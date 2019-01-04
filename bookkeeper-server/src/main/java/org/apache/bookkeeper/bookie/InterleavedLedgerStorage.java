@@ -29,6 +29,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRYLOGGER_SCO
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGES_SCANNED;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGE_RETRIES;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -55,6 +56,7 @@ import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
@@ -112,6 +114,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     )
     private OpStatsLogger getEntryStats;
     private OpStatsLogger pageScanStats;
+    private Counter retryCounter;
 
     @VisibleForTesting
     public InterleavedLedgerStorage() {
@@ -149,11 +152,34 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                                         Checkpointer checkpointer,
                                         EntryLogListener entryLogListener,
                                         StatsLogger statsLogger) throws IOException {
+        initializeWithEntryLogger(
+                conf,
+                ledgerManager,
+                ledgerDirsManager,
+                indexDirsManager,
+                stateManager,
+                checkpointSource,
+                checkpointer,
+                new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE)),
+                statsLogger);
+    }
+
+    @VisibleForTesting
+    public void initializeWithEntryLogger(ServerConfiguration conf,
+                LedgerManager ledgerManager,
+                LedgerDirsManager ledgerDirsManager,
+                LedgerDirsManager indexDirsManager,
+                StateManager stateManager,
+                CheckpointSource checkpointSource,
+                Checkpointer checkpointer,
+                EntryLogger entryLogger,
+                StatsLogger statsLogger) throws IOException {
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");
+        this.entryLogger = entryLogger;
+        this.entryLogger.addListener(this);
         this.checkpointSource = checkpointSource;
         this.checkpointer = checkpointer;
-        entryLogger = new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE));
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger.scope("gc"));
@@ -162,6 +188,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         getOffsetStats = statsLogger.getOpStatsLogger(STORAGE_GET_OFFSET);
         getEntryStats = statsLogger.getOpStatsLogger(STORAGE_GET_ENTRY);
         pageScanStats = statsLogger.getOpStatsLogger(STORAGE_SCRUB_PAGES_SCANNED);
+        retryCounter = statsLogger.getCounter(STORAGE_SCRUB_PAGE_RETRIES);
     }
 
     private LedgerDirsListener getLedgerDirsListener() {
@@ -538,6 +565,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                     @Cleanup LedgerEntryPage lep = page.getLEP();
                     MutableBoolean retry = new MutableBoolean(false);
                     do {
+                        retry.setValue(false);
                         int version = lep.getVersion();
 
                         MutableBoolean success = new MutableBoolean(true);
@@ -556,6 +584,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                                     } else {
                                         LOG.debug("localConsistencyCheck: concurrent modification, retrying");
                                         retry.setValue(true);
+                                        retryCounter.inc();
                                     }
                                     return false;
                                 } else {

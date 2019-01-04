@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGE_RETRIES;
 import static org.junit.Assert.assertEquals;
 
 import io.netty.buffer.ByteBuf;
@@ -27,9 +29,11 @@ import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,18 +41,37 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
+import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test for InterleavedLedgerStorage.
  */
+@RunWith(Parameterized.class)
 public class InterleavedLedgerStorageTest {
+    private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorageTest.class);
+
+    @Parameterized.Parameters
+    public static Iterable<Boolean> elplSetting() {
+        return Arrays.asList(true, false);
+    }
+
+    public InterleavedLedgerStorageTest(boolean elplSetting) {
+        conf.setEntryLogSizeLimit(2048);
+        conf.setEntryLogPerLedgerEnabled(elplSetting);
+    }
 
     CheckpointSource checkpointSource = new CheckpointSource() {
         @Override
@@ -73,8 +96,41 @@ public class InterleavedLedgerStorageTest {
         }
     };
 
+    static class TestableEntryLogger extends EntryLogger {
+        public interface CheckEntryListener {
+            void accept(long ledgerId,
+                        long entryId,
+                        long entryLogId,
+                        long pos);
+        }
+        volatile CheckEntryListener testPoint;
+
+        public TestableEntryLogger(
+                ServerConfiguration conf,
+                LedgerDirsManager ledgerDirsManager,
+                EntryLogListener listener,
+                StatsLogger statsLogger) throws IOException {
+            super(conf, ledgerDirsManager, listener, statsLogger);
+        }
+
+        void setCheckEntryTestPoint(CheckEntryListener testPoint) throws InterruptedException {
+            this.testPoint = testPoint;
+        }
+
+        @Override
+        void checkEntry(long ledgerId, long entryId, long location) throws EntryLookupException, IOException {
+            CheckEntryListener runBefore = testPoint;
+            if (runBefore != null) {
+                runBefore.accept(ledgerId, entryId, logIdForOffset(location), posForOffset(location));
+            }
+            super.checkEntry(ledgerId, entryId, location);
+        }
+    }
+
+    TestStatsProvider statsProvider = new TestStatsProvider();
     ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
     LedgerDirsManager ledgerDirsManager;
+    TestableEntryLogger entryLogger;
     InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
     final long numWrites = 2000;
     final long entriesPerWrite = 2;
@@ -87,14 +143,16 @@ public class InterleavedLedgerStorageTest {
         File curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
 
-        conf = TestBKConfiguration.newServerConfiguration();
-        conf.setLedgerDirNames(new String[] { tmpDir.toString() });
-        conf.setEntryLogSizeLimit(2048);
+        conf.setLedgerDirNames(new String[]{tmpDir.toString()});
         ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
-                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+        entryLogger = new TestableEntryLogger(
+                conf, ledgerDirsManager, null, NullStatsLogger.INSTANCE);
+        interleavedStorage.initializeWithEntryLogger(
+                conf, null, ledgerDirsManager, ledgerDirsManager,
+                null, checkpointSource, checkpointer, entryLogger,
+                statsProvider.getStatsLogger(BOOKIE_SCOPE));
 
         // Insert some ledger & entries in the interleaved storage
         for (long entryId = 0; entryId < numWrites; entryId++) {
@@ -132,41 +190,77 @@ public class InterleavedLedgerStorageTest {
     }
 
     @Test
-    public void testConsistencyCheckConcurrentModification() throws Exception {
-        AtomicBoolean done = new AtomicBoolean(false);
-        EntryLogger entryLogger = interleavedStorage.getEntryLogger();
-        List<Exception> asyncErrors = new ArrayList<>();
+    public void testConsistencyCheckConcurrentGC() throws Exception {
+        final long signalDone = -1;
+        final List<Exception> asyncErrors = new ArrayList<>();
+        final LinkedBlockingQueue<Long> toCompact = new LinkedBlockingQueue<>();
+        final Semaphore awaitingCompaction = new Semaphore(0);
+
+        interleavedStorage.flush();
+        final long lastLogId = entryLogger.getLeastUnflushedLogId();
+
+        final MutableInt counter = new MutableInt(0);
+        entryLogger.setCheckEntryTestPoint((ledgerId, entryId, entryLogId, pos) -> {
+            if (entryLogId < lastLogId) {
+                if (counter.intValue() % 100 == 0) {
+                    try {
+                        toCompact.put(entryLogId);
+                        awaitingCompaction.acquire();
+                    } catch (InterruptedException e) {
+                        asyncErrors.add(e);
+                    }
+                }
+                counter.increment();
+            }
+        });
+
         Thread mutator = new Thread(() -> {
             EntryLogCompactor compactor = new EntryLogCompactor(
                     conf,
                     entryLogger,
                     interleavedStorage,
                     entryLogger::removeEntryLog);
-            long next = 0;
-            while (!done.get()) {
+            while (true) {
+                Long next = null;
                 try {
+                    next = toCompact.take();
+                    if (next == null || next == signalDone) {
+                        break;
+                    }
                     compactor.compact(entryLogger.getEntryLogMetadata(next));
-                    next++;
-                } catch (IOException e) {
+                } catch (BufferedChannelBase.BufferedChannelClosedException e) {
+                    // next was already removed, ignore
+                } catch (Exception e) {
                     asyncErrors.add(e);
                     break;
+                } finally {
+                    if (next != null) {
+                        awaitingCompaction.release();
+                    }
                 }
             }
         });
         mutator.start();
 
-        for (int i = 0; i < 100; ++i) {
-            assert interleavedStorage.localConsistencyCheck(Optional.empty()).size() == 0;
-            Thread.sleep(10);
+        List<LedgerStorage.DetectedInconsistency> inconsistencies = interleavedStorage.localConsistencyCheck(
+                Optional.empty());
+        for (LedgerStorage.DetectedInconsistency e: inconsistencies) {
+            LOG.error("Found: {}", e);
         }
+        Assert.assertEquals(0, inconsistencies.size());
 
-        done.set(true);
+        toCompact.offer(signalDone);
         mutator.join();
         for (Exception e: asyncErrors) {
             throw e;
         }
-    }
 
+        if (!conf.isEntryLogPerLedgerEnabled()) {
+            Assert.assertNotEquals(
+                    0,
+                    statsProvider.getCounter(BOOKIE_SCOPE + "." + STORAGE_SCRUB_PAGE_RETRIES).get().longValue());
+        }
+    }
 
     @Test
     public void testConsistencyMissingEntry() throws Exception {

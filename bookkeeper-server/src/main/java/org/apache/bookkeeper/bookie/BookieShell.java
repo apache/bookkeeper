@@ -1234,7 +1234,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Print the metadata for a ledger.
+     * Check local storage for inconsistencies.
      */
     class LocalConsistencyCheck extends MyCommand {
         Options lOpts = new Options();
