@@ -696,6 +696,10 @@ public class EntryLogger {
     }
 
 
+    static long posForOffset(long location) {
+        return location & 0xffffffffL;
+    }
+
 
     /**
      * Exception type for representing lookup errors.  Useful for disambiguating different error
@@ -778,7 +782,7 @@ public class EntryLogger {
             throws EntryLookupException, IOException {
         ByteBuf sizeBuff = sizeBuffer.get();
         sizeBuff.clear();
-        pos -= 4; // we want to get the ledgerId and length to check
+        pos -= 4; // we want to get the entrySize as well as the ledgerId and entryId
         BufferedReadChannel fc;
         try {
             fc = getChannelForLogId(entryLogId);
@@ -817,14 +821,14 @@ public class EntryLogger {
 
     void checkEntry(long ledgerId, long entryId, long location) throws EntryLookupException, IOException {
         long entryLogId = logIdForOffset(location);
-        long pos = location & 0xffffffffL;
+        long pos = posForOffset(location);
         getFCForEntryInternal(ledgerId, entryId, entryLogId, pos);
     }
 
     public ByteBuf internalReadEntry(long ledgerId, long entryId, long location)
             throws IOException, Bookie.NoEntryException {
         long entryLogId = logIdForOffset(location);
-        long pos = location & 0xffffffffL;
+        long pos = posForOffset(location);
 
         final EntryLogEntry entry;
         try {
