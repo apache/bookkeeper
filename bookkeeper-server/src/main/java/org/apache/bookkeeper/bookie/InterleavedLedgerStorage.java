@@ -165,7 +165,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 stateManager,
                 checkpointSource,
                 checkpointer,
-                new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE), allocator),
+                new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE),
+                        allocator),
                 statsLogger);
     }
 
