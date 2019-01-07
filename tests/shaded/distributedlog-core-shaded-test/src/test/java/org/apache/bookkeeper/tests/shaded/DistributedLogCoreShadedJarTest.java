@@ -179,7 +179,7 @@ public class DistributedLogCoreShadedJarTest {
         when(manager.readLedgerLayout()).thenReturn(layout);
 
         LedgerManagerFactory factory = mock(LedgerManagerFactory.class);
-        when(factory.initialize(any(AbstractConfiguration.class), same(manager), anyInt(), anyInt()))
+        when(factory.initialize(any(AbstractConfiguration.class), same(manager), anyInt()))
             .thenReturn(factory);
         PowerMockito.mockStatic(ReflectionUtils.class);
         when(ReflectionUtils.newInstance(any(Class.class)))
@@ -191,7 +191,7 @@ public class DistributedLogCoreShadedJarTest {
             if (allowShaded) {
                 assertSame(factory, result);
                 verify(factory, times(1))
-                    .initialize(any(AbstractConfiguration.class), same(manager), anyInt(), anyInt());
+                    .initialize(any(AbstractConfiguration.class), same(manager), anyInt());
             } else {
                 fail("Should fail to instantiate ledger manager factory if allowShaded is false");
             }

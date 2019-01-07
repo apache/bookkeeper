@@ -80,8 +80,7 @@ public class LedgerMetadataTest {
             .withCreationTime(System.currentTimeMillis())
             .storingCreationTime(true)
             .build();
-        LedgerMetadataFormat format = new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION)
-            .buildProtoFormat(lm);
+        LedgerMetadataFormat format = new LedgerMetadataSerDe().buildProtoFormat(lm);
         assertTrue(format.hasCtime());
     }
 
@@ -95,8 +94,7 @@ public class LedgerMetadataTest {
         LedgerMetadata lm = LedgerMetadataBuilder.create()
             .newEnsembleEntry(0L, ensemble).build();
 
-        LedgerMetadataFormat format = new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION)
-            .buildProtoFormat(lm);
+        LedgerMetadataFormat format = new LedgerMetadataSerDe().buildProtoFormat(lm);
         assertFalse(format.hasCtime());
     }
 

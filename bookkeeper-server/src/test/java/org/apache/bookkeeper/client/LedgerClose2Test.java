@@ -268,5 +268,41 @@ public class LedgerClose2Test {
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), LedgerHandle.INVALID_ENTRY_ID);
         Assert.assertEquals(lh.getLedgerMetadata().getLength(), 0);
     }
+
+    @Test
+    public void testDoubleCloseOnHandle() throws Exception {
+        long ledgerId = 123L;
+        MockClientContext clientCtx = MockClientContext.create();
+
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, ledgerId,
+                LedgerMetadataBuilder.create()
+                .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
+                .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
+
+        CompletableFuture<Void> metadataPromise = new CompletableFuture<>();
+        CompletableFuture<Void> clientPromise = new CompletableFuture<>();
+
+        LedgerHandle writer = new LedgerHandle(clientCtx, ledgerId, md,
+                                               BookKeeper.DigestType.CRC32C,
+                                               ClientUtil.PASSWD, WriteFlag.NONE);
+        long eid1 = writer.append("entry1".getBytes());
+
+        log.info("block writes from completing on bookies and metadata");
+        clientCtx.getMockBookieClient().setPostWriteHook((bookie, lid, eid) -> clientPromise);
+        clientCtx.getMockLedgerManager().setPreWriteHook((lid, metadata) -> metadataPromise);
+
+        log.info("try to add another entry, it will block");
+        writer.appendAsync("entry2".getBytes());
+
+        log.info("attempt one close, should block forever");
+        CompletableFuture<Void> firstClose = writer.closeAsync();
+
+        log.info("attempt second close, should not finish before first one");
+        CompletableFuture<Void> secondClose = writer.closeAsync();
+
+        Thread.sleep(500); // give it a chance to complete, the request jumps around threads
+        Assert.assertFalse(firstClose.isDone());
+        Assert.assertFalse(secondClose.isDone());
+    }
 }
 
