@@ -92,13 +92,6 @@ public class LedgerMetadataSerDe {
     private static final String V1_CLOSED_TAG = "CLOSED";
     private static final int V1_IN_RECOVERY_ENTRY_ID = -102;
 
-    private final int maxLedgerMetadataFormatVersion;
-
-    public LedgerMetadataSerDe(int maxLedgerMetadataFormatVersion) {
-        log.info("SerDe initialized with max version {}", maxLedgerMetadataFormatVersion);
-        this.maxLedgerMetadataFormatVersion = maxLedgerMetadataFormatVersion;
-    }
-
     private static void writeHeader(OutputStream os, int version) throws IOException {
         os.write(VERSION_KEY_BYTES);
         os.write(String.valueOf(version).getBytes(UTF_8));
@@ -135,7 +128,7 @@ public class LedgerMetadataSerDe {
     }
 
     public byte[] serialize(LedgerMetadata metadata) throws IOException {
-        int formatVersion = Math.min(maxLedgerMetadataFormatVersion, metadata.getMetadataFormatVersion());
+        int formatVersion = metadata.getMetadataFormatVersion();
         final byte[] serialized;
         switch (formatVersion) {
         case METADATA_FORMAT_VERSION_3:

@@ -17,28 +17,77 @@
  */
 package org.apache.bookkeeper.conf;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
+
 import com.google.common.annotations.Beta;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
+import org.apache.bookkeeper.common.conf.ConfigDef;
+import org.apache.bookkeeper.common.conf.ConfigException;
+import org.apache.bookkeeper.common.conf.ConfigKey;
+import org.apache.bookkeeper.common.conf.ConfigKeyGroup;
+import org.apache.bookkeeper.common.conf.Type;
+import org.apache.bookkeeper.common.conf.validators.ClassValidator;
+import org.apache.bookkeeper.common.conf.validators.RangeValidator;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
-import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.configuration.ConfigurationException;
 
 /**
  * Configuration manages server-side settings.
  */
 public class ServerConfiguration extends AbstractConfiguration<ServerConfiguration> {
+
+    // Ledger Storage Settings
+
+    private static final ConfigKeyGroup GROUP_LEDGER_STORAGE = ConfigKeyGroup.builder("ledgerstorage")
+        .description("Ledger Storage related settings")
+        .order(10) // place a place holder here
+        .build();
+
+    protected static final String LEDGER_STORAGE_CLASS = "ledgerStorageClass";
+    protected static final ConfigKey LEDGER_STORAGE_CLASS_KEY = ConfigKey.builder(LEDGER_STORAGE_CLASS)
+        .type(Type.CLASS)
+        .description("Ledger storage implementation class")
+        .defaultValue(SortedLedgerStorage.class)
+        .optionValues(Lists.newArrayList(
+            InterleavedLedgerStorage.class.getName(),
+            SortedLedgerStorage.class.getName(),
+            DbLedgerStorage.class.getName()
+        ))
+        .validator(ClassValidator.of(LedgerStorage.class))
+        .group(GROUP_LEDGER_STORAGE)
+        .build();
+
     // Entry Log Parameters
+
+    private static final ConfigKeyGroup GROUP_LEDGER_STORAGE_ENTRY_LOGGER = ConfigKeyGroup.builder("entrylogger")
+        .description("EntryLogger related settings")
+        .order(11)
+        .build();
+
     protected static final String ENTRY_LOG_SIZE_LIMIT = "logSizeLimit";
+    protected static final ConfigKey ENTRY_LOG_SIZE_LIMIT_KEY = ConfigKey.builder(ENTRY_LOG_SIZE_LIMIT)
+        .type(Type.LONG)
+        .description("Max file size of entry logger, in bytes")
+        .documentation("A new entry log file will be created when the old one reaches this file size limitation")
+        .defaultValue(MAX_LOG_SIZE_LIMIT)
+        .validator(RangeValidator.between(0, MAX_LOG_SIZE_LIMIT))
+        .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+        .build();
+
     protected static final String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
+
+
     protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
@@ -55,6 +104,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
+    // Scrub Parameters
+    protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
+    protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
     // Sync Parameters
     protected static final String FLUSH_INTERVAL = "flushInterval";
     protected static final String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
@@ -163,7 +215,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String ENABLE_STATISTICS = "enableStatistics";
     protected static final String STATS_PROVIDER_CLASS = "statsProviderClass";
 
-    protected static final String LEDGER_STORAGE_CLASS = "ledgerStorageClass";
 
     // Rx adaptive ByteBuf allocator parameters
     protected static final String BYTEBUF_ALLOCATOR_SIZE_INITIAL = "byteBufAllocatorSizeInitial";
@@ -226,6 +277,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR =
             "entryLogPerLedgerCounterLimitsMultFactor";
 
+    // Perform local consistency check on bookie startup
+    protected static final String LOCAL_CONSISTENCY_CHECK_ON_STARTUP = "localConsistencyCheckOnStartup";
+
     /**
      * Construct a default configuration object.
      */
@@ -250,7 +304,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return entry logger size limitation
      */
     public long getEntryLogSizeLimit() {
-        return this.getLong(ENTRY_LOG_SIZE_LIMIT, 1 * 1024 * 1024 * 1024L);
+        return ENTRY_LOG_SIZE_LIMIT_KEY.getLong(this);
     }
 
     /**
@@ -260,7 +314,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *          new log size limitation
      */
     public ServerConfiguration setEntryLogSizeLimit(long logSizeLimit) {
-        this.setProperty(ENTRY_LOG_SIZE_LIMIT, Long.toString(logSizeLimit));
+        ENTRY_LOG_SIZE_LIMIT_KEY.set(this, logSizeLimit);
         return this;
     }
 
@@ -372,6 +426,50 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setVerifyMetadataOnGc(boolean verifyMetadataOnGC) {
         this.setProperty(VERIFY_METADATA_ON_GC, verifyMetadataOnGC);
         return this;
+    }
+
+    /**
+     * Get whether local scrub is enabled.
+     *
+     * @return Whether local scrub is enabled.
+     */
+    public boolean isLocalScrubEnabled() {
+        return this.getLocalScrubPeriod() > 0;
+    }
+
+    /**
+     * Get local scrub interval.
+     *
+     * @return Number of seconds between scrubs, <= 0 for disabled.
+     */
+    public long getLocalScrubPeriod() {
+        return this.getLong(LOCAL_SCRUB_PERIOD, 0);
+    }
+
+    /**
+     * Set local scrub period in seconds (<= 0 for disabled). Scrub will be scheduled at delays
+     * chosen from the interval (.5 * interval, 1.5 * interval)
+     */
+    public void setLocalScrubPeriod(long period) {
+        this.setProperty(LOCAL_SCRUB_PERIOD, period);
+    }
+
+    /**
+     * Get local scrub rate limit (entries/second).
+     *
+     * @return Max number of entries to scrub per second, 0 for disabled.
+     */
+    public double getLocalScrubRateLimit() {
+        return this.getDouble(LOCAL_SCRUB_RATE_LIMIT, 60);
+    }
+
+    /**
+     * Get local scrub rate limit (entries/second).
+     *
+     * @param scrubRateLimit Max number of entries per second to scan.
+     */
+    public void setLocalScrubRateLimit(double scrubRateLimit) {
+        this.setProperty(LOCAL_SCRUB_RATE_LIMIT, scrubRateLimit);
     }
 
     /**
@@ -2317,7 +2415,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the class name
      */
     public String getLedgerStorageClass() {
-        String ledgerStorageClass = getString(LEDGER_STORAGE_CLASS, SortedLedgerStorage.class.getName());
+        String ledgerStorageClass = LEDGER_STORAGE_CLASS_KEY.getString(this);
         if (ledgerStorageClass.equals(SortedLedgerStorage.class.getName())
                 && !getSortedLedgerStorageEnabled()) {
             // This is to retain compatibility with BK-4.3 configuration
@@ -2340,7 +2438,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setLedgerStorageClass(String ledgerStorageClass) {
-        setProperty(LEDGER_STORAGE_CLASS, ledgerStorageClass);
+        LEDGER_STORAGE_CLASS_KEY.set(this, ledgerStorageClass);
         return this;
     }
 
@@ -2473,6 +2571,14 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @throws ConfigurationException
      */
     public void validate() throws ConfigurationException {
+        // generate config def
+        ConfigDef configDef = ConfigDef.of(ServerConfiguration.class);
+        try {
+            configDef.validate(this);
+        } catch (ConfigException e) {
+            throw new ConfigurationException(e.getMessage(), e.getCause());
+        }
+
         if (getSkipListArenaChunkSize() < getSkipListArenaMaxAllocSize()) {
             throw new ConfigurationException("Arena max allocation size should be smaller than the chunk size.");
         }
@@ -2481,10 +2587,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         }
         if (getJournalAlignmentSize() > getJournalPreAllocSizeMB() * 1024 * 1024) {
             throw new ConfigurationException("Invalid preallocation size : " + getJournalPreAllocSizeMB() + " MB");
-        }
-        if (getEntryLogSizeLimit() > BookKeeperConstants.MAX_LOG_SIZE_LIMIT) {
-            throw new ConfigurationException("Entry log file size should not be larger than "
-                    + BookKeeperConstants.MAX_LOG_SIZE_LIMIT);
         }
         if (0 == getBookiePort() && !getAllowEphemeralPorts()) {
             throw new ConfigurationException("Invalid port specified, using ephemeral ports accidentally?");
@@ -3092,5 +3194,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         this.setProperty(ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR,
                 Integer.toString(entryLogPerLedgerCounterLimitsMultFactor));
         return this;
+    }
+
+    /**
+     * True if a local consistency check should be performed on startup.
+     */
+    public boolean isLocalConsistencyCheckOnStartup() {
+        return this.getBoolean(LOCAL_CONSISTENCY_CHECK_ON_STARTUP, false);
     }
 }

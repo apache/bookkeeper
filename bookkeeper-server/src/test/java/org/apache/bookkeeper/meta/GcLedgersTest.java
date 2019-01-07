@@ -21,8 +21,6 @@
 
 package org.apache.bookkeeper.meta;
 
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ACTIVE_LEDGER_COUNT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.DELETED_LEDGER_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -176,7 +174,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         final CountDownLatch endLatch = new CountDownLatch(2);
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         TestStatsProvider stats = new TestStatsProvider();
-        final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
+        final ScanAndCompareGarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
                 mockLedgerStorage, baseConf, stats.getStatsLogger("gc"));
         Thread gcThread = new Thread() {
             @Override
@@ -239,11 +237,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
             assertTrue(activeLedgers.containsKey(ledger));
         }
         assertTrue(
-                "Wrong DELETED_LEDGER_COUNT",
-                stats.getCounter("gc." + DELETED_LEDGER_COUNT).get() == removedLedgers.size());
-        assertTrue(
                 "Wrong ACTIVE_LEDGER_COUNT",
-                stats.getGauge("gc." + ACTIVE_LEDGER_COUNT).getSample().intValue() == createdLedgers.size());
+                garbageCollector.getNumActiveLedgers() == createdLedgers.size());
     }
 
     @Test
@@ -256,7 +251,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         MockLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         TestStatsProvider stats = new TestStatsProvider();
-        final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
+        final ScanAndCompareGarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
                 mockLedgerStorage, baseConf, stats.getStatsLogger("gc"));
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
                 @Override
@@ -275,36 +270,25 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         garbageCollector.gc(cleaner);
         assertNull("Should have cleaned nothing", cleaned.poll());
         assertTrue(
-                "Wrong DELETED_LEDGER_COUNT",
-                stats.getCounter("gc." + DELETED_LEDGER_COUNT).get() == 0);
-        assertTrue(
                 "Wrong ACTIVE_LEDGER_COUNT",
-                stats.getGauge(
-                        "gc." + ACTIVE_LEDGER_COUNT).getSample().intValue() == numLedgers);
+                garbageCollector.getNumActiveLedgers() == numLedgers);
 
         long last = createdLedgers.last();
         removeLedger(last);
         garbageCollector.gc(cleaner);
         assertNotNull("Should have cleaned something", cleaned.peek());
         assertEquals("Should have cleaned last ledger" + last, (long) last, (long) cleaned.poll());
-        assertTrue(
-                "Wrong DELETED_LEDGER_COUNT",
-                stats.getCounter("gc." + DELETED_LEDGER_COUNT).get() == 1);
 
         long first = createdLedgers.first();
         removeLedger(first);
         garbageCollector.gc(cleaner);
         assertNotNull("Should have cleaned something", cleaned.peek());
         assertEquals("Should have cleaned first ledger" + first, (long) first, (long) cleaned.poll());
-        assertTrue(
-                "Wrong DELETED_LEDGER_COUNT",
-                stats.getCounter("gc." + DELETED_LEDGER_COUNT).get() == 2);
 
         garbageCollector.gc(cleaner);
         assertTrue(
                 "Wrong ACTIVE_LEDGER_COUNT",
-                stats.getGauge(
-                        "gc." + ACTIVE_LEDGER_COUNT).getSample().intValue() == (numLedgers - 2));
+                garbageCollector.getNumActiveLedgers() == (numLedgers - 2));
 
     }
 

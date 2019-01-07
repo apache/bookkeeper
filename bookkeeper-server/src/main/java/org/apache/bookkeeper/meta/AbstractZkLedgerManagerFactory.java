@@ -160,8 +160,8 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
 
         // if layoutManager is null, return the default ledger manager
         if (layoutManager == null) {
-            return new FlatLedgerManagerFactory().initialize(conf, null,
-                    FlatLedgerManagerFactory.CUR_VERSION, LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
+            return new FlatLedgerManagerFactory()
+                   .initialize(conf, null, FlatLedgerManagerFactory.CUR_VERSION);
         }
 
         LedgerManagerFactory lmFactory;
@@ -172,9 +172,8 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
 
         if (layout == null) { // no existing layout
             lmFactory = createNewLMFactory(conf, layoutManager, factoryClass);
-            return lmFactory.initialize(conf, layoutManager,
-                                        lmFactory.getCurrentVersion(),
-                                        LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
+            return lmFactory
+                    .initialize(conf, layoutManager, lmFactory.getCurrentVersion());
         }
         if (log.isDebugEnabled()) {
             log.debug("read ledger layout {}", layout);
@@ -198,8 +197,7 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             } else {
                 throw new IOException("Unknown ledger manager type: " + lmType);
             }
-            return lmFactory.initialize(conf, layoutManager, layout.getManagerVersion(),
-                                        layout.getMaxLedgerMetadataFormatVersion());
+            return lmFactory.initialize(conf, layoutManager, layout.getManagerVersion());
         }
 
         // handle V2 layout case
@@ -229,8 +227,7 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
         }
         // instantiate a factory
         lmFactory = ReflectionUtils.newInstance(factoryClass);
-        return lmFactory.initialize(conf, layoutManager, layout.getManagerVersion(),
-                                    layout.getMaxLedgerMetadataFormatVersion());
+        return lmFactory.initialize(conf, layoutManager, layout.getManagerVersion());
     }
 
     private static String normalizedLedgerManagerFactoryClassName(String factoryClass,
