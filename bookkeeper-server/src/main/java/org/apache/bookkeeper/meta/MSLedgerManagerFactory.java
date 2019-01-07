@@ -96,7 +96,6 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     public static final String META_FIELD = ".META";
 
     AbstractConfiguration conf;
-    private int maxLedgerMetadataFormatVersion;
     MetaStore metastore;
 
     @Override
@@ -107,8 +106,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     @Override
     public LedgerManagerFactory initialize(final AbstractConfiguration conf,
                                            final LayoutManager layoutManager,
-                                           final int factoryVersion,
-                                           int maxLedgerMetadataFormatVersion) throws IOException {
+                                           final int factoryVersion) throws IOException {
         checkArgument(layoutManager instanceof ZkLayoutManager);
         ZkLayoutManager zkLayoutManager = (ZkLayoutManager) layoutManager;
 
@@ -117,7 +115,6 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         }
         this.conf = conf;
         this.zk = zkLayoutManager.getZk();
-        this.maxLedgerMetadataFormatVersion = maxLedgerMetadataFormatVersion;
 
         // load metadata store
         String msName = conf.getMetastoreImplClass();
@@ -283,12 +280,11 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             }
         }
 
-        MsLedgerManager(final AbstractConfiguration conf, final ZooKeeper zk, final MetaStore metastore,
-                        int maxLedgerMetadataFormatVersion) {
+        MsLedgerManager(final AbstractConfiguration conf, final ZooKeeper zk, final MetaStore metastore) {
             this.conf = conf;
             this.zk = zk;
             this.metastore = metastore;
-            this.serDe = new LedgerMetadataSerDe(maxLedgerMetadataFormatVersion);
+            this.serDe = new LedgerMetadataSerDe();
 
             try {
                 ledgerTable = metastore.createScannableTable(TABLE_NAME);
@@ -655,7 +651,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
     @Override
     public LedgerManager newLedgerManager() {
-        return new MsLedgerManager(conf, zk, metastore, maxLedgerMetadataFormatVersion);
+        return new MsLedgerManager(conf, zk, metastore);
     }
 
     @Override

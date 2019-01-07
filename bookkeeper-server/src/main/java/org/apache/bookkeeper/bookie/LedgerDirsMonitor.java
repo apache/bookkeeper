@@ -122,43 +122,46 @@ class LedgerDirsMonitor {
         }
 
         List<File> fullfilledDirs = new ArrayList<File>(ldm.getFullFilledLedgerDirs());
-        boolean hasWritableLedgerDirs = ldm.hasWritableLedgerDirs();
-        float totalDiskUsage = 0;
+        boolean makeWritable = ldm.hasWritableLedgerDirs();
 
-        // When bookie is in READONLY mode .i.e there are no writableLedgerDirs:
-        // - Check if the total disk usage is below DiskLowWaterMarkUsageThreshold.
-        // - If So, walk through the entire list of fullfilledDirs and add them back to writableLedgerDirs list if
-        // their usage is < conf.getDiskUsageThreshold.
+        // When bookie is in READONLY mode, i.e there are no writableLedgerDirs:
+        // - Update fullfilledDirs disk usage.
+        // - If the total disk usage is below DiskLowWaterMarkUsageThreshold
+        // add fullfilledDirs back to writableLedgerDirs list if their usage is < conf.getDiskUsageThreshold.
         try {
-            if (hasWritableLedgerDirs
-                    || (totalDiskUsage = diskChecker.getTotalDiskUsage(ldm.getAllLedgerDirs())) < conf
-                            .getDiskLowWaterMarkUsageThreshold()) {
-                // Check all full-filled disk space usage
-                for (File dir : fullfilledDirs) {
-                    try {
-                        diskUsages.put(dir, diskChecker.checkDir(dir));
-                        ldm.addToWritableDirs(dir, true);
-                    } catch (DiskErrorException e) {
-                        // Notify disk failure to all the listeners
-                        for (LedgerDirsListener listener : ldm.getListeners()) {
-                            listener.diskFailed(dir);
-                        }
-                    } catch (DiskWarnThresholdException e) {
-                        diskUsages.put(dir, e.getUsage());
-                        // the full-filled dir become writable but still
-                        // above
-                        // warn threshold
-                        ldm.addToWritableDirs(dir, false);
-                    } catch (DiskOutOfSpaceException e) {
-                        // the full-filled dir is still full-filled
-                        diskUsages.put(dir, e.getUsage());
-                    }
-                }
-            } else {
-                LOG.debug(
+            if (!makeWritable) {
+                float totalDiskUsage = diskChecker.getTotalDiskUsage(ldm.getAllLedgerDirs());
+                if (totalDiskUsage < conf.getDiskLowWaterMarkUsageThreshold()) {
+                    makeWritable = true;
+                } else {
+                    LOG.debug(
                         "Current TotalDiskUsage: {} is greater than LWMThreshold: {}."
-                            + " So not adding any filledDir to WritableDirsList",
+                                + " So not adding any filledDir to WritableDirsList",
                         totalDiskUsage, conf.getDiskLowWaterMarkUsageThreshold());
+                }
+            }
+            // Update all full-filled disk space usage
+            for (File dir : fullfilledDirs) {
+                try {
+                    diskUsages.put(dir, diskChecker.checkDir(dir));
+                    if (makeWritable) {
+                        ldm.addToWritableDirs(dir, true);
+                    }
+                } catch (DiskErrorException e) {
+                    // Notify disk failure to all the listeners
+                    for (LedgerDirsListener listener : ldm.getListeners()) {
+                        listener.diskFailed(dir);
+                    }
+                } catch (DiskWarnThresholdException e) {
+                    diskUsages.put(dir, e.getUsage());
+                    // the full-filled dir become writable but still above the warn threshold
+                    if (makeWritable) {
+                        ldm.addToWritableDirs(dir, false);
+                    }
+                } catch (DiskOutOfSpaceException e) {
+                    // the full-filled dir is still full-filled
+                    diskUsages.put(dir, e.getUsage());
+                }
             }
         } catch (IOException ioe) {
             LOG.error("Got IOException while monitoring Dirs", ioe);

@@ -538,6 +538,9 @@ groups:
         - Twitter Ostrich   : org.apache.bookkeeper.stats.twitter.ostrich.OstrichProvider
         - Twitter Science   : org.apache.bookkeeper.stats.twitter.science.TwitterStatsProvider
     default: org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider
+  - param: limitStatsLogging
+    description: option to limit stats logging
+    default: 'false'
 
 - name: Prometheus Metrics Provider Settings
   params:

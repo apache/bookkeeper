@@ -55,7 +55,6 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
-import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.metadata.etcd.helpers.ValueStream;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -82,8 +81,7 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
     public void setUp() throws Exception {
         super.setUp();
         this.scope = RandomStringUtils.randomAlphabetic(8);
-        this.lm = new EtcdLedgerManager(etcdClient, scope,
-                                        LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
+        this.lm = new EtcdLedgerManager(etcdClient, scope);
     }
 
     @Override

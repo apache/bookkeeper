@@ -43,15 +43,12 @@ public interface LedgerManagerFactory extends AutoCloseable {
      *          Layout manager used for initialize ledger manager factory
      * @param factoryVersion
      *          What version used to initialize factory.
-     * @param maxLedgerMetadataFormatVersion
-     *          Maximum format version for ledger metadata.
      * @return ledger manager factory instance
      * @throws IOException when fail to initialize the factory.
      */
     LedgerManagerFactory initialize(AbstractConfiguration conf,
                                     LayoutManager layoutManager,
-                                    int factoryVersion,
-                                    int maxLedgerMetadataFormatVersion)
+                                    int factoryVersion)
         throws IOException;
 
     /**

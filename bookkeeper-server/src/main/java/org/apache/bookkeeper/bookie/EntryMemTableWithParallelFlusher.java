@@ -139,7 +139,7 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                         throw new IOException("Failed to complete the flushSnapshotByParallelizing",
                                 exceptionWhileFlushingParallelly.get());
                     }
-                    flushBytesCounter.add(flushedSize.get());
+                    memTableStats.getFlushBytesCounter().add(flushedSize.get());
                     clearSnapshot(keyValues);
                 }
             }

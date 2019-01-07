@@ -55,9 +55,8 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
      *          ZooKeeper Client Handle
      * @throws IOException when version is not compatible
      */
-    public FlatLedgerManager(AbstractConfiguration conf, ZooKeeper zk,
-                             int maxLedgerMetadataFormatVersion) {
-        super(conf, zk, maxLedgerMetadataFormatVersion);
+    public FlatLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
+        super(conf, zk);
 
         ledgerPrefix = ledgerRootPath + "/" + StringUtils.LEDGER_NODE_PREFIX;
     }

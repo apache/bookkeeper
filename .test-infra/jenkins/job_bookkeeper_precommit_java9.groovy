@@ -49,7 +49,7 @@ mavenJob('bookkeeper_precommit_pullrequest_java9') {
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
-    'Build (Java 9)',
+    'Build (Java 9) (trigger via `rebuild java9`)',
     '.*(re)?build java9.*',
     '.*\\[x\\] \\[skip build java9\\].*')
 

@@ -163,6 +163,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String ALLOCATOR_OOM_POLICY = "allocatorOutOfMemoryPolicy";
     protected static final String ALLOCATOR_LEAK_DETECTION_POLICY = "allocatorLeakDetectionPolicy";
 
+    // option to limit stats logging
+    public static final String LIMIT_STATS_LOGGING = "limitStatsLogging";
+
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {
@@ -972,6 +975,28 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setAllocatorLeakDetectionPolicy(LeakDetectionPolicy leakDetectionPolicy) {
         this.setProperty(ALLOCATOR_LEAK_DETECTION_POLICY, leakDetectionPolicy.toString());
+        return getThis();
+    }
+
+    /**
+     * Return the flag indicating whether to limit stats logging.
+     *
+     * @return
+     *      the boolean flag indicating whether to limit stats logging
+     */
+    public boolean getLimitStatsLogging() {
+        return getBoolean(LIMIT_STATS_LOGGING, false);
+    }
+
+    /**
+     * Sets flag to limit the stats logging.
+     *
+     * @param limitStatsLogging
+     *          flag to limit the stats logging.
+     * @return configuration.
+     */
+    public T setLimitStatsLogging(boolean limitStatsLogging) {
+        setProperty(LIMIT_STATS_LOGGING, limitStatsLogging);
         return getThis();
     }
 
