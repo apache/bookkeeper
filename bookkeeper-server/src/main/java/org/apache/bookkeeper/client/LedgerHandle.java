@@ -42,13 +42,13 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -196,7 +196,7 @@ public class LedgerHandle implements WriteHandle {
 
         if (clientCtx.getConf().enableStickyReads
                 && getLedgerMetadata().getEnsembleSize() == getLedgerMetadata().getWriteQuorumSize()) {
-            stickyBookieIndex = ThreadLocalRandom.current().nextInt() % getLedgerMetadata().getEnsembleSize();
+            stickyBookieIndex = clientCtx.getPlacementPolicy().getStickyReadBookieIndex(metadata, Optional.empty());
         } else {
             stickyBookieIndex = -1;
         }
@@ -267,7 +267,8 @@ public class LedgerHandle implements WriteHandle {
         if (stickyBookieIndex != -1) {
             // This will be idempotent when we have multiple read errors on the
             // same bookie. The net result is that we just go to the next bookie
-            stickyBookieIndex = (bookieIndex + 1) % getLedgerMetadata().getEnsembleSize();
+            stickyBookieIndex = clientCtx.getPlacementPolicy().getStickyReadBookieIndex(getLedgerMetadata(),
+                    Optional.of(bookieIndex));
         }
     }
 
