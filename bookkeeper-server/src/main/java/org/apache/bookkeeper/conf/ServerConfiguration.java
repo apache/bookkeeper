@@ -134,6 +134,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_ALIGNMENT_SIZE = "journalAlignmentSize";
     protected static final String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
     protected static final String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
+    protected static final String JOURNAL_QUEUE_SIZE = "journalQueueSize";
     // backpressure control
     protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
     protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
@@ -768,6 +769,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setJournalFormatVersionToWrite(int version) {
         this.setProperty(JOURNAL_FORMAT_VERSION_TO_WRITE, version);
         return this;
+    }
+
+    /**
+     * Set the size of the journal queue.
+     *
+     * @param journalQueueSize
+     *            the max size of journal queue
+     * @return server configuration.
+     */
+    public ServerConfiguration setJournalQueueSize(int journalQueueSize) {
+        this.setProperty(JOURNAL_QUEUE_SIZE, journalQueueSize);
+        return this;
+    }
+
+    /**
+     * Get size of journal queue.
+     *
+     * @return the max size of journal queue.
+     */
+    public int getJournalQueueSize() {
+        return this.getInt(JOURNAL_QUEUE_SIZE, 10_000);
     }
 
     /**

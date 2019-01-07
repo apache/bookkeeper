@@ -87,6 +87,7 @@
                   <include>net.java.dev.jna:jna</include>
                   <include>net.jpountz.lz4:lz4</include>
                   <include>org.apache.bookkeeper:bookkeeper-common</include>
+                  <include>org.apache.bookkeeper:cpu-affinity</include>
                   <include>org.apache.bookkeeper:bookkeeper-tools-framework</include>
                   <include>org.apache.bookkeeper:bookkeeper-proto</include>
                   <include>org.apache.bookkeeper:bookkeeper-server</include>
