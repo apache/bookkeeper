@@ -86,6 +86,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
             "storeSystemTimeAsLedgerUnderreplicatedMarkTime";
     protected static final String STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME = "storeSystemTimeAsLedgerCreationTime";
 
+    protected static final String ENABLE_BUSY_WAIT = "enableBusyWait";
+
     // Metastore settings, only being used when LEDGER_MANAGER_FACTORY_CLASS is MSLedgerManagerFactory
     protected static final String METASTORE_IMPL_CLASS = "metastoreImplClass";
     protected static final String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
@@ -876,6 +878,42 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setPreserveMdcForTaskExecution(boolean enabled) {
         setProperty(PRESERVE_MDC_FOR_TASK_EXECUTION, enabled);
+        return getThis();
+    }
+
+    /**
+     * Return whether the busy-wait is enabled for BookKeeper and Netty IO threads.
+     *
+     * <p>Default is false
+     *
+     * @return the value of the option
+     */
+    public boolean isBusyWaitEnabled() {
+        return getBoolean(ENABLE_BUSY_WAIT, false);
+    }
+
+    /**
+     * Option to enable busy-wait settings.
+     *
+     * <p>Default is false.
+     *
+     * <p>WARNING: This option will enable spin-waiting on executors and IO threads
+     * in order to reduce latency during context switches. The spinning will
+     * consume 100% CPU even when bookie is not doing any work. It is
+     * recommended to reduce the number of threads in the main workers pool
+     * ({@link ClientConfiguration#setNumWorkerThreads(int)}) and Netty event
+     * loop {@link ClientConfiguration#setNumIOThreads(int)} to only have few
+     * CPU cores busy.
+     * </p>
+     *
+     * @param busyWaitEanbled
+     *            if enabled, use spin-waiting strategy to reduce latency in
+     *            context switches
+     *
+     * @see #isBusyWaitEnabled()
+     */
+    public T setBusyWaitEnabled(boolean busyWaitEanbled) {
+        setProperty(ENABLE_BUSY_WAIT, busyWaitEanbled);
         return getThis();
     }
 

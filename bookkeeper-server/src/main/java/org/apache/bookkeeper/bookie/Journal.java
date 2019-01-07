@@ -40,6 +40,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,7 +48,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
+import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
 import org.apache.bookkeeper.common.collections.RecyclableArrayList;
+import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
@@ -56,7 +59,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.collections.GrowableArrayBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -472,6 +474,15 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         @Override
         public void run() {
             LOG.info("ForceWrite Thread started");
+
+            if (conf.isBusyWaitEnabled()) {
+                try {
+                    CpuAffinity.acquireCore();
+                } catch (Exception e) {
+                    LOG.warn("Unable to acquire CPU core for Journal ForceWrite thread: {}", e.getMessage(), e);
+                }
+            }
+
             boolean shouldForceWrite = true;
             int numReqInLastForceWrite = 0;
             while (running) {
@@ -611,8 +622,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private final ExecutorService cbThreadPool;
 
     // journal entry queue to commit
-    final BlockingQueue<QueueEntry> queue = new GrowableArrayBlockingQueue<QueueEntry>();
-    final BlockingQueue<ForceWriteRequest> forceWriteRequests = new GrowableArrayBlockingQueue<ForceWriteRequest>();
+    final BlockingQueue<QueueEntry> queue;
+    final BlockingQueue<ForceWriteRequest> forceWriteRequests;
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
@@ -628,6 +639,16 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger) {
         super("BookieJournal-" + conf.getBookiePort());
+
+        if (conf.isBusyWaitEnabled()) {
+            // To achieve lower latency, use busy-wait blocking queue implementation
+            queue = new BlockingMpscQueue<>(conf.getJournalQueueSize());
+            forceWriteRequests = new BlockingMpscQueue<>(conf.getJournalQueueSize());
+        } else {
+            queue = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
+            forceWriteRequests = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
+        }
+
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
         this.journalDirectory = journalDirectory;
@@ -905,6 +926,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     @Override
     public void run() {
         LOG.info("Starting journal on {}", journalDirectory);
+
+        if (conf.isBusyWaitEnabled()) {
+            try {
+                CpuAffinity.acquireCore();
+            } catch (Exception e) {
+                LOG.warn("Unable to acquire CPU core for Journal thread: {}", e.getMessage(), e);
+            }
+        }
 
         RecyclableArrayList<QueueEntry> toFlush = entryListRecycler.newInstance();
         int numEntriesToFlush = 0;
