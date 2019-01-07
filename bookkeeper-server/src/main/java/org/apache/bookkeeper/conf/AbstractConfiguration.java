@@ -155,6 +155,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // enforce minimum number of racks per write quorum
     public static final String ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM = "enforceMinNumRacksPerWriteQuorum";
 
+    // option to limit stats logging
+    public static final String LIMIT_STATS_LOGGING = "limitStatsLogging";
+
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {
@@ -878,7 +881,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         return getThis();
     }
 
-
     /**
      * Return whether the busy-wait is enabled for BookKeeper and Netty IO threads.
      *
@@ -912,6 +914,28 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setBusyWaitEnabled(boolean busyWaitEanbled) {
         setProperty(ENABLE_BUSY_WAIT, busyWaitEanbled);
+        return getThis();
+    }
+
+    /**
+     * Return the flag indicating whether to limit stats logging.
+     *
+     * @return
+     *      the boolean flag indicating whether to limit stats logging
+     */
+    public boolean getLimitStatsLogging() {
+        return getBoolean(LIMIT_STATS_LOGGING, false);
+    }
+
+    /**
+     * Sets flag to limit the stats logging.
+     *
+     * @param limitStatsLogging
+     *          flag to limit the stats logging.
+     * @return configuration.
+     */
+    public T setLimitStatsLogging(boolean limitStatsLogging) {
+        setProperty(LIMIT_STATS_LOGGING, limitStatsLogging);
         return getThis();
     }
 

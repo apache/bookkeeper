@@ -63,12 +63,6 @@ public class LedgerMetadataSerDe {
     private static final String V1_CLOSED_TAG = "CLOSED";
     private static final int V1_IN_RECOVERY_ENTRY_ID = -102;
 
-    private final int maxLedgerMetadataFormatVersion;
-
-    public LedgerMetadataSerDe(int maxLedgerMetadataFormatVersion) {
-        this.maxLedgerMetadataFormatVersion = maxLedgerMetadataFormatVersion;
-    }
-
     public byte[] serialize(LedgerMetadata metadata) {
         if (metadata.getMetadataFormatVersion() == 1) {
             return serializeVersion1(metadata);

@@ -72,7 +72,7 @@ public class MockLedgerManager implements LedgerManager {
         this.metadataMap = metadataMap;
         this.executor = executor;
         this.ownsExecutor = ownsExecutor;
-        this.serDe = new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
+        this.serDe = new LedgerMetadataSerDe();
     }
 
     public MockLedgerManager newClient() {

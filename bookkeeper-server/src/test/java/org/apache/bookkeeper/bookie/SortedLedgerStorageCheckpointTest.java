@@ -99,7 +99,7 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
 
     public SortedLedgerStorageCheckpointTest() {
         super();
-        conf.setEntryLogSizeLimit(1);
+        conf.setEntryLogSizeLimit(1024);
         conf.setEntryLogFilePreAllocationEnabled(false);
         this.checkpoints = new LinkedBlockingQueue<>();
     }

@@ -387,8 +387,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(1, respBody.size());
         // verify LedgerMetadata content is equal
         assertTrue(respBody.get(ledgerId.toString()).toString()
-                .equals(new String(new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION)
-                                   .serialize(lh[0].getLedgerMetadata()))));
+                .equals(new String(new LedgerMetadataSerDe().serialize(lh[0].getLedgerMetadata()))));
     }
 
     @Test
