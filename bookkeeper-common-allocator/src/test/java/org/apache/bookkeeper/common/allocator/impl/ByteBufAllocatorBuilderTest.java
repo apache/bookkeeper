@@ -145,10 +145,10 @@ public class ByteBufAllocatorBuilderTest {
     }
 
     @Test
-    public void testOomUnpooled() {
+    public void testOomUnpooledDirect() {
         ByteBufAllocator heapAlloc = mock(ByteBufAllocator.class);
-        OutOfMemoryError noHeapError = new OutOfMemoryError("no more heap");
-        when(heapAlloc.heapBuffer(anyInt(), anyInt())).thenThrow(noHeapError);
+        OutOfMemoryError noMemError = new OutOfMemoryError("no more direct mem");
+        when(heapAlloc.directBuffer(anyInt(), anyInt())).thenThrow(noMemError);
 
         AtomicReference<OutOfMemoryError> receivedException = new AtomicReference<>();
 
@@ -166,11 +166,11 @@ public class ByteBufAllocatorBuilderTest {
             fail("Should have thrown exception");
         } catch (OutOfMemoryError e) {
             // Expected
-            assertEquals(noHeapError, e);
+            assertEquals(noMemError, e);
         }
 
         // Ensure the notification was triggered even when exception is thrown
-        assertEquals(noHeapError, receivedException.get());
+        assertEquals(noMemError, receivedException.get());
     }
 
     @Test
@@ -214,7 +214,7 @@ public class ByteBufAllocatorBuilderTest {
 
         ByteBuf buf2 = alloc.directBuffer();
         assertEquals(UnpooledByteBufAllocator.DEFAULT, buf2.alloc());
-        assertTrue(buf2.hasArray());
+        assertFalse(buf2.hasArray());
     }
 
     @Test

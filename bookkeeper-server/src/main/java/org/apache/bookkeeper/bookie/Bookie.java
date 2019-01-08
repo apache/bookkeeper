@@ -28,9 +28,13 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.SettableFuture;
+
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -53,6 +57,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
@@ -135,6 +140,8 @@ public class Bookie extends BookieCriticalThread {
     // Expose Stats
     final StatsLogger statsLogger;
     private final BookieStats bookieStats;
+
+    private final ByteBufAllocator allocator;
 
     /**
      * Exception is thrown when no such a ledger is found in this bookie.
@@ -600,7 +607,7 @@ public class Bookie extends BookieCriticalThread {
 
     public Bookie(ServerConfiguration conf)
             throws IOException, InterruptedException, BookieException {
-        this(conf, NullStatsLogger.INSTANCE);
+        this(conf, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
     }
 
     private static LedgerStorage buildLedgerStorage(ServerConfiguration conf) throws IOException {
@@ -658,12 +665,13 @@ public class Bookie extends BookieCriticalThread {
                 null,
                 checkpointSource,
                 checkpointer,
-                statsLogger);
+                statsLogger,
+                UnpooledByteBufAllocator.DEFAULT);
 
         return ledgerStorage;
     }
 
-    public Bookie(ServerConfiguration conf, StatsLogger statsLogger)
+    public Bookie(ServerConfiguration conf, StatsLogger statsLogger, ByteBufAllocator allocator)
             throws IOException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
         this.statsLogger = statsLogger;
@@ -676,6 +684,7 @@ public class Bookie extends BookieCriticalThread {
         this.ledgerDirsManager = createLedgerDirsManager(conf, diskChecker, statsLogger.scope(LD_LEDGER_SCOPE));
         this.indexDirsManager = createIndexDirsManager(conf, diskChecker, statsLogger.scope(LD_INDEX_SCOPE),
                                                        this.ledgerDirsManager);
+        this.allocator = allocator;
 
         // instantiate zookeeper client to initialize ledger manager
         this.metadataDriver = instantiateMetadataDriver(conf);
@@ -732,7 +741,7 @@ public class Bookie extends BookieCriticalThread {
         journals = Lists.newArrayList();
         for (int i = 0; i < journalDirectories.size(); i++) {
             journals.add(new Journal(i, journalDirectories.get(i),
-                         conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE)));
+                    conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE), allocator));
         }
 
         this.entryLogPerLedgerEnabled = conf.isEntryLogPerLedgerEnabled();
@@ -786,7 +795,8 @@ public class Bookie extends BookieCriticalThread {
             stateManager,
             checkpointSource,
             syncThread,
-            statsLogger);
+            statsLogger,
+            allocator);
 
 
         handles = new HandleFactoryImpl(ledgerStorage);
@@ -1287,8 +1297,8 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
-    static ByteBuf createExplicitLACEntry(long ledgerId, ByteBuf explicitLac) {
-        ByteBuf bb = PooledByteBufAllocator.DEFAULT.directBuffer(8 + 8 + 4 + explicitLac.capacity());
+    private ByteBuf createExplicitLACEntry(long ledgerId, ByteBuf explicitLac) {
+        ByteBuf bb = allocator.directBuffer(8 + 8 + 4 + explicitLac.capacity());
         bb.writeLong(ledgerId);
         bb.writeLong(METAENTRY_ID_LEDGER_EXPLICITLAC);
         bb.writeInt(explicitLac.capacity());
@@ -1483,6 +1493,10 @@ public class Bookie extends BookieCriticalThread {
                 wait();
             }
         }
+    }
+
+    public ByteBufAllocator getAllocator() {
+        return allocator;
     }
 
     /**

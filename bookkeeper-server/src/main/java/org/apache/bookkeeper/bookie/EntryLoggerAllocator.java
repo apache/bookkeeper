@@ -25,6 +25,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import java.io.BufferedWriter;
@@ -61,11 +62,14 @@ class EntryLoggerAllocator {
     private final Object createCompactionLogLock = new Object();
     private final EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
     private final boolean entryLogPreAllocationEnabled;
+    private final ByteBufAllocator byteBufAllocator;
     final ByteBuf logfileHeader = Unpooled.buffer(EntryLogger.LOGFILE_HEADER_SIZE);
 
     EntryLoggerAllocator(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
-            EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus, long logId) {
+            EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus, long logId,
+            ByteBufAllocator byteBufAllocator) {
         this.conf = conf;
+        this.byteBufAllocator = byteBufAllocator;
         this.ledgerDirsManager = ledgerDirsManager;
         this.preallocatedLogId = logId;
         this.recentlyCreatedEntryLogsStatus = recentlyCreatedEntryLogsStatus;
@@ -161,7 +165,7 @@ class EntryLoggerAllocator {
         File newLogFile = new File(dirForNextEntryLog, logFileName);
         FileChannel channel = new RandomAccessFile(newLogFile, "rw").getChannel();
 
-        BufferedLogChannel logChannel = new BufferedLogChannel(channel, conf.getWriteBufferBytes(),
+        BufferedLogChannel logChannel = new BufferedLogChannel(byteBufAllocator, channel, conf.getWriteBufferBytes(),
                 conf.getReadBufferBytes(), preallocatedLogId, newLogFile, conf.getFlushIntervalInBytes());
         logfileHeader.readerIndex(0);
         logChannel.write(logfileHeader);

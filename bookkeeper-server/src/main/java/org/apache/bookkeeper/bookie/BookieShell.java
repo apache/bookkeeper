@@ -29,7 +29,9 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -917,8 +919,8 @@ public class BookieShell implements Tool {
                     ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
                         new DefaultThreadFactory("BookKeeperClientSchedulerPool"));
 
-                    BookieClient bookieClient = new BookieClientImpl(conf, eventLoopGroup, executor,
-                        scheduler, NullStatsLogger.INSTANCE);
+                    BookieClient bookieClient = new BookieClientImpl(conf, eventLoopGroup,
+                            UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE);
 
                     LongStream.range(firstEntry, lastEntry).forEach(entryId -> {
                         CompletableFuture<Void> future = new CompletableFuture<>();
@@ -2825,9 +2827,9 @@ public class BookieShell implements Tool {
             };
 
             dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager, null,
-                        checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+                        checkpointSource, checkpointer, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
             interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
-                    null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+                    null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
             LedgerCache interleavedLedgerCache = interleavedStorage.ledgerCache;
 
             int convertedLedgers = 0;

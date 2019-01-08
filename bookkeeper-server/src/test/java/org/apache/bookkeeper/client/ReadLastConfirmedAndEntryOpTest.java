@@ -32,6 +32,8 @@ import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -132,7 +134,7 @@ public class ReadLastConfirmedAndEntryOpTest {
         when(mockLh.getCurrentEnsemble()).thenReturn(ensemble);
         when(mockLh.getLedgerMetadata()).thenReturn(ledgerMetadata);
         when(mockLh.getDistributionSchedule()).thenReturn(distributionSchedule);
-        digestManager = new DummyDigestManager(LEDGERID, false);
+        digestManager = new DummyDigestManager(LEDGERID, false, UnpooledByteBufAllocator.DEFAULT);
         when(mockLh.getDigestManager()).thenReturn(digestManager);
     }
 

@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.IOException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -38,9 +40,9 @@ public class ReadOnlyBookie extends Bookie {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyBookie.class);
 
-    public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger)
+    public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger, ByteBufAllocator allocator)
             throws IOException, KeeperException, InterruptedException, BookieException {
-        super(conf, statsLogger);
+        super(conf, statsLogger, allocator);
         if (conf.isReadOnlyModeEnabled()) {
             stateManager.forceToReadOnly();
         } else {

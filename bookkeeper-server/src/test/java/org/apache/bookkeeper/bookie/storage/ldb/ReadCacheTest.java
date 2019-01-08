@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNull;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import org.junit.Test;
 
@@ -35,7 +36,7 @@ public class ReadCacheTest {
 
     @Test
     public void simple() {
-        ReadCache cache = new ReadCache(10 * 1024);
+        ReadCache cache = new ReadCache(UnpooledByteBufAllocator.DEFAULT, 10 * 1024);
 
         assertEquals(0, cache.count());
         assertEquals(0, cache.size());
@@ -72,7 +73,7 @@ public class ReadCacheTest {
 
     @Test
     public void emptyCache() {
-        ReadCache cache = new ReadCache(10 * 1024);
+        ReadCache cache = new ReadCache(UnpooledByteBufAllocator.DEFAULT, 10 * 1024);
 
         assertEquals(0, cache.count());
         assertEquals(0, cache.size());
@@ -84,7 +85,7 @@ public class ReadCacheTest {
     @Test
     public void multipleSegments() {
         // Test with multiple smaller segments
-        ReadCache cache = new ReadCache(10 * 1024, 2 * 1024);
+        ReadCache cache = new ReadCache(UnpooledByteBufAllocator.DEFAULT, 10 * 1024, 2 * 1024);
 
         assertEquals(0, cache.count());
         assertEquals(0, cache.size());

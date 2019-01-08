@@ -23,7 +23,6 @@ package org.apache.bookkeeper.util;
 import com.google.common.annotations.VisibleForTesting;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -307,7 +306,7 @@ public class ByteBufList extends AbstractReferenceCounted {
                     if (prependSize) {
                         // Prepend the frame size before writing the buffer list, so that we only have 1 single size
                         // header
-                        ByteBuf sizeBuffer = PooledByteBufAllocator.DEFAULT.directBuffer(4, 4);
+                        ByteBuf sizeBuffer = ctx.alloc().directBuffer(4, 4);
                         sizeBuffer.writeInt(b.readableBytes());
                         ctx.write(sizeBuffer, ctx.voidPromise());
                     }

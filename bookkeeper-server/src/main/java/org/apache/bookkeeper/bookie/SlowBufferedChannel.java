@@ -22,6 +22,7 @@ package org.apache.bookkeeper.bookie;
  */
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -36,12 +37,13 @@ public class SlowBufferedChannel extends BufferedChannel {
     public volatile long addDelay = 0;
     public volatile long flushDelay = 0;
 
-    public SlowBufferedChannel(FileChannel fc, int capacity) throws IOException {
-        super(fc, capacity);
+    public SlowBufferedChannel(ByteBufAllocator allocator, FileChannel fc, int capacity) throws IOException {
+        super(allocator, fc, capacity);
     }
 
-    public SlowBufferedChannel(FileChannel fc, int writeCapacity, int readCapacity) throws IOException {
-        super(fc, writeCapacity, readCapacity);
+    public SlowBufferedChannel(ByteBufAllocator allocator, FileChannel fc, int writeCapacity, int readCapacity)
+            throws IOException {
+        super(allocator, fc, writeCapacity, readCapacity);
     }
 
     public void setAddDelay(long delay) {

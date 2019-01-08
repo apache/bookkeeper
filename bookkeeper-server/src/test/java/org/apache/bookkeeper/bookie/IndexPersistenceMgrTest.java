@@ -29,6 +29,7 @@ import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.File;
 import java.io.IOException;
@@ -342,7 +343,8 @@ public class IndexPersistenceMgrTest {
 
         preCreateFileInfoForLedger(ledgerId, headerVersion);
         DigestManager digestManager = DigestManager.instantiate(ledgerId, masterKey,
-                BookKeeper.DigestType.toProtoDigestType(digestType), getUseV2WireProtocol);
+                BookKeeper.DigestType.toProtoDigestType(digestType), UnpooledByteBufAllocator.DEFAULT,
+                getUseV2WireProtocol);
 
         CachedFileInfo fileInfo = indexPersistenceMgr.getFileInfo(ledgerId, masterKey);
         fileInfo.readHeader();

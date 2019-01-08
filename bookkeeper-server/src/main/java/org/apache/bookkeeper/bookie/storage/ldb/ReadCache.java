@@ -57,13 +57,15 @@ public class ReadCache implements Closeable {
 
     private final int segmentSize;
 
+    private ByteBufAllocator allocator;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public ReadCache(long maxCacheSize) {
-        this(maxCacheSize, DEFAULT_MAX_SEGMENT_SIZE);
+    public ReadCache(ByteBufAllocator allocator, long maxCacheSize) {
+        this(allocator, maxCacheSize, DEFAULT_MAX_SEGMENT_SIZE);
     }
 
-    public ReadCache(long maxCacheSize, int maxSegmentSize) {
+    public ReadCache(ByteBufAllocator allocator, long maxCacheSize, int maxSegmentSize) {
+        this.allocator = allocator;
         int segmentsCount = Math.max(2, (int) (maxCacheSize / maxSegmentSize));
         segmentSize = (int) (maxCacheSize / segmentsCount);
 
@@ -140,7 +142,7 @@ public class ReadCache implements Closeable {
                     int entryOffset = (int) res.first;
                     int entryLen = (int) res.second;
 
-                    ByteBuf entry = ByteBufAllocator.DEFAULT.directBuffer(entryLen, entryLen);
+                    ByteBuf entry = allocator.directBuffer(entryLen, entryLen);
                     entry.writeBytes(cacheSegments.get(segmentIdx), entryOffset, entryLen);
                     return entry;
                 }

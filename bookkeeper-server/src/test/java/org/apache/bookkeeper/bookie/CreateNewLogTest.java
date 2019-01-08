@@ -22,6 +22,8 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.common.util.concurrent.MoreExecutors;
 
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -606,7 +608,8 @@ public class CreateNewLogTest {
         conf.setEntryLogPerLedgerCounterLimitsMultFactor(entryLogPerLedgerCounterLimitsMultFactor);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager, null, statsLogger);
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager, null, statsLogger,
+                UnpooledByteBufAllocator.DEFAULT);
         EntryLogManagerForEntryLogPerLedger entrylogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
         // set same thread executor for entryLoggerAllocator's allocatorExecutor
@@ -731,7 +734,8 @@ public class CreateNewLogTest {
         conf.setEntryLogPerLedgerCounterLimitsMultFactor(entryLogPerLedgerCounterLimitsMultFactor);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager, null, statsLogger);
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager, null, statsLogger,
+                UnpooledByteBufAllocator.DEFAULT);
         EntryLogManagerForEntryLogPerLedger entrylogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
         // set same thread executor for entryLoggerAllocator's allocatorExecutor

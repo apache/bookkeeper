@@ -66,23 +66,24 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     private boolean closed = false;
 
     // make constructor to be public for unit test
-    public BufferedChannel(FileChannel fc, int capacity) throws IOException {
+    public BufferedChannel(ByteBufAllocator allocator, FileChannel fc, int capacity) throws IOException {
         // Use the same capacity for read and write buffers.
-        this(fc, capacity, 0L);
+        this(allocator, fc, capacity, 0L);
     }
 
-    public BufferedChannel(FileChannel fc, int capacity, long unpersistedBytesBound) throws IOException {
-        // Use the same capacity for read and write buffers.
-        this(fc, capacity, capacity, unpersistedBytesBound);
-    }
-
-    public BufferedChannel(FileChannel fc, int writeCapacity, int readCapacity, long unpersistedBytesBound)
+    public BufferedChannel(ByteBufAllocator allocator, FileChannel fc, int capacity, long unpersistedBytesBound)
             throws IOException {
+        // Use the same capacity for read and write buffers.
+        this(allocator, fc, capacity, capacity, unpersistedBytesBound);
+    }
+
+    public BufferedChannel(ByteBufAllocator allocator, FileChannel fc, int writeCapacity, int readCapacity,
+            long unpersistedBytesBound) throws IOException {
         super(fc, readCapacity);
         this.writeCapacity = writeCapacity;
         this.position = new AtomicLong(fc.position());
         this.writeBufferStartPosition.set(position.get());
-        this.writeBuffer = ByteBufAllocator.DEFAULT.directBuffer(writeCapacity);
+        this.writeBuffer = allocator.directBuffer(writeCapacity);
         this.unpersistedBytes = new AtomicLong(0);
         this.unpersistedBytesBound = unpersistedBytesBound;
         this.doRegularFlushes = unpersistedBytesBound > 0;

@@ -26,9 +26,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.nio.charset.Charset;
 import java.util.concurrent.BrokenBarrierException;
@@ -46,11 +47,13 @@ import org.junit.Test;
  */
 public class WriteCacheTest {
 
+    private static final ByteBufAllocator allocator = UnpooledByteBufAllocator.DEFAULT;
+
     @Test
     public void simple() throws Exception {
-        WriteCache cache = new WriteCache(10 * 1024);
+        WriteCache cache = new WriteCache(allocator, 10 * 1024);
 
-        ByteBuf entry1 = PooledByteBufAllocator.DEFAULT.buffer(1024);
+        ByteBuf entry1 = allocator.buffer(1024);
         ByteBufUtil.writeUtf8(entry1, "entry-1");
         entry1.writerIndex(entry1.capacity());
 
@@ -87,9 +90,9 @@ public class WriteCacheTest {
         int entrySize = 1024;
         int entriesCount = cacheSize / entrySize;
 
-        WriteCache cache = new WriteCache(cacheSize);
+        WriteCache cache = new WriteCache(allocator, cacheSize);
 
-        ByteBuf entry = PooledByteBufAllocator.DEFAULT.buffer(entrySize);
+        ByteBuf entry = allocator.buffer(entrySize);
         entry.writerIndex(entry.capacity());
 
         for (int i = 0; i < entriesCount; i++) {
@@ -125,7 +128,7 @@ public class WriteCacheTest {
     @Test
     public void testMultipleSegments() {
         // Create cache with max size 1Mb and each segment is 16Kb
-        WriteCache cache = new WriteCache(1024 * 1024, 16 * 1024);
+        WriteCache cache = new WriteCache(allocator, 1024 * 1024, 16 * 1024);
 
         ByteBuf entry = Unpooled.buffer(1024);
         entry.writerIndex(entry.capacity());
@@ -142,7 +145,7 @@ public class WriteCacheTest {
 
     @Test
     public void testEmptyCache() {
-        WriteCache cache = new WriteCache(1024 * 1024, 16 * 1024);
+        WriteCache cache = new WriteCache(allocator, 1024 * 1024, 16 * 1024);
 
         assertEquals(0, cache.count());
         assertEquals(0, cache.size());
@@ -160,7 +163,7 @@ public class WriteCacheTest {
     @Test
     public void testMultipleWriters() throws Exception {
         // Create cache with max size 1Mb and each segment is 16Kb
-        WriteCache cache = new WriteCache(10 * 1024 * 1024, 16 * 1024);
+        WriteCache cache = new WriteCache(allocator, 10 * 1024 * 1024, 16 * 1024);
 
         ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -220,7 +223,7 @@ public class WriteCacheTest {
 
     @Test
     public void testLedgerDeletion() {
-        WriteCache cache = new WriteCache(1024 * 1024, 16 * 1024);
+        WriteCache cache = new WriteCache(allocator, 1024 * 1024, 16 * 1024);
 
         ByteBuf entry = Unpooled.buffer(1024);
         entry.writerIndex(entry.capacity());
@@ -265,7 +268,7 @@ public class WriteCacheTest {
     @Test
     public void testWriteReadsInMultipleSegments() {
         // Create cache with max size 4 KB and each segment is 128 bytes
-        WriteCache cache = new WriteCache(4 * 1024, 128);
+        WriteCache cache = new WriteCache(allocator, 4 * 1024, 128);
 
         for (int i = 0; i < 48; i++) {
             boolean inserted = cache.put(1, i, Unpooled.wrappedBuffer(("test-" + i).getBytes()));

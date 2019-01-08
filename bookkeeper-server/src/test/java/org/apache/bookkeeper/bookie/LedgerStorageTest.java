@@ -23,6 +23,8 @@ package org.apache.bookkeeper.bookie;
 import static org.junit.Assert.assertEquals;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -145,7 +147,8 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
 
         if ((journalFormatVersionToWrite >= 6) && (fileInfoFormatVersionToWrite >= 1)) {
             DigestManager digestManager = DigestManager.instantiate(ledgerId, passwdBytes,
-                    BookKeeper.DigestType.toProtoDigestType(digestType), confWithExplicitLAC.getUseV2WireProtocol());
+                    BookKeeper.DigestType.toProtoDigestType(digestType), UnpooledByteBufAllocator.DEFAULT,
+                    confWithExplicitLAC.getUseV2WireProtocol());
             long explicitLacPersistedInJournal = digestManager.verifyDigestAndReturnLac(explicitLacBuf);
             assertEquals("explicitLac persisted in journal", (numOfEntries - 1), explicitLacPersistedInJournal);
         } else {
@@ -226,7 +229,8 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
 
         if ((journalFormatVersionToWrite >= 6) && (fileInfoFormatVersionToWrite >= 1)) {
             DigestManager digestManager = DigestManager.instantiate(ledgerId, passwdBytes,
-                    BookKeeper.DigestType.toProtoDigestType(digestType), confWithExplicitLAC.getUseV2WireProtocol());
+                    BookKeeper.DigestType.toProtoDigestType(digestType), UnpooledByteBufAllocator.DEFAULT,
+                    confWithExplicitLAC.getUseV2WireProtocol());
             long explicitLacReadFromFileInfo = digestManager.verifyDigestAndReturnLac(explicitLacBufReadFromFileInfo);
             assertEquals("explicitLac persisted in FileInfo", (numOfEntries - 1), explicitLacReadFromFileInfo);
         } else {

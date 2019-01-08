@@ -23,6 +23,8 @@ package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
@@ -76,8 +78,8 @@ public class BufferedChannelTest {
         newLogFile.deleteOnExit();
         FileChannel fileChannel = new RandomAccessFile(newLogFile, "rw").getChannel();
 
-        BufferedChannel logChannel = new BufferedChannel(fileChannel, INTERNAL_BUFFER_WRITE_CAPACITY,
-                INTERNAL_BUFFER_READ_CAPACITY, unpersistedBytesBound);
+        BufferedChannel logChannel = new BufferedChannel(UnpooledByteBufAllocator.DEFAULT, fileChannel,
+                INTERNAL_BUFFER_WRITE_CAPACITY, INTERNAL_BUFFER_READ_CAPACITY, unpersistedBytesBound);
 
         ByteBuf dataBuf = generateEntry(byteBufLength);
         dataBuf.markReaderIndex();

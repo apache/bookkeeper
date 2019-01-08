@@ -21,11 +21,14 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
 import io.netty.buffer.ByteBuf;
+
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
+import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.ZKRegistrationClient;
@@ -1772,8 +1775,11 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     /**
      * Option to use Netty Pooled ByteBufs.
      *
+     * @deprecated see {@link BookKeeperBuilder#allocator(io.netty.buffer.ByteBufAllocator)}
+     *
      * @return the value of the option
      */
+    @Deprecated
     public boolean isNettyUsePooledBuffers() {
         return getBoolean(NETTY_USE_POOLED_BUFFERS, true);
     }
@@ -1784,6 +1790,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      *
      * @param enabled
      *          if enabled BookKeeper will use default Pooled Netty Buffer allocator
+     *
+     * @deprecated see {@link BookKeeperBuilder#allocator(io.netty.buffer.ByteBufAllocator)}
      *
      * @see #setUseV2WireProtocol(boolean)
      * @see ByteBuf#release()

@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
@@ -132,7 +133,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
             LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StateManager stateManager,
             CheckpointSource checkpointSource, Checkpointer checkpointer, StatsLogger statsLogger,
-            ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize) throws IOException {
+            ByteBufAllocator allocator, ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize)
+            throws IOException {
 
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
@@ -141,8 +143,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         log.info("Creating single directory db ledger storage on {}", baseDir);
 
         this.writeCacheMaxSize = writeCacheSize;
-        this.writeCache = new WriteCache(writeCacheMaxSize / 2);
-        this.writeCacheBeingFlushed = new WriteCache(writeCacheMaxSize / 2);
+        this.writeCache = new WriteCache(allocator, writeCacheMaxSize / 2);
+        this.writeCacheBeingFlushed = new WriteCache(allocator, writeCacheMaxSize / 2);
 
         this.checkpointSource = checkpointSource;
 
@@ -153,7 +155,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 DEFAULT_MAX_THROTTLE_TIME_MILLIS);
         maxThrottleTimeNanos = TimeUnit.MILLISECONDS.toNanos(maxThrottleTimeMillis);
 
-        readCache = new ReadCache(readCacheMaxSize);
+        readCache = new ReadCache(allocator, readCacheMaxSize);
 
         ledgerIndex = new LedgerMetadataIndex(conf, KeyValueStorageRocksDB.factory, baseDir, statsLogger);
         entryLocationIndex = new EntryLocationIndex(conf, KeyValueStorageRocksDB.factory, baseDir, statsLogger);
@@ -164,7 +166,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES,
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES, TimeUnit.MINUTES);
 
-        entryLogger = new EntryLogger(conf, ledgerDirsManager, null, statsLogger);
+        entryLogger = new EntryLogger(conf, ledgerDirsManager, null, statsLogger, allocator);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger);
 
         dbLedgerStorageStats = new DbLedgerStorageStats(
@@ -179,7 +181,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
             LedgerDirsManager indexDirsManager, StateManager stateManager, CheckpointSource checkpointSource,
-            Checkpointer checkpointer, StatsLogger statsLogger) throws IOException {
+            Checkpointer checkpointer, StatsLogger statsLogger,
+            ByteBufAllocator allocator) throws IOException {
         /// Initialized in constructor
     }
 

@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -45,7 +47,7 @@ public class BookKeeperTestClient extends BookKeeper {
 
     public BookKeeperTestClient(ClientConfiguration conf, TestStatsProvider statsProvider)
             throws IOException, InterruptedException, BKException {
-        super(conf, null, null,
+        super(conf, null, null, new UnpooledByteBufAllocator(false),
               statsProvider == null ? NullStatsLogger.INSTANCE : statsProvider.getStatsLogger(""),
               null, null, null);
         this.statsProvider = statsProvider;

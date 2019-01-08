@@ -25,6 +25,8 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
 import static org.apache.bookkeeper.conf.AbstractConfiguration.PERMITTED_STARTUP_USERS;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
@@ -38,6 +40,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -62,7 +65,7 @@ public class BookieServer {
     final ServerConfiguration conf;
     BookieNettyServer nettyServer;
     private volatile boolean running = false;
-    Bookie bookie;
+    private final Bookie bookie;
     DeathWatcher deathWatcher;
     private static final Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
@@ -96,10 +99,11 @@ public class BookieServer {
             LOG.error("Got ParseJsonException while converting Config to JSONString", pe);
         }
 
+        ByteBufAllocator allocator = getAllocator(conf);
         this.statsLogger = statsLogger;
-        this.nettyServer = new BookieNettyServer(this.conf, null);
+        this.nettyServer = new BookieNettyServer(this.conf, null, allocator);
         try {
-            this.bookie = newBookie(conf);
+            this.bookie = newBookie(conf, allocator);
         } catch (IOException | KeeperException | InterruptedException | BookieException e) {
             // interrupted on constructing a bookie
             this.nettyServer.shutdown();
@@ -110,7 +114,7 @@ public class BookieServer {
         shFactory = SecurityProviderFactoryFactory
                 .getSecurityProviderFactory(conf.getTLSProviderFactoryClass());
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
-                statsLogger.scope(SERVER_SCOPE), shFactory);
+                statsLogger.scope(SERVER_SCOPE), shFactory, bookie.getAllocator());
         this.nettyServer.setRequestProcessor(this.requestProcessor);
     }
 
@@ -126,11 +130,11 @@ public class BookieServer {
         this.uncaughtExceptionHandler = exceptionHandler;
     }
 
-    protected Bookie newBookie(ServerConfiguration conf)
+    protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator)
         throws IOException, KeeperException, InterruptedException, BookieException {
         return conf.isForceReadOnlyBookie()
-            ? new ReadOnlyBookie(conf, statsLogger.scope(BOOKIE_SCOPE))
-            : new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
+            ? new ReadOnlyBookie(conf, statsLogger.scope(BOOKIE_SCOPE), allocator)
+            : new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE), allocator);
     }
 
     public void start() throws IOException, UnavailableException, InterruptedException, BKException {
@@ -283,6 +287,24 @@ public class BookieServer {
                 }
             }
         }
+    }
+
+    private ByteBufAllocator getAllocator(ServerConfiguration conf) {
+        return ByteBufAllocatorBuilder.create()
+                .poolingPolicy(conf.getAllocatorPoolingPolicy())
+                .poolingConcurrency(conf.getAllocatorPoolingConcurrency())
+                .outOfMemoryPolicy(conf.getAllocatorOutOfMemoryPolicy())
+                .outOfMemoryListener((ex) -> {
+                    try {
+                        LOG.error("Unable to allocate memory, exiting bookie", ex);
+                    } finally {
+                        if (uncaughtExceptionHandler != null) {
+                            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), ex);
+                        }
+                    }
+                })
+                .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
+                .build();
     }
 
     /**

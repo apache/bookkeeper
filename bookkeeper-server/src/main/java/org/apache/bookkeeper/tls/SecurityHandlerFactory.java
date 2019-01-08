@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.tls;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.SslHandler;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -37,7 +38,7 @@ public interface SecurityHandlerFactory {
 
     String getHandlerName();
 
-    void init(NodeType type, AbstractConfiguration conf) throws SecurityException;
+    void init(NodeType type, AbstractConfiguration conf, ByteBufAllocator allocator) throws SecurityException;
 
     SslHandler newTLSHandler();
 }

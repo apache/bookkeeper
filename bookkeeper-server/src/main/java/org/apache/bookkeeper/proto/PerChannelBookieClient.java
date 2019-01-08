@@ -29,7 +29,6 @@ import com.google.protobuf.UnsafeByteOperations;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -166,6 +165,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     final BookieSocketAddress addr;
     final EventLoopGroup eventLoopGroup;
+    final ByteBufAllocator allocator;
     final OrderedExecutor executor;
     final long addEntryTimeoutNanos;
     final long readEntryTimeoutNanos;
@@ -345,12 +345,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool) throws SecurityException {
-       this(conf, executor, eventLoopGroup, addr, NullStatsLogger.INSTANCE,
+        this(conf, executor, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, addr, NullStatsLogger.INSTANCE,
                 authProviderFactory, extRegistry, pcbcPool, null);
     }
 
     public PerChannelBookieClient(ClientConfiguration conf, OrderedExecutor executor,
-                                  EventLoopGroup eventLoopGroup, BookieSocketAddress addr,
+                                  EventLoopGroup eventLoopGroup,
+                                  ByteBufAllocator allocator,
+                                  BookieSocketAddress addr,
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool,
@@ -364,6 +366,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         } else {
             this.eventLoopGroup = eventLoopGroup;
         }
+        this.allocator = allocator;
         this.state = ConnectionState.DISCONNECTED;
         this.addEntryTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryTimeout());
         this.readEntryTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getReadEntryTimeout());
@@ -376,7 +379,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         this.extRegistry = extRegistry;
         this.shFactory = shFactory;
         if (shFactory != null) {
-            shFactory.init(NodeType.Client, conf);
+            shFactory.init(NodeType.Client, conf, allocator);
         }
 
         StringBuilder nameBuilder = new StringBuilder();
@@ -515,14 +518,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             bootstrap.channel(NioSocketChannel.class);
         }
 
-        ByteBufAllocator allocator;
-        if (this.conf.isNettyUsePooledBuffers()) {
-            allocator = PooledByteBufAllocator.DEFAULT;
-        } else {
-            allocator = UnpooledByteBufAllocator.DEFAULT;
-        }
-
-        bootstrap.option(ChannelOption.ALLOCATOR, allocator);
+        bootstrap.option(ChannelOption.ALLOCATOR, this.allocator);
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, conf.getClientConnectTimeoutMillis());
         bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                 conf.getClientWriteBufferLowWaterMark(), conf.getClientWriteBufferHighWaterMark()));

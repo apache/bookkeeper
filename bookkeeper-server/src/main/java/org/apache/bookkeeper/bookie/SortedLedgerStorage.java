@@ -24,6 +24,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -72,7 +74,8 @@ public class SortedLedgerStorage
                            StateManager stateManager,
                            CheckpointSource checkpointSource,
                            Checkpointer checkpointer,
-                           StatsLogger statsLogger)
+                           StatsLogger statsLogger,
+                           ByteBufAllocator allocator)
             throws IOException {
 
         interleavedLedgerStorage.initializeWithEntryLogListener(
@@ -86,7 +89,8 @@ public class SortedLedgerStorage
             // uses sorted ledger storage's own entry log listener
             // since it manages entry log rotations and checkpoints.
             this,
-            statsLogger);
+            statsLogger,
+            allocator);
 
         if (conf.isEntryLogPerLedgerEnabled()) {
             this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger);

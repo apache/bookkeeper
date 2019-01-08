@@ -26,6 +26,8 @@ import static org.mockito.Mockito.mock;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -141,7 +143,8 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
             null,
             checkpointSrc,
             checkpointer,
-            NullStatsLogger.INSTANCE);
+            NullStatsLogger.INSTANCE,
+            UnpooledByteBufAllocator.DEFAULT);
     }
 
     @After

@@ -28,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import java.io.File;
@@ -522,7 +523,8 @@ public class LedgerCacheTest {
                                StateManager stateManager,
                                CheckpointSource checkpointSource,
                                Checkpointer checkpointer,
-                               StatsLogger statsLogger) throws IOException {
+                               StatsLogger statsLogger,
+                               ByteBufAllocator allocator) throws IOException {
             super.initialize(
                 conf,
                 ledgerManager,
@@ -531,7 +533,8 @@ public class LedgerCacheTest {
                 stateManager,
                 checkpointSource,
                 checkpointer,
-                statsLogger);
+                statsLogger,
+                allocator);
             if (this.memTable instanceof EntryMemTableWithParallelFlusher) {
                 this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger) {
                     @Override

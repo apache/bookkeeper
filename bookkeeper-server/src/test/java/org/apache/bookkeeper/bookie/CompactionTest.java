@@ -37,6 +37,7 @@ import static org.junit.Assert.fail;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.File;
 import java.io.IOException;
@@ -265,7 +266,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                     null,
                     cp,
                     Checkpointer.NULL,
-                    NullStatsLogger.INSTANCE);
+                    NullStatsLogger.INSTANCE,
+                    UnpooledByteBufAllocator.DEFAULT);
                 storage.start();
                 long startTime = System.currentTimeMillis();
                 storage.gcThread.enableForceGC();
@@ -616,7 +618,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         Bookie newbookie = new Bookie(newBookieConf);
 
         DigestManager digestManager = DigestManager.instantiate(ledgerId, passwdBytes,
-                BookKeeper.DigestType.toProtoDigestType(digestType), baseClientConf.getUseV2WireProtocol());
+                BookKeeper.DigestType.toProtoDigestType(digestType), UnpooledByteBufAllocator.DEFAULT,
+                baseClientConf.getUseV2WireProtocol());
 
         for (long entryId = 0; entryId <= lastAddConfirmed; entryId++) {
             ByteBuf readEntryBufWithChecksum = newbookie.readEntry(ledgerId, entryId);
@@ -860,7 +863,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             null,
             checkpointSource,
             Checkpointer.NULL,
-            NullStatsLogger.INSTANCE);
+            NullStatsLogger.INSTANCE,
+            UnpooledByteBufAllocator.DEFAULT);
         ledgers.add(1L);
         ledgers.add(2L);
         ledgers.add(3L);
@@ -885,7 +889,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             dirs, dirs, null,
             checkpointSource,
             Checkpointer.NULL,
-            NullStatsLogger.INSTANCE);
+            NullStatsLogger.INSTANCE,
+            UnpooledByteBufAllocator.DEFAULT);
         storage.start();
         for (int i = 0; i < 10; i++) {
             if (!log0.exists()) {
@@ -910,7 +915,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             null,
             checkpointSource,
             Checkpointer.NULL,
-            NullStatsLogger.INSTANCE);
+            NullStatsLogger.INSTANCE,
+            UnpooledByteBufAllocator.DEFAULT);
         storage.getEntry(1, 1); // entry should exist
     }
 
@@ -1021,7 +1027,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             null,
             checkpointSource,
             Checkpointer.NULL,
-            NullStatsLogger.INSTANCE);
+            NullStatsLogger.INSTANCE,
+            UnpooledByteBufAllocator.DEFAULT);
 
         double threshold = 0.1;
         // shouldn't throw exception
@@ -1063,7 +1070,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         };
         InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
         storage.initialize(conf, manager, dirs, dirs, null, checkpointSource,
-            Checkpointer.NULL, NullStatsLogger.INSTANCE);
+            Checkpointer.NULL, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
 
         for (long ledger = 0; ledger <= 10; ledger++) {
             ledgers.add(ledger);
@@ -1081,7 +1088,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         storage = new InterleavedLedgerStorage();
         storage.initialize(conf, manager, dirs, dirs, null, checkpointSource,
-                           Checkpointer.NULL, NullStatsLogger.INSTANCE);
+                           Checkpointer.NULL, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
 
         long startingEntriesCount = storage.gcThread.entryLogger.getLeastUnflushedLogId()
             - storage.gcThread.scannedLogId;
@@ -1158,7 +1165,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             null,
             cp,
             Checkpointer.NULL,
-            stats.getStatsLogger("storage"));
+            stats.getStatsLogger("storage"),
+            UnpooledByteBufAllocator.DEFAULT);
         storage.start();
 
         int majorCompactions = stats.getCounter("storage.gc." + MAJOR_COMPACTION_COUNT).get().intValue();

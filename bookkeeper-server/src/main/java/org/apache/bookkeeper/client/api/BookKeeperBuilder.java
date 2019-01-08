@@ -20,9 +20,11 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
+
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -46,6 +48,15 @@ public interface BookKeeperBuilder {
      * @return client builder.
      */
     BookKeeperBuilder eventLoopGroup(EventLoopGroup eventLoopGroup);
+
+    /**
+     * Configure the bookkeeper client with a provided {@link ByteBufAllocator}.
+     *
+     * @param allocator an external {@link ByteBufAllocator} to use by the bookkeeper client.
+     * @return client builder.
+     * @since 4.9
+     */
+    BookKeeperBuilder allocator(ByteBufAllocator allocator);
 
     /**
      * Configure the bookkeeper client with a provided {@link StatsLogger}.

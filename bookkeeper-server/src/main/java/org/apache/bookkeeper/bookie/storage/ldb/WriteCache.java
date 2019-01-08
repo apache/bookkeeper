@@ -80,17 +80,20 @@ public class WriteCache implements Closeable {
 
     private final ConcurrentLongHashSet deletedLedgers = new ConcurrentLongHashSet();
 
-    public WriteCache(long maxCacheSize) {
+    private final ByteBufAllocator allocator;
+
+    public WriteCache(ByteBufAllocator allocator, long maxCacheSize) {
         // Default maxSegmentSize set to 1Gb
-        this(maxCacheSize, 1 * 1024 * 1024 * 1024);
+        this(allocator, maxCacheSize, 1 * 1024 * 1024 * 1024);
     }
 
-    public WriteCache(long maxCacheSize, int maxSegmentSize) {
+    public WriteCache(ByteBufAllocator allocator, long maxCacheSize, int maxSegmentSize) {
         checkArgument(maxSegmentSize > 0);
 
         long alignedMaxSegmentSize = alignToPowerOfTwo(maxSegmentSize);
         checkArgument(maxSegmentSize == alignedMaxSegmentSize, "Max segment size needs to be in form of 2^n");
 
+        this.allocator = allocator;
         this.maxCacheSize = maxCacheSize;
         this.maxSegmentSize = (int) maxSegmentSize;
         this.segmentOffsetMask = maxSegmentSize - 1;
@@ -185,7 +188,7 @@ public class WriteCache implements Closeable {
 
         long offset = result.first;
         int size = (int) result.second;
-        ByteBuf entry = ByteBufAllocator.DEFAULT.buffer(size, size);
+        ByteBuf entry = allocator.buffer(size, size);
 
         int localOffset = (int) (offset & segmentOffsetMask);
         int segmentIdx = (int) (offset >>> segmentOffsetBits);

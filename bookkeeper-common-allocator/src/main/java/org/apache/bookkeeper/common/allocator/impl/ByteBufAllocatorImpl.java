@@ -39,6 +39,10 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
 
     private static final Logger log = LoggerFactory.getLogger(ByteBufAllocatorImpl.class);
 
+    // Same as AbstractByteBufAllocator, but copied here since it's not visible
+    private static final int DEFAULT_INITIAL_CAPACITY = 256;
+    private static final int DEFAULT_MAX_CAPACITY = Integer.MAX_VALUE;
+
     private final ByteBufAllocator pooledAllocator;
     private final ByteBufAllocator unpooledAllocator;
     private final PoolingPolicy poolingPolicy;
@@ -63,16 +67,22 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
 
         if (poolingPolicy == PoolingPolicy.PooledDirect) {
             if (pooledAllocator == null) {
-                this.pooledAllocator = new PooledByteBufAllocator(
-                        true /* preferDirect */,
-                        poolingConcurrency /* nHeapArena */,
-                        poolingConcurrency /* nDirectArena */,
-                        PooledByteBufAllocator.defaultPageSize(),
-                        PooledByteBufAllocator.defaultMaxOrder(),
-                        PooledByteBufAllocator.defaultTinyCacheSize(),
-                        PooledByteBufAllocator.defaultSmallCacheSize(),
-                        PooledByteBufAllocator.defaultNormalCacheSize(),
-                        PooledByteBufAllocator.defaultUseCacheForAllThreads());
+                if (poolingConcurrency == PooledByteBufAllocator.defaultNumDirectArena()) {
+                    // If all the parameters are the same as in the default Netty pool,
+                    // just reuse the static instance as the underlying allocator.
+                    this.pooledAllocator = PooledByteBufAllocator.DEFAULT;
+                } else {
+                    this.pooledAllocator = new PooledByteBufAllocator(
+                            true /* preferDirect */,
+                            poolingConcurrency /* nHeapArena */,
+                            poolingConcurrency /* nDirectArena */,
+                            PooledByteBufAllocator.defaultPageSize(),
+                            PooledByteBufAllocator.defaultMaxOrder(),
+                            PooledByteBufAllocator.defaultTinyCacheSize(),
+                            PooledByteBufAllocator.defaultSmallCacheSize(),
+                            PooledByteBufAllocator.defaultNormalCacheSize(),
+                            PooledByteBufAllocator.defaultUseCacheForAllThreads());
+                }
             } else {
                 this.pooledAllocator = pooledAllocator;
             }
@@ -110,6 +120,25 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
     }
 
     @Override
+    public ByteBuf buffer() {
+        return buffer(DEFAULT_INITIAL_CAPACITY);
+    }
+
+    @Override
+    public ByteBuf buffer(int initialCapacity) {
+        return buffer(initialCapacity, DEFAULT_MAX_CAPACITY);
+    }
+
+    @Override
+    public ByteBuf buffer(int initialCapacity, int maxCapacity) {
+        if (poolingPolicy == PoolingPolicy.PooledDirect) {
+            return newDirectBuffer(initialCapacity, maxCapacity, true /* can fallback to heap if needed */);
+        } else {
+            return newHeapBuffer(initialCapacity, maxCapacity);
+        }
+    }
+
+    @Override
     protected ByteBuf newHeapBuffer(int initialCapacity, int maxCapacity) {
         try {
             // There are few cases in which we ask explicitly for a pooled
@@ -125,30 +154,33 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
 
     @Override
     protected ByteBuf newDirectBuffer(int initialCapacity, int maxCapacity) {
+        // If caller asked specifically for a direct buffer, we cannot fallback to heap
+        return newDirectBuffer(initialCapacity, maxCapacity, false);
+    }
+
+    private ByteBuf newDirectBuffer(int initialCapacity, int maxCapacity, boolean canFallbackToHeap) {
         if (poolingPolicy == PoolingPolicy.PooledDirect) {
             try {
                 return pooledAllocator.directBuffer(initialCapacity, maxCapacity);
             } catch (OutOfMemoryError e) {
-                switch (outOfMemoryPolicy) {
-                case ThrowException:
-                    outOfMemoryListener.accept(e);
-                    throw e;
-
-                case FallbackToHeap:
+                if (canFallbackToHeap && outOfMemoryPolicy == OutOfMemoryPolicy.FallbackToHeap) {
                     try {
                         return unpooledAllocator.heapBuffer(initialCapacity, maxCapacity);
                     } catch (OutOfMemoryError e2) {
                         outOfMemoryListener.accept(e2);
                         throw e2;
                     }
+                } else {
+                    // ThrowException
+                    outOfMemoryListener.accept(e);
+                    throw e;
                 }
-                return null;
             }
         } else {
             // Unpooled heap buffer. Force heap buffers because unpooled direct
             // buffers have very high overhead of allocation/reclaiming
             try {
-                return unpooledAllocator.heapBuffer(initialCapacity, maxCapacity);
+                return unpooledAllocator.directBuffer(initialCapacity, maxCapacity);
             } catch (OutOfMemoryError e) {
                 outOfMemoryListener.accept(e);
                 throw e;
