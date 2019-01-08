@@ -663,6 +663,16 @@ interface (the interface it uses to establish its identity). By default, loopbac
 </td>
       <td><code>10000</code></td>
     </tr>
+    
+    <tr id="enableBusyWait">
+      <td><code>enableBusyWait</code></td>
+      <td><p>Option to enable busy-wait settings. Default is false.
+WARNING: This option will enable spin-waiting on executors and IO threads in order to reduce latency during
+context switches. The spinning will consume 100% CPU even when bookie is not doing any work. It is recommended to
+reduce the number of threads in the main workers pool and Netty event loop to only have few CPU cores busy.</p>
+</td>
+      <td></td>
+    </tr>
      <!-- for param in group.params -->
   </tbody>
 </table>
@@ -1085,6 +1095,13 @@ the unflushed data. If the ledger is replicated to multiple bookies, the chances
       <td><p>If we should flush the journal when journal queue is empty.</p>
 </td>
       <td><code>false</code></td>
+    </tr>
+    
+    <tr id="journalQueueSize">
+      <td><code>journalQueueSize</code></td>
+      <td><p>Set the size of the journal queue.</p>
+</td>
+      <td><code>10000</code></td>
     </tr>
      <!-- for param in group.params -->
   </tbody>
