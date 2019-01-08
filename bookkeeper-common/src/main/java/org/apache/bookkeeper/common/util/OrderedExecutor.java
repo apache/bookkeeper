@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -44,6 +45,8 @@ import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
+import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -68,6 +71,7 @@ import org.slf4j.MDC;
 @Slf4j
 public class OrderedExecutor implements ExecutorService {
     public static final int NO_TASK_LIMIT = -1;
+    private static final int DEFAULT_MAX_ARRAY_QUEUE_SIZE = 10_000;
     protected static final long WARN_TIME_MICRO_SEC_DEFAULT = TimeUnit.SECONDS.toMicros(1);
 
     final String name;
@@ -80,7 +84,7 @@ public class OrderedExecutor implements ExecutorService {
     final boolean preserveMdcForTaskExecution;
     final long warnTimeMicroSec;
     final int maxTasksInQueue;
-
+    final boolean enableBusyWait;
 
     public static Builder newBuilder() {
         return new Builder();
@@ -98,7 +102,7 @@ public class OrderedExecutor implements ExecutorService {
             }
             return new OrderedExecutor(name, numThreads, threadFactory, statsLogger,
                                            traceTaskExecution, preserveMdcForTaskExecution,
-                                           warnTimeMicroSec, maxTasksInQueue);
+                                           warnTimeMicroSec, maxTasksInQueue, enableBusyWait);
         }
     }
 
@@ -114,6 +118,7 @@ public class OrderedExecutor implements ExecutorService {
         protected boolean preserveMdcForTaskExecution = false;
         protected long warnTimeMicroSec = WARN_TIME_MICRO_SEC_DEFAULT;
         protected int maxTasksInQueue = NO_TASK_LIMIT;
+        protected boolean enableBusyWait = false;
 
         public AbstractBuilder<T> name(String name) {
             this.name = name;
@@ -155,6 +160,11 @@ public class OrderedExecutor implements ExecutorService {
             return this;
         }
 
+        public AbstractBuilder<T> enableBusyWait(boolean enableBusyWait) {
+            this.enableBusyWait = enableBusyWait;
+            return this;
+        }
+
         @SuppressWarnings("unchecked")
         public T build() {
             if (null == threadFactory) {
@@ -168,7 +178,8 @@ public class OrderedExecutor implements ExecutorService {
                 traceTaskExecution,
                 preserveMdcForTaskExecution,
                 warnTimeMicroSec,
-                maxTasksInQueue);
+                maxTasksInQueue,
+                enableBusyWait);
         }
     }
 
@@ -277,7 +288,15 @@ public class OrderedExecutor implements ExecutorService {
     }
 
     protected ThreadPoolExecutor createSingleThreadExecutor(ThreadFactory factory) {
-        return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), factory);
+        BlockingQueue<Runnable> queue;
+        if (enableBusyWait) {
+            // Use queue with busy-wait polling strategy
+            queue = new BlockingMpscQueue<>(maxTasksInQueue > 0 ? maxTasksInQueue : DEFAULT_MAX_ARRAY_QUEUE_SIZE);
+        } else {
+            // By default, use regular JDK LinkedBlockingQueue
+            queue = new LinkedBlockingQueue<>();
+        }
+        return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, queue, factory);
     }
 
     protected ExecutorService getBoundedExecutor(ThreadPoolExecutor executor) {
@@ -361,12 +380,14 @@ public class OrderedExecutor implements ExecutorService {
      */
     protected OrderedExecutor(String baseName, int numThreads, ThreadFactory threadFactory,
                                 StatsLogger statsLogger, boolean traceTaskExecution,
-                                boolean preserveMdcForTaskExecution, long warnTimeMicroSec, int maxTasksInQueue) {
+                                boolean preserveMdcForTaskExecution, long warnTimeMicroSec, int maxTasksInQueue,
+                                boolean enableBusyWait) {
         checkArgument(numThreads > 0);
         checkArgument(!StringUtils.isBlank(baseName));
 
         this.maxTasksInQueue = maxTasksInQueue;
         this.warnTimeMicroSec = warnTimeMicroSec;
+        this.enableBusyWait = enableBusyWait;
         name = baseName;
         threads = new ExecutorService[numThreads];
         threadIds = new long[numThreads];
@@ -374,12 +395,25 @@ public class OrderedExecutor implements ExecutorService {
             ThreadPoolExecutor thread = createSingleThreadExecutor(
                     new ThreadFactoryBuilder().setNameFormat(name + "-" + getClass().getSimpleName() + "-" + i + "-%d")
                     .setThreadFactory(threadFactory).build());
+
             threads[i] = addExecutorDecorators(getBoundedExecutor(thread));
 
             final int idx = i;
             try {
                 threads[idx].submit(() -> {
                     threadIds[idx] = Thread.currentThread().getId();
+
+                    if (enableBusyWait) {
+                        // Try to acquire 1 CPU core to the executor thread. If it fails we
+                        // are just logging the error and continuing, falling back to
+                        // non-isolated CPUs.
+                        try {
+                            CpuAffinity.acquireCore();
+                        } catch (Throwable t) {
+                            log.warn("Failed to acquire CPU core for thread {}", Thread.currentThread().getName(),
+                                    t.getMessage(), t);
+                        }
+                    }
                 }).get();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

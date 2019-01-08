@@ -71,6 +71,13 @@ groups:
   - param: maxPendingReadRequestsPerThread
     description: If add worker threads are enabled, limit the number of pending requests, to avoid the executor queue to grow indefinitely. If zero or negative, the number of pending requests is unlimited.
     default: 10000
+  - param: enableBusyWait
+    description: |
+      Option to enable busy-wait settings. Default is false.
+      WARNING: This option will enable spin-waiting on executors and IO threads in order to reduce latency during
+      context switches. The spinning will consume 100% CPU even when bookie is not doing any work. It is recommended to
+      reduce the number of threads in the main workers pool and Netty event loop to only have few CPU cores busy.
+    default: false
 
 - name: Long poll settings
   params:
@@ -248,6 +255,9 @@ groups:
   - param: journalFlushWhenQueueEmpty
     description: If we should flush the journal when journal queue is empty.
     default: 'false'
+  - param: journalQueueSize
+    description: Set the size of the journal queue.
+    default: 10000
 
 - name: Ledger storage settings
   params:

@@ -29,8 +29,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
@@ -43,7 +41,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -84,9 +81,9 @@ import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.DataFormats;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.EventLoopUtil;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.lang.SystemUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -427,6 +424,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 .traceTaskExecution(conf.getEnableTaskExecutionStats())
                 .preserveMdcForTaskExecution(conf.getPreserveMdcForTaskExecution())
                 .traceTaskWarnTimeMicroSec(conf.getTaskExecutionWarnTimeMicros())
+                .enableBusyWait(conf.isBusyWaitEnabled())
                 .build();
 
         // initialize stats logger
@@ -457,7 +455,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         // initialize event loop group
         if (null == eventLoopGroup) {
-            this.eventLoopGroup = getDefaultEventLoopGroup(conf);
+            this.eventLoopGroup = EventLoopUtil.getClientEventLoopGroup(conf,
+                    new DefaultThreadFactory("bookkeeper-io"));
             this.ownEventLoopGroup = true;
         } else {
             this.eventLoopGroup = eventLoopGroup;
@@ -636,8 +635,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return bookieWatcher;
     }
 
-    @VisibleForTesting
-    OrderedExecutor getMainWorkerPool() {
+    public OrderedExecutor getMainWorkerPool() {
         return mainWorkerPool;
     }
 
@@ -1317,7 +1315,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    @SuppressWarnings("unchecked")
     public void deleteLedger(long lId) throws InterruptedException, BKException {
         CompletableFuture<Void> future = new CompletableFuture<>();
         SyncDeleteCallback result = new SyncDeleteCallback(future);
@@ -1439,22 +1436,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             eventLoopGroup.shutdownGracefully();
         }
         this.metadataDriver.close();
-    }
-
-    static EventLoopGroup getDefaultEventLoopGroup(ClientConfiguration conf) {
-        ThreadFactory threadFactory = new DefaultThreadFactory("bookkeeper-io");
-        final int numThreads = conf.getNumIOThreads();
-
-        if (SystemUtils.IS_OS_LINUX) {
-            try {
-                return new EpollEventLoopGroup(numThreads, threadFactory);
-            } catch (Throwable t) {
-                LOG.warn("Could not use Netty Epoll event loop for bookie server: {}", t.getMessage());
-                return new NioEventLoopGroup(numThreads, threadFactory);
-            }
-        } else {
-            return new NioEventLoopGroup(numThreads, threadFactory);
-        }
     }
 
     @Override
