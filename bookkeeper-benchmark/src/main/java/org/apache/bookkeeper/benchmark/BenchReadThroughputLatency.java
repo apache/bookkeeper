@@ -20,7 +20,6 @@
 package org.apache.bookkeeper.benchmark;
 
 import static com.google.common.base.Charsets.UTF_8;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -50,8 +49,6 @@ import org.slf4j.LoggerFactory;
 /**
  * A benchmark that benchmarks the read throughput and latency.
  */
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public class BenchReadThroughputLatency {
     static final Logger LOG = LoggerFactory.getLogger(BenchReadThroughputLatency.class);
 

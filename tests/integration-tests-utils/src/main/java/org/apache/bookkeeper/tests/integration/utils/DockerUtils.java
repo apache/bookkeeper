@@ -25,7 +25,6 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.model.ContainerNetwork;
 import com.github.dockerjava.api.model.Frame;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Closeable;
 import java.io.File;
@@ -51,8 +50,6 @@ import org.slf4j.LoggerFactory;
 /**
  * Docker utilities for integration tests.
  */
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public class DockerUtils {
     private static final Logger LOG = LoggerFactory.getLogger(DockerUtils.class);
 

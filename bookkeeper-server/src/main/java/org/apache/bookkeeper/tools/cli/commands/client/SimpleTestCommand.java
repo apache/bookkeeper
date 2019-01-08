@@ -21,7 +21,6 @@ package org.apache.bookkeeper.tools.cli.commands.client;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 
 import com.beust.jcommander.Parameter;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.TimeUnit;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -36,8 +35,6 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
 /**
  * A client command that simply tests if a cluster is healthy.
  */
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public class SimpleTestCommand extends ClientCommand<Flags> {
 
     private static final String NAME = "simpletest";

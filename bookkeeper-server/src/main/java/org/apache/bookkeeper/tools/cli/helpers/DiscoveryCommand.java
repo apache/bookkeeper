@@ -18,7 +18,6 @@
  */
 package org.apache.bookkeeper.tools.cli.helpers;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -38,8 +37,6 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
  * This is a mixin for commands that talks to discovery service.
  */
 @Slf4j
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public abstract class DiscoveryCommand<DiscoveryFlagsT extends CliFlags> extends ClientCommand<DiscoveryFlagsT> {
 
     protected DiscoveryCommand(CliSpec<DiscoveryFlagsT> spec) {

@@ -1100,5 +1100,23 @@
         <module>stream</module>
       </modules>
     </profile>
+
+    <profile>
+      <id>jdk11-no-spotbugs</id>
+      <activation>
+        <jdk>[11,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+           <plugin>
+             <groupId>com.github.spotbugs</groupId>
+             <artifactId>spotbugs-maven-plugin</artifactId>
+             <configuration>
+                 <skip>true</skip>
+             </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>

@@ -23,7 +23,6 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.stream.cli.Commands.OP_GET;
 
 import com.beust.jcommander.Parameter;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -38,8 +37,6 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
 /**
  * Command to get kv.
  */
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public class GetCommand extends ClientCommand<Flags> {
 
     private static final String NAME = OP_GET;

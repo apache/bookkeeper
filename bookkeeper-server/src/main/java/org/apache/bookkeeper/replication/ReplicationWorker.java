@@ -29,7 +29,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -75,8 +74,6 @@ import org.slf4j.LoggerFactory;
  * ReplicationWorker will take the fragments one by one from
  * ZKLedgerUnderreplicationManager and replicates to it.
  */
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 @StatsDoc(
     name = REPLICATION_WORKER_SCOPE,
     help = "replication worker related stats"

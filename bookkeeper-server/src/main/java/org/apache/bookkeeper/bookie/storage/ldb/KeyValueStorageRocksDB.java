@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.primitives.UnsignedBytes;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 //CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
@@ -54,8 +53,6 @@ import org.slf4j.LoggerFactory;
 /**
  * RocksDB based implementation of the KeyValueStorage.
  */
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     static KeyValueStorageFactory factory = (path, dbConfigType, conf) -> new KeyValueStorageRocksDB(path, dbConfigType,

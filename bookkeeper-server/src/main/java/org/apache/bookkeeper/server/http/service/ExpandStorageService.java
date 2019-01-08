@@ -21,7 +21,6 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Lists;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.net.URI;
 import java.util.Arrays;
@@ -45,8 +44,6 @@ import org.slf4j.LoggerFactory;
  * User should update the directories info in the conf file with new empty ledger/index
  * directories, before running the command.
  */
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public class ExpandStorageService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(ExpandStorageService.class);

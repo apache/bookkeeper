@@ -25,7 +25,6 @@ import com.beust.jcommander.Parameter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.util.concurrent.RateLimiter;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -52,8 +51,6 @@ import org.apache.bookkeeper.tools.perf.utils.PaddingDecimalFormat;
  * Perf client to evaluate the performance of table service.
  */
 @Slf4j
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public class PerfClient implements Runnable {
 
     enum OP {

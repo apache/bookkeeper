@@ -24,7 +24,6 @@ import static org.apache.bookkeeper.stream.cli.Commands.OP_INIT;
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
@@ -52,8 +51,6 @@ import org.apache.zookeeper.KeeperException.Code;
  * Command to init a cluster.
  */
 @Slf4j
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public class InitClusterCommand extends BKCommand<Flags> {
 
     private static final String NAME = OP_INIT;
