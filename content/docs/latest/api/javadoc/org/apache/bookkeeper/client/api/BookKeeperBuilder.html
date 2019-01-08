@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -132,36 +132,42 @@ public interface <span class="typeNameLabel">BookKeeperBuilder</span></pre>
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#allocator-io.netty.buffer.ByteBufAllocator-">allocator</a></span>(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code>
+<div class="block">Configure the bookkeeper client with a provided <code>ByteBufAllocator</code>.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeper.html" title="interface in org.apache.bookkeeper.client.api">BookKeeper</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#build--">build</a></span>()</code>
 <div class="block">Start and initialize a new BookKeeper client.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#dnsResolver-org.apache.bookkeeper.net.DNSToSwitchMapping-">dnsResolver</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver)</code>
 <div class="block">Configure the bookkeeper client to use the provided dns resolver <code>DNSToSwitchMapping</code>.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#eventLoopGroup-io.netty.channel.EventLoopGroup-">eventLoopGroup</a></span>(io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup)</code>
 <div class="block">Configure the bookkeeper client with a provided Netty EventLoopGroup.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#featureProvider-org.apache.bookkeeper.feature.FeatureProvider-">featureProvider</a></span>(<a href="../../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider)</code>
 <div class="block">Configure the bookkeeper client to use a provided <a href="../../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature"><code>FeatureProvider</code></a>.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#requestTimer-io.netty.util.HashedWheelTimer-">requestTimer</a></span>(io.netty.util.HashedWheelTimer&nbsp;requestTimer)</code>
 <div class="block">Configure the bookkeeper client to use a provided Netty HashedWheelTimer.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#statsLogger-org.apache.bookkeeper.stats.StatsLogger-">statsLogger</a></span>(<a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>
 <div class="block">Configure the bookkeeper client with a provided <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats"><code>StatsLogger</code></a>.</div>
@@ -195,6 +201,24 @@ public interface <span class="typeNameLabel">BookKeeperBuilder</span></pre>
 <dd><code>eventLoopGroup</code> - an external <code>EventLoopGroup</code> to use by the bookkeeper client.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>client builder.</dd>
+</dl>
+</li>
+</ul>
+<a name="allocator-io.netty.buffer.ByteBufAllocator-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>allocator</h4>
+<pre><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a>&nbsp;allocator(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</pre>
+<div class="block">Configure the bookkeeper client with a provided <code>ByteBufAllocator</code>.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>allocator</code> - an external <code>ByteBufAllocator</code> to use by the bookkeeper client.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>client builder.</dd>
+<dt><span class="simpleTagLabel">Since:</span></dt>
+<dd>4.9</dd>
 </dl>
 </li>
 </ul>

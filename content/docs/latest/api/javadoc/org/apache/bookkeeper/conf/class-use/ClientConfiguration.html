@@ -247,9 +247,10 @@
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">BookKeeper</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-io.netty.buffer.ByteBufAllocator-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">BookKeeper</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
           org.apache.zookeeper.ZooKeeper&nbsp;zkc,
           io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+          io.netty.buffer.ByteBufAllocator&nbsp;byteBufAllocator,
           <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;rootStatsLogger,
           org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;requestTimer,
@@ -553,7 +554,9 @@
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ClientConfiguration.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html#setNettyUsePooledBuffers-boolean-">setNettyUsePooledBuffers</a></span>(boolean&nbsp;enabled)</code>
-<div class="block">Enable/Disable the usage of Pooled Netty buffers.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
+<div class="block"><span class="deprecationComment">see <a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#allocator-io.netty.buffer.ByteBufAllocator-"><code>BookKeeperBuilder.allocator(io.netty.buffer.ByteBufAllocator)</code></a></span></div>
+</div>
 </td>
 </tr>
 <tr class="rowColor">

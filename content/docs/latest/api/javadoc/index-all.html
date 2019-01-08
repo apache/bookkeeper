@@ -227,6 +227,26 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackOrRegionDurabilityCoverageSet.html#allocationToRacksOrRegions">allocationToRacksOrRegions</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackOrRegionDurabilityCoverageSet.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackOrRegionDurabilityCoverageSet</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BookKeeperBuilder.html#allocator-io.netty.buffer.ByteBufAllocator-">allocator(ByteBufAllocator)</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></dt>
+<dd>
+<div class="block">Configure the bookkeeper client with a provided <code>ByteBufAllocator</code>.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.Builder.html#allocator">allocator</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.Builder.html#allocator-io.netty.buffer.ByteBufAllocator-">allocator(ByteBufAllocator)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></dt>
+<dd>
+<div class="block">Configure the bookkeeper client with a provided <code>ByteBufAllocator</code>.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperBuilderImpl.html#allocator-io.netty.buffer.ByteBufAllocator-">allocator(ByteBufAllocator)</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperBuilderImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperBuilderImpl</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#ALLOCATOR_LEAK_DETECTION_POLICY">ALLOCATOR_LEAK_DETECTION_POLICY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#ALLOCATOR_OOM_POLICY">ALLOCATOR_OOM_POLICY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#ALLOCATOR_POOLING_CONCURRENCY">ALLOCATOR_POOLING_CONCURRENCY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#ALLOCATOR_POOLING_POLICY">ALLOCATOR_POOLING_POLICY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#ALLOW_EPHEMERAL_PORTS">ALLOW_EPHEMERAL_PORTS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#ALLOW_LOOPBACK">ALLOW_LOOPBACK</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
@@ -913,7 +933,7 @@
 <div class="block">Create a bookkeeper client but use the passed in zookeeper client and
  client event loop group instead of instantiating those.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">BookKeeper(ClientConfiguration, ZooKeeper, EventLoopGroup, StatsLogger, DNSToSwitchMapping, HashedWheelTimer, FeatureProvider)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-io.netty.buffer.ByteBufAllocator-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">BookKeeper(ClientConfiguration, ZooKeeper, EventLoopGroup, ByteBufAllocator, StatsLogger, DNSToSwitchMapping, HashedWheelTimer, FeatureProvider)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>
 <div class="block">Constructor for use with the builder.</div>
 </dd>
@@ -2281,6 +2301,16 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadataImpl.html#getAllEnsembles--">getAllEnsembles()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadataImpl.html" title="class in org.apache.bookkeeper.client">LedgerMetadataImpl</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getAllocatorLeakDetectionPolicy--">getAllocatorLeakDetectionPolicy()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Return the configured leak detection policy for the allocator.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getAllocatorOutOfMemoryPolicy--">getAllocatorOutOfMemoryPolicy()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getAllocatorPoolingConcurrency--">getAllocatorPoolingConcurrency()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getAllocatorPoolingPolicy--">getAllocatorPoolingPolicy()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getAllowEphemeralPorts--">getAllowEphemeralPorts()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Is the bookie allowed to use an ephemeral port (port 0) as its server port.</div>
@@ -2404,6 +2434,8 @@
 <dd>
 <div class="block">Returns the average value of a given bucket (the mean between its lower and upper bound).</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ClientContext.html#getByteBufAllocator--">getByteBufAllocator()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/UncheckedConfigurationException.html#getCause--">getCause()</a></span> - Method in exception org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/UncheckedConfigurationException.html" title="class in org.apache.bookkeeper.conf">UncheckedConfigurationException</a></dt>
 <dd>
 <div class="block">Returns the cause of this exception.</div>
@@ -4318,7 +4350,9 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#isNettyUsePooledBuffers--">isNettyUsePooledBuffers()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
-<div class="block">Option to use Netty Pooled ByteBufs.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>
+<div class="block"><span class="deprecationComment">see <a href="org/apache/bookkeeper/client/api/BookKeeperBuilder.html#allocator-io.netty.buffer.ByteBufAllocator-"><code>BookKeeperBuilder.allocator(io.netty.buffer.ByteBufAllocator)</code></a></span></div>
+</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#isPersistBookieStatusEnabled--">isPersistBookieStatusEnabled()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -4795,8 +4829,6 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#localNode">localNode</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD">LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#LOG">LOG</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#LOG">LOG</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
@@ -12636,6 +12668,22 @@
 <dd>
 <div class="block">Configure the bookie to advertise a specific address.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setAllocatorLeakDetectionPolicy-org.apache.bookkeeper.common.allocator.LeakDetectionPolicy-">setAllocatorLeakDetectionPolicy(LeakDetectionPolicy)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Enable the leak detection for the allocator.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setAllocatorOutOfMemoryPolicy-org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy-">setAllocatorOutOfMemoryPolicy(OutOfMemoryPolicy)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Define the memory allocator out of memory policy.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setAllocatorPoolingConcurrenncy-int-">setAllocatorPoolingConcurrenncy(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Controls the amount of concurrency for the memory pool.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setAllocatorPoolingPolicy-org.apache.bookkeeper.common.allocator.PoolingPolicy-">setAllocatorPoolingPolicy(PoolingPolicy)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Define the memory pooling policy.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setAllowEphemeralPorts-boolean-">setAllowEphemeralPorts(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Configure the bookie to allow using an ephemeral port.</div>
@@ -13188,7 +13236,9 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setNettyUsePooledBuffers-boolean-">setNettyUsePooledBuffers(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
-<div class="block">Enable/Disable the usage of Pooled Netty buffers.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>
+<div class="block"><span class="deprecationComment">see <a href="org/apache/bookkeeper/client/api/BookKeeperBuilder.html#allocator-io.netty.buffer.ByteBufAllocator-"><code>BookKeeperBuilder.allocator(io.netty.buffer.ByteBufAllocator)</code></a></span></div>
+</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setNetworkTopologyStabilizePeriodSeconds-int-">setNetworkTopologyStabilizePeriodSeconds(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>

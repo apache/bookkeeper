@@ -223,34 +223,30 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#ledgerManagerFactory">ledgerManagerFactory</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) static org.slf4j.Logger</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#LOG">LOG</a></span></code>&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.common.util.OrderedExecutor</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#mainWorkerPool">mainWorkerPool</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.meta.MetadataClientDriver</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#metadataDriver">metadataDriver</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#ownEventLoopGroup">ownEventLoopGroup</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#ownTimer">ownTimer</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#placementPolicy">placementPolicy</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) io.netty.util.HashedWheelTimer</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#requestTimer">requestTimer</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.common.util.OrderedScheduler</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#scheduler">scheduler</a></span></code>&nbsp;</td>
 </tr>
@@ -294,9 +290,10 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 </td>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">BookKeeper</a></span>(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-io.netty.buffer.ByteBufAllocator-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">BookKeeper</a></span>(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
           org.apache.zookeeper.ZooKeeper&nbsp;zkc,
           io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+          io.netty.buffer.ByteBufAllocator&nbsp;byteBufAllocator,
           <a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;rootStatsLogger,
           org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;requestTimer,
@@ -657,15 +654,6 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <!--   -->
 </a>
 <h3>Field Detail</h3>
-<a name="LOG">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>LOG</h4>
-<pre>static final&nbsp;org.slf4j.Logger LOG</pre>
-</li>
-</ul>
 <a name="eventLoopGroup">
 <!--   -->
 </a>
@@ -957,7 +945,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 </dl>
 </li>
 </ul>
-<a name="BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">
+<a name="BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-io.netty.buffer.ByteBufAllocator-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -966,6 +954,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <pre>BookKeeper(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
            org.apache.zookeeper.ZooKeeper&nbsp;zkc,
            io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+           io.netty.buffer.ByteBufAllocator&nbsp;byteBufAllocator,
            <a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;rootStatsLogger,
            org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
            io.netty.util.HashedWheelTimer&nbsp;requestTimer,

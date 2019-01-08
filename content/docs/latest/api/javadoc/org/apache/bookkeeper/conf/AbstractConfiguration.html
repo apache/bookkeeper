@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":42,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":6,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":42,"i29":42,"i30":10,"i31":42,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":42,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":42,"i66":10,"i67":42,"i68":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":42,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":6,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":42,"i33":42,"i34":10,"i35":42,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":42,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":42,"i74":10,"i75":42,"i76":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"],32:["t6","Deprecated Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -152,6 +152,22 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Field and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#ALLOCATOR_LEAK_DETECTION_POLICY">ALLOCATOR_LEAK_DETECTION_POLICY</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#ALLOCATOR_OOM_POLICY">ALLOCATOR_OOM_POLICY</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#ALLOCATOR_POOLING_CONCURRENCY">ALLOCATOR_POOLING_CONCURRENCY</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#ALLOCATOR_POOLING_POLICY">ALLOCATOR_POOLING_POLICY</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
@@ -379,53 +395,71 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>org.apache.bookkeeper.common.allocator.LeakDetectionPolicy</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getAllocatorLeakDetectionPolicy--">getAllocatorLeakDetectionPolicy</a></span>()</code>
+<div class="block">Return the configured leak detection policy for the allocator.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getAllocatorOutOfMemoryPolicy--">getAllocatorOutOfMemoryPolicy</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getAllocatorPoolingConcurrency--">getAllocatorPoolingConcurrency</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>org.apache.bookkeeper.common.allocator.PoolingPolicy</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getAllocatorPoolingPolicy--">getAllocatorPoolingPolicy</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getClientAuthProviderFactoryClass--">getClientAuthProviderFactoryClass</a></span>()</code>
 <div class="block">Get the client authentication provider factory class name.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getEnforceMinNumRacksPerWriteQuorum--">getEnforceMinNumRacksPerWriteQuorum</a></span>()</code>
 <div class="block">Get the flag which enforces the minimum number of racks per write quorum.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;? extends org.apache.bookkeeper.util.EntryFormatter&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getEntryFormatterClass--">getEntryFormatterClass</a></span>()</code>
 <div class="block">Get entry formatter class.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/feature/Feature.html" title="interface in org.apache.bookkeeper.feature">Feature</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getFeature-java.lang.String-org.apache.bookkeeper.feature.Feature-">getFeature</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;configProperty,
           <a href="../../../../org/apache/bookkeeper/feature/Feature.html" title="interface in org.apache.bookkeeper.feature">Feature</a>&nbsp;defaultValue)</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;? extends org.apache.bookkeeper.util.LedgerIdFormatter&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getLedgerIdFormatterClass--">getLedgerIdFormatterClass</a></span>()</code>
 <div class="block">Get ledger id formatter class.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;? extends org.apache.bookkeeper.meta.LedgerManagerFactory&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getLedgerManagerFactoryClass--">getLedgerManagerFactoryClass</a></span>()</code>
 <div class="block">Get ledger manager factory class.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getLedgerManagerFactoryClassName--">getLedgerManagerFactoryClassName</a></span>()</code>
 <div class="block">Get Ledger Manager Factory Class Name.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getLedgerManagerLayoutStringFromFactoryClass--">getLedgerManagerLayoutStringFromFactoryClass</a></span>()</code>
 <div class="block">Get layout string ("null" if unconfigured).</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getLedgerManagerType--">getLedgerManagerType</a></span>()</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
@@ -433,135 +467,135 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 </div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getLimitStatsLogging--">getLimitStatsLogging</a></span>()</code>
 <div class="block">Return the flag indicating whether to limit stats logging.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getMetadataServiceUri--">getMetadataServiceUri</a></span>()</code>
 <div class="block">Get metadata service uri.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getMetadataServiceUriUnchecked--">getMetadataServiceUriUnchecked</a></span>()</code>
 <div class="block">Get metadata service uri.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getMetastoreImplClass--">getMetastoreImplClass</a></span>()</code>
 <div class="block">Get metastore implementation class.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getMetastoreMaxEntriesPerScan--">getMetastoreMaxEntriesPerScan</a></span>()</code>
 <div class="block">Get max entries per scan in metastore.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getMinNumRacksPerWriteQuorum--">getMinNumRacksPerWriteQuorum</a></span>()</code>
 <div class="block">Get the minimum number of racks per write quorum.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getNettyMaxFrameSizeBytes--">getNettyMaxFrameSizeBytes</a></span>()</code>
 <div class="block">Get the maximum netty frame size in bytes.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getPermittedStartupUsers--">getPermittedStartupUsers</a></span>()</code>
 <div class="block">Get array of users specified in this property.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getPreserveMdcForTaskExecution--">getPreserveMdcForTaskExecution</a></span>()</code>
 <div class="block">Whether to preserve MDC for tasks in Executor.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getRereplicationEntryBatchSize--">getRereplicationEntryBatchSize</a></span>()</code>
 <div class="block">Get the re-replication entry batch size.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getShadedLedgerManagerFactoryClassPrefix--">getShadedLedgerManagerFactoryClassPrefix</a></span>()</code>
 <div class="block">Get the class prefix of the shaded ledger manager factory class name allowed to be used for
  instantiating ledger manager factory.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getStoreSystemTimeAsLedgerUnderreplicatedMarkTime--">getStoreSystemTimeAsLedgerUnderreplicatedMarkTime</a></span>()</code>
 <div class="block">Return the flag that indicates whether auditor is using system time as
  underreplicated ledger mark time.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>protected abstract <a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getThis--">getThis</a></span>()</code>
 <div class="block">Trickery to allow inheritance with fluent style.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getTLSClientAuthentication--">getTLSClientAuthentication</a></span>()</code>
 <div class="block">Whether the client will send an TLS certificate on TLS-handshake.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getTLSEnabledCipherSuites--">getTLSEnabledCipherSuites</a></span>()</code>
 <div class="block">Get the list of enabled TLS cipher suites.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getTLSEnabledProtocols--">getTLSEnabledProtocols</a></span>()</code>
 <div class="block">Get the list of enabled TLS protocols.</div>
 </td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getTLSProvider--">getTLSProvider</a></span>()</code>
 <div class="block">Get TLS Provider (JDK or OpenSSL).</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getTLSProviderFactoryClass--">getTLSProviderFactoryClass</a></span>()</code>
 <div class="block">Get the security provider factory class name.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getZkAvailableBookiesPath--">getZkAvailableBookiesPath</a></span>()</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getZkLedgersRootPath--">getZkLedgersRootPath</a></span>()</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getZkRequestRateLimit--">getZkRequestRateLimit</a></span>()</code>
 <div class="block">Get zookeeper access request rate limit.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getZkServers--">getZkServers</a></span>()</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
@@ -569,98 +603,122 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 </div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getZkTimeout--">getZkTimeout</a></span>()</code>
 <div class="block">Get zookeeper timeout.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#isBusyWaitEnabled--">isBusyWaitEnabled</a></span>()</code>
 <div class="block">Return whether the busy-wait is enabled for BookKeeper and Netty IO threads.</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#isShadedLedgerManagerFactoryClassAllowed--">isShadedLedgerManagerFactoryClassAllowed</a></span>()</code>
 <div class="block">Is shaded ledger manager factory class name allowed to be used for
  instantiating ledger manager factory.</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#isZkEnableSecurity--">isZkEnableSecurity</a></span>()</code>
 <div class="block">Are z-node created with strict ACLs.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#loadConf-org.apache.commons.configuration.CompositeConfiguration-">loadConf</a></span>(org.apache.commons.configuration.CompositeConfiguration&nbsp;baseConf)</code>
 <div class="block">You can load configuration from other configuration.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#loadConf-java.net.URL-">loadConf</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/net/URL.html?is-external=true" title="class or interface in java.net">URL</a>&nbsp;confURL)</code>
 <div class="block">You can load configurations in precedence order.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i42" class="altColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setAllocatorLeakDetectionPolicy-org.apache.bookkeeper.common.allocator.LeakDetectionPolicy-">setAllocatorLeakDetectionPolicy</a></span>(org.apache.bookkeeper.common.allocator.LeakDetectionPolicy&nbsp;leakDetectionPolicy)</code>
+<div class="block">Enable the leak detection for the allocator.</div>
+</td>
+</tr>
+<tr id="i43" class="rowColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setAllocatorOutOfMemoryPolicy-org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy-">setAllocatorOutOfMemoryPolicy</a></span>(org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy&nbsp;oomPolicy)</code>
+<div class="block">Define the memory allocator out of memory policy.</div>
+</td>
+</tr>
+<tr id="i44" class="altColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setAllocatorPoolingConcurrenncy-int-">setAllocatorPoolingConcurrenncy</a></span>(int&nbsp;concurrency)</code>
+<div class="block">Controls the amount of concurrency for the memory pool.</div>
+</td>
+</tr>
+<tr id="i45" class="rowColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setAllocatorPoolingPolicy-org.apache.bookkeeper.common.allocator.PoolingPolicy-">setAllocatorPoolingPolicy</a></span>(org.apache.bookkeeper.common.allocator.PoolingPolicy&nbsp;poolingPolicy)</code>
+<div class="block">Define the memory pooling policy.</div>
+</td>
+</tr>
+<tr id="i46" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setAllowShadedLedgerManagerFactoryClass-boolean-">setAllowShadedLedgerManagerFactoryClass</a></span>(boolean&nbsp;allowed)</code>
 <div class="block">Set the flag to allow using shaded ledger manager factory class for
  instantiating a ledger manager factory.</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setBusyWaitEnabled-boolean-">setBusyWaitEnabled</a></span>(boolean&nbsp;busyWaitEanbled)</code>
 <div class="block">Option to enable busy-wait settings.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setClientAuthProviderFactoryClass-java.lang.String-">setClientAuthProviderFactoryClass</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;factoryClass)</code>
 <div class="block">Set the client authentication provider factory class name.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setEnforceMinNumRacksPerWriteQuorum-boolean-">setEnforceMinNumRacksPerWriteQuorum</a></span>(boolean&nbsp;enforceMinNumRacksPerWriteQuorum)</code>
 <div class="block">Set the flag to enforce minimum number of racks per write quorum.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setEntryFormatterClass-java.lang.Class-">setEntryFormatterClass</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;? extends org.apache.bookkeeper.util.EntryFormatter&gt;&nbsp;formatterClass)</code>
 <div class="block">Set entry formatter Class.</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setFeature-java.lang.String-org.apache.bookkeeper.feature.Feature-">setFeature</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;configProperty,
           <a href="../../../../org/apache/bookkeeper/feature/Feature.html" title="interface in org.apache.bookkeeper.feature">Feature</a>&nbsp;feature)</code>&nbsp;</td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i52" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setLedgerIdFormatterClass-java.lang.Class-">setLedgerIdFormatterClass</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;? extends org.apache.bookkeeper.util.LedgerIdFormatter&gt;&nbsp;formatterClass)</code>
 <div class="block">Set Ledger id formatter Class.</div>
 </td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i53" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setLedgerManagerFactoryClass-java.lang.Class-">setLedgerManagerFactoryClass</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;? extends org.apache.bookkeeper.meta.LedgerManagerFactory&gt;&nbsp;factoryClass)</code>
 <div class="block">Set Ledger Manager Factory Class.</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i54" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setLedgerManagerFactoryClassName-java.lang.String-">setLedgerManagerFactoryClassName</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;factoryClassName)</code>
 <div class="block">Set Ledger Manager Factory Class Name.</div>
 </td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setLedgerManagerType-java.lang.String-">setLedgerManagerType</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;lmType)</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
@@ -668,129 +726,129 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 </div>
 </td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i56" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setLimitStatsLogging-boolean-">setLimitStatsLogging</a></span>(boolean&nbsp;limitStatsLogging)</code>
 <div class="block">Sets flag to limit the stats logging.</div>
 </td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i57" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setMetadataServiceUri-java.lang.String-">setMetadataServiceUri</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;serviceUri)</code>
 <div class="block">Set the metadata service uri.</div>
 </td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i58" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setMetastoreImplClass-java.lang.String-">setMetastoreImplClass</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;metastoreImplClass)</code>
 <div class="block">Set metastore implementation class.</div>
 </td>
 </tr>
-<tr id="i51" class="rowColor">
+<tr id="i59" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setMetastoreMaxEntriesPerScan-int-">setMetastoreMaxEntriesPerScan</a></span>(int&nbsp;maxEntries)</code>
 <div class="block">Set max entries per scan in metastore.</div>
 </td>
 </tr>
-<tr id="i52" class="altColor">
+<tr id="i60" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setMinNumRacksPerWriteQuorum-int-">setMinNumRacksPerWriteQuorum</a></span>(int&nbsp;minNumRacksPerWriteQuorum)</code>
 <div class="block">Set the minimum number of racks per write quorum.</div>
 </td>
 </tr>
-<tr id="i53" class="rowColor">
+<tr id="i61" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setNettyMaxFrameSizeBytes-int-">setNettyMaxFrameSizeBytes</a></span>(int&nbsp;maxSize)</code>
 <div class="block">Set the max number of bytes a single message can be that is read by the bookie.</div>
 </td>
 </tr>
-<tr id="i54" class="altColor">
+<tr id="i62" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setPermittedStartupUsers-java.lang.String-">setPermittedStartupUsers</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;s)</code>
 <div class="block">Limit who can start the application to prevent future permission errors.</div>
 </td>
 </tr>
-<tr id="i55" class="rowColor">
+<tr id="i63" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setPreserveMdcForTaskExecution-boolean-">setPreserveMdcForTaskExecution</a></span>(boolean&nbsp;enabled)</code>
 <div class="block">Whether to preserve MDC for tasks in Executor.</div>
 </td>
 </tr>
-<tr id="i56" class="altColor">
+<tr id="i64" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setRereplicationEntryBatchSize-long-">setRereplicationEntryBatchSize</a></span>(long&nbsp;rereplicationEntryBatchSize)</code>
 <div class="block">Set the max entries to keep in fragment for re-replication.</div>
 </td>
 </tr>
-<tr id="i57" class="rowColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setShadedLedgerManagerFactoryClassPrefix-java.lang.String-">setShadedLedgerManagerFactoryClassPrefix</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;classPrefix)</code>
 <div class="block">Set the class prefix of the shaded ledger manager factory class for
  instantiating a ledger manager factory.</div>
 </td>
 </tr>
-<tr id="i58" class="altColor">
+<tr id="i66" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setStoreSystemTimeAsLedgerUnderreplicatedMarkTime-boolean-">setStoreSystemTimeAsLedgerUnderreplicatedMarkTime</a></span>(boolean&nbsp;enabled)</code>
 <div class="block">Enable the Auditor to use system time as underreplicated ledger mark
  time.</div>
 </td>
 </tr>
-<tr id="i59" class="rowColor">
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSClientAuthentication-boolean-">setTLSClientAuthentication</a></span>(boolean&nbsp;enabled)</code>
 <div class="block">Specify whether the client will send an TLS certificate on TLS-handshake.</div>
 </td>
 </tr>
-<tr id="i60" class="altColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSEnabledCipherSuites-java.lang.String-">setTLSEnabledCipherSuites</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;list)</code>
 <div class="block">Set the list of enabled TLS cipher suites.</div>
 </td>
 </tr>
-<tr id="i61" class="rowColor">
+<tr id="i69" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSEnabledProtocols-java.lang.String-">setTLSEnabledProtocols</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;list)</code>
 <div class="block">Set the list of enabled TLS protocols.</div>
 </td>
 </tr>
-<tr id="i62" class="altColor">
+<tr id="i70" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSProvider-java.lang.String-">setTLSProvider</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;provider)</code>
 <div class="block">Set TLS Provider (JDK or OpenSSL).</div>
 </td>
 </tr>
-<tr id="i63" class="rowColor">
+<tr id="i71" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSProviderFactoryClass-java.lang.String-">setTLSProviderFactoryClass</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;factoryClass)</code>
 <div class="block">Set the client security provider factory class name.</div>
 </td>
 </tr>
-<tr id="i64" class="altColor">
+<tr id="i72" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setZkEnableSecurity-boolean-">setZkEnableSecurity</a></span>(boolean&nbsp;zkEnableSecurity)</code>
 <div class="block">Set the usage of ACLs of new z-nodes.</div>
 </td>
 </tr>
-<tr id="i65" class="rowColor">
+<tr id="i73" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setZkLedgersRootPath-java.lang.String-">setZkLedgersRootPath</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;zkLedgersPath)</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 </td>
 </tr>
-<tr id="i66" class="altColor">
+<tr id="i74" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setZkRequestRateLimit-double-">setZkRequestRateLimit</a></span>(double&nbsp;rateLimit)</code>
 <div class="block">Set zookeeper access request rate limit.</div>
 </td>
 </tr>
-<tr id="i67" class="rowColor">
+<tr id="i75" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setZkServers-java.lang.String-">setZkServers</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;zkServers)</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 </td>
 </tr>
-<tr id="i68" class="altColor">
+<tr id="i76" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setZkTimeout-int-">setZkTimeout</a></span>(int&nbsp;zkTimeout)</code>
 <div class="block">Set zookeeper timeout.</div>
@@ -1375,6 +1433,58 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../constant-values.html#org.apache.bookkeeper.conf.AbstractConfiguration.ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="ALLOCATOR_POOLING_POLICY">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ALLOCATOR_POOLING_POLICY</h4>
+<pre>protected static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> ALLOCATOR_POOLING_POLICY</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.bookkeeper.conf.AbstractConfiguration.ALLOCATOR_POOLING_POLICY">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="ALLOCATOR_POOLING_CONCURRENCY">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ALLOCATOR_POOLING_CONCURRENCY</h4>
+<pre>protected static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> ALLOCATOR_POOLING_CONCURRENCY</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.bookkeeper.conf.AbstractConfiguration.ALLOCATOR_POOLING_CONCURRENCY">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="ALLOCATOR_OOM_POLICY">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ALLOCATOR_OOM_POLICY</h4>
+<pre>protected static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> ALLOCATOR_OOM_POLICY</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.bookkeeper.conf.AbstractConfiguration.ALLOCATOR_OOM_POLICY">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="ALLOCATOR_LEAK_DETECTION_POLICY">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ALLOCATOR_LEAK_DETECTION_POLICY</h4>
+<pre>protected static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> ALLOCATOR_LEAK_DETECTION_POLICY</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.bookkeeper.conf.AbstractConfiguration.ALLOCATOR_LEAK_DETECTION_POLICY">Constant Field Values</a></dd>
 </dl>
 </li>
 </ul>
@@ -2358,6 +2468,130 @@ public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.
 <dd><code>enabled</code> - flag to enable/disable MDC preservation in Executor.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>configuration.</dd>
+</dl>
+</li>
+</ul>
+<a name="getAllocatorPoolingPolicy--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getAllocatorPoolingPolicy</h4>
+<pre>public&nbsp;org.apache.bookkeeper.common.allocator.PoolingPolicy&nbsp;getAllocatorPoolingPolicy()</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the configured pooling policy for the allocator.</dd>
+</dl>
+</li>
+</ul>
+<a name="setAllocatorPoolingPolicy-org.apache.bookkeeper.common.allocator.PoolingPolicy-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setAllocatorPoolingPolicy</h4>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a>&nbsp;setAllocatorPoolingPolicy(org.apache.bookkeeper.common.allocator.PoolingPolicy&nbsp;poolingPolicy)</pre>
+<div class="block">Define the memory pooling policy.
+
+ <p>Default is <code>PoolingPolicy.PooledDirect</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>poolingPolicy</code> - the memory pooling policy</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>configuration object.</dd>
+</dl>
+</li>
+</ul>
+<a name="getAllocatorPoolingConcurrency--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getAllocatorPoolingConcurrency</h4>
+<pre>public&nbsp;int&nbsp;getAllocatorPoolingConcurrency()</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the configured pooling concurrency for the allocator.</dd>
+</dl>
+</li>
+</ul>
+<a name="setAllocatorPoolingConcurrenncy-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setAllocatorPoolingConcurrenncy</h4>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a>&nbsp;setAllocatorPoolingConcurrenncy(int&nbsp;concurrency)</pre>
+<div class="block">Controls the amount of concurrency for the memory pool.
+
+ <p>Default is to have a number of allocator arenas equals to 2 * CPUS.
+
+ <p>Decreasing this number will reduce the amount of memory overhead, at the
+ expense of increased allocation contention.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>concurrency</code> - the concurrency level to use for the allocator pool</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>configuration object.</dd>
+</dl>
+</li>
+</ul>
+<a name="getAllocatorOutOfMemoryPolicy--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getAllocatorOutOfMemoryPolicy</h4>
+<pre>public&nbsp;org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy&nbsp;getAllocatorOutOfMemoryPolicy()</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the configured ouf of memory policy for the allocator.</dd>
+</dl>
+</li>
+</ul>
+<a name="setAllocatorOutOfMemoryPolicy-org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setAllocatorOutOfMemoryPolicy</h4>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a>&nbsp;setAllocatorOutOfMemoryPolicy(org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy&nbsp;oomPolicy)</pre>
+<div class="block">Define the memory allocator out of memory policy.
+
+ <p>Default is <code>OutOfMemoryPolicy.FallbackToHeap</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>oomPolicy</code> - the "out-of-memory" policy for the memory allocator</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>configuration object.</dd>
+</dl>
+</li>
+</ul>
+<a name="getAllocatorLeakDetectionPolicy--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getAllocatorLeakDetectionPolicy</h4>
+<pre>public&nbsp;org.apache.bookkeeper.common.allocator.LeakDetectionPolicy&nbsp;getAllocatorLeakDetectionPolicy()</pre>
+<div class="block">Return the configured leak detection policy for the allocator.</div>
+</li>
+</ul>
+<a name="setAllocatorLeakDetectionPolicy-org.apache.bookkeeper.common.allocator.LeakDetectionPolicy-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setAllocatorLeakDetectionPolicy</h4>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="type parameter in AbstractConfiguration">T</a>&nbsp;setAllocatorLeakDetectionPolicy(org.apache.bookkeeper.common.allocator.LeakDetectionPolicy&nbsp;leakDetectionPolicy)</pre>
+<div class="block">Enable the leak detection for the allocator.
+
+ <p>Default is <code>LeakDetectionPolicy.Disabled</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>leakDetectionPolicy</code> - the leak detection policy for the memory allocator</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>configuration object.</dd>
 </dl>
 </li>
 </ul>

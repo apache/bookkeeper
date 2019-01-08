@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":42,"i6":42,"i7":42,"i8":10,"i9":42};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":42,"i7":42,"i8":42,"i9":10,"i10":42};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"],32:["t6","Deprecated Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -139,30 +139,34 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colLast" scope="col">Field and Description</th>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) io.netty.buffer.ByteBufAllocator</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#allocator">allocator</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#conf">conf</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.net.DNSToSwitchMapping</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#dnsResolver">dnsResolver</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) io.netty.channel.EventLoopGroup</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#eventLoopGroup">eventLoopGroup</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#featureProvider">featureProvider</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) io.netty.util.HashedWheelTimer</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#requestTimer">requestTimer</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#statsLogger">statsLogger</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) org.apache.zookeeper.ZooKeeper</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#zk">zk</a></span></code>&nbsp;</td>
 </tr>
@@ -199,34 +203,40 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#allocator-io.netty.buffer.ByteBufAllocator-">allocator</a></span>(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code>
+<div class="block">Configure the bookkeeper client with a provided <code>ByteBufAllocator</code>.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#build--">build</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#dnsResolver-org.apache.bookkeeper.net.DNSToSwitchMapping-">dnsResolver</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver)</code>
 <div class="block">Configure the bookkeeper client to use the provided dns resolver <code>DNSToSwitchMapping</code>.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#eventLoopGroup-io.netty.channel.EventLoopGroup-">eventLoopGroup</a></span>(io.netty.channel.EventLoopGroup&nbsp;f)</code>
 <div class="block">Configure the bookkeeper client with a provided <code>EventLoopGroup</code>.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#featureProvider-org.apache.bookkeeper.feature.FeatureProvider-">featureProvider</a></span>(<a href="../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider)</code>
 <div class="block">Feature Provider.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#requestTimer-io.netty.util.HashedWheelTimer-">requestTimer</a></span>(io.netty.util.HashedWheelTimer&nbsp;requestTimer)</code>
 <div class="block">Configure the bookkeeper client to use a provided <code>HashedWheelTimer</code>.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#setEventLoopGroup-io.netty.channel.EventLoopGroup-">setEventLoopGroup</a></span>(io.netty.channel.EventLoopGroup&nbsp;f)</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
@@ -234,7 +244,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#setStatsLogger-org.apache.bookkeeper.stats.StatsLogger-">setStatsLogger</a></span>(<a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
@@ -242,7 +252,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#setZookeeper-org.apache.zookeeper.ZooKeeper-">setZookeeper</a></span>(org.apache.zookeeper.ZooKeeper&nbsp;zk)</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
@@ -250,13 +260,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#statsLogger-org.apache.bookkeeper.stats.StatsLogger-">statsLogger</a></span>(<a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>
 <div class="block">Configure the bookkeeper client with a provided <a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats"><code>StatsLogger</code></a>.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#zk-org.apache.zookeeper.ZooKeeper-">zk</a></span>(org.apache.zookeeper.ZooKeeper&nbsp;zk)</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
@@ -309,6 +319,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>eventLoopGroup</h4>
 <pre>io.netty.channel.EventLoopGroup eventLoopGroup</pre>
+</li>
+</ul>
+<a name="allocator">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>allocator</h4>
+<pre>io.netty.buffer.ByteBufAllocator allocator</pre>
 </li>
 </ul>
 <a name="statsLogger">
@@ -448,6 +467,24 @@ public&nbsp;<a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder
 <dd>client builder.</dd>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>4.5</dd>
+</dl>
+</li>
+</ul>
+<a name="allocator-io.netty.buffer.ByteBufAllocator-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>allocator</h4>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a>&nbsp;allocator(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</pre>
+<div class="block">Configure the bookkeeper client with a provided <code>ByteBufAllocator</code>.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>allocator</code> - an external <code>ByteBufAllocator</code> to use by the bookkeeper client.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>client builder.</dd>
+<dt><span class="simpleTagLabel">Since:</span></dt>
+<dd>4.9</dd>
 </dl>
 </li>
 </ul>
