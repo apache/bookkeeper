@@ -114,9 +114,8 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
                                long warnTimeMicroSec,
                                int maxTasksInQueue) {
         super(baseName, numThreads, threadFactory, statsLogger, traceTaskExecution,
-                preserveMdcForTaskExecution, warnTimeMicroSec, maxTasksInQueue);
+                preserveMdcForTaskExecution, warnTimeMicroSec, maxTasksInQueue, false /* enableBusyWait */);
     }
-
 
     @Override
     protected ScheduledThreadPoolExecutor createSingleThreadExecutor(ThreadFactory factory) {

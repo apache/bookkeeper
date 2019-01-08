@@ -21,8 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ACTIVE_LEDGER_COUNT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.DELETED_LEDGER_COUNT;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 
 import com.google.common.collect.Sets;
@@ -42,8 +40,6 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -69,7 +65,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1331}
  */
-public class ScanAndCompareGarbageCollector implements GarbageCollector{
+public class ScanAndCompareGarbageCollector implements GarbageCollector {
 
     static final Logger LOG = LoggerFactory.getLogger(ScanAndCompareGarbageCollector.class);
     static final int MAX_CONCURRENT_ZK_REQUESTS = 1000;
@@ -86,7 +82,6 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
     private final String zkLedgersRootPath;
     private final boolean verifyMetadataOnGc;
     private int activeLedgerCounter;
-    private Counter deletedLedgerCounter;
 
     public ScanAndCompareGarbageCollector(LedgerManager ledgerManager, CompactableLedgerStorage ledgerStorage,
             ServerConfiguration conf, StatsLogger statsLogger) throws IOException {
@@ -106,20 +101,11 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
 
         verifyMetadataOnGc = conf.getVerifyMetadataOnGC();
 
-        this.deletedLedgerCounter = statsLogger.getCounter(DELETED_LEDGER_COUNT);
-
         this.activeLedgerCounter = 0;
-        statsLogger.registerGauge(ACTIVE_LEDGER_COUNT, new Gauge<Integer>() {
-            @Override
-            public Integer getDefaultValue() {
-                return 0;
-            }
+    }
 
-            @Override
-            public Integer getSample() {
-                return activeLedgerCounter;
-            }
-        });
+    public int getNumActiveLedgers() {
+        return activeLedgerCounter;
     }
 
     @Override
@@ -190,7 +176,6 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                                 continue;
                             }
                         }
-                        deletedLedgerCounter.inc();
                         garbageCleaner.clean(bkLid);
                     }
                 }

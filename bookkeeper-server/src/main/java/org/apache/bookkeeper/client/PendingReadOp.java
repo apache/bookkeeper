@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.api.LedgerEntries;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.util.SafeRunnable;
@@ -486,7 +487,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         return speculativeTask;
     }
 
-    // I don't think this is ever used in production code -Ivan
     PendingReadOp parallelRead(boolean enabled) {
         this.parallelRead = enabled;
         return this;
@@ -506,8 +506,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         List<BookieSocketAddress> ensemble = null;
         do {
             if (i == nextEnsembleChange) {
-                ensemble = getLedgerMetadata().getEnsemble(i);
-                nextEnsembleChange = getLedgerMetadata().getNextEnsembleChange(i);
+                ensemble = getLedgerMetadata().getEnsembleAt(i);
+                nextEnsembleChange = LedgerMetadataUtils.getNextEnsembleChange(getLedgerMetadata(), i);
             }
             LedgerEntryRequest entry;
             if (parallelRead) {

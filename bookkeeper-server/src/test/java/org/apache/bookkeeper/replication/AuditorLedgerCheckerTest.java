@@ -51,8 +51,8 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -553,8 +553,8 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
             LedgerMetadata metadata = LedgerMetadataBuilder.create()
                 .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
-                .withDigestType(DigestType.CRC32.toApiDigestType())
                 .withPassword("passwd".getBytes())
+                .withDigestType(DigestType.CRC32.toApiDigestType())
                 .newEnsembleEntry(0L, ensemble).build();
 
             long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
