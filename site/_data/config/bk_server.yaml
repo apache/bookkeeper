@@ -137,7 +137,7 @@ groups:
     default: 8080
 
 - name: Security settings
-  params: 
+  params:
   - param: bookieAuthProviderFactoryClass
     description: The bookie authentication provider factory class name. If this is null, no authentication will take place.
     default: null
@@ -207,7 +207,7 @@ groups:
        5: expanding header to 512 and padding writes to align sector size configured by `journalAlignmentSize`
        6: persisting explicitLac is introduced
 
-      By default, it is `6`. 
+      By default, it is `6`.
       If you'd like to disable persisting ExplicitLac, you can set this config to < `6` and also fileInfoFormatVersionToWrite should be set to 0. If there is mismatch then the serverconfig is considered invalid.
       You can disable `padding-writes` by setting journal version back to `4`. This feature is available in 4.5.0 and onward versions.
     default: 6
@@ -618,7 +618,7 @@ groups:
   - param: ensemblePlacementPolicy
     description: |
       The ensemble placement policy used for finding bookie for re-replicating entries.
-    
+
       Options:
         - org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy
         - org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy
@@ -678,4 +678,55 @@ groups:
     description: The time to backoff when replication worker encounters exceptions on replicating a ledger, in milliseconds.
     default: 5000
 
+- name: Memory allocator settings
+  params:
+  - param: allocatorPoolingPolicy
+    description: |
+      Define the memory pooling policy.
 
+      Available options are:
+        - PooledDirect: Use Direct memory for all buffers and pool the memory.
+                        Direct memory will avoid the overhead of JVM GC and most
+                        memory copies when reading and writing to socket channel.
+                        Pooling will add memory space overhead due to the fact that
+                        there will be fragmentation in the allocator and that threads
+                        will keep a portion of memory as thread-local to avoid
+                        contention when possible.
+        - UnpooledHeap: Allocate memory from JVM heap without any pooling.
+                        This option has the least overhead in terms of memory usage
+                        since the memory will be automatically reclaimed by the
+                        JVM GC but might impose a performance penalty at high
+                        throughput.
+    default: PooledDirect
+  - param: allocatorPoolingConcurrency
+    description: |
+      Controls the amount of concurrency for the memory pool.
+      Default is to have a number of allocator arenas equals to 2 * CPUS.
+      Decreasing this number will reduce the amount of memory overhead, at the
+      expense of increased allocation contention.
+    default: 2 * CPUS
+  - param: allocatorOutOfMemoryPolicy
+    description: |
+      Define the memory allocator out of memory policy.
+
+      Available options are:
+        - FallbackToHeap: If it's not possible to allocate a buffer from direct memory,
+                          fallback to allocate an unpooled buffer from JVM heap.
+                          This will help absorb memory allocation spikes because the heap
+                          allocations will naturally slow down the process and will result
+                          if full GC cleanup if the Heap itself is full.
+        - ThrowException: Throw regular OOM exception without taking addition actions.
+    default: FallbackToHeap
+  - param: allocatorLeakDetectionPolicy
+    description: |
+      Define the memory allocator leak detection policy.
+
+      Available options are:
+        - Disabled: No leak detection and no overhead.
+        - Simple: Instruments 1% of the allocated buffer to track for leaks.
+        - Advanced: Instruments 1% of the allocated buffer to track for leaks, reporting
+                    stack traces of places where the buffer was used.
+        - Paranoid: Instruments 100% of the allocated buffer to track for leaks, reporting
+                    stack traces of places where the buffer was used. Introduce very
+                    significant overhead.
+    default: Disabled

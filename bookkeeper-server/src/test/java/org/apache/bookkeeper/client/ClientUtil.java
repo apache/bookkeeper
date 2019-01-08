@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.security.GeneralSecurityException;
 import java.util.function.Function;
@@ -47,7 +48,8 @@ public class ClientUtil {
 
     public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed, long length, byte[] data,
             int offset, int len) throws GeneralSecurityException {
-        DigestManager dm = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
+        DigestManager dm = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32,
+                UnpooledByteBufAllocator.DEFAULT, true);
         return ByteBufList.coalesce(dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,
                 Unpooled.wrappedBuffer(data, offset, len)));
     }

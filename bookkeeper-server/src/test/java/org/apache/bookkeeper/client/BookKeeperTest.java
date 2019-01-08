@@ -587,6 +587,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testReadEntryReleaseByteBufs() throws Exception {
         ClientConfiguration confWriter = new ClientConfiguration();

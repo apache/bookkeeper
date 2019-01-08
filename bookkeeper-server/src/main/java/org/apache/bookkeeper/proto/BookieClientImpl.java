@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import com.google.protobuf.ExtensionRegistry;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -76,11 +77,12 @@ import org.slf4j.LoggerFactory;
 public class BookieClientImpl implements BookieClient, PerChannelBookieClientFactory {
     static final Logger LOG = LoggerFactory.getLogger(BookieClient.class);
 
-    OrderedExecutor executor;
-    ScheduledExecutorService scheduler;
-    ScheduledFuture<?> timeoutFuture;
+    private final OrderedExecutor executor;
+    private final ScheduledExecutorService scheduler;
+    private final ScheduledFuture<?> timeoutFuture;
 
-    EventLoopGroup eventLoopGroup;
+    private final EventLoopGroup eventLoopGroup;
+    private final ByteBufAllocator allocator;
     final ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool> channels =
             new ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool>();
 
@@ -96,10 +98,12 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     private final long bookieErrorThresholdPerInterval;
 
     public BookieClientImpl(ClientConfiguration conf, EventLoopGroup eventLoopGroup,
+                            ByteBufAllocator allocator,
                             OrderedExecutor executor, ScheduledExecutorService scheduler,
                             StatsLogger statsLogger) throws IOException {
         this.conf = conf;
         this.eventLoopGroup = eventLoopGroup;
+        this.allocator = allocator;
         this.executor = executor;
         this.closed = false;
         this.closeLock = new ReentrantReadWriteLock();
@@ -120,6 +124,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                                                                     conf.getTimeoutMonitorIntervalSec(),
                                                                     conf.getTimeoutMonitorIntervalSec(),
                                                                     TimeUnit.SECONDS);
+        } else {
+            this.timeoutFuture = null;
         }
     }
 
@@ -175,7 +181,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         if (conf.getLimitStatsLogging()) {
             statsLoggerForPCBC = NullStatsLogger.INSTANCE;
         }
-        return new PerChannelBookieClient(conf, executor, eventLoopGroup, address, statsLoggerForPCBC,
+        return new PerChannelBookieClient(conf, executor, eventLoopGroup, allocator, address, statsLoggerForPCBC,
                 authProviderFactory, registry, pcbcPool, shFactory);
     }
 
@@ -596,8 +602,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                 .build();
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
                 new DefaultThreadFactory("BookKeeperClientScheduler"));
-        BookieClientImpl bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup, executor,
-                                                   scheduler, NullStatsLogger.INSTANCE);
+        BookieClientImpl bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
+                null, executor, scheduler, NullStatsLogger.INSTANCE);
         BookieSocketAddress addr = new BookieSocketAddress(args[0], Integer.parseInt(args[1]));
 
         for (int i = 0; i < 100000; i++) {

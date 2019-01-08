@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ExtensionRegistry;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.AdaptiveRecvByteBufAllocator;
 import io.netty.channel.Channel;
@@ -107,8 +108,11 @@ class BookieNettyServer {
     final BookieAuthProvider.Factory authProviderFactory;
     final ExtensionRegistry registry = ExtensionRegistry.newInstance();
 
-    BookieNettyServer(ServerConfiguration conf, RequestProcessor processor)
+    private final ByteBufAllocator allocator;
+
+    BookieNettyServer(ServerConfiguration conf, RequestProcessor processor, ByteBufAllocator allocator)
         throws IOException, KeeperException, InterruptedException, BookieException {
+        this.allocator = allocator;
         this.maxFrameSize = conf.getNettyMaxFrameSizeBytes();
         this.conf = conf;
         this.requestProcessor = processor;
@@ -296,7 +300,8 @@ class BookieNettyServer {
     private void listenOn(InetSocketAddress address, BookieSocketAddress bookieAddress) throws InterruptedException {
         if (!conf.isDisableServerSocketBind()) {
             ServerBootstrap bootstrap = new ServerBootstrap();
-            bootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(true));
+            bootstrap.option(ChannelOption.ALLOCATOR, allocator);
+            bootstrap.childOption(ChannelOption.ALLOCATOR, allocator);
             bootstrap.group(eventLoopGroup, eventLoopGroup);
             bootstrap.childOption(ChannelOption.TCP_NODELAY, conf.getServerTcpNoDelay());
             bootstrap.childOption(ChannelOption.SO_LINGER, conf.getServerSockLinger());

@@ -25,6 +25,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.lang.reflect.Field;
 import java.nio.channels.FileChannel;
 import java.util.Enumeration;
@@ -130,7 +132,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         for (int i = 0; i < journals.size(); i++) {
             Journal mock = spy(journals.get(i));
             when(mock.getBufferedChannelBuilder()).thenReturn((FileChannel fc, int capacity) ->  {
-                SlowBufferedChannel sbc = new SlowBufferedChannel(fc, capacity);
+                SlowBufferedChannel sbc = new SlowBufferedChannel(UnpooledByteBufAllocator.DEFAULT, fc, capacity);
                 sbc.setAddDelay(addDelay);
                 sbc.setGetDelay(getDelay);
                 sbc.setFlushDelay(flushDelay);
@@ -306,7 +308,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         BookieServer bks = bs.get(bkId);
         bks.shutdown();
         bks = new BookieServer(bsConfs.get(bkId));
-        mockJournal(bks.bookie, getDelay, addDelay, flushDelay);
+        mockJournal(bks.getBookie(), getDelay, addDelay, flushDelay);
         bks.start();
         bs.set(bkId, bks);
 
@@ -347,7 +349,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         BookieServer bks = bs.get(bkId);
         bks.shutdown();
         bks = new BookieServer(bsConfs.get(bkId));
-        mockJournal(bks.bookie, getDelay, addDelay, flushDelay);
+        mockJournal(bks.getBookie(), getDelay, addDelay, flushDelay);
         bks.start();
         bs.set(bkId, bks);
 
@@ -392,7 +394,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         BookieServer bks = bs.get(bkId);
         bks.shutdown();
         bks = new BookieServer(bsConfs.get(bkId));
-        mockJournal(bks.bookie, getDelay, addDelay, flushDelay);
+        mockJournal(bks.getBookie(), getDelay, addDelay, flushDelay);
         bks.start();
         bs.set(bkId, bks);
 

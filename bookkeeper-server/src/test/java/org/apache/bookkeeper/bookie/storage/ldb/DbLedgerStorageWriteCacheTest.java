@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import java.io.File;
@@ -58,10 +59,11 @@ public class DbLedgerStorageWriteCacheTest {
         protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
                 LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
                 StateManager stateManager, CheckpointSource checkpointSource, Checkpointer checkpointer,
-                StatsLogger statsLogger, ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize)
+                StatsLogger statsLogger, ScheduledExecutorService gcExecutor,
+                long writeCacheSize, long readCacheSize)
                 throws IOException {
             return new MockedSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
-                    stateManager, checkpointSource, checkpointer, statsLogger, gcExecutor, writeCacheSize,
+                    stateManager, checkpointSource, checkpointer, statsLogger, allocator, gcExecutor, writeCacheSize,
                     readCacheSize);
         }
 
@@ -69,9 +71,10 @@ public class DbLedgerStorageWriteCacheTest {
             public MockedSingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                     LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StateManager stateManager,
                     CheckpointSource checkpointSource, Checkpointer checkpointer, StatsLogger statsLogger,
-                    ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize) throws IOException {
+                    ByteBufAllocator allocator, ScheduledExecutorService gcExecutor, long writeCacheSize,
+                    long readCacheSize) throws IOException {
                 super(conf, ledgerManager, ledgerDirsManager, indexDirsManager, stateManager, checkpointSource,
-                        checkpointer, statsLogger, gcExecutor, writeCacheSize, readCacheSize);
+                        checkpointer, statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize);
             }
 
           @Override

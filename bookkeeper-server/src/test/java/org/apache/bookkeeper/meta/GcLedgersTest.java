@@ -30,6 +30,8 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +50,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -566,7 +569,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
             StateManager stateManager,
             CheckpointSource checkpointSource,
             Checkpointer checkpointer,
-            StatsLogger statsLogger) throws IOException {
+            StatsLogger statsLogger,
+            ByteBufAllocator allocator) throws IOException {
         }
 
         @Override

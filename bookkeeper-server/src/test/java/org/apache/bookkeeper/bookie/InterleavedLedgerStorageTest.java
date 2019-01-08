@@ -26,6 +26,8 @@ import static org.junit.Assert.assertEquals;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -110,7 +112,7 @@ public class InterleavedLedgerStorageTest {
                 LedgerDirsManager ledgerDirsManager,
                 EntryLogListener listener,
                 StatsLogger statsLogger) throws IOException {
-            super(conf, ledgerDirsManager, listener, statsLogger);
+            super(conf, ledgerDirsManager, listener, statsLogger, UnpooledByteBufAllocator.DEFAULT);
         }
 
         void setCheckEntryTestPoint(CheckEntryListener testPoint) throws InterruptedException {

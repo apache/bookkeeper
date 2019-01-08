@@ -22,6 +22,9 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.util.function.BooleanSupplier;
 
 import org.apache.bookkeeper.common.util.OrderedExecutor;
@@ -50,6 +53,7 @@ public class MockClientContext implements ClientContext {
     private BookKeeperClientStats clientStats;
     private BooleanSupplier isClientClosed;
     private MockRegistrationClient regClient;
+    private ByteBufAllocator allocator;
 
     static MockClientContext create() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
@@ -67,6 +71,7 @@ public class MockClientContext implements ClientContext {
             .setPlacementPolicy(placementPolicy)
             .setRegistrationClient(regClient)
             .setBookieClient(new MockBookieClient(scheduler))
+            .setByteBufAllocator(UnpooledByteBufAllocator.DEFAULT)
             .setMainWorkerPool(scheduler)
             .setScheduler(scheduler)
             .setClientStats(BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE))
@@ -83,6 +88,7 @@ public class MockClientContext implements ClientContext {
             .setMainWorkerPool(other.getMainWorkerPool())
             .setScheduler(other.getScheduler())
             .setClientStats(other.getClientStats())
+            .setByteBufAllocator(other.getByteBufAllocator())
             .setIsClientClosed(other::isClientClosed);
     }
 
@@ -151,6 +157,11 @@ public class MockClientContext implements ClientContext {
         return this;
     }
 
+    public MockClientContext setByteBufAllocator(ByteBufAllocator allocator) {
+        this.allocator = allocator;
+        return this;
+    }
+
     private static <T> T maybeSpy(T orig) {
         if (Mockito.mockingDetails(orig).isSpy()) {
             return orig;
@@ -204,4 +215,8 @@ public class MockClientContext implements ClientContext {
         return isClientClosed.getAsBoolean();
     }
 
+    @Override
+    public ByteBufAllocator getByteBufAllocator() {
+        return allocator;
+    }
 }

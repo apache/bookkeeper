@@ -35,6 +35,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -129,7 +131,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                            StateManager stateManager,
                            CheckpointSource checkpointSource,
                            Checkpointer checkpointer,
-                           StatsLogger statsLogger)
+                           StatsLogger statsLogger,
+                           ByteBufAllocator allocator)
             throws IOException {
         initializeWithEntryLogListener(
             conf,
@@ -140,7 +143,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             checkpointSource,
             checkpointer,
             this,
-            statsLogger);
+            statsLogger,
+            allocator);
     }
 
     void initializeWithEntryLogListener(ServerConfiguration conf,
@@ -151,7 +155,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                                         CheckpointSource checkpointSource,
                                         Checkpointer checkpointer,
                                         EntryLogListener entryLogListener,
-                                        StatsLogger statsLogger) throws IOException {
+                                        StatsLogger statsLogger,
+                                        ByteBufAllocator allocator) throws IOException {
         initializeWithEntryLogger(
                 conf,
                 ledgerManager,
@@ -160,7 +165,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 stateManager,
                 checkpointSource,
                 checkpointer,
-                new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE)),
+                new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE),
+                        allocator),
                 statsLogger);
     }
 

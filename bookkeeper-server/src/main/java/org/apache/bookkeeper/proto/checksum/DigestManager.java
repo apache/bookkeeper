@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 
@@ -47,6 +47,7 @@ public abstract class DigestManager {
 
     final long ledgerId;
     final boolean useV2Protocol;
+    private final ByteBufAllocator allocator;
 
     abstract int getMacCodeLength();
 
@@ -60,28 +61,24 @@ public abstract class DigestManager {
 
     final int macCodeLength;
 
-    public DigestManager(long ledgerId, boolean useV2Protocol) {
+    public DigestManager(long ledgerId, boolean useV2Protocol, ByteBufAllocator allocator) {
         this.ledgerId = ledgerId;
         this.useV2Protocol = useV2Protocol;
-        macCodeLength = getMacCodeLength();
-    }
-
-    public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType)
-            throws GeneralSecurityException {
-        return instantiate(ledgerId, passwd, digestType, false);
+        this.macCodeLength = getMacCodeLength();
+        this.allocator = allocator;
     }
 
     public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType,
-            boolean useV2Protocol) throws GeneralSecurityException {
+            ByteBufAllocator allocator, boolean useV2Protocol) throws GeneralSecurityException {
         switch(digestType) {
         case HMAC:
-            return new MacDigestManager(ledgerId, passwd, useV2Protocol);
+            return new MacDigestManager(ledgerId, passwd, useV2Protocol, allocator);
         case CRC32:
-            return new CRC32DigestManager(ledgerId, useV2Protocol);
+            return new CRC32DigestManager(ledgerId, useV2Protocol, allocator);
         case CRC32C:
-            return new CRC32CDigestManager(ledgerId, useV2Protocol);
+            return new CRC32CDigestManager(ledgerId, useV2Protocol, allocator);
         case DUMMY:
-            return new DummyDigestManager(ledgerId, useV2Protocol);
+            return new DummyDigestManager(ledgerId, useV2Protocol, allocator);
         default:
             throw new GeneralSecurityException("Unknown checksum type: " + digestType);
         }
@@ -106,7 +103,7 @@ public abstract class DigestManager {
             /*
              * For V2 protocol, use pooled direct ByteBuf's to avoid object allocation in DigestManager.
              */
-            ByteBuf headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(METADATA_LENGTH + macCodeLength);
+            ByteBuf headersBuffer = allocator.buffer(METADATA_LENGTH + macCodeLength);
             headersBuffer.writeLong(ledgerId);
             headersBuffer.writeLong(entryId);
             headersBuffer.writeLong(lastAddConfirmed);
@@ -149,7 +146,7 @@ public abstract class DigestManager {
     public ByteBufList computeDigestAndPackageForSendingLac(long lac) {
         ByteBuf headersBuffer;
         if (this.useV2Protocol) {
-            headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(LAC_METADATA_LENGTH + macCodeLength);
+            headersBuffer = allocator.buffer(LAC_METADATA_LENGTH + macCodeLength);
         } else {
             headersBuffer = Unpooled.buffer(LAC_METADATA_LENGTH + macCodeLength);
         }
@@ -185,7 +182,7 @@ public abstract class DigestManager {
         int offset = METADATA_LENGTH + macCodeLength;
         update(dataReceived.slice(offset, dataReceived.readableBytes() - offset));
 
-        ByteBuf digest = PooledByteBufAllocator.DEFAULT.buffer(macCodeLength);
+        ByteBuf digest = allocator.buffer(macCodeLength);
         populateValueAndReset(digest);
 
         try {
@@ -225,7 +222,7 @@ public abstract class DigestManager {
 
         update(dataReceived.slice(0, LAC_METADATA_LENGTH));
 
-        ByteBuf digest = PooledByteBufAllocator.DEFAULT.buffer(macCodeLength);
+        ByteBuf digest = allocator.buffer(macCodeLength);
         try {
             populateValueAndReset(digest);
 

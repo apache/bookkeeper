@@ -22,6 +22,8 @@
 package org.apache.bookkeeper.meta;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
@@ -29,6 +31,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -173,7 +176,8 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
             StateManager stateManager,
             CheckpointSource checkpointSource,
             Checkpointer checkpointer,
-            StatsLogger statsLogger) throws IOException {
+            StatsLogger statsLogger,
+            ByteBufAllocator allocator) throws IOException {
         }
 
         @Override

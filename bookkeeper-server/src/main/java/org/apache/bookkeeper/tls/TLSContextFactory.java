@@ -20,7 +20,8 @@ package org.apache.bookkeeper.tls;
 import com.google.common.base.Strings;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.netty.buffer.PooledByteBufAllocator;
+
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslContext;
@@ -79,6 +80,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     private String[] protocols;
     private String[] ciphers;
     private SslContext sslContext;
+    private ByteBufAllocator allocator;
 
     private String getPasswordFromFile(String path) throws IOException {
         byte[] pwd;
@@ -350,7 +352,9 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     }
 
     @Override
-    public synchronized void init(NodeType type, AbstractConfiguration conf) throws SecurityException {
+    public synchronized void init(NodeType type, AbstractConfiguration conf, ByteBufAllocator allocator)
+            throws SecurityException {
+        this.allocator = allocator;
         final String enabledProtocols;
         final String enabledCiphers;
 
@@ -397,7 +401,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
     @Override
     public SslHandler newTLSHandler() {
-        SslHandler sslHandler = sslContext.newHandler(PooledByteBufAllocator.DEFAULT);
+        SslHandler sslHandler = sslContext.newHandler(allocator);
 
         if (protocols != null && protocols.length != 0) {
             sslHandler.engine().setEnabledProtocols(protocols);

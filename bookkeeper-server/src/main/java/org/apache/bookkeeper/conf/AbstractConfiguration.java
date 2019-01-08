@@ -28,6 +28,10 @@ import java.util.Map;
 import javax.net.ssl.SSLEngine;
 
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
+import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
+import org.apache.bookkeeper.common.allocator.PoolingPolicy;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
@@ -154,6 +158,12 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
 
     // enforce minimum number of racks per write quorum
     public static final String ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM = "enforceMinNumRacksPerWriteQuorum";
+
+    // Allocator configuration
+    protected static final String ALLOCATOR_POOLING_POLICY = "allocatorPoolingPolicy";
+    protected static final String ALLOCATOR_POOLING_CONCURRENCY = "allocatorPoolingConcurrency";
+    protected static final String ALLOCATOR_OOM_POLICY = "allocatorOutOfMemoryPolicy";
+    protected static final String ALLOCATOR_LEAK_DETECTION_POLICY = "allocatorLeakDetectionPolicy";
 
     // option to limit stats logging
     public static final String LIMIT_STATS_LOGGING = "limitStatsLogging";
@@ -878,6 +888,95 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setPreserveMdcForTaskExecution(boolean enabled) {
         setProperty(PRESERVE_MDC_FOR_TASK_EXECUTION, enabled);
+        return getThis();
+    }
+
+    /**
+     * @return the configured pooling policy for the allocator.
+     */
+    public PoolingPolicy getAllocatorPoolingPolicy() {
+        return PoolingPolicy.valueOf(this.getString(ALLOCATOR_POOLING_POLICY, PoolingPolicy.PooledDirect.toString()));
+    }
+
+    /**
+     * Define the memory pooling policy.
+     *
+     * <p>Default is {@link PoolingPolicy#PooledDirect}
+     *
+     * @param poolingPolicy
+     *            the memory pooling policy
+     * @return configuration object.
+     */
+    public T setAllocatorPoolingPolicy(PoolingPolicy poolingPolicy) {
+        this.setProperty(ALLOCATOR_POOLING_POLICY, poolingPolicy.toString());
+        return getThis();
+    }
+
+    /**
+     * @return the configured pooling concurrency for the allocator.
+     */
+    public int getAllocatorPoolingConcurrency() {
+        return this.getInteger(ALLOCATOR_POOLING_CONCURRENCY, 2 * Runtime.getRuntime().availableProcessors());
+    }
+
+    /**
+     * Controls the amount of concurrency for the memory pool.
+     *
+     * <p>Default is to have a number of allocator arenas equals to 2 * CPUS.
+     *
+     * <p>Decreasing this number will reduce the amount of memory overhead, at the
+     * expense of increased allocation contention.
+     *
+     * @param concurrency
+     *            the concurrency level to use for the allocator pool
+     * @return configuration object.
+     */
+    public T setAllocatorPoolingConcurrenncy(int concurrency) {
+        this.setProperty(ALLOCATOR_POOLING_POLICY, concurrency);
+        return getThis();
+    }
+
+    /**
+     * @return the configured ouf of memory policy for the allocator.
+     */
+    public OutOfMemoryPolicy getAllocatorOutOfMemoryPolicy() {
+        return OutOfMemoryPolicy
+                .valueOf(this.getString(ALLOCATOR_OOM_POLICY, OutOfMemoryPolicy.FallbackToHeap.toString()));
+    }
+
+    /**
+     * Define the memory allocator out of memory policy.
+     *
+     * <p>Default is {@link OutOfMemoryPolicy#FallbackToHeap}
+     *
+     * @param oomPolicy
+     *            the "out-of-memory" policy for the memory allocator
+     * @return configuration object.
+     */
+    public T setAllocatorOutOfMemoryPolicy(OutOfMemoryPolicy oomPolicy) {
+        this.setProperty(ALLOCATOR_OOM_POLICY, oomPolicy.toString());
+        return getThis();
+    }
+
+    /**
+     * Return the configured leak detection policy for the allocator.
+     */
+    public LeakDetectionPolicy getAllocatorLeakDetectionPolicy() {
+        return LeakDetectionPolicy
+                .valueOf(this.getString(ALLOCATOR_LEAK_DETECTION_POLICY, LeakDetectionPolicy.Disabled.toString()));
+    }
+
+    /**
+     * Enable the leak detection for the allocator.
+     *
+     * <p>Default is {@link LeakDetectionPolicy#Disabled}
+     *
+     * @param leakDetectionPolicy
+     *            the leak detection policy for the memory allocator
+     * @return configuration object.
+     */
+    public T setAllocatorLeakDetectionPolicy(LeakDetectionPolicy leakDetectionPolicy) {
+        this.setProperty(ALLOCATOR_LEAK_DETECTION_POLICY, leakDetectionPolicy.toString());
         return getThis();
     }
 
