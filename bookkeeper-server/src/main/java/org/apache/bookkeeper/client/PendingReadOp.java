@@ -98,12 +98,13 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             this.eId = eId;
 
             if (clientCtx.getConf().enableReorderReadSequence) {
-                writeSet = clientCtx.getPlacementPolicy().reorderReadSequence(
+                writeSet = clientCtx.getPlacementPolicy()
+                    .reorderReadSequence(
                             ensemble,
                             lh.getBookiesHealthInfo(),
-                            lh.distributionSchedule.getWriteSet(eId));
+                            lh.getWriteSetForReadOperation(eId));
             } else {
-                writeSet = lh.distributionSchedule.getWriteSet(eId);
+                writeSet = lh.getWriteSetForReadOperation(eId);
             }
         }
 
@@ -209,6 +210,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                             errMsg, lh.ledgerId, eId, host);
                 }
             }
+
+            lh.recordReadErrorOnBookie(bookieIndex);
         }
 
         /**

@@ -41,6 +41,7 @@ class ClientInternalConf {
     final long addEntryQuorumTimeoutNanos;
     final boolean enableParallelRecoveryRead;
     final boolean enableReorderReadSequence;
+    final boolean enableStickyReads;
     final int recoveryReadBatchSize;
     final int throttleValue;
     final int bookieFailureHistoryExpirationMSec;
@@ -80,6 +81,7 @@ class ClientInternalConf {
         this.timeoutMonitorIntervalSec = conf.getTimeoutMonitorIntervalSec();
         this.enableBookieFailureTracking = conf.getEnableBookieFailureTracking();
         this.useV2WireProtocol = conf.getUseV2WireProtocol();
+        this.enableStickyReads = conf.isStickyReadsEnabled();
 
         if (conf.getFirstSpeculativeReadTimeout() > 0) {
             this.readSpeculativeRequestPolicy =

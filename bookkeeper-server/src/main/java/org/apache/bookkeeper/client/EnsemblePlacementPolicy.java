@@ -22,9 +22,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.DistributionSchedule.WriteSet;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -350,5 +353,37 @@ public interface EnsemblePlacementPolicy {
      * @since 4.5
      */
     default void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieInfoMap) {
+    }
+
+    /**
+     * Select one bookie to the "sticky" bookie where all reads for a particular
+     * ledger will be directed to.
+     *
+     * <p>The default implementation will pick a bookie randomly from the ensemble.
+     * Other placement policies will be able to do better decisions based on
+     * additional informations (eg: rack or region awareness).
+     *
+     * @param metadata
+     *            the {@link LedgerMetadata} object
+     * @param currentStickyBookieIndex
+     *            if we are changing the sticky bookie after a read failure, the
+     *            current sticky bookie is passed in so that we will avoid
+     *            choosing it again
+     * @return the index, within the ensemble of the bookie chosen as the sticky
+     *         bookie
+     *
+     * @since 4.9
+     */
+    default int getStickyReadBookieIndex(LedgerMetadata metadata, Optional<Integer> currentStickyBookieIndex) {
+        if (!currentStickyBookieIndex.isPresent()) {
+            // Pick one bookie randomly from the current ensemble as the initial
+            // "sticky bookie"
+            return ThreadLocalRandom.current().nextInt() % metadata.getEnsembleSize();
+        } else {
+            // When choosing a new sticky bookie index (eg: after the current
+            // one has read failures), by default we pick the next one in the
+            // ensemble, to avoid picking up the same one again.
+            return (currentStickyBookieIndex.get() + 1) % metadata.getEnsembleSize();
+        }
     }
 }
