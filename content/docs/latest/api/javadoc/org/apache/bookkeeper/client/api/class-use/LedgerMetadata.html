@@ -255,10 +255,18 @@
 </td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>default int</code></td>
+<td class="colLast"><span class="typeNameLabel">EnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#getStickyReadBookieIndex-org.apache.bookkeeper.client.api.LedgerMetadata-java.util.Optional-">getStickyReadBookieIndex</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;currentStickyBookieIndex)</code>
+<div class="block">Select one bookie to the "sticky" bookie where all reads for a particular
+ ledger will be directed to.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">MetadataUpdateLoop.NeedsUpdatePredicate.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.NeedsUpdatePredicate.html#needsUpdate-org.apache.bookkeeper.client.api.LedgerMetadata-">needsUpdate</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">EnsembleUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/EnsembleUtils.html#replaceBookiesInEnsemble-org.apache.bookkeeper.client.BookieWatcher-org.apache.bookkeeper.client.api.LedgerMetadata-java.util.List-java.util.Map-java.lang.String-">replaceBookiesInEnsemble</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a>&nbsp;bookieWatcher,
                         <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
@@ -266,11 +274,11 @@
                         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;failedBookies,
                         <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;logContext)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerMetadataUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerMetadataUtils.html#shouldStoreCtime-org.apache.bookkeeper.client.api.LedgerMetadata-">shouldStoreCtime</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MetadataUpdateLoop.MetadataTransform.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.MetadataTransform.html#transform-org.apache.bookkeeper.client.api.LedgerMetadata-">transform</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code>&nbsp;</td>
 </tr>

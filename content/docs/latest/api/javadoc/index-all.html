@@ -1864,6 +1864,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ClientInternalConf.html#enableReorderReadSequence">enableReorderReadSequence</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ClientInternalConf.html" title="class in org.apache.bookkeeper.client">ClientInternalConf</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ClientInternalConf.html#enableStickyReads">enableStickyReads</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ClientInternalConf.html" title="class in org.apache.bookkeeper.client">ClientInternalConf</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#enableValidation">enableValidation</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#endEntryId">endEntryId</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
@@ -3727,6 +3729,11 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/FastSnapshot.html#getStdDev--">getStdDev()</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/FastSnapshot.html" title="class in org.apache.bookkeeper.stats.codahale">FastSnapshot</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#getStickyReadBookieIndex-org.apache.bookkeeper.client.api.LedgerMetadata-java.util.Optional-">getStickyReadBookieIndex(LedgerMetadata, Optional&lt;Integer&gt;)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></dt>
+<dd>
+<div class="block">Select one bookie to the "sticky" bookie where all reads for a particular
+ ledger will be directed to.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getStoreSystemtimeAsLedgerCreationTime--">getStoreSystemtimeAsLedgerCreationTime()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Return the flag that indicates whether client is using system time as the ledger creation time when
@@ -3933,6 +3940,10 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html#getWriteSet-long-">getWriteSet(long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html" title="class in org.apache.bookkeeper.client">RoundRobinDistributionSchedule</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getWriteSetForReadOperation-long-">getWriteSetForReadOperation(long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dd>
+<div class="block">Return a <a href="org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client"><code>DistributionSchedule.WriteSet</code></a> suitable for reading a particular entry.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getZkAvailableBookiesPath--">getZkAvailableBookiesPath()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
@@ -4379,6 +4390,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#isStatisticsEnabled--">isStatisticsEnabled()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Is statistics enabled.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#isStickyReadsEnabled--">isStickyReadsEnabled()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">If read operation should be sticky to a single bookie or not.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragment.html#isStoredEntryId-long-int-">isStoredEntryId(long, int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a></dt>
 <dd>&nbsp;</dd>
@@ -12107,6 +12122,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/generated/StatsLoggerBenchmark_recordLatency_jmhTest.html#recordLatency_thrpt_jmhStub-org.openjdk.jmh.runner.InfraControl-org.openjdk.jmh.results.RawResults-org.openjdk.jmh.infra.BenchmarkParams-org.openjdk.jmh.infra.IterationParams-org.openjdk.jmh.infra.ThreadParams-org.openjdk.jmh.infra.Blackhole-org.openjdk.jmh.infra.Control-int-org.apache.bookkeeper.stats.generated.StatsLoggerBenchmark_LoggerState_jmhType-org.apache.bookkeeper.stats.generated.StatsLoggerBenchmark_jmhType-">recordLatency_thrpt_jmhStub(InfraControl, RawResults, BenchmarkParams, IterationParams, ThreadParams, Blackhole, Control, int, StatsLoggerBenchmark_LoggerState_jmhType, StatsLoggerBenchmark_jmhType)</a></span> - Static method in class org.apache.bookkeeper.stats.generated.<a href="org/apache/bookkeeper/stats/generated/StatsLoggerBenchmark_recordLatency_jmhTest.html" title="class in org.apache.bookkeeper.stats.generated">StatsLoggerBenchmark_recordLatency_jmhTest</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#recordReadErrorOnBookie-int-">recordReadErrorOnBookie(int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dd>
+<div class="block">Notify the LedgerHandle that a read operation was failed on a particular bookie.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">recover(BookkeeperInternalCallbacks.GenericCallback&lt;Void&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-boolean-">recover(BookkeeperInternalCallbacks.GenericCallback&lt;Void&gt;, BookkeeperInternalCallbacks.ReadEntryListener, boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle</a></dt>
@@ -13476,6 +13495,11 @@
 <dd>
 <div class="block">Set the stats provider used by bookie.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setStickyReadsEnabled-boolean-">setStickyReadsEnabled(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Enable/disable having read operations for a ledger to be sticky to
+ a single bookie.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setStoreSystemtimeAsLedgerCreationTime-boolean-">setStoreSystemtimeAsLedgerCreationTime(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Enable the client to use system time as the ledger creation time.</div>
@@ -13944,6 +13968,8 @@
 <dd>
 <div class="block">Provider to provide stats logger for different scopes.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#STICKY_READS_ENABLED">STICKY_READS_ENABLED</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsProvider.html#stop--">stop()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsProvider.html" title="class in org.apache.bookkeeper.stats">CachingStatsProvider</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#stop--">stop()</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
