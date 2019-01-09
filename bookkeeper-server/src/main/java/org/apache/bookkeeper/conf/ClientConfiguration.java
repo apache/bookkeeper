@@ -114,6 +114,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String ENABLE_PARALLEL_RECOVERY_READ = "enableParallelRecoveryRead";
     protected static final String RECOVERY_READ_BATCH_SIZE = "recoveryReadBatchSize";
     protected static final String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
+    protected static final String STICKY_READS_ENABLED = "stickyReadSEnabled";
     // Add Parameters
     protected static final String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
     protected static final String MAX_ALLOWED_ENSEMBLE_CHANGES = "maxNumEnsembleChanges";
@@ -1132,6 +1133,34 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setReorderReadSequenceEnabled(boolean enabled) {
         setProperty(REORDER_READ_SEQUENCE_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * If read operation should be sticky to a single bookie or not.
+     *
+     * @return true if reorder read sequence is enabled, otherwise false.
+     */
+    public boolean isStickyReadsEnabled() {
+        return getBoolean(STICKY_READS_ENABLED, false);
+    }
+
+    /**
+     * Enable/disable having read operations for a ledger to be sticky to
+     * a single bookie.
+     *
+     * <p>If this flag is enabled, the client will use one single bookie (by
+     * preference) to read all entries for a ledger.
+     *
+     * <p>Having all the read to one bookie will increase the chances that
+     * a read request will be fullfilled by Bookie read cache (or OS file
+     * system cache) when doing sequential reads.
+     *
+     * @param enabled the flag to enable/disable sticky reads.
+     * @return client configuration instance.
+     */
+    public ClientConfiguration setStickyReadsEnabled(boolean enabled) {
+        setProperty(STICKY_READS_ENABLED, enabled);
         return this;
     }
 
