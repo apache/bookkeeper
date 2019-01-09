@@ -144,78 +144,20 @@ public class LedgerMetadataSerDe {
             throw new IllegalArgumentException("Invalid format version " + formatVersion);
         }
         if (log.isDebugEnabled()) {
-            log.debug("Serialized with format {}: {}", formatVersion, Base64.getEncoder().encodeToString(serialized));
+            String serializedStr;
+            if (formatVersion > METADATA_FORMAT_VERSION_2) {
+                serializedStr = Base64.getEncoder().encodeToString(serialized);
+            } else {
+                serializedStr = new String(serialized, UTF_8);
+            }
+            log.debug("Serialized with format {}: {}", formatVersion, serializedStr);
         }
         return serialized;
     }
 
     private static byte[] serializeVersion3(LedgerMetadata metadata) throws IOException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        writeHeader(os, METADATA_FORMAT_VERSION_3);
-        LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
-        builder.setQuorumSize(metadata.getWriteQuorumSize())
-            .setAckQuorumSize(metadata.getAckQuorumSize())
-            .setEnsembleSize(metadata.getEnsembleSize())
-            .setLength(metadata.getLength())
-            .setLastEntryId(metadata.getLastEntryId());
-
-        switch (metadata.getState()) {
-        case CLOSED:
-            builder.setState(LedgerMetadataFormat.State.CLOSED);
-            break;
-        case IN_RECOVERY:
-            builder.setState(LedgerMetadataFormat.State.IN_RECOVERY);
-            break;
-        case OPEN:
-            builder.setState(LedgerMetadataFormat.State.OPEN);
-            break;
-        default:
-            checkArgument(false,
-                          String.format("Unknown state %s for protobuf serialization", metadata.getState()));
-            break;
-        }
-
-        builder.setCtime(metadata.getCtime());
-        builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
-        if (metadata.getPassword() == null || metadata.getPassword().length == 0) {
-            builder.setPassword(ByteString.EMPTY);
-        } else {
-            builder.setPassword(ByteString.copyFrom(metadata.getPassword()));
-        }
-
-        Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
-        if (customMetadata.size() > 0) {
-            LedgerMetadataFormat.cMetadataMapEntry.Builder cMetadataBuilder =
-                LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
-            for (Map.Entry<String, byte[]> entry : customMetadata.entrySet()) {
-                cMetadataBuilder.setKey(entry.getKey()).setValue(ByteString.copyFrom(entry.getValue()));
-                builder.addCustomMetadata(cMetadataBuilder.build());
-            }
-        }
-
-        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry : metadata.getAllEnsembles().entrySet()) {
-            LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
-            segmentBuilder.setFirstEntryId(entry.getKey());
-            for (BookieSocketAddress addr : entry.getValue()) {
-                segmentBuilder.addEnsembleMember(addr.toString());
-            }
-            builder.addSegment(segmentBuilder.build());
-        }
-
-        builder.build().writeDelimitedTo(os);
-        return os.toByteArray();
-    }
-
-    private static byte[] serializeVersion2(LedgerMetadata metadata) throws IOException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        writeHeader(os, METADATA_FORMAT_VERSION_2);
-        try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, UTF_8.name()))) {
-            /***********************************************************************
-             * WARNING: Do not modify to add fields.
-             * This code is purposefully duplicated, as version 2 does not support adding
-             * fields, and if this code was shared with version 3, it would be easy to
-             * accidently add new fields and create BC issues.
-             **********************************************************************/
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            writeHeader(os, METADATA_FORMAT_VERSION_3);
             LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
             builder.setQuorumSize(metadata.getWriteQuorumSize())
                 .setAckQuorumSize(metadata.getAckQuorumSize())
@@ -239,11 +181,7 @@ public class LedgerMetadataSerDe {
                 break;
             }
 
-            /** Hack to get around fact that ctime was never versioned correctly */
-            if (LedgerMetadataUtils.shouldStoreCtime(metadata)) {
-                builder.setCtime(metadata.getCtime());
-            }
-
+            builder.setCtime(metadata.getCtime());
             builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
             if (metadata.getPassword() == null || metadata.getPassword().length == 0) {
                 builder.setPassword(ByteString.EMPTY);
@@ -270,41 +208,115 @@ public class LedgerMetadataSerDe {
                 builder.addSegment(segmentBuilder.build());
             }
 
-            TextFormat.print(builder.build(), writer);
-            writer.flush();
+            builder.build().writeDelimitedTo(os);
+            return os.toByteArray();
+        }
+    }
+
+    private static byte[] serializeVersion2(LedgerMetadata metadata) throws IOException {
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            writeHeader(os, METADATA_FORMAT_VERSION_2);
+            try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, UTF_8.name()))) {
+                /***********************************************************************
+                 * WARNING: Do not modify to add fields.
+                 * This code is purposefully duplicated, as version 2 does not support adding
+                 * fields, and if this code was shared with version 3, it would be easy to
+                 * accidently add new fields and create BC issues.
+                 **********************************************************************/
+                LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
+                builder.setQuorumSize(metadata.getWriteQuorumSize())
+                    .setAckQuorumSize(metadata.getAckQuorumSize())
+                    .setEnsembleSize(metadata.getEnsembleSize())
+                    .setLength(metadata.getLength())
+                    .setLastEntryId(metadata.getLastEntryId());
+
+                switch (metadata.getState()) {
+                case CLOSED:
+                    builder.setState(LedgerMetadataFormat.State.CLOSED);
+                    break;
+                case IN_RECOVERY:
+                    builder.setState(LedgerMetadataFormat.State.IN_RECOVERY);
+                    break;
+                case OPEN:
+                    builder.setState(LedgerMetadataFormat.State.OPEN);
+                    break;
+                default:
+                    checkArgument(false,
+                                  String.format("Unknown state %s for protobuf serialization", metadata.getState()));
+                    break;
+                }
+
+                /** Hack to get around fact that ctime was never versioned correctly */
+                if (LedgerMetadataUtils.shouldStoreCtime(metadata)) {
+                    builder.setCtime(metadata.getCtime());
+                }
+
+                builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
+                if (metadata.getPassword() == null || metadata.getPassword().length == 0) {
+                    builder.setPassword(ByteString.EMPTY);
+                } else {
+                    builder.setPassword(ByteString.copyFrom(metadata.getPassword()));
+                }
+
+                Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
+                if (customMetadata.size() > 0) {
+                    LedgerMetadataFormat.cMetadataMapEntry.Builder cMetadataBuilder =
+                        LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
+                    for (Map.Entry<String, byte[]> entry : customMetadata.entrySet()) {
+                        cMetadataBuilder.setKey(entry.getKey()).setValue(ByteString.copyFrom(entry.getValue()));
+                        builder.addCustomMetadata(cMetadataBuilder.build());
+                    }
+                }
+
+                for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry :
+                         metadata.getAllEnsembles().entrySet()) {
+                    LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
+                    segmentBuilder.setFirstEntryId(entry.getKey());
+                    for (BookieSocketAddress addr : entry.getValue()) {
+                        segmentBuilder.addEnsembleMember(addr.toString());
+                    }
+                    builder.addSegment(segmentBuilder.build());
+                }
+
+                TextFormat.print(builder.build(), writer);
+                writer.flush();
+            }
             return os.toByteArray();
         }
     }
 
     private static byte[] serializeVersion1(LedgerMetadata metadata) throws IOException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        writeHeader(os, METADATA_FORMAT_VERSION_1);
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            writeHeader(os, METADATA_FORMAT_VERSION_1);
 
-        try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, UTF_8.name()))) {
-            writer.append(String.valueOf(metadata.getWriteQuorumSize())).append(LINE_SPLITTER);
-            writer.append(String.valueOf(metadata.getEnsembleSize())).append(LINE_SPLITTER);
-            writer.append(String.valueOf(metadata.getLength())).append(LINE_SPLITTER);
+            try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, UTF_8.name()))) {
+                writer.append(String.valueOf(metadata.getWriteQuorumSize())).append(LINE_SPLITTER);
+                writer.append(String.valueOf(metadata.getEnsembleSize())).append(LINE_SPLITTER);
+                writer.append(String.valueOf(metadata.getLength())).append(LINE_SPLITTER);
 
-            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry : metadata.getAllEnsembles().entrySet()) {
-                writer.append(String.valueOf(entry.getKey()));
-                for (BookieSocketAddress addr : entry.getValue()) {
-                    writer.append(FIELD_SPLITTER).append(addr.toString());
+                for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry :
+                         metadata.getAllEnsembles().entrySet()) {
+                    writer.append(String.valueOf(entry.getKey()));
+                    for (BookieSocketAddress addr : entry.getValue()) {
+                        writer.append(FIELD_SPLITTER).append(addr.toString());
+                    }
+                    writer.append(LINE_SPLITTER);
                 }
-                writer.append(LINE_SPLITTER);
-            }
 
-            if (metadata.getState() == State.IN_RECOVERY) {
-                writer.append(String.valueOf(V1_IN_RECOVERY_ENTRY_ID)).append(FIELD_SPLITTER).append(V1_CLOSED_TAG);
-            } else if (metadata.getState() == State.CLOSED) {
-                writer.append(String.valueOf(metadata.getLastEntryId())).append(FIELD_SPLITTER).append(V1_CLOSED_TAG);
-            } else {
-                checkArgument(metadata.getState() == State.OPEN,
-                              String.format("Unknown state %s for V1 serialization", metadata.getState()));
+                if (metadata.getState() == State.IN_RECOVERY) {
+                    writer.append(String.valueOf(V1_IN_RECOVERY_ENTRY_ID)).append(FIELD_SPLITTER).append(V1_CLOSED_TAG);
+                } else if (metadata.getState() == State.CLOSED) {
+                    writer.append(String.valueOf(metadata.getLastEntryId()))
+                        .append(FIELD_SPLITTER).append(V1_CLOSED_TAG);
+                } else {
+                    checkArgument(metadata.getState() == State.OPEN,
+                                  String.format("Unknown state %s for V1 serialization", metadata.getState()));
+                }
+                writer.flush();
+            } catch (UnsupportedEncodingException uee) {
+                throw new RuntimeException("UTF_8 should be supported everywhere");
             }
-            writer.flush();
             return os.toByteArray();
-        } catch (UnsupportedEncodingException uee) {
-            throw new RuntimeException("UTF_8 should be supported everywhere");
         }
     }
 
@@ -327,7 +339,11 @@ public class LedgerMetadataSerDe {
         try (ByteArrayInputStream is = new ByteArrayInputStream(bytes)) {
             int metadataFormatVersion = readHeader(is);
             if (log.isDebugEnabled()) {
-                log.debug("Format version {} detected", metadataFormatVersion);
+                String contentStr = "";
+                if (metadataFormatVersion <= METADATA_FORMAT_VERSION_2) {
+                    contentStr = ", content: " + new String(bytes, UTF_8);
+                }
+                log.debug("Format version {} detected{}", metadataFormatVersion, contentStr);
             }
 
             switch (metadataFormatVersion) {

@@ -399,7 +399,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             try {
                 bytes = serDe.serialize(metadata);
             } catch (IOException ioe) {
-                promise.completeExceptionally(new BKException.BKSerializationException(ioe));
+                promise.completeExceptionally(new BKException.BKMetadataSerializationException(ioe));
                 return promise;
             }
             ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, bytes),
@@ -420,7 +420,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     } else if (MSException.Code.OK.getCode() == rc) {
                         FutureUtils.complete(promise, null);
                     } else {
-                        promise.completeExceptionally(new BKException.BKSerializationException());
+                        promise.completeExceptionally(new BKException.BKMetadataSerializationException());
                     }
                 }
             };

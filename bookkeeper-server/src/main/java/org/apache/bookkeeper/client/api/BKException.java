@@ -167,8 +167,8 @@ public class BKException extends Exception {
             return "Bookie operation timeout";
         case Code.SecurityException:
             return "Failed to establish a secure connection";
-        case Code.SerializationException:
-            return "Failed to serialize/deserialize";
+        case Code.MetadataSerializationException:
+            return "Failed to serialize metadata";
         default:
             return "Unexpected condition";
         }
@@ -274,11 +274,11 @@ public class BKException extends Exception {
         int LedgerIdOverflowException = -106;
 
         /**
-         * Failure to serialize/deserialize.
+         * Failure to serialize metadata.
          *
          * @since 4.9
          */
-        int SerializationException = -107;
+        int MetadataSerializationException = -107;
 
         /**
          * Generic exception code used to propagate in replication pipeline.

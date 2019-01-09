@@ -117,7 +117,7 @@ class EtcdLedgerManager implements LedgerManager {
         try {
             valueBs = ByteSequence.fromBytes(serDe.serialize(metadata));
         } catch (IOException ioe) {
-            promise.completeExceptionally(new BKException.BKSerializationException(ioe));
+            promise.completeExceptionally(new BKException.BKMetadataSerializationException(ioe));
             return promise;
         }
         kvClient.txn()
@@ -268,7 +268,7 @@ class EtcdLedgerManager implements LedgerManager {
         try {
             valueBs = ByteSequence.fromBytes(serDe.serialize(metadata));
         } catch (IOException ioe) {
-            promise.completeExceptionally(new BKException.BKSerializationException(ioe));
+            promise.completeExceptionally(new BKException.BKMetadataSerializationException(ioe));
             return promise;
         }
 
