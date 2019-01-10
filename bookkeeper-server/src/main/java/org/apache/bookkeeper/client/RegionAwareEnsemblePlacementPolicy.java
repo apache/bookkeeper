@@ -571,6 +571,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         /**
          * TODO: have to implement actual logic for this method for
          * RegionAwareEnsemblePlacementPolicy. For now return true value.
+         *
+         * - https://github.com/apache/bookkeeper/issues/1898
          */
         return true;
     }

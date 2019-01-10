@@ -150,6 +150,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
         final Supplier<String> defaultRackSupplier;
         final DNSToSwitchMapping resolver;
+        @StatsDoc(
+                name = FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER,
+                help = "total number of times Resolver failed to resolve rack information of a node"
+        )
         final Counter failedToResolveNetworkLocationCounter;
 
         DNSResolverDecorator(DNSToSwitchMapping resolver, Supplier<String> defaultRackSupplier,
@@ -1251,7 +1255,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         for (int i = 0; i < ensembleList.size(); i++) {
             racksOrRegionsInQuorum.clear();
             for (int j = 0; j < writeQuorumSize; j++) {
-                bookie = ensembleList.get((ensembleSize + i + j) % ensembleSize);
+                bookie = ensembleList.get((i + j) % ensembleSize);
                 try {
                     racksOrRegionsInQuorum.add(knownBookies.get(bookie).getNetworkLocation());
                 } catch (Exception e) {

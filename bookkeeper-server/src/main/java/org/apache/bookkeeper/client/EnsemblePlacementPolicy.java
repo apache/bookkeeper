@@ -404,6 +404,8 @@ public interface EnsemblePlacementPolicy {
      *            ackQuorumSize of the ensemble
      * @return
      */
-    boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList, int writeQuorumSize,
-            int ackQuorumSize);
+    default boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList, int writeQuorumSize,
+            int ackQuorumSize) {
+        return false;
+    }
 }
