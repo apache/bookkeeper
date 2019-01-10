@@ -380,8 +380,9 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
                     } else if (covered[nodeIndex] != BKException.Code.NoSuchEntryException
                             && covered[nodeIndex] != BKException.Code.NoSuchLedgerExistsException) {
                         nodesNotCovered++;
-                    } else if (covered[nodeIndex] == BKException.Code.UNINITIALIZED) {
-                        nodesUninitialized++;
+                        if (covered[nodeIndex] == BKException.Code.UNINITIALIZED) {
+                            nodesUninitialized++;
+                        }
                     }
                 }
                 // if we haven't seen any OK responses and there are still nodes not heard from,
