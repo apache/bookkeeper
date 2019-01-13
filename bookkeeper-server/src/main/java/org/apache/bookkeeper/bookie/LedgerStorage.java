@@ -23,6 +23,8 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,7 +55,8 @@ public interface LedgerStorage {
                     StateManager stateManager,
                     CheckpointSource checkpointSource,
                     Checkpointer checkpointer,
-                    StatsLogger statsLogger)
+                    StatsLogger statsLogger,
+                    ByteBufAllocator allocator)
             throws IOException;
 
     /**

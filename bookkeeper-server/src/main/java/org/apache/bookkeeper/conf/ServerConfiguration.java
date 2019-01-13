@@ -807,6 +807,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         .orderInGroup(113)
         .build();
 
+    protected static final String JOURNAL_QUEUE_SIZE = "journalQueueSize";
+    protected static final ConfigKey JOURNAL_QUEUE_SIZE_KEY = ConfigKey.builder(JOURNAL_QUEUE_SIZE)
+            .type(Type.INT)
+            .description("The size of journal queue")
+            .defaultValue(10_000)
+            .group(GROUP_JOURNAL)
+            .orderInGroup(114)
+            .build();
+
     //
     // Entry Logger Settings
     //
@@ -2154,6 +2163,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setJournalFormatVersionToWrite(int version) {
         JOURNAL_FORMAT_VERSION_TO_WRITE_KEY.set(this, version);
         return this;
+    }
+
+    /**
+     * Set the size of the journal queue.
+     *
+     * @param journalQueueSize
+     *            the max size of journal queue
+     * @return server configuration.
+     */
+    public ServerConfiguration setJournalQueueSize(int journalQueueSize) {
+        JOURNAL_QUEUE_SIZE_KEY.set(this, journalQueueSize);
+        return this;
+    }
+
+    /**
+     * Get size of journal queue.
+     *
+     * @return the max size of journal queue.
+     */
+    public int getJournalQueueSize() {
+        return JOURNAL_QUEUE_SIZE_KEY.getInt(this);
     }
 
     /**

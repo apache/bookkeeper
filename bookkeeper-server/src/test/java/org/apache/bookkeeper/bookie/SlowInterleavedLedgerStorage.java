@@ -22,6 +22,9 @@ package org.apache.bookkeeper.bookie;
  */
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.io.IOException;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -48,7 +51,7 @@ public class SlowInterleavedLedgerStorage extends InterleavedLedgerStorage {
 
         public SlowEntryLogger(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager, EntryLogListener listener,
                 StatsLogger statsLogger) throws IOException {
-            super(conf, ledgerDirsManager, listener, statsLogger);
+            super(conf, ledgerDirsManager, listener, statsLogger, UnpooledByteBufAllocator.DEFAULT);
         }
 
         public SlowEntryLogger setAddDelay(long delay) {
@@ -110,10 +113,11 @@ public class SlowInterleavedLedgerStorage extends InterleavedLedgerStorage {
                            StateManager stateManager,
                            CheckpointSource checkpointSource,
                            Checkpointer checkpointer,
-                           StatsLogger statsLogger)
+                           StatsLogger statsLogger,
+                           ByteBufAllocator allocator)
             throws IOException {
         super.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
-                stateManager, checkpointSource, checkpointer, statsLogger);
+                stateManager, checkpointSource, checkpointer, statsLogger, allocator);
         // do not want to add these to config class, reading throw "raw" interface
         long getDelay = conf.getLong(PROP_SLOW_STORAGE_GET_DELAY, 0);
         long addDelay = conf.getLong(PROP_SLOW_STORAGE_ADD_DELAY, 0);

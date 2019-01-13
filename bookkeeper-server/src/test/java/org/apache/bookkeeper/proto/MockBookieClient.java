@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -109,7 +110,8 @@ public class MockBookieClient implements BookieClient {
     }
 
     public void seedEntries(BookieSocketAddress bookie, long ledgerId, long entryId, long lac) throws Exception {
-        DigestManager digestManager = DigestManager.instantiate(ledgerId, new byte[0], DigestType.CRC32C);
+        DigestManager digestManager = DigestManager.instantiate(ledgerId, new byte[0], DigestType.CRC32C,
+                UnpooledByteBufAllocator.DEFAULT, false);
         ByteBuf entry = ByteBufList.coalesce(digestManager.computeDigestAndPackageForSending(
                                                      entryId, lac, 0, Unpooled.buffer(10)));
 

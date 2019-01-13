@@ -26,6 +26,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -273,7 +275,8 @@ public class TestSyncThread {
             StateManager stateManager,
             CheckpointSource checkpointSource,
             Checkpointer checkpointer,
-            StatsLogger statsLogger)
+            StatsLogger statsLogger,
+            ByteBufAllocator allocator)
                 throws IOException {
         }
 

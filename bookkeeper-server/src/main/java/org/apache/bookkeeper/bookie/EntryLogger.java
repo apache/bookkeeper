@@ -88,9 +88,9 @@ public class EntryLogger {
         private final File logFile;
         private long ledgerIdAssigned = UNASSIGNED_LEDGERID;
 
-        public BufferedLogChannel(FileChannel fc, int writeCapacity, int readCapacity, long logId, File logFile,
-                long unpersistedBytesBound) throws IOException {
-            super(fc, writeCapacity, readCapacity, unpersistedBytesBound);
+        public BufferedLogChannel(ByteBufAllocator allocator, FileChannel fc, int writeCapacity, int readCapacity,
+                long logId, File logFile, long unpersistedBytesBound) throws IOException {
+            super(allocator, fc, writeCapacity, readCapacity, unpersistedBytesBound);
             this.logId = logId;
             this.entryLogMetadata = new EntryLogMetadata(logId);
             this.logFile = logFile;
@@ -283,6 +283,8 @@ public class EntryLogger {
 
     private final int maxSaneEntrySize;
 
+    private final ByteBufAllocator allocator;
+
     final ServerConfiguration conf;
     /**
      * Scan entries in a entry log file.
@@ -332,15 +334,16 @@ public class EntryLogger {
      */
     public EntryLogger(ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager) throws IOException {
-        this(conf, ledgerDirsManager, null, NullStatsLogger.INSTANCE);
+        this(conf, ledgerDirsManager, null, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
     }
 
     public EntryLogger(ServerConfiguration conf,
-            LedgerDirsManager ledgerDirsManager, EntryLogListener listener, StatsLogger statsLogger)
-                    throws IOException {
+            LedgerDirsManager ledgerDirsManager, EntryLogListener listener, StatsLogger statsLogger,
+            ByteBufAllocator allocator) throws IOException {
         //We reserve 500 bytes as overhead for the protocol.  This is not 100% accurate
         // but the protocol varies so an exact value is difficult to determine
         this.maxSaneEntrySize = conf.getNettyMaxFrameSizeBytes() - 500;
+        this.allocator = allocator;
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
         entryLogPerLedgerEnabled = conf.isEntryLogPerLedgerEnabled();
@@ -371,7 +374,7 @@ public class EntryLogger {
         }
         this.recentlyCreatedEntryLogsStatus = new RecentEntryLogsStatus(logId + 1);
         this.entryLoggerAllocator = new EntryLoggerAllocator(conf, ledgerDirsManager, recentlyCreatedEntryLogsStatus,
-                logId);
+                logId, allocator);
         if (entryLogPerLedgerEnabled) {
             this.entryLogManager = new EntryLogManagerForEntryLogPerLedger(conf, ledgerDirsManager,
                     entryLoggerAllocator, listeners, recentlyCreatedEntryLogsStatus, statsLogger);
@@ -696,6 +699,10 @@ public class EntryLogger {
     }
 
 
+    static long posForOffset(long location) {
+        return location & 0xffffffffL;
+    }
+
 
     /**
      * Exception type for representing lookup errors.  Useful for disambiguating different error
@@ -778,7 +785,7 @@ public class EntryLogger {
             throws EntryLookupException, IOException {
         ByteBuf sizeBuff = sizeBuffer.get();
         sizeBuff.clear();
-        pos -= 4; // we want to get the ledgerId and length to check
+        pos -= 4; // we want to get the entrySize as well as the ledgerId and entryId
         BufferedReadChannel fc;
         try {
             fc = getChannelForLogId(entryLogId);
@@ -817,14 +824,14 @@ public class EntryLogger {
 
     void checkEntry(long ledgerId, long entryId, long location) throws EntryLookupException, IOException {
         long entryLogId = logIdForOffset(location);
-        long pos = location & 0xffffffffL;
+        long pos = posForOffset(location);
         getFCForEntryInternal(ledgerId, entryId, entryLogId, pos);
     }
 
     public ByteBuf internalReadEntry(long ledgerId, long entryId, long location)
             throws IOException, Bookie.NoEntryException {
         long entryLogId = logIdForOffset(location);
-        long pos = location & 0xffffffffL;
+        long pos = posForOffset(location);
 
         final EntryLogEntry entry;
         try {
@@ -836,7 +843,7 @@ public class EntryLogger {
             throw new IOException(e.toString());
         }
 
-        ByteBuf data = PooledByteBufAllocator.DEFAULT.directBuffer(entry.entrySize, entry.entrySize);
+        ByteBuf data = allocator.buffer(entry.entrySize, entry.entrySize);
         int rc = readFromLogChannel(entryLogId, entry.fc, data, pos);
         if (rc != entry.entrySize) {
             // Note that throwing NoEntryException here instead of IOException is not
@@ -868,7 +875,7 @@ public class EntryLogger {
         BufferedReadChannel bc = getChannelForLogId(entryLogId);
 
         // Allocate buffer to read (version, ledgersMapOffset, ledgerCount)
-        ByteBuf headers = PooledByteBufAllocator.DEFAULT.directBuffer(LOGFILE_HEADER_SIZE);
+        ByteBuf headers = allocator.directBuffer(LOGFILE_HEADER_SIZE);
         try {
             bc.read(headers, 0);
 
@@ -984,7 +991,7 @@ public class EntryLogger {
         long pos = LOGFILE_HEADER_SIZE;
 
         // Start with a reasonably sized buffer size
-        ByteBuf data = PooledByteBufAllocator.DEFAULT.directBuffer(1024 * 1024);
+        ByteBuf data = allocator.directBuffer(1024 * 1024);
 
         try {
 
@@ -1066,7 +1073,7 @@ public class EntryLogger {
         EntryLogMetadata meta = new EntryLogMetadata(entryLogId);
 
         final int maxMapSize = LEDGERS_MAP_HEADER_SIZE + LEDGERS_MAP_ENTRY_SIZE * LEDGERS_MAP_MAX_BATCH_SIZE;
-        ByteBuf ledgersMap = ByteBufAllocator.DEFAULT.directBuffer(maxMapSize);
+        ByteBuf ledgersMap = allocator.directBuffer(maxMapSize);
 
         try {
             while (offset < bc.size()) {

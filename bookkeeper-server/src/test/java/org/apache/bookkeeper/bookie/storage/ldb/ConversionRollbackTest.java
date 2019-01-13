@@ -25,6 +25,7 @@ import com.google.common.collect.Sets;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.File;
 import java.io.IOException;
@@ -94,7 +95,7 @@ public class ConversionRollbackTest {
 
         DbLedgerStorage dbStorage = new DbLedgerStorage();
         dbStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, null, checkpointSource, checkpointer,
-                NullStatsLogger.INSTANCE);
+                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
 
         // Insert some ledger & entries in the dbStorage
         for (long ledgerId = 0; ledgerId < 5; ledgerId++) {
@@ -124,7 +125,7 @@ public class ConversionRollbackTest {
         // Verify that interleaved storage index has the same entries
         InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
         interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
-                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
 
         Set<Long> ledgers = Sets.newTreeSet(interleavedStorage.getActiveLedgersInRange(0, Long.MAX_VALUE));
         Assert.assertEquals(Sets.newTreeSet(Lists.newArrayList(0L, 1L, 2L, 3L, 4L)), ledgers);

@@ -34,6 +34,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -153,7 +155,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         // simulating ZooKeeper exception by assigning a closed zk client to bk
         BookieServer bkServer = new BookieServer(conf) {
-            protected Bookie newBookie(ServerConfiguration conf)
+            @Override
+            protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator)
                     throws IOException, KeeperException, InterruptedException,
                     BookieException {
                 Bookie bookie = new Bookie(conf);
@@ -708,7 +711,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        protected Bookie newBookie(ServerConfiguration conf)
+        protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator)
                 throws IOException, KeeperException, InterruptedException, BookieException {
             return new MockBookieWithNoopShutdown(conf, NullStatsLogger.INSTANCE);
         }
@@ -717,7 +720,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     class MockBookieWithNoopShutdown extends Bookie {
         public MockBookieWithNoopShutdown(ServerConfiguration conf, StatsLogger statsLogger)
                 throws IOException, KeeperException, InterruptedException, BookieException {
-            super(conf, statsLogger);
+            super(conf, statsLogger, UnpooledByteBufAllocator.DEFAULT);
         }
 
         // making Bookie Shutdown no-op. Ideally for this testcase we need to

@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBufAllocator;
+
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -37,6 +39,7 @@ interface ClientContext {
     BookieWatcher getBookieWatcher();
     EnsemblePlacementPolicy getPlacementPolicy();
     BookieClient getBookieClient();
+    ByteBufAllocator getByteBufAllocator();
     OrderedExecutor getMainWorkerPool();
     OrderedScheduler getScheduler();
     BookKeeperClientStats getClientStats();
