@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -82,6 +81,7 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -994,15 +994,25 @@ public class BookKeeperAdmin implements AutoCloseable {
         // allocate bookies
         for (Integer bookieIndex : bookieIndexesToRereplicate) {
             BookieSocketAddress oldBookie = ensemble.get(bookieIndex);
-            BookieSocketAddress newBookie =
+            Pair<BookieSocketAddress, Boolean> replaceBookieResponse =
                     bkc.getPlacementPolicy().replaceBookie(
                             lh.getLedgerMetadata().getEnsembleSize(),
                             lh.getLedgerMetadata().getWriteQuorumSize(),
                             lh.getLedgerMetadata().getAckQuorumSize(),
                             lh.getLedgerMetadata().getCustomMetadata(),
-                            new HashSet<>(ensemble),
+                            ensemble,
                             oldBookie,
                             bookiesToExclude);
+            BookieSocketAddress newBookie = replaceBookieResponse.getLeft();
+            boolean isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getRight();
+            if (!isEnsembleAdheringToPlacementPolicy) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(
+                            "replaceBookie for bookie: {} in ensemble: {} "
+                                    + "is not adhering to placement policy and chose {}",
+                            oldBookie, ensemble, newBookie);
+                }
+            }
             targetBookieAddresses.put(bookieIndex, newBookie);
             bookiesToExclude.add(newBookie);
         }

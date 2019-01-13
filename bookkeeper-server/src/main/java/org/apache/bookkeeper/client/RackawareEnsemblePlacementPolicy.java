@@ -18,19 +18,16 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.util.HashedWheelTimer;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
-import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble;
-import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate;
-import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * A placement policy implementation use rack information for placing ensembles.
@@ -95,8 +92,8 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public List<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
+    public Pair<List<BookieSocketAddress>, Boolean> newEnsemble(int ensembleSize, int writeQuorumSize,
+            int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
         try {
             return super.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, excludeBookies);
@@ -110,8 +107,8 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, Set<BookieSocketAddress> currentEnsemble,
+    public Pair<BookieSocketAddress, Boolean> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            Map<String, byte[]> customMetadata, List<BookieSocketAddress> currentEnsemble,
             BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
        try {
@@ -146,7 +143,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public List<BookieSocketAddress> newEnsemble(int ensembleSize,
+    public Pair<List<BookieSocketAddress>, Boolean> newEnsemble(int ensembleSize,
                                                  int writeQuorumSize,
                                                  int ackQuorumSize,
                                                  Set<BookieSocketAddress> excludeBookies,

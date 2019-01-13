@@ -25,8 +25,8 @@ import java.util.StringTokenizer;
 
 import org.apache.bookkeeper.util.Shell.ShellCommandExecutor;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class implements the {@link DNSToSwitchMapping} interface using a
@@ -129,7 +129,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
     private static final class RawScriptBasedMapping extends AbstractDNSToSwitchMapping {
         private String scriptName;
         private int maxArgs; //max hostnames per call of the script
-        private static final Log LOG = LogFactory.getLog(ScriptBasedMapping.class);
+        private static final Logger LOG = LoggerFactory.getLogger(ScriptBasedMapping.class);
 
         /**
          * Set the configuration and extract the configuration parameters of interest.
@@ -233,7 +233,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
                     s.execute();
                     allOutput.append(s.getOutput()).append(" ");
                 } catch (Exception e) {
-                    LOG.warn("Exception running " + s, e);
+                    LOG.warn("Exception running: {} Exception message: {}", s, e.getMessage());
                     return null;
                 }
                 loopCount++;
