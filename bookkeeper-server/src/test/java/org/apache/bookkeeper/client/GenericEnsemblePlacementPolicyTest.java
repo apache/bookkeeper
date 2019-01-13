@@ -33,6 +33,7 @@ import java.util.Set;
 
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,8 +70,8 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
     public static final class CustomEnsemblePlacementPolicy extends DefaultEnsemblePlacementPolicy {
 
         @Override
-        public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize,
-            int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> currentEnsemble,
+        public Pair<BookieSocketAddress, Boolean> replaceBookie(int ensembleSize, int writeQuorumSize,
+            int ackQuorumSize, Map<String, byte[]> customMetadata, List<BookieSocketAddress> currentEnsemble,
             BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
             new Exception("replaceBookie " + ensembleSize + "," + customMetadata).printStackTrace();
@@ -81,7 +82,7 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         }
 
         @Override
-        public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int quorumSize,
+        public Pair<List<BookieSocketAddress>, Boolean> newEnsemble(int ensembleSize, int quorumSize,
             int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
             assertNotNull(customMetadata);

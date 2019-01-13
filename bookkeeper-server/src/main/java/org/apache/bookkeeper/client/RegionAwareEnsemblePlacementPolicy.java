@@ -225,8 +225,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
 
     @Override
-    public List<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
+    public Pair<List<BookieSocketAddress>, Boolean> newEnsemble(int ensembleSize, int writeQuorumSize,
+            int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
 
         int effectiveMinRegionsForDurability = disableDurabilityFeature.isAvailable() ? 1 : minRegionsForDurability;
@@ -279,7 +279,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 for (BookieNode bn : bns) {
                     addrs.add(bn.getAddr());
                 }
-                return addrs;
+                return Pair.of(addrs, isEnsembleAdheringToPlacementPolicy(addrs, writeQuorumSize, ackQuorumSize));
             }
 
             // Single region, fall back to RackAwareEnsemblePlacement
@@ -347,7 +347,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                             try {
                                 List<BookieSocketAddress> allocated = policyWithinRegion.newEnsemble(newEnsembleSize,
                                         newWriteQuorumSize, newWriteQuorumSize, excludeBookies, tempEnsemble,
-                                        tempEnsemble);
+                                        tempEnsemble).getLeft();
                                 ensemble = tempEnsemble;
                                 remainingEnsemble -= addToEnsembleSize;
                                 remainingWriteQuorum -= addToWriteQuorum;
@@ -407,15 +407,17 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 throw new BKException.BKNotEnoughBookiesException();
             }
             LOG.info("Bookies allocated successfully {}", ensemble);
-            return ensemble.toList();
+            List<BookieSocketAddress> ensembleList = ensemble.toList();
+            return Pair.of(ensembleList,
+                    isEnsembleAdheringToPlacementPolicy(ensembleList, writeQuorumSize, ackQuorumSize));
         } finally {
             rwLock.readLock().unlock();
         }
     }
 
     @Override
-    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, Set<BookieSocketAddress> currentEnsemble,
+    public Pair<BookieSocketAddress, Boolean> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            Map<String, byte[]> customMetadata, List<BookieSocketAddress> currentEnsemble,
             BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
         rwLock.readLock().lock();
@@ -469,7 +471,19 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Bookie {} is chosen to replace bookie {}.", candidate, bookieNodeToReplace);
             }
-            return candidate.getAddr();
+            BookieSocketAddress candidateAddr = candidate.getAddr();
+            List<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>(currentEnsemble);
+            if (currentEnsemble.isEmpty()) {
+                /*
+                 * in testing code there are test cases which would pass empty
+                 * currentEnsemble
+                 */
+                newEnsemble.add(candidateAddr);
+            } else {
+                newEnsemble.set(currentEnsemble.indexOf(bookieToReplace), candidateAddr);
+            }
+            return Pair.of(candidateAddr,
+                    isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
         } finally {
             rwLock.readLock().unlock();
         }
@@ -549,5 +563,17 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         DistributionSchedule.WriteSet finalList = reorderReadSequence(ensemble, bookiesHealthInfo, writeSet);
         finalList.addMissingIndices(ensemble.size());
         return finalList;
+    }
+
+    @Override
+    public boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList, int writeQuorumSize,
+            int ackQuorumSize) {
+        /**
+         * TODO: have to implement actual logic for this method for
+         * RegionAwareEnsemblePlacementPolicy. For now return true value.
+         *
+         * - https://github.com/apache/bookkeeper/issues/1898
+         */
+        return true;
     }
 }

@@ -28,6 +28,7 @@ import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.Node;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Interface for topology aware ensemble placement policy.
@@ -93,7 +94,7 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
      * @return list of bookies forming the ensemble
      * @throws BKException.BKNotEnoughBookiesException
      */
-    List<BookieSocketAddress> newEnsemble(
+    Pair<List<BookieSocketAddress>, Boolean> newEnsemble(
             int ensembleSize,
             int writeQuorumSize,
             int ackQuorumSize,
