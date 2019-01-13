@@ -145,6 +145,10 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#defaultRackSupplier">defaultRackSupplier</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#failedToResolveNetworkLocationCounter">failedToResolveNetworkLocationCounter</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.net.DNSToSwitchMapping</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#resolver">resolver</a></span></code>&nbsp;</td>
 </tr>
@@ -163,8 +167,9 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#DNSResolverDecorator-org.apache.bookkeeper.net.DNSToSwitchMapping-java.util.function.Supplier-">DNSResolverDecorator</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;resolver,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;defaultRackSupplier)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#DNSResolverDecorator-org.apache.bookkeeper.net.DNSToSwitchMapping-java.util.function.Supplier-org.apache.bookkeeper.stats.Counter-">DNSResolverDecorator</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;resolver,
+                    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;defaultRackSupplier,
+                    <a href="../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&nbsp;failedToResolveNetworkLocationCounter)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -237,10 +242,21 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 <a name="resolver">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>resolver</h4>
 <pre>final&nbsp;org.apache.bookkeeper.net.DNSToSwitchMapping resolver</pre>
+</li>
+</ul>
+<a name="failedToResolveNetworkLocationCounter">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>failedToResolveNetworkLocationCounter</h4>
+<pre><a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">@StatsDoc</a>(<a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#name--">name</a>="FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER",
+          <a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#help--">help</a>="total number of times Resolver failed to resolve rack information of a node")
+final&nbsp;<a href="../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> failedToResolveNetworkLocationCounter</pre>
 </li>
 </ul>
 </li>
@@ -251,14 +267,15 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="DNSResolverDecorator-org.apache.bookkeeper.net.DNSToSwitchMapping-java.util.function.Supplier-">
+<a name="DNSResolverDecorator-org.apache.bookkeeper.net.DNSToSwitchMapping-java.util.function.Supplier-org.apache.bookkeeper.stats.Counter-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>DNSResolverDecorator</h4>
 <pre>DNSResolverDecorator(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;resolver,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;defaultRackSupplier)</pre>
+                     <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;defaultRackSupplier,
+                     <a href="../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&nbsp;failedToResolveNetworkLocationCounter)</pre>
 </li>
 </ul>
 </li>
