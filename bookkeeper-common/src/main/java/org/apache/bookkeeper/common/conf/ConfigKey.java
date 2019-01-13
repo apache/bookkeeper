@@ -116,6 +116,15 @@ public class ConfigKey {
         }
     }
 
+    private Number defaultValueAsNumber(Configuration conf) {
+        Object value = defaultValue(conf);
+        if (value instanceof Number) {
+            return (Number) value;
+        } else {
+            throw new IllegalArgumentException("The default value of key '" + name() + "' is not a NUMBER");
+        }
+    }
+
     private String defaultValueAsString(Configuration conf) {
         Object defaultValue = defaultValue(conf);
         if (null == defaultValue) {
@@ -228,17 +237,20 @@ public class ConfigKey {
      * @param value value of the setting
      */
     public void set(Configuration conf, Object value) {
-        if (!type().validator().validate(name(), value)) {
-            throw new IllegalArgumentException(
-                "Invalid value '" + value + "' to set on setting '" + name() + "': expected type = " + type);
-        }
+        if (null == value) {
+            conf.setProperty(name(), null);
+        } else {
+            if (!type().validator().validate(name(), value)) {
+                throw new IllegalArgumentException(
+                        "Invalid value '" + value + "' to set on setting '" + name() + "': expected type = " + type);
+            }
 
-        if (null != validator() && !validator().validate(name(), value)) {
-            throw new IllegalArgumentException(
-                "Invalid value '" + value + "' to set on setting '" + name() + "': required '" + validator() + "'");
-        }
+            if (null != validator() && !validator().validate(name(), value)) {
+                throw new IllegalArgumentException(
+                        "Invalid value '" + value + "' to set on setting '" + name()
+                                + "': required '" + validator() + "'");
+            }
 
-        if (null != value) {
             if (value instanceof Class) {
                 conf.setProperty(name(), ((Class) value).getName());
             } else {
@@ -255,7 +267,7 @@ public class ConfigKey {
      */
     public long getLong(Configuration conf) {
         checkArgument(type() == Type.LONG, "'" + name() + "' is NOT a LONG numeric setting");
-        return conf.getLong(name(), (Long) defaultValue(conf));
+        return conf.getLong(name(), defaultValueAsNumber(conf).longValue());
     }
 
     /**
@@ -266,7 +278,7 @@ public class ConfigKey {
      */
     public int getInt(Configuration conf) {
         checkArgument(type() == Type.INT, "'" + name() + "' is NOT a INT numeric setting");
-        return conf.getInt(name(), (Integer) defaultValue(conf));
+        return conf.getInt(name(), defaultValueAsNumber(conf).intValue());
     }
 
     /**
@@ -277,7 +289,7 @@ public class ConfigKey {
      */
     public short getShort(Configuration conf) {
         checkArgument(type() == Type.SHORT, "'" + name() + "' is NOT a SHORT numeric setting");
-        return conf.getShort(name(), (Short) defaultValue(conf));
+        return conf.getShort(name(), defaultValueAsNumber(conf).shortValue());
     }
 
     /**
@@ -299,7 +311,7 @@ public class ConfigKey {
      */
     public double getDouble(Configuration conf) {
         checkArgument(type() == Type.DOUBLE, "'" + name() + "' is NOT a DOUBLE numeric setting");
-        return conf.getDouble(name(), (Double) defaultValue(conf));
+        return conf.getDouble(name(), defaultValueAsNumber(conf).doubleValue());
     }
 
     /**
@@ -310,7 +322,7 @@ public class ConfigKey {
      */
     public float getFloat(Configuration conf) {
         checkArgument(type() == Type.FLOAT, "'" + name() + "' is NOT a FLOAT numeric setting");
-        return conf.getFloat(name(), (Float) defaultValue(conf));
+        return conf.getFloat(name(), defaultValueAsNumber(conf).floatValue());
     }
 
     /**

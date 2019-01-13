@@ -81,7 +81,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
     protected static final ConfigKey METADATA_SERVICE_URI_KEY = ConfigKey.builder(METADATA_SERVICE_URI)
         .type(Type.STRING)
-        .description("metadata service uri that bookkeeper is used for loading corresponding metadata driver"
+        .description("metadata service uri that bookkeeper uses for loading corresponding metadata driver"
             + " and resolving its metadata service location")
         .required(true)
         .group(GROUP_METADATA_SERVICE)
@@ -218,7 +218,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         .type(Type.DOUBLE)
         .description("The Zookeeper request limit")
         .documentation("It is only enabled when setting a positive value. Default value is 0.")
-        .defaultValue(0)
+        .defaultValue(0.0f)
         .group(GROUP_ZK)
         .orderInGroup(3)
         .build();
@@ -625,7 +625,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @throws ConfigurationException if the metadata service uri is invalid.
      */
     public String getMetadataServiceUri() throws ConfigurationException {
-        String serviceUri = METADATA_SERVICE_URI_KEY.getString(this);
+        String serviceUri = METADATA_SERVICE_URI_KEY.getStringWithoutDefault(this);
         if (null == serviceUri) {
             // no service uri is defined, fallback to old settings
             String ledgerManagerType;

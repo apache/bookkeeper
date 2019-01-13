@@ -84,6 +84,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
     public static final int DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS = 60;
     private static final ConfigKey PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS_KEY =
         ConfigKey.builder(PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS)
+            .type(Type.INT)
             .description("latency stats rollover interval, in seconds")
             .defaultValue(DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS)
             .orderInGroup(2)

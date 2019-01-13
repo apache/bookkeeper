@@ -1340,7 +1340,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final ConfigKey LOCAL_SCRUB_RATE_LIMIT_KEY = ConfigKey.builder(LOCAL_SCRUB_RATE_LIMIT)
         .type(Type.DOUBLE)
         .description("local scrub rate limit (entries/second)")
-        .defaultValue(60)
+        .defaultValue(60.0f)
         .group(GROUP_SCRUB)
         .orderInGroup(1)
         .build();
