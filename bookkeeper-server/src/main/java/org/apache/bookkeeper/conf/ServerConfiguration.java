@@ -921,7 +921,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
                 + " the entrylog file after the last addEntry call for that ledger, if explicit writeclose"
                 + " for that ledger is not received")
             .defaultValue(300)
-            .validator(RangeValidator.atLeast(0))
             .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
             .orderInGroup(7)
             .build();
@@ -4560,7 +4559,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setEntryLogPerLedgerCounterLimitsMultFactor(
             int entryLogPerLedgerCounterLimitsMultFactor) {
-        ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS_KEY.set(this, entryLogPerLedgerCounterLimitsMultFactor);
+        ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR_KEY.set(this, entryLogPerLedgerCounterLimitsMultFactor);
         return this;
     }
 
