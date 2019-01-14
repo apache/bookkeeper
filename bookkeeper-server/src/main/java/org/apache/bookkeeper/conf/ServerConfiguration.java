@@ -4085,12 +4085,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the truststore type for client. Default is JKS.
+     * Get the keystore type for client. Default is JKS.
      *
      * @return
      */
-    public String getTLSTrustStoreType() {
-        return TLS_TRUSTSTORE_TYPE_KEY.getString(this);
+    public String getTLSKeyStoreType() {
+        return TLS_KEYSTORE_TYPE_KEY.getString(this);
     }
 
     /**
@@ -4099,7 +4099,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public ServerConfiguration setTLSKeyStoreType(String arg) {
-        TLS_TRUSTSTORE_TYPE_KEY.set(this, arg);
+        TLS_KEYSTORE_TYPE_KEY.set(this, arg);
         return this;
     }
 
@@ -4142,12 +4142,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the keystore type for client. Default is JKS.
+     * Get the truststore type for client. Default is JKS.
      *
      * @return
      */
-    public String getTLSKeyStoreType() {
-        return TLS_KEYSTORE_TYPE_KEY.getString(this);
+    public String getTLSTrustStoreType() {
+        return TLS_TRUSTSTORE_TYPE_KEY.getString(this);
     }
 
     /**
