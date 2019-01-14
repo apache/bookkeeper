@@ -50,6 +50,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.CheckAllLedgersFormat;
 import org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat;
 import org.apache.bookkeeper.proto.DataFormats.LockDataFormat;
+import org.apache.bookkeeper.proto.DataFormats.MetadataCheckFormat;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationEnableCb;
 import org.apache.bookkeeper.replication.ReplicationException;
@@ -118,6 +119,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private final AbstractConfiguration conf;
     private final String lostBookieRecoveryDelayZnode;
     private final String checkAllLedgersCtimeZnode;
+    private final String metadataCheckCtimeZnode;
     private final ZooKeeper zkc;
     private final SubTreeCache subTreeCache;
 
@@ -131,6 +133,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         urLockPath = basePath + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK;
         lostBookieRecoveryDelayZnode = basePath + '/' + BookKeeperConstants.LOSTBOOKIERECOVERYDELAY_NODE;
         checkAllLedgersCtimeZnode = basePath + '/' + BookKeeperConstants.CHECK_ALL_LEDGERS_CTIME;
+        metadataCheckCtimeZnode = basePath + '/' + BookKeeperConstants.METADATA_CHECK_CTIME;
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
         this.zkc = zkc;
         this.subTreeCache = new SubTreeCache(new SubTreeCache.TreeProvider() {
@@ -923,6 +926,51 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                     : -1;
         } catch (KeeperException.NoNodeException ne) {
             LOG.warn("checkAllLedgersCtimeZnode is not yet available");
+            return -1;
+        } catch (KeeperException ke) {
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        } catch (InvalidProtocolBufferException ipbe) {
+            throw new ReplicationException.UnavailableException("Error while parsing ZK protobuf binary data", ipbe);
+        }
+    }
+
+    @Override
+    public void setMetadataCheckCTime(long metadataCheckCTime) throws UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("setMetadataCheckCTime");
+        }
+        try {
+            List<ACL> zkAcls = ZkUtils.getACLs(conf);
+            MetadataCheckFormat.Builder builder = MetadataCheckFormat.newBuilder();
+            builder.setMetadataCheckCTime(metadataCheckCTime);
+            byte[] metadataCheckFormatByteArray = builder.build().toByteArray();
+            if (zkc.exists(metadataCheckCtimeZnode, false) != null) {
+                zkc.setData(metadataCheckCtimeZnode, metadataCheckFormatByteArray, -1);
+            } else {
+                zkc.create(metadataCheckCtimeZnode, metadataCheckFormatByteArray, zkAcls, CreateMode.PERSISTENT);
+            }
+        } catch (KeeperException ke) {
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public long getMetadataCheckCTime() throws UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("getMetadataCheckCTime");
+        }
+        try {
+            byte[] data = zkc.getData(metadataCheckCtimeZnode, false, null);
+            MetadataCheckFormat metadataCheckFormat = MetadataCheckFormat.parseFrom(data);
+            return metadataCheckFormat.hasMetadataCheckCTime() ? metadataCheckFormat.getMetadataCheckCTime() : -1;
+        } catch (KeeperException.NoNodeException ne) {
+            LOG.warn("metadataCheckCtimeZnode is not yet available");
             return -1;
         } catch (KeeperException ke) {
             throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);

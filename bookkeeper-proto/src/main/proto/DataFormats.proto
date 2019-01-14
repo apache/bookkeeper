@@ -102,3 +102,10 @@ message AuditorVoteFormat {
 message CheckAllLedgersFormat {
     optional int64 checkAllLedgersCTime = 1;
 }
+
+/**
+ * information of MetadataCheck execution
+ */
+message MetadataCheckFormat {
+    optional int64 metadataCheckCTime = 1;
+}

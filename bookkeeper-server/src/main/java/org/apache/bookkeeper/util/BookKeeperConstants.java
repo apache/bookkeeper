@@ -43,6 +43,7 @@ public class BookKeeperConstants {
     public static final String DISABLE_NODE = "disable";
     public static final String LOSTBOOKIERECOVERYDELAY_NODE = "lostBookieRecoveryDelay";
     public static final String CHECK_ALL_LEDGERS_CTIME = "checkallledgersctime";
+    public static final String METADATA_CHECK_CTIME = "metadatacheckctime";
     public static final String DEFAULT_ZK_LEDGERS_ROOT_PATH = "/ledgers";
     public static final String LAYOUT_ZNODE = "LAYOUT";
     public static final String INSTANCEID = "INSTANCEID";
