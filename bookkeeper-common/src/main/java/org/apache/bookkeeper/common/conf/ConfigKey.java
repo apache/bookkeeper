@@ -406,7 +406,12 @@ public class ConfigKey {
     public String[] getArray(Configuration conf) {
         String[] retArray = getArrayWithoutDefault(conf);
         if (null == retArray || retArray.length == 0) {
-            return (String[]) defaultValue(conf);
+            Object dv = defaultValue(conf);
+            if (dv instanceof String[]) {
+                return (String[]) dv;
+            } else {
+                return new String[] { defaultValueAsString(conf) };
+            }
         } else {
             return retArray;
         }

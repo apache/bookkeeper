@@ -1032,7 +1032,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
                 + " `diskUsageThreshold`. Because compaction, journal replays can still write data to disks"
                 + " when a bookie is readonly.\n\n"
                 + "Default value is 1.2 * `" + ENTRY_LOG_SIZE_LIMIT + "`.")
-            .validator(RangeValidator.atLeast(0L))
             .defaultValueSupplier(conf -> 1.2 * ENTRY_LOG_SIZE_LIMIT_KEY.getLong(conf))
             .group(GROUP_LEDGER_STORAGE)
             .orderInGroup(5)
@@ -1575,11 +1574,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
     protected static final ConfigKey OPEN_LEDGER_REREPLICATION_GRACE_PERIOD_KEY =
         ConfigKey.builder(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD)
-            .type(Type.INT)
+            .type(Type.LONG)
             .description("The grace period, in seconds, that the replication worker waits"
                     + " before fencing and replicating a ledger fragment that's still being"
                     + " written to upon bookie failure.")
-            .defaultValue(30)
+            .defaultValue(30L)
             .group(GROUP_REPLICATION_WORKER)
             .orderInGroup(100)
             .build();
@@ -1598,12 +1597,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD = "lockReleaseOfFailedLedgerGracePeriod";
     protected static final ConfigKey LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD_KEY =
         ConfigKey.builder(LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD)
-            .type(Type.INT)
+            .type(Type.LONG)
             .description("The grace period, in milliseconds, if the replication worker fails to replicate"
                 + " a underreplicatedledger for more than `10` times, then instead of releasing the lock"
                 + " immediately after failed attempt, it will hold under replicated ledger lock for this"
                 + " grace period and then it will release the lock.")
-            .defaultValue(60000)
+            .defaultValue(60000L)
             .group(GROUP_REPLICATION_WORKER)
             .orderInGroup(102)
             .build();
@@ -1615,14 +1614,14 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected static final ConfigKey AUDITOR_PERIODIC_CHECK_INTERVAL_KEY =
         ConfigKey.builder(AUDITOR_PERIODIC_CHECK_INTERVAL)
-            .type(Type.INT)
+            .type(Type.LONG)
             .description("The interval between auditor bookie checks, in seconds")
             .documentation("The auditor bookie check, checks ledger metadata to see which bookies should"
                 + " contain entries for each ledger. If a bookie which should contain entries is "
                 + " unavailable, then the ledger containing that entry is marked for recovery."
                 + " Setting this to 0 disabled the periodic check. Bookie checks will still run when"
                 + " a bookie fails")
-            .defaultValue(604800)
+            .defaultValue(604800L)
             .group(GROUP_AUDITOR)
             .orderInGroup(100)
             .build();
@@ -1630,11 +1629,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
     protected static final ConfigKey AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL_KEY =
         ConfigKey.builder(AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL)
-            .type(Type.INT)
+            .type(Type.LONG)
             .description("Interval at which the auditor will do a check of all ledgers in the cluster, in seconds")
             .documentation("To disable the periodic check completely, set this to 0. Note that periodic checking"
                     + " will put extra load on the cluster, so it should not be run more frequently than once a day.")
-            .defaultValue(86400)
+            .defaultValue(86400L)
             .group(GROUP_AUDITOR)
             .orderInGroup(101)
             .build();
@@ -2118,7 +2117,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMaxBackupJournals(int maxBackupJournals) {
-        MAX_JOURNAL_SIZE_KEY.set(this, maxBackupJournals);
+        MAX_BACKUP_JOURNALS_KEY.set(this, maxBackupJournals);
         return this;
     }
 
@@ -2904,7 +2903,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @param waitTime time to wait before replicating ledger fragment
      */
-    public void setOpenLedgerRereplicationGracePeriod(String waitTime) {
+    public void setOpenLedgerRereplicationGracePeriod(long waitTime) {
         OPEN_LEDGER_REREPLICATION_GRACE_PERIOD_KEY.set(this, waitTime);
     }
 
@@ -3217,7 +3216,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration object.
      */
     public ServerConfiguration setSkipListSizeLimit(int size) {
-        SKIP_LIST_SIZE_LIMIT_KEY.set(this, size);
+        SKIP_LIST_SIZE_LIMIT_KEY.set(this, (long) size);
         return this;
     }
 

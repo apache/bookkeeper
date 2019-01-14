@@ -2211,12 +2211,12 @@ public class BookieShell implements Tool {
                         for (File dir : ledgerDirectories) {
                             newCookie.writeToDirectory(dir);
                         }
-                        LOG.info("Updated cookie file present in ledgerDirectories {}", ledgerDirectories);
+                        LOG.info("Updated cookie file present in ledgerDirectories {}", (Object[]) ledgerDirectories);
                         if (ledgerDirectories != indexDirectories) {
                             for (File dir : indexDirectories) {
                                 newCookie.writeToDirectory(dir);
                             }
-                            LOG.info("Updated cookie file present in indexDirectories {}", indexDirectories);
+                            LOG.info("Updated cookie file present in indexDirectories {}", (Object[]) indexDirectories);
                         }
                     }
                     // writes newcookie to zookeeper

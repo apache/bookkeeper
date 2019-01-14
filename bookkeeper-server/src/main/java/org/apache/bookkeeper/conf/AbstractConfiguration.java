@@ -108,7 +108,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         .description("Ledger Manager Class")
         .documentation("What kind of ledger manager is used to manage how ledgers are stored, managed and"
             + " garbage collected. Try to read 'BookKeeper Internals' for detail info.")
-        .defaultValue(HierarchicalLedgerManagerFactory.class)
         .group(GROUP_METADATA_SERVICE)
         .orderInGroup(2)
         .deprecated(true)
@@ -1169,7 +1168,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return
      */
     public T setTLSCertificatePath(String arg) {
-        TLS_CLIENT_AUTHENTICATION_KEY.set(this, arg);
+        TLS_CERTIFICATE_PATH_KEY.set(this, arg);
         return getThis();
     }
 

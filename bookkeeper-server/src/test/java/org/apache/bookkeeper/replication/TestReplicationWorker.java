@@ -404,7 +404,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("New Bookie addr : {}", newBkAddr);
 
         // set to 3s instead of default 30s
-        baseConf.setOpenLedgerRereplicationGracePeriod("3000");
+        baseConf.setOpenLedgerRereplicationGracePeriod(3000L);
         ReplicationWorker rw = new ReplicationWorker(baseConf);
 
         @Cleanup MetadataClientDriver clientDriver = MetadataDrivers.getClientDriver(
