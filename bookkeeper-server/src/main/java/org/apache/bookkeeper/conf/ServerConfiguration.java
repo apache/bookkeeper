@@ -1641,11 +1641,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUDITOR_LEDGER_VERIFICATION_PERCENTAGE = "auditorLedgerVerificationPercentage";
     protected static final ConfigKey AUDITOR_LEDGER_VERIFICATION_PERCENTAGE_KEY =
         ConfigKey.builder(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE)
-            .type(Type.INT)
+            .type(Type.LONG)
             .description("The percentage of a ledger (fragment)'s entries will be verified before claiming this"
                 + " fragment as missing fragment")
             .documentation("Default is 0, which only verify the first and last entries of a given fragment")
-            .defaultValue(0)
+            .defaultValue(0L)
             .group(GROUP_AUDITOR)
             .orderInGroup(102)
             .build();
