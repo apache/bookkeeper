@@ -183,11 +183,8 @@ public class LedgerMetadataSerDe {
 
             builder.setCtime(metadata.getCtime());
             builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
-            if (metadata.getPassword() == null || metadata.getPassword().length == 0) {
-                builder.setPassword(ByteString.EMPTY);
-            } else {
-                builder.setPassword(ByteString.copyFrom(metadata.getPassword()));
-            }
+
+            serializePassword(metadata.getPassword(), builder);
 
             Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
             if (customMetadata.size() > 0) {
@@ -252,11 +249,7 @@ public class LedgerMetadataSerDe {
                 }
 
                 builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
-                if (metadata.getPassword() == null || metadata.getPassword().length == 0) {
-                    builder.setPassword(ByteString.EMPTY);
-                } else {
-                    builder.setPassword(ByteString.copyFrom(metadata.getPassword()));
-                }
+                serializePassword(metadata.getPassword(), builder);
 
                 Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
                 if (customMetadata.size() > 0) {
@@ -317,6 +310,14 @@ public class LedgerMetadataSerDe {
                 throw new RuntimeException("UTF_8 should be supported everywhere");
             }
             return os.toByteArray();
+        }
+    }
+
+    private static void serializePassword(byte[] password, LedgerMetadataFormat.Builder builder) {
+        if (password == null || password.length == 0) {
+            builder.setPassword(ByteString.EMPTY);
+        } else {
+            builder.setPassword(ByteString.copyFrom(password));
         }
     }
 
