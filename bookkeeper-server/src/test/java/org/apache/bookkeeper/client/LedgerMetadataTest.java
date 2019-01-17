@@ -30,9 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
-import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.junit.Test;
 
 /**
@@ -66,36 +64,6 @@ public class LedgerMetadataTest {
         assertEquals(1, metadata.getAllEnsembles().size());
         assertEquals(ensemble, metadata.getAllEnsembles().get(0L));
         assertEquals(ensemble, metadata.getEnsembleAt(99L));
-    }
-
-    @Test
-    public void testStoreSystemtimeAsLedgerCtimeEnabled()
-            throws Exception {
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234));
-        LedgerMetadata lm = LedgerMetadataBuilder.create()
-            .newEnsembleEntry(0L, ensemble)
-            .withCreationTime(System.currentTimeMillis())
-            .storingCreationTime(true)
-            .build();
-        LedgerMetadataFormat format = new LedgerMetadataSerDe().buildProtoFormat(lm);
-        assertTrue(format.hasCtime());
-    }
-
-    @Test
-    public void testStoreSystemtimeAsLedgerCtimeDisabled()
-            throws Exception {
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234));
-        LedgerMetadata lm = LedgerMetadataBuilder.create()
-            .newEnsembleEntry(0L, ensemble).build();
-
-        LedgerMetadataFormat format = new LedgerMetadataSerDe().buildProtoFormat(lm);
-        assertFalse(format.hasCtime());
     }
 
     @Test

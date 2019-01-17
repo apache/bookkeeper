@@ -51,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
+import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -121,6 +122,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
                 new BookieSocketAddress("192.0.2.4", 3181),
                 new BookieSocketAddress("192.0.2.5", 3181));
         this.metadata = LedgerMetadataBuilder.create()
+            .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
             .withEnsembleSize(5)
             .withWriteQuorumSize(3)
             .withAckQuorumSize(3)

@@ -110,8 +110,16 @@ class EtcdLedgerManager implements LedgerManager {
                                                                              LedgerMetadata metadata) {
         CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
-        ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
         log.info("Create ledger metadata under key {}", ledgerKey);
+
+        ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
+        final ByteSequence valueBs;
+        try {
+            valueBs = ByteSequence.fromBytes(serDe.serialize(metadata));
+        } catch (IOException ioe) {
+            promise.completeExceptionally(new BKException.BKMetadataSerializationException(ioe));
+            return promise;
+        }
         kvClient.txn()
             .If(new Cmp(
                 ledgerKeyBs,
@@ -124,7 +132,7 @@ class EtcdLedgerManager implements LedgerManager {
                     .build()))
             .Else(com.coreos.jetcd.op.Op.put(
                 ledgerKeyBs,
-                ByteSequence.fromBytes(serDe.serialize(metadata)),
+                valueBs,
                 PutOption.DEFAULT))
             .commit()
             .thenAccept(resp -> {
@@ -255,6 +263,15 @@ class EtcdLedgerManager implements LedgerManager {
         final LongVersion lv = (LongVersion) currentVersion;
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
         ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
+
+        final ByteSequence valueBs;
+        try {
+            valueBs = ByteSequence.fromBytes(serDe.serialize(metadata));
+        } catch (IOException ioe) {
+            promise.completeExceptionally(new BKException.BKMetadataSerializationException(ioe));
+            return promise;
+        }
+
         kvClient.txn()
             .If(new Cmp(
                 ledgerKeyBs,
@@ -262,7 +279,7 @@ class EtcdLedgerManager implements LedgerManager {
                 CmpTarget.modRevision(lv.getLongVersion())))
             .Then(com.coreos.jetcd.op.Op.put(
                 ledgerKeyBs,
-                ByteSequence.fromBytes(serDe.serialize(metadata)),
+                valueBs,
                 PutOption.DEFAULT))
             .Else(com.coreos.jetcd.op.Op.get(
                 ledgerKeyBs,

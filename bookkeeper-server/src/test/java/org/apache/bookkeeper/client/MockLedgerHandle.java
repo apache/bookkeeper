@@ -65,8 +65,8 @@ public class MockLedgerHandle extends LedgerHandle {
 
     MockLedgerHandle(MockBookKeeper bk, long id, DigestType digest, byte[] passwd) throws GeneralSecurityException {
         super(bk.getClientCtx(), id,
-              new Versioned<>(createMetadata(), new LongVersion(0L)),
-              DigestType.MAC, "".getBytes(), WriteFlag.NONE);
+              new Versioned<>(createMetadata(digest, passwd), new LongVersion(0L)),
+              digest, passwd, WriteFlag.NONE);
         this.bk = bk;
         this.id = id;
         this.digest = digest;
@@ -268,12 +268,14 @@ public class MockLedgerHandle extends LedgerHandle {
         return readHandle.readLastAddConfirmedAndEntryAsync(entryId, timeOutInMillis, parallel);
     }
 
-    private static LedgerMetadata createMetadata() {
+    private static LedgerMetadata createMetadata(DigestType digest, byte[] passwd) {
         List<BookieSocketAddress> ensemble = Lists.newArrayList(
                 new BookieSocketAddress("192.0.2.1", 1234),
                 new BookieSocketAddress("192.0.2.2", 1234),
                 new BookieSocketAddress("192.0.2.3", 1234));
         return LedgerMetadataBuilder.create()
+            .withDigestType(digest.toApiDigestType())
+            .withPassword(passwd)
             .newEnsembleEntry(0L, ensemble)
             .build();
     }
