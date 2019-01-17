@@ -1166,7 +1166,7 @@ public class BookieShell implements Tool {
     void printLedgerMetadata(long ledgerId, LedgerMetadata md, boolean printMeta) {
         System.out.println("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
         if (printMeta) {
-            System.out.println(new String(new LedgerMetadataSerDe().serialize(md), UTF_8));
+            System.out.println(md.toString());
         }
     }
 

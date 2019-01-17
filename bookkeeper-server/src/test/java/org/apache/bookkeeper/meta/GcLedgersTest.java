@@ -65,6 +65,7 @@ import org.apache.bookkeeper.bookie.ScanAndCompareGarbageCollector;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
+import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -113,6 +114,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                     }
 
                     LedgerMetadata md = LedgerMetadataBuilder.create()
+                        .withDigestType(DigestType.CRC32C)
+                        .withPassword(new byte[0])
                         .withEnsembleSize(1).withWriteQuorumSize(1).withAckQuorumSize(1)
                         .newEnsembleEntry(0L, ensemble).build();
 
