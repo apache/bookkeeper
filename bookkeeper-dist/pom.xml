@@ -65,15 +65,6 @@
           </execution>
         </executions>
       </plugin>
-      <!-- skip deploying this artifact, since this module is used for generating an uber package-->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <version>${maven-deploy-plugin.version}</version>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
 </project>
