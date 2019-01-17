@@ -18,44 +18,26 @@
 
 import common_job_properties
 
-// This is the Java precommit which runs a maven install, and the current set of precommit tests.
-mavenJob('bookkeeper_precommit_pullrequest_java9') {
-  description('precommit verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a> in Java 9.')
+// This job runs the Java postcommit tests on Java 9
+mavenJob('bookkeeper_postcommit_master_java11') {
+  description('Runs nightly build for bookkeeper in Java 11.')
 
   // clean up the workspace before build
   wrappers { preBuildCleanup() }
 
-  // Temporary information gathering to see if full disks are causing the builds to flake
-  preBuildSteps {
-    shell("id")
-    shell("ulimit -a")
-    shell("pwd")
-    shell("df -h")
-    shell("ps aux")
-  }
-
-  // Execute concurrent builds if necessary.
-  concurrentBuild()
-
   // Set common parameters.
   common_job_properties.setTopLevelMainJobProperties(
-    delegate,
-    'master',
-    'JDK 1.9 (latest)',
-    200,
-    'ubuntu',
-    '${sha1}')
+    delegate, 'master', 'JDK 11 (latest)')
 
-  // Sets that this is a PreCommit job.
-  common_job_properties.setPreCommit(
-    delegate,
-    'Build (Java 9) (trigger via `rebuild java9`)',
-    '.*(re)?build java9.*',
-    '.*\\[x\\] \\[skip build java9\\].*')
+  // Sets that this is a PostCommit job.
+  common_job_properties.setPostCommit(
+      delegate,
+      'H 12 * * *',
+      false)
 
-  // Set Maven parameters.
+  // Set maven parameters.
   common_job_properties.setMavenConfig(delegate)
 
-  // Maven build project
-  goals('clean package spotbugs:check -Dstream -DskipBookKeeperServerTests')
+  // Maven build project.
+  goals('clean package spotbugs:check -Ddistributedlog -Dstream -DstreamTests')
 }
