@@ -177,7 +177,7 @@ public class Auditor implements AutoCloseable {
     @StatsDoc(
         name = METADATA_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER,
         help = "total number of "
-            + "segments of ledgers failed to adhere to EnsemblePlacementPolicy found in metadata check"
+            + "ledgers failed to adhere to EnsemblePlacementPolicy found in metadata check"
     )
     private final Counter metadataCheckEnsembleNotAdheringToPlacementPolicy;
 
@@ -614,9 +614,9 @@ public class Auditor implements AutoCloseable {
                         metadataCheck();
                         long metadataCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
                         LOG.info("Completed metadataCheck in {} milliSeconds", metadataCheckDuration);
-                        checkAllLedgersTime.registerSuccessfulEvent(metadataCheckDuration, TimeUnit.MILLISECONDS);
+                        metadataCheckTime.registerSuccessfulEvent(metadataCheckDuration, TimeUnit.MILLISECONDS);
                     } catch (BKAuditException e) {
-                        LOG.error("I/O exception running periodic metadata check", e);
+                        LOG.error("BKAuditException running periodic metadata check", e);
                     }
                 }
             }, initialDelay, interval, TimeUnit.SECONDS);
@@ -901,6 +901,7 @@ public class Auditor implements AutoCloseable {
                         int writeQuorumSize = metadata.getWriteQuorumSize();
                         int ackQuorumSize = metadata.getAckQuorumSize();
                         if (metadata.isClosed()) {
+                            boolean foundSegmentNotAdheringToPlacementPolicy = false;
                             for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble : metadata
                                     .getAllEnsembles().entrySet()) {
                                 long startEntryIdOfSegment = ensemble.getKey();
@@ -908,7 +909,7 @@ public class Auditor implements AutoCloseable {
                                 boolean segmentAdheringToPlacementPolicy = admin.isEnsembleAdheringToPlacementPolicy(
                                         ensembleOfSegment, writeQuorumSize, ackQuorumSize);
                                 if (!segmentAdheringToPlacementPolicy) {
-                                    metadataCheckEnsembleNotAdheringToPlacementPolicy.inc();
+                                    foundSegmentNotAdheringToPlacementPolicy = true;
                                     LOG.warn(
                                             "For ledger: {}, Segment starting at entry: {}, with ensemble: {} having "
                                                     + "writeQuorumSize: {} and ackQuorumSize: {} is not adhering to "
@@ -917,9 +918,15 @@ public class Auditor implements AutoCloseable {
                                             ackQuorumSize);
                                 }
                             }
+                            if (foundSegmentNotAdheringToPlacementPolicy) {
+                                metadataCheckEnsembleNotAdheringToPlacementPolicy.inc();
+                            }
                         } else {
-                            LOG.debug("Ledger: {} is not yet closed, so skipping the metadata check analysis for now",
-                                    ledgerId);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug(
+                                        "Ledger: {} is not yet closed, so skipping the metadata check analysis for now",
+                                        ledgerId);
+                            }
                         }
                         iterCallback.processResult(BKException.Code.OK, null, null);
                     } else if (BKException
@@ -951,6 +958,11 @@ public class Auditor implements AutoCloseable {
         }
         if (!resultCode.contains(BKException.Code.OK)) {
             throw new BKAuditException("Exception while doing metadata check", BKException.create(resultCode.get(0)));
+        }
+        try {
+            ledgerUnderreplicationManager.setMetadataCheckCTime(System.currentTimeMillis());
+        } catch (UnavailableException ue) {
+            LOG.error("Got exception while trying to set MetadataCheckCTime", ue);
         }
     }
 

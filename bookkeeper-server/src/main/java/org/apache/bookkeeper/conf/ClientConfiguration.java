@@ -152,7 +152,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String NUM_IO_THREADS = "numIOThreads";
 
     // Ensemble Placement Policy
-    protected static final String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
+    public static final String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
     protected static final String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
     protected static final String READ_REORDER_THRESHOLD_PENDING_REQUESTS = "readReorderThresholdPendingRequests";
     protected static final String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES =

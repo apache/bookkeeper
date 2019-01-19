@@ -2190,10 +2190,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the regularity at which the auditor will run a metadata check of all
-     * write closed/fenced ledgers. This should not be run very often, and at
-     * most, once a day. Setting this to 0 will completely disable the periodic
-     * metadata check.
+     * Sets the regularity/interval at which the auditor will run a metadata
+     * check of all ledgers, which are closed. This should not be run very
+     * often, and should be run at most once a day. Setting this to 0 will
+     * completely disable the periodic metadata check.
      *
      * @param interval
      *            The interval in seconds. e.g. 86400 = 1 day, 604800 = 1 week
@@ -2203,8 +2203,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the regularity at which the auditor does metadata check of all write
-     * closed/fenced ledgers.
+     * Get the regularity at which the auditor does metadata check of all
+     * ledgers, which are closed.
      *
      * @return The interval in seconds. Default is 172800 (2 days).
      */

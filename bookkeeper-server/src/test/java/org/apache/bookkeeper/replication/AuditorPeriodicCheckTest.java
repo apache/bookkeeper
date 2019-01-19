@@ -62,6 +62,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -397,6 +398,8 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         TestOpStatsLogger checkAllLedgersStatsLogger = (TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME);
         servConf.setAuditorPeriodicCheckInterval(auditorPeriodicCheckInterval);
+        servConf.setAuditorPeriodicMetadataCheckInterval(0);
+        servConf.setAuditorPeriodicBookieCheckInterval(0);
         final TestAuditor auditor = new TestAuditor(Bookie.getBookieAddress(servConf).toString(), servConf, bkc, false,
                 statsLogger);
         CountDownLatch latch = auditor.getLatch();
@@ -454,7 +457,100 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         auditor.close();
     }
 
-    class TestAuditor extends Auditor {
+    @Test
+    public void testInitialDelayOfMetadataCheck() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+
+        final int numLedgers = 10;
+        List<Long> ids = new LinkedList<Long>();
+        for (int i = 0; i < numLedgers; i++) {
+            LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
+            ids.add(lh.getId());
+            for (int j = 0; j < 2; j++) {
+                lh.addEntry("testdata".getBytes());
+            }
+            lh.close();
+        }
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
+
+        ServerConfiguration servConf = new ServerConfiguration(bsConfs.get(0));
+        validateInitialDelayOfMetadataCheck(urm, -1, 1000, servConf, bkc);
+        validateInitialDelayOfMetadataCheck(urm, 999, 1000, servConf, bkc);
+        validateInitialDelayOfMetadataCheck(urm, 1001, 1000, servConf, bkc);
+    }
+
+    void validateInitialDelayOfMetadataCheck(LedgerUnderreplicationManager urm, long timeSinceLastExecutedInSecs,
+            long auditorPeriodicMetadataCheckInterval, ServerConfiguration servConf, BookKeeper bkc)
+            throws UnavailableException, UnknownHostException, InterruptedException {
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
+        TestOpStatsLogger metadataCheckStatsLogger = (TestOpStatsLogger) statsLogger
+                .getOpStatsLogger(ReplicationStats.METADATA_CHECK_TIME);
+        servConf.setAuditorPeriodicMetadataCheckInterval(auditorPeriodicMetadataCheckInterval);
+        servConf.setAuditorPeriodicCheckInterval(0);
+        servConf.setAuditorPeriodicBookieCheckInterval(0);
+        final TestAuditor auditor = new TestAuditor(Bookie.getBookieAddress(servConf).toString(), servConf, bkc, false,
+                statsLogger);
+        CountDownLatch latch = auditor.getLatch();
+        assertEquals("METADATA_CHECK_TIME SuccessCount", 0, metadataCheckStatsLogger.getSuccessCount());
+        long curTimeBeforeStart = System.currentTimeMillis();
+        long metadataCheckCTime = -1;
+        long initialDelayInMsecs = -1;
+        long nextExpectedMetadataCheckExecutionTime = -1;
+        long bufferTimeInMsecs = 12000L;
+        if (timeSinceLastExecutedInSecs == -1) {
+            /*
+             * if we are setting metadataCheckCTime to -1, it means that
+             * metadataCheck hasn't run before. So initialDelay for
+             * metadataCheck should be 0.
+             */
+            metadataCheckCTime = -1;
+            initialDelayInMsecs = 0;
+        } else {
+            metadataCheckCTime = curTimeBeforeStart - timeSinceLastExecutedInSecs * 1000L;
+            initialDelayInMsecs = timeSinceLastExecutedInSecs > auditorPeriodicMetadataCheckInterval ? 0
+                    : (auditorPeriodicMetadataCheckInterval - timeSinceLastExecutedInSecs) * 1000L;
+        }
+        /*
+         * next metadataCheck should happen atleast after
+         * nextExpectedMetadataCheckExecutionTime.
+         */
+        nextExpectedMetadataCheckExecutionTime = curTimeBeforeStart + initialDelayInMsecs;
+
+        urm.setMetadataCheckCTime(metadataCheckCTime);
+        auditor.start();
+        /*
+         * since auditorPeriodicMetadataCheckInterval are higher values (in the
+         * order of 100s of seconds), its ok bufferTimeInMsecs to be ` 10 secs.
+         */
+        assertTrue("metadataCheck should have executed with initialDelay " + initialDelayInMsecs,
+                latch.await(initialDelayInMsecs + bufferTimeInMsecs, TimeUnit.MILLISECONDS));
+        for (int i = 0; i < 10; i++) {
+            Thread.sleep(100);
+            if (metadataCheckStatsLogger.getSuccessCount() >= 1) {
+                break;
+            }
+        }
+        assertEquals("METADATA_CHECK_TIME SuccessCount", 1, metadataCheckStatsLogger.getSuccessCount());
+        long currentMetadataCheckCTime = urm.getMetadataCheckCTime();
+        assertTrue(
+                "currentMetadataCheckCTime: " + currentMetadataCheckCTime
+                        + " should be greater than nextExpectedMetadataCheckExecutionTime: "
+                        + nextExpectedMetadataCheckExecutionTime,
+                currentMetadataCheckCTime > nextExpectedMetadataCheckExecutionTime);
+        assertTrue(
+                "currentMetadataCheckCTime: " + currentMetadataCheckCTime
+                        + " should be lesser than nextExpectedMetadataCheckExecutionTime+bufferTimeInMsecs: "
+                        + (nextExpectedMetadataCheckExecutionTime + bufferTimeInMsecs),
+                currentMetadataCheckCTime < (nextExpectedMetadataCheckExecutionTime + bufferTimeInMsecs));
+        auditor.close();
+    }
+
+    static class TestAuditor extends Auditor {
 
         final AtomicReference<CountDownLatch> latchRef = new AtomicReference<CountDownLatch>(new CountDownLatch(1));
 
@@ -463,8 +559,18 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             super(bookieIdentifier, conf, bkc, ownBkc, statsLogger);
         }
 
+        public TestAuditor(final String bookieIdentifier, ServerConfiguration conf, StatsLogger statsLogger)
+                throws UnavailableException {
+            super(bookieIdentifier, conf, statsLogger);
+        }
+
         void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
             super.checkAllLedgers();
+            latchRef.get().countDown();
+        }
+
+        void metadataCheck() throws BKAuditException {
+            super.metadataCheck();
             latchRef.get().countDown();
         }
 

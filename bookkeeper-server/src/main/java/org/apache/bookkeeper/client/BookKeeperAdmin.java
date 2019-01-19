@@ -1648,7 +1648,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * adhering to the ensemble placement policy for the given writeQuorumSize
      * and ackQuorumSize.
      *
-     * @param ensembleList
+     * @param ensembleBookiesList
      *            ensemble of the segment
      * @param writeQuorumSize
      *            writeQuorumSize of the ledger
@@ -1657,9 +1657,9 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @return <tt>true</tt> if the ledger is adhering to
      *         EnsemblePlacementPolicy
      */
-    public boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList, int writeQuorumSize,
-            int ackQuorumSize) {
-        return bkc.getPlacementPolicy().isEnsembleAdheringToPlacementPolicy(ensembleList, writeQuorumSize,
+    public boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleBookiesList,
+            int writeQuorumSize, int ackQuorumSize) {
+        return bkc.getPlacementPolicy().isEnsembleAdheringToPlacementPolicy(ensembleBookiesList, writeQuorumSize,
                 ackQuorumSize);
     }
 }
