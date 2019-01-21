@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.9.0-SNAPSHOT</version>
+    <version>4.10.0-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>bookkeeper-stats-api</artifactId>
