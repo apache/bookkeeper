@@ -48,8 +48,7 @@
             </goals>
             <configuration>
               <target>
-                <concat destfile="${project.basedir}/src/main/resources/META-INF/services/org.apache.bookkeeper.tools.framework.CommandGroup"
-                        overwrite="true">
+                <concat destfile="${project.basedir}/src/main/resources/META-INF/services/org.apache.bookkeeper.tools.framework.CommandGroup" overwrite="true">
                   <filelist dir="${project.basedir}/../ledger/src/main/resources" files="commands">
                   </filelist>
                 </concat>
@@ -91,8 +90,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <concat destfile="${project.basedir}/src/main/resources/META-INF/services/org.apache.bookkeeper.tools.framework.CommandGroup"
-                            append="true">
+                    <concat destfile="${project.basedir}/src/main/resources/META-INF/services/org.apache.bookkeeper.tools.framework.CommandGroup" append="true">
                       <filelist dir="${project.basedir}/../stream/src/main/resources" files="commands">
                       </filelist>
                     </concat>
