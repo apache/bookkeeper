@@ -79,13 +79,11 @@
                 <configuration>
                   <tasks>
                     <echo>copy python wheel file</echo>
-                    <mkdir dir="${project.basedir}/target/bookkeeper-client"/>
-                    <copydir src="${project.basedir}/../../../stream/clients/python/dist"
-                             dest="${project.basedir}/target/bookkeeper-client"/>
+                    <mkdir dir="${project.basedir}/target/bookkeeper-client" />
+                    <copydir src="${project.basedir}/../../../stream/clients/python/dist" dest="${project.basedir}/target/bookkeeper-client" />
                     <echo>copying docker scripts</echo>
                     <mkdir dir="${project.basedir}/target/scripts" />
-                    <copydir src="${project.basedir}/../../../docker/scripts"
-                             dest="${project.basedir}/target/scripts" />
+                    <copydir src="${project.basedir}/../../../docker/scripts" dest="${project.basedir}/target/scripts" />
                   </tasks>
                 </configuration>
               </execution>
