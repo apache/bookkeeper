@@ -390,7 +390,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         latch = new CountDownLatch(1);
         Stat s = watchUrLedgerNode(urZNode, latch); // should be marked as replicated
         if (s != null) {
-            assertTrue("Should be marked as replicated", latch.await(10, TimeUnit.SECONDS));
+            assertTrue("Should be marked as replicated", latch.await(15, TimeUnit.SECONDS));
         }
 
         replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(1);
