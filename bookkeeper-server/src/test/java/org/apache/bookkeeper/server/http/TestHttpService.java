@@ -45,7 +45,6 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
@@ -83,6 +82,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        baseClientConf.setStoreSystemtimeAsLedgerCreationTime(true);
         this.bkHttpServiceProvider = new BKHttpServiceProvider.Builder()
             .setBookieServer(bs.get(numberOfBookies - 1))
             .setServerConfiguration(baseConf)
@@ -383,11 +383,15 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response2 = getLedgerMetaService.handle(request2);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
         @SuppressWarnings("unchecked")
-        HashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), HashMap.class);
+        HashMap<String, Object> respBody = JsonUtil.fromJson(response2.getBody(), HashMap.class);
         assertEquals(1, respBody.size());
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> expected = JsonUtil.fromJson(JsonUtil.toJson(lh[0].getLedgerMetadata()), HashMap.class);
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> actual = (HashMap<String, Object>) respBody.get(ledgerId.toString());
+
         // verify LedgerMetadata content is equal
-        assertTrue(respBody.get(ledgerId.toString()).toString()
-                .equals(new String(new LedgerMetadataSerDe().serialize(lh[0].getLedgerMetadata()))));
+        assertTrue(Maps.difference(expected, actual).areEqual());
     }
 
     @Test

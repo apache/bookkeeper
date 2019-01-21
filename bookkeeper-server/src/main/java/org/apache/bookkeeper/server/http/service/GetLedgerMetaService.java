@@ -18,7 +18,6 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
@@ -68,9 +67,9 @@ public class GetLedgerMetaService implements HttpEndpointService {
             LedgerManager manager = mFactory.newLedgerManager();
 
             // output <ledgerId: ledgerMetadata>
-            Map<String, String> output = Maps.newHashMap();
+            Map<String, Object> output = Maps.newHashMap();
             LedgerMetadata md = manager.readLedgerMetadata(ledgerId).get().getValue();
-            output.put(ledgerId.toString(), new String(serDe.serialize(md), UTF_8));
+            output.put(ledgerId.toString(), md);
 
             manager.close();
 

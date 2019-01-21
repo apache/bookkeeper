@@ -22,6 +22,7 @@ package org.apache.bookkeeper.net;
 
 import static org.apache.bookkeeper.util.BookKeeperConstants.COLON;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.net.InetAddresses;
 import io.netty.channel.local.LocalAddress;
 
@@ -91,6 +92,7 @@ public class BookieSocketAddress {
     }
 
     // Method to return an InetSocketAddress for the regular port.
+    @JsonIgnore
     public InetSocketAddress getSocketAddress() {
         /*
          * Return each time a new instance of the InetSocketAddress if hostname
@@ -106,6 +108,7 @@ public class BookieSocketAddress {
     /**
      * Maps the socketAddress to a "local" address.
      */
+    @JsonIgnore
     public LocalAddress getLocalAddress() {
         // for local address, we just need "port" to differentiate different addresses.
         return new LocalAddress("" + port);

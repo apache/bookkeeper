@@ -132,7 +132,7 @@ class LedgerCreateOp {
             metadataBuilder.withCustomMetadata(customMetadata);
         }
         if (bk.getConf().getStoreSystemtimeAsLedgerCreationTime()) {
-            metadataBuilder.withCreationTime(System.currentTimeMillis());
+            metadataBuilder.withCreationTime(System.currentTimeMillis()).storingCreationTime(true);
         }
 
         // select bookies for first ensemble
