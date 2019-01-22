@@ -26,9 +26,9 @@ import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predic
 import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.BookieNode;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
-import org.apache.bookkeeper.common.collections.Pair;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.Node;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Interface for topology aware ensemble placement policy.
