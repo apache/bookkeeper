@@ -411,11 +411,11 @@ public interface EnsemblePlacementPolicy {
     /**
      * Result of a placement calculation against a placement policy.
      */
-    class PlacementResult<T> {
+    final class PlacementResult<T> {
         private final T result;
         private final boolean adhering;
 
-        public PlacementResult(T result, boolean adhering) {
+        PlacementResult(T result, boolean adhering) {
             this.result = result;
             this.adhering = adhering;
         }
