@@ -415,7 +415,7 @@ public interface EnsemblePlacementPolicy {
         private final T result;
         private final boolean adhering;
 
-        PlacementResult(T result, boolean adhering) {
+        public PlacementResult(T result, boolean adhering) {
             this.result = result;
             this.adhering = adhering;
         }
