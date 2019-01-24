@@ -94,6 +94,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
     protected int minNumRacksPerWriteQuorum;
     protected boolean enforceMinNumRacksPerWriteQuorum;
+    protected boolean ignoreLocalNodeInPlacementPolicy;
 
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
@@ -275,6 +276,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                                               int maxWeightMultiple,
                                                               int minNumRacksPerWriteQuorum,
                                                               boolean enforceMinNumRacksPerWriteQuorum,
+                                                              boolean ignoreLocalNodeInPlacementPolicy,
                                                               StatsLogger statsLogger) {
         checkNotNull(statsLogger, "statsLogger should not be null, use NullStatsLogger instead.");
         this.statsLogger = statsLogger;
@@ -291,6 +293,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         this.timer = timer;
         this.minNumRacksPerWriteQuorum = minNumRacksPerWriteQuorum;
         this.enforceMinNumRacksPerWriteQuorum = enforceMinNumRacksPerWriteQuorum;
+        this.ignoreLocalNodeInPlacementPolicy = ignoreLocalNodeInPlacementPolicy;
 
         // create the network topology
         if (stabilizePeriodSeconds > 0) {
@@ -299,12 +302,15 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             this.topology = new NetworkTopologyImpl();
         }
 
-        BookieNode bn;
-        try {
-            bn = createBookieNode(new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0));
-        } catch (UnknownHostException e) {
-            LOG.error("Failed to get local host address : ", e);
-            bn = null;
+        BookieNode bn = null;
+        if (!ignoreLocalNodeInPlacementPolicy) {
+            try {
+                bn = createBookieNode(new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0));
+            } catch (UnknownHostException e) {
+                LOG.error("Failed to get local host address : ", e);
+            }
+        } else {
+            LOG.info("Ignoring LocalNode in Placementpolicy");
         }
         localNode = bn;
         LOG.info("Initialize rackaware ensemble placement policy @ {} @ {} : {}.",
@@ -391,6 +397,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 conf.getBookieMaxWeightMultipleForWeightBasedPlacement(),
                 conf.getMinNumRacksPerWriteQuorum(),
                 conf.getEnforceMinNumRacksPerWriteQuorum(),
+                conf.getIgnoreLocalNodeInPlacementPolicy(),
                 statsLogger);
     }
 

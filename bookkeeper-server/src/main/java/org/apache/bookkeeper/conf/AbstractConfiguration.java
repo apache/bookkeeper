@@ -159,6 +159,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // enforce minimum number of racks per write quorum
     public static final String ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM = "enforceMinNumRacksPerWriteQuorum";
 
+    // ignore usage of local node in the internal logic of placement policy
+    public static final String IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY = "ignoreLocalNodeInPlacementPolicy";
+
     // Allocator configuration
     protected static final String ALLOCATOR_POOLING_POLICY = "allocatorPoolingPolicy";
     protected static final String ALLOCATOR_POOLING_CONCURRENCY = "allocatorPoolingConcurrency";
@@ -841,6 +844,20 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public boolean getEnforceMinNumRacksPerWriteQuorum() {
         return getBoolean(ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM, false);
+    }
+
+    /**
+     * Sets the flag to ignore usage of localnode in placement policy.
+     */
+    public void setIgnoreLocalNodeInPlacementPolicy(boolean ignoreLocalNodeInPlacementPolicy) {
+        setProperty(IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY, ignoreLocalNodeInPlacementPolicy);
+    }
+
+    /**
+     * Whether to ignore localnode in placementpolicy.
+     */
+    public boolean getIgnoreLocalNodeInPlacementPolicy() {
+        return getBoolean(IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY, false);
     }
 
     /**
