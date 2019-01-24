@@ -415,7 +415,11 @@ public interface EnsemblePlacementPolicy {
         private final T result;
         private final boolean adhering;
 
-        public PlacementResult(T result, boolean adhering) {
+        public static <T> PlacementResult<T> of(T result, boolean adhering) {
+            return new PlacementResult<>(result, adhering);
+        }
+
+        private PlacementResult(T result, boolean adhering) {
             this.result = result;
             this.adhering = adhering;
         }

@@ -279,9 +279,9 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 for (BookieNode bn : bns) {
                     addrs.add(bn.getAddr());
                 }
-                return new PlacementResult<>(addrs,
-                                             isEnsembleAdheringToPlacementPolicy(
-                                                     addrs, writeQuorumSize, ackQuorumSize));
+                return PlacementResult.of(addrs,
+                                          isEnsembleAdheringToPlacementPolicy(
+                                                  addrs, writeQuorumSize, ackQuorumSize));
             }
 
             // Single region, fall back to RackAwareEnsemblePlacement
@@ -410,7 +410,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             }
             LOG.info("Bookies allocated successfully {}", ensemble);
             List<BookieSocketAddress> ensembleList = ensemble.toList();
-            return new PlacementResult<>(ensembleList,
+            return PlacementResult.of(ensembleList,
                     isEnsembleAdheringToPlacementPolicy(ensembleList, writeQuorumSize, ackQuorumSize));
         } finally {
             rwLock.readLock().unlock();
@@ -484,7 +484,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             } else {
                 newEnsemble.set(currentEnsemble.indexOf(bookieToReplace), candidateAddr);
             }
-            return new PlacementResult<>(candidateAddr,
+            return PlacementResult.of(candidateAddr,
                     isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
         } finally {
             rwLock.readLock().unlock();

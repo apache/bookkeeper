@@ -597,7 +597,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 for (BookieNode bn : bns) {
                     addrs.add(bn.getAddr());
                 }
-                return new PlacementResult<>(addrs, false);
+                return PlacementResult.of(addrs, false);
             }
 
             for (int i = 0; i < ensembleSize; i++) {
@@ -621,9 +621,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                           ensembleSize, bookieList);
                 throw new BKNotEnoughBookiesException();
             }
-            return new PlacementResult<>(bookieList,
-                                         isEnsembleAdheringToPlacementPolicy(
-                                                 bookieList, writeQuorumSize, ackQuorumSize));
+            return PlacementResult.of(bookieList,
+                                      isEnsembleAdheringToPlacementPolicy(
+                                              bookieList, writeQuorumSize, ackQuorumSize));
         } finally {
             rwLock.readLock().unlock();
         }
@@ -677,7 +677,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             } else {
                 newEnsemble.set(currentEnsemble.indexOf(bookieToReplace), candidateAddr);
             }
-            return new PlacementResult<>(candidateAddr,
+            return PlacementResult.of(candidateAddr,
                     isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
         } finally {
             rwLock.readLock().unlock();

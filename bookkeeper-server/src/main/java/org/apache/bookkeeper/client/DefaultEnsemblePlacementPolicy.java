@@ -69,7 +69,7 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
             throws BKNotEnoughBookiesException {
         ArrayList<BookieSocketAddress> newBookies = new ArrayList<BookieSocketAddress>(ensembleSize);
         if (ensembleSize <= 0) {
-            return new PlacementResult<>(newBookies, false);
+            return PlacementResult.of(newBookies, false);
         }
         List<BookieSocketAddress> allBookies;
         rwLock.readLock().lock();
@@ -95,7 +95,7 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
                     newBookies.add(b);
                     --ensembleSize;
                     if (ensembleSize == 0) {
-                        return new PlacementResult<>(newBookies,
+                        return PlacementResult.of(newBookies,
                                 isEnsembleAdheringToPlacementPolicy(newBookies, quorumSize, ackQuorumSize));
                     }
                 }
@@ -111,7 +111,7 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
                 newBookies.add(bookie);
                 --ensembleSize;
                 if (ensembleSize == 0) {
-                    return new PlacementResult<>(newBookies,
+                    return PlacementResult.of(newBookies,
                             isEnsembleAdheringToPlacementPolicy(newBookies, quorumSize, ackQuorumSize));
                 }
             }
@@ -130,8 +130,8 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
         BookieSocketAddress candidateAddr = addresses.get(0);
         List<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>(currentEnsemble);
         newEnsemble.set(currentEnsemble.indexOf(bookieToReplace), candidateAddr);
-        return new PlacementResult<>(candidateAddr,
-                                     isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
+        return PlacementResult.of(candidateAddr,
+                isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
     }
 
     @Override
