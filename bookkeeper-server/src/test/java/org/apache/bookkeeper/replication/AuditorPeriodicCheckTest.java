@@ -87,7 +87,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     private MetadataBookieDriver driver;
     private HashMap<String, AuditorElector> auditorElectors = new HashMap<String, AuditorElector>();
 
-    private static final int CHECK_INTERVAL = 1; // run every second
+    private static final long CHECK_INTERVAL = 1L; // run every second
 
     public AuditorPeriodicCheckTest() {
         super(3);

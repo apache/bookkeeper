@@ -46,7 +46,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
 
     public BookieDecommissionTest() {
         super(NUM_OF_BOOKIES, 480);
-        baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30000));
+        baseConf.setOpenLedgerRereplicationGracePeriod(30000L);
         setAutoRecoveryEnabled(true);
     }
 

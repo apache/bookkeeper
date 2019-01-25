@@ -69,7 +69,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
             .getLogger(BookieAutoRecoveryTest.class);
     private static final byte[] PASSWD = "admin".getBytes();
     private static final byte[] data = "TESTDATA".getBytes();
-    private static final String openLedgerRereplicationGracePeriod = "3000"; // milliseconds
+    private static final long openLedgerRereplicationGracePeriod = 3000L; // milliseconds
 
     private DigestType digestType;
     private MetadataClientDriver metadataClientDriver;

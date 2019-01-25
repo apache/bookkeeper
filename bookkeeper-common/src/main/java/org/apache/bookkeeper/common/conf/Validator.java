@@ -45,4 +45,19 @@ public interface Validator {
         return "";
     }
 
+    default Validator and(Validator validator) {
+        return (name, value) ->
+            validate(name, value) && validator.validate(name, value);
+    }
+
+    default Validator or(Validator validator) {
+        return (name, value) ->
+            validate(name, value) || validator.validate(name, value);
+    }
+
+    default Validator negate() {
+        return (name, value) ->
+            !validate(name, value);
+    }
+
 }

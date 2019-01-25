@@ -16,6 +16,8 @@
  */
 package org.apache.bookkeeper.stats.twitter.science;
 
+import org.apache.bookkeeper.common.conf.ConfigKey;
+import org.apache.bookkeeper.common.conf.Type;
 import org.apache.bookkeeper.stats.CachingStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
@@ -33,6 +35,21 @@ public class TwitterStatsProvider implements StatsProvider {
 
     protected static final String STATS_EXPORT = "statsExport";
     protected static final String STATS_HTTP_PORT = "statsHttpPort";
+
+    private static final ConfigKey STATS_EXPORT_KEY = ConfigKey.builder(STATS_EXPORT)
+        .type(Type.BOOLEAN)
+        .description("Flag to control whether to expose metrics via a http endpoint configured by `"
+            + STATS_HTTP_PORT + "`")
+        .defaultValue(false)
+        .orderInGroup(0)
+        .build();
+
+    private static final ConfigKey STATS_HTTP_PORT_KEY = ConfigKey.builder(STATS_HTTP_PORT)
+        .type(Type.INT)
+        .description("The http port of exposing stats if `" + STATS_EXPORT + "` is set to true")
+        .defaultValue(9002)
+        .orderInGroup(1)
+        .build();
 
     private HTTPStatsExporter statsExporter = null;
     private final CachingStatsProvider cachingStatsProvider;
@@ -64,8 +81,8 @@ public class TwitterStatsProvider implements StatsProvider {
 
     @Override
     public void start(Configuration conf) {
-        if (conf.getBoolean(STATS_EXPORT, false)) {
-            statsExporter = new HTTPStatsExporter(conf.getInt(STATS_HTTP_PORT, 9002));
+        if (STATS_EXPORT_KEY.getBoolean(conf)) {
+            statsExporter = new HTTPStatsExporter(STATS_HTTP_PORT_KEY.getInt(conf));
         }
         if (null != statsExporter) {
             try {
