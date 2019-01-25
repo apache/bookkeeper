@@ -152,6 +152,13 @@ extends <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolic
 </td>
 </tr>
 </table>
+<ul class="blockList">
+<li class="blockList"><a name="nested.classes.inherited.from.class.org.apache.bookkeeper.client.EnsemblePlacementPolicy">
+<!--   -->
+</a>
+<h3>Nested classes/interfaces inherited from interface&nbsp;org.apache.bookkeeper.client.<a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></h3>
+<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="type parameter in EnsemblePlacementPolicy.PlacementResult">T</a>&gt;</code></li>
+</ul>
 </li>
 </ul>
 <!-- ========== METHOD SUMMARY =========== -->
@@ -179,7 +186,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolic
 </td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;</code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">newEnsemble</a></span>(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
            int&nbsp;ackQuorumSize,
@@ -249,13 +256,13 @@ extends <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolic
 <ul class="blockList">
 <li class="blockList">
 <h4>newEnsemble</h4>
-<pre>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;&nbsp;newEnsemble(int&nbsp;ensembleSize,
-                                                                                                             int&nbsp;writeQuorumSize,
-                                                                                                             int&nbsp;ackQuorumSize,
-                                                                                                             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies,
-                                                                                                             <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="type parameter in ITopologyAwareEnsemblePlacementPolicy">T</a>&gt;&nbsp;parentEnsemble,
-                                                                                                             <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="type parameter in ITopologyAwareEnsemblePlacementPolicy">T</a>&gt;&nbsp;parentPredicate)
-                                                                                                      throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
+<pre><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;&nbsp;newEnsemble(int&nbsp;ensembleSize,
+                                                                                                         int&nbsp;writeQuorumSize,
+                                                                                                         int&nbsp;ackQuorumSize,
+                                                                                                         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies,
+                                                                                                         <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="type parameter in ITopologyAwareEnsemblePlacementPolicy">T</a>&gt;&nbsp;parentEnsemble,
+                                                                                                         <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="type parameter in ITopologyAwareEnsemblePlacementPolicy">T</a>&gt;&nbsp;parentPredicate)
+                                                                                                  throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block">Create an ensemble with parent ensemble.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>

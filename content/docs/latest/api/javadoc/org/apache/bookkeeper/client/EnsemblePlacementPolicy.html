@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/bookkeeper/client/EnsembleUtils.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" target="_top">Frames</a></li>
@@ -74,7 +74,7 @@ var activeTableTab = "activeTableTab";
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -278,6 +278,27 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
+<!-- ======== NESTED CLASS SUMMARY ======== -->
+<ul class="blockList">
+<li class="blockList"><a name="nested.class.summary">
+<!--   -->
+</a>
+<h3>Nested Class Summary</h3>
+<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Nested Class Summary table, listing nested classes, and an explanation">
+<caption><span>Nested Classes</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Interface and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="type parameter in EnsemblePlacementPolicy.PlacementResult">T</a>&gt;</span></code>
+<div class="block">Result of a placement calculation against a placement policy.</div>
+</td>
+</tr>
+</table>
+</li>
+</ul>
 <!-- ========== METHOD SUMMARY =========== -->
 <ul class="blockList">
 <li class="blockList"><a name="method.summary">
@@ -319,7 +340,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 </td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;</code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a></span>(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
            int&nbsp;ackQuorumSize,
@@ -360,7 +381,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 </td>
 </tr>
 <tr id="i8" class="altColor">
-<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;</code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
              int&nbsp;ackQuorumSize,
@@ -463,12 +484,12 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 <ul class="blockList">
 <li class="blockList">
 <h4>newEnsemble</h4>
-<pre>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;&nbsp;newEnsemble(int&nbsp;ensembleSize,
-                                                                                                             int&nbsp;writeQuorumSize,
-                                                                                                             int&nbsp;ackQuorumSize,
-                                                                                                             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-                                                                                                             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)
-                                                                                                      throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
+<pre><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;&nbsp;newEnsemble(int&nbsp;ensembleSize,
+                                                                                                         int&nbsp;writeQuorumSize,
+                                                                                                         int&nbsp;ackQuorumSize,
+                                                                                                         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+                                                                                                         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)
+                                                                                                  throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block">Choose <i>numBookies</i> bookies for ensemble. If the count is more than the number of available
  nodes, <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client"><code>BKException.BKNotEnoughBookiesException</code></a> is thrown.
 
@@ -486,7 +507,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
                        provides in <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#createLedger-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-"><code>BookKeeper.createLedger(int, int, int, BookKeeper.DigestType, byte[])</code></a></dd>
 <dd><code>excludeBookies</code> - Bookies that should not be considered as targets.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</dd>
+<dd>a placement result containing list of bookie addresses for the ensemble.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></code> - if not enough bookies available.</dd>
 </dl>
@@ -498,14 +519,14 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 <ul class="blockList">
 <li class="blockList">
 <h4>replaceBookie</h4>
-<pre>org.apache.commons.lang3.tuple.Pair&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;&nbsp;replaceBookie(int&nbsp;ensembleSize,
-                                                                                                         int&nbsp;writeQuorumSize,
-                                                                                                         int&nbsp;ackQuorumSize,
-                                                                                                         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-                                                                                                         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;currentEnsemble,
-                                                                                                         org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieToReplace,
-                                                                                                         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)
-                                                                                                  throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
+<pre><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;replaceBookie(int&nbsp;ensembleSize,
+                                                                                                     int&nbsp;writeQuorumSize,
+                                                                                                     int&nbsp;ackQuorumSize,
+                                                                                                     <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+                                                                                                     <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;currentEnsemble,
+                                                                                                     org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieToReplace,
+                                                                                                     <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)
+                                                                                              throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block">Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
  <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client"><code>BKException.BKNotEnoughBookiesException</code></a> is thrown.</div>
 <dl>
@@ -519,7 +540,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 <dd><code>bookieToReplace</code> - bookie to replace</dd>
 <dd><code>excludeBookies</code> - bookies that should not be considered as candidate.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the org.apache.bookkeeper.net.BookieSocketAddress</dd>
+<dd>a placement result containing the new bookie address.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></code></dd>
 </dl>
@@ -686,7 +707,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/bookkeeper/client/EnsembleUtils.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" target="_top">Frames</a></li>
@@ -710,7 +731,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
