@@ -35,7 +35,6 @@ import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * {@link EnsemblePlacementPolicy} encapsulates the algorithm that bookkeeper client uses to select a number of bookies
@@ -262,13 +261,13 @@ public interface EnsemblePlacementPolicy {
      *                       provides in {@link BookKeeper#createLedger(int, int, int, BookKeeper.DigestType, byte[])}
      * @param excludeBookies Bookies that should not be considered as targets.
      * @throws BKNotEnoughBookiesException if not enough bookies available.
-     * @return the List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;
+     * @return a placement result containing list of bookie addresses for the ensemble.
      */
-    Pair<List<BookieSocketAddress>, Boolean> newEnsemble(int ensembleSize,
-                                                         int writeQuorumSize,
-                                                         int ackQuorumSize,
-                                                         Map<String, byte[]> customMetadata,
-                                                         Set<BookieSocketAddress> excludeBookies)
+    PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize,
+                                                           int writeQuorumSize,
+                                                           int ackQuorumSize,
+                                                           Map<String, byte[]> customMetadata,
+                                                           Set<BookieSocketAddress> excludeBookies)
             throws BKNotEnoughBookiesException;
 
     /**
@@ -286,15 +285,15 @@ public interface EnsemblePlacementPolicy {
      * @param bookieToReplace bookie to replace
      * @param excludeBookies bookies that should not be considered as candidate.
      * @throws BKNotEnoughBookiesException
-     * @return the org.apache.bookkeeper.net.BookieSocketAddress
+     * @return a placement result containing the new bookie address.
      */
-    Pair<BookieSocketAddress, Boolean> replaceBookie(int ensembleSize,
-                                                     int writeQuorumSize,
-                                                     int ackQuorumSize,
-                                                     Map<String, byte[]> customMetadata,
-                                                     List<BookieSocketAddress> currentEnsemble,
-                                                     BookieSocketAddress bookieToReplace,
-                                                     Set<BookieSocketAddress> excludeBookies)
+    PlacementResult<BookieSocketAddress> replaceBookie(int ensembleSize,
+                                                       int writeQuorumSize,
+                                                       int ackQuorumSize,
+                                                       Map<String, byte[]> customMetadata,
+                                                       List<BookieSocketAddress> currentEnsemble,
+                                                       BookieSocketAddress bookieToReplace,
+                                                       Set<BookieSocketAddress> excludeBookies)
             throws BKNotEnoughBookiesException;
 
     /**
@@ -407,5 +406,30 @@ public interface EnsemblePlacementPolicy {
     default boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList, int writeQuorumSize,
             int ackQuorumSize) {
         return false;
+    }
+
+    /**
+     * Result of a placement calculation against a placement policy.
+     */
+    final class PlacementResult<T> {
+        private final T result;
+        private final boolean adhering;
+
+        public static <T> PlacementResult<T> of(T result, boolean adhering) {
+            return new PlacementResult<>(result, adhering);
+        }
+
+        private PlacementResult(T result, boolean adhering) {
+            this.result = result;
+            this.adhering = adhering;
+        }
+
+        public T getResult() {
+            return result;
+        }
+
+        public boolean isStrictlyAdheringToPolicy() {
+            return adhering;
+        }
     }
 }
