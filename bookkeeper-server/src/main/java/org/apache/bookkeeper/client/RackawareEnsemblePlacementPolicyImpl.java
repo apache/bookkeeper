@@ -71,7 +71,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -526,17 +525,17 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
-    public Pair<List<BookieSocketAddress>, Boolean> newEnsemble(int ensembleSize, int writeQuorumSize,
+    public PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize, int writeQuorumSize,
             int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
             throws BKNotEnoughBookiesException {
         return newEnsembleInternal(ensembleSize, writeQuorumSize, excludeBookies, null, null);
     }
 
-    protected Pair<List<BookieSocketAddress>, Boolean> newEnsembleInternal(int ensembleSize,
-                                                            int writeQuorumSize,
-                                                            Set<BookieSocketAddress> excludeBookies,
-                                                            Ensemble<BookieNode> parentEnsemble,
-                                                            Predicate<BookieNode> parentPredicate)
+    protected PlacementResult<List<BookieSocketAddress>> newEnsembleInternal(int ensembleSize,
+                                                                             int writeQuorumSize,
+                                                                             Set<BookieSocketAddress> excludeBookies,
+                                                                             Ensemble<BookieNode> parentEnsemble,
+                                                                             Predicate<BookieNode> parentPredicate)
             throws BKNotEnoughBookiesException {
         return newEnsembleInternal(
                 ensembleSize,
@@ -548,12 +547,12 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
-    public Pair<List<BookieSocketAddress>, Boolean> newEnsemble(int ensembleSize,
-                                                 int writeQuorumSize,
-                                                 int ackQuorumSize,
-                                                 Set<BookieSocketAddress> excludeBookies,
-                                                 Ensemble<BookieNode> parentEnsemble,
-                                                 Predicate<BookieNode> parentPredicate)
+    public PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize,
+                                                                  int writeQuorumSize,
+                                                                  int ackQuorumSize,
+                                                                  Set<BookieSocketAddress> excludeBookies,
+                                                                  Ensemble<BookieNode> parentEnsemble,
+                                                                  Predicate<BookieNode> parentPredicate)
             throws BKNotEnoughBookiesException {
         return newEnsembleInternal(
                 ensembleSize,
@@ -564,7 +563,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 parentPredicate);
     }
 
-    protected Pair<List<BookieSocketAddress>, Boolean> newEnsembleInternal(
+    protected PlacementResult<List<BookieSocketAddress>> newEnsembleInternal(
             int ensembleSize,
             int writeQuorumSize,
             int ackQuorumSize,
@@ -598,7 +597,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 for (BookieNode bn : bns) {
                     addrs.add(bn.getAddr());
                 }
-                return Pair.of(addrs, false);
+                return PlacementResult.of(addrs, false);
             }
 
             for (int i = 0; i < ensembleSize; i++) {
@@ -622,14 +621,16 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                           ensembleSize, bookieList);
                 throw new BKNotEnoughBookiesException();
             }
-            return Pair.of(bookieList, isEnsembleAdheringToPlacementPolicy(bookieList, writeQuorumSize, ackQuorumSize));
+            return PlacementResult.of(bookieList,
+                                      isEnsembleAdheringToPlacementPolicy(
+                                              bookieList, writeQuorumSize, ackQuorumSize));
         } finally {
             rwLock.readLock().unlock();
         }
     }
 
     @Override
-    public Pair<BookieSocketAddress, Boolean> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+    public PlacementResult<BookieSocketAddress> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             Map<String, byte[]> customMetadata, List<BookieSocketAddress> currentEnsemble,
             BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKNotEnoughBookiesException {
@@ -676,7 +677,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             } else {
                 newEnsemble.set(currentEnsemble.indexOf(bookieToReplace), candidateAddr);
             }
-            return Pair.of(candidateAddr,
+            return PlacementResult.of(candidateAddr,
                     isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
         } finally {
             rwLock.readLock().unlock();

@@ -51,7 +51,6 @@ import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StaticDNSResolver;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -424,9 +423,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         // replace node under r2
-        Pair<BookieSocketAddress, Boolean> replaceBookieResponse = repp.replaceBookie(1, 1, 1, null,
-                new ArrayList<BookieSocketAddress>(), addr2, new HashSet<BookieSocketAddress>());
-        BookieSocketAddress replacedBookie = replaceBookieResponse.getLeft();
+        BookieSocketAddress replacedBookie = repp.replaceBookie(1, 1, 1, null,
+                new ArrayList<BookieSocketAddress>(), addr2, new HashSet<BookieSocketAddress>()).getResult();
         assertEquals(addr3, replacedBookie);
     }
 
@@ -451,9 +449,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         // replace node under r2
         Set<BookieSocketAddress> excludedAddrs = new HashSet<BookieSocketAddress>();
         excludedAddrs.add(addr1);
-        Pair<BookieSocketAddress, Boolean> replaceBookieResponse = repp.replaceBookie(1, 1, 1, null,
-                new ArrayList<BookieSocketAddress>(), addr2, excludedAddrs);
-        BookieSocketAddress replacedBookie = replaceBookieResponse.getLeft();
+        BookieSocketAddress replacedBookie = repp.replaceBookie(1, 1, 1, null,
+                new ArrayList<BookieSocketAddress>(), addr2, excludedAddrs).getResult();
 
         assertFalse(addr1.equals(replacedBookie));
         assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
@@ -478,9 +475,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(5, 5, 3, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> list = ensembleResponse.getLeft();
+            List<BookieSocketAddress> list = repp.newEnsemble(5, 5, 3, null,
+                    new HashSet<BookieSocketAddress>()).getResult();
             LOG.info("Ensemble : {}", list);
             fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -541,13 +537,11 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(3, 2, 2, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> ensemble = ensembleResponse.getLeft();
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null,
+                    new HashSet<BookieSocketAddress>()).getResult();
             assertEquals(0, getNumCoveredRegionsInWriteQuorum(ensemble, 2));
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse2 = repp.newEnsemble(4, 2, 2, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> ensemble2 = ensembleResponse2.getLeft();
+            List<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null,
+                    new HashSet<BookieSocketAddress>()).getResult();
             assertEquals(0, getNumCoveredRegionsInWriteQuorum(ensemble2, 2));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -576,9 +570,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(3, 2, 2, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> ensemble = ensembleResponse.getLeft();
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null,
+                    new HashSet<BookieSocketAddress>()).getResult();
             int numCovered = getNumCoveredRegionsInWriteQuorum(ensemble, 2);
             assertTrue(numCovered >= 1);
             assertTrue(numCovered < 3);
@@ -586,9 +579,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
         try {
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse2 = repp.newEnsemble(4, 2, 2, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> ensemble2 = ensembleResponse2.getLeft();
+            List<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null,
+                    new HashSet<BookieSocketAddress>()).getResult();
             int numCovered = getNumCoveredRegionsInWriteQuorum(ensemble2, 2);
             assertTrue(numCovered >= 1 && numCovered < 3);
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -627,13 +619,11 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr8);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse1 = repp.newEnsemble(3, 2, 2, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> ensemble1 = ensembleResponse1.getLeft();
+            List<BookieSocketAddress> ensemble1 = repp.newEnsemble(3, 2, 2, null,
+                    new HashSet<BookieSocketAddress>()).getResult();
             assertEquals(3, getNumCoveredRegionsInWriteQuorum(ensemble1, 2));
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse2 = repp.newEnsemble(4, 2, 2, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> ensemble2 = ensembleResponse2.getLeft();
+            List<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null,
+                    new HashSet<BookieSocketAddress>()).getResult();
             assertEquals(4, getNumCoveredRegionsInWriteQuorum(ensemble2, 2));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -680,27 +670,23 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr10);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(6, 6, 4, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> ensemble = ensembleResponse.getLeft();
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(6, 6, 4, null,
+                    new HashSet<BookieSocketAddress>()).getResult();
             assert(ensemble.contains(addr4));
             assert(ensemble.contains(addr8));
             assert(ensemble.size() == 6);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            ensembleResponse = repp.newEnsemble(7, 7, 4, null, new HashSet<BookieSocketAddress>());
-            ensemble = ensembleResponse.getLeft();
+            ensemble = repp.newEnsemble(7, 7, 4, null, new HashSet<BookieSocketAddress>()).getResult();
             assert(ensemble.contains(addr4));
             assert(ensemble.contains(addr8));
             assert(ensemble.size() == 7);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            ensembleResponse = repp.newEnsemble(8, 8, 5, null, new HashSet<BookieSocketAddress>());
-            ensemble = ensembleResponse.getLeft();
+            ensemble = repp.newEnsemble(8, 8, 5, null, new HashSet<BookieSocketAddress>()).getResult();
             assert(ensemble.contains(addr4));
             assert(ensemble.contains(addr8));
             assert(ensemble.size() == 8);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            ensembleResponse = repp.newEnsemble(9, 9, 5, null, new HashSet<BookieSocketAddress>());
-            ensemble = ensembleResponse.getLeft();
+            ensemble = repp.newEnsemble(9, 9, 5, null, new HashSet<BookieSocketAddress>()).getResult();
             assert(ensemble.contains(addr4));
             assert(ensemble.contains(addr8));
             assert(ensemble.size() == 9);
@@ -753,9 +739,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
             ((SettableFeature) featureProvider.scope("region1").getFeature("disallowBookies")).set(true);
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(6, 6, 4, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> ensemble = ensembleResponse.getLeft();
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(6, 6, 4, null,
+                                                                  new HashSet<BookieSocketAddress>()).getResult();
             assertEquals(2, getNumRegionsInEnsemble(ensemble));
             assert(ensemble.contains(addr1));
             assert(ensemble.contains(addr3));
@@ -776,9 +761,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
         try {
             ((SettableFeature) featureProvider.scope("region2").getFeature("disallowBookies")).set(false);
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(6, 6, 4, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> ensemble = ensembleResponse.getLeft();
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(6, 6, 4, null,
+                                                                  new HashSet<BookieSocketAddress>()).getResult();
             assert(ensemble.contains(addr1));
             assert(ensemble.contains(addr3));
             assert(ensemble.contains(addr4));
@@ -851,9 +835,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
         try {
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(10, 10, 10, null,
-                    new HashSet<BookieSocketAddress>());
-            List<BookieSocketAddress> ensemble = ensembleResponse.getLeft();
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(10, 10, 10, null,
+                                                                  new HashSet<BookieSocketAddress>()).getResult();
             assert(ensemble.size() == 10);
             assertEquals(5, getNumRegionsInEnsemble(ensemble));
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -864,9 +847,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         try {
             Set<BookieSocketAddress> excludedAddrs = new HashSet<BookieSocketAddress>();
             excludedAddrs.add(addr10);
-            Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(10, 10, 10, null,
-                    excludedAddrs);
-            List<BookieSocketAddress> ensemble = ensembleResponse.getLeft();
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(10, 10, 10, null,
+                                                                  excludedAddrs).getResult();
             assert(ensemble.contains(addr11) && ensemble.contains(addr12));
             assert(ensemble.size() == 10);
             assertEquals(5, getNumRegionsInEnsemble(ensemble));
@@ -956,11 +938,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             ackQuorum = 5;
         }
 
-        Pair<List<BookieSocketAddress>, Boolean> ensembleResponse;
         List<BookieSocketAddress> ensemble;
         try {
-            ensembleResponse = repp.newEnsemble(6, 6, ackQuorum, null, new HashSet<BookieSocketAddress>());
-            ensemble = ensembleResponse.getLeft();
+            ensemble = repp.newEnsemble(6, 6, ackQuorum, null, new HashSet<BookieSocketAddress>()).getResult();
             assert(ensemble.size() == 6);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -981,9 +961,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             Set<BookieSocketAddress> excludedAddrs = new HashSet<BookieSocketAddress>();
             for (BookieSocketAddress addr: region2Bookies) {
                 if (ensemble.contains(addr)) {
-                    Pair<BookieSocketAddress, Boolean> replaceBookieResponse = repp.replaceBookie(6, 6, ackQuorum, null,
-                            ensemble, addr, excludedAddrs);
-                    BookieSocketAddress replacedBookie = replaceBookieResponse.getLeft();
+                    BookieSocketAddress replacedBookie = repp.replaceBookie(6, 6, ackQuorum, null,
+                                                                            ensemble, addr, excludedAddrs).getResult();
                     ensemble.remove(addr);
                     ensemble.add(replacedBookie);
                 }
@@ -1007,9 +986,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             Set<BookieSocketAddress> excludedAddrs = new HashSet<BookieSocketAddress>();
 
             try {
-                Pair<BookieSocketAddress, Boolean> replaceBookieResponse = repp.replaceBookie(6, 6, ackQuorum, null,
-                        ensemble, bookieToReplace, excludedAddrs);
-                BookieSocketAddress replacedBookie = replaceBookieResponse.getLeft();
+                BookieSocketAddress replacedBookie = repp.replaceBookie(6, 6, ackQuorum, null,
+                        ensemble, bookieToReplace, excludedAddrs).getResult();
                 assert (replacedBookie.equals(replacedBookieExpected));
                 assertEquals(3, getNumRegionsInEnsemble(ensemble));
             } catch (BKNotEnoughBookiesException bnebe) {
@@ -1092,11 +1070,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                     .set(true);
         }
 
-        Pair<List<BookieSocketAddress>, Boolean> ensembleResponse;
         List<BookieSocketAddress> ensemble;
         try {
-            ensembleResponse = repp.newEnsemble(6, 6, 4, null, new HashSet<BookieSocketAddress>());
-            ensemble = ensembleResponse.getLeft();
+            ensemble = repp.newEnsemble(6, 6, 4, null, new HashSet<BookieSocketAddress>()).getResult();
             assert(ensemble.size() == 6);
         } catch (BKNotEnoughBookiesException bnebe) {
             LOG.error("BKNotEnoughBookiesException", bnebe);
@@ -1160,8 +1136,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         excludedAddrs.add(addr10);
         excludedAddrs.add(addr9);
         try {
-            Pair<List<BookieSocketAddress>, Boolean> list = repp.newEnsemble(5, 5, 5, null, excludedAddrs);
-            LOG.info("Ensemble : {}", list.getLeft());
+            LOG.info("Ensemble : {}", repp.newEnsemble(5, 5, 5, null, excludedAddrs).getResult());
             fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
         } catch (BKNotEnoughBookiesException bnebe) {
             // should throw not enou
@@ -1220,9 +1195,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
     private void basicReorderReadSequenceWithLocalRegionTest(String myRegion, boolean isReadLAC) throws Exception {
         prepareNetworkTopologyForReorderTests(myRegion);
-        Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(9, 9, 5, null,
-                new HashSet<BookieSocketAddress>());
-        List<BookieSocketAddress> ensemble = ensembleResponse.getLeft();
+        List<BookieSocketAddress> ensemble = repp.newEnsemble(9, 9, 5, null,
+                                                              new HashSet<BookieSocketAddress>()).getResult();
         assertEquals(9, getNumCoveredRegionsInWriteQuorum(ensemble, 9));
 
         DistributionSchedule ds = new RoundRobinDistributionSchedule(9, 9, 9);
@@ -1278,9 +1252,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     private void basicReorderReadSequenceWithRemoteRegionTest(String myRegion, boolean isReadLAC) throws Exception {
         prepareNetworkTopologyForReorderTests(myRegion);
 
-        Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(9, 9, 5, null,
-                new HashSet<BookieSocketAddress>());
-        List<BookieSocketAddress> ensemble = ensembleResponse.getLeft();
+        List<BookieSocketAddress> ensemble = repp.newEnsemble(9, 9, 5, null,
+                                                              new HashSet<BookieSocketAddress>()).getResult();
         assertEquals(9, getNumCoveredRegionsInWriteQuorum(ensemble, 9));
 
         DistributionSchedule ds = new RoundRobinDistributionSchedule(9, 9, 9);
@@ -1350,9 +1323,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         prepareNetworkTopologyForReorderTests(myRegion);
 
-        Pair<List<BookieSocketAddress>, Boolean> ensembleResponse = repp.newEnsemble(9, 9, 5, null,
-                new HashSet<BookieSocketAddress>());
-        List<BookieSocketAddress> ensemble = ensembleResponse.getLeft();
+        List<BookieSocketAddress> ensemble = repp.newEnsemble(9, 9, 5, null,
+                                                              new HashSet<BookieSocketAddress>()).getResult();
         assertEquals(9, getNumCoveredRegionsInWriteQuorum(ensemble, 9));
 
         DistributionSchedule ds = new RoundRobinDistributionSchedule(9, 9, 9);

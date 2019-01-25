@@ -81,7 +81,6 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -994,7 +993,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         // allocate bookies
         for (Integer bookieIndex : bookieIndexesToRereplicate) {
             BookieSocketAddress oldBookie = ensemble.get(bookieIndex);
-            Pair<BookieSocketAddress, Boolean> replaceBookieResponse =
+            EnsemblePlacementPolicy.PlacementResult<BookieSocketAddress> replaceBookieResponse =
                     bkc.getPlacementPolicy().replaceBookie(
                             lh.getLedgerMetadata().getEnsembleSize(),
                             lh.getLedgerMetadata().getWriteQuorumSize(),
@@ -1003,8 +1002,8 @@ public class BookKeeperAdmin implements AutoCloseable {
                             ensemble,
                             oldBookie,
                             bookiesToExclude);
-            BookieSocketAddress newBookie = replaceBookieResponse.getLeft();
-            boolean isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getRight();
+            BookieSocketAddress newBookie = replaceBookieResponse.getResult();
+            boolean isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isStrictlyAdheringToPolicy();
             if (!isEnsembleAdheringToPlacementPolicy) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(
