@@ -25,15 +25,15 @@ import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDIT_BOOKIES_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.BOOKIE_TO_LEDGERS_MAP_CREATION_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.CHECK_ALL_LEDGERS_TIME;
-import static org.apache.bookkeeper.replication.ReplicationStats.
-                                    METADATA_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER;
-import static org.apache.bookkeeper.replication.ReplicationStats.METADATA_CHECK_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_BOOKIES_PER_LEDGER;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FRAGMENTS_PER_LEDGER;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_CHECKED;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS;
+import static org.apache.bookkeeper.replication.ReplicationStats.
+                                    PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER;
+import static org.apache.bookkeeper.replication.ReplicationStats.PLACEMENT_POLICY_CHECK_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -140,10 +140,10 @@ public class Auditor implements AutoCloseable {
     )
     private final OpStatsLogger checkAllLedgersTime;
     @StatsDoc(
-            name = METADATA_CHECK_TIME,
-            help = "the latency distribution of metadata check"
+            name = PLACEMENT_POLICY_CHECK_TIME,
+            help = "the latency distribution of placementPolicy check"
         )
-    private final OpStatsLogger metadataCheckTime;
+    private final OpStatsLogger placementPolicyCheckTime;
     @StatsDoc(
         name = AUDIT_BOOKIES_TIME,
         help = "the latency distribution of auditing all the bookies"
@@ -175,11 +175,11 @@ public class Auditor implements AutoCloseable {
     )
     private final Counter numDelayedBookieAuditsCancelled;
     @StatsDoc(
-        name = METADATA_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER,
+        name = PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER,
         help = "total number of "
-            + "ledgers failed to adhere to EnsemblePlacementPolicy found in metadata check"
+            + "ledgers failed to adhere to EnsemblePlacementPolicy found in PLACEMENT POLICY check"
     )
-    private final Counter metadataCheckEnsembleNotAdheringToPlacementPolicy;
+    private final Counter placementPolicyCheckEnsembleNotAdheringToPlacementPolicy;
 
     static BookKeeper createBookKeeperClient(ServerConfiguration conf) throws InterruptedException, IOException {
         return createBookKeeperClient(conf, NullStatsLogger.INSTANCE);
@@ -237,7 +237,7 @@ public class Auditor implements AutoCloseable {
         bookieToLedgersMapCreationTime = this.statsLogger
                 .getOpStatsLogger(ReplicationStats.BOOKIE_TO_LEDGERS_MAP_CREATION_TIME);
         checkAllLedgersTime = this.statsLogger.getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME);
-        metadataCheckTime = this.statsLogger.getOpStatsLogger(ReplicationStats.METADATA_CHECK_TIME);
+        placementPolicyCheckTime = this.statsLogger.getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
         auditBookiesTime = this.statsLogger.getOpStatsLogger(ReplicationStats.AUDIT_BOOKIES_TIME);
         numLedgersChecked = this.statsLogger.getCounter(ReplicationStats.NUM_LEDGERS_CHECKED);
         numFragmentsPerLedger = statsLogger.getOpStatsLogger(ReplicationStats.NUM_FRAGMENTS_PER_LEDGER);
@@ -245,8 +245,8 @@ public class Auditor implements AutoCloseable {
         numBookieAuditsDelayed = this.statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
         numDelayedBookieAuditsCancelled = this.statsLogger
                 .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
-        metadataCheckEnsembleNotAdheringToPlacementPolicy = statsLogger
-                .getCounter(ReplicationStats.METADATA_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
+        placementPolicyCheckEnsembleNotAdheringToPlacementPolicy = statsLogger
+                .getCounter(ReplicationStats.PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
         this.bkc = bkc;
         this.ownBkc = ownBkc;
         initialize(conf, bkc);
@@ -489,7 +489,7 @@ public class Auditor implements AutoCloseable {
 
             scheduleBookieCheckTask();
             scheduleCheckAllLedgersTask();
-            scheduleMetadataCheckTask();
+            schedulePlacementPolicyCheckTask();
         }
     }
 
@@ -572,27 +572,27 @@ public class Auditor implements AutoCloseable {
         }
     }
 
-    private void scheduleMetadataCheckTask(){
-        long interval = conf.getAuditorPeriodicMetadataCheckInterval();
+    private void schedulePlacementPolicyCheckTask(){
+        long interval = conf.getAuditorPeriodicPlacementPolicyCheckInterval();
 
         if (interval > 0) {
-            LOG.info("Auditor periodic metadata check enabled" + " 'auditorPeriodicMetadataCheckInterval' {} seconds",
-                    interval);
+            LOG.info("Auditor periodic placement policy check enabled"
+                    + " 'auditorPeriodicPlacementPolicyCheckInterval' {} seconds", interval);
 
-            long metadataCheckLastExecutedCTime;
+            long placementPolicyCheckLastExecutedCTime;
             long durationSinceLastExecutionInSecs;
             long initialDelay;
             try {
-                metadataCheckLastExecutedCTime = ledgerUnderreplicationManager.getMetadataCheckCTime();
+                placementPolicyCheckLastExecutedCTime = ledgerUnderreplicationManager.getPlacementPolicyCheckCTime();
             } catch (UnavailableException ue) {
-                LOG.error("Got UnavailableException while trying to get metadataCheckCTime", ue);
-                metadataCheckLastExecutedCTime = -1;
+                LOG.error("Got UnavailableException while trying to get placementPolicyCheckCTime", ue);
+                placementPolicyCheckLastExecutedCTime = -1;
             }
-            if (metadataCheckLastExecutedCTime == -1) {
+            if (placementPolicyCheckLastExecutedCTime == -1) {
                 durationSinceLastExecutionInSecs = -1;
                 initialDelay = 0;
             } else {
-                durationSinceLastExecutionInSecs = (System.currentTimeMillis() - metadataCheckLastExecutedCTime)
+                durationSinceLastExecutionInSecs = (System.currentTimeMillis() - placementPolicyCheckLastExecutedCTime)
                         / 1000;
                 if (durationSinceLastExecutionInSecs < 0) {
                     // this can happen if there is no strict time ordering
@@ -602,26 +602,27 @@ public class Auditor implements AutoCloseable {
                         : (interval - durationSinceLastExecutionInSecs);
             }
             LOG.info(
-                    "metadataCheck scheduling info.  metadataCheckLastExecutedCTime: {} "
+                    "placementPolicyCheck scheduling info.  placementPolicyCheckLastExecutedCTime: {} "
                             + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
-                            metadataCheckLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
+                    placementPolicyCheckLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
             executor.scheduleAtFixedRate(new Runnable() {
                 public void run() {
                     try {
                         Stopwatch stopwatch = Stopwatch.createStarted();
-                        LOG.info("Starting MetadataCheck");
-                        metadataCheck();
-                        long metadataCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
-                        LOG.info("Completed metadataCheck in {} milliSeconds", metadataCheckDuration);
-                        metadataCheckTime.registerSuccessfulEvent(metadataCheckDuration, TimeUnit.MILLISECONDS);
+                        LOG.info("Starting PlacementPolicyCheck");
+                        placementPolicyCheck();
+                        long placementPolicyCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
+                        LOG.info("Completed placementPolicyCheck in {} milliSeconds", placementPolicyCheckDuration);
+                        placementPolicyCheckTime.registerSuccessfulEvent(placementPolicyCheckDuration,
+                                TimeUnit.MILLISECONDS);
                     } catch (BKAuditException e) {
-                        LOG.error("BKAuditException running periodic metadata check", e);
+                        LOG.error("BKAuditException running periodic placementPolicy check", e);
                     }
                 }
             }, initialDelay, interval, TimeUnit.SECONDS);
         } else {
-            LOG.info("Periodic metadata check disabled");
+            LOG.info("Periodic placementPolicy check disabled");
         }
     }
 
@@ -890,8 +891,8 @@ public class Auditor implements AutoCloseable {
         }
     }
 
-    void metadataCheck() throws BKAuditException {
-        final CountDownLatch metadataCheckLatch = new CountDownLatch(1);
+    void placementPolicyCheck() throws BKAuditException {
+        final CountDownLatch placementPolicyCheckLatch = new CountDownLatch(1);
         Processor<Long> ledgerProcessor = new Processor<Long>() {
             @Override
             public void process(Long ledgerId, AsyncCallback.VoidCallback iterCallback) {
@@ -919,13 +920,12 @@ public class Auditor implements AutoCloseable {
                                 }
                             }
                             if (foundSegmentNotAdheringToPlacementPolicy) {
-                                metadataCheckEnsembleNotAdheringToPlacementPolicy.inc();
+                                placementPolicyCheckEnsembleNotAdheringToPlacementPolicy.inc();
                             }
                         } else {
                             if (LOG.isDebugEnabled()) {
-                                LOG.debug(
-                                        "Ledger: {} is not yet closed, so skipping the metadata check analysis for now",
-                                        ledgerId);
+                                LOG.debug("Ledger: {} is not yet closed, so skipping the placementPolicy"
+                                        + "check analysis for now", ledgerId);
                             }
                         }
                         iterCallback.processResult(BKException.Code.OK, null, null);
@@ -947,22 +947,23 @@ public class Auditor implements AutoCloseable {
             @Override
             public void processResult(int rc, String s, Object obj) {
                 resultCode.add(rc);
-                metadataCheckLatch.countDown();
+                placementPolicyCheckLatch.countDown();
             }
         }, null, BKException.Code.OK, BKException.Code.ReadException);
         try {
-            metadataCheckLatch.await();
+            placementPolicyCheckLatch.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new BKAuditException("Exception while doing metadata check", e);
+            throw new BKAuditException("Exception while doing placementPolicy check", e);
         }
         if (!resultCode.contains(BKException.Code.OK)) {
-            throw new BKAuditException("Exception while doing metadata check", BKException.create(resultCode.get(0)));
+            throw new BKAuditException("Exception while doing placementPolicy check",
+                    BKException.create(resultCode.get(0)));
         }
         try {
-            ledgerUnderreplicationManager.setMetadataCheckCTime(System.currentTimeMillis());
+            ledgerUnderreplicationManager.setPlacementPolicyCheckCTime(System.currentTimeMillis());
         } catch (UnavailableException ue) {
-            LOG.error("Got exception while trying to set MetadataCheckCTime", ue);
+            LOG.error("Got exception while trying to set PlacementPolicyCheckCTime", ue);
         }
     }
 

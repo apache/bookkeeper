@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
+import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -65,12 +66,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Tests the logic of Auditor's MetadataCheck.
+ * Tests the logic of Auditor's PlacementPolicyCheck.
  */
-public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
+public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     private MetadataBookieDriver driver;
 
-    public AuditorMetadataCheckTest() {
+    public AuditorPlacementPolicyCheckTest() {
         super(1);
         baseConf.setPageLimit(1); // to make it easy to push ledger out of cache
     }
@@ -95,7 +96,7 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testMetadataCheckWithBookiesFromDifferentRacks() throws Exception {
+    public void testPlacementPolicyCheckWithBookiesFromDifferentRacks() throws Exception {
         int numOfBookies = 5;
         List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
         BookieSocketAddress bookieAddress;
@@ -126,6 +127,8 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
                 .withClosedState()
                 .withLastEntryId(100)
                 .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
                 .build();
         lm.createLedgerMetadata(1L, initMeta).get();
 
@@ -142,6 +145,8 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
                 .withClosedState()
                 .withLastEntryId(100)
                 .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
                 .build();
         lm.createLedgerMetadata(2L, initMeta).get();
 
@@ -152,6 +157,8 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
                 .newEnsembleEntry(0L, bookieAddresses.subList(0, 4))
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
                 .build();
         lm.createLedgerMetadata(3L, initMeta).get();
 
@@ -164,6 +171,8 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
                 .newEnsembleEntry(0L, bookieAddresses.subList(0, 4))
                 .newEnsembleEntry(20L, bookieAddresses.subList(1, 5))
                 .newEnsembleEntry(60L, bookieAddresses.subList(0, 4))
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
                 .build();
         lm.createLedgerMetadata(4L, initMeta).get();
 
@@ -172,15 +181,15 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
         setServerConfigProperties(servConf);
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
-            TestStatsLogger statsLogger = startAuditorAndWaitForMetadataCheck(servConf, auditorRef);
-            TestCounter metadataCheckEnsembleNotAdheringToPlacementPolicy = (TestCounter) statsLogger
-                    .getCounter(ReplicationStats.METADATA_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
+            TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
+            TestCounter placementPolicyCheckEnsembleNotAdheringToPlacementPolicy = (TestCounter) statsLogger.getCounter(
+                    ReplicationStats.PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
             /*
              * since all of the bookies are in different racks, there shouldn't be any ledger not adhering
              * to placement policy.
              */
-            assertEquals("METADATA_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER SuccessCount", 0L,
-                    metadataCheckEnsembleNotAdheringToPlacementPolicy.get().longValue());
+            assertEquals("PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER SuccessCount", 0L,
+                    placementPolicyCheckEnsembleNotAdheringToPlacementPolicy.get().longValue());
         } finally {
             Auditor auditor = auditorRef.getValue();
             if (auditor != null) {
@@ -190,7 +199,7 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testMetadataCheckWithLedgersNotAdheringToPlacementPolicy() throws Exception {
+    public void testPlacementPolicyCheckWithLedgersNotAdheringToPlacementPolicy() throws Exception {
         int numOfBookies = 5;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
         List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
@@ -228,6 +237,8 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
                 .withClosedState()
                 .withLastEntryId(100)
                 .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
                 .build();
         lm.createLedgerMetadata(1L, initMeta).get();
         numOfLedgersNotAdheringToPlacementPolicy++;
@@ -241,6 +252,8 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
                 .newEnsembleEntry(0L, bookieAddresses)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
                 .build();
         lm.createLedgerMetadata(2L, initMeta).get();
 
@@ -249,12 +262,12 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
         setServerConfigProperties(servConf);
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
-            TestStatsLogger statsLogger = startAuditorAndWaitForMetadataCheck(servConf, auditorRef);
-            TestCounter metadataCheckEnsembleNotAdheringToPlacementPolicy = (TestCounter) statsLogger
-                    .getCounter(ReplicationStats.METADATA_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
-            assertEquals("METADATA_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER SuccessCount",
+            TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
+            TestCounter placementPolicyCheckEnsembleNotAdheringToPlacementPolicy = (TestCounter) statsLogger.getCounter(
+                    ReplicationStats.PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
+            assertEquals("PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER SuccessCount",
                     (long) numOfLedgersNotAdheringToPlacementPolicy,
-                    metadataCheckEnsembleNotAdheringToPlacementPolicy.get().longValue());
+                    placementPolicyCheckEnsembleNotAdheringToPlacementPolicy.get().longValue());
         } finally {
             Auditor auditor = auditorRef.getValue();
             if (auditor != null) {
@@ -264,7 +277,7 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testMetadataCheckWithLedgersNotAdheringToPolicyWithMultipleSegments() throws Exception {
+    public void testPlacementPolicyCheckWithLedgersNotAdheringToPolicyWithMultipleSegments() throws Exception {
         int numOfBookies = 7;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
         List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
@@ -306,6 +319,8 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
                 .withClosedState()
                 .withLastEntryId(100)
                 .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
                 .build();
         lm.createLedgerMetadata(1L, initMeta).get();
 
@@ -335,6 +350,8 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
                 .withClosedState()
                 .withLastEntryId(100)
                 .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
                 .build();
         lm.createLedgerMetadata(2L, initMeta).get();
         numOfLedgersNotAdheringToPlacementPolicy++;
@@ -344,12 +361,12 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
         setServerConfigProperties(servConf);
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
-            TestStatsLogger statsLogger = startAuditorAndWaitForMetadataCheck(servConf, auditorRef);
-            TestCounter metadataCheckEnsembleNotAdheringToPlacementPolicy = (TestCounter) statsLogger
-                    .getCounter(ReplicationStats.METADATA_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
-            assertEquals("METADATA_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER SuccessCount",
+            TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
+            TestCounter placementPolicyCheckEnsembleNotAdheringToPlacementPolicy = (TestCounter) statsLogger.getCounter(
+                    ReplicationStats.PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
+            assertEquals("PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER SuccessCount",
                     (long) numOfLedgersNotAdheringToPlacementPolicy,
-                    metadataCheckEnsembleNotAdheringToPlacementPolicy.get().longValue());
+                    placementPolicyCheckEnsembleNotAdheringToPlacementPolicy.get().longValue());
         } finally {
             Auditor auditor = auditorRef.getValue();
             if (auditor != null) {
@@ -364,38 +381,38 @@ public class AuditorMetadataCheckTest extends BookKeeperClusterTestCase {
                 RackawareEnsemblePlacementPolicy.class.getName());
         servConf.setAuditorPeriodicCheckInterval(0);
         servConf.setAuditorPeriodicBookieCheckInterval(0);
-        servConf.setAuditorPeriodicMetadataCheckInterval(1000);
+        servConf.setAuditorPeriodicPlacementPolicyCheckInterval(1000);
     }
 
-    private TestStatsLogger startAuditorAndWaitForMetadataCheck(ServerConfiguration servConf,
+    private TestStatsLogger startAuditorAndWaitForPlacementPolicyCheck(ServerConfiguration servConf,
             MutableObject<Auditor> auditorRef) throws MetadataException, CompatibilityException, KeeperException,
             InterruptedException, UnavailableException, UnknownHostException {
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
         TestStatsProvider statsProvider = new TestStatsProvider();
         TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
-        TestOpStatsLogger metadataCheckStatsLogger = (TestOpStatsLogger) statsLogger
-                .getOpStatsLogger(ReplicationStats.METADATA_CHECK_TIME);
+        TestOpStatsLogger placementPolicyCheckStatsLogger = (TestOpStatsLogger) statsLogger
+                .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
 
         final TestAuditor auditor = new TestAuditor(Bookie.getBookieAddress(servConf).toString(), servConf,
                 statsLogger);
         auditorRef.setValue(auditor);
         CountDownLatch latch = auditor.getLatch();
-        assertEquals("METADATA_CHECK_TIME SuccessCount", 0, metadataCheckStatsLogger.getSuccessCount());
-        urm.setMetadataCheckCTime(-1);
+        assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0, placementPolicyCheckStatsLogger.getSuccessCount());
+        urm.setPlacementPolicyCheckCTime(-1);
         auditor.start();
         /*
-         * since metadataCheckCTime is set to -1, metadataCheck should be
+         * since placementPolicyCheckCTime is set to -1, placementPolicyCheck should be
          * scheduled to run with no initialdelay
          */
-        assertTrue("metadataCheck should have executed", latch.await(10, TimeUnit.SECONDS));
-        for (int i = 0; i < 10; i++) {
+        assertTrue("placementPolicyCheck should have executed", latch.await(20, TimeUnit.SECONDS));
+        for (int i = 0; i < 20; i++) {
             Thread.sleep(100);
-            if (metadataCheckStatsLogger.getSuccessCount() >= 1) {
+            if (placementPolicyCheckStatsLogger.getSuccessCount() >= 1) {
                 break;
             }
         }
-        assertEquals("METADATA_CHECK_TIME SuccessCount", 1, metadataCheckStatsLogger.getSuccessCount());
+        assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 1, placementPolicyCheckStatsLogger.getSuccessCount());
         return statsLogger;
     }
 }

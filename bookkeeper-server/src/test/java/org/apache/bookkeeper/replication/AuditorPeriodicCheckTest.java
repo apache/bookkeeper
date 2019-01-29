@@ -398,7 +398,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         TestOpStatsLogger checkAllLedgersStatsLogger = (TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME);
         servConf.setAuditorPeriodicCheckInterval(auditorPeriodicCheckInterval);
-        servConf.setAuditorPeriodicMetadataCheckInterval(0);
+        servConf.setAuditorPeriodicPlacementPolicyCheckInterval(0);
         servConf.setAuditorPeriodicBookieCheckInterval(0);
         final TestAuditor auditor = new TestAuditor(Bookie.getBookieAddress(servConf).toString(), servConf, bkc, false,
                 statsLogger);
@@ -458,7 +458,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testInitialDelayOfMetadataCheck() throws Exception {
+    public void testInitialDelayOfPlacementPolicyCheck() throws Exception {
         for (AuditorElector e : auditorElectors.values()) {
             e.shutdown();
         }
@@ -478,75 +478,75 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
 
         ServerConfiguration servConf = new ServerConfiguration(bsConfs.get(0));
-        validateInitialDelayOfMetadataCheck(urm, -1, 1000, servConf, bkc);
-        validateInitialDelayOfMetadataCheck(urm, 999, 1000, servConf, bkc);
-        validateInitialDelayOfMetadataCheck(urm, 1001, 1000, servConf, bkc);
+        validateInitialDelayOfPlacementPolicyCheck(urm, -1, 1000, servConf, bkc);
+        validateInitialDelayOfPlacementPolicyCheck(urm, 999, 1000, servConf, bkc);
+        validateInitialDelayOfPlacementPolicyCheck(urm, 1001, 1000, servConf, bkc);
     }
 
-    void validateInitialDelayOfMetadataCheck(LedgerUnderreplicationManager urm, long timeSinceLastExecutedInSecs,
-            long auditorPeriodicMetadataCheckInterval, ServerConfiguration servConf, BookKeeper bkc)
+    void validateInitialDelayOfPlacementPolicyCheck(LedgerUnderreplicationManager urm, long timeSinceLastExecutedInSecs,
+            long auditorPeriodicPlacementPolicyCheckInterval, ServerConfiguration servConf, BookKeeper bkc)
             throws UnavailableException, UnknownHostException, InterruptedException {
         TestStatsProvider statsProvider = new TestStatsProvider();
         TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
-        TestOpStatsLogger metadataCheckStatsLogger = (TestOpStatsLogger) statsLogger
-                .getOpStatsLogger(ReplicationStats.METADATA_CHECK_TIME);
-        servConf.setAuditorPeriodicMetadataCheckInterval(auditorPeriodicMetadataCheckInterval);
+        TestOpStatsLogger placementPolicyCheckStatsLogger = (TestOpStatsLogger) statsLogger
+                .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
+        servConf.setAuditorPeriodicPlacementPolicyCheckInterval(auditorPeriodicPlacementPolicyCheckInterval);
         servConf.setAuditorPeriodicCheckInterval(0);
         servConf.setAuditorPeriodicBookieCheckInterval(0);
         final TestAuditor auditor = new TestAuditor(Bookie.getBookieAddress(servConf).toString(), servConf, bkc, false,
                 statsLogger);
         CountDownLatch latch = auditor.getLatch();
-        assertEquals("METADATA_CHECK_TIME SuccessCount", 0, metadataCheckStatsLogger.getSuccessCount());
+        assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0, placementPolicyCheckStatsLogger.getSuccessCount());
         long curTimeBeforeStart = System.currentTimeMillis();
-        long metadataCheckCTime = -1;
+        long placementPolicyCheckCTime = -1;
         long initialDelayInMsecs = -1;
-        long nextExpectedMetadataCheckExecutionTime = -1;
-        long bufferTimeInMsecs = 12000L;
+        long nextExpectedPlacementPolicyCheckExecutionTime = -1;
+        long bufferTimeInMsecs = 20000L;
         if (timeSinceLastExecutedInSecs == -1) {
             /*
-             * if we are setting metadataCheckCTime to -1, it means that
-             * metadataCheck hasn't run before. So initialDelay for
-             * metadataCheck should be 0.
+             * if we are setting placementPolicyCheckCTime to -1, it means that
+             * placementPolicyCheck hasn't run before. So initialDelay for
+             * placementPolicyCheck should be 0.
              */
-            metadataCheckCTime = -1;
+            placementPolicyCheckCTime = -1;
             initialDelayInMsecs = 0;
         } else {
-            metadataCheckCTime = curTimeBeforeStart - timeSinceLastExecutedInSecs * 1000L;
-            initialDelayInMsecs = timeSinceLastExecutedInSecs > auditorPeriodicMetadataCheckInterval ? 0
-                    : (auditorPeriodicMetadataCheckInterval - timeSinceLastExecutedInSecs) * 1000L;
+            placementPolicyCheckCTime = curTimeBeforeStart - timeSinceLastExecutedInSecs * 1000L;
+            initialDelayInMsecs = timeSinceLastExecutedInSecs > auditorPeriodicPlacementPolicyCheckInterval ? 0
+                    : (auditorPeriodicPlacementPolicyCheckInterval - timeSinceLastExecutedInSecs) * 1000L;
         }
         /*
-         * next metadataCheck should happen atleast after
-         * nextExpectedMetadataCheckExecutionTime.
+         * next placementPolicyCheck should happen atleast after
+         * nextExpectedPlacementPolicyCheckExecutionTime.
          */
-        nextExpectedMetadataCheckExecutionTime = curTimeBeforeStart + initialDelayInMsecs;
+        nextExpectedPlacementPolicyCheckExecutionTime = curTimeBeforeStart + initialDelayInMsecs;
 
-        urm.setMetadataCheckCTime(metadataCheckCTime);
+        urm.setPlacementPolicyCheckCTime(placementPolicyCheckCTime);
         auditor.start();
         /*
-         * since auditorPeriodicMetadataCheckInterval are higher values (in the
-         * order of 100s of seconds), its ok bufferTimeInMsecs to be ` 10 secs.
+         * since auditorPeriodicPlacementPolicyCheckInterval are higher values (in the
+         * order of 100s of seconds), its ok bufferTimeInMsecs to be ` 20 secs.
          */
-        assertTrue("metadataCheck should have executed with initialDelay " + initialDelayInMsecs,
+        assertTrue("placementPolicyCheck should have executed with initialDelay " + initialDelayInMsecs,
                 latch.await(initialDelayInMsecs + bufferTimeInMsecs, TimeUnit.MILLISECONDS));
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 20; i++) {
             Thread.sleep(100);
-            if (metadataCheckStatsLogger.getSuccessCount() >= 1) {
+            if (placementPolicyCheckStatsLogger.getSuccessCount() >= 1) {
                 break;
             }
         }
-        assertEquals("METADATA_CHECK_TIME SuccessCount", 1, metadataCheckStatsLogger.getSuccessCount());
-        long currentMetadataCheckCTime = urm.getMetadataCheckCTime();
+        assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 1, placementPolicyCheckStatsLogger.getSuccessCount());
+        long currentPlacementPolicyCheckCTime = urm.getPlacementPolicyCheckCTime();
         assertTrue(
-                "currentMetadataCheckCTime: " + currentMetadataCheckCTime
-                        + " should be greater than nextExpectedMetadataCheckExecutionTime: "
-                        + nextExpectedMetadataCheckExecutionTime,
-                currentMetadataCheckCTime > nextExpectedMetadataCheckExecutionTime);
+                "currentPlacementPolicyCheckCTime: " + currentPlacementPolicyCheckCTime
+                        + " should be greater than nextExpectedPlacementPolicyCheckExecutionTime: "
+                        + nextExpectedPlacementPolicyCheckExecutionTime,
+                currentPlacementPolicyCheckCTime > nextExpectedPlacementPolicyCheckExecutionTime);
         assertTrue(
-                "currentMetadataCheckCTime: " + currentMetadataCheckCTime
-                        + " should be lesser than nextExpectedMetadataCheckExecutionTime+bufferTimeInMsecs: "
-                        + (nextExpectedMetadataCheckExecutionTime + bufferTimeInMsecs),
-                currentMetadataCheckCTime < (nextExpectedMetadataCheckExecutionTime + bufferTimeInMsecs));
+                "currentPlacementPolicyCheckCTime: " + currentPlacementPolicyCheckCTime
+                        + " should be lesser than nextExpectedPlacementPolicyCheckExecutionTime+bufferTimeInMsecs: "
+                        + (nextExpectedPlacementPolicyCheckExecutionTime + bufferTimeInMsecs),
+                currentPlacementPolicyCheckCTime < (nextExpectedPlacementPolicyCheckExecutionTime + bufferTimeInMsecs));
         auditor.close();
     }
 
@@ -569,8 +569,8 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             latchRef.get().countDown();
         }
 
-        void metadataCheck() throws BKAuditException {
-            super.metadataCheck();
+        void placementPolicyCheck() throws BKAuditException {
+            super.placementPolicyCheck();
             latchRef.get().countDown();
         }
 

@@ -104,9 +104,9 @@ message CheckAllLedgersFormat {
 }
 
 /**
- * information of MetadataCheck execution
+ * information of PlacementPolicyCheck execution
  */
-message MetadataCheckFormat {
-    optional int64 metadataCheckCTime = 1;
+message PlacementPolicyCheckFormat {
+    optional int64 placementPolicyCheckCTime = 1;
 }
 

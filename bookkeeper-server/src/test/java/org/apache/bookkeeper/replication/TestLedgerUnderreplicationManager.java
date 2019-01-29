@@ -781,18 +781,18 @@ public class TestLedgerUnderreplicationManager {
     }
 
     @Test
-    public void testMetadataCheckCTime() throws Exception {
+    public void testPlacementPolicyCheckCTime() throws Exception {
         @Cleanup
         LedgerUnderreplicationManager underReplicaMgr1 = lmf1.newLedgerUnderreplicationManager();
         @Cleanup
         LedgerUnderreplicationManager underReplicaMgr2 = lmf2.newLedgerUnderreplicationManager();
-        assertEquals(-1, underReplicaMgr1.getMetadataCheckCTime());
+        assertEquals(-1, underReplicaMgr1.getPlacementPolicyCheckCTime());
         long curTime = System.currentTimeMillis();
-        underReplicaMgr2.setMetadataCheckCTime(curTime);
-        assertEquals(curTime, underReplicaMgr1.getMetadataCheckCTime());
+        underReplicaMgr2.setPlacementPolicyCheckCTime(curTime);
+        assertEquals(curTime, underReplicaMgr1.getPlacementPolicyCheckCTime());
         curTime = System.currentTimeMillis();
-        underReplicaMgr2.setMetadataCheckCTime(curTime);
-        assertEquals(curTime, underReplicaMgr1.getMetadataCheckCTime());
+        underReplicaMgr2.setPlacementPolicyCheckCTime(curTime);
+        assertEquals(curTime, underReplicaMgr1.getPlacementPolicyCheckCTime());
     }
 
     private void verifyMarkLedgerUnderreplicated(Collection<String> missingReplica)
