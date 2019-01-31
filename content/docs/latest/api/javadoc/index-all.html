@@ -2920,6 +2920,10 @@
 <div class="block">Return the flag whether to ignore startup failures on loading server components specified at
  <a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getExtraServerComponents--"><code>ServerConfiguration.getExtraServerComponents()</code></a>.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getIgnoreLocalNodeInPlacementPolicy--">getIgnoreLocalNodeInPlacementPolicy()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Whether to ignore localnode in placementpolicy.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getIndexDirNames--">getIndexDirNames()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get dir name to store index files.</div>
@@ -4100,6 +4104,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES">IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY">IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#ignoreLocalNodeInPlacementPolicy">ignoreLocalNodeInPlacementPolicy</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.Code.html#IllegalOpException">IllegalOpException</a></span> - Static variable in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.Code.html" title="interface in org.apache.bookkeeper.client.api">BKException.Code</a></dt>
 <dd>
 <div class="block">Operation is illegal.</div>
@@ -4145,9 +4153,9 @@
 <dd>
 <div class="block">Initialize the policy.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-int-boolean-int-int-boolean-org.apache.bookkeeper.stats.StatsLogger-">initialize(DNSToSwitchMapping, HashedWheelTimer, boolean, int, int, boolean, int, int, boolean, StatsLogger)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-int-boolean-int-int-boolean-boolean-org.apache.bookkeeper.stats.StatsLogger-">initialize(DNSToSwitchMapping, HashedWheelTimer, boolean, int, int, boolean, int, int, boolean, boolean, StatsLogger)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-int-boolean-int-int-boolean-org.apache.bookkeeper.stats.StatsLogger-">initialize(DNSToSwitchMapping, HashedWheelTimer, boolean, int, int, boolean, int, int, boolean, StatsLogger)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-int-boolean-int-int-boolean-boolean-org.apache.bookkeeper.stats.StatsLogger-">initialize(DNSToSwitchMapping, HashedWheelTimer, boolean, int, int, boolean, int, int, boolean, boolean, StatsLogger)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>
 <div class="block">Initialize the policy.</div>
 </dd>
@@ -13063,6 +13071,10 @@
 <dd>
 <div class="block">Set the flag whether to ignore startup failures on loading server components specified at
  <a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getExtraServerComponents--"><code>ServerConfiguration.getExtraServerComponents()</code></a>.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setIgnoreLocalNodeInPlacementPolicy-boolean-">setIgnoreLocalNodeInPlacementPolicy(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Sets the flag to ignore usage of localnode in placement policy.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setIndexDirName-java.lang.String:A-">setIndexDirName(String[])</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>

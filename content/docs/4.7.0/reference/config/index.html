@@ -2039,6 +2039,13 @@ when using either RackawareEnsemblePlacementPolicy and RegionAwareEnsemblePlacem
 </td>
       <td></td>
     </tr>
+    
+    <tr id="ignoreLocalNodeInPlacementPolicy">
+      <td><code>ignoreLocalNodeInPlacementPolicy</code></td>
+      <td><p>‘ignoreLocalNodeInPlacementPolicy’ specifies whether to ignore localnode in the internal logic of placement policy. If it is not possible or useful to use Bookkeeper client node’s (or AutoReplicator) rack/region info. for placement policy then it is better to ignore localnode instead of false alarming with log lines and metrics.</p>
+</td>
+      <td></td>
+    </tr>
      <!-- for param in group.params -->
   </tbody>
 </table>

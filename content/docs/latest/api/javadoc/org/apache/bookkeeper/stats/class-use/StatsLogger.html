@@ -218,7 +218,7 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected <a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-int-boolean-int-int-boolean-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-int-boolean-int-int-boolean-boolean-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           boolean&nbsp;reorderReadsRandom,
           int&nbsp;stabilizePeriodSeconds,
@@ -227,13 +227,14 @@
           int&nbsp;maxWeightMultiple,
           int&nbsp;minNumRacksPerWriteQuorum,
           boolean&nbsp;enforceMinNumRacksPerWriteQuorum,
+          boolean&nbsp;ignoreLocalNodeInPlacementPolicy,
           <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>
 <div class="block">Initialize the policy.</div>
 </td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-int-boolean-int-int-boolean-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-int-boolean-int-int-boolean-boolean-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           boolean&nbsp;reorderReadsRandom,
           int&nbsp;stabilizePeriodSeconds,
@@ -242,6 +243,7 @@
           int&nbsp;maxWeightMultiple,
           int&nbsp;minNumRacksPerWriteQuorum,
           boolean&nbsp;enforceMinNumRacksPerWriteQuorum,
+          boolean&nbsp;ignoreLocalNodeInPlacementPolicy,
           <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
