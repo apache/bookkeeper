@@ -55,18 +55,20 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
                                                           int maxWeightMultiple,
                                                           int minNumRacksPerWriteQuorum,
                                                           boolean enforceMinNumRacksPerWriteQuorum,
+                                                          boolean ignoreLocalNodeInPlacementPolicy,
             StatsLogger statsLogger) {
         if (stabilizePeriodSeconds > 0) {
             super.initialize(dnsResolver, timer, reorderReadsRandom, 0, reorderThresholdPendingRequests, isWeighted,
-                    maxWeightMultiple, minNumRacksPerWriteQuorum, enforceMinNumRacksPerWriteQuorum, statsLogger);
+                    maxWeightMultiple, minNumRacksPerWriteQuorum, enforceMinNumRacksPerWriteQuorum,
+                    ignoreLocalNodeInPlacementPolicy, statsLogger);
             slave = new RackawareEnsemblePlacementPolicyImpl(enforceDurability);
             slave.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
                     reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
-                    enforceMinNumRacksPerWriteQuorum, statsLogger);
+                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger);
         } else {
             super.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
                     reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
-                    enforceMinNumRacksPerWriteQuorum, statsLogger);
+                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger);
             slave = null;
         }
         return this;
