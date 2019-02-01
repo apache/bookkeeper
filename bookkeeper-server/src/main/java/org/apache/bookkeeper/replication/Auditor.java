@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.replication;
 
+
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDIT_BOOKIES_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.BOOKIE_TO_LEDGERS_MAP_CREATION_TIME;
@@ -30,6 +31,9 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_DELAYED_BOO
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FRAGMENTS_PER_LEDGER;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_CHECKED;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS;
+import static org.apache.bookkeeper.replication.ReplicationStats.
+                                    PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER;
+import static org.apache.bookkeeper.replication.ReplicationStats.PLACEMENT_POLICY_CHECK_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -37,6 +41,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,12 +49,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -57,6 +64,7 @@ import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerChecker;
 import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -132,6 +140,11 @@ public class Auditor implements AutoCloseable {
     )
     private final OpStatsLogger checkAllLedgersTime;
     @StatsDoc(
+            name = PLACEMENT_POLICY_CHECK_TIME,
+            help = "the latency distribution of placementPolicy check"
+        )
+    private final OpStatsLogger placementPolicyCheckTime;
+    @StatsDoc(
         name = AUDIT_BOOKIES_TIME,
         help = "the latency distribution of auditing all the bookies"
     )
@@ -161,6 +174,12 @@ public class Auditor implements AutoCloseable {
         help = "the number of delayed-bookie-audits cancelled"
     )
     private final Counter numDelayedBookieAuditsCancelled;
+    @StatsDoc(
+        name = PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER,
+        help = "total number of "
+            + "ledgers failed to adhere to EnsemblePlacementPolicy found in PLACEMENT POLICY check"
+    )
+    private final Counter placementPolicyCheckEnsembleNotAdheringToPlacementPolicy;
 
     static BookKeeper createBookKeeperClient(ServerConfiguration conf) throws InterruptedException, IOException {
         return createBookKeeperClient(conf, NullStatsLogger.INSTANCE);
@@ -218,6 +237,7 @@ public class Auditor implements AutoCloseable {
         bookieToLedgersMapCreationTime = this.statsLogger
                 .getOpStatsLogger(ReplicationStats.BOOKIE_TO_LEDGERS_MAP_CREATION_TIME);
         checkAllLedgersTime = this.statsLogger.getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME);
+        placementPolicyCheckTime = this.statsLogger.getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
         auditBookiesTime = this.statsLogger.getOpStatsLogger(ReplicationStats.AUDIT_BOOKIES_TIME);
         numLedgersChecked = this.statsLogger.getCounter(ReplicationStats.NUM_LEDGERS_CHECKED);
         numFragmentsPerLedger = statsLogger.getOpStatsLogger(ReplicationStats.NUM_FRAGMENTS_PER_LEDGER);
@@ -225,7 +245,8 @@ public class Auditor implements AutoCloseable {
         numBookieAuditsDelayed = this.statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
         numDelayedBookieAuditsCancelled = this.statsLogger
                 .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
-
+        placementPolicyCheckEnsembleNotAdheringToPlacementPolicy = statsLogger
+                .getCounter(ReplicationStats.PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
         this.bkc = bkc;
         this.ownBkc = ownBkc;
         initialize(conf, bkc);
@@ -466,80 +487,142 @@ public class Auditor implements AutoCloseable {
                 submitShutdownTask();
             }
 
-            long bookieCheckInterval = conf.getAuditorPeriodicBookieCheckInterval();
-            if (bookieCheckInterval == 0) {
-                LOG.info("Auditor periodic bookie checking disabled, running once check now anyhow");
-                executor.submit(bookieCheck);
-            } else {
-                LOG.info("Auditor periodic bookie checking enabled"
-                         + " 'auditorPeriodicBookieCheckInterval' {} seconds", bookieCheckInterval);
-                executor.scheduleAtFixedRate(bookieCheck, 0, bookieCheckInterval, TimeUnit.SECONDS);
+            scheduleBookieCheckTask();
+            scheduleCheckAllLedgersTask();
+            schedulePlacementPolicyCheckTask();
+        }
+    }
+
+    private void scheduleBookieCheckTask() {
+        long bookieCheckInterval = conf.getAuditorPeriodicBookieCheckInterval();
+        if (bookieCheckInterval == 0) {
+            LOG.info("Auditor periodic bookie checking disabled, running once check now anyhow");
+            executor.submit(bookieCheck);
+        } else {
+            LOG.info("Auditor periodic bookie checking enabled" + " 'auditorPeriodicBookieCheckInterval' {} seconds",
+                    bookieCheckInterval);
+            executor.scheduleAtFixedRate(bookieCheck, 0, bookieCheckInterval, TimeUnit.SECONDS);
+        }
+    }
+
+    private void scheduleCheckAllLedgersTask(){
+        long interval = conf.getAuditorPeriodicCheckInterval();
+
+        if (interval > 0) {
+            LOG.info("Auditor periodic ledger checking enabled" + " 'auditorPeriodicCheckInterval' {} seconds",
+                    interval);
+
+            long checkAllLedgersLastExecutedCTime;
+            long durationSinceLastExecutionInSecs;
+            long initialDelay;
+            try {
+                checkAllLedgersLastExecutedCTime = ledgerUnderreplicationManager.getCheckAllLedgersCTime();
+            } catch (UnavailableException ue) {
+                LOG.error("Got UnavailableException while trying to get checkAllLedgersCTime", ue);
+                checkAllLedgersLastExecutedCTime = -1;
             }
-
-            long interval = conf.getAuditorPeriodicCheckInterval();
-
-            if (interval > 0) {
-                LOG.info("Auditor periodic ledger checking enabled" + " 'auditorPeriodicCheckInterval' {} seconds",
-                        interval);
-
-                long checkAllLedgersLastExecutedCTime;
-                long durationSinceLastExecutionInSecs;
-                long initialDelay;
-                try {
-                    checkAllLedgersLastExecutedCTime = ledgerUnderreplicationManager.getCheckAllLedgersCTime();
-                } catch (UnavailableException ue) {
-                    LOG.error("Got UnavailableException while trying to get checkAllLedgersCTime", ue);
-                    checkAllLedgersLastExecutedCTime = -1;
+            if (checkAllLedgersLastExecutedCTime == -1) {
+                durationSinceLastExecutionInSecs = -1;
+                initialDelay = 0;
+            } else {
+                durationSinceLastExecutionInSecs = (System.currentTimeMillis() - checkAllLedgersLastExecutedCTime)
+                        / 1000;
+                if (durationSinceLastExecutionInSecs < 0) {
+                    // this can happen if there is no strict time ordering
+                    durationSinceLastExecutionInSecs = 0;
                 }
-                if (checkAllLedgersLastExecutedCTime == -1) {
-                    durationSinceLastExecutionInSecs = -1;
-                    initialDelay = 0;
-                } else {
-                    durationSinceLastExecutionInSecs = (System.currentTimeMillis() - checkAllLedgersLastExecutedCTime)
-                            / 1000;
-                    if (durationSinceLastExecutionInSecs < 0) {
-                        // this can happen if there is no strict time ordering
-                        durationSinceLastExecutionInSecs = 0;
-                    }
-                    initialDelay = durationSinceLastExecutionInSecs > interval ? 0
-                            : (interval - durationSinceLastExecutionInSecs);
-                }
-                LOG.info(
-                        "checkAllLedgers scheduling info.  checkAllLedgersLastExecutedCTime: {} "
-                                + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
-                        checkAllLedgersLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
+                initialDelay = durationSinceLastExecutionInSecs > interval ? 0
+                        : (interval - durationSinceLastExecutionInSecs);
+            }
+            LOG.info(
+                    "checkAllLedgers scheduling info.  checkAllLedgersLastExecutedCTime: {} "
+                            + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
+                    checkAllLedgersLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
-                executor.scheduleAtFixedRate(new Runnable() {
-                    public void run() {
-                        try {
-                            if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                                LOG.info("Ledger replication disabled, skipping checkAllLedgers");
-                                return;
-                            }
-
-                            Stopwatch stopwatch = Stopwatch.createStarted();
-                            LOG.info("Starting checkAllLedgers");
-                            checkAllLedgers();
-                            long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
-                            LOG.info("Completed checkAllLedgers in {} milliSeconds", checkAllLedgersDuration);
-                            checkAllLedgersTime.registerSuccessfulEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
-                        } catch (KeeperException ke) {
-                            LOG.error("Exception while running periodic check", ke);
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                            LOG.error("Interrupted while running periodic check", ie);
-                        } catch (BKException bke) {
-                            LOG.error("Exception running periodic check", bke);
-                        } catch (IOException ioe) {
-                            LOG.error("I/O exception running periodic check", ioe);
-                        } catch (ReplicationException.UnavailableException ue) {
-                            LOG.error("Underreplication manager unavailable running periodic check", ue);
+            executor.scheduleAtFixedRate(new Runnable() {
+                public void run() {
+                    try {
+                        if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                            LOG.info("Ledger replication disabled, skipping checkAllLedgers");
+                            return;
                         }
+
+                        Stopwatch stopwatch = Stopwatch.createStarted();
+                        LOG.info("Starting checkAllLedgers");
+                        checkAllLedgers();
+                        long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
+                        LOG.info("Completed checkAllLedgers in {} milliSeconds", checkAllLedgersDuration);
+                        checkAllLedgersTime.registerSuccessfulEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
+                    } catch (KeeperException ke) {
+                        LOG.error("Exception while running periodic check", ke);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        LOG.error("Interrupted while running periodic check", ie);
+                    } catch (BKException bke) {
+                        LOG.error("Exception running periodic check", bke);
+                    } catch (IOException ioe) {
+                        LOG.error("I/O exception running periodic check", ioe);
+                    } catch (ReplicationException.UnavailableException ue) {
+                        LOG.error("Underreplication manager unavailable running periodic check", ue);
                     }
-                    }, initialDelay, interval, TimeUnit.SECONDS);
-            } else {
-                LOG.info("Periodic checking disabled");
+                }
+                }, initialDelay, interval, TimeUnit.SECONDS);
+        } else {
+            LOG.info("Periodic checking disabled");
+        }
+    }
+
+    private void schedulePlacementPolicyCheckTask(){
+        long interval = conf.getAuditorPeriodicPlacementPolicyCheckInterval();
+
+        if (interval > 0) {
+            LOG.info("Auditor periodic placement policy check enabled"
+                    + " 'auditorPeriodicPlacementPolicyCheckInterval' {} seconds", interval);
+
+            long placementPolicyCheckLastExecutedCTime;
+            long durationSinceLastExecutionInSecs;
+            long initialDelay;
+            try {
+                placementPolicyCheckLastExecutedCTime = ledgerUnderreplicationManager.getPlacementPolicyCheckCTime();
+            } catch (UnavailableException ue) {
+                LOG.error("Got UnavailableException while trying to get placementPolicyCheckCTime", ue);
+                placementPolicyCheckLastExecutedCTime = -1;
             }
+            if (placementPolicyCheckLastExecutedCTime == -1) {
+                durationSinceLastExecutionInSecs = -1;
+                initialDelay = 0;
+            } else {
+                durationSinceLastExecutionInSecs = (System.currentTimeMillis() - placementPolicyCheckLastExecutedCTime)
+                        / 1000;
+                if (durationSinceLastExecutionInSecs < 0) {
+                    // this can happen if there is no strict time ordering
+                    durationSinceLastExecutionInSecs = 0;
+                }
+                initialDelay = durationSinceLastExecutionInSecs > interval ? 0
+                        : (interval - durationSinceLastExecutionInSecs);
+            }
+            LOG.info(
+                    "placementPolicyCheck scheduling info.  placementPolicyCheckLastExecutedCTime: {} "
+                            + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
+                    placementPolicyCheckLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
+
+            executor.scheduleAtFixedRate(new Runnable() {
+                public void run() {
+                    try {
+                        Stopwatch stopwatch = Stopwatch.createStarted();
+                        LOG.info("Starting PlacementPolicyCheck");
+                        placementPolicyCheck();
+                        long placementPolicyCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
+                        LOG.info("Completed placementPolicyCheck in {} milliSeconds", placementPolicyCheckDuration);
+                        placementPolicyCheckTime.registerSuccessfulEvent(placementPolicyCheckDuration,
+                                TimeUnit.MILLISECONDS);
+                    } catch (BKAuditException e) {
+                        LOG.error("BKAuditException running periodic placementPolicy check", e);
+                    }
+                }
+            }, initialDelay, interval, TimeUnit.SECONDS);
+        } else {
+            LOG.info("Periodic placementPolicy check disabled");
         }
     }
 
@@ -743,11 +826,11 @@ public class Auditor implements AutoCloseable {
      * be run very often.
      */
     void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
-        final BookKeeper client = createBookKeeperClient(conf);
-        final BookKeeperAdmin admin = new BookKeeperAdmin(client, statsLogger);
+        final BookKeeper localClient = createBookKeeperClient(conf);
+        final BookKeeperAdmin localAdmin = new BookKeeperAdmin(localClient, statsLogger);
 
         try {
-            final LedgerChecker checker = new LedgerChecker(client);
+            final LedgerChecker checker = new LedgerChecker(localClient);
 
             final CompletableFuture<Void> processFuture = new CompletableFuture<>();
 
@@ -764,7 +847,7 @@ public class Auditor implements AutoCloseable {
                     return;
                 }
 
-                admin.asyncOpenLedgerNoRecovery(ledgerId, (rc, lh, ctx) -> {
+                localAdmin.asyncOpenLedgerNoRecovery(ledgerId, (rc, lh, ctx) -> {
                     if (Code.OK == rc) {
                         checker.checkLedger(lh,
                                 // the ledger handle will be closed after checkLedger is done.
@@ -803,8 +886,84 @@ public class Auditor implements AutoCloseable {
                 LOG.error("Got exception while trying to set checkAllLedgersCTime", ue);
             }
         } finally {
-            admin.close();
-            client.close();
+            localAdmin.close();
+            localClient.close();
+        }
+    }
+
+    void placementPolicyCheck() throws BKAuditException {
+        final CountDownLatch placementPolicyCheckLatch = new CountDownLatch(1);
+        Processor<Long> ledgerProcessor = new Processor<Long>() {
+            @Override
+            public void process(Long ledgerId, AsyncCallback.VoidCallback iterCallback) {
+                ledgerManager.readLedgerMetadata(ledgerId).whenComplete((metadataVer, exception) -> {
+                    if (exception == null) {
+                        LedgerMetadata metadata = metadataVer.getValue();
+                        int writeQuorumSize = metadata.getWriteQuorumSize();
+                        int ackQuorumSize = metadata.getAckQuorumSize();
+                        if (metadata.isClosed()) {
+                            boolean foundSegmentNotAdheringToPlacementPolicy = false;
+                            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble : metadata
+                                    .getAllEnsembles().entrySet()) {
+                                long startEntryIdOfSegment = ensemble.getKey();
+                                List<BookieSocketAddress> ensembleOfSegment = ensemble.getValue();
+                                boolean segmentAdheringToPlacementPolicy = admin.isEnsembleAdheringToPlacementPolicy(
+                                        ensembleOfSegment, writeQuorumSize, ackQuorumSize);
+                                if (!segmentAdheringToPlacementPolicy) {
+                                    foundSegmentNotAdheringToPlacementPolicy = true;
+                                    LOG.warn(
+                                            "For ledger: {}, Segment starting at entry: {}, with ensemble: {} having "
+                                                    + "writeQuorumSize: {} and ackQuorumSize: {} is not adhering to "
+                                                    + "EnsemblePlacementPolicy",
+                                            ledgerId, startEntryIdOfSegment, ensembleOfSegment, writeQuorumSize,
+                                            ackQuorumSize);
+                                }
+                            }
+                            if (foundSegmentNotAdheringToPlacementPolicy) {
+                                placementPolicyCheckEnsembleNotAdheringToPlacementPolicy.inc();
+                            }
+                        } else {
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Ledger: {} is not yet closed, so skipping the placementPolicy"
+                                        + "check analysis for now", ledgerId);
+                            }
+                        }
+                        iterCallback.processResult(BKException.Code.OK, null, null);
+                    } else if (BKException
+                            .getExceptionCode(exception) == BKException.Code.NoSuchLedgerExistsException) {
+                        LOG.debug("Ignoring replication of already deleted ledger {}", ledgerId);
+                        iterCallback.processResult(BKException.Code.OK, null, null);
+                    } else {
+                        LOG.warn("Unable to read the ledger: {} information", ledgerId);
+                        iterCallback.processResult(BKException.getExceptionCode(exception), null, null);
+                    }
+                });
+            }
+        };
+        // Reading the result after processing all the ledgers
+        final List<Integer> resultCode = new ArrayList<Integer>(1);
+        ledgerManager.asyncProcessLedgers(ledgerProcessor, new AsyncCallback.VoidCallback() {
+
+            @Override
+            public void processResult(int rc, String s, Object obj) {
+                resultCode.add(rc);
+                placementPolicyCheckLatch.countDown();
+            }
+        }, null, BKException.Code.OK, BKException.Code.ReadException);
+        try {
+            placementPolicyCheckLatch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BKAuditException("Exception while doing placementPolicy check", e);
+        }
+        if (!resultCode.contains(BKException.Code.OK)) {
+            throw new BKAuditException("Exception while doing placementPolicy check",
+                    BKException.create(resultCode.get(0)));
+        }
+        try {
+            ledgerUnderreplicationManager.setPlacementPolicyCheckCTime(System.currentTimeMillis());
+        } catch (UnavailableException ue) {
+            LOG.error("Got exception while trying to set PlacementPolicyCheckCTime", ue);
         }
     }
 

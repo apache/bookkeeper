@@ -656,6 +656,9 @@ groups:
 
       Set this to 0 to disable the periodic check completely. Note that periodic checking will put extra load on the cluster, so it should not be run more frequently than once a day.
     default: 604800
+  - param: auditorPeriodicPlacementPolicyCheckInterval
+    description: The time interval between auditor placement policy checks, in seconds. The auditor placement policy check validates if the ensemble of segments of all the closed ledgers is adhering to the placement policy. It is just monitoring scrutiny but doesn't take any corrective measure other than logging error and reporting metrics. By default it is disabled.
+    default: 0
   - param: auditorLedgerVerificationPercentage
     description: |
       The percentage of a ledger (fragment)'s entries will be verified before claiming a fragment as missing. If it is 0, it only verifies the first and last entries of a given fragment.

@@ -102,3 +102,11 @@ message AuditorVoteFormat {
 message CheckAllLedgersFormat {
     optional int64 checkAllLedgersCTime = 1;
 }
+
+/**
+ * information of PlacementPolicyCheck execution
+ */
+message PlacementPolicyCheckFormat {
+    optional int64 placementPolicyCheckCTime = 1;
+}
+

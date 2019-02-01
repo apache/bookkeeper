@@ -50,6 +50,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.CheckAllLedgersFormat;
 import org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat;
 import org.apache.bookkeeper.proto.DataFormats.LockDataFormat;
+import org.apache.bookkeeper.proto.DataFormats.PlacementPolicyCheckFormat;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationEnableCb;
 import org.apache.bookkeeper.replication.ReplicationException;
@@ -118,6 +119,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private final AbstractConfiguration conf;
     private final String lostBookieRecoveryDelayZnode;
     private final String checkAllLedgersCtimeZnode;
+    private final String placementPolicyCheckCtimeZnode;
     private final ZooKeeper zkc;
     private final SubTreeCache subTreeCache;
 
@@ -131,6 +133,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         urLockPath = basePath + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK;
         lostBookieRecoveryDelayZnode = basePath + '/' + BookKeeperConstants.LOSTBOOKIERECOVERYDELAY_NODE;
         checkAllLedgersCtimeZnode = basePath + '/' + BookKeeperConstants.CHECK_ALL_LEDGERS_CTIME;
+        placementPolicyCheckCtimeZnode = basePath + '/' + BookKeeperConstants.PLACEMENT_POLICY_CHECK_CTIME;
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
         this.zkc = zkc;
         this.subTreeCache = new SubTreeCache(new SubTreeCache.TreeProvider() {
@@ -924,6 +927,53 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                     : -1;
         } catch (KeeperException.NoNodeException ne) {
             LOG.warn("checkAllLedgersCtimeZnode is not yet available");
+            return -1;
+        } catch (KeeperException ke) {
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        } catch (InvalidProtocolBufferException ipbe) {
+            throw new ReplicationException.UnavailableException("Error while parsing ZK protobuf binary data", ipbe);
+        }
+    }
+
+    @Override
+    public void setPlacementPolicyCheckCTime(long placementPolicyCheckCTime) throws UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("setPlacementPolicyCheckCTime");
+        }
+        try {
+            List<ACL> zkAcls = ZkUtils.getACLs(conf);
+            PlacementPolicyCheckFormat.Builder builder = PlacementPolicyCheckFormat.newBuilder();
+            builder.setPlacementPolicyCheckCTime(placementPolicyCheckCTime);
+            byte[] placementPolicyCheckFormatByteArray = builder.build().toByteArray();
+            if (zkc.exists(placementPolicyCheckCtimeZnode, false) != null) {
+                zkc.setData(placementPolicyCheckCtimeZnode, placementPolicyCheckFormatByteArray, -1);
+            } else {
+                zkc.create(placementPolicyCheckCtimeZnode, placementPolicyCheckFormatByteArray, zkAcls,
+                        CreateMode.PERSISTENT);
+            }
+        } catch (KeeperException ke) {
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public long getPlacementPolicyCheckCTime() throws UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("getPlacementPolicyCheckCTime");
+        }
+        try {
+            byte[] data = zkc.getData(placementPolicyCheckCtimeZnode, false, null);
+            PlacementPolicyCheckFormat placementPolicyCheckFormat = PlacementPolicyCheckFormat.parseFrom(data);
+            return placementPolicyCheckFormat.hasPlacementPolicyCheckCTime()
+                    ? placementPolicyCheckFormat.getPlacementPolicyCheckCTime() : -1;
+        } catch (KeeperException.NoNodeException ne) {
+            LOG.warn("placementPolicyCheckCtimeZnode is not yet available");
             return -1;
         } catch (KeeperException ke) {
             throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
