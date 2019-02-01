@@ -5,8 +5,7 @@ title: Apache BookKeeper 4.9.0 Release Notes
 This is the 16th release of Apache BookKeeper!
 
 The 4.9.0 release incorporates hundreds of bug fixes, improvements, and features since previous major release, 4.8.0,
-which was released four months ago. It is a new milestone in Apache BookKeeper community. This release includes great
-new features, like 
+which was released four months ago. It is a new milestone in Apache BookKeeper community.
 
 Apache BookKeeper/DistributedLog users are encouraged to [upgrade to 4.9.0](../../admin/upgrade). The technical details of
 this release are summarized below.
