@@ -538,6 +538,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#AUDITOR_PERIODIC_CHECK_INTERVAL">AUDITOR_PERIODIC_CHECK_INTERVAL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL">AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#AUTO_RECOVERY_DAEMON_ENABLED">AUTO_RECOVERY_DAEMON_ENABLED</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/feature/Feature.html#availability--">availability()</a></span> - Method in interface org.apache.bookkeeper.feature.<a href="org/apache/bookkeeper/feature/Feature.html" title="interface in org.apache.bookkeeper.feature">Feature</a></dt>
@@ -2353,6 +2355,11 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getAuditorPeriodicCheckInterval--">getAuditorPeriodicCheckInterval()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get the regularity at which the auditor checks all ledgers.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getAuditorPeriodicPlacementPolicyCheckInterval--">getAuditorPeriodicPlacementPolicyCheckInterval()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get the regularity at which the auditor does placement policy check of
+ all ledgers, which are closed.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#getAvailableBookies--">getAvailableBookies()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>
@@ -4358,6 +4365,12 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#isEnableLocalTransport--">isEnableLocalTransport()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get whether to listen for local JVM clients.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy(List&lt;BookieSocketAddress&gt;, int, int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
+<dd>
+<div class="block">returns boolean value specifying if the ensemble of the segment is
+ adhering to the ensemble placement policy for the given writeQuorumSize
+ and ackQuorumSize.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy(List&lt;BookieSocketAddress&gt;, int, int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
@@ -12785,6 +12798,11 @@
 <dd>
 <div class="block">Set the regularity at which the auditor will run a check
  of all ledgers.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setAuditorPeriodicPlacementPolicyCheckInterval-long-">setAuditorPeriodicPlacementPolicyCheckInterval(long)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Sets the regularity/interval at which the auditor will run a placement
+ policy check of all ledgers, which are closed.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setAutoRecoveryDaemonEnabled-boolean-">setAutoRecoveryDaemonEnabled(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>

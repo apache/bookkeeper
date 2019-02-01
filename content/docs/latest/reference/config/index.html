@@ -2083,6 +2083,13 @@ when using either RackawareEnsemblePlacementPolicy and RegionAwareEnsemblePlacem
       <td><code>604800</code></td>
     </tr>
     
+    <tr id="auditorPeriodicPlacementPolicyCheckInterval">
+      <td><code>auditorPeriodicPlacementPolicyCheckInterval</code></td>
+      <td><p>The time interval between auditor placement policy checks, in seconds. The auditor placement policy check validates if the ensemble of segments of all the closed ledgers is adhering to the placement policy. It is just monitoring scrutiny but doesn’t take any corrective measure other than logging error and reporting metrics. By default it is disabled.</p>
+</td>
+      <td><code>0</code></td>
+    </tr>
+    
     <tr id="auditorLedgerVerificationPercentage">
       <td><code>auditorLedgerVerificationPercentage</code></td>
       <td><p>The percentage of a ledger (fragment)’s entries will be verified before claiming a fragment as missing. If it is 0, it only verifies the first and last entries of a given fragment.</p>
