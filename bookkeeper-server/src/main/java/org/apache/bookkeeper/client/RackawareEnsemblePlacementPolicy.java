@@ -27,7 +27,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * A placement policy implementation use rack information for placing ensembles.
@@ -56,18 +55,20 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
                                                           int maxWeightMultiple,
                                                           int minNumRacksPerWriteQuorum,
                                                           boolean enforceMinNumRacksPerWriteQuorum,
+                                                          boolean ignoreLocalNodeInPlacementPolicy,
             StatsLogger statsLogger) {
         if (stabilizePeriodSeconds > 0) {
             super.initialize(dnsResolver, timer, reorderReadsRandom, 0, reorderThresholdPendingRequests, isWeighted,
-                    maxWeightMultiple, minNumRacksPerWriteQuorum, enforceMinNumRacksPerWriteQuorum, statsLogger);
+                    maxWeightMultiple, minNumRacksPerWriteQuorum, enforceMinNumRacksPerWriteQuorum,
+                    ignoreLocalNodeInPlacementPolicy, statsLogger);
             slave = new RackawareEnsemblePlacementPolicyImpl(enforceDurability);
             slave.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
                     reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
-                    enforceMinNumRacksPerWriteQuorum, statsLogger);
+                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger);
         } else {
             super.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
                     reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
-                    enforceMinNumRacksPerWriteQuorum, statsLogger);
+                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger);
             slave = null;
         }
         return this;
@@ -92,7 +93,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public Pair<List<BookieSocketAddress>, Boolean> newEnsemble(int ensembleSize, int writeQuorumSize,
+    public PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize, int writeQuorumSize,
             int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
         try {
@@ -107,7 +108,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public Pair<BookieSocketAddress, Boolean> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+    public PlacementResult<BookieSocketAddress> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             Map<String, byte[]> customMetadata, List<BookieSocketAddress> currentEnsemble,
             BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
@@ -143,7 +144,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public Pair<List<BookieSocketAddress>, Boolean> newEnsemble(int ensembleSize,
+    public PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize,
                                                  int writeQuorumSize,
                                                  int ackQuorumSize,
                                                  Set<BookieSocketAddress> excludeBookies,
