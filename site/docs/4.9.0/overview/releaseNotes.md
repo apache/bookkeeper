@@ -64,7 +64,7 @@ There are a few big changes around metadata in 4.9.0. They are:
 
 - Refactor ledger metadata in LedgerHandle to make ledger metadata instance immutable (see [#281](https://github.com/apache/bookkeeper/issues/281))
 - Store ledger metadata in binary protobuf format (see details at [#723](https://github.com/apache/bookkeeper/issues/723))
-- Etcd based metadata driver implementation (see details at [#1639](https://github.com/apache/bookkeeper/issues/1639))
+- Etcd based metadata driver implementation is in BETA release (see details at [#1639](https://github.com/apache/bookkeeper/issues/1639))
 
 Additionally, there are bunch of new interfaces introduced in the metadata driver API.
 
@@ -116,6 +116,7 @@ used for documenting stats added across the project.
 - [Issue 1682: Added BlockingQueue implementation based on JCtools](https://github.com/apache/bookkeeper/pull/1682)
 - [Issue 1813: Set default sizes of DbLedgerStorage read and write cache to be proportional to JVM direct memory](https://github.com/apache/bookkeeper/pull/1813)
 - [Issue 1808: Allow to configure sticky reads](https://github.com/apache/bookkeeper/pull/1808)
+- [Issue 1754: Netty allocator wrapper](https://github.com/apache/bookkeeper/pull/1754)
 
 ### Bug Fixes
 
