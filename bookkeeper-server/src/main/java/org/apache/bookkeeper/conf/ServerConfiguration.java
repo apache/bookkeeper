@@ -2207,10 +2207,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Get the regularity at which the auditor does placement policy check of
      * all ledgers, which are closed.
      *
-     * @return The interval in seconds. Default is 108000 (30 hours).
+     * @return The interval in seconds. By default it is disabled.
      */
     public long getAuditorPeriodicPlacementPolicyCheckInterval() {
-        return getLong(AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL, 108000);
+        return getLong(AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL, 0);
     }
 
     /**
