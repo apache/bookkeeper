@@ -181,6 +181,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Replication parameters
     protected static final String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
+    protected static final String AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL =
+                                                                "auditorPeriodicPlacementPolicyCheckInterval";
     protected static final String AUDITOR_LEDGER_VERIFICATION_PERCENTAGE = "auditorLedgerVerificationPercentage";
     protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
     protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
@@ -2186,6 +2188,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getAuditorPeriodicBookieCheckInterval() {
         return getLong(AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL, 86400);
+    }
+
+    /**
+     * Sets the regularity/interval at which the auditor will run a placement
+     * policy check of all ledgers, which are closed. This should not be run
+     * very often, and should be run at most once a day. Setting this to 0 will
+     * completely disable the periodic metadata check.
+     *
+     * @param interval
+     *            The interval in seconds. e.g. 86400 = 1 day, 604800 = 1 week
+     */
+    public void setAuditorPeriodicPlacementPolicyCheckInterval(long interval) {
+        setProperty(AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL, interval);
+    }
+
+    /**
+     * Get the regularity at which the auditor does placement policy check of
+     * all ledgers, which are closed.
+     *
+     * @return The interval in seconds. By default it is disabled.
+     */
+    public long getAuditorPeriodicPlacementPolicyCheckInterval() {
+        return getLong(AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL, 0);
     }
 
     /**
