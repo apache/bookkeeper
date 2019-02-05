@@ -26,7 +26,7 @@ Master Issue: #<master-issue-number>
 > - [ ] [skip bookkeeper-server remaining tests]: skip testing all other tests in bookkeeper-server module.
 > - [ ] [skip integration tests]: skip docker based integration tests. if you make java code changes, you shouldn't skip integration tests.
 > - [ ] [skip build java8]: skip build on java8. *ONLY* skip this when *ONLY* changing files under documentation under `site`.
-> - [ ] [skip build java9]: skip build on java9. *ONLY* skip this when *ONLY* changing files under documentation under `site`.
+> - [ ] [skip build java11]: skip build on java11. *ONLY* skip this when *ONLY* changing files under documentation under `site`.
 > ---
 
 > ---
