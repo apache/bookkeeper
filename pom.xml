@@ -130,7 +130,7 @@
     <freebuilder.version>1.14.9</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.1.2</google.errorprone.version>
-    <grpc.version>1.12.0</grpc.version>
+    <grpc.version>1.18.0</grpc.version>
     <guava.version>21.0</guava.version>
     <kerby.version>1.1.1</kerby.version>
     <hadoop.version>2.7.3</hadoop.version>
@@ -150,8 +150,8 @@
     <lombok.version>1.16.22</lombok.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>2.22.0</mockito.version>
-    <netty.version>4.1.31.Final</netty.version>
-    <netty-boringssl.version>2.0.19.Final</netty-boringssl.version>
+    <netty.version>4.1.32.Final</netty.version>
+    <netty-boringssl.version>2.0.20.Final</netty-boringssl.version>
     <ostrich.version>9.1.3</ostrich.version>
     <powermock.version>2.0.0-beta.5</powermock.version>
     <prometheus.version>0.0.21</prometheus.version>
