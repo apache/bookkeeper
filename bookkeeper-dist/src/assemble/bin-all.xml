@@ -54,14 +54,15 @@
       <directory>../src/main/resources/deps</directory>
       <outputDirectory>deps</outputDirectory>
       <includes>
+        <include>checker-compat-qual-2.5.2/LICENSE</include>
         <include>google-auth-library-credentials-0.9.0/LICENSE</include>
         <include>javax.servlet-api-3.1.0/CDDL+GPL-1.1</include>
+        <include>jline-2.11/LICENSE</include>
         <include>jsr-305/LICENSE</include>
         <include>netty-3.10.1.Final/*</include>
-        <include>netty-4.1.31.Final/*</include>
+        <include>netty-4.1.32.Final/*</include>
         <include>paranamer-2.8/LICENSE.txt</include>
         <include>protobuf-3.0.0/LICENSE</include>
-        <include>jline-2.11/LICENSE</include>
         <include>protobuf-3.5.1/LICENSE</include>
         <include>scala-library-2.11.7/LICENSE.md</include>
         <include>scala-parser-combinators_2.11-1.0.4/LICENSE.md</include>
@@ -105,6 +106,7 @@
         <exclude>org.apache.bookkeeper:stream-storage-api</exclude>
         <exclude>org.apache.bookkeeper:stream-storage-java-client-base</exclude>
         <exclude>org.apache.bookkeeper:stream-storage-java-kv-client</exclude>
+        <exclude>org.codehaus.mojo:animal-sniffer-annotations</exclude>
       </excludes>
     </dependencySet>
   </dependencySets>
