@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -46,6 +47,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ZkUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ZkUtils.class);
+    public static final int OP_TIME_OUT_SEC = 2;
 
     /**
      * Asynchronously create zookeeper path recursively and optimistically.
@@ -240,7 +242,12 @@ public class ZkUtils {
 
         synchronized (ctx) {
             while (!ctx.done) {
-                ctx.wait();
+                try {
+                    ctx.wait(TimeUnit.SECONDS.toMillis(OP_TIME_OUT_SEC));
+                } catch (InterruptedException e) {
+                    ctx.rc = Code.OPERATIONTIMEOUT.intValue();
+                    ctx.done = true;
+                }
             }
         }
         if (Code.NONODE.intValue() == ctx.rc) {
