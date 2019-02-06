@@ -261,7 +261,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
             String nodePath = nodeBuilder.toString();
             List<String> ledgerNodes = null;
             try {
-                ledgerNodes = ZkUtils.getChildrenInSingleNode(zk, nodePath);
+                ledgerNodes = ZkUtils.getChildrenInSingleNode(zk, nodePath, ZkUtils.OP_TIME_OUT_SEC);
             } catch (KeeperException.NoNodeException e) {
                 /* If the node doesn't exist, we must have raced with a recursive node removal, just
                  * return an empty list. */

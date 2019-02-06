@@ -162,7 +162,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
          */
         List<String> getChildrenAt(String path) throws IOException {
             try {
-                List<String> children = ZkUtils.getChildrenInSingleNode(zk, path);
+                List<String> children = ZkUtils.getChildrenInSingleNode(zk, path, ZkUtils.OP_TIME_OUT_SEC);
                 Collections.sort(children);
                 return children;
             } catch (KeeperException.NoNodeException e) {

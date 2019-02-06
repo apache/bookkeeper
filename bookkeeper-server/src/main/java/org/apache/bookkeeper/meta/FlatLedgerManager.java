@@ -103,7 +103,8 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
 
                 try {
                     zkActiveLedgers = ledgerListToSet(
-                            ZkUtils.getChildrenInSingleNode(zk, ledgerRootPath), ledgerRootPath);
+                            ZkUtils.getChildrenInSingleNode(zk, ledgerRootPath, ZkUtils.OP_TIME_OUT_SEC),
+                            ledgerRootPath);
                     nextRange = new LedgerRange(zkActiveLedgers);
                 } catch (KeeperException.NoNodeException e) {
                     throw new IOException("Path does not exist: " + ledgerRootPath, e);

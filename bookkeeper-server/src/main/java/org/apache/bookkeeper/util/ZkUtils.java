@@ -223,7 +223,7 @@ public class ZkUtils {
      * @throws InterruptedException
      * @throws IOException
      */
-    public static List<String> getChildrenInSingleNode(final ZooKeeper zk, final String node)
+    public static List<String> getChildrenInSingleNode(final ZooKeeper zk, final String node, long timeOutSec)
             throws InterruptedException, IOException, KeeperException.NoNodeException {
         final GetChildrenCtx ctx = new GetChildrenCtx();
         getChildrenInSingleNode(zk, node, new GenericCallback<List<String>>() {
@@ -243,7 +243,7 @@ public class ZkUtils {
         synchronized (ctx) {
             while (!ctx.done) {
                 try {
-                    ctx.wait(TimeUnit.SECONDS.toMillis(OP_TIME_OUT_SEC));
+                    ctx.wait(TimeUnit.SECONDS.toMillis(timeOutSec));
                 } catch (InterruptedException e) {
                     ctx.rc = Code.OPERATIONTIMEOUT.intValue();
                     ctx.done = true;
