@@ -104,6 +104,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
+    protected static final String MAX_ENTRY_LOGGERS_SCAN_ON_GC = "maxEntryLoggersScanOnGc";
     // Scrub Parameters
     protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
     protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
@@ -431,6 +432,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
+    /**
+     * Get Max entry-logger files that should be loaded while performing gc.
+     *
+     */
+    public int getMaxEntryLoggersScanOnGc() {
+        return this.getInt(MAX_ENTRY_LOGGERS_SCAN_ON_GC, 1000);
+    }
+
+    /**
+     * Set Max entry-logger files that should be loaded while performing gc.
+     *
+     * @return use transactional compaction
+     */
+    public ServerConfiguration setMaxEntryLoggersScanOnGc(int maxEntryLoggerForScan) {
+        this.setProperty(MAX_ENTRY_LOGGERS_SCAN_ON_GC, maxEntryLoggerForScan);
+        return this;
+    }
+
+    
     /**
      * Get whether local scrub is enabled.
      *
