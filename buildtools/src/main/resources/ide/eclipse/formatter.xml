@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
    Licensed to the Apache Software Foundation (ASF) under one or more
    contributor license agreements.  See the NOTICE file distributed with
@@ -15,7 +16,6 @@
    limitations under the License.
 -->
 
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <profiles version="11">
 <profile kind="CodeFormatterProfile" name="BookKeeper" version="11">
 <setting id="org.eclipse.jdt.core.formatter.comment.insert_new_line_before_root_tags" value="insert"/>
