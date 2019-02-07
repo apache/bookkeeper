@@ -104,7 +104,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
-    protected static final String ZK_OP_TIME_OUT = "zkOperationTimeout";
     // Scrub Parameters
     protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
     protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
@@ -432,27 +431,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
-    /**
-     * Get zk-operation timeout in seconds used by GC while performing zk
-     * operation (set 0 to ignore timeout. default = 0).
-     *
-     */
-    public long getZkOperationTimeOut() {
-        return this.getLong(ZK_OP_TIME_OUT, 0);
-    }
-
-    /**
-     * Set zk-operation timeout in seconds used by GC while performing zk
-     * operation, set 0 to ignore timeout.
-     * 
-     * @param zkOpTimeout
-     * @return server configuration
-     */
-    public ServerConfiguration setZkOperationTimeOut(long zkOpTimeout) {
-        this.setProperty(ZK_OP_TIME_OUT, zkOpTimeout);
-        return this;
-    }
-    
     /**
      * Get whether local scrub is enabled.
      *
