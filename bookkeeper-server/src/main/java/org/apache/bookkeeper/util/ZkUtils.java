@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ZkUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ZkUtils.class);
-    public static final int OP_TIME_OUT_SEC = 2;
 
     /**
      * Asynchronously create zookeeper path recursively and optimistically.
@@ -243,7 +242,7 @@ public class ZkUtils {
         synchronized (ctx) {
             while (!ctx.done) {
                 try {
-                    ctx.wait(TimeUnit.SECONDS.toMillis(timeOutSec));
+                    ctx.wait(timeOutSec > 0 ? TimeUnit.SECONDS.toMillis(timeOutSec) : 0);
                 } catch (InterruptedException e) {
                     ctx.rc = Code.OPERATIONTIMEOUT.intValue();
                     ctx.done = true;

@@ -87,9 +87,9 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     }
 
     @Override
-    public LedgerRangeIterator getLedgerRanges() {
-        LedgerRangeIterator legacyLedgerRangeIterator = legacyLM.getLedgerRanges();
-        LedgerRangeIterator longLedgerRangeIterator = longLM.getLedgerRanges();
+    public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutSec) {
+        LedgerRangeIterator legacyLedgerRangeIterator = legacyLM.getLedgerRanges(zkOpTimeoutSec);
+        LedgerRangeIterator longLedgerRangeIterator = longLM.getLedgerRanges(zkOpTimeoutSec);
         return new HierarchicalLedgerRangeIterator(legacyLedgerRangeIterator, longLedgerRangeIterator);
     }
 
