@@ -93,6 +93,9 @@ public interface BookKeeperClientStats {
     String FAILED_CONNECTION_COUNTER = "FAILED_CONNECTION_COUNTER";
     String FAILED_TLS_HANDSHAKE_COUNTER = "FAILED_TLS_HANDSHAKE_COUNTER";
 
+    // placementpolicy stats
+    String NUM_BOOKIES_IN_DEFAULT_FAULTZONE = "NUM_BOOKIES_IN_DEFAULT_FAULTZONE";
+
     OpStatsLogger getCreateOpLogger();
     OpStatsLogger getOpenOpLogger();
     OpStatsLogger getDeleteOpLogger();
