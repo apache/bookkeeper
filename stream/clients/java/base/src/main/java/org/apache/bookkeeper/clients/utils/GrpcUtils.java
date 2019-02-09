@@ -20,10 +20,8 @@ package org.apache.bookkeeper.clients.utils;
 
 import static org.apache.bookkeeper.clients.utils.ClientConstants.TOKEN;
 
-import io.grpc.Attributes;
-import io.grpc.CallCredentials;
+import io.grpc.CallCredentials2;
 import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
 import io.grpc.stub.AbstractStub;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -50,10 +48,9 @@ public final class GrpcUtils {
             Metadata metadata = new Metadata();
             Metadata.Key<String> tokenKey = Metadata.Key.of(TOKEN, Metadata.ASCII_STRING_MARSHALLER);
             metadata.put(tokenKey, t);
-            CallCredentials callCredentials = new CallCredentials() {
+            CallCredentials2 callCredentials = new CallCredentials2() {
                 @Override
-                public void applyRequestMetadata(MethodDescriptor<?, ?> method,
-                                                 Attributes attrs,
+                public void applyRequestMetadata(RequestInfo requestInfo,
                                                  Executor appExecutor,
                                                  MetadataApplier applier) {
                     applier.apply(metadata);
