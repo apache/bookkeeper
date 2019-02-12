@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 38*
+*Next Proposal Number: 39*
 
 ### Inprogress
 
@@ -109,6 +109,7 @@ Proposal | State
 [BP-35: 128 bits support](../../bps/BP-35-128-bits-support) | Accepted
 [BP-36: Stats documentation annotation](../../bps/BP-36-stats-documentation-annotation) | Accepted
 [BP-37: Improve configuration management for better documentation](../../bps/BP-37-conf-documentation) | Accepted
+[BP-38: Bypass journal ledger](../../bps/BP-38-bypass-journal-ledger) | Draft
 
 ### Adopted
 

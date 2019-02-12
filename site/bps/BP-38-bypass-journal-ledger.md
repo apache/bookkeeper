@@ -30,8 +30,8 @@ the actual implementation is more tricky. In my opinion, there are three differe
 
 1. Relax LAC protocol
 
-    Just modify server side code, if the write flag is `BYPASS_JOURNAL`, after write to `LegerStorage`(the data maybe in the memTable, or the buffer of File, or the os cache),
-return to the client directly.
+    Modify server side code mostly and don't change legerHandle's LAC advance logic, if the write flag is `BYPASS_JOURNAL`, after write to `LegerStorage`(the data maybe in the memTable, or the buffer of File, or the os cache),
+bookie return result to the client directly.
 This impl is like [disable syncData](https://github.com/apache/bookkeeper/issues/753), once all the replica fails, the BK cluster can't recovery from it.
 Note, the user shall know the weak durability for his use case when using this impl.
 
@@ -42,8 +42,8 @@ Only advance LAC using `force` api. To support this new 'bypass-journal' option,
 
     - Add persistent callback to LedgerStorage
     
-        Maintain non-persistent entry list and `maxPersistentEntryId` on `LedgerDescriptor`
-If the entry is 'bypass-journal', the callback for this entry is not null, and it will receives notification after persistent.
+        Maintain non-persistent entry list(necessary for out of order entry arriving) and `maxPersistentEntryId` on `LedgerDescriptor`
+If the entry is 'bypass-journal', the callback for this entry is not null, and it will receives notification after persistent through legerStorage.
     
     - Extend the force request
         
@@ -62,12 +62,12 @@ If the entry is 'bypass-journal', the callback for this entry is not null, and i
         
     - Wire protocol changes
     
-        Add optional `maxPersistentEntryId` field to `AddResponse`. When the `AddRequest` has 'bypass-journal' option, the server get `maxPersistentEntryId` from `LedgerDescriptor`.
+        Add optional `maxPersistentEntryId` field to `AddResponse`. When the `AddRequest` has 'bypass-journal' option, the server get `maxPersistentEntryId` from `LedgerDescriptor` to construct response.
 
     - Client side changes
     
         Add `nonPersistentLAC` to WriteHandle. WriteHandle with 'bypass-journal' option updates the LAC using `maxPersistentEntryId`, and update `nonPersistentLAC` if receives enough ack.
-        For normal WriteHandle, the `nonPersistentLAC` is set to null to keep original LAC advance logic. 
+        For normal WriteHandle, the `nonPersistentLAC` is set to null to indicate to keep original LAC advance logic. 
 
 ### Compatibility, Deprecation, and Migration Plan
 
@@ -87,11 +87,5 @@ When user use the latest client which has the `BYPASS_JOURNAL` write flag, but t
 To avoid two write of data, we can write the data to one log abstraction in the bookie, either by bypassing journal or 
  bypassing entryLog. If we choose bypassing entryLog, then we will do lots of work to enable rich read on journal,
  which is more huge work compared with bypassing journal.
- 
-### sub-task/ small basic component task
 
-- [ ] server side changes (bypass-journal)
-- [ ] client side implementation (writeflag BYPASS_JOURNAL implementation on the client side)
-- [ ] compat tests (client with writeflags will not be able to write on old bookies)
-- [ ] docs update
 
