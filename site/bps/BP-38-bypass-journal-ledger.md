@@ -8,8 +8,7 @@ release: "N/A"
 ### Motivation
 
 To guarantee high durability, BK write journal before flush data to persistent device which will cause two write of data.
-At the presence of replicating and auto-recovery mechanism, the two-write is a bit waste of the persistent device bandwidth,
-especially on the [scenarios](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-14+Relax+durability) which prefer weak durability guarantee.
+But we may not need this level of persistence under [scenarios](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-14+Relax+durability) which prefer weak durability guarantee.
 This proposal is aimed at providing bypass journal ledger, this feature includes these parts work:
  - add new write flag `BYPASS_JOURNAL` to existing protocol
  - impl the newly write flag at the client side and server side
