@@ -161,7 +161,7 @@ public class DiskChecker {
             // Warn should be triggered only if disk usage threshold doesn't trigger first.
             if (used > diskUsageWarnThreshold) {
                 LOG.warn("Space left on device {} : {}, Used space fraction: {} > WarnThreshold {}.",
-                        dir, usableSpace, used, diskUsageThreshold);
+                        dir, usableSpace, used, diskUsageWarnThreshold);
                 throw new DiskWarnThresholdException("Space left on device:"
                         + usableSpace + " Used space fraction:" + used + " > WarnThreshold:" + diskUsageWarnThreshold,
                         used);
