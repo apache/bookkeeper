@@ -203,7 +203,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             @Override
             public void diskAlmostFull(File disk) {
                 if (gcThread.isForceGCAllowWhenNoSpace) {
-                    gcThread.enableForceGC();
+                    gcThread.enableForceGCIfMinIntervalElapsed();
                 } else {
                     gcThread.suspendMajorGC();
                 }
@@ -212,7 +212,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             @Override
             public void diskFull(File disk) {
                 if (gcThread.isForceGCAllowWhenNoSpace) {
-                    gcThread.enableForceGC();
+                    gcThread.enableForceGCIfMinIntervalElapsed();
                 } else {
                     gcThread.suspendMajorGC();
                     gcThread.suspendMinorGC();
@@ -222,7 +222,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             @Override
             public void allDisksFull(boolean highPriorityWritesAllowed) {
                 if (gcThread.isForceGCAllowWhenNoSpace) {
-                    gcThread.enableForceGC();
+                    gcThread.enableForceGCIfMinIntervalElapsed();
                 } else {
                     gcThread.suspendMajorGC();
                     gcThread.suspendMinorGC();
@@ -246,7 +246,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             public void diskJustWritable(File disk) {
                 if (gcThread.isForceGCAllowWhenNoSpace) {
                     // if a disk is just writable, we still need force gc.
-                    gcThread.enableForceGC();
+                    gcThread.enableForceGCIfMinIntervalElapsed();
                 } else {
                     // still under warn threshold, only resume minor compaction.
                     gcThread.resumeMinorGC();

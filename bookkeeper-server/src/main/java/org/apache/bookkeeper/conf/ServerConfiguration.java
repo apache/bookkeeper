@@ -92,6 +92,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
     protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
+    protected static final String FORCE_COMPACTION_INTERVAL = "forceCompactionInterval";
     protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
     protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
     protected static final String COMPACTION_RATE = "compactionRate";
@@ -1478,6 +1479,43 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setMajorCompactionInterval(long interval) {
         setProperty(MAJOR_COMPACTION_INTERVAL, interval);
+        return this;
+    }
+
+    /**
+     * Get the minimum interval needed to trigger force compaction by
+     * LedgerDirsListener, since the last main compaction. Main compaction will
+     * be Major compaction, if majorcompaction is disabled/suspended then it
+     * will be minorcompaction. If both major and minor are disabled/suspended
+     * then it will be just gc run.
+     *
+     * <p>If it is set to zero, then it wont check for time gap before force
+     * compacting. Default value is GcWaitTime/2.
+     *
+     * @return high water mark
+     */
+    public long getForceCompactionInterval() {
+        return getLong(FORCE_COMPACTION_INTERVAL, getGcWaitTime() / 2);
+    }
+
+    /**
+     * Set the minimum interval needed to force compaction by LedgerDirsListener,
+     * since the last main compaction. Main compaction will be Major compaction,
+     * if majorcompaction is disabled/suspended then it will be minorcompaction.
+     * If both major and minor are disabled/suspended then it will be just gc
+     * run.
+     *
+     * <p>If it is set to zero, then it wont check for time gap before force
+     * compacting.
+     *
+     * @see #getForceCompactionInterval()
+     *
+     * @param interval
+     *            Interval to run major compaction
+     * @return server configuration
+     */
+    public ServerConfiguration setForceCompactionInterval(long interval) {
+        setProperty(FORCE_COMPACTION_INTERVAL, interval);
         return this;
     }
 

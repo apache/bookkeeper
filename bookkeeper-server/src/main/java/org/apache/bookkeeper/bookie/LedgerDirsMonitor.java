@@ -191,7 +191,8 @@ class LedgerDirsMonitor {
                 .setNameFormat("LedgerDirsMonitorThread")
                 .setDaemon(true)
                 .build());
-        this.checkTask = this.executor.scheduleAtFixedRate(() -> check(), interval, interval, TimeUnit.MILLISECONDS);
+        this.checkTask = this.executor.scheduleWithFixedDelay(() -> check(),
+                interval, interval, TimeUnit.MILLISECONDS);
     }
 
     // shutdown disk monitoring daemon
