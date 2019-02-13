@@ -134,6 +134,17 @@ Configure access to the [Apache Nexus repository](http://repository.apache.org/)
           </servers>
         </settings>
 
+#### Create an account on PyPi
+
+Since 4.9.0 we are releasing a python client for table service during release process. In order to publishing
+a python package to PyPi, you need to [create an account](https://pypi.org/account/register/) there. After
+you create the account successfully, you also need to add the account as a maintainer
+for [bookkeeper-client](https://pypi.org/project/apache-bookkeeper-client/) project. You can checkout who
+are the maintainers at the project page and ask them for adding your account as the maintainer.
+
+You can also read the instructions on [how to upload packages to PyPi](https://twine.readthedocs.io/en/latest/)
+if you are interested in learning more details.
+
 ### Create a new version in Github
 
 When contributors resolve an issue in GitHub, they are tagging it with a release that will contain their changes. With the release currently underway, new issues should be resolved against a subsequent future release. Therefore, you should create a release item for this subsequent release, as follows:
@@ -152,6 +163,13 @@ The list of release-blocking issues is available at the [milestones page](https:
 * If the issue has been resolved and was not updated, close it accordingly.
 * If the issue has not been resolved and it is acceptable to defer this until the next release, update the `Milestone` field to the new milestone you just created. Please consider discussing this with stakeholders and the dev@ mailing list, as appropriate.
 * If the issue has not been resolved and it is not acceptable to release until it is fixed, the release cannot proceed. Instead, work with the BookKeeper community to resolve the issue.
+
+### Change Python Client Version
+
+Before cutting a release, you need to update the python client version in
+[setup.py](https://github.com/apache/bookkeeper/blob/master/stream/clients/python/setup.py#L22)
+from `SNAPSHOT` version to a release version and get the change merge to master. For example,
+in release 4.10.0, you need to change the version from `4.10.0-SNAPSHOT` to `4.10.0`.
 
 ### Review Release Notes in Github
 
@@ -556,6 +574,36 @@ done
 
 2. Once the new docker image is built, update BC tests to include new docker image. Example: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1352)
 
+### Release Python Client
+
+Make sure you have installed [`pip`](https://pypi.org/project/pip/) and
+[`twine`](https://twine.readthedocs.io/en/latest/).
+
+- Install Pip
+  ```bash
+  brew install pip
+  ```
+
+- Install Twine
+  ```bash
+  pip install twine
+  ```
+
+After install `twine`, make sure `twine` exist in your PATH before releasing python client.
+
+```bash
+twine --version
+```
+
+Now, you are ready to publish the python client.
+
+```bash
+cd stream/clients/python
+./publish.sh
+```
+
+Check the PyPi project package to make sure the python client is uploaded to  https://pypi.org/project/apache-bookkeeper-client/ .
+
 ### Advance version on release branch
 
 > only do this for minor release
@@ -573,6 +621,14 @@ Then you have to create a PR and submit it for review.
 
 Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1350)
 
+### Advance python client version
+
+If you are doing a major release, you need to update the python client version to next major development version in master
+and next minor development version in the branch. For example, if you are doing 4.9.0 release, you need to bump the version
+in master to `4.10.0-SNAPSHOT`, and the version in `branch-4.9` to `4.9.1-SNAPSHOT`.
+
+If you are only doing a minor release, you just need to update the version in release branch. For example, if you are doing
+4.9.1 release, you need to bump the version in `branch-4.9` to `4.9.2-SNAPSHOT`.
 
 ### Mark the version as released in Github
 
