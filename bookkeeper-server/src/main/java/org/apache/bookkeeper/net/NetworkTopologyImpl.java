@@ -807,7 +807,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                 }
             }
             Node n = getNode(scope);
-            int scopeNodeCount = 1;
+            int scopeNodeCount = 0;
             if (n instanceof InnerNode) {
                 scopeNodeCount = ((InnerNode) n).getNumOfLeaves();
             }

@@ -363,7 +363,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
             TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
             Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
                     .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
-            assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value",
+            assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY gauge value",
                     numOfLedgersNotAdheringToPlacementPolicy, ledgersNotAdheringToPlacementPolicyGuage.getSample());
         } finally {
             Auditor auditor = auditorRef.getValue();

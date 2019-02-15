@@ -22,7 +22,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIES_JOINED;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIES_LEFT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
-import static org.apache.bookkeeper.client.BookKeeperClientStats.NUM_BOOKIES_IN_DEFAULT_FAULTZONE;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.READ_REQUESTS_REORDERED;
 import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.UNKNOWN_REGION;
 
@@ -243,10 +243,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     )
     protected Counter failedToResolveNetworkLocationCounter = null;
     @StatsDoc(
-            name = NUM_BOOKIES_IN_DEFAULT_FAULTZONE,
-            help = "Gauge for the number of Bookies in default Fault Zone"
+            name = NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK,
+            help = "Gauge for the number of writable Bookies in default rack"
     )
-    protected Gauge<Integer> numBookiesInDefaultFaultZone;
+    protected Gauge<Integer> numWritableBookiesInDefaultRack;
 
     private String defaultRack = NetworkTopology.DEFAULT_RACK;
 
@@ -289,7 +289,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         this.bookiesLeftCounter = statsLogger.getOpStatsLogger(BOOKIES_LEFT);
         this.readReorderedCounter = statsLogger.getOpStatsLogger(READ_REQUESTS_REORDERED);
         this.failedToResolveNetworkLocationCounter = statsLogger.getCounter(FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER);
-        this.numBookiesInDefaultFaultZone = new Gauge<Integer>() {
+        this.numWritableBookiesInDefaultRack = new Gauge<Integer>() {
             @Override
             public Integer getDefaultValue() {
                 return 0;
@@ -305,7 +305,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
             }
         };
-        this.statsLogger.registerGauge(NUM_BOOKIES_IN_DEFAULT_FAULTZONE, numBookiesInDefaultFaultZone);
+        this.statsLogger.registerGauge(NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK, numWritableBookiesInDefaultRack);
         this.reorderReadsRandom = reorderReadsRandom;
         this.stabilizePeriodSeconds = stabilizePeriodSeconds;
         this.reorderThresholdPendingRequests = reorderThresholdPendingRequests;
@@ -1298,28 +1298,31 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
     }
 
+    // this method should be called in readlock scope of 'rwlock'
     @Override
     public boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList, int writeQuorumSize,
             int ackQuorumSize) {
         int ensembleSize = ensembleList.size();
         int minNumRacksPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
-        HashSet<String> racksOrRegionsInQuorum = new HashSet<String>();
+        HashSet<String> racksInQuorum = new HashSet<String>();
         BookieSocketAddress bookie;
         for (int i = 0; i < ensembleList.size(); i++) {
-            racksOrRegionsInQuorum.clear();
+            racksInQuorum.clear();
             for (int j = 0; j < writeQuorumSize; j++) {
                 bookie = ensembleList.get((i + j) % ensembleSize);
                 try {
-                    racksOrRegionsInQuorum.add(knownBookies.get(bookie).getNetworkLocation());
+                    racksInQuorum.add(knownBookies.get(bookie).getNetworkLocation());
                 } catch (Exception e) {
                     /*
-                     * any issue/exception in analyzing whether ensemble is strictly adhering to
-                     * placement policy should be swallowed.
+                     * any issue/exception in analyzing whether ensemble is
+                     * strictly adhering to placement policy should be
+                     * swallowed.
                      */
                     LOG.warn("Received exception while trying to get network location of bookie: {}", bookie, e);
                 }
             }
-            if (racksOrRegionsInQuorum.size() < minNumRacksPerWriteQuorumForThisEnsemble) {
+            if ((racksInQuorum.size() < minNumRacksPerWriteQuorumForThisEnsemble)
+                    || (enforceMinNumRacksPerWriteQuorum && racksInQuorum.contains(getDefaultRack()))) {
                 return false;
             }
         }

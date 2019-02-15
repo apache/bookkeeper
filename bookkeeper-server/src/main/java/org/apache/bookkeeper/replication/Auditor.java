@@ -635,7 +635,7 @@ public class Auditor implements AutoCloseable {
                                 + " numOfLedgersNotAdheringToPlacementPolicy {}",
                                 placementPolicyCheckDuration, numOfLedgersFoundInPlacementPolicyCheckValue);
                         ledgersNotAdheringToPlacementPolicyGuageValue
-                                .set(numOfLedgersFoundInPlacementPolicyCheck.get());
+                                .set(numOfLedgersFoundInPlacementPolicyCheckValue);
                         placementPolicyCheckTime.registerSuccessfulEvent(placementPolicyCheckDuration,
                                 TimeUnit.MILLISECONDS);
                     } catch (BKAuditException e) {
@@ -648,7 +648,7 @@ public class Auditor implements AutoCloseable {
                              * adhering to placement policy. So reporting it.
                              */
                             ledgersNotAdheringToPlacementPolicyGuageValue
-                                    .set(numOfLedgersFoundInPlacementPolicyCheck.get());
+                                    .set(numOfLedgersFoundInPlacementPolicyCheckValue);
                         }
                         LOG.error(
                                 "BKAuditException running periodic placementPolicy check."
