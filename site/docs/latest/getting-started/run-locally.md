@@ -10,7 +10,7 @@ toc_disable: true
 This would start up an ensemble with 10 bookies:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper localbookie 10
+$ bin/bookkeeper localbookie 10
 ```
 
 > When you start up an ensemble using `localbookie`, all bookies run in a single JVM process.

@@ -31,13 +31,13 @@ You can run bookies either in the foreground or in the background, using [nohup]
 To start a bookie in the foreground, use the [`bookie`](../../reference/cli#bookkeeper-bookie) command of the [`bookkeeper`](../../reference/cli#bookkeeper) CLI tool:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper bookie
+$ bin/bookkeeper bookie
 ```
 
 To start a bookie in the background, use the [`bookkeeper-daemon.sh`](../../reference/cli#bookkeeper-daemon.sh) script and run `start bookie`:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper-daemon.sh start bookie
+$ bin/bookkeeper-daemon.sh start bookie
 ```
 
 ### Local bookies
@@ -47,7 +47,7 @@ The instructions above showed you how to run bookies intended for production use
 This would spin up a local ensemble of 6 bookies:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper localbookie 6
+$ bin/bookkeeper localbookie 6
 ```
 
 > When you run a local bookie ensemble, all bookies run in a single JVM process.
@@ -75,7 +75,7 @@ To enable logging for a bookie, create a `log4j.properties` file and point the `
 
 ```shell
 $ export BOOKIE_LOG_CONF=/some/path/log4j.properties
-$ bookkeeper-server/bin/bookkeeper bookie
+$ bin/bookkeeper bookie
 ```
 
 ## Upgrading
@@ -99,25 +99,25 @@ Flag | Action
 A standard upgrade pattern is to run an upgrade...
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper upgrade --upgrade
+$ bin/bookkeeper upgrade --upgrade
 ```
 
 ...then check that everything is working normally, then kill the bookie. If everything is okay, finalize the upgrade...
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper upgrade --finalize
+$ bin/bookkeeper upgrade --finalize
 ```
 
 ...and then restart the server:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper bookie
+$ bin/bookkeeper bookie
 ```
 
 If something has gone wrong, you can always perform a rollback:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper upgrade --rollback
+$ bin/bookkeeper upgrade --rollback
 ```
 
 ## Formatting
@@ -127,13 +127,13 @@ You can format bookie metadata in ZooKeeper using the [`metaformat`](../../refer
 By default, formatting is done in interactive mode, which prompts you to confirm the format operation if old data exists. You can disable confirmation using the `-nonInteractive` flag. If old data does exist, the format operation will abort *unless* you set the `-force` flag. Here's an example:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper shell metaformat
+$ bin/bookkeeper shell metaformat
 ```
 
 You can format the local filesystem data on a bookie using the [`bookieformat`](../../reference/cli#bookkeeper-shell-bookieformat) command on each bookie. Here's an example:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper shell bookieformat
+$ bin/bookkeeper shell bookieformat
 ```
 
 > The `-force` and `-nonInteractive` flags are also available for the `bookieformat` command.
@@ -162,7 +162,7 @@ If the change was the result of an accidental configuration change, the change c
 1. Run the following command to re-replicate the data:
 
    ```bash
-   $ bookkeeper-server/bin/bookkeeper shell recover \
+   $ bin/bookkeeper shell recover \
      <zkserver> \
      <oldbookie> \
      <newbookie>
@@ -171,7 +171,7 @@ If the change was the result of an accidental configuration change, the change c
    The ZooKeeper server, old bookie, and new bookie, are all identified by their external IP and `bookiePort` (3181 by default). Here's an example:
 
    ```bash
-   $ bookkeeper-server/bin/bookkeeper shell recover \
+   $ bin/bookkeeper shell recover \
      zk1.example.com \
      192.168.1.10:3181 \
      192.168.1.10:3181
