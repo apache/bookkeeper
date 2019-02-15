@@ -1184,6 +1184,13 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             }
         }
 
+        // Clean up metadata directories if they are separate from the
+        // ledger dirs
+        File metadataDir = new File(conf.getGcEntryLogMetadataCachePath());
+        if (!cleanDir(metadataDir)) {
+            LOG.error("Formatting ledger metadata directory {} failed", metadataDir);
+            return false;
+        }
         LOG.info("Bookie format completed successfully");
         return true;
     }
