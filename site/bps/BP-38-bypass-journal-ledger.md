@@ -12,7 +12,22 @@ But we may not need this level of persistence under [scenarios](https://cwiki.ap
 This proposal is aimed at providing bypass journal ledger, this feature includes these parts work:
  - add new write flag `BYPASS_JOURNAL` to existing protocol
  - impl the newly write flag at the client side and server side
- 
+
+The usage will looks like this:
+```java
+WriteHandle writeHandle = newCreateLedgerOp()
+                        .withEnsembleSize(3)
+                        .withWriteQuorumSize(3)
+                        .withAckQuorumSize(3)
+                        .withPassword(PASSWORD)
+                        .withWriteFlags(WriteFlag.BYPASS_JOURNAL)
+                        .execute().get();
+// append data as usual, but the lac won't advance
+writeHandle.appendAsync(...);
+// force to advance lac
+writeHandle.force();
+writeHandle.closeAsync();
+``` 
 The details of changes are listed in Section “[Proposed Changes](#proposed-changes)”.
  
 ### Public Interfaces
@@ -27,7 +42,7 @@ The detailed compatibility related stuff is in Section “[CDMP](#compatibility-
 While the main approach is based on [`WRITE_FLAG` impl](https://github.com/apache/bookkeeper/pull/742),
 the actual implementation is more tricky. In my opinion, there are three different solution:
 
-1. Relax LAC protocol
+1. Relax LAC protocol(rejected due to violate LAC protocol)
 
     Modify server side code mostly and don't change legerHandle's LAC advance logic, if the write flag is `BYPASS_JOURNAL`, after write to `LegerStorage`(the data maybe in the memTable, or the buffer of File, or the os cache),
 bookie return result to the client directly.
@@ -39,19 +54,19 @@ Note, the user shall know the weak durability for his use case when using this i
     Like `DEFERRED_SYNC`, the normal 'bypass-journal' operation don't advance LAC on the client.
 Only advance LAC using `force` api. To support this new 'bypass-journal' option, we need theses changes:
 
-    - Add persistent callback to LedgerStorage
+    - Add force interface to `LedgerDescriptor` and LedgerStorage
     
-        Maintain non-persistent entry list(necessary for out of order entry arriving) and `maxPersistentEntryId` on `LedgerDescriptor`
-If the entry is 'bypass-journal', the callback for this entry is not null, and it will receives notification after persistent through legerStorage.
+        Used to flush the data on memTable to persistent device for specific ledger, and this make senses with "one entry logger per ledger" feature.
+        For general SortedLedgerStorage, this "force" operation may has some overhead due to flush data too early.
     
     - Extend the force request
         
-        If the force request contains bypass journal option, get `maxPersistentEntryId` from `LedgerDescriptor`
- or impl force method on `LedgerDescriptor`, which force the entry to persistent device through `LedgerStorage`.
+        If the force request contains bypass journal option, execute force method of `LedgerDescriptor`, which will call LedgerStorage's force interface to flush received entries to persistent device.
 
     In addition to these changes, we should consider who is responsible for the `force` execution? How often to schedule 'force'?
+    To simply the design and give more choices to apps, these choices are up to user.
 
-3. Add NonPersistentLAC semantic to existing LAC protocol
+3. Add NonPersistentLAC semantic to existing LAC protocol(rejected due to infeasible and complex)
 
     To not violate LAC semantics like method 1, we can add `NonPersistentLAC` semantic, this includes these changes:
 
@@ -68,6 +83,8 @@ If the entry is 'bypass-journal', the callback for this entry is not null, and i
         Add `nonPersistentLAC` to WriteHandle. WriteHandle with 'bypass-journal' option updates the LAC using `maxPersistentEntryId`, and update `nonPersistentLAC` if receives enough ack.
         For normal WriteHandle, the `nonPersistentLAC` is set to null to indicate to keep original LAC advance logic. 
 
+As we only introduce `BYPASS_JOURNAL` write flag to add request, it's better not change existing fencing logic. So fence operation shall falls into journal io path.
+
 ### Compatibility, Deprecation, and Migration Plan
 
 As this new feature only add one ledger creating option and corresponding ledger implementation. It has no effect
@@ -77,7 +94,7 @@ When user use the latest client which has the `BYPASS_JOURNAL` write flag, but t
 
 ### Test Plan
 
-- unit tests for newly introduced write_flag at client side and server side
+- unit tests for newly introduced write_flag and extended force at client side and server side
 - end-to-end tests for the new Protocol request/response
 - compat tests (client with this new writeflags will not be able to write on old bookies)
 
