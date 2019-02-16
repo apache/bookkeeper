@@ -273,10 +273,12 @@
       <li><a href="#one-time-setup-instructions" id="markdown-toc-one-time-setup-instructions">One-time setup instructions</a>        <ul>
           <li><a href="#gpg-key" id="markdown-toc-gpg-key">GPG Key</a></li>
           <li><a href="#access-to-apache-nexus-repository" id="markdown-toc-access-to-apache-nexus-repository">Access to Apache Nexus repository</a></li>
+          <li><a href="#create-an-account-on-pypi" id="markdown-toc-create-an-account-on-pypi">Create an account on PyPi</a></li>
         </ul>
       </li>
       <li><a href="#create-a-new-version-in-github" id="markdown-toc-create-a-new-version-in-github">Create a new version in Github</a></li>
       <li><a href="#triage-release-blocking-issues-in-github" id="markdown-toc-triage-release-blocking-issues-in-github">Triage release-blocking issues in Github</a></li>
+      <li><a href="#change-python-client-version" id="markdown-toc-change-python-client-version">Change Python Client Version</a></li>
       <li><a href="#review-release-notes-in-github" id="markdown-toc-review-release-notes-in-github">Review Release Notes in Github</a>        <ul>
           <li><a href="#prepare-release-notes" id="markdown-toc-prepare-release-notes">Prepare Release Notes</a></li>
         </ul>
@@ -315,7 +317,9 @@
       <li><a href="#update-dcos-bookkeeper-package" id="markdown-toc-update-dcos-bookkeeper-package">Update DC/OS BookKeeper package</a></li>
       <li><a href="#git-tag" id="markdown-toc-git-tag">Git tag</a></li>
       <li><a href="#verify-docker-image" id="markdown-toc-verify-docker-image">Verify Docker Image</a></li>
+      <li><a href="#release-python-client" id="markdown-toc-release-python-client">Release Python Client</a></li>
       <li><a href="#advance-version-on-release-branch" id="markdown-toc-advance-version-on-release-branch">Advance version on release branch</a></li>
+      <li><a href="#advance-python-client-version" id="markdown-toc-advance-python-client-version">Advance python client version</a></li>
       <li><a href="#mark-the-version-as-released-in-github" id="markdown-toc-mark-the-version-as-released-in-github">Mark the version as released in Github</a></li>
       <li><a href="#update-release-schedule" id="markdown-toc-update-release-schedule">Update Release Schedule</a></li>
       <li><a href="#checklist-to-proceed-to-the-next-step-4" id="markdown-toc-checklist-to-proceed-to-the-next-step-4">Checklist to proceed to the next step</a></li>
@@ -474,6 +478,17 @@ export GPG_AGENT_INFO
   </li>
 </ol>
 
+<h4 id="create-an-account-on-pypi">Create an account on PyPi</h4>
+
+<p>Since 4.9.0 we are releasing a python client for table service during release process. In order to publishing
+a python package to PyPi, you need to <a href="https://pypi.org/account/register/">create an account</a> there. After
+you create the account successfully, you also need to add the account as a maintainer
+for <a href="https://pypi.org/project/apache-bookkeeper-client/">bookkeeper-client</a> project. You can checkout who
+are the maintainers at the project page and ask them for adding your account as the maintainer.</p>
+
+<p>You can also read the instructions on <a href="https://twine.readthedocs.io/en/latest/">how to upload packages to PyPi</a>
+if you are interested in learning more details.</p>
+
 <h3 id="create-a-new-version-in-github">Create a new version in Github</h3>
 
 <p>When contributors resolve an issue in GitHub, they are tagging it with a release that will contain their changes. With the release currently underway, new issues should be resolved against a subsequent future release. Therefore, you should create a release item for this subsequent release, as follows:</p>
@@ -496,6 +511,13 @@ export GPG_AGENT_INFO
   <li>If the issue has not been resolved and it is acceptable to defer this until the next release, update the <code class="highlighter-rouge">Milestone</code> field to the new milestone you just created. Please consider discussing this with stakeholders and the dev@ mailing list, as appropriate.</li>
   <li>If the issue has not been resolved and it is not acceptable to release until it is fixed, the release cannot proceed. Instead, work with the BookKeeper community to resolve the issue.</li>
 </ul>
+
+<h3 id="change-python-client-version">Change Python Client Version</h3>
+
+<p>Before cutting a release, you need to update the python client version in
+<a href="https://github.com/apache/bookkeeper/blob/master/stream/clients/python/setup.py#L22">setup.py</a>
+from <code class="highlighter-rouge">SNAPSHOT</code> version to a release version and get the change merge to master. For example,
+in release 4.10.0, you need to change the version from <code class="highlighter-rouge">4.10.0-SNAPSHOT</code> to <code class="highlighter-rouge">4.10.0</code>.</p>
 
 <h3 id="review-release-notes-in-github">Review Release Notes in Github</h3>
 
@@ -945,6 +967,35 @@ git push apache <span class="s2">"</span><span class="k">${</span><span class="n
   </li>
 </ol>
 
+<h3 id="release-python-client">Release Python Client</h3>
+
+<p>Make sure you have installed <a href="https://pypi.org/project/pip/"><code class="highlighter-rouge">pip</code></a> and
+<a href="https://twine.readthedocs.io/en/latest/"><code class="highlighter-rouge">twine</code></a>.</p>
+
+<ul>
+  <li>Install Pip
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>brew <span class="nb">install </span>pip
+</code></pre></div>    </div>
+  </li>
+  <li>Install Twine
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip <span class="nb">install </span>twine
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<p>After install <code class="highlighter-rouge">twine</code>, make sure <code class="highlighter-rouge">twine</code> exist in your PATH before releasing python client.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>twine <span class="nt">--version</span>
+</code></pre></div></div>
+
+<p>Now, you are ready to publish the python client.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cd </span>stream/clients/python
+./publish.sh
+</code></pre></div></div>
+
+<p>Check the PyPi project package to make sure the python client is uploaded to  https://pypi.org/project/apache-bookkeeper-client/ .</p>
+
 <h3 id="advance-version-on-release-branch">Advance version on release branch</h3>
 
 <blockquote>
@@ -966,6 +1017,15 @@ git push apache <span class="s2">"</span><span class="k">${</span><span class="n
 Then you have to create a PR and submit it for review.</p>
 
 <p>Example PR: <a href="https://github.com/apache/bookkeeper/pull/1350">release-4.7.0</a></p>
+
+<h3 id="advance-python-client-version">Advance python client version</h3>
+
+<p>If you are doing a major release, you need to update the python client version to next major development version in master
+and next minor development version in the branch. For example, if you are doing 4.9.0 release, you need to bump the version
+in master to <code class="highlighter-rouge">4.10.0-SNAPSHOT</code>, and the version in <code class="highlighter-rouge">branch-4.9</code> to <code class="highlighter-rouge">4.9.1-SNAPSHOT</code>.</p>
+
+<p>If you are only doing a minor release, you just need to update the version in release branch. For example, if you are doing
+4.9.1 release, you need to bump the version in <code class="highlighter-rouge">branch-4.9</code> to <code class="highlighter-rouge">4.9.2-SNAPSHOT</code>.</p>
 
 <h3 id="mark-the-version-as-released-in-github">Mark the version as released in Github</h3>
 
