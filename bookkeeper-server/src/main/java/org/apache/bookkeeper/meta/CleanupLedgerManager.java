@@ -210,13 +210,13 @@ public class CleanupLedgerManager implements LedgerManager {
     }
 
     @Override
-    public LedgerRangeIterator getLedgerRanges() {
+    public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutSec) {
         closeLock.readLock().lock();
         try {
             if (closed) {
                 return new ClosedLedgerRangeIterator();
             }
-            return underlying.getLedgerRanges();
+            return underlying.getLedgerRanges(zkOpTimeoutSec);
         } finally {
             closeLock.readLock().unlock();
         }

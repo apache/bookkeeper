@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -221,7 +222,7 @@ public class ZkUtils {
      * @throws InterruptedException
      * @throws IOException
      */
-    public static List<String> getChildrenInSingleNode(final ZooKeeper zk, final String node)
+    public static List<String> getChildrenInSingleNode(final ZooKeeper zk, final String node, long timeOutSec)
             throws InterruptedException, IOException, KeeperException.NoNodeException {
         final GetChildrenCtx ctx = new GetChildrenCtx();
         getChildrenInSingleNode(zk, node, new GenericCallback<List<String>>() {
@@ -240,7 +241,12 @@ public class ZkUtils {
 
         synchronized (ctx) {
             while (!ctx.done) {
-                ctx.wait();
+                try {
+                    ctx.wait(timeOutSec > 0 ? TimeUnit.SECONDS.toMillis(timeOutSec) : 0);
+                } catch (InterruptedException e) {
+                    ctx.rc = Code.OPERATIONTIMEOUT.intValue();
+                    ctx.done = true;
+                }
             }
         }
         if (Code.NONODE.intValue() == ctx.rc) {

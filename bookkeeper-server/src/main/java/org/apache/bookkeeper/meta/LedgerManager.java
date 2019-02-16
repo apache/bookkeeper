@@ -149,9 +149,12 @@ public interface LedgerManager extends Closeable {
     /**
      * Loop to scan a range of metadata from metadata storage.
      *
+     * @param zkOpTimeOutSec
+     *            Iterator considers timeout while fetching ledger-range from
+     *            zk.
      * @return will return a iterator of the Ranges
      */
-    LedgerRangeIterator getLedgerRanges();
+    LedgerRangeIterator getLedgerRanges(long zkOpTimeOutSec);
 
     /**
      * Used to represent the Ledgers range returned from the
