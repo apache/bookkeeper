@@ -90,7 +90,7 @@ public class ListLedgerService implements HttpEndpointService {
 
             LedgerManagerFactory mFactory = bookieServer.getBookie().getLedgerManagerFactory();
             LedgerManager manager = mFactory.newLedgerManager();
-            LedgerManager.LedgerRangeIterator iter = manager.getLedgerRanges();
+            LedgerManager.LedgerRangeIterator iter = manager.getLedgerRanges(0);
 
             // output <ledgerId: ledgerMetadata>
             LinkedHashMap<String, String> output = Maps.newLinkedHashMap();

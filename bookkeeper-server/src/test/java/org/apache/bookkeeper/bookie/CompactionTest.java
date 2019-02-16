@@ -970,7 +970,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                 }
 
                 @Override
-                public LedgerRangeIterator getLedgerRanges() {
+                public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutSec) {
                     final AtomicBoolean hasnext = new AtomicBoolean(true);
                     return new LedgerManager.LedgerRangeIterator() {
                         @Override

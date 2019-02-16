@@ -316,7 +316,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
             };
 
         SortedSet<Long> scannedLedgers = new TreeSet<Long>();
-        LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges();
+        LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges(0);
         while (iterator.hasNext()) {
             LedgerRange ledgerRange = iterator.next();
             scannedLedgers.addAll(ledgerRange.getLedgers());
@@ -422,7 +422,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
             @Override
-            public LedgerRangeIterator getLedgerRanges() {
+            public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
                 return new LedgerRangeIterator() {
                     @Override
                     public LedgerRange next() throws IOException {
@@ -552,7 +552,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
     public void validateLedgerRangeIterator(SortedSet<Long> createdLedgers) throws IOException {
         SortedSet<Long> scannedLedgers = new TreeSet<Long>();
-        LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges();
+        LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges(0);
         while (iterator.hasNext()) {
             LedgerRange ledgerRange = iterator.next();
             scannedLedgers.addAll(ledgerRange.getLedgers());

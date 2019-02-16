@@ -225,7 +225,7 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         createNumLedgers(numLedgers);
 
         long nextLedgerId = 0L;
-        LedgerRangeIterator iter = lm.getLedgerRanges();
+        LedgerRangeIterator iter = lm.getLedgerRanges(0);
         while (iter.hasNext()) {
             LedgerRange lr = iter.next();
             for (Long lid : lr.getLedgers()) {

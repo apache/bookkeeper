@@ -139,7 +139,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             }
 
             // Iterate over all the ledger on the metadata store
-            LedgerRangeIterator ledgerRangeIterator = ledgerManager.getLedgerRanges();
+            long zkOpTimeout = this.conf.getZkTimeout() * 2;
+            LedgerRangeIterator ledgerRangeIterator = ledgerManager.getLedgerRanges(zkOpTimeout);
             Set<Long> ledgersInMetadata = null;
             long start;
             long end = -1;

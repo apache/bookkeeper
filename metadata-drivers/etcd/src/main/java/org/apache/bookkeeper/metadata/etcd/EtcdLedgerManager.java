@@ -420,7 +420,7 @@ class EtcdLedgerManager implements LedgerManager {
     }
 
     @Override
-    public LedgerRangeIterator getLedgerRanges() {
+    public LedgerRangeIterator getLedgerRanges(long opTimeOutSec) {
         KeyStream<Long> ks = new KeyStream<>(
             kvClient,
             ByteSequence.fromString(EtcdUtils.getLedgerKey(scope, 0L)),

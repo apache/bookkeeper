@@ -134,7 +134,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     @Test
     public void testIterateNoLedgers() throws Exception {
         LedgerManager lm = getLedgerManager();
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         if (lri.hasNext()) {
             lri.next();
@@ -150,7 +150,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         long id = 2020202;
         createLedger(lm, id);
 
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         Set<Long> lids = ledgerRangeToSet(lri);
         assertEquals(lids.size(), 1);
@@ -169,7 +169,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
             createLedger(lm, id);
         }
 
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         Set<Long> returnedIds = ledgerRangeToSet(lri);
         assertEquals(ids, returnedIds);
@@ -188,7 +188,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
             ids.add(i);
         }
 
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         Set<Long> returnedIds = ledgerRangeToSet(lri);
         assertEquals(ids, returnedIds);
@@ -232,7 +232,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
 
         Set<Long> found = new TreeSet<>();
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         while (lri.hasNext()) {
             LedgerManager.LedgerRange lr = lri.next();
             found.addAll(lr.getLedgers());
@@ -279,7 +279,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                     path, "data".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
 
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         Set<Long> returnedIds = ledgerRangeToSet(lri);
         assertEquals(ids, returnedIds);
@@ -287,7 +287,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         Set<Long> ledgersReadAsync = getLedgerIdsByUsingAsyncProcessLedgers(lm);
         assertEquals("Comparing LedgersIds read asynchronously", ids, ledgersReadAsync);
 
-        lri = lm.getLedgerRanges();
+        lri = lm.getLedgerRanges(0);
         int emptyRanges = 0;
         while (lri.hasNext()) {
             if (lri.next().getLedgers().isEmpty()) {
@@ -329,7 +329,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                     path, "data".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
 
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         Set<Long> returnedIds = ledgerRangeToSet(lri);
         assertEquals(ids, returnedIds);
@@ -394,7 +394,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                     latch.await();
 
                     while (MathUtils.elapsedNanos(start) < runtime) {
-                        LedgerRangeIterator lri = checkerLM.getLedgerRanges();
+                        LedgerRangeIterator lri = checkerLM.getLedgerRanges(0);
                         Set<Long> returnedIds = ledgerRangeToSet(lri);
                         for (long id: mustExist) {
                             assertTrue(returnedIds.contains(id));
@@ -505,7 +505,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     public void hierarchicalLedgerManagerAsyncProcessLedgersTest() throws Throwable {
         Assume.assumeTrue(baseConf.getLedgerManagerFactoryClass().equals(HierarchicalLedgerManagerFactory.class));
         LedgerManager lm = getLedgerManager();
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
 
         Set<Long> ledgerIds = new TreeSet<>(Arrays.asList(1234L, 123456789123456789L));
         for (Long ledgerId : ledgerIds) {
