@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.bookkeeper.conf.Configurable;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This is a base class for DNS to Switch mappings.
@@ -117,7 +118,8 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
     }
 
     protected boolean isSingleSwitchByScriptPolicy() {
-        return conf != null && conf.getString(CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_FILE_NAME_KEY) == null;
+        return conf != null
+                && (!StringUtils.isNotBlank(conf.getString(CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_FILE_NAME_KEY)));
     }
 
     /**

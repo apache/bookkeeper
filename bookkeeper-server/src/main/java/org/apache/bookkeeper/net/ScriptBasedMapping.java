@@ -25,6 +25,7 @@ import java.util.StringTokenizer;
 
 import org.apache.bookkeeper.util.Shell.ShellCommandExecutor;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,8 +140,14 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
         public void setConf(Configuration conf) {
             super.setConf(conf);
             if (conf != null) {
-                scriptName = conf.getString(SCRIPT_FILENAME_KEY);
-                maxArgs = conf.getInt(SCRIPT_ARG_COUNT_KEY, DEFAULT_ARG_COUNT);
+                String scriptNameConfValue = conf.getString(SCRIPT_FILENAME_KEY);
+                if (StringUtils.isNotBlank(scriptNameConfValue)) {
+                    scriptName = scriptNameConfValue;
+                    maxArgs = conf.getInt(SCRIPT_ARG_COUNT_KEY, DEFAULT_ARG_COUNT);
+                } else {
+                    scriptName = null;
+                    maxArgs = 0;
+                }
             } else {
                 scriptName = null;
                 maxArgs = 0;
