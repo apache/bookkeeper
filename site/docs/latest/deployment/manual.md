@@ -26,7 +26,7 @@ zkServers=100.0.0.1:2181,100.0.0.2:2181,100.0.0.3:2181
 Once the bookie's configuration is set, you can start it up using the [`bookie`](../../reference/cli#bookkeeper-bookie) command of the [`bookkeeper`](../../reference/cli#bookkeeper) CLI tool:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper bookie
+$ bin/bookkeeper bookie
 ```
 
 > You can also build BookKeeper [by cloning it from source](../../getting-started/installation#clone) or [using Maven](../../getting-started/installation#build-using-maven).
@@ -40,7 +40,7 @@ $ bookkeeper-server/bin/bookkeeper bookie
 Once you've started up a cluster of bookies, you need to set up cluster metadata for the cluster by running the following command from any bookie in the cluster:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper shell metaformat
+$ bin/bookkeeper shell metaformat
 ```
 
 You can run in the formatting 

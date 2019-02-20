@@ -230,10 +230,10 @@ Usually we could config files bk_server.conf, bkenv.sh, log4j.properties, and lo
 
 Be careful where you put the transaction log (journal). A dedicated transaction log device is key to consistent good performance. Putting the log on a busy device will adversely effect performance.
 
-Here is some useful and graceful command the could be used to replace the default command, once you want to delete the cookeis and do auto recovery:
+Here is some useful and graceful command the could be used to replace the default command, once you want to delete the cookies and do auto recovery:
 ```
-/bookkeeper/bookkeeper-server/bin/bookkeeper shell bookieformat -nonInteractive -force -deleteCookie
-/bookkeeper/bookkeeper-server/bin/bookkeeper autorecovery
+/bookkeeper/bin/bookkeeper shell bookieformat -nonInteractive -force -deleteCookie
+/bookkeeper/bin/bookkeeper autorecovery
 ```
 Use them, and replace the default [CMD] when you wanted to do things other than start a bookie.
 
