@@ -514,14 +514,14 @@
 
 <p>Here’s an example:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell recover <span class="se">\</span>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell recover <span class="se">\</span>
   zk1.example.com:2181 <span class="se">\ </span><span class="c"># IP and port for ZooKeeper</span>
   192.168.1.10:3181      <span class="c"># IP and port for the failed bookie</span>
 </code></pre></div></div>
 
 <p>If you wish, you can also specify which bookie you’d like to rereplicate to. Here’s an example:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell recover <span class="se">\</span>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell recover <span class="se">\</span>
   zk1.example.com:2181 <span class="se">\ </span><span class="c"># IP and port for ZooKeeper</span>
   192.168.1.10:3181 <span class="se">\ </span>   <span class="c"># IP and port for the failed bookie</span>
   192.168.1.11:3181      <span class="c"># IP and port for the bookie to rereplicate to</span>
@@ -558,7 +558,7 @@
 
 <p>You can start up AutoRecovery using the <a href="../../reference/cli#bookkeeper-autorecovery"><code class="highlighter-rouge">autorecovery</code></a> command of the <a href="../../reference/cli"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool.</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper autorecovery
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper autorecovery
 </code></pre></div></div>
 
 <blockquote>
@@ -579,12 +579,12 @@
 
 <p>You can disable AutoRecover using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell autorecovery <span class="nt">-disable</span>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell autorecovery <span class="nt">-disable</span>
 </code></pre></div></div>
 
 <p>Once disabled, you can reenable AutoRecovery using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">enable</code></a> shell command:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell autorecovery <span class="nt">-enable</span>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell autorecovery <span class="nt">-enable</span>
 </code></pre></div></div>
 
 <h2 id="autorecovery-architecture">AutoRecovery architecture</h2>
