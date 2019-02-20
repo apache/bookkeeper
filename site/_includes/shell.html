@@ -8,7 +8,7 @@
 <h5>Usage</h5>
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper shell {{ command.name }}{% if command.argument %} \
+$ bin/bookkeeper shell {{ command.name }}{% if command.argument %} \
   {{ command.argument }}{% endif %}{% if command.options %} \
   <options>{% endif %}
 ```
