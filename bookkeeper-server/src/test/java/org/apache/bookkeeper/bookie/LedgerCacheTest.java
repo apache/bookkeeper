@@ -379,6 +379,128 @@ public class LedgerCacheTest {
         }
     }
 
+
+    /**
+     * Test for race between putEntryOffset and flush.
+     * {@link https://github.com/apache/bookkeeper/issues/1919}
+     */
+    @Test
+    public void testPutEntryOffsetDeleteRace() throws Exception {
+        newLedgerCache();
+        final AtomicInteger rc = new AtomicInteger(0);
+        final LinkedBlockingQueue<Long> putQ = new LinkedBlockingQueue<>(100);
+        final LinkedBlockingQueue<Long> deleteQ = new LinkedBlockingQueue<>(100);
+        final byte[] masterKey = "masterKey".getBytes();
+        final long numLedgers = 1000;
+        final int numPutters = 10;
+        final int numDeleters = 10;
+        final AtomicBoolean running = new AtomicBoolean(true);
+        Thread newLedgerThread = new Thread() {
+                public void run() {
+                    try {
+                        for (long i = 0; i < numLedgers && rc.get() == 0; i++) {
+                            ledgerCache.setMasterKey(i, masterKey);
+
+                            ledgerCache.putEntryOffset(i, 1, 0);
+                            deleteQ.put(i);
+                            putQ.put(i);
+                        }
+                        for (int i = 0; i < numPutters; ++i) {
+                            putQ.put(-1L);
+                        }
+                        for (int i = 0; i < numDeleters; ++i) {
+                            deleteQ.put(-1L);
+                        }
+                    } catch (Throwable e) {
+                        rc.set(-1);
+                        LOG.error("Exception in new ledger thread", e);
+                    }
+                }
+            };
+        newLedgerThread.start();
+
+        Thread[] flushThreads = new Thread[numPutters];
+        for (int i = 0; i < numPutters; ++i) {
+            Thread flushThread = new Thread() {
+                public void run() {
+                    try {
+                        while (true) {
+                            long id = putQ.take();
+                            if (id == -1L) {
+                                break;
+                            }
+                            LOG.info("Putting {}", id);
+                            try {
+                                ledgerCache.putEntryOffset(id, 2, 0);
+                                ledgerCache.deleteLedger(id);
+                            } catch (NoLedgerException e) {
+                                // No problem
+                            }
+                        }
+                    } catch (Throwable e) {
+                        rc.set(-1);
+                        LOG.error("Exception in put thread", e);
+                    }
+                }
+            };
+            flushThread.start();
+            flushThreads[i] = flushThread;
+        }
+
+        Thread[] deleteThreads = new Thread[numDeleters];
+        for (int i = 0; i < numDeleters; ++i) {
+            Thread deleteThread = new Thread() {
+                public void run() {
+                    try {
+                        while (true) {
+                            long id = deleteQ.take();
+                            if (id == -1L) {
+                                break;
+                            }
+                            LOG.info("Deleting {}", id);
+                            try {
+                                ledgerCache.deleteLedger(id);
+                            } catch (NoLedgerException e) {
+                                // No problem
+                            }
+                        }
+                    } catch (Throwable e) {
+                        rc.set(-1);
+                        LOG.error("Exception in delete thread", e);
+                    }
+                }
+            };
+            deleteThread.start();
+            deleteThreads[i] = deleteThread;
+        }
+
+        newLedgerThread.join();
+
+        for (Thread deleteThread : deleteThreads) {
+            deleteThread.join();
+        }
+
+        running.set(false);
+        for (Thread flushThread : flushThreads) {
+            flushThread.join();
+        }
+
+        assertEquals("Should have been no errors", rc.get(), 0);
+        for (long i = 0L; i < numLedgers; ++i) {
+            boolean gotError = false;
+            try {
+                LOG.error("Checking {}", i);
+                ledgerCache.getEntryOffset(i, 0);
+            } catch (NoLedgerException e) {
+                gotError = true;
+            }
+            if (!gotError) {
+                LOG.error("Ledger {} is still around", i);
+                fail("Found ledger " + i + ", which should have been removed");
+            }
+        }
+    }
+
     /**
      * Test for race between delete and flush.
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-604}
