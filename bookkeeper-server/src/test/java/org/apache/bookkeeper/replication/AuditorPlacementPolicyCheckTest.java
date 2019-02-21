@@ -52,10 +52,10 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorPeriodicCheckTest.TestAuditor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
-import org.apache.bookkeeper.test.TestStatsProvider.TestCounter;
 import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
@@ -182,14 +182,14 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
             TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
-            TestCounter placementPolicyCheckEnsembleNotAdheringToPlacementPolicy = (TestCounter) statsLogger.getCounter(
-                    ReplicationStats.PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
+            Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
             /*
              * since all of the bookies are in different racks, there shouldn't be any ledger not adhering
              * to placement policy.
              */
-            assertEquals("PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER SuccessCount", 0L,
-                    placementPolicyCheckEnsembleNotAdheringToPlacementPolicy.get().longValue());
+            assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value", 0,
+                    ledgersNotAdheringToPlacementPolicyGuage.getSample());
         } finally {
             Auditor auditor = auditorRef.getValue();
             if (auditor != null) {
@@ -263,11 +263,10 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
             TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
-            TestCounter placementPolicyCheckEnsembleNotAdheringToPlacementPolicy = (TestCounter) statsLogger.getCounter(
-                    ReplicationStats.PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
-            assertEquals("PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER SuccessCount",
-                    (long) numOfLedgersNotAdheringToPlacementPolicy,
-                    placementPolicyCheckEnsembleNotAdheringToPlacementPolicy.get().longValue());
+            Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value",
+                    numOfLedgersNotAdheringToPlacementPolicy, ledgersNotAdheringToPlacementPolicyGuage.getSample());
         } finally {
             Auditor auditor = auditorRef.getValue();
             if (auditor != null) {
@@ -362,11 +361,10 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
             TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
-            TestCounter placementPolicyCheckEnsembleNotAdheringToPlacementPolicy = (TestCounter) statsLogger.getCounter(
-                    ReplicationStats.PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
-            assertEquals("PLACEMENT_POLICY_CHECK_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER SuccessCount",
-                    (long) numOfLedgersNotAdheringToPlacementPolicy,
-                    placementPolicyCheckEnsembleNotAdheringToPlacementPolicy.get().longValue());
+            Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY gauge value",
+                    numOfLedgersNotAdheringToPlacementPolicy, ledgersNotAdheringToPlacementPolicyGuage.getSample());
         } finally {
             Auditor auditor = auditorRef.getValue();
             if (auditor != null) {
