@@ -146,6 +146,8 @@
 <dd>
 <div class="block">Callback declaration which additionally passes quorum write complete latency.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#addDefaultRackBookiesIfMinNumRacksIsEnforced-java.util.Set-">addDefaultRackBookiesIfMinNumRacksIsEnforced(Set&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#addEntry-byte:A-">addEntry(byte[])</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
 <div class="block">Add entry synchronously to an open ledger.</div>
@@ -1659,8 +1661,6 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html#defaultRackSupplier">defaultRackSupplier</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DefaultResolver</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#defaultRackSupplier">defaultRackSupplier</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html#DefaultResolver--">DefaultResolver()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DefaultResolver</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html#DefaultResolver-java.util.function.Supplier-">DefaultResolver(Supplier&lt;String&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DefaultResolver</a></dt>
 <dd>&nbsp;</dd>
@@ -5237,8 +5237,6 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadataBuilder.html#newEnsembleEntry-long-java.util.List-">newEnsembleEntry(long, List&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#newEnsembleInternal-int-int-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">newEnsembleInternal(int, int, Set&lt;BookieSocketAddress&gt;, ITopologyAwareEnsemblePlacementPolicy.Ensemble&lt;TopologyAwareEnsemblePlacementPolicy.BookieNode&gt;, ITopologyAwareEnsemblePlacementPolicy.Predicate&lt;TopologyAwareEnsemblePlacementPolicy.BookieNode&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#newEnsembleInternal-int-int-int-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">newEnsembleInternal(int, int, int, Set&lt;BookieSocketAddress&gt;, ITopologyAwareEnsemblePlacementPolicy.Ensemble&lt;TopologyAwareEnsemblePlacementPolicy.BookieNode&gt;, ITopologyAwareEnsemblePlacementPolicy.Predicate&lt;TopologyAwareEnsemblePlacementPolicy.BookieNode&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#newInstance-org.apache.bookkeeper.stats.StatsLogger-">newInstance(StatsLogger)</a></span> - Static method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
@@ -5349,6 +5347,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#NUM_WORKER_THREADS">NUM_WORKER_THREADS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK">NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#NUMBER_OF_MEMTABLE_FLUSH_THREADS">NUMBER_OF_MEMTABLE_FLUSH_THREADS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#numBookiesMissingEntry">numBookiesMissingEntry</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></dt>
@@ -5368,6 +5368,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedOp.html#numResponsesPending">numResponsesPending</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedOp.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#numResponsesPending">numResponsesPending</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TryReadLastConfirmedOp.html" title="class in org.apache.bookkeeper.client">TryReadLastConfirmedOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#numWritableBookiesInDefaultRack">numWritableBookiesInDefaultRack</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 </dl>
 <a name="I:O">

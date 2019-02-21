@@ -497,7 +497,10 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
  should be equal to the provide <code>ensembleSize</code>.
 
  <p><code>customMetadata</code> is the same user defined data that user provides
- when <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#createLedger-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.Map-"><code>BookKeeper.createLedger(int, int, int, BookKeeper.DigestType, byte[], Map)</code></a>.</div>
+ when <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#createLedger-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.Map-"><code>BookKeeper.createLedger(int, int, int, BookKeeper.DigestType, byte[], Map)</code></a>.
+
+ <p>If 'enforceMinNumRacksPerWriteQuorum' config is enabled then the bookies belonging to default
+ faultzone (rack) will be excluded while selecting bookies.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ensembleSize</code> - Ensemble Size</dd>
@@ -528,7 +531,10 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
                                                                                                      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)
                                                                                               throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block">Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
- <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client"><code>BKException.BKNotEnoughBookiesException</code></a> is thrown.</div>
+ <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client"><code>BKException.BKNotEnoughBookiesException</code></a> is thrown.
+
+ <p>If 'enforceMinNumRacksPerWriteQuorum' config is enabled then the bookies belonging to default
+ faultzone (rack) will be excluded while selecting bookies.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ensembleSize</code> - the value of ensembleSize</dd>
