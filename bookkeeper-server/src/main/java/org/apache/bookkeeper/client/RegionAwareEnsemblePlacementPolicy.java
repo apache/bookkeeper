@@ -257,7 +257,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
         rwLock.readLock().lock();
         try {
-            Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = addDefaultZoneBookiesIfMinNumRacksIsEnforced(
+            Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = addDefaultRackBookiesIfMinNumRacksIsEnforced(
                     excludedBookies);
             Set<Node> excludeNodes = convertBookiesToNodes(comprehensiveExclusionBookiesSet);
             Set<String> availableRegions = new HashSet<String>();
@@ -431,7 +431,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         try {
             boolean enforceDurability = enforceDurabilityInReplace && !disableDurabilityFeature.isAvailable();
             int effectiveMinRegionsForDurability = enforceDurability ? minRegionsForDurability : 1;
-            Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = addDefaultZoneBookiesIfMinNumRacksIsEnforced(
+            Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = addDefaultRackBookiesIfMinNumRacksIsEnforced(
                     excludeBookies);
             Set<Node> excludeNodes = convertBookiesToNodes(comprehensiveExclusionBookiesSet);
             RRTopologyAwareCoverageEnsemble ensemble = new RRTopologyAwareCoverageEnsemble(ensembleSize,

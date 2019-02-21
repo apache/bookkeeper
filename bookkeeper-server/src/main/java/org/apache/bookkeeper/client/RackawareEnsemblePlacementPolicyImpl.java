@@ -564,17 +564,30 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     /*
      * this method should be called in readlock scope of 'rwLock'
      */
-    protected Set<BookieSocketAddress> addDefaultZoneBookiesIfMinNumRacksIsEnforced(
+    protected Set<BookieSocketAddress> addDefaultRackBookiesIfMinNumRacksIsEnforced(
             Set<BookieSocketAddress> excludeBookies) {
         Set<BookieSocketAddress> comprehensiveExclusionBookiesSet;
         if (enforceMinNumRacksPerWriteQuorum) {
-            comprehensiveExclusionBookiesSet = new HashSet<BookieSocketAddress>(excludeBookies);
-            topology.getLeaves(getDefaultRack()).forEach((Node node) -> {
+            Set<BookieSocketAddress> bookiesInDefaultRack = null;
+            Set<Node> defaultRackLeaves = topology.getLeaves(getDefaultRack());
+            for (Node node : defaultRackLeaves) {
                 if (node instanceof BookieNode) {
-                    BookieNode bookieNode = (BookieNode) node;
-                    comprehensiveExclusionBookiesSet.add(bookieNode.getAddr());
+                    if (bookiesInDefaultRack == null) {
+                        bookiesInDefaultRack = new HashSet<BookieSocketAddress>(excludeBookies);
+                    }
+                    bookiesInDefaultRack.add(((BookieNode) node).getAddr());
+                } else {
+                    LOG.error("found non-BookieNode: {} as leaf of defaultrack: {}", node, getDefaultRack());
                 }
-            });
+            }
+            if ((bookiesInDefaultRack == null) || bookiesInDefaultRack.isEmpty()) {
+                comprehensiveExclusionBookiesSet = excludeBookies;
+            } else {
+                comprehensiveExclusionBookiesSet = new HashSet<BookieSocketAddress>(excludeBookies);
+                comprehensiveExclusionBookiesSet.addAll(bookiesInDefaultRack);
+                LOG.info("enforceMinNumRacksPerWriteQuorum is enabled, so Excluding bookies of defaultRack: {}",
+                        bookiesInDefaultRack);
+            }
         } else {
             comprehensiveExclusionBookiesSet = excludeBookies;
         }
@@ -587,7 +600,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
         try {
-            Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = addDefaultZoneBookiesIfMinNumRacksIsEnforced(
+            Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = addDefaultRackBookiesIfMinNumRacksIsEnforced(
                     excludeBookies);
             PlacementResult<List<BookieSocketAddress>> newEnsembleResult = newEnsembleInternal(ensembleSize,
                     writeQuorumSize, ackQuorumSize, comprehensiveExclusionBookiesSet, null, null);
@@ -687,7 +700,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
         try {
-            excludeBookies = addDefaultZoneBookiesIfMinNumRacksIsEnforced(excludeBookies);
+            excludeBookies = addDefaultRackBookiesIfMinNumRacksIsEnforced(excludeBookies);
             excludeBookies.addAll(currentEnsemble);
             BookieNode bn = knownBookies.get(bookieToReplace);
             if (null == bn) {

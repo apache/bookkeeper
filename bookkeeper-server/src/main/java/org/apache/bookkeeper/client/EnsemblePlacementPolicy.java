@@ -252,7 +252,7 @@ public interface EnsemblePlacementPolicy {
      * when {@link BookKeeper#createLedger(int, int, int, BookKeeper.DigestType, byte[], Map)}.
      *
      * <p>If 'enforceMinNumRacksPerWriteQuorum' config is enabled then the bookies belonging to default
-     * faultzone (rack) will be excluded while selecting bookies. This is to enable strict placementpolicy.
+     * faultzone (rack) will be excluded while selecting bookies.
      *
      * @param ensembleSize
      *          Ensemble Size
@@ -278,7 +278,7 @@ public interface EnsemblePlacementPolicy {
      * {@link BKNotEnoughBookiesException} is thrown.
      *
      * <p>If 'enforceMinNumRacksPerWriteQuorum' config is enabled then the bookies belonging to default
-     * faultzone (rack) will be excluded while selecting bookies. This is to enable strict placementpolicy.
+     * faultzone (rack) will be excluded while selecting bookies.
      *
      * @param ensembleSize
      *          the value of ensembleSize
