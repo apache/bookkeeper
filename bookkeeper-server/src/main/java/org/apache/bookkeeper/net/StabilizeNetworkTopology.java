@@ -21,6 +21,7 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -150,5 +151,10 @@ public class StabilizeNetworkTopology implements NetworkTopology {
     @Override
     public Set<Node> getLeaves(String loc) {
         return impl.getLeaves(loc);
+    }
+
+    @Override
+    public int countNumOfAvailableNodes(String scope, Collection<Node> excludedNodes) {
+        return impl.countNumOfAvailableNodes(scope, excludedNodes);
     }
 }

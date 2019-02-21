@@ -251,6 +251,9 @@ public interface EnsemblePlacementPolicy {
      * <p>{@code customMetadata} is the same user defined data that user provides
      * when {@link BookKeeper#createLedger(int, int, int, BookKeeper.DigestType, byte[], Map)}.
      *
+     * <p>If 'enforceMinNumRacksPerWriteQuorum' config is enabled then the bookies belonging to default
+     * faultzone (rack) will be excluded while selecting bookies.
+     *
      * @param ensembleSize
      *          Ensemble Size
      * @param writeQuorumSize
@@ -273,6 +276,9 @@ public interface EnsemblePlacementPolicy {
     /**
      * Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
      * {@link BKNotEnoughBookiesException} is thrown.
+     *
+     * <p>If 'enforceMinNumRacksPerWriteQuorum' config is enabled then the bookies belonging to default
+     * faultzone (rack) will be excluded while selecting bookies.
      *
      * @param ensembleSize
      *          the value of ensembleSize

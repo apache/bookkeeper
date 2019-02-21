@@ -177,7 +177,7 @@ public class TestStatsProvider implements StatsProvider {
         }
 
         public Gauge<? extends Number> getGauge(String name) {
-            return gaugeMap.get(path);
+            return gaugeMap.get(getSubPath(name));
         }
 
         @Override

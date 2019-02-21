@@ -29,6 +29,7 @@ import io.netty.util.HashedWheelTimer;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,8 +51,12 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.Node;
+import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.test.TestStatsProvider;
+import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -740,17 +745,22 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
     @Test
     public void testNewEnsembleWithEnforceMinNumRacks() throws Exception {
+        String defaultRackForThisTest = NetworkTopology.DEFAULT_REGION_AND_RACK;
         repp.uninitalize();
+        updateMyRack(defaultRackForThisTest);
 
         int minNumRacksPerWriteQuorum = 4;
         ClientConfiguration clientConf = new ClientConfiguration(conf);
         clientConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorum);
         // set enforceMinNumRacksPerWriteQuorum
         clientConf.setEnforceMinNumRacksPerWriteQuorum(true);
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(clientConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
-                NullStatsLogger.INSTANCE);
-        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+        repp.initialize(clientConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, statsLogger);
+        repp.withDefaultRack(defaultRackForThisTest);
+        Gauge<? extends Number> numBookiesInDefaultRackGauge = statsLogger
+                .getGauge(BookKeeperClientStats.NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK);
 
         int numOfRacks = 3;
         int numOfBookiesPerRack = 5;
@@ -764,26 +774,41 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             }
         }
 
-        repp.onClusterChanged(new HashSet<BookieSocketAddress>(Arrays.asList(bookieSocketAddresses)),
-                new HashSet<BookieSocketAddress>());
+        int numOfBookiesInDefaultRack = 5;
+        BookieSocketAddress[] bookieSocketAddressesInDefaultRack = new BookieSocketAddress[numOfBookiesInDefaultRack];
+        for (int i = 0; i < numOfBookiesInDefaultRack; i++) {
+            bookieSocketAddressesInDefaultRack[i] = new BookieSocketAddress("128.0.0." + (100 + i), 3181);
+            StaticDNSResolver.addNodeToRack(bookieSocketAddressesInDefaultRack[i].getHostName(),
+                    defaultRackForThisTest);
+        }
+
+        List<BookieSocketAddress> nonDefaultRackBookiesList = Arrays.asList(bookieSocketAddresses);
+        List<BookieSocketAddress> defaultRackBookiesList = Arrays.asList(bookieSocketAddressesInDefaultRack);
+        Set<BookieSocketAddress> writableBookies = new HashSet<BookieSocketAddress>(nonDefaultRackBookiesList);
+        writableBookies.addAll(defaultRackBookiesList);
+        repp.onClusterChanged(writableBookies, new HashSet<BookieSocketAddress>());
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
+                numBookiesInDefaultRackGauge.getSample());
 
         try {
+            // this newEnsemble call will exclude default rack bookies
             repp.newEnsemble(8, 4, 4, null, new HashSet<>());
-            fail("Should get not enough bookies exception since there are only 3 racks");
+            fail("Should get not enough bookies exception since there are only 3 non-default racks");
         } catch (BKNotEnoughBookiesException bnebe) {
         }
 
         try {
-            repp.newEnsemble(8, 4, 4, new HashSet<>(),
+            repp.newEnsemble(8, 4, 4, new HashSet<>(defaultRackBookiesList),
                     EnsembleForReplacementWithNoConstraints.INSTANCE, TruePredicate.INSTANCE);
-            fail("Should get not enough bookies exception since there are only 3 racks");
+            fail("Should get not enough bookies exception since there are only 3 non-default racks"
+                    + " and defaultrack bookies are excluded");
         } catch (BKNotEnoughBookiesException bnebe) {
         }
 
         /*
          * Though minNumRacksPerWriteQuorum is set to 4, since writeQuorum is 3
-         * and there are enough bookies in 3 racks, this newEnsemble calls should
-         * succeed.
+         * and there are enough bookies in 3 racks, this newEnsemble calls
+         * should succeed.
          */
         EnsemblePlacementPolicy.PlacementResult<List<BookieSocketAddress>> ensembleResponse;
         List<BookieSocketAddress> ensemble;
@@ -799,8 +824,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum()));
         assertTrue(isEnsembleAdheringToPlacementPolicy);
 
-        ensembleResponse = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, new HashSet<>(),
-                EnsembleForReplacementWithNoConstraints.INSTANCE, TruePredicate.INSTANCE);
+        ensembleResponse = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize,
+                new HashSet<>(defaultRackBookiesList), EnsembleForReplacementWithNoConstraints.INSTANCE,
+                TruePredicate.INSTANCE);
         ensemble = ensembleResponse.getResult();
         isEnsembleAdheringToPlacementPolicy = ensembleResponse.isStrictlyAdheringToPolicy();
         assertEquals("Number of writeQuorum sets covered", ensembleSize,
@@ -872,17 +898,23 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
     @Test
     public void testReplaceBookieWithEnforceMinNumRacks() throws Exception {
+        String defaultRackForThisTest = NetworkTopology.DEFAULT_REGION_AND_RACK;
         repp.uninitalize();
+        updateMyRack(defaultRackForThisTest);
 
         int minNumRacksPerWriteQuorum = 4;
         ClientConfiguration clientConf = new ClientConfiguration(conf);
         clientConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorum);
         // set enforceMinNumRacksPerWriteQuorum
         clientConf.setEnforceMinNumRacksPerWriteQuorum(true);
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
         repp = new RackawareEnsemblePlacementPolicy();
         repp.initialize(clientConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
-                NullStatsLogger.INSTANCE);
-        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+                statsLogger);
+        repp.withDefaultRack(defaultRackForThisTest);
+        Gauge<? extends Number> numBookiesInDefaultRackGauge = statsLogger
+                .getGauge(BookKeeperClientStats.NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK);
 
         int numOfRacks = 3;
         int numOfBookiesPerRack = 5;
@@ -900,8 +932,25 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 bookieRackMap.put(bookieAddress, rack);
             }
         }
+        /*
+         * bookies in this default rack should not be returned for replacebookie
+         * response.
+         */
+        int numOfBookiesInDefaultRack = 5;
+        BookieSocketAddress[] bookieSocketAddressesInDefaultRack = new BookieSocketAddress[numOfBookiesInDefaultRack];
+        for (int i = 0; i < numOfBookiesInDefaultRack; i++) {
+            bookieSocketAddressesInDefaultRack[i] = new BookieSocketAddress("127.0.0." + (i + 100), 3181);
+            StaticDNSResolver.addNodeToRack(bookieSocketAddressesInDefaultRack[i].getHostName(),
+                    defaultRackForThisTest);
+        }
 
-        repp.onClusterChanged(bookieSocketAddresses, new HashSet<BookieSocketAddress>());
+        Set<BookieSocketAddress> nonDefaultRackBookiesList = bookieSocketAddresses;
+        List<BookieSocketAddress> defaultRackBookiesList = Arrays.asList(bookieSocketAddressesInDefaultRack);
+        Set<BookieSocketAddress> writableBookies = new HashSet<BookieSocketAddress>(nonDefaultRackBookiesList);
+        writableBookies.addAll(defaultRackBookiesList);
+        repp.onClusterChanged(writableBookies, new HashSet<BookieSocketAddress>());
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
+                numBookiesInDefaultRackGauge.getSample());
 
         /*
          * Though minNumRacksPerWriteQuorum is set to 4, since writeQuorum is 3
@@ -927,9 +976,12 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
          */
         StaticDNSResolver.addNodeToRack(newBookieAddress1.getHostName(), rackOfOtherBookieInEnsemble);
         bookieSocketAddresses.add(newBookieAddress1);
+        writableBookies.add(newBookieAddress1);
         bookieRackMap.put(newBookieAddress1, rackOfOtherBookieInEnsemble);
 
-        repp.onClusterChanged(bookieSocketAddresses, new HashSet<BookieSocketAddress>());
+        repp.onClusterChanged(writableBookies, new HashSet<BookieSocketAddress>());
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
+                numBookiesInDefaultRackGauge.getSample());
         try {
             repp.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, null,
                     ensemble, bookieInEnsembleToBeReplaced, new HashSet<>());
@@ -947,9 +999,12 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
          */
         StaticDNSResolver.addNodeToRack(newBookieAddress2.getHostName(), newRack);
         bookieSocketAddresses.add(newBookieAddress2);
+        writableBookies.add(newBookieAddress2);
         bookieRackMap.put(newBookieAddress2, newRack);
 
-        repp.onClusterChanged(bookieSocketAddresses, new HashSet<BookieSocketAddress>());
+        repp.onClusterChanged(writableBookies, new HashSet<BookieSocketAddress>());
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
+                numBookiesInDefaultRackGauge.getSample());
         /*
          * this replaceBookie should succeed, because a new bookie is added to a
          * new rack.
@@ -966,7 +1021,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         Set<BookieSocketAddress> bookiesToExclude = new HashSet<>();
         bookiesToExclude.add(newBookieAddress2);
-        repp.onClusterChanged(bookieSocketAddresses, new HashSet<BookieSocketAddress>());
+        repp.onClusterChanged(writableBookies, new HashSet<BookieSocketAddress>());
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
+                numBookiesInDefaultRackGauge.getSample());
         try {
             repp.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, null, ensemble,
                     bookieInEnsembleToBeReplaced, bookiesToExclude);
@@ -984,9 +1041,12 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
          */
         StaticDNSResolver.addNodeToRack(newBookieAddress3.getHostName(), rackOfBookieToBeReplaced);
         bookieSocketAddresses.add(newBookieAddress3);
+        writableBookies.add(newBookieAddress3);
         bookieRackMap.put(newBookieAddress3, rackOfBookieToBeReplaced);
 
-        repp.onClusterChanged(bookieSocketAddresses, new HashSet<BookieSocketAddress>());
+        repp.onClusterChanged(writableBookies, new HashSet<BookieSocketAddress>());
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
+                numBookiesInDefaultRackGauge.getSample());
         /*
          * here we have added new bookie to the rack of the bookie to be
          * replaced, so we should be able to replacebookie though
@@ -2023,4 +2083,154 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertTrue(shuffleOccurred);
     }
 
+    @Test
+    public void testNumBookiesInDefaultRackGauge() throws Exception {
+        String defaultRackForThisTest = NetworkTopology.DEFAULT_REGION_AND_RACK;
+        repp.uninitalize();
+        updateMyRack(defaultRackForThisTest);
+
+        // Update cluster
+        BookieSocketAddress newAddr1 = new BookieSocketAddress("127.0.0.100", 3181);
+        BookieSocketAddress newAddr2 = new BookieSocketAddress("127.0.0.101", 3181);
+        BookieSocketAddress newAddr3 = new BookieSocketAddress("127.0.0.102", 3181);
+        BookieSocketAddress newAddr4 = new BookieSocketAddress("127.0.0.103", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(newAddr1.getHostName(), defaultRackForThisTest);
+        StaticDNSResolver.addNodeToRack(newAddr2.getHostName(), "/default-region/r2");
+        StaticDNSResolver.addNodeToRack(newAddr3.getHostName(), "/default-region/r3");
+        StaticDNSResolver.addNodeToRack(newAddr4.getHostName(), defaultRackForThisTest);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, statsLogger);
+        repp.withDefaultRack(defaultRackForThisTest);
+
+        Gauge<? extends Number> numBookiesInDefaultRackGauge = statsLogger
+                .getGauge(BookKeeperClientStats.NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK);
+
+        Set<BookieSocketAddress> writeableBookies = new HashSet<BookieSocketAddress>();
+        writeableBookies.add(newAddr1);
+        writeableBookies.add(newAddr2);
+        Set<BookieSocketAddress> readOnlyBookies = new HashSet<BookieSocketAddress>();
+        readOnlyBookies.add(newAddr3);
+        readOnlyBookies.add(newAddr4);
+        repp.onClusterChanged(writeableBookies, readOnlyBookies);
+        // only writable bookie - newAddr1 in default rack
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 1, numBookiesInDefaultRackGauge.getSample());
+
+        readOnlyBookies.remove(newAddr4);
+        writeableBookies.add(newAddr4);
+        repp.onClusterChanged(writeableBookies, readOnlyBookies);
+        // newAddr4 is also added to writable bookie so 2 writable bookies -
+        // newAddr1 and newAddr4
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 2, numBookiesInDefaultRackGauge.getSample());
+
+        // newAddr4 rack is changed and it is not in default anymore
+        StaticDNSResolver.changeRack(Arrays.asList(newAddr4), Arrays.asList("/default-region/r4"));
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 1, numBookiesInDefaultRackGauge.getSample());
+
+        writeableBookies.clear();
+        // writeableBookies is empty so 0 writable bookies in default rack
+        repp.onClusterChanged(writeableBookies, readOnlyBookies);
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 0, numBookiesInDefaultRackGauge.getSample());
+
+        StaticDNSResolver.changeRack(Arrays.asList(newAddr1), Arrays.asList("/default-region/r2"));
+        readOnlyBookies.clear();
+        writeableBookies.add(newAddr1);
+        writeableBookies.add(newAddr2);
+        writeableBookies.add(newAddr3);
+        writeableBookies.add(newAddr4);
+        repp.onClusterChanged(writeableBookies, readOnlyBookies);
+        // newAddr1 rack is changed and it is not in default anymore. So no
+        // bookies in default rack anymore
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 0, numBookiesInDefaultRackGauge.getSample());
+    }
+
+    @Test
+    public void testNewEnsembleExcludesDefaultRackBookiesEnforceMinNumRacks() throws Exception {
+        String defaultRackForThisTest = NetworkTopology.DEFAULT_REGION_AND_RACK;
+        repp.uninitalize();
+        updateMyRack(defaultRackForThisTest);
+        int minNumRacksPerWriteQuorum = 4;
+        ClientConfiguration clientConf = new ClientConfiguration(conf);
+        clientConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorum);
+        // set enforceMinNumRacksPerWriteQuorum
+        clientConf.setEnforceMinNumRacksPerWriteQuorum(true);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(clientConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, statsLogger);
+        repp.withDefaultRack(defaultRackForThisTest);
+        Gauge<? extends Number> numBookiesInDefaultRackGauge = statsLogger
+                .getGauge(BookKeeperClientStats.NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK);
+
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 3;
+        int effectiveMinNumRacksPerWriteQuorum = Math.min(minNumRacksPerWriteQuorum, writeQuorumSize);
+
+        int numOfRacks = 2 * effectiveMinNumRacksPerWriteQuorum - 1;
+        int numOfBookiesPerRack = 20;
+        BookieSocketAddress[] bookieSocketAddresses = new BookieSocketAddress[numOfRacks * numOfBookiesPerRack];
+
+        for (int i = 0; i < numOfRacks; i++) {
+            for (int j = 0; j < numOfBookiesPerRack; j++) {
+                int index = i * numOfBookiesPerRack + j;
+                bookieSocketAddresses[index] = new BookieSocketAddress("128.0.0." + index, 3181);
+                StaticDNSResolver.addNodeToRack(bookieSocketAddresses[index].getHostName(), "/default-region/r" + i);
+            }
+        }
+
+        int numOfBookiesInDefaultRack = 10;
+        BookieSocketAddress[] bookieSocketAddressesInDefaultRack = new BookieSocketAddress[numOfBookiesInDefaultRack];
+        for (int i = 0; i < numOfBookiesInDefaultRack; i++) {
+            bookieSocketAddressesInDefaultRack[i] = new BookieSocketAddress("127.0.0." + (i + 100), 3181);
+            StaticDNSResolver.addNodeToRack(bookieSocketAddressesInDefaultRack[i].getHostName(),
+                    defaultRackForThisTest);
+        }
+
+        Set<BookieSocketAddress> writableBookies = new HashSet<BookieSocketAddress>(
+                Arrays.asList(bookieSocketAddresses));
+        writableBookies.addAll(Arrays.asList(bookieSocketAddressesInDefaultRack));
+        repp.onClusterChanged(writableBookies, new HashSet<BookieSocketAddress>());
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
+                numBookiesInDefaultRackGauge.getSample());
+
+        /*
+         * in this scenario we have enough number of racks (2 *
+         * effectiveMinNumRacksPerWriteQuorum - 1) and more number of bookies in
+         * each rack. So we should be able to create ensemble for all
+         * ensembleSizes (as long as there are enough number of bookies in each
+         * rack).
+         *
+         * Since minNumRacksPerWriteQuorum is enforced, it shouldn't select node
+         * from default rack.
+         */
+        EnsemblePlacementPolicy.PlacementResult<List<BookieSocketAddress>> ensembleResponse;
+        List<BookieSocketAddress> ensemble;
+        boolean isEnsembleAdheringToPlacementPolicy;
+        for (int ensembleSize = effectiveMinNumRacksPerWriteQuorum; ensembleSize < 40; ensembleSize++) {
+            ensembleResponse = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, null, new HashSet<>());
+            ensemble = ensembleResponse.getResult();
+            isEnsembleAdheringToPlacementPolicy = ensembleResponse.isStrictlyAdheringToPolicy();
+            assertEquals("Number of writeQuorum sets covered", ensembleSize,
+                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum()));
+            assertTrue(isEnsembleAdheringToPlacementPolicy);
+
+            ensembleResponse = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, null, new HashSet<>());
+            ensemble = ensembleResponse.getResult();
+            isEnsembleAdheringToPlacementPolicy = ensembleResponse.isStrictlyAdheringToPolicy();
+            assertEquals("Number of writeQuorum sets covered", ensembleSize,
+                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum()));
+            assertTrue(isEnsembleAdheringToPlacementPolicy);
+            Collection<BookieSocketAddress> bookiesOfDefaultRackInEnsemble = CollectionUtils
+                    .intersection(Arrays.asList(bookieSocketAddressesInDefaultRack), ensemble);
+            assertTrue("Ensemble is not supposed to contain bookies from default rack, but ensemble contains - "
+                    + bookiesOfDefaultRackInEnsemble, bookiesOfDefaultRackInEnsemble.isEmpty());
+        }
+    }
 }

@@ -78,7 +78,6 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     }
 
     protected static class BookieNode extends NodeBase {
-
         private final BookieSocketAddress addr; // identifier of a bookie node.
 
         BookieNode(BookieSocketAddress addr, String networkLoc) {
@@ -108,7 +107,6 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         public String toString() {
             return String.format("<Bookie:%s>", name);
         }
-
     }
 
     /**
