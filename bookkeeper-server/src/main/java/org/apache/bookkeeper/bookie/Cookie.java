@@ -217,16 +217,9 @@ public class Cookie {
     }
 
     public void writeToFile (File versionFile) throws IOException {
-        FileOutputStream fos = new FileOutputStream(versionFile);
-        BufferedWriter bw = null;
-        try {
-            bw = new BufferedWriter(new OutputStreamWriter(fos, UTF_8));
+        try (FileOutputStream fos = new FileOutputStream(versionFile);
+             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos, UTF_8))) {
             bw.write(toString());
-        } finally {
-            if (bw != null) {
-                bw.close();
-            }
-            fos.close();
         }
     }
 
