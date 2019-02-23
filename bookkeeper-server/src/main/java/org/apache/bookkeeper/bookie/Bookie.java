@@ -37,7 +37,6 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -123,10 +122,9 @@ public class Bookie extends BookieCriticalThread {
     static final long METAENTRY_ID_LEDGER_EXPLICITLAC  = -0x8000;
 
     private final LedgerDirsManager ledgerDirsManager;
-    private LedgerDirsManager indexDirsManager;
-
-    LedgerDirsMonitor ledgerMonitor;
-    LedgerDirsMonitor idxMonitor;
+    private final LedgerDirsManager indexDirsManager;
+    private final LedgerDirsManager allDirsManager;
+    LedgerDirsMonitor dirsMonitor;
 
     // Registration Manager for managing registration
     protected final MetadataBookieDriver metadataDriver;
@@ -202,15 +200,12 @@ public class Bookie extends BookieCriticalThread {
                     BookKeeperConstants.VERSION_FILENAME);
 
             final AtomicBoolean oldDataExists = new AtomicBoolean(false);
-            parent.list(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File dir, String name) {
-                        if (name.endsWith(".txn") || name.endsWith(".idx") || name.endsWith(".log")) {
-                            oldDataExists.set(true);
-                        }
-                        return true;
-                    }
-                });
+            parent.list((dir1, name) -> {
+                if (name.endsWith(".txn") || name.endsWith(".idx") || name.endsWith(".log")) {
+                    oldDataExists.set(true);
+                }
+                return true;
+            });
             if (preV3versionFile.exists() || oldDataExists.get()) {
                 String err = "Directory layout version is less than 3, upgrade needed";
                 LOG.error(err);
@@ -231,12 +226,7 @@ public class Bookie extends BookieCriticalThread {
      */
     private void checkEnvironment(MetadataBookieDriver metadataDriver)
             throws BookieException, IOException {
-        List<File> allLedgerDirs = new ArrayList<File>(ledgerDirsManager.getAllLedgerDirs().size()
-                                                     + indexDirsManager.getAllLedgerDirs().size());
-        allLedgerDirs.addAll(ledgerDirsManager.getAllLedgerDirs());
-        if (indexDirsManager != ledgerDirsManager) {
-            allLedgerDirs.addAll(indexDirsManager.getAllLedgerDirs());
-        }
+        final List<File> allLedgerDirs = allDirsManager.getAllLedgerDirs();
         if (metadataDriver == null) { // exists only for testing, just make sure directories are correct
 
             for (File journalDirectory : journalDirectories) {
@@ -684,6 +674,7 @@ public class Bookie extends BookieCriticalThread {
         this.ledgerDirsManager = createLedgerDirsManager(conf, diskChecker, statsLogger.scope(LD_LEDGER_SCOPE));
         this.indexDirsManager = createIndexDirsManager(conf, diskChecker, statsLogger.scope(LD_INDEX_SCOPE),
                                                        this.ledgerDirsManager);
+        this.allDirsManager = createAllDirsManager(conf, diskChecker, statsLogger.scope(LD_LEDGER_SCOPE));
         this.allocator = allocator;
 
         // instantiate zookeeper client to initialize ledger manager
@@ -705,12 +696,12 @@ public class Bookie extends BookieCriticalThread {
         stateManager = initializeStateManager();
         // register shutdown handler using trigger mode
         stateManager.setShutdownHandler(exitCode -> triggerBookieShutdown(exitCode));
-        // Initialise ledgerDirMonitor. This would look through all the
+        // Initialise dirsMonitor. This would look through all the
         // configured directories. When disk errors or all the ledger
         // directories are full, would throws exception and fail bookie startup.
-        this.ledgerMonitor = new LedgerDirsMonitor(conf, diskChecker, ledgerDirsManager);
+        this.dirsMonitor = new LedgerDirsMonitor(conf, diskChecker, allDirsManager);
         try {
-            this.ledgerMonitor.init();
+            this.dirsMonitor.init();
         } catch (NoWritableLedgerDirException nle) {
             // start in read-only mode if no writable dirs and read-only allowed
             if (!conf.isReadOnlyModeEnabled()) {
@@ -719,23 +710,6 @@ public class Bookie extends BookieCriticalThread {
                 this.stateManager.transitionToReadOnlyMode();
             }
         }
-
-        if (ledgerDirsManager == indexDirsManager) {
-            this.idxMonitor = this.ledgerMonitor;
-        } else {
-            this.idxMonitor = new LedgerDirsMonitor(conf, diskChecker, indexDirsManager);
-            try {
-                this.idxMonitor.init();
-            } catch (NoWritableLedgerDirException nle) {
-                // start in read-only mode if no writable dirs and read-only allowed
-                if (!conf.isReadOnlyModeEnabled()) {
-                    throw nle;
-                } else {
-                    this.stateManager.transitionToReadOnlyMode();
-                }
-            }
-        }
-
 
         // instantiate the journals
         journals = Lists.newArrayList();
@@ -912,20 +886,13 @@ public class Bookie extends BookieCriticalThread {
                     journalDirectories.stream().map(File::getName).collect(Collectors.joining(", ")));
         }
         //Start DiskChecker thread
-        ledgerMonitor.start();
-        if (indexDirsManager != ledgerDirsManager) {
-            idxMonitor.start();
-        }
+        dirsMonitor.start();
 
         // replay journals
         try {
             readJournal();
-        } catch (IOException ioe) {
+        } catch (IOException | BookieException ioe) {
             LOG.error("Exception while replaying journals, shutting down", ioe);
-            shutdown(ExitCode.BOOKIE_EXCEPTION);
-            return;
-        } catch (BookieException be) {
-            LOG.error("Exception while replaying journals, shutting down", be);
             shutdown(ExitCode.BOOKIE_EXCEPTION);
             return;
         }
@@ -977,6 +944,7 @@ public class Bookie extends BookieCriticalThread {
 
         // After successful bookie startup, register listener for disk
         // error/full notifications.
+        allDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         if (indexDirsManager != ledgerDirsManager) {
             indexDirsManager.addLedgerDirsListener(getLedgerDirsListener());
@@ -1184,11 +1152,7 @@ public class Bookie extends BookieCriticalThread {
                 }
 
                 //Shutdown disk checker
-                ledgerMonitor.shutdown();
-                if (indexDirsManager != ledgerDirsManager) {
-                    idxMonitor.shutdown();
-                }
-
+                dirsMonitor.shutdown();
             }
             // Shutdown the ZK client
             if (metadataDriver != null) {
@@ -1353,7 +1317,7 @@ public class Bookie extends BookieCriticalThread {
      * @throws BookieException.LedgerFencedException if the ledger is fenced
      */
     public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
-            throws IOException, BookieException.LedgerFencedException, BookieException, InterruptedException {
+            throws IOException, BookieException, InterruptedException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
         int entrySize = 0;
@@ -1382,26 +1346,6 @@ public class Bookie extends BookieCriticalThread {
             }
 
             entry.release();
-        }
-    }
-
-    static class FutureWriteCallback implements WriteCallback {
-
-        SettableFuture<Boolean> result = SettableFuture.create();
-
-        @Override
-        public void writeComplete(int rc, long ledgerId, long entryId,
-                                  BookieSocketAddress addr, Object ctx) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
-                        entryId, ledgerId, addr, rc);
-            }
-
-            result.set(0 == rc);
-        }
-
-        public SettableFuture<Boolean> getResult() {
-            return result;
         }
     }
 
@@ -1634,5 +1578,20 @@ public class Bookie extends BookieCriticalThread {
         } else {
             return new LedgerDirsManager(conf, idxDirs, diskChecker, statsLogger);
         }
+    }
+
+    private static LedgerDirsManager createAllDirsManager(ServerConfiguration conf,
+                                                          DiskChecker diskChecker,
+                                                          StatsLogger statsLogger) {
+        final File[] idxDirs = conf.getIndexDirs();
+        final File[] ledgerDirs = conf.getLedgerDirs();
+        final List<File> files = new ArrayList<>();
+        if (idxDirs != null) {
+            files.addAll(Arrays.asList(idxDirs));
+        }
+        if (ledgerDirs != null) {
+            files.addAll(Arrays.asList(ledgerDirs));
+        }
+        return new LedgerDirsManager(conf, files.toArray(File[]::new), diskChecker, statsLogger);
     }
 }

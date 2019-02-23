@@ -157,9 +157,9 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         bs.add(server);
         bsConfs.add(conf);
         Bookie bookie = server.getBookie();
-        // since we are going to set dependency injected ledgermonitor, so we need to shutdown
-        // the ledgermonitor which was created as part of the initialization of Bookie
-        bookie.ledgerMonitor.shutdown();
+        // since we are going to set dependency injected dirsMonitor, so we need to shutdown
+        // the dirsMonitor which was created as part of the initialization of Bookie
+        bookie.dirsMonitor.shutdown();
 
         LedgerDirsManager ledgerDirsManager = bookie.getLedgerDirsManager();
 
@@ -183,13 +183,11 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         // Dependency Injected class
         ThresholdTestDiskChecker thresholdTestDiskChecker = new ThresholdTestDiskChecker(
                 baseConf.getDiskUsageThreshold(), baseConf.getDiskUsageWarnThreshold());
-        LedgerDirsMonitor ledgerDirsMonitor = new LedgerDirsMonitor(baseConf, thresholdTestDiskChecker,
+        bookie.dirsMonitor = new LedgerDirsMonitor(baseConf, thresholdTestDiskChecker,
                 ledgerDirsManager);
-        // set the ledgermonitor and idxmonitor and initiate/start it
-        bookie.ledgerMonitor = ledgerDirsMonitor;
-        bookie.idxMonitor = ledgerDirsMonitor;
-        bookie.ledgerMonitor.init();
-        bookie.ledgerMonitor.start();
+        // set the dirsMonitor and initiate/start it
+        bookie.dirsMonitor.init();
+        bookie.dirsMonitor.start();
 
         // create ledgers and add fragments
         LedgerHandle[] lhs = prepareData(3);
