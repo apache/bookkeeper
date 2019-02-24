@@ -93,7 +93,6 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,7 +122,6 @@ public class Bookie extends BookieCriticalThread {
 
     private final LedgerDirsManager ledgerDirsManager;
     private final LedgerDirsManager indexDirsManager;
-    private final LedgerDirsManager allDirsManager;
     LedgerDirsMonitor dirsMonitor;
 
     // Registration Manager for managing registration
@@ -226,7 +224,12 @@ public class Bookie extends BookieCriticalThread {
      */
     private void checkEnvironment(MetadataBookieDriver metadataDriver)
             throws BookieException, IOException {
-        final List<File> allLedgerDirs = allDirsManager.getAllLedgerDirs();
+        List<File> allLedgerDirs = new ArrayList<File>(ledgerDirsManager.getAllLedgerDirs().size()
+                + indexDirsManager.getAllLedgerDirs().size());
+        allLedgerDirs.addAll(ledgerDirsManager.getAllLedgerDirs());
+        if (indexDirsManager != ledgerDirsManager) {
+            allLedgerDirs.addAll(indexDirsManager.getAllLedgerDirs());
+        }
         if (metadataDriver == null) { // exists only for testing, just make sure directories are correct
 
             for (File journalDirectory : journalDirectories) {
@@ -674,7 +677,6 @@ public class Bookie extends BookieCriticalThread {
         this.ledgerDirsManager = createLedgerDirsManager(conf, diskChecker, statsLogger.scope(LD_LEDGER_SCOPE));
         this.indexDirsManager = createIndexDirsManager(conf, diskChecker, statsLogger.scope(LD_INDEX_SCOPE),
                                                        this.ledgerDirsManager);
-        this.allDirsManager = createAllDirsManager(conf, diskChecker, statsLogger.scope(LD_LEDGER_SCOPE));
         this.allocator = allocator;
 
         // instantiate zookeeper client to initialize ledger manager
@@ -699,7 +701,7 @@ public class Bookie extends BookieCriticalThread {
         // Initialise dirsMonitor. This would look through all the
         // configured directories. When disk errors or all the ledger
         // directories are full, would throws exception and fail bookie startup.
-        this.dirsMonitor = new LedgerDirsMonitor(conf, diskChecker, allDirsManager);
+        this.dirsMonitor = new LedgerDirsMonitor(conf, diskChecker, Arrays.asList(ledgerDirsManager, indexDirsManager));
         try {
             this.dirsMonitor.init();
         } catch (NoWritableLedgerDirException nle) {
@@ -944,7 +946,6 @@ public class Bookie extends BookieCriticalThread {
 
         // After successful bookie startup, register listener for disk
         // error/full notifications.
-        allDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         if (indexDirsManager != ledgerDirsManager) {
             indexDirsManager.addLedgerDirsListener(getLedgerDirsListener());
@@ -1534,7 +1535,7 @@ public class Bookie extends BookieCriticalThread {
      * @throws InterruptedException
      */
     public static void main(String[] args)
-            throws IOException, InterruptedException, BookieException, KeeperException {
+            throws IOException, InterruptedException, BookieException {
         Bookie b = new Bookie(new ServerConfiguration());
         b.start();
         CounterCallback cb = new CounterCallback();
@@ -1577,20 +1578,5 @@ public class Bookie extends BookieCriticalThread {
         } else {
             return new LedgerDirsManager(conf, idxDirs, diskChecker, statsLogger);
         }
-    }
-
-    private static LedgerDirsManager createAllDirsManager(ServerConfiguration conf,
-                                                          DiskChecker diskChecker,
-                                                          StatsLogger statsLogger) {
-        final File[] idxDirs = conf.getIndexDirs();
-        final File[] ledgerDirs = conf.getLedgerDirs();
-        final List<File> files = new ArrayList<>();
-        if (idxDirs != null) {
-            files.addAll(Arrays.asList(idxDirs));
-        }
-        if (ledgerDirs != null) {
-            files.addAll(Arrays.asList(ledgerDirs));
-        }
-        return new LedgerDirsManager(conf, files.toArray(new File[0]), diskChecker, statsLogger);
     }
 }
