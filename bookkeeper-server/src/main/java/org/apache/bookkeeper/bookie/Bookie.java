@@ -1592,6 +1592,6 @@ public class Bookie extends BookieCriticalThread {
         if (ledgerDirs != null) {
             files.addAll(Arrays.asList(ledgerDirs));
         }
-        return new LedgerDirsManager(conf, files.toArray(File[]::new), diskChecker, statsLogger);
+        return new LedgerDirsManager(conf, files.toArray(new File[0]), diskChecker, statsLogger);
     }
 }
