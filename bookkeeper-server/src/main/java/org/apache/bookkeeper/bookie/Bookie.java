@@ -1314,7 +1314,6 @@ public class Bookie extends BookieCriticalThread {
 
     /**
      * Add entry to a ledger.
-     * @throws BookieException.LedgerFencedException if the ledger is fenced
      */
     public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException, InterruptedException {
