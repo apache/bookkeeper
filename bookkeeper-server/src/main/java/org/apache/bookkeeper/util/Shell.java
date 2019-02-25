@@ -176,6 +176,11 @@ public abstract class Shell {
             //taken care in finally block
             if (exitCode != 0) {
                 throw new ExitCodeException(exitCode, errMsg.toString());
+            } else {
+                String errMsgStr = errMsg.toString();
+                if (!errMsgStr.isEmpty()) {
+                    LOG.error(errMsgStr);
+                }
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
