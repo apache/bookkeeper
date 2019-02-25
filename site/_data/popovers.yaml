@@ -12,7 +12,12 @@
 - term: striping
   d: |
     Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.
-    
+
+    Striping is essential to ensuring fast performance.
+- term: striped
+  d: |
+    Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.
+
     Striping is essential to ensuring fast performance.
 - term: journal
   d: A journal file stores BookKeeper transaction logs.
