@@ -70,6 +70,9 @@ public class VertxHttpServer implements HttpServer {
             @Override
             public void bindHandler(String endpoint, VertxAbstractHandler handler) {
                 router.get(endpoint).handler(handler);
+                router.put(endpoint).handler(handler);
+                router.post(endpoint).handler(handler);
+                router.delete(endpoint).handler(handler);
             }
         };
         requestRouter.bindAll();
