@@ -7,7 +7,7 @@ title: Release Management
 Apache BookKeeper community makes a feture release every 3 month.
 
 - A month before the release date, the release manager will cut branches and also publish a list of features that will be included in the release. These features will typically
-    be [BookKeeper Proposals](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BookKeeper+Proposals), but not always.
+    be [BookKeeper Proposals](http://bookkeeper.apache.org/community/bookkeeper_proposals/), but not always.
 - Another week will be left for *minor* features to get in, but at this point the community will start efforts to stabilize the release branch and contribute mostly tests and fixes.
 - Two weeks before the release date, the bookkeeper community will announce code-freeze and start rolling out release candidates, after which only fixes for blocking bugs will be merged.
 
