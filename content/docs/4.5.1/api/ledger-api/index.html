@@ -1035,6 +1035,13 @@ Value <span class="o">=</span> 3, isLeader <span class="o">=</span> <span class=
 
 </div>
 
+<div id="striped-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
 <div id="journal-popover-html" class="popover-template">
   <p>A journal file stores BookKeeper transaction logs.</p>
 
@@ -1079,6 +1086,12 @@ tippy('#rereplication-popover', {
 
 tippy('#striping-popover', {
   html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striped-popover', {
+  html: '#striped-popover-html',
   arrow: true,
   animation: 'fade'
 });
