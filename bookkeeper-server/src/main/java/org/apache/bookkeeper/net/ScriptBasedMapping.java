@@ -132,13 +132,19 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
         private int maxArgs; //max hostnames per call of the script
         private static final Logger LOG = LoggerFactory.getLogger(ScriptBasedMapping.class);
 
-        /**
-         * Set the configuration and extract the configuration parameters of interest.
-         * @param conf the new configuration
+        /*
+         * extract 'scriptName' and 'maxArgs' parameters from the conf and throw
+         * RuntimeException if 'scriptName' is null. Also for sanity check
+         * purpose try executing the script with no arguments. Here it is
+         * expected that running script with no arguments would do sanity check
+         * of the script and the env, and return successfully if script and env.
+         * are valid. If sanity check of the script with no argument fails then
+         * throw RuntimeException.
+         *
          */
         @Override
-        public void setConf(Configuration conf) {
-            super.setConf(conf);
+        protected void validateConf() {
+            Configuration conf = getConf();
             if (conf != null) {
                 String scriptNameConfValue = conf.getString(SCRIPT_FILENAME_KEY);
                 if (StringUtils.isNotBlank(scriptNameConfValue)) {
@@ -154,7 +160,24 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
             }
 
             if (null == scriptName) {
-                throw new RuntimeException("No network topology script is found when using script based DNS resolver.");
+                throw new RuntimeException("No network topology script is found when using script"
+                        + " based DNS resolver.");
+            } else {
+                File dir = null;
+                String userDir;
+                if ((userDir = System.getProperty("user.dir")) != null) {
+                    dir = new File(userDir);
+                }
+                String[] execString = { this.scriptName };
+                ShellCommandExecutor s = new ShellCommandExecutor(execString, dir);
+                try {
+                    s.execute();
+                } catch (Exception e) {
+                    LOG.error("Conf validation failed. Got exception for sanity check of script: " + this.scriptName,
+                            e);
+                    throw new RuntimeException(
+                            "Conf validation failed. Got exception for sanity check of script: " + this.scriptName, e);
+                }
             }
         }
 
