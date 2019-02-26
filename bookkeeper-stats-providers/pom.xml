@@ -39,7 +39,7 @@
         </property>
       </activation>
       <modules>
-        <!-- enable building table service -->
+        <!-- only building twitter stats providers when `-Dtwitter` is provided -->
         <module>twitter-finagle-provider</module>
         <module>twitter-science-provider</module>
         <module>twitter-ostrich-provider</module>
