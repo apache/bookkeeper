@@ -47,7 +47,7 @@ public class TestVertxHttpServer {
         httpServer.initialize(httpServiceProvider);
         assertTrue(httpServer.startServer(0));
         int port = httpServer.getListeningPort();
-        HttpResponse httpResponse = sendGet(getUrl(port, HttpRouter.HEARTBEAT));
+        HttpResponse httpResponse = send(getUrl(port, HttpRouter.HEARTBEAT), HttpServer.Method.GET);
         assertEquals(HttpServer.StatusCode.OK.getValue(), httpResponse.responseCode);
         assertEquals(HeartbeatService.HEARTBEAT.trim(), httpResponse.responseBody.trim());
         httpServer.stopServer();
@@ -60,17 +60,33 @@ public class TestVertxHttpServer {
         httpServer.initialize(httpServiceProvider);
         assertTrue(httpServer.startServer(0));
         int port = httpServer.getListeningPort();
-        HttpResponse httpResponse = sendGet(getUrl(port, HttpRouter.METRICS));
+        HttpResponse httpResponse = send(getUrl(port, HttpRouter.METRICS), HttpServer.Method.GET);
         assertEquals(HttpServer.StatusCode.OK.getValue(), httpResponse.responseCode);
         httpServer.stopServer();
     }
 
-    // HTTP GET request
-    private HttpResponse sendGet(String url) throws IOException {
+    @Test
+    public void testHttpMethods() throws Exception {
+        VertxHttpServer httpServer = new VertxHttpServer();
+        HttpServiceProvider httpServiceProvider = NullHttpServiceProvider.getInstance();
+        httpServer.initialize(httpServiceProvider);
+        assertTrue(httpServer.startServer(0));
+        int port = httpServer.getListeningPort();
+        HttpResponse httpResponse = send(getUrl(port, HttpRouter.GC), HttpServer.Method.GET);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), httpResponse.responseCode);
+        httpResponse = send(getUrl(port, HttpRouter.GC), HttpServer.Method.POST);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), httpResponse.responseCode);
+        httpResponse = send(getUrl(port, HttpRouter.GC), HttpServer.Method.PUT);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), httpResponse.responseCode);
+        httpServer.stopServer();
+    }
+
+    // HTTP request
+    private HttpResponse send(String url, HttpServer.Method method) throws IOException {
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
         // optional, default is GET
-        con.setRequestMethod("GET");
+        con.setRequestMethod(method.toString());
         int responseCode = con.getResponseCode();
         StringBuilder response = new StringBuilder();
         BufferedReader in = null;
