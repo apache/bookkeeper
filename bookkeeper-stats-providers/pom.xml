@@ -26,10 +26,25 @@
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Stats Providers</name>
   <modules>
-    <module>twitter-finagle-provider</module>
-    <module>twitter-science-provider</module>
-    <module>twitter-ostrich-provider</module>
     <module>codahale-metrics-provider</module>
     <module>prometheus-metrics-provider</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>twitter</id>
+      <activation>
+        <property>
+          <name>twitter</name>
+        </property>
+      </activation>
+      <modules>
+        <!-- only building twitter stats providers when `-Dtwitter` is provided -->
+        <module>twitter-finagle-provider</module>
+        <module>twitter-science-provider</module>
+        <module>twitter-ostrich-provider</module>
+      </modules>
+    </profile>
+  </profiles>
+
 </project>
