@@ -358,6 +358,51 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
     }
 
+    @Test
+    public void testNetworkTopologyScriptFileNameIsEmpty() throws Exception {
+        ignoreTestIfItIsWindowsOS();
+        repp.uninitalize();
+
+        ClientConfiguration newConf = new ClientConfiguration();
+        newConf.setProperty(REPP_DNS_RESOLVER_CLASS, ScriptBasedMapping.class.getName());
+        newConf.setProperty(CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_FILE_NAME_KEY, "");
+        newConf.setEnforceMinNumRacksPerWriteQuorum(false);
+        timer = new HashedWheelTimer(new ThreadFactoryBuilder().setNameFormat("TestTimer-%d").build(),
+                newConf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS, newConf.getTimeoutTimerNumTicks());
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        try {
+            repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                    NullStatsLogger.INSTANCE);
+        } catch (RuntimeException re) {
+            fail("EnforceMinNumRacksPerWriteQuorum is not set, so repp.initialize should succeed even if"
+                    + " networkTopologyScriptFileName is empty");
+        }
+        repp.uninitalize();
+
+        newConf.setEnforceMinNumRacksPerWriteQuorum(true);
+        repp = new RackawareEnsemblePlacementPolicy();
+        try {
+            repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                    NullStatsLogger.INSTANCE);
+            fail("EnforceMinNumRacksPerWriteQuorum is set, so repp.initialize should fail if"
+                    + " networkTopologyScriptFileName is empty");
+        } catch (RuntimeException re) {
+        }
+        repp.uninitalize();
+
+        newConf.setProperty(CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_FILE_NAME_KEY,
+                "src/test/resources/networkmappingscript.sh");
+        try {
+            repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                    NullStatsLogger.INSTANCE);
+        } catch (RuntimeException re) {
+            fail("EnforceMinNumRacksPerWriteQuorum is set and networkTopologyScriptFileName is not empty,"
+                    + " so it should succeed");
+        }
+        repp.uninitalize();
+    }
+
     private int getNumCoveredWriteQuorums(List<BookieSocketAddress> ensemble, int writeQuorumSize)
             throws Exception {
         int ensembleSize = ensemble.size();
