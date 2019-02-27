@@ -386,7 +386,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     ((RackChangeNotifier) dnsResolver).registerRackChangeListener(this);
                 }
             } catch (RuntimeException re) {
-                if (!enforceMinNumRacksPerWriteQuorum) {
+                if (!conf.getEnforceMinNumRacksPerWriteQuorum()) {
                     LOG.info("Failed to initialize DNS Resolver {}, used default subnet resolver : {}", dnsResolverName,
                             re, re.getMessage());
                     dnsResolver = new DefaultResolver(() -> this.getDefaultRack());
