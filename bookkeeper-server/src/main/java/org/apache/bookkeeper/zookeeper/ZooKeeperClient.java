@@ -271,7 +271,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
         return new Builder();
     }
 
-    ZooKeeperClient(String connectString,
+    protected ZooKeeperClient(String connectString,
                     int sessionTimeoutMs,
                     ZooKeeperWatcherBase watcherManager,
                     RetryPolicy connectRetryPolicy,
@@ -329,7 +329,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
         }
     }
 
-    protected void waitForConnection() throws KeeperException, InterruptedException {
+    public void waitForConnection() throws KeeperException, InterruptedException {
         watcherManager.waitForConnection();
     }
 
