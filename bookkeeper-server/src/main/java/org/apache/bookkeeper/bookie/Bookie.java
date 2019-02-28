@@ -37,6 +37,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -198,11 +199,14 @@ public class Bookie extends BookieCriticalThread {
                     BookKeeperConstants.VERSION_FILENAME);
 
             final AtomicBoolean oldDataExists = new AtomicBoolean(false);
-            parent.list((dir1, name) -> {
-                if (name.endsWith(".txn") || name.endsWith(".idx") || name.endsWith(".log")) {
-                    oldDataExists.set(true);
+            parent.list(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    if (name.endsWith(".txn") || name.endsWith(".idx") || name.endsWith(".log")) {
+                        oldDataExists.set(true);
+                    }
+                    return true;
                 }
-                return true;
             });
             if (preV3versionFile.exists() || oldDataExists.get()) {
                 String err = "Directory layout version is less than 3, upgrade needed";
