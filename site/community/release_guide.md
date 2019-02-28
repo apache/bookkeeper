@@ -169,7 +169,7 @@ The list of release-blocking issues is available at the [milestones page](https:
 Before cutting a release, you need to update the python client version in
 [setup.py](https://github.com/apache/bookkeeper/blob/master/stream/clients/python/setup.py#L22)
 from `SNAPSHOT` version to a release version and get the change merge to master. For example,
-in release 4.10.0, you need to change the version from `4.10.0-SNAPSHOT` to `4.10.0`.
+in release 4.10.0, you need to change the version from `4.10.0-alpha-0` to `4.10.0`.
 
 ### Review Release Notes in Github
 
@@ -625,10 +625,11 @@ Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1350)
 
 If you are doing a major release, you need to update the python client version to next major development version in master
 and next minor development version in the branch. For example, if you are doing 4.9.0 release, you need to bump the version
-in master to `4.10.0-SNAPSHOT`, and the version in `branch-4.9` to `4.9.1-SNAPSHOT`.
+in master to `4.10.0-alpha-0` (NOTE: we are using `alpha-0` as `SNAPSHOT`, otherwise pypi doesn't work), and the version in
+`branch-4.9` to `4.9.1-alpha-0`.
 
 If you are only doing a minor release, you just need to update the version in release branch. For example, if you are doing
-4.9.1 release, you need to bump the version in `branch-4.9` to `4.9.2-SNAPSHOT`.
+4.9.1 release, you need to bump the version in `branch-4.9` to `4.9.2-alpha-0`.
 
 ### Mark the version as released in Github
 
