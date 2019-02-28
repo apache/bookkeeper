@@ -63,6 +63,9 @@ public class LedgerMetadataBuilder {
     private boolean storeCtime = false;
     private Map<String, byte[]> customMetadata = Collections.emptyMap();
 
+    private static final long BLANK_CREATOR_ID = 0;
+    private long creatorId = BLANK_CREATOR_ID;
+
     public static LedgerMetadataBuilder create() {
         return new LedgerMetadataBuilder();
     }
@@ -181,6 +184,11 @@ public class LedgerMetadataBuilder {
         return this;
     }
 
+    public LedgerMetadataBuilder withCreatorId(long id) {
+        this.creatorId = id;
+        return this;
+    }
+
     public LedgerMetadata build() {
         checkArgument(ensembleSize >= writeQuorumSize, "Write quorum must be less or equal to ensemble size");
         checkArgument(writeQuorumSize >= ackQuorumSize, "Write quorum must be greater or equal to ack quorum");
@@ -189,6 +197,7 @@ public class LedgerMetadataBuilder {
                                       ensembleSize, writeQuorumSize, ackQuorumSize,
                                       state, lastEntryId, length, ensembles,
                                       digestType, password, ctime, storeCtime,
+                                      creatorId,
                                       customMetadata);
     }
 

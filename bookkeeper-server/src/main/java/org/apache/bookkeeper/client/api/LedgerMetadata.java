@@ -174,4 +174,11 @@ public interface LedgerMetadata {
      * @return the format version.
      */
     int getMetadataFormatVersion();
+
+    /**
+     * Get the unique id for the client which created this Ledger.
+     *
+     * @return the creatorId
+     */
+    long getCreatorId();
 }

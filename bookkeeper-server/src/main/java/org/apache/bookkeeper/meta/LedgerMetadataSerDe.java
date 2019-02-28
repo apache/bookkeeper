@@ -205,6 +205,8 @@ public class LedgerMetadataSerDe {
                 builder.addSegment(segmentBuilder.build());
             }
 
+            builder.setCreatorId(metadata.getCreatorId());
+
             builder.build().writeDelimitedTo(os);
             return os.toByteArray();
         }
@@ -428,6 +430,10 @@ public class LedgerMetadataSerDe {
             builder.withCustomMetadata(data.getCustomMetadataList().stream().collect(
                                                Collectors.toMap(e -> e.getKey(),
                                                                 e -> e.getValue().toByteArray())));
+        }
+
+        if (data.hasCreatorId()) {
+            builder.withCreatorId(data.getCreatorId());
         }
     }
 
