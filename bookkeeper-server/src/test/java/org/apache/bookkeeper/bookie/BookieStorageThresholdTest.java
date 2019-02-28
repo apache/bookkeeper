@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -184,7 +185,7 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         ThresholdTestDiskChecker thresholdTestDiskChecker = new ThresholdTestDiskChecker(
                 baseConf.getDiskUsageThreshold(), baseConf.getDiskUsageWarnThreshold());
         bookie.dirsMonitor = new LedgerDirsMonitor(baseConf, thresholdTestDiskChecker,
-                ledgerDirsManager);
+                Collections.singletonList(ledgerDirsManager));
         // set the dirsMonitor and initiate/start it
         bookie.dirsMonitor.init();
         bookie.dirsMonitor.start();

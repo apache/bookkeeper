@@ -701,7 +701,12 @@ public class Bookie extends BookieCriticalThread {
         // Initialise dirsMonitor. This would look through all the
         // configured directories. When disk errors or all the ledger
         // directories are full, would throws exception and fail bookie startup.
-        this.dirsMonitor = new LedgerDirsMonitor(conf, diskChecker, Arrays.asList(ledgerDirsManager, indexDirsManager));
+        List<LedgerDirsManager> ledgerDirsManagers = new ArrayList<>();
+        ledgerDirsManagers.add(ledgerDirsManager);
+        if (indexDirsManager != ledgerDirsManager) {
+            ledgerDirsManagers.add(indexDirsManager);
+        }
+        this.dirsMonitor = new LedgerDirsMonitor(conf, diskChecker, ledgerDirsManagers);
         try {
             this.dirsMonitor.init();
         } catch (NoWritableLedgerDirException nle) {

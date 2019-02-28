@@ -25,7 +25,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
@@ -56,16 +55,6 @@ class LedgerDirsMonitor {
     private long minUsableSizeForHighPriorityWrites;
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> checkTask;
-
-    public LedgerDirsMonitor(final ServerConfiguration conf,
-                             final DiskChecker diskChecker,
-                             final LedgerDirsManager ldm) {
-        this.interval = conf.getDiskCheckInterval();
-        this.minUsableSizeForHighPriorityWrites = conf.getMinUsableSizeForHighPriorityWrites();
-        this.conf = conf;
-        this.diskChecker = diskChecker;
-        this.ledgerDirsManagers = Collections.singletonList(ldm);
-    }
 
     public LedgerDirsMonitor(final ServerConfiguration conf,
                              final DiskChecker diskChecker,
@@ -182,9 +171,7 @@ class LedgerDirsMonitor {
     }
 
     private void check() {
-        for (LedgerDirsManager ledgerDirsManager : ledgerDirsManagers) {
-            check(ledgerDirsManager);
-        }
+        ledgerDirsManagers.forEach(this::check);
     }
 
     /**
