@@ -517,7 +517,7 @@ if you are interested in learning more details.</p>
 <p>Before cutting a release, you need to update the python client version in
 <a href="https://github.com/apache/bookkeeper/blob/master/stream/clients/python/setup.py#L22">setup.py</a>
 from <code class="highlighter-rouge">SNAPSHOT</code> version to a release version and get the change merge to master. For example,
-in release 4.10.0, you need to change the version from <code class="highlighter-rouge">4.10.0-SNAPSHOT</code> to <code class="highlighter-rouge">4.10.0</code>.</p>
+in release 4.10.0, you need to change the version from <code class="highlighter-rouge">4.10.0-alpha-0</code> to <code class="highlighter-rouge">4.10.0</code>.</p>
 
 <h3 id="review-release-notes-in-github">Review Release Notes in Github</h3>
 
@@ -1022,10 +1022,11 @@ Then you have to create a PR and submit it for review.</p>
 
 <p>If you are doing a major release, you need to update the python client version to next major development version in master
 and next minor development version in the branch. For example, if you are doing 4.9.0 release, you need to bump the version
-in master to <code class="highlighter-rouge">4.10.0-SNAPSHOT</code>, and the version in <code class="highlighter-rouge">branch-4.9</code> to <code class="highlighter-rouge">4.9.1-SNAPSHOT</code>.</p>
+in master to <code class="highlighter-rouge">4.10.0-alpha-0</code> (NOTE: we are using <code class="highlighter-rouge">alpha-0</code> as <code class="highlighter-rouge">SNAPSHOT</code>, otherwise pypi doesn’t work), and the version in
+<code class="highlighter-rouge">branch-4.9</code> to <code class="highlighter-rouge">4.9.1-alpha-0</code>.</p>
 
 <p>If you are only doing a minor release, you just need to update the version in release branch. For example, if you are doing
-4.9.1 release, you need to bump the version in <code class="highlighter-rouge">branch-4.9</code> to <code class="highlighter-rouge">4.9.2-SNAPSHOT</code>.</p>
+4.9.1 release, you need to bump the version in <code class="highlighter-rouge">branch-4.9</code> to <code class="highlighter-rouge">4.9.2-alpha-0</code>.</p>
 
 <h3 id="mark-the-version-as-released-in-github">Mark the version as released in Github</h3>
 
