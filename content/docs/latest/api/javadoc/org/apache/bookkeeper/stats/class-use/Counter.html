@@ -112,24 +112,6 @@
 <div class="block">A stats provider implementation based on <code>https://prometheus.io/</code>.</div>
 </td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.finagle">org.apache.bookkeeper.stats.twitter.finagle</a></td>
-<td class="colLast">
-<div class="block">A stats provider implemented based on <i>finagle stats</i> library.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.ostrich">org.apache.bookkeeper.stats.twitter.ostrich</a></td>
-<td class="colLast">
-<div class="block">A stats provider implemented based on <i>Twitter Ostrich</i> library.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.science">org.apache.bookkeeper.stats.twitter.science</a></td>
-<td class="colLast">
-<div class="block">A stats provider implementation based on <i>Twitter Science Stats</i> library.</div>
-</td>
-</tr>
 </tbody>
 </table>
 </li>
@@ -383,75 +365,6 @@
 <td class="colLast"><span class="typeNameLabel">PrometheusTextFormatUtil.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#writeCounter-java.io.Writer-java.lang.String-org.apache.bookkeeper.stats.Counter-">writeCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/Writer.html?is-external=true" title="class or interface in java.io">Writer</a>&nbsp;w,
             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
             <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&nbsp;counter)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a name="org.apache.bookkeeper.stats.twitter.finagle">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/package-summary.html">org.apache.bookkeeper.stats.twitter.finagle</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing classes, and an explanation">
-<caption><span>Classes in <a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/package-summary.html">org.apache.bookkeeper.stats.twitter.finagle</a> that implement <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Class and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/CounterImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">CounterImpl</a></span></code>
-<div class="block">Note: this counter doesn't support resetting values or getting the current value.</div>
-</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/package-summary.html">org.apache.bookkeeper.stats.twitter.finagle</a> that return <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">FinagleStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/FinagleStatsLoggerImpl.html#getCounter-java.lang.String-">getCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a name="org.apache.bookkeeper.stats.twitter.ostrich">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../../../../org/apache/bookkeeper/stats/twitter/ostrich/package-summary.html">org.apache.bookkeeper.stats.twitter.ostrich</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/stats/twitter/ostrich/package-summary.html">org.apache.bookkeeper.stats.twitter.ostrich</a> that return <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">OstrichStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/ostrich/OstrichStatsLoggerImpl.html#getCounter-java.lang.String-">getCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;statName)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a name="org.apache.bookkeeper.stats.twitter.science">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../../../../org/apache/bookkeeper/stats/twitter/science/package-summary.html">org.apache.bookkeeper.stats.twitter.science</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/stats/twitter/science/package-summary.html">org.apache.bookkeeper.stats.twitter.science</a> that return <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">TwitterStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/science/TwitterStatsLoggerImpl.html#getCounter-java.lang.String-">getCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;statName)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

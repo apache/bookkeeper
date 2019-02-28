@@ -112,24 +112,6 @@
 <div class="block">A stats provider implementation based on <code>https://prometheus.io/</code>.</div>
 </td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.finagle">org.apache.bookkeeper.stats.twitter.finagle</a></td>
-<td class="colLast">
-<div class="block">A stats provider implemented based on <i>finagle stats</i> library.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.ostrich">org.apache.bookkeeper.stats.twitter.ostrich</a></td>
-<td class="colLast">
-<div class="block">A stats provider implemented based on <i>Twitter Ostrich</i> library.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.science">org.apache.bookkeeper.stats.twitter.science</a></td>
-<td class="colLast">
-<div class="block">A stats provider implementation based on <i>Twitter Science Stats</i> library.</div>
-</td>
-</tr>
 </tbody>
 </table>
 </li>
@@ -301,91 +283,6 @@
 <tbody>
 <tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/SimpleGauge.html#SimpleGauge-org.apache.bookkeeper.stats.Gauge-">SimpleGauge</a></span>(<a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;<a href="../../../../../org/apache/bookkeeper/stats/prometheus/SimpleGauge.html" title="type parameter in SimpleGauge">T</a>&gt;&nbsp;gauge)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a name="org.apache.bookkeeper.stats.twitter.finagle">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a> in <a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/package-summary.html">org.apache.bookkeeper.stats.twitter.finagle</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing fields, and an explanation">
-<caption><span>Fields in <a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/package-summary.html">org.apache.bookkeeper.stats.twitter.finagle</a> with type parameters of type <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Field and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>,com.twitter.finagle.stats.Gauge&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">FinagleStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/FinagleStatsLoggerImpl.html#finagleGauges">finagleGauges</a></span></code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/package-summary.html">org.apache.bookkeeper.stats.twitter.finagle</a> with parameters of type <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>&lt;T extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Number.html?is-external=true" title="class or interface in java.lang">Number</a>&gt;<br>void</code></td>
-<td class="colLast"><span class="typeNameLabel">FinagleStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/FinagleStatsLoggerImpl.html#registerGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">registerGauge</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
-             <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;T&gt;&nbsp;gauge)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>&lt;T extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Number.html?is-external=true" title="class or interface in java.lang">Number</a>&gt;<br>void</code></td>
-<td class="colLast"><span class="typeNameLabel">FinagleStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/FinagleStatsLoggerImpl.html#unregisterGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">unregisterGauge</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
-               <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;T&gt;&nbsp;gauge)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a name="org.apache.bookkeeper.stats.twitter.ostrich">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a> in <a href="../../../../../org/apache/bookkeeper/stats/twitter/ostrich/package-summary.html">org.apache.bookkeeper.stats.twitter.ostrich</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/stats/twitter/ostrich/package-summary.html">org.apache.bookkeeper.stats.twitter.ostrich</a> with parameters of type <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>&lt;T extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Number.html?is-external=true" title="class or interface in java.lang">Number</a>&gt;<br>void</code></td>
-<td class="colLast"><span class="typeNameLabel">OstrichStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/ostrich/OstrichStatsLoggerImpl.html#registerGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">registerGauge</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;statName,
-             <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;T&gt;&nbsp;gauge)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>&lt;T extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Number.html?is-external=true" title="class or interface in java.lang">Number</a>&gt;<br>void</code></td>
-<td class="colLast"><span class="typeNameLabel">OstrichStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/ostrich/OstrichStatsLoggerImpl.html#unregisterGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">unregisterGauge</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;statName,
-               <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;T&gt;&nbsp;gauge)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a name="org.apache.bookkeeper.stats.twitter.science">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a> in <a href="../../../../../org/apache/bookkeeper/stats/twitter/science/package-summary.html">org.apache.bookkeeper.stats.twitter.science</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/stats/twitter/science/package-summary.html">org.apache.bookkeeper.stats.twitter.science</a> with parameters of type <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>&lt;T extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Number.html?is-external=true" title="class or interface in java.lang">Number</a>&gt;<br>void</code></td>
-<td class="colLast"><span class="typeNameLabel">TwitterStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/science/TwitterStatsLoggerImpl.html#registerGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">registerGauge</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;statName,
-             <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;T&gt;&nbsp;gauge)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>&lt;T extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Number.html?is-external=true" title="class or interface in java.lang">Number</a>&gt;<br>void</code></td>
-<td class="colLast"><span class="typeNameLabel">TwitterStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/science/TwitterStatsLoggerImpl.html#unregisterGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">unregisterGauge</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
-               <a href="../../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;T&gt;&nbsp;gauge)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

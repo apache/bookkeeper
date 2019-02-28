@@ -112,24 +112,6 @@
 <div class="block">A stats provider implementation based on <code>https://prometheus.io/</code>.</div>
 </td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.finagle">org.apache.bookkeeper.stats.twitter.finagle</a></td>
-<td class="colLast">
-<div class="block">A stats provider implemented based on <i>finagle stats</i> library.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.ostrich">org.apache.bookkeeper.stats.twitter.ostrich</a></td>
-<td class="colLast">
-<div class="block">A stats provider implemented based on <i>Twitter Ostrich</i> library.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.science">org.apache.bookkeeper.stats.twitter.science</a></td>
-<td class="colLast">
-<div class="block">A stats provider implementation based on <i>Twitter Science Stats</i> library.</div>
-</td>
-</tr>
 </tbody>
 </table>
 </li>
@@ -429,76 +411,6 @@
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <td class="colLast"><span class="typeNameLabel">PrometheusStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a name="org.apache.bookkeeper.stats.twitter.finagle">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> in <a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/package-summary.html">org.apache.bookkeeper.stats.twitter.finagle</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing classes, and an explanation">
-<caption><span>Classes in <a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/package-summary.html">org.apache.bookkeeper.stats.twitter.finagle</a> that implement <a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Class and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">OpStatsLoggerImpl</a></span></code>
-<div class="block">A percentile stat that will delegate to Finagle stats' implementation library
- to compute the percentiles.</div>
-</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/package-summary.html">org.apache.bookkeeper.stats.twitter.finagle</a> that return <a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
-<td class="colLast"><span class="typeNameLabel">FinagleStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/finagle/FinagleStatsLoggerImpl.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a name="org.apache.bookkeeper.stats.twitter.ostrich">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> in <a href="../../../../../org/apache/bookkeeper/stats/twitter/ostrich/package-summary.html">org.apache.bookkeeper.stats.twitter.ostrich</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/stats/twitter/ostrich/package-summary.html">org.apache.bookkeeper.stats.twitter.ostrich</a> that return <a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
-<td class="colLast"><span class="typeNameLabel">OstrichStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/ostrich/OstrichStatsLoggerImpl.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;statName)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a name="org.apache.bookkeeper.stats.twitter.science">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> in <a href="../../../../../org/apache/bookkeeper/stats/twitter/science/package-summary.html">org.apache.bookkeeper.stats.twitter.science</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/stats/twitter/science/package-summary.html">org.apache.bookkeeper.stats.twitter.science</a> that return <a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
-<td class="colLast"><span class="typeNameLabel">TwitterStatsLoggerImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/twitter/science/TwitterStatsLoggerImpl.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;statName)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

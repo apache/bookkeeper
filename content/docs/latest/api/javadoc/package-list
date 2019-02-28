@@ -10,7 +10,4 @@ org.apache.bookkeeper.stats.codahale
 org.apache.bookkeeper.stats.codahale.generated
 org.apache.bookkeeper.stats.generated
 org.apache.bookkeeper.stats.prometheus
-org.apache.bookkeeper.stats.twitter.finagle
-org.apache.bookkeeper.stats.twitter.ostrich
-org.apache.bookkeeper.stats.twitter.science
 org.apache.bookkeeper.stats.utils
