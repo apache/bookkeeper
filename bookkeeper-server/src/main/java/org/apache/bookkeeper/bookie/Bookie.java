@@ -200,13 +200,13 @@ public class Bookie extends BookieCriticalThread {
 
             final AtomicBoolean oldDataExists = new AtomicBoolean(false);
             parent.list(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    if (name.endsWith(".txn") || name.endsWith(".idx") || name.endsWith(".log")) {
-                        oldDataExists.set(true);
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        if (name.endsWith(".txn") || name.endsWith(".idx") || name.endsWith(".log")) {
+                            oldDataExists.set(true);
+                        }
+                        return true;
                     }
-                    return true;
-                }
             });
             if (preV3versionFile.exists() || oldDataExists.get()) {
                 String err = "Directory layout version is less than 3, upgrade needed";
