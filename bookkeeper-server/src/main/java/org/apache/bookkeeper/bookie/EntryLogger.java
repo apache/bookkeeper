@@ -35,7 +35,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -547,12 +546,7 @@ public class EntryLogger {
             return id;
         }
         // read failed, scan the ledger directories to find biggest log id
-        File[] logFiles = dir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File file) {
-                return file.getName().endsWith(".log");
-            }
-        });
+        File[] logFiles = dir.listFiles(file -> file.getName().endsWith(".log"));
         List<Long> logs = new ArrayList<Long>();
         if (logFiles != null) {
             for (File lf : logFiles) {
@@ -579,19 +573,11 @@ public class EntryLogger {
         } catch (FileNotFoundException e) {
             return INVALID_LID;
         }
-        BufferedReader br = new BufferedReader(new InputStreamReader(fis, UTF_8));
-        try {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(fis, UTF_8))) {
             String lastIdString = br.readLine();
             return Long.parseLong(lastIdString, 16);
-        } catch (IOException e) {
+        } catch (IOException | NumberFormatException e) {
             return INVALID_LID;
-        } catch (NumberFormatException e) {
-            return INVALID_LID;
-        } finally {
-            try {
-                br.close();
-            } catch (IOException e) {
-            }
         }
     }
 

@@ -123,16 +123,9 @@ public class BookieStatus {
      * @throws IOException
      */
     private static void writeToFile(File file, String body) throws IOException {
-        FileOutputStream fos = new FileOutputStream(file);
-        BufferedWriter bw = null;
-        try {
-            bw = new BufferedWriter(new OutputStreamWriter(fos, UTF_8));
+        try (FileOutputStream fos = new FileOutputStream(file);
+             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos, UTF_8))) {
             bw.write(body);
-        } finally {
-            if (bw != null) {
-                bw.close();
-            }
-            fos.close();
         }
     }
 
