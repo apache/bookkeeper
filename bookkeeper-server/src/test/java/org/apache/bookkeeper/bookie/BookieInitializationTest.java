@@ -50,7 +50,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.AccessControlException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -814,7 +813,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             LedgerDirsManager ldm = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                     new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
             LedgerDirsMonitor ledgerMonitor = new LedgerDirsMonitor(conf,
-                    new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), Collections.singletonList(ldm));
+                    new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
+                    Collections.singletonList(ldm));
             ledgerMonitor.init();
             fail("should throw exception");
         } catch (Exception e) {

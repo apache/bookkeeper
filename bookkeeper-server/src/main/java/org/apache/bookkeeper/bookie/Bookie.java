@@ -207,7 +207,7 @@ public class Bookie extends BookieCriticalThread {
                         }
                         return true;
                     }
-            });
+                });
             if (preV3versionFile.exists() || oldDataExists.get()) {
                 String err = "Directory layout version is less than 3, upgrade needed";
                 LOG.error(err);
@@ -705,12 +705,12 @@ public class Bookie extends BookieCriticalThread {
         // Initialise dirsMonitor. This would look through all the
         // configured directories. When disk errors or all the ledger
         // directories are full, would throws exception and fail bookie startup.
-        List<LedgerDirsManager> ledgerDirsManagers = new ArrayList<>();
-        ledgerDirsManagers.add(ledgerDirsManager);
+        List<LedgerDirsManager> dirsManagers = new ArrayList<>();
+        dirsManagers.add(ledgerDirsManager);
         if (indexDirsManager != ledgerDirsManager) {
-            ledgerDirsManagers.add(indexDirsManager);
+            dirsManagers.add(indexDirsManager);
         }
-        this.dirsMonitor = new LedgerDirsMonitor(conf, diskChecker, ledgerDirsManagers);
+        this.dirsMonitor = new LedgerDirsMonitor(conf, diskChecker, dirsManagers);
         try {
             this.dirsMonitor.init();
         } catch (NoWritableLedgerDirException nle) {

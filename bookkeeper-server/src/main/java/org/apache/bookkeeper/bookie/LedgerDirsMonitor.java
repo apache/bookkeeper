@@ -51,19 +51,19 @@ class LedgerDirsMonitor {
     private final int interval;
     private final ServerConfiguration conf;
     private final DiskChecker diskChecker;
-    private final List<LedgerDirsManager> ledgerDirsManagers;
+    private final List<LedgerDirsManager> dirsManagers;
     private long minUsableSizeForHighPriorityWrites;
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> checkTask;
 
     public LedgerDirsMonitor(final ServerConfiguration conf,
                              final DiskChecker diskChecker,
-                             final List<LedgerDirsManager> ledgerDirsManagers) {
+                             final List<LedgerDirsManager> dirsManagers) {
         this.interval = conf.getDiskCheckInterval();
         this.minUsableSizeForHighPriorityWrites = conf.getMinUsableSizeForHighPriorityWrites();
         this.conf = conf;
         this.diskChecker = diskChecker;
-        this.ledgerDirsManagers = ledgerDirsManagers;
+        this.dirsManagers = dirsManagers;
     }
 
     private void check(final LedgerDirsManager ldm) {
@@ -171,7 +171,7 @@ class LedgerDirsMonitor {
     }
 
     private void check() {
-        ledgerDirsManagers.forEach(this::check);
+        dirsManagers.forEach(this::check);
     }
 
     /**
@@ -211,8 +211,8 @@ class LedgerDirsMonitor {
     }
 
     private void checkDirs() throws NoWritableLedgerDirException, DiskErrorException {
-        for (LedgerDirsManager ledgerDirsManager : ledgerDirsManagers) {
-            checkDirs(ledgerDirsManager);
+        for (LedgerDirsManager dirsManager : dirsManagers) {
+            checkDirs(dirsManager);
         }
     }
 
