@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,7 +113,7 @@ public class TestLedgerDirsManager {
         dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), statsLogger);
         ledgerMonitor = new LedgerDirsMonitor(conf,
-                mockDiskChecker, dirsManager);
+                mockDiskChecker, Collections.singletonList(dirsManager));
         ledgerMonitor.init();
     }
 
@@ -215,7 +216,7 @@ public class TestLedgerDirsManager {
             conf.setMinUsableSizeForHighPriorityWrites(curDir.getUsableSpace() + 1024);
             dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), statsLogger);
-            ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
+            ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, Collections.singletonList(dirsManager));
             ledgerMonitor.init();
         }
 
@@ -257,7 +258,7 @@ public class TestLedgerDirsManager {
         mockDiskChecker = new MockDiskChecker(nospace, warnThreshold);
         dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
+        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, Collections.singletonList(dirsManager));
         ledgerMonitor.init();
         final MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
         dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
@@ -321,7 +322,7 @@ public class TestLedgerDirsManager {
         dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
                 statsLogger);
-        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
+        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, Collections.singletonList(dirsManager));
         usageMap = new HashMap<File, Float>();
         usageMap.put(curDir1, 0.1f);
         usageMap.put(curDir2, 0.1f);
@@ -412,7 +413,7 @@ public class TestLedgerDirsManager {
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
                 statsLogger);
 
-        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
+        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, Collections.singletonList(dirsManager));
         try {
             ledgerMonitor.init();
             fail("NoWritableLedgerDirException expected");
