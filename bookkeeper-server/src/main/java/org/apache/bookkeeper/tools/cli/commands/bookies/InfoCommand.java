@@ -16,7 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.bookkeeper.tools.cli.commands.bookie;
+package org.apache.bookkeeper.tools.cli.commands.bookies;
+
+import java.io.IOException;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.util.Map;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -29,10 +34,6 @@ import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 
-import java.io.IOException;
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.util.Map;
 
 /**
  * A bookie command to retrieve bookie info.
@@ -69,11 +70,7 @@ public class InfoCommand extends BookieCommand<CliFlags> {
 
         ClientConfiguration clientConf = new ClientConfiguration(conf);
         clientConf.setDiskWeightBasedPlacementEnabled(true);
-        try {
-            try(BookKeeper bk = new BookKeeper(clientConf)) {
-               ...
-            }
-
+        try(BookKeeper bk = new BookKeeper(clientConf)) {
             Map<BookieSocketAddress, BookieInfo> map = bk.getBookieInfo();
             if (map.size() == 0) {
                 System.out.println("Failed to retrieve bookie information from any of the bookies");
@@ -86,9 +83,9 @@ public class InfoCommand extends BookieCommand<CliFlags> {
             for (Map.Entry<BookieSocketAddress, BookieInfo> e : map.entrySet()) {
                 BookieInfo bInfo = e.getValue();
                 BookieSocketAddress bookieId = e.getKey();
-                System.out.println(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId) +
-                    ":\tFree: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace()) +
-                    "\tTotal: " + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
+                System.out.println(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId)
+                    + ":\tFree: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace())
+                    + "\tTotal: " + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
                 totalFree += bInfo.getFreeDiskSpace();
                 total += bInfo.getTotalDiskSpace();
             }
