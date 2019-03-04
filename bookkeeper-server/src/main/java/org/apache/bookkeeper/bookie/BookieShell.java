@@ -112,6 +112,7 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.cli.commands.bookie.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
@@ -2538,46 +2539,10 @@ public class BookieShell implements Tool {
             return lOpts;
         }
 
-        String getReadable(long val) {
-            String unit[] = {"", "KB", "MB", "GB", "TB"};
-            int cnt = 0;
-            double d = val;
-            while (d >= 1000 && cnt < unit.length - 1) {
-                d = d / 1000;
-                cnt++;
-            }
-            DecimalFormat df = new DecimalFormat("#.###");
-            df.setRoundingMode(RoundingMode.DOWN);
-            return cnt > 0 ? "(" + df.format(d) + unit[cnt] + ")" : unit[cnt];
-        }
-
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            ClientConfiguration clientConf = new ClientConfiguration(bkConf);
-            clientConf.setDiskWeightBasedPlacementEnabled(true);
-            BookKeeper bk = new BookKeeper(clientConf);
-
-            Map<BookieSocketAddress, BookieInfo> map = bk.getBookieInfo();
-            if (map.size() == 0) {
-                System.out.println("Failed to retrieve bookie information from any of the bookies");
-                bk.close();
-                return 0;
-            }
-
-            System.out.println("Free disk space info:");
-            long totalFree = 0, total = 0;
-            for (Map.Entry<BookieSocketAddress, BookieInfo> e : map.entrySet()) {
-                BookieInfo bInfo = e.getValue();
-                BookieSocketAddress bookieId = e.getKey();
-                System.out.println(getBookieSocketAddrStringRepresentation(bookieId) + ":\tFree: "
-                        + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace()) + "\tTotal: "
-                        + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
-                totalFree += bInfo.getFreeDiskSpace();
-                total += bInfo.getTotalDiskSpace();
-            }
-            System.out.println("Total free disk space in the cluster:\t" + totalFree + getReadable(totalFree));
-            System.out.println("Total disk capacity in the cluster:\t" + total + getReadable(total));
-            bk.close();
+            InfoCommand cmd = new InfoCommand();
+            cmd.apply(bkConf, new CliFlags());
             return 0;
         }
     }
