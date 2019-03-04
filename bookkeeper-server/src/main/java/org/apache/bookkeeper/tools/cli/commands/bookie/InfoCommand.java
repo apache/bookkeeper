@@ -70,7 +70,9 @@ public class InfoCommand extends BookieCommand<CliFlags> {
         ClientConfiguration clientConf = new ClientConfiguration(conf);
         clientConf.setDiskWeightBasedPlacementEnabled(true);
         try {
-            BookKeeper bk = new BookKeeper(clientConf);
+            try(BookKeeper bk = new BookKeeper(clientConf)) {
+               ...
+            }
 
             Map<BookieSocketAddress, BookieInfo> map = bk.getBookieInfo();
             if (map.size() == 0) {
