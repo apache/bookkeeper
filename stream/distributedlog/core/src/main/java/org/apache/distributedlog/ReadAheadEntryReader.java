@@ -67,7 +67,7 @@ class ReadAheadEntryReader implements
 
     private static final Logger logger = LoggerFactory.getLogger(ReadAheadEntryReader.class);
 
-    enum State {
+    private enum State {
         IDLE,
         READING,
         PAUSED,
