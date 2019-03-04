@@ -79,50 +79,51 @@ public class SearchReplaceBookieIdCommand extends ClientCommand<SearchReplaceBoo
 
     @Override
     protected void run(BookKeeper bk, Flags flags) throws Exception {
-        BookKeeperAdmin admin = new BookKeeperAdmin((org.apache.bookkeeper.client.BookKeeper) bk);
-        LedgerManager ledgerManager = ((org.apache.bookkeeper.client.BookKeeper) bk).getLedgerManager();
-        long i = 0;
+        try (BookKeeperAdmin admin = new BookKeeperAdmin((org.apache.bookkeeper.client.BookKeeper) bk)) {
+            LedgerManager ledgerManager = ((org.apache.bookkeeper.client.BookKeeper) bk).getLedgerManager();
+            long i = 0;
 
-        BookieSocketAddress fromAddr = new BookieSocketAddress(flags.from);
-        BookieSocketAddress toAddr = new BookieSocketAddress(flags.to);
-        System.out.println(String.format("Replacing bookie id %s with %s in metadata", fromAddr, toAddr));
-        RateLimiter limiter = RateLimiter.create(flags.rate);
-        for (Long lid : admin.listLedgers()) {
-            Versioned<LedgerMetadata> md = ledgerManager.readLedgerMetadata(lid).get();
-            if (md.getValue().getAllEnsembles().entrySet().stream().anyMatch(e -> e.getValue().contains(fromAddr))) {
-                limiter.acquire();
+            BookieSocketAddress fromAddr = new BookieSocketAddress(flags.from);
+            BookieSocketAddress toAddr = new BookieSocketAddress(flags.to);
+            System.out.println(String.format("Replacing bookie id %s with %s in metadata", fromAddr, toAddr));
+            RateLimiter limiter = RateLimiter.create(flags.rate);
+            for (Long lid : admin.listLedgers()) {
+                Versioned<LedgerMetadata> md = ledgerManager.readLedgerMetadata(lid).get();
+                if (md.getValue().getAllEnsembles().entrySet().stream().anyMatch(e -> e.getValue().contains(fromAddr))) {
+                    limiter.acquire();
 
-                LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(md.getValue());
-                md.getValue().getAllEnsembles().entrySet().stream()
-                    .filter(e -> e.getValue().contains(fromAddr))
-                    .forEach(e -> {
-                            List<BookieSocketAddress> ensemble = new ArrayList<>(e.getValue());
-                            ensemble.replaceAll((a) -> {
-                                    if (a.equals(fromAddr)) {
-                                        return toAddr;
-                                    } else {
-                                        return a;
-                                    }
-                                });
-                            builder.replaceEnsembleEntry(e.getKey(), ensemble);
-                        });
-                LedgerMetadata newMeta = builder.build();
-                if (flags.verbose) {
-                    System.out.println("Replacing ledger " + lid + " metadata ...");
-                    System.out.println(md.getValue().toString());
-                    System.out.println("with ...");
-                    System.out.println(newMeta.toString());
+                    LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(md.getValue());
+                    md.getValue().getAllEnsembles().entrySet().stream()
+                        .filter(e -> e.getValue().contains(fromAddr))
+                        .forEach(e -> {
+                                List<BookieSocketAddress> ensemble = new ArrayList<>(e.getValue());
+                                ensemble.replaceAll((a) -> {
+                                        if (a.equals(fromAddr)) {
+                                            return toAddr;
+                                        } else {
+                                            return a;
+                                        }
+                                    });
+                                builder.replaceEnsembleEntry(e.getKey(), ensemble);
+                            });
+                    LedgerMetadata newMeta = builder.build();
+                    if (flags.verbose) {
+                        System.out.println("Replacing ledger " + lid + " metadata ...");
+                        System.out.println(md.getValue().toSafeString());
+                        System.out.println("with ...");
+                        System.out.println(newMeta.toSafeString());
+                    }
+                    i++;
+                    if (!flags.dryRun) {
+                        ledgerManager.writeLedgerMetadata(lid, newMeta, md.getVersion()).get();
+                    }
                 }
-                i++;
-                if (!flags.dryRun) {
-                    ledgerManager.writeLedgerMetadata(lid, newMeta, md.getVersion()).get();
+                if (i >= flags.max) {
+                    System.out.println("Max number of ledgers processed, exiting");
+                    break;
                 }
             }
-            if (i >= flags.max) {
-                System.out.println("Max number of ledgers processed, exiting");
-                break;
-            }
+            System.out.println("Replaced bookie ID in " + i + " ledgers");
         }
-        System.out.println("Replaced bookie ID in " + i + " ledgers");
     }
 }
