@@ -69,6 +69,8 @@ public class InfoCommand extends BookieCommand<CliFlags> {
                 System.out.println(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId) +
                     ":\tFree: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace()) +
                     "\tTotal: " + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
+                totalFree += bInfo.getFreeDiskSpace();
+                total += bInfo.getTotalDiskSpace();
             }
 
             System.out.println("Total free disk space in the cluster:\t" + totalFree + getReadable(totalFree));
