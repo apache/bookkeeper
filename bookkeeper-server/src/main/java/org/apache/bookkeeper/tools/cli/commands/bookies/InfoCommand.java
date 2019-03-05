@@ -28,11 +28,9 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
-import org.apache.bookkeeper.tools.cli.helpers.DiscoveryCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 
@@ -72,8 +70,7 @@ public class InfoCommand extends BookieCommand<CliFlags> {
 
         ClientConfiguration clientConf = new ClientConfiguration(conf);
         clientConf.setDiskWeightBasedPlacementEnabled(true);
-
-        try(BookKeeper bk = new BookKeeper(clientConf)) {
+        try (BookKeeper bk = new BookKeeper(clientConf)) {
             Map<BookieSocketAddress, BookieInfo> map = bk.getBookieInfo();
             if (map.size() == 0) {
                 System.out.println("Failed to retrieve bookie information from any of the bookies");
@@ -101,7 +98,6 @@ public class InfoCommand extends BookieCommand<CliFlags> {
         } catch (IOException | InterruptedException | BKException e) {
             e.printStackTrace();
         }
-
         return true;
     }
 }
