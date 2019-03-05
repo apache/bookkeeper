@@ -21,7 +21,6 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import com.beust.jcommander.Parameter;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -57,13 +56,12 @@ public class FormatCommand extends BookieCommand<FormatCommand.Flags> {
             .build());
     }
 
-
     /*
      * Flags for format bookie command.
      */
     @Accessors(fluent = true)
     @Setter
-    public static class Flags extends CliFlags{
+    public static class Flags extends CliFlags {
 
         @Parameter(names = {"-n", "--noninteractive"},
             description = "Whether to confirm if old data exists?")
