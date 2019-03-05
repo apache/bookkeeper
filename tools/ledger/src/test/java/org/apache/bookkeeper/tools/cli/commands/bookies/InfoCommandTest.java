@@ -17,6 +17,15 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookieInfoReader;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -31,14 +40,8 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
 /**
- * Unit test of {@link InfoCommand}
+ * Unit test of {@link InfoCommand}.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({InfoCommand.class})
