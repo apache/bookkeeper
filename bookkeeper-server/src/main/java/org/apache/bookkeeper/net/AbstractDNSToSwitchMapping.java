@@ -65,6 +65,7 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
 
     public void setConf(Configuration conf) {
         this.conf = conf;
+        validateConf();
     }
 
     /**
@@ -138,4 +139,10 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
                 && ((AbstractDNSToSwitchMapping) mapping).isSingleSwitch();
     }
 
+    /**
+     * when setConf is called it should do sanity checking of the conf/env. and
+     * throw RuntimeException if things are not valid.
+     */
+    protected void validateConf() {
+    }
 }

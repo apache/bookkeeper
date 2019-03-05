@@ -403,6 +403,64 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         repp.uninitalize();
     }
 
+    @Test
+    public void testIfValidateConfFails() throws Exception {
+        ignoreTestIfItIsWindowsOS();
+        repp.uninitalize();
+
+        ClientConfiguration newConf = new ClientConfiguration();
+        newConf.setProperty(REPP_DNS_RESOLVER_CLASS, ScriptBasedMapping.class.getName());
+        /*
+         * this script, exits with error value if no argument is passed to it.
+         * So mapping.validateConf will fail.
+         */
+        newConf.setProperty(CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_FILE_NAME_KEY,
+                "src/test/resources/networkmappingscriptwithargs.sh");
+        timer = new HashedWheelTimer(new ThreadFactoryBuilder().setNameFormat("TestTimer-%d").build(),
+                newConf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS, newConf.getTimeoutTimerNumTicks());
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+
+        repp.uninitalize();
+        repp = new RackawareEnsemblePlacementPolicy();
+        try {
+            repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                    NullStatsLogger.INSTANCE);
+        } catch (RuntimeException re) {
+            fail("EnforceMinNumRacksPerWriteQuorum is not set, so repp.initialize should succeed"
+                    + " even if mapping.validateConf fails");
+        }
+
+        newConf.setEnforceMinNumRacksPerWriteQuorum(true);
+        repp.uninitalize();
+        repp = new RackawareEnsemblePlacementPolicy();
+        try {
+            repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                    NullStatsLogger.INSTANCE);
+            fail("EnforceMinNumRacksPerWriteQuorum is set, so repp.initialize should fail"
+                    + " if mapping.validateConf fails");
+        } catch (RuntimeException re) {
+
+        }
+
+        /*
+         * this script returns successfully even if no argument is passed to it.
+         * So mapping.validateConf will succeed.
+         */
+        newConf.setProperty(CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_FILE_NAME_KEY,
+                "src/test/resources/networkmappingscript.sh");
+        repp.uninitalize();
+        repp = new RackawareEnsemblePlacementPolicy();
+        try {
+            repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                    NullStatsLogger.INSTANCE);
+        } catch (RuntimeException re) {
+            fail("EnforceMinNumRacksPerWriteQuorum is set, and mapping.validateConf succeeds."
+                    + " So repp.initialize should succeed");
+        }
+    }
+
     private int getNumCoveredWriteQuorums(List<BookieSocketAddress> ensemble, int writeQuorumSize)
             throws Exception {
         int ensembleSize = ensemble.size();
