@@ -18,11 +18,11 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.function.Function;
@@ -76,7 +76,7 @@ public class FormatCommandTest extends BookieCommandTestBase {
                 .withArguments(any(Cookie.class), eq(new LongVersion(1L))).thenReturn(cookie);
 
         PowerMockito.mockStatic(Cookie.class);
-        when(Cookie.readFromRegistrationManager(rm, conf)).thenReturn((Versioned<Cookie>)cookie);
+        when(Cookie.readFromRegistrationManager(rm, conf)).thenReturn((Versioned<Cookie>) cookie);
 
         when(cookie.getValue()).thenReturn(mock(Cookie.class));
     }

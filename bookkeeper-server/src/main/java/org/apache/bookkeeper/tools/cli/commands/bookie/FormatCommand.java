@@ -21,10 +21,11 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import com.beust.jcommander.Parameter;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import java.util.concurrent.ExecutionException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
@@ -35,8 +36,9 @@ import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutionException;
-
+/**
+ * Command to format the current server contents.
+ */
 public class FormatCommand extends BookieCommand<FormatCommand.Flags> {
 
     static final Logger LOG = LoggerFactory.getLogger(FormatCommand.class);
@@ -92,18 +94,14 @@ public class FormatCommand extends BookieCommand<FormatCommand.Flags> {
                     try {
                         Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bfconf);
                         cookie.getValue().deleteFromRegistrationManager(rm, bfconf, cookie.getVersion());
-                    } catch (BookieException.CookieNotFoundException nne) {
-                        LOG.warn("No cookie to remove : ", nne);
-                    } catch (BookieException e) {
-                        e.printStackTrace();
+                    } catch (Exception e) {
+                        throw new UncheckedExecutionException(e.getMessage(), e);
                     }
 
                     return null;
                 });
-            } catch (MetadataException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            } catch (MetadataException | ExecutionException e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
             }
         }
         return result;
