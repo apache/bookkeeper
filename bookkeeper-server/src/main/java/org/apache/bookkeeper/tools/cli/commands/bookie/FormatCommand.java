@@ -58,7 +58,7 @@ public class FormatCommand extends BookieCommand<FormatCommand.Flags> {
             .build());
     }
 
-    /*
+    /**
      * Flags for format bookie command.
      */
     @Accessors(fluent = true)
