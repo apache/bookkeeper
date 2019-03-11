@@ -109,6 +109,7 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
@@ -456,23 +457,14 @@ public class BookieShell implements Tool {
         int runCmd(CommandLine cmdLine) throws Exception {
             boolean interactive = (!cmdLine.hasOption("n"));
             boolean force = cmdLine.hasOption("f");
+            boolean deletecookie = cmdLine.hasOption("d");
 
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-            boolean result = Bookie.format(conf, interactive, force);
-            // delete cookie
-            if (cmdLine.hasOption("d")) {
-                runFunctionWithRegistrationManager(bkConf, rm -> {
-                    try {
-                        Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, conf);
-                        cookie.getValue().deleteFromRegistrationManager(rm, conf, cookie.getVersion());
-                    } catch (CookieNotFoundException nne) {
-                        LOG.warn("No cookie to remove : ", nne);
-                    } catch (BookieException be) {
-                        throw new UncheckedExecutionException(be.getMessage(), be);
-                    }
-                    return null;
-                });
-            }
+            FormatCommand.Flags flags = new FormatCommand.Flags()
+                .nonInteractive(interactive)
+                .force(force)
+                .deleteCookie(deletecookie);
+            FormatCommand command = new FormatCommand(flags);
+            boolean result = command.apply(bkConf, flags);
             return (result) ? 0 : 1;
         }
     }
