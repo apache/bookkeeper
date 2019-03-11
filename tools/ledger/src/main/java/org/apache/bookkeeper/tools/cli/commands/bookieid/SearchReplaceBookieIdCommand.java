@@ -89,7 +89,8 @@ public class SearchReplaceBookieIdCommand extends ClientCommand<SearchReplaceBoo
             RateLimiter limiter = RateLimiter.create(flags.rate);
             for (Long lid : admin.listLedgers()) {
                 Versioned<LedgerMetadata> md = ledgerManager.readLedgerMetadata(lid).get();
-                if (md.getValue().getAllEnsembles().entrySet().stream().anyMatch(e -> e.getValue().contains(fromAddr))) {
+                if (md.getValue().getAllEnsembles().entrySet()
+                        .stream().anyMatch(e -> e.getValue().contains(fromAddr))) {
                     limiter.acquire();
 
                     LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(md.getValue());
