@@ -112,6 +112,7 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
@@ -508,7 +509,8 @@ public class BookieShell implements Tool {
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
             ServerConfiguration conf = new ServerConfiguration(bkConf);
-            boolean result = BookKeeperAdmin.initBookie(conf);
+            InitCommand initCommand = new InitCommand();
+            boolean result = initCommand.apply(conf, new CliFlags());
             return (result) ? 0 : 1;
         }
     }
@@ -2162,6 +2164,7 @@ public class BookieShell implements Tool {
             return retValue;
         }
 
+        @SuppressWarnings("unchecked")
         private int updateBookieIdInCookie(final String bookieId, final boolean useHostname)
                 throws Exception {
             return runFunctionWithRegistrationManager(bkConf, rm -> {
