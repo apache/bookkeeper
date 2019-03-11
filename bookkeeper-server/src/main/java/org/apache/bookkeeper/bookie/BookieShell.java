@@ -109,8 +109,8 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
@@ -2154,7 +2154,6 @@ public class BookieShell implements Tool {
             return retValue;
         }
 
-        @SuppressWarnings("unchecked")
         private int updateBookieIdInCookie(final String bookieId, final boolean useHostname)
                 throws Exception {
             return runFunctionWithRegistrationManager(bkConf, rm -> {

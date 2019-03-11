@@ -18,9 +18,6 @@
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -32,21 +29,20 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
- * Unit test for {@link InitCommand}
+ * Unit test for {@link InitCommand}.
  */
 @RunWith(PowerMockRunner.class)
+@PrepareForTest({BookKeeperAdmin.class})
 public class InitCommandTest extends BookieCommandTestBase {
 
     public InitCommandTest() {
         super(3, 0);
     }
 
-    public void set() throws Exception {
+    public void setup() throws Exception {
         PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-
         PowerMockito.mockStatic(BookKeeperAdmin.class);
-        PowerMockito.when(BookKeeperAdmin.initBookie(any()));
-        when(BookKeeperAdmin.initBookie(any(ServerConfiguration.class))).thenReturn(anyBoolean());
+        PowerMockito.when(BookKeeperAdmin.initBookie(conf)).thenReturn(true);
     }
 
     @Test
