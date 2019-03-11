@@ -21,6 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands;
 import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
 
 import org.apache.bookkeeper.tools.cli.BKCtl;
+import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
@@ -40,6 +41,7 @@ public class BookiesCommandGroup extends CliCommandGroup<BKFlags> {
         .withParent(BKCtl.NAME)
         .withCategory(CATEGORY_INFRA_SERVICE)
         .addCommand(new ListBookiesCommand())
+        .addCommand(new InfoCommand())
         .build();
 
     public BookiesCommandGroup() {
