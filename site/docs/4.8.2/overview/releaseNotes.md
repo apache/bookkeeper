@@ -17,7 +17,7 @@ below.
 
 - Handle double bookie failures, see [apache/bookkeeper#1886](https://github.com/apache/bookkeeper/pull/1886)
 
-- dir_*_usage stats are reported as 0, see [apache/bookkeeper#1884](https://github.com/apache/bookkeeper/pull/1884)
+- dir_\*_usage stats are reported as 0, see [apache/bookkeeper#1884](https://github.com/apache/bookkeeper/pull/1884)
 
 - Fix selectFromNetworkLocation in RackawareEnsemblePlacementPolicyImpl, see [apache/bookkeeper#1862](https://github.com/apache/bookkeeper/pull/1862)
 
