@@ -21,6 +21,8 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
+import java.util.function.Function;
+
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -49,6 +51,12 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
     private static final String DESC = "Dump ledger index entries into readable format";
 
     private LedgerIdFormatter ledgerIdFormatter;
+
+    private Function<String, Boolean> print = this::printInfoLine;
+
+    public void setPrint(Function<String, Boolean> print) {
+        this.print = print;
+    }
 
     public LedgerCommand() {
         this(new LedgerFlags());
@@ -105,7 +113,7 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
             }
 
             try {
-                printInfoLine("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
+                print.apply("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
                 for (LedgerCache.PageEntries page : interleavedLedgerStorage.getIndexEntries(ledgerId)) {
                     if (printPageEntries(page)) {
                         return true;
@@ -140,20 +148,19 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
     }
 
     private void printMeta(long ledgerId, InterleavedLedgerStorage interleavedLedgerStorage) {
-        printInfoLine("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
+        print.apply("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
         try {
             LedgerCache.LedgerIndexMetadata meta = interleavedLedgerStorage.readLedgerIndexMetadata(ledgerId);
-            printInfoLine("master key  : " + meta.getMasterKeyHex());
+            print.apply("master key  : " + meta.getMasterKeyHex());
             long size = meta.size;
             if (size % 8 == 0) {
-                printInfoLine("size         : " + size);
+                print.apply("size         : " + size);
             } else {
-                printInfoLine("size : " + size + "(not aligned with 8, may be corrupted or under flushing now)");
+                print.apply("size : " + size + "(not aligned with 8, may be corrupted or under flushing now)");
             }
 
-            printInfoLine("entries      : " + (size / 8));
-            printInfoLine("isFenced     : " + meta.fenced);
-
+            print.apply("entries      : " + (size / 8));
+            print.apply("isFenced     : " + meta.fenced);
         } catch (IOException e) {
             throw new UncheckedExecutionException(e.getMessage(), e);
         }
@@ -164,23 +171,24 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
         try (LedgerEntryPage lep = page.getLEP()) {
             lep.getEntries((entry, offset) -> {
                 while (curEntry.longValue() < entry) {
-                    printInfoLine("entry " + curEntry + "\t:\tN/A");
+                    print.apply("entry " + curEntry + "\t:\tN/A");
                     curEntry.increment();
                 }
                 long entryLogId = offset >> 32L;
                 long pos = offset & 0xffffffffL;
-                printInfoLine("entry " + curEntry + "\t:\t(log:" + entryLogId + ", pos: " + pos + ")");
+                print.apply("entry " + curEntry + "\t:\t(log:" + entryLogId + ", pos: " + pos + ")");
                 curEntry.increment();
                 return true;
             });
         } catch (Exception e) {
-            printInfoLine("Failed to read index page @ " + page.getFirstEntry()
-                    + ", the index file may be corrupted : " + e.getMessage());
+            print.apply(
+                    "Failed to read index page @ " + page.getFirstEntry() + ", the index file may be corrupted : " + e
+                            .getMessage());
             return true;
         }
 
         while (curEntry.longValue() < page.getLastEntry()) {
-            printInfoLine("entry " + curEntry + "\t:\tN/A");
+            print.apply("entry " + curEntry + "\t:\tN/A");
             curEntry.increment();
         }
 
@@ -188,7 +196,8 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
     }
 
 
-    private void printInfoLine(String mes) {
+    private Boolean printInfoLine(String mes) {
         System.out.println(mes);
+        return true;
     }
 }

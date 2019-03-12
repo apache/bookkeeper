@@ -240,8 +240,9 @@ public class BookieShell implements Tool {
         void printUsage();
     }
 
-    void printInfoLine(String s) {
+    Boolean printInfoLine(String s) {
         System.out.println(s);
+        return true;
     }
 
     void printErrorLine(String s) {
@@ -716,9 +717,14 @@ public class BookieShell implements Tool {
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
             LedgerCommand cmd = new LedgerCommand(ledgerIdFormatter);
+            cmd.setPrint(BookieShell.this::printInfoLine);
             LedgerCommand.LedgerFlags flags = new LedgerCommand.LedgerFlags();
-            cmd.apply(bkConf, flags);
-            return 1;
+            if (cmdLine.hasOption("m")) {
+                flags.meta(true);
+            }
+            flags.ledgerId(Long.parseLong(cmdLine.getArgs()[0]));
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : 1;
         }
 
         @Override

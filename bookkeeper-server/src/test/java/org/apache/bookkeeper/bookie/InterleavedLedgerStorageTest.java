@@ -350,7 +350,7 @@ public class InterleavedLedgerStorageTest {
         BookieShell shell = new BookieShell(
                 LedgerIdFormatter.LONG_LEDGERID_FORMATTER, EntryFormatter.STRING_FORMATTER) {
             @Override
-            void printInfoLine(String s) {
+            Boolean printInfoLine(String s) {
                 Matcher matcher = entryPattern.matcher(s);
                 System.out.println(s);
                 if (matcher.matches()) {
@@ -375,6 +375,7 @@ public class InterleavedLedgerStorageTest {
                 } else {
                     foundMetadata.check(s);
                 }
+                return true;
             }
         };
         shell.setConf(conf);
