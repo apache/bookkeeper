@@ -110,6 +110,7 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
@@ -498,7 +499,8 @@ public class BookieShell implements Tool {
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
             ServerConfiguration conf = new ServerConfiguration(bkConf);
-            boolean result = BookKeeperAdmin.initBookie(conf);
+            InitCommand initCommand = new InitCommand();
+            boolean result = initCommand.apply(conf, new CliFlags());
             return (result) ? 0 : 1;
         }
     }
