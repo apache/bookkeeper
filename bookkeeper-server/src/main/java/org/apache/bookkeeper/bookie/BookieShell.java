@@ -240,9 +240,8 @@ public class BookieShell implements Tool {
         void printUsage();
     }
 
-    Boolean printInfoLine(String s) {
+    void printInfoLine(String s) {
         System.out.println(s);
-        return true;
     }
 
     void printErrorLine(String s) {

@@ -21,7 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -52,9 +52,9 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
 
     private LedgerIdFormatter ledgerIdFormatter;
 
-    private Function<String, Boolean> print = this::printInfoLine;
+    private Consumer<String> print = this::printInfoLine;
 
-    public void setPrint(Function<String, Boolean> print) {
+    public void setPrint(Consumer<String> print) {
         this.print = print;
     }
 
@@ -97,8 +97,8 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
             if (!dumpLedgerInfo(ledgerId, conf)) {
                 return false;
             }
-        } else if (conf.getLedgerStorageClass().equals(SortedLedgerStorage.class.getName()) || conf
-                .getLedgerStorageClass().equals(InterleavedLedgerStorage.class.getName())) {
+        } else if (conf.getLedgerStorageClass().equals(SortedLedgerStorage.class.getName())
+                || conf.getLedgerStorageClass().equals(InterleavedLedgerStorage.class.getName())) {
             ServerConfiguration tConf = new ServerConfiguration(conf);
             InterleavedLedgerStorage interleavedLedgerStorage = new InterleavedLedgerStorage();
             try {
@@ -113,7 +113,7 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
             }
 
             try {
-                print.apply("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
+                print.accept("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
                 for (LedgerCache.PageEntries page : interleavedLedgerStorage.getIndexEntries(ledgerId)) {
                     if (printPageEntries(page)) {
                         return true;
@@ -148,19 +148,19 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
     }
 
     private void printMeta(long ledgerId, InterleavedLedgerStorage interleavedLedgerStorage) {
-        print.apply("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
+        print.accept("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
         try {
             LedgerCache.LedgerIndexMetadata meta = interleavedLedgerStorage.readLedgerIndexMetadata(ledgerId);
-            print.apply("master key  : " + meta.getMasterKeyHex());
+            print.accept("master key  : " + meta.getMasterKeyHex());
             long size = meta.size;
             if (size % 8 == 0) {
-                print.apply("size         : " + size);
+                print.accept("size         : " + size);
             } else {
-                print.apply("size : " + size + "(not aligned with 8, may be corrupted or under flushing now)");
+                print.accept("size : " + size + "(not aligned with 8, may be corrupted or under flushing now)");
             }
 
-            print.apply("entries      : " + (size / 8));
-            print.apply("isFenced     : " + meta.fenced);
+            print.accept("entries      : " + (size / 8));
+            print.accept("isFenced     : " + meta.fenced);
         } catch (IOException e) {
             throw new UncheckedExecutionException(e.getMessage(), e);
         }
@@ -171,24 +171,24 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
         try (LedgerEntryPage lep = page.getLEP()) {
             lep.getEntries((entry, offset) -> {
                 while (curEntry.longValue() < entry) {
-                    print.apply("entry " + curEntry + "\t:\tN/A");
+                    print.accept("entry " + curEntry + "\t:\tN/A");
                     curEntry.increment();
                 }
                 long entryLogId = offset >> 32L;
                 long pos = offset & 0xffffffffL;
-                print.apply("entry " + curEntry + "\t:\t(log:" + entryLogId + ", pos: " + pos + ")");
+                print.accept("entry " + curEntry + "\t:\t(log:" + entryLogId + ", pos: " + pos + ")");
                 curEntry.increment();
                 return true;
             });
         } catch (Exception e) {
-            print.apply(
+            print.accept(
                     "Failed to read index page @ " + page.getFirstEntry() + ", the index file may be corrupted : " + e
                             .getMessage());
             return true;
         }
 
         while (curEntry.longValue() < page.getLastEntry()) {
-            print.apply("entry " + curEntry + "\t:\tN/A");
+            print.accept("entry " + curEntry + "\t:\tN/A");
             curEntry.increment();
         }
 
@@ -196,8 +196,7 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
     }
 
 
-    private Boolean printInfoLine(String mes) {
+    private void printInfoLine(String mes) {
         System.out.println(mes);
-        return true;
     }
 }
