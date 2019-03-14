@@ -134,6 +134,6 @@ public class SanityCommand extends BookieCommand<SanityFlags> {
         }
 
         LOG.info("Bookie sanity test succeeded");
-        return false;
+        return true;
     }
 }

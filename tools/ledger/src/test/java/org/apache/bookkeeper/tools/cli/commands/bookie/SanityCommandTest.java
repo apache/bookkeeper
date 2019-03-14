@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -112,6 +113,6 @@ public class SanityCommandTest extends BookieCommandTestBase {
 
     public void testSanityCommand(String... args) {
         SanityCommand cmd = new SanityCommand();
-        cmd.apply(bkFlags, args);
+        assertTrue(cmd.apply(bkFlags, args));
     }
 }
