@@ -57,7 +57,7 @@ import org.junit.runners.MethodSorters;
 @RunWith(Arquillian.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestSmoke {
-    private static final byte[] PASSWD = "foobar".getBytes();
+    static final byte[] PASSWD = "foobar".getBytes();
 
     @ArquillianResource
     DockerClient docker;
@@ -112,9 +112,9 @@ public class TestSmoke {
         }
     }
 
-    private static void readEntries(BookKeeper bk,
-                                    long ledgerId,
-                                    int numExpectedEntries) throws Exception {
+    static void readEntries(BookKeeper bk,
+                            long ledgerId,
+                            int numExpectedEntries) throws Exception {
         try (LedgerHandle readlh = bk.openLedger(ledgerId, BookKeeper.DigestType.CRC32C, PASSWD)) {
             long lac = readlh.getLastAddConfirmed();
             int i = 0;
