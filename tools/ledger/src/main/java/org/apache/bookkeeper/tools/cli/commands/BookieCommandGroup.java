@@ -24,7 +24,7 @@ import org.apache.bookkeeper.tools.cli.BKCtl;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookie.SanityCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -45,7 +45,7 @@ public class BookieCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new LastMarkCommand())
         .addCommand(new InitCommand())
         .addCommand(new FormatCommand())
-        .addCommand(new SanityCommand())
+        .addCommand(new SanityTestCommand())
         .build();
 
     public BookieCommandGroup() {
