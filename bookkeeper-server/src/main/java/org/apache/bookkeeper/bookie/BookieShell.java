@@ -107,6 +107,7 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
@@ -2548,42 +2549,10 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            LOG.info("=== Converting to DbLedgerStorage ===");
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-
-            InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
-            Bookie.mountLedgerStorageOffline(conf, interleavedStorage);
-
-            DbLedgerStorage dbStorage = new DbLedgerStorage();
-            Bookie.mountLedgerStorageOffline(conf, dbStorage);
-
-            int convertedLedgers = 0;
-            for (long ledgerId : interleavedStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Converting ledger {}", ledgerIdFormatter.formatLedgerId(ledgerId));
-                }
-
-                LedgerCache.LedgerIndexMetadata fi = interleavedStorage.readLedgerIndexMetadata(ledgerId);
-
-                LedgerCache.PageEntriesIterable pages = interleavedStorage.getIndexEntries(ledgerId);
-
-                long numberOfEntries = dbStorage.addLedgerToIndex(ledgerId, fi.fenced, fi.masterKey, pages);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("   -- done. fenced={} entries={}", fi.fenced, numberOfEntries);
-                }
-
-                // Remove index from old storage
-                interleavedStorage.deleteLedger(ledgerId);
-
-                if (++convertedLedgers % 1000 == 0) {
-                    LOG.info("Converted {} ledgers", convertedLedgers);
-                }
-            }
-
-            dbStorage.shutdown();
-            interleavedStorage.shutdown();
-
-            LOG.info("---- Done Converting ----");
+            ConvertToDBStorageCommand cmd = new ConvertToDBStorageCommand();
+            ConvertToDBStorageCommand.CTDBFlags flags = new ConvertToDBStorageCommand.CTDBFlags();
+            cmd.setLedgerIdFormatter(ledgerIdFormatter);
+            cmd.apply(bkConf, flags);
             return 0;
         }
     }
