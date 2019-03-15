@@ -31,7 +31,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.tools.cli.commands.bookie.SanityCommand.SanityFlags;
+import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand.SanityFlags;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -41,18 +41,18 @@ import org.slf4j.LoggerFactory;
 /**
  * A bookie command to sanity test for local bookie.
  */
-public class SanityCommand extends BookieCommand<SanityFlags> {
+public class SanityTestCommand extends BookieCommand<SanityFlags> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SanityCommand.class);
-    private static final String NAME = "sanity";
+    private static final Logger LOG = LoggerFactory.getLogger(SanityTestCommand.class);
+    private static final String NAME = "sanitytest";
     private static final String DESC = "Sanity test for local bookie. "
                                            + "Create ledger and write/reads entries on local bookie.";
 
-    public SanityCommand() {
+    public SanityTestCommand() {
         this(new SanityFlags());
     }
 
-    public SanityCommand(SanityFlags flags) {
+    public SanityTestCommand(SanityFlags flags) {
         super(CliSpec.<SanityFlags>newBuilder().withFlags(flags).withName(NAME).withDescription(DESC).build());
     }
 

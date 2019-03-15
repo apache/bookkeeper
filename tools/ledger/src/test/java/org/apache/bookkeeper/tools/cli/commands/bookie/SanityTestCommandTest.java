@@ -44,12 +44,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Test for sanity command.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({SanityCommand.class, LedgerEntry.class})
-public class SanityCommandTest extends BookieCommandTestBase {
+@PrepareForTest({ SanityTestCommand.class, LedgerEntry.class})
+public class SanityTestCommandTest extends BookieCommandTestBase {
 
     private LedgerHandle lh;
 
-    public SanityCommandTest() {
+    public SanityTestCommandTest() {
         super(3, 1);
     }
 
@@ -112,7 +112,7 @@ public class SanityCommandTest extends BookieCommandTestBase {
     }
 
     public void testSanityCommand(String... args) {
-        SanityCommand cmd = new SanityCommand();
+        SanityTestCommand cmd = new SanityTestCommand();
         assertTrue(cmd.apply(bkFlags, args));
     }
 }

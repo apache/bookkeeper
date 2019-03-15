@@ -110,7 +110,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookie.SanityCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
@@ -1349,8 +1349,8 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            SanityCommand command = new SanityCommand();
-            SanityCommand.SanityFlags flags = new SanityCommand.SanityFlags();
+            SanityTestCommand command = new SanityTestCommand();
+            SanityTestCommand.SanityFlags flags = new SanityTestCommand.SanityFlags();
             boolean result = command.apply(bkConf, flags);
             return (result) ? 0 : -1;
         }
@@ -2150,12 +2150,12 @@ public class BookieShell implements Tool {
                         for (File dir : ledgerDirectories) {
                             newCookie.writeToDirectory(dir);
                         }
-                        LOG.info("Updated cookie file present in ledgerDirectories {}", (Object) ledgerDirectories);
+                        LOG.info("Updated cookie file present in ledgerDirectories {}", ledgerDirectories);
                         if (ledgerDirectories != indexDirectories) {
                             for (File dir : indexDirectories) {
                                 newCookie.writeToDirectory(dir);
                             }
-                            LOG.info("Updated cookie file present in indexDirectories {}", (Object) indexDirectories);
+                            LOG.info("Updated cookie file present in indexDirectories {}", indexDirectories);
                         }
                     }
                     // writes newcookie to zookeeper
