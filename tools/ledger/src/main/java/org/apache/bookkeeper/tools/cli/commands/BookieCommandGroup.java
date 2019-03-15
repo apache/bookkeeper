@@ -21,10 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands;
 import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
 
 import org.apache.bookkeeper.tools.cli.BKCtl;
-import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.*;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -46,6 +43,7 @@ public class BookieCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new InitCommand())
         .addCommand(new FormatCommand())
         .addCommand(new LedgerCommand())
+        .addCommand(new ConvertToInterleavedStorageCommand())
         .build();
 
     public BookieCommandGroup() {
