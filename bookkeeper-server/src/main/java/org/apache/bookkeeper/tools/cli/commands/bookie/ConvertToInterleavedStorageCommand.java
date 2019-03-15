@@ -51,6 +51,7 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
     private static final Logger LOG = LoggerFactory.getLogger(ConvertToInterleavedStorageCommand.class);
     private static final String NAME = "converttointerleavedstorage";
     private static final String DESC = "Convert bookie indexes from DbLedgerStorage to InterleavedStorage format";
+    private static final String NOT_INIT = "default formatter";
 
     @Setter
     private LedgerIdFormatter ledgerIdFormatter;
@@ -70,7 +71,7 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
     public static class CTISFlags extends CliFlags{
 
         @Parameter(names = { "-l", "--ledgeridformatter" }, description = "Set ledger id formatter")
-        private String ledgerIdFormatter = "";
+        private String ledgerIdFormatter = NOT_INIT;
 
     }
 
@@ -173,7 +174,7 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
         if (this.ledgerIdFormatter != null) {
             return;
         }
-        if (flags.ledgerIdFormatter.equals("")) {
+        if (flags.ledgerIdFormatter.equals(NOT_INIT)) {
             this.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(conf);
         } else {
             this.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(flags.ledgerIdFormatter, conf);
