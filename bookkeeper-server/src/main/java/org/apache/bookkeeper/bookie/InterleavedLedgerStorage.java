@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.Cleanup;
+import lombok.Getter;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
@@ -84,6 +85,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
     EntryLogger entryLogger;
+    @Getter
     LedgerCache ledgerCache;
     protected CheckpointSource checkpointSource;
     protected Checkpointer checkpointer;

@@ -42,6 +42,7 @@ public class ConvertToDBStorageCommand extends BookieCommand<ConvertToDBStorageC
     private static final Logger LOG = LoggerFactory.getLogger(ConvertToDBStorageCommand.class);
     private static final String NAME = "converttodbstorage";
     private static final String DESC = "Convert bookie indexes from InterleavedStorage to DbLedgerStorage format";
+    private static final String NOT_INIT = "default formatter";
 
     @Setter
     private LedgerIdFormatter ledgerIdFormatter;
@@ -59,11 +60,8 @@ public class ConvertToDBStorageCommand extends BookieCommand<ConvertToDBStorageC
     @Accessors(fluent = true)
     @Setter
     public static class CTDBFlags extends CliFlags {
-
         @Parameter(names = { "-l", "--ledgeridformatter" }, description = "Set ledger id formatter")
-        private String ledgerIdFormatter = "";
-
-
+        private String ledgerIdFormatter = NOT_INIT;
     }
 
     @Override
@@ -120,7 +118,7 @@ public class ConvertToDBStorageCommand extends BookieCommand<ConvertToDBStorageC
         if (this.ledgerIdFormatter != null) {
             return;
         }
-        if (flags.ledgerIdFormatter.equals("")) {
+        if (flags.ledgerIdFormatter.equals(NOT_INIT)) {
             this.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(conf);
         } else {
             this.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(flags.ledgerIdFormatter, conf);
