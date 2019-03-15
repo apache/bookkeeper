@@ -625,9 +625,8 @@ public class Bookie extends BookieCriticalThread {
      * @return Passed ledgerStorage instance
      * @throws IOException
      */
-    static LedgerStorage mountLedgerStorageOffline(
-            ServerConfiguration conf,
-            LedgerStorage ledgerStorage) throws IOException {
+    public static LedgerStorage mountLedgerStorageOffline(ServerConfiguration conf, LedgerStorage ledgerStorage)
+            throws IOException {
         StatsLogger statsLogger = NullStatsLogger.INSTANCE;
         DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
 

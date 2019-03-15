@@ -112,6 +112,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
@@ -144,7 +145,6 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
-import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
@@ -717,96 +717,15 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            String[] leftArgs = cmdLine.getArgs();
-            if (leftArgs.length <= 0) {
-                printErrorLine("ERROR: missing ledger id");
-                printUsage();
-                return -1;
-            }
-
-            boolean printMeta = false;
+            LedgerCommand cmd = new LedgerCommand(ledgerIdFormatter);
+            cmd.setPrint(BookieShell.this::printInfoLine);
+            LedgerCommand.LedgerFlags flags = new LedgerCommand.LedgerFlags();
             if (cmdLine.hasOption("m")) {
-                printMeta = true;
+                flags.meta(true);
             }
-            long ledgerId;
-            try {
-                ledgerId = ledgerIdFormatter.readLedgerId(leftArgs[0]);
-            } catch (IllegalArgumentException iae) {
-                printErrorLine("ERROR: invalid ledger id " + leftArgs[0]);
-                printUsage();
-                return -1;
-            }
-
-            if (bkConf.getLedgerStorageClass().equals(DbLedgerStorage.class.getName())) {
-                // dump ledger info
-                try {
-                    DbLedgerStorage.readLedgerIndexEntries(ledgerId, bkConf,
-                            (currentEntry, entryLogId, position) -> printInfoLine(
-                                    "entry " + currentEntry + "\t:\t(log: " + entryLogId + ", pos: " + position + ")"));
-                } catch (IOException e) {
-                    System.err.printf("ERROR: initializing dbLedgerStorage %s", e.getMessage());
-                    return -1;
-                }
-            } else if ((bkConf.getLedgerStorageClass().equals(SortedLedgerStorage.class.getName())
-                    || bkConf.getLedgerStorageClass().equals(InterleavedLedgerStorage.class.getName()))) {
-                ServerConfiguration conf = new ServerConfiguration(bkConf);
-                InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
-                Bookie.mountLedgerStorageOffline(conf, interleavedStorage);
-
-                if (printMeta) {
-                    // print meta
-                    printInfoLine("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
-                    LedgerCache.LedgerIndexMetadata meta = interleavedStorage.readLedgerIndexMetadata(ledgerId);
-                    printInfoLine("master key  : " + meta.getMasterKeyHex());
-
-                    long size = meta.size;
-                    if (size % 8 == 0) {
-                        printInfoLine("size        : " + size);
-                    } else {
-                        printInfoLine("size : " + size
-                                + " (not aligned with 8, may be corrupted or under flushing now)");
-                    }
-
-                    printInfoLine("entries     : " + (size / 8));
-                    printInfoLine("isFenced    : " + meta.fenced);
-                }
-
-                try {
-                    // dump ledger info
-                    printInfoLine("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
-                    for (LedgerCache.PageEntries page : interleavedStorage.getIndexEntries(ledgerId)) {
-                        final MutableLong curEntry = new MutableLong(page.getFirstEntry());
-                        try (LedgerEntryPage lep = page.getLEP()){
-                            lep.getEntries((entry, offset) -> {
-                                while (curEntry.longValue() < entry) {
-                                    printInfoLine("entry " + curEntry + "\t:\tN/A");
-                                    curEntry.increment();
-                                }
-                                long entryLogId = offset >> 32L;
-                                long pos = offset & 0xffffffffL;
-                                printInfoLine("entry " + curEntry + "\t:\t(log:" + entryLogId + ", pos: " + pos + ")");
-                                curEntry.increment();
-                                return true;
-                            });
-                        } catch (IOException ie) {
-                            printInfoLine("Failed to read index page @ " + page.getFirstEntry()
-                                    + ", the index file may be corrupted : "
-                                    + ie.getMessage());
-                            return 1;
-                        }
-
-                        while (curEntry.longValue() < page.getLastEntry()) {
-                            printInfoLine("entry " + curEntry + "\t:\tN/A");
-                            curEntry.increment();
-                        }
-                    }
-                } catch (IOException ie) {
-                    LOG.error("Failed to read index page");
-                    return 1;
-                }
-            }
-
-            return 0;
+            flags.ledgerId(Long.parseLong(cmdLine.getArgs()[0]));
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : 1;
         }
 
         @Override
