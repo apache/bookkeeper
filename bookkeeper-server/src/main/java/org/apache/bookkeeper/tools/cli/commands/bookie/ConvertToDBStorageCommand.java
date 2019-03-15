@@ -54,7 +54,7 @@ public class ConvertToDBStorageCommand extends BookieCommand<ConvertToDBStorageC
     }
 
     /**
-     *
+     * Flags for this command.
      */
     @Accessors(fluent = true)
     @Setter
