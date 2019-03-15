@@ -120,7 +120,7 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
                 }
             }
 
-            LOG.info("Read {} entries from ledger {}", entries, lh.getId());
+            LOG.info("Read {} entries from ledger {}", i, lh.getId());
         } catch (Exception e) {
             LOG.warn("Error in bookie sanity test", e);
             return false;
