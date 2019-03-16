@@ -22,11 +22,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.stream.LongStream;
@@ -44,13 +48,17 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-
 /**
  * Unit test for {@link ConvertToDBStorageCommand}.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ Bookie.class, ConvertToDBStorageCommand.class })
 public class ConvertToDBStorageCommandTest extends BookieCommandTestBase {
+
+    private InterleavedLedgerStorage interleavedLedgerStorage;
+    private DbLedgerStorage dbStorage;
+    private LedgerCache.LedgerIndexMetadata metadata;
+    private LedgerCache.PageEntriesIterable entries;
 
     public ConvertToDBStorageCommandTest() {
         super(3, 0);
@@ -61,19 +69,19 @@ public class ConvertToDBStorageCommandTest extends BookieCommandTestBase {
         super.setup();
 
         whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
-            .withArguments(conf).thenReturn(conf);
+        whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class).withArguments(conf)
+            .thenReturn(conf);
 
-        InterleavedLedgerStorage interleavedLedgerStorage = mock(InterleavedLedgerStorage.class);
+        interleavedLedgerStorage = mock(InterleavedLedgerStorage.class);
         whenNew(InterleavedLedgerStorage.class).withNoArguments().thenReturn(interleavedLedgerStorage);
         doNothing().when(interleavedLedgerStorage).shutdown();
         when(interleavedLedgerStorage.getActiveLedgersInRange(anyLong(), anyLong())).thenReturn(this::getLedgerId);
-        LedgerCache.LedgerIndexMetadata metadata = mock(LedgerCache.LedgerIndexMetadata.class);
+        metadata = mock(LedgerCache.LedgerIndexMetadata.class);
         when(interleavedLedgerStorage.readLedgerIndexMetadata(anyLong())).thenReturn(metadata);
-        LedgerCache.PageEntriesIterable entries = mock(LedgerCache.PageEntriesIterable.class);
+        entries = mock(LedgerCache.PageEntriesIterable.class);
         when(interleavedLedgerStorage.getIndexEntries(anyLong())).thenReturn(entries);
 
-        DbLedgerStorage dbStorage = mock(DbLedgerStorage.class);
+        dbStorage = mock(DbLedgerStorage.class);
         whenNew(DbLedgerStorage.class).withNoArguments().thenReturn(dbStorage);
         doNothing().when(dbStorage).shutdown();
         when(dbStorage.addLedgerToIndex(anyLong(), anyBoolean(), eq(new byte[0]),
@@ -95,5 +103,22 @@ public class ConvertToDBStorageCommandTest extends BookieCommandTestBase {
     public void testCTDB() {
         ConvertToDBStorageCommand cmd = new ConvertToDBStorageCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
+
+        try {
+            verifyNew(ServerConfiguration.class, times(1)).withArguments(conf);
+            verifyNew(InterleavedLedgerStorage.class, times(1)).withNoArguments();
+            verifyNew(DbLedgerStorage.class, times(1)).withNoArguments();
+
+            verify(interleavedLedgerStorage, times(10)).readLedgerIndexMetadata(anyLong());
+            verify(interleavedLedgerStorage, times(10)).getIndexEntries(anyLong());
+            verify(dbStorage, times(10))
+                .addLedgerToIndex(anyLong(), anyBoolean(), any(), any(LedgerCache.PageEntriesIterable.class));
+            verify(interleavedLedgerStorage, times(10)).deleteLedger(anyLong());
+
+            verify(dbStorage, times(1)).shutdown();
+            verify(interleavedLedgerStorage, times(1)).shutdown();
+        } catch (Exception e) {
+            throw new UncheckedExecutionException(e.getMessage(), e);
+        }
     }
 }
