@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-BookKeeper.DigestType.MAC,import com.google.common.util.concurrent.UncheckedExecutionException;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Enumeration;
 import java.util.Vector;
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
