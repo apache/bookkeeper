@@ -161,7 +161,7 @@ public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBas
             verify(interleavedLedgerStorage, times(1)).flush();
             verify(interleavedLedgerStorage, times(1)).shutdown();
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new UncheckedExecutionException(e.getMessage(), e);
         }
     }
 }
