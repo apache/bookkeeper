@@ -25,15 +25,21 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+BookKeeper.DigestType.MAC,import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Enumeration;
 import java.util.Vector;
+import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
+import org.apache.commons.configuration.Configuration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -47,6 +53,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest({ SanityTestCommand.class, LedgerEntry.class})
 public class SanityTestCommandTest extends BookieCommandTestBase {
 
+    private ClientConfiguration clientConf;
+    private BookKeeper bk;
     private LedgerHandle lh;
 
     public SanityTestCommandTest() {
@@ -57,10 +65,10 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        ClientConfiguration clientConf = mock(ClientConfiguration.class);
+        clientConf = mock(ClientConfiguration.class);
         PowerMockito.whenNew(ClientConfiguration.class).withNoArguments().thenReturn(clientConf);
 
-        BookKeeper bk = mock(BookKeeper.class);
+        bk = mock(BookKeeper.class);
         lh = mock(LedgerHandle.class);
         PowerMockito.whenNew(BookKeeper.class).withParameterTypes(ClientConfiguration.class)
             .withArguments(any(ClientConfiguration.class)).thenReturn(bk);
@@ -93,12 +101,25 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
     public void testEntriesShortArgs() {
         when(lh.getLastAddConfirmed()).thenReturn(0L);
         testSanityCommand("-e", "1");
+        verifyFunc();
     }
 
     @Test
     public void testEntriesLongArgs() {
         when(lh.getLastAddConfirmed()).thenReturn(0L);
         testSanityCommand("--entries", "1");
+        verifyFunc();
+    }
+
+    private void verifyFunc() {
+        try {
+            verify(clientConf, times(1)).setAddEntryTimeout(1);
+            verify(clientConf, times(1)).setReadEntryTimeout(1);
+            verify(lh, times(1)).addEntry(any());
+            verify(lh, times(1)).readEntries(0, 0);
+        } catch (Exception e) {
+            throw new UncheckedExecutionException(e.getMessage(), e);
+        }
     }
 
     @Test
@@ -111,8 +132,33 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
         testSanityCommand("--timeout", "10");
     }
 
+    private void verifyTimeout() {
+        verify(clientConf, times(1)).setAddEntryTimeout(10);
+        verify(clientConf, times(1)).setReadEntryTimeout(10);
+        try {
+            verify(lh, times(10)).addEntry(any());
+        } catch (Exception e) {
+            throw new UncheckedExecutionException(e.getMessage(), e);
+        }
+    }
+
     public void testSanityCommand(String... args) {
         SanityTestCommand cmd = new SanityTestCommand();
         assertTrue(cmd.apply(bkFlags, args));
+        try {
+            verifyNew(ClientConfiguration.class, times(1)).withNoArguments();
+            verify(clientConf, times(1)).addConfiguration(any(Configuration.class));
+            verify(clientConf, times(1)).setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class);
+
+            verifyNew(BookKeeper.class).withArguments(clientConf);
+            verify(bk, times(1)).createLedger(1, 1, BookKeeper.DigestType.MAC, new byte[0]);
+            verify(lh, times(6)).getId();
+            verify(bk, times(1)).openLedger(anyLong(), eq(BookKeeper.DigestType.MAC), eq(new byte[0]));
+            verify(lh, times(1)).getLastAddConfirmed();
+            verify(bk, times(1)).deleteLedger(anyLong());
+            verify(bk, times(1)).close();
+        } catch (Exception e) {
+            throw new UncheckedExecutionException(e.getMessage(), e);
+        }
     }
 }
