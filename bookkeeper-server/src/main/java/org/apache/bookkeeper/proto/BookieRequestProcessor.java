@@ -370,6 +370,12 @@ public class BookieRequestProcessor implements RequestProcessor {
                 MDC.clear();
             }
         } else {
+            if (serverCfg.isOnlySecureClientConnectionAllowed()) {
+                LOG.error("Client request of an older protocol version " + BookieProtocol.CURRENT_PROTOCOL_VERSION
+                        +  " denied because server config option \"onlySecureClientsAllowed=true\" and this version "
+                        + "of the protocol does not support TLS.");
+                return;
+            }
             BookieProtocol.Request r = (BookieProtocol.Request) msg;
             // process packet
             switch (r.getOpCode()) {

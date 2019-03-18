@@ -29,6 +29,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.ssl.SslHandler;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Queue;
@@ -39,6 +40,7 @@ import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.NettyChannelUtil;
@@ -52,9 +54,12 @@ class AuthHandler {
         volatile boolean authenticated = false;
         final BookieAuthProvider.Factory authProviderFactory;
         final BookieConnectionPeer connectionPeer;
+        final ServerConfiguration serverCfg;
         BookieAuthProvider authProvider;
 
-        ServerSideHandler(BookieConnectionPeer connectionPeer, BookieAuthProvider.Factory authProviderFactory) {
+        ServerSideHandler(ServerConfiguration serverCfg, BookieConnectionPeer connectionPeer,
+                          BookieAuthProvider.Factory authProviderFactory) {
+            this.serverCfg = serverCfg;
             this.authProviderFactory = authProviderFactory;
             this.connectionPeer = connectionPeer;
             authProvider = null;
@@ -86,6 +91,24 @@ class AuthHandler {
             }
 
             if (authenticated) {
+                if (msg instanceof BookkeeperProtocol.Request) {
+                    Channel c = ctx.channel();
+                    BookkeeperProtocol.Request req = (BookkeeperProtocol.Request) msg;
+                    // If onlySecureClientsAllowed is set to True, Allow operations from only the Secure Clients.
+                    // The Secure Clients have the tls handler installed in their Channel Pipeline.
+                    if (serverCfg.isOnlySecureClientConnectionAllowed()
+                            && req.getHeader().getOperation() != BookkeeperProtocol.OperationType.START_TLS
+                            && c.pipeline().get(SslHandler.class) == null) {
+                            LOG.error("Request from Non-secure connection is not allowed",
+                                    req.getHeader().getOperation());
+                            // We return Authentication Failure(EAUTH) error to Client
+                            BookkeeperProtocol.Response.Builder builder = BookkeeperProtocol.Response.newBuilder()
+                                    .setHeader(req.getHeader())
+                                    .setStatus(BookkeeperProtocol.StatusCode.EUA);
+                            ctx.channel().writeAndFlush(builder.build());
+                            return;
+                    }
+                }
                 super.channelRead(ctx, msg);
             } else if (msg instanceof BookieProtocol.AuthRequest) { // pre-PB-client
                 BookieProtocol.AuthRequest req = (BookieProtocol.AuthRequest) msg;

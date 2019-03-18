@@ -110,7 +110,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     public TestTLS(String keyStoreFormat,
                    String trustStoreFormat,
                    boolean useV2Protocol) {
-        super(3);
+        super(1);
         this.clientKeyStoreFormat = KeyStoreType.valueOf(keyStoreFormat);
         this.clientTrustStoreFormat = KeyStoreType.valueOf(trustStoreFormat);
         this.serverKeyStoreFormat = KeyStoreType.valueOf(keyStoreFormat);
@@ -504,15 +504,97 @@ public class TestTLS extends BookKeeperClusterTestCase {
 
     /**
      * Verify that a client without tls enabled can connect to a cluster with TLS.
+     * In the Default Bookie config, ONLY_SECURE_CLIENTS_ALLOWED is set to false.
+     * Therefore, the Bookie allows non-secure client connection.
      */
     @Test
-    public void testConnectToTLSClusterNonTLSClient() throws Exception {
+    public void testConnectToTLSClusterNonTLSClient1() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         conf.setTLSProviderFactoryClass(null);
         try {
             testClient(conf, numBookies);
         } catch (BKException.BKNotEnoughBookiesException nnbe) {
             fail("non tls client should be able to connect to tls enabled bookies");
+        }
+    }
+
+    /**
+     * Verify that a client without tls enabled can NOT connect to a cluster with TLS,
+     * if ONLY_SECURE_CLIENTS_ALLOWED is set in the Bookie config.
+     */
+    @Test
+    public void testConnectToTLSClusterNonTLSClient2() throws Exception {
+        // Set client without TLS
+        ClientConfiguration conf = new ClientConfiguration(baseClientConf);
+        conf.setTLSProviderFactoryClass(null);
+        try {
+            // Enable the feature to only allow secure clients.
+            restartBookies(c -> {
+                c.setOnlySecureClientConnectionAllowed(true);
+                return c;
+            });
+            testClient(conf, numBookies);
+            fail("non tls client should not be able to connect to tls enabled bookies");
+        } catch (BKException.BKNotEnoughBookiesException nnbe) {
+            // Correct response.
+        } catch (BKException.BKUnauthorizedAccessException ue) {
+            // Correct response.
+        }
+    }
+
+    /**
+     *  Verify that the Read from the non-Secure Client throws BKSecurityException
+     *  if ONLY_SECURE_CLIENTS_ALLOWED is set in the Bookie config.
+     */
+    @Test
+    public void testReadwithNonTLSBookie() throws Exception {
+
+        /* TestTLS tests for V3 and V2 protocols together
+         * We should be able to create a ledger when its v3 and setOnlySecureClientConnectionAllowed(true)
+         * We shouldn't be able to do any create / read when its v2 and setOnlySecureClientConnectionAllowed(true)
+         * since v2 does not support TLS.
+         */
+        if (useV2Protocol) {
+            return;
+        }
+
+        // Enable the feature to only allow secure clients.
+        ClientConfiguration conf = new ClientConfiguration(baseClientConf);
+        long lid = 0;
+        try {
+            restartBookies(c -> {
+                c.setOnlySecureClientConnectionAllowed(true);
+                return c;
+            });
+            // Create the Ledger
+            BookKeeper client = new BookKeeper(conf);
+            byte[] passwd = "testPassword".getBytes();
+            int numEntries = 10;
+            byte[] testEntry = "testEntry".getBytes();
+            try (LedgerHandle lh = client.createLedger(numBookies, numBookies, DigestType.CRC32, passwd);) {
+                for (int i = 0; i <= numEntries; i++) {
+                    lh.addEntry(testEntry);
+                }
+                lid = lh.getId();
+            }
+        } catch (BKException.BKNotEnoughBookiesException nnbe) {
+            fail("tls client could not create the ledger");
+        }
+        // nonTLS client should not be able to read the ledger
+        conf.setTLSProviderFactoryClass(null);
+        try {
+            BookKeeper client = new BookKeeper(conf);
+            byte[] passwd = "testPassword".getBytes();
+            int numEntries = 10;
+            byte[] testEntry = "testEntry".getBytes();
+            try (LedgerHandle lh = client.openLedger(lid, DigestType.CRC32, passwd);) {
+                Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries);
+                fail("The Read should've failed with BKSecurityException");
+            }
+        } catch (BKException.BKSecurityException se) {
+            // Correct Response.
+        }  catch (BKException.BKUnauthorizedAccessException ue) {
+            // Correct response.
         }
     }
 
@@ -540,7 +622,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
      * bookies with TLS enabled in the cluster, although few bookies do not have TLS enabled.
      */
     @Test
-    public void testTLSClientButOnlyFewTLSServers() throws Exception {
+    public void testTLSClientButOnlyFewTLSServers1() throws Exception {
         // disable TLS on initial set of bookies
         restartBookies(c -> {
                 c.setTLSProviderFactoryClass(null);
