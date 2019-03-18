@@ -64,6 +64,10 @@ Client Guide | API docs
 
 ## News
 
+### [date] Release {{ site.latest_version }} available
+
+[INSERT SUMMARY]
+
 ### 31 January, 2019 Release 4.9.0 available
 
 This is the 16th release of Apache BookKeeper!
