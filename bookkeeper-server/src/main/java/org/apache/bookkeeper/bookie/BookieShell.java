@@ -52,7 +52,6 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -83,7 +82,6 @@ import org.apache.bookkeeper.bookie.storage.ldb.LocationsIndexRebuildOp;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.MetaStoreException;
 import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -113,6 +111,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
@@ -1269,62 +1268,10 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            int numberOfEntries = getOptionIntValue(cmdLine, "entries", 10);
-            int timeoutSecs = getOptionIntValue(cmdLine, "timeout", 1);
-
-            ClientConfiguration conf = new ClientConfiguration();
-            conf.addConfiguration(bkConf);
-            conf.setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class);
-            conf.setAddEntryTimeout(timeoutSecs);
-            conf.setReadEntryTimeout(timeoutSecs);
-
-            BookKeeper bk = new BookKeeper(conf);
-            LedgerHandle lh = null;
-            try {
-                lh = bk.createLedger(1, 1, DigestType.MAC, new byte[0]);
-                LOG.info("Created ledger {}", lh.getId());
-
-                for (int i = 0; i < numberOfEntries; i++) {
-                    String content = "entry-" + i;
-                    lh.addEntry(content.getBytes(UTF_8));
-                }
-
-                LOG.info("Written {} entries in ledger {}", numberOfEntries, lh.getId());
-
-                // Reopen the ledger and read entries
-                lh = bk.openLedger(lh.getId(), DigestType.MAC, new byte[0]);
-                if (lh.getLastAddConfirmed() != (numberOfEntries - 1)) {
-                    throw new Exception("Invalid last entry found on ledger. expecting: " + (numberOfEntries - 1)
-                            + " -- found: " + lh.getLastAddConfirmed());
-                }
-
-                Enumeration<LedgerEntry> entries = lh.readEntries(0, numberOfEntries - 1);
-                int i = 0;
-                while (entries.hasMoreElements()) {
-                    LedgerEntry entry = entries.nextElement();
-                    String actualMsg = new String(entry.getEntry(), UTF_8);
-                    String expectedMsg = "entry-" + (i++);
-                    if (!expectedMsg.equals(actualMsg)) {
-                        throw new Exception("Failed validation of received message - Expected: " + expectedMsg
-                                + ", Actual: " + actualMsg);
-                    }
-                }
-
-                LOG.info("Read {} entries from ledger {}", entries, lh.getId());
-            } catch (Exception e) {
-                LOG.warn("Error in bookie sanity test", e);
-                return -1;
-            } finally {
-                if (lh != null) {
-                    bk.deleteLedger(lh.getId());
-                    LOG.info("Deleted ledger {}", lh.getId());
-                }
-
-                bk.close();
-            }
-
-            LOG.info("Bookie sanity test succeeded");
-            return 0;
+            SanityTestCommand command = new SanityTestCommand();
+            SanityTestCommand.SanityFlags flags = new SanityTestCommand.SanityFlags();
+            boolean result = command.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
     }
 
