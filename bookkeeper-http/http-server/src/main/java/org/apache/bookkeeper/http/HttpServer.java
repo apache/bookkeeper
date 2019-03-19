@@ -79,6 +79,7 @@ public interface HttpServer {
         EXPAND_STORAGE,
         GC,
         GC_DETAILS,
+        BOOKIE_STATE,
 
         // autorecovery
         RECOVERY_BOOKIE,

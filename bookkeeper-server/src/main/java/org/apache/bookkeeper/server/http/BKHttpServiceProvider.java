@@ -37,6 +37,7 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
+import org.apache.bookkeeper.server.http.service.BookieStateService;
 import org.apache.bookkeeper.server.http.service.ConfigurationService;
 import org.apache.bookkeeper.server.http.service.DecommissionService;
 import org.apache.bookkeeper.server.http.service.DeleteLedgerService;
@@ -214,6 +215,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new TriggerGCService(configuration, bookieServer);
             case GC_DETAILS:
                 return new GCDetailsService(configuration, bookieServer);
+            case BOOKIE_STATE:
+                return new BookieStateService(bookieServer.getBookie());
 
             // autorecovery
             case RECOVERY_BOOKIE:
