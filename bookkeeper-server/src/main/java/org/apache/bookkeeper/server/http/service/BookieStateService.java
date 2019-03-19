@@ -20,6 +20,9 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.common.util.JsonUtil;
@@ -52,11 +55,16 @@ public class BookieStateService implements HttpEndpointService {
         this.bookie = checkNotNull(bookie);
     }
 
+    /**
+     * POJO definition for the bookie state response.
+     */
+    @Data
+    @NoArgsConstructor
     public static class BookieState {
-        public boolean running;
-        public boolean readOnly;
-        public boolean shuttingDown;
-        public boolean availableForHighPriorityWrites;
+        private boolean running;
+        private boolean readOnly;
+        private boolean shuttingDown;
+        private boolean availableForHighPriorityWrites;
     }
 
     @Override

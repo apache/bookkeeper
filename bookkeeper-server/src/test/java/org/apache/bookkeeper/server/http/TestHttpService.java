@@ -51,7 +51,6 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
-import org.apache.bookkeeper.server.http.service.BookieStateService;
 import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
@@ -841,9 +840,9 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
 
         BookieState bs = JsonUtil.fromJson(response1.getBody(), BookieState.class);
-        assertEquals(true, bs.running);
-        assertEquals(false, bs.readOnly);
-        assertEquals(true, bs.availableForHighPriorityWrites);
-        assertEquals(false, bs.shuttingDown);
+        assertEquals(true, bs.isRunning());
+        assertEquals(false, bs.isReadOnly());
+        assertEquals(true, bs.isAvailableForHighPriorityWrites());
+        assertEquals(false, bs.isShuttingDown());
     }
 }
