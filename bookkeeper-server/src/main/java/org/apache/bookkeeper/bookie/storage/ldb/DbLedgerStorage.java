@@ -62,6 +62,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -78,9 +79,8 @@ public class DbLedgerStorage implements LedgerStorage {
 
     private static final int MB = 1024 * 1024;
 
-    private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory())
-            / MB;
-    private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory()) / MB;
+    private static final long DEFAULT_WRITE_CACHE_MAX_SIZE = (long) (0.25 * PlatformDependent.maxDirectMemory());
+    private static final long DEFAULT_READ_CACHE_MAX_SIZE = (long) (0.25 * PlatformDependent.maxDirectMemory());
     private int numberOfDirs;
     private List<SingleDirectoryDbLedgerStorage> ledgerStorageList;
 
@@ -94,8 +94,15 @@ public class DbLedgerStorage implements LedgerStorage {
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
             LedgerDirsManager indexDirsManager, StateManager stateManager, CheckpointSource checkpointSource,
             Checkpointer checkpointer, StatsLogger statsLogger, ByteBufAllocator allocator) throws IOException {
-        long writeCacheMaxSize = conf.getLong(WRITE_CACHE_MAX_SIZE_MB, DEFAULT_WRITE_CACHE_MAX_SIZE_MB) * MB;
-        long readCacheMaxSize = conf.getLong(READ_AHEAD_CACHE_MAX_SIZE_MB, DEFAULT_READ_CACHE_MAX_SIZE_MB) * MB;
+        long writeCacheMaxSize = DEFAULT_WRITE_CACHE_MAX_SIZE;
+        if (!StringUtils.isEmpty(conf.getString(WRITE_CACHE_MAX_SIZE_MB))) {
+            writeCacheMaxSize = conf.getLong(WRITE_CACHE_MAX_SIZE_MB) * MB;
+        }
+
+        long readCacheMaxSize = DEFAULT_READ_CACHE_MAX_SIZE;
+        if (!StringUtils.isEmpty(conf.getString(READ_AHEAD_CACHE_MAX_SIZE_MB))) {
+            writeCacheMaxSize = conf.getLong(READ_AHEAD_CACHE_MAX_SIZE_MB) * MB;
+        }
 
         this.allocator = allocator;
         this.numberOfDirs = ledgerDirsManager.getAllLedgerDirs().size();
