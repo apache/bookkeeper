@@ -51,8 +51,7 @@ public class BookieCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new SanityTestCommand())
         .addCommand(new LedgerCommand())
         .addCommand(new ConvertToDBStorageCommand())
-        .addCommand(new ConvertToInterleavedStorageCommand()
-        .build();
+        .addCommand(new ConvertToInterleavedStorageCommand()).build();
 
     public BookieCommandGroup() {
         super(spec);
