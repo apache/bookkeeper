@@ -800,7 +800,9 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
                         return;
                     }
                 } finally {
-                    removedEntry.release();
+                    if (removedEntry != null) {
+                        removedEntry.release();
+                    }
                 }
             } else if (skipBrokenEntries && BKException.Code.DigestMatchException == entry.getRc()) {
                 // skip this entry and move forward
