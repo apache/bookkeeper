@@ -446,7 +446,7 @@ public class LocalBookKeeper {
                 System.exit(-1);
             }
 
-            int numBookies;
+            int numBookies = 0;
             try {
                 numBookies = Integer.parseInt(args[0]);
             } catch (NumberFormatException nfe) {
