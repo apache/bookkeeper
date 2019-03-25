@@ -29,7 +29,6 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
@@ -74,10 +73,8 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
-import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
-import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.bookie.storage.ldb.LocationsIndexRebuildOp;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.MetaStoreException;
@@ -108,6 +105,7 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
@@ -2070,12 +2068,12 @@ public class BookieShell implements Tool {
                         for (File dir : ledgerDirectories) {
                             newCookie.writeToDirectory(dir);
                         }
-                        LOG.info("Updated cookie file present in ledgerDirectories {}", ledgerDirectories);
+                        LOG.info("Updated cookie file present in ledgerDirectories {}", (Object) ledgerDirectories);
                         if (ledgerDirectories != indexDirectories) {
                             for (File dir : indexDirectories) {
                                 newCookie.writeToDirectory(dir);
                             }
-                            LOG.info("Updated cookie file present in indexDirectories {}", indexDirectories);
+                            LOG.info("Updated cookie file present in indexDirectories {}", (Object) indexDirectories);
                         }
                     }
                     // writes newcookie to zookeeper
@@ -2584,89 +2582,9 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            LOG.info("=== Converting DbLedgerStorage ===");
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-            LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
-                    new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()));
-            LedgerDirsManager ledgerIndexManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
-                    new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()));
-
-            DbLedgerStorage dbStorage = new DbLedgerStorage();
-            InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
-
-            CheckpointSource checkpointSource = new CheckpointSource() {
-                    @Override
-                    public Checkpoint newCheckpoint() {
-                        return Checkpoint.MAX;
-                    }
-
-                    @Override
-                    public void checkpointComplete(Checkpoint checkpoint, boolean compact)
-                            throws IOException {
-                    }
-                };
-            Checkpointer checkpointer = new Checkpointer() {
-                @Override
-                public void startCheckpoint(Checkpoint checkpoint) {
-                    // No-op
-                }
-
-                @Override
-                public void start() {
-                    // no-op
-                }
-            };
-
-            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager, null,
-                        checkpointSource, checkpointer, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
-            interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
-                    null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
-            LedgerCache interleavedLedgerCache = interleavedStorage.ledgerCache;
-
-            int convertedLedgers = 0;
-            for (long ledgerId : dbStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Converting ledger {}", ledgerIdFormatter.formatLedgerId(ledgerId));
-                }
-
-                interleavedStorage.setMasterKey(ledgerId, dbStorage.readMasterKey(ledgerId));
-                if (dbStorage.isFenced(ledgerId)) {
-                    interleavedStorage.setFenced(ledgerId);
-                }
-
-                long lastEntryInLedger = dbStorage.getLastEntryInLedger(ledgerId);
-                for (long entryId = 0; entryId <= lastEntryInLedger; entryId++) {
-                    try {
-                        long location = dbStorage.getLocation(ledgerId, entryId);
-                        if (location != 0L) {
-                            interleavedLedgerCache.putEntryOffset(ledgerId, entryId, location);
-                        }
-                    } catch (Bookie.NoEntryException e) {
-                        // Ignore entry
-                    }
-                }
-
-                if (++convertedLedgers % 1000 == 0) {
-                    LOG.info("Converted {} ledgers", convertedLedgers);
-                }
-            }
-
-            dbStorage.shutdown();
-
-            interleavedLedgerCache.flushLedger(true);
-            interleavedStorage.flush();
-            interleavedStorage.shutdown();
-
-            String baseDir = ledgerDirsManager.getAllLedgerDirs().get(0).toString();
-
-            // Rename databases and keep backup
-            Files.move(FileSystems.getDefault().getPath(baseDir, "ledgers"),
-                    FileSystems.getDefault().getPath(baseDir, "ledgers.backup"));
-
-            Files.move(FileSystems.getDefault().getPath(baseDir, "locations"),
-                    FileSystems.getDefault().getPath(baseDir, "locations.backup"));
-
-            LOG.info("---- Done Converting {} ledgers ----", convertedLedgers);
+            ConvertToInterleavedStorageCommand cmd = new ConvertToInterleavedStorageCommand();
+            ConvertToInterleavedStorageCommand.CTISFlags flags = new ConvertToInterleavedStorageCommand.CTISFlags();
+            cmd.apply(bkConf, flags);
             return 0;
         }
     }
