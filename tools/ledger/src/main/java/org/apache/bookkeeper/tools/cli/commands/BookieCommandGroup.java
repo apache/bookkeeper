@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_IN
 
 import org.apache.bookkeeper.tools.cli.BKCtl;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
@@ -50,7 +51,7 @@ public class BookieCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new SanityTestCommand())
         .addCommand(new LedgerCommand())
         .addCommand(new ConvertToDBStorageCommand())
-        .build();
+        .addCommand(new ConvertToInterleavedStorageCommand()).build();
 
     public BookieCommandGroup() {
         super(spec);
