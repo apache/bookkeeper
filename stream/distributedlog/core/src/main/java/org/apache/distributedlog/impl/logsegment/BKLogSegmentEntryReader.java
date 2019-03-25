@@ -33,6 +33,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import io.netty.util.ReferenceCountUtil;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -800,9 +802,7 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
                         return;
                     }
                 } finally {
-                    if (removedEntry != null) {
-                        removedEntry.release();
-                    }
+                    ReferenceCountUtil.safeRelease(removedEntry);
                 }
             } else if (skipBrokenEntries && BKException.Code.DigestMatchException == entry.getRc()) {
                 // skip this entry and move forward
