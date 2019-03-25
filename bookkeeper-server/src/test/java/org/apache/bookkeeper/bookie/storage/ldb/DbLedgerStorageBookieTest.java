@@ -43,6 +43,12 @@ public class DbLedgerStorageBookieTest extends BookKeeperClusterTestCase {
         baseConf.setLedgerStorageClass(DbLedgerStorage.class.getName());
         baseConf.setFlushInterval(60000);
         baseConf.setGcWaitTime(60000);
+
+        // Leave it empty to pickup default
+        baseConf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, "");
+
+        // Configure explicitely with a int object
+        baseConf.setProperty(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB, 16);
     }
 
     @Test
