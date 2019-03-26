@@ -46,3 +46,4 @@ There is no dependency upgrade from 4.8.1.
 ## Full list of changes
 
 - [https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.8.2+is%3Aclosed](https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.8.2+is%3Aclosed)
+
