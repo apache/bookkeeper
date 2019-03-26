@@ -86,7 +86,7 @@ public class FormatUtil {
         System.out.println();
     }
 
-    static String bytes2Hex(byte[] data) {
+    public static String bytes2Hex(byte[] data) {
         StringBuilder sb = new StringBuilder(data.length * 2);
         Formatter formatter = new Formatter(sb);
         for (byte b : data) {
