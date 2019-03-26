@@ -21,6 +21,7 @@ import static com.google.common.base.Charsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -800,7 +801,7 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
                         return;
                     }
                 } finally {
-                    removedEntry.release();
+                    ReferenceCountUtil.safeRelease(removedEntry);
                 }
             } else if (skipBrokenEntries && BKException.Code.DigestMatchException == entry.getRc()) {
                 // skip this entry and move forward
