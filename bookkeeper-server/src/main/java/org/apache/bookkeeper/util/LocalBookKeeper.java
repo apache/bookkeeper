@@ -450,7 +450,7 @@ public class LocalBookKeeper {
             try {
                 numBookies = Integer.parseInt(args[0]);
             } catch (NumberFormatException nfe) {
-                LOG.error("Unrecognized number-of-bookies: " + args[0]);
+                LOG.error("Unrecognized number-of-bookies: {}", args[0]);
                 usage();
                 System.exit(-1);
             }
