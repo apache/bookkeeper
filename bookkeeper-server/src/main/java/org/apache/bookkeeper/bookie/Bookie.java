@@ -116,8 +116,8 @@ public class Bookie extends BookieCriticalThread {
     final HandleFactory handles;
     final boolean entryLogPerLedgerEnabled;
 
-    static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
-    static final long METAENTRY_ID_FENCE_KEY  = -0x2000;
+    public static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
+    public static final long METAENTRY_ID_FENCE_KEY  = -0x2000;
     public static final long METAENTRY_ID_FORCE_LEDGER  = -0x4000;
     static final long METAENTRY_ID_LEDGER_EXPLICITLAC  = -0x8000;
 
