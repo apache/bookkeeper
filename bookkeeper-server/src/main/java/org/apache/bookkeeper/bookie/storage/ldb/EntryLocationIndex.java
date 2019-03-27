@@ -216,7 +216,15 @@ public class EntryLocationIndex implements Closeable {
                 }
 
                 long firstEntryId = ArrayUtil.getLong(firstKeyRes.getKey(), 8);
-                long lastEntryId = getLastEntryInLedgerInternal(ledgerId);
+                long lastEntryId;
+                try {
+                    lastEntryId = getLastEntryInLedgerInternal(ledgerId);
+                } catch (Bookie.NoEntryException nee) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("No last entry id found for ledger {}", ledgerId);
+                    }
+                    continue;
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("Deleting index for ledger {} entries ({} -> {})",
                             ledgerId, firstEntryId, lastEntryId);
