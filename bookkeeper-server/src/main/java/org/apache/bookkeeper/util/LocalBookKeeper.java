@@ -428,25 +428,32 @@ public class LocalBookKeeper {
         Iterator<String> keys = localBookieConfig.getKeys();
         try (PrintWriter writer = new PrintWriter(localBookieConfFile, "UTF-8")) {
             while (keys.hasNext()) {
-                String key = keys.next().toString();
+                String key = keys.next();
                 String[] values = localBookieConfig.getStringArray(key);
                 StringBuilder concatenatedValue = new StringBuilder(values[0]);
                 for (int i = 1; i < values.length; i++) {
-                    concatenatedValue.append("," + values[i]);
+                    concatenatedValue.append(",").append(values[i]);
                 }
                 writer.println(key + "=" + concatenatedValue.toString());
             }
         }
     }
 
-    public static void main(String[] args) throws Exception, SecurityException {
+    public static void main(String[] args) {
         try {
             if (args.length < 1) {
                 usage();
                 System.exit(-1);
             }
 
-            int numBookies = Integer.parseInt(args[0]);
+            int numBookies = 0;
+            try {
+                numBookies = Integer.parseInt(args[0]);
+            } catch (NumberFormatException nfe) {
+                LOG.error("Unrecognized number-of-bookies: {}", args[0]);
+                usage();
+                System.exit(-1);
+            }
 
             ServerConfiguration conf = new ServerConfiguration();
             conf.setAllowLoopback(true);
