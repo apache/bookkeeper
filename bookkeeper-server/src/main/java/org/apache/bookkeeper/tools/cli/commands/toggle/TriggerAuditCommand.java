@@ -19,16 +19,12 @@
 package org.apache.bookkeeper.tools.cli.commands.toggle;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import java.io.IOException;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.apache.zookeeper.KeeperException;
 
 /**
  * Command to trigger AuditTask by resetting lostBookieRecoveryDelay to its current value.
