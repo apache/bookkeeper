@@ -92,6 +92,7 @@ import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GetCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.UpdateCookieCommand;
+import org.apache.bookkeeper.tools.cli.commands.toggle.TriggerAuditCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.EntryFormatter;
@@ -1861,15 +1862,8 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-            try {
-                admin.triggerAudit();
-            } finally {
-                if (admin != null) {
-                    admin.close();
-                }
-            }
+            TriggerAuditCommand cmd = new TriggerAuditCommand();
+            cmd.apply(bkConf, new CliFlags());
             return 0;
         }
     }
