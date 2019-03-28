@@ -120,6 +120,7 @@ import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GetCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.UpdateCookieCommand;
+import org.apache.bookkeeper.tools.cli.commands.toggle.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -1776,30 +1777,16 @@ public class BookieShell implements Tool {
         int runCmd(CommandLine cmdLine) throws Exception {
             boolean getter = cmdLine.hasOption("g");
             boolean setter = cmdLine.hasOption("s");
+            int set = 0;
+            if (setter) {
+                set = Integer.parseInt(cmdLine.getOptionValue("set"));
+            }
 
-            if ((!getter && !setter) || (getter && setter)) {
-                LOG.error("One and only one of -get and -set must be specified");
-                printUsage();
-                return 1;
-            }
-            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-            try {
-                if (getter) {
-                    int lostBookieRecoveryDelay = admin.getLostBookieRecoveryDelay();
-                    LOG.info("LostBookieRecoveryDelay value in ZK: {}", String.valueOf(lostBookieRecoveryDelay));
-                } else {
-                    int lostBookieRecoveryDelay = Integer.parseInt(cmdLine.getOptionValue("set"));
-                    admin.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
-                    LOG.info("Successfully set LostBookieRecoveryDelay value in ZK: {}",
-                            String.valueOf(lostBookieRecoveryDelay));
-                }
-            } finally {
-                if (admin != null) {
-                    admin.close();
-                }
-            }
-            return 0;
+            LostBookieRecoveryDelayCommand.LBRDFlags flags = new LostBookieRecoveryDelayCommand.LBRDFlags()
+                .get(getter).set(set);
+            LostBookieRecoveryDelayCommand cmd = new LostBookieRecoveryDelayCommand();
+            boolean result = cmd.apply(bkConf, flags);
+            return result ? 0 : 1;
         }
     }
 
