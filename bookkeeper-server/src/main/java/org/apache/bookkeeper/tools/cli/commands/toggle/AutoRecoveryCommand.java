@@ -67,8 +67,8 @@ public class AutoRecoveryCommand extends BookieCommand<AutoRecoveryCommand.AutoR
                                                                + "ledgers.")
         private boolean enable;
 
-        @Parameter(names = {"-l", "--look"}, description = "Check the auto recovery status.")
-        private boolean look;
+        @Parameter(names = {"-s", "--status"}, description = "Check the auto recovery status.")
+        private boolean status;
 
     }
 
@@ -87,7 +87,7 @@ public class AutoRecoveryCommand extends BookieCommand<AutoRecoveryCommand.AutoR
             try {
                 try (LedgerUnderreplicationManager underreplicationManager = mFactory
                          .newLedgerUnderreplicationManager()) {
-                    if (flags.look) {
+                    if (flags.status) {
                         System.out.println("Autorecovery is " + (underreplicationManager.isLedgerReplicationEnabled()
                                                                      ? "enabled." : "disabled."));
                         return null;

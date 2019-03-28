@@ -94,7 +94,7 @@ public class AutoRecoveryCommandTest extends BookieCommandTestBase {
     public void testWithLook()
         throws InterruptedException, ReplicationException.CompatibilityException, KeeperException,
                ReplicationException.UnavailableException {
-        testCommand("-l");
+        testCommand("s");
         verify(ledgerManagerFactory, times(1)).newLedgerUnderreplicationManager();
         verify(ledgerUnderreplicationManager, times(1)).isLedgerReplicationEnabled();
     }
