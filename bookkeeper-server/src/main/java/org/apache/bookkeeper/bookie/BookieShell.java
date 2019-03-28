@@ -1289,7 +1289,7 @@ public class BookieShell implements Tool {
             boolean enable = cmdLine.hasOption("e");
 
             AutoRecoveryCommand.AutoRecoveryFlags flags = new AutoRecoveryCommand.AutoRecoveryFlags()
-                .enable(enable).look(!disable && !enable);
+                .enable(enable).status(!disable && !enable);
             AutoRecoveryCommand cmd = new AutoRecoveryCommand();
             cmd.apply(bkConf, flags);
 
