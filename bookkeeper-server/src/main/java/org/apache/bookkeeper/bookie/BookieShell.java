@@ -120,7 +120,7 @@ import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GetCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.UpdateCookieCommand;
-import org.apache.bookkeeper.tools.cli.commands.toggle.LostBookieRecoveryDelayCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;

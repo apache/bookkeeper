@@ -20,4 +20,4 @@
 /**
  * This package provides all toggle commands.
  */
-package org.apache.bookkeeper.tools.cli.commands.toggle;
+package org.apache.bookkeeper.tools.cli.commands.autorecovery;
