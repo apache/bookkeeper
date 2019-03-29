@@ -58,13 +58,13 @@ public class WhoIsAuditorCommand extends BookieCommand<CliFlags> {
     @Override
     public boolean apply(ServerConfiguration conf, CliFlags cmdFlags) {
         try {
-            return handler(conf);
+            return getAuditor(conf);
         } catch (Exception e) {
             throw new UncheckedExecutionException(e.getMessage(), e);
         }
     }
 
-    public boolean handler(ServerConfiguration conf)
+    public boolean getAuditor(ServerConfiguration conf)
         throws ConfigurationException, InterruptedException, IOException, KeeperException {
         ZooKeeper zk = null;
         try {
