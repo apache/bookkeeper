@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.bookkeeper.tools.cli.commands.toggle;
+package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
