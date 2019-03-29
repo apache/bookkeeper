@@ -41,10 +41,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 
 /**
- * Unit test for {@link AutoRecoveryCommand}.
+ * Unit test for {@link ToggleCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ AutoRecoveryCommand.class, MetadataDrivers.class })
+@PrepareForTest({ ToggleCommand.class, MetadataDrivers.class })
 public class AutoRecoveryCommandTest extends BookieCommandTestBase {
 
     private LedgerManagerFactory ledgerManagerFactory;
@@ -117,7 +117,7 @@ public class AutoRecoveryCommandTest extends BookieCommandTestBase {
     }
 
     private void testCommand(String... args) {
-        AutoRecoveryCommand cmd = new AutoRecoveryCommand();
+        ToggleCommand cmd = new ToggleCommand();
         Assert.assertTrue(cmd.apply(bkFlags, args));
     }
 }

@@ -91,7 +91,7 @@ import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GetCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.UpdateCookieCommand;
-import org.apache.bookkeeper.tools.cli.commands.toggle.AutoRecoveryCommand;
+import org.apache.bookkeeper.tools.cli.commands.toggle.ToggleCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.EntryFormatter;
@@ -1288,9 +1288,9 @@ public class BookieShell implements Tool {
             boolean disable = cmdLine.hasOption("d");
             boolean enable = cmdLine.hasOption("e");
 
-            AutoRecoveryCommand.AutoRecoveryFlags flags = new AutoRecoveryCommand.AutoRecoveryFlags()
+            ToggleCommand.AutoRecoveryFlags flags = new ToggleCommand.AutoRecoveryFlags()
                 .enable(enable).status(!disable && !enable);
-            AutoRecoveryCommand cmd = new AutoRecoveryCommand();
+            ToggleCommand cmd = new ToggleCommand();
             cmd.apply(bkConf, flags);
 
             return 0;

@@ -39,19 +39,19 @@ import org.slf4j.LoggerFactory;
 /**
  * Command to enable or disable auto recovery in the cluster.
  */
-public class AutoRecoveryCommand extends BookieCommand<AutoRecoveryCommand.AutoRecoveryFlags> {
+public class ToggleCommand extends BookieCommand<ToggleCommand.AutoRecoveryFlags> {
 
-    static final Logger LOG = LoggerFactory.getLogger(AutoRecoveryCommand.class);
+    static final Logger LOG = LoggerFactory.getLogger(ToggleCommand.class);
 
-    private static final String NAME = "autorecovery";
+    private static final String NAME = "toggle";
     private static final String DESC = "Enable or disable auto recovery in the cluster. Default is disable.";
 
-    public AutoRecoveryCommand() {
+    public ToggleCommand() {
         this(new AutoRecoveryFlags());
     }
 
-    private AutoRecoveryCommand(AutoRecoveryFlags flags) {
-        super(CliSpec.<AutoRecoveryCommand.AutoRecoveryFlags>newBuilder()
+    private ToggleCommand(AutoRecoveryFlags flags) {
+        super(CliSpec.<ToggleCommand.AutoRecoveryFlags>newBuilder()
             .withName(NAME).withDescription(DESC)
             .withFlags(flags).build());
     }
