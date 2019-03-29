@@ -20,7 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands;
 
 import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
 
-import org.apache.bookkeeper.tools.cli.commands.toggle.ListUnderReplicatedCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -28,7 +28,7 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
 /**
  * Commands on some specific operation.
  */
-public class ToggleCommandGroup extends CliCommandGroup<BKFlags> {
+public class AutoRecoveryCommandGroup extends CliCommandGroup<BKFlags> {
 
     private static final String NAME = "toggle";
     private static final String DESC = "Command on some specific operation.";
@@ -40,7 +40,7 @@ public class ToggleCommandGroup extends CliCommandGroup<BKFlags> {
                                                      .addCommand(new ListUnderReplicatedCommand())
                                                      .build();
 
-    public ToggleCommandGroup() {
+    public AutoRecoveryCommandGroup() {
         super(spec);
     }
 }
