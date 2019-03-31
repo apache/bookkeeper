@@ -24,7 +24,6 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelPromise;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,9 +60,6 @@ public class ReadEntryProcessorTest {
     @Before
     public void setup() throws IOException, BookieException {
         channel = mock(Channel.class);
-        when(channel.remoteAddress()).thenReturn(new SocketAddress() {
-            private static final long serialVersionUID = 848167796763251014L;
-        });
     }
 
     @Test
