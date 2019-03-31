@@ -60,20 +60,19 @@ public class ReadEntryProcessorTest {
     @Before
     public void setup() throws IOException, BookieException {
         channel = mock(Channel.class);
-    }
-
-    @Test
-    public void testFenceRequestWithThreadPool() throws Exception {
         bookie = mock(Bookie.class);
-        SettableFuture<Boolean> fenceResult = SettableFuture.create();
-        when(bookie.fenceLedger(anyLong(), any())).thenReturn(fenceResult);
         requestProcessor = mock(BookieRequestProcessor.class);
         when(requestProcessor.getBookie()).thenReturn(bookie);
         when(requestProcessor.getWaitTimeoutOnBackpressureMillis()).thenReturn(-1L);
         when(requestProcessor.getRequestStats()).thenReturn(new RequestStats(NullStatsLogger.INSTANCE));
-
         when(channel.voidPromise()).thenReturn(mock(ChannelPromise.class));
         when(channel.writeAndFlush(any())).thenReturn(mock(ChannelPromise.class));
+    }
+
+    @Test
+    public void testFenceRequestWithThreadPool() throws Exception {
+        SettableFuture<Boolean> fenceResult = SettableFuture.create();
+        when(bookie.fenceLedger(anyLong(), any())).thenReturn(fenceResult);
 
         ChannelPromise promise = new DefaultChannelPromise(channel);
         AtomicReference<Object> writtenObject = new AtomicReference<>();
@@ -103,4 +102,35 @@ public class ReadEntryProcessorTest {
         assertEquals(BookieProtocol.EOK, response.getErrorCode());
     }
 
+    @Test
+    public void testFenceRequestWithoutThreadPool() throws Exception {
+        SettableFuture<Boolean> fenceResult = SettableFuture.create();
+        when(bookie.fenceLedger(anyLong(), any())).thenReturn(fenceResult);
+
+        ChannelPromise promise = new DefaultChannelPromise(channel);
+        AtomicReference<Object> writtenObject = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(invocationOnMock -> {
+            writtenObject.set(invocationOnMock.getArgument(0));
+            latch.countDown();
+            return promise;
+        }).when(channel).writeAndFlush(any(Response.class), any());
+
+        long ledgerId = System.currentTimeMillis();
+        ReadRequest request = new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
+                1, BookieProtocol.FLAG_DO_FENCING, new byte[]{});
+        ReadEntryProcessor processor = ReadEntryProcessor.create(request, channel, requestProcessor, null);
+        fenceResult.set(true);
+        processor.run();
+
+        latch.await();
+        verify(channel, times(1)).writeAndFlush(any(Response.class), any());
+
+        assertTrue(writtenObject.get() instanceof Response);
+        Response response = (Response) writtenObject.get();
+        assertEquals(1, response.getEntryId());
+        assertEquals(ledgerId, response.getLedgerId());
+        assertEquals(READENTRY, response.getOpCode());
+        assertEquals(BookieProtocol.EOK, response.getErrorCode());
+    }
 }
