@@ -22,7 +22,7 @@ MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
 ARG BK_VERSION=4.9.0
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
-ARG GPG_KEY=FD74402C
+ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
 
 ENV BOOKIE_PORT=3181
 EXPOSE $BOOKIE_PORT
@@ -30,18 +30,18 @@ ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
 ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
 
-
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
     && adduser "${BK_USER}" \
     && yum install -y java-1.8.0-openjdk-headless wget bash python sudo \
     && mkdir -pv /opt \
     && cd /opt \
-    && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz" \
-    && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz.asc" \
-    && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz.sha512" \
+    && wget -q "${DISTRO_URL}" \
+    && wget -q "${DISTRO_URL}.asc" \
+    && wget -q "${DISTRO_URL}.sha512" \
     && sha512sum -c ${DISTRO_NAME}.tar.gz.sha512 \
-    && gpg --keyserver ha.pool.sks-keyservers.net --recv-key "$GPG_KEY" \
+    && wget https://dist.apache.org/repos/dist/release/bookkeeper/KEYS \
+    && gpg --import KEYS \
     && gpg --batch --verify "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz" \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
