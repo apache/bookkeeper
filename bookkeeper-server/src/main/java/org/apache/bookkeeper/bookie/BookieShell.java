@@ -1,4 +1,4 @@
-/**
+run integration tests/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,7 +18,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
@@ -39,7 +38,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -2173,23 +2171,17 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            byte[] password;
-            if (cmdLine.hasOption("password")) {
-                password = cmdLine.getOptionValue("password").getBytes(UTF_8);
-            } else if (cmdLine.hasOption("b64password")) {
-                password = Base64.getDecoder().decode(cmdLine.getOptionValue("b64password"));
-            } else {
-                LOG.error("The password must be specified to regenerate the index file.");
-                return 1;
-            }
-            Set<Long> ledgerIds = Arrays.stream(cmdLine.getOptionValues("ledgerIds"))
-                .map((id) -> Long.parseLong(id)).collect(Collectors.toSet());
+            RegenerateInterleavedStorageIndexFileCommand cmd = new RegenerateInterleavedStorageIndexFileCommand();
+            RegenerateInterleavedStorageIndexFileCommand.RISIFFlags
+                flags = new RegenerateInterleavedStorageIndexFileCommand.RISIFFlags();
+            List<Long> ledgerIds = Arrays.stream(cmdLine.getOptionValues("ledgerIds")).map((id) -> Long.parseLong(id))
+                                         .collect(Collectors.toList());
             boolean dryRun = cmdLine.hasOption("dryRun");
-
-            LOG.info("=== Rebuilding index file for {} ===", ledgerIds);
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-            new InterleavedStorageRegenerateIndexOp(conf, ledgerIds, password).initiate(dryRun);
-            LOG.info("-- Done rebuilding index file for {} --", ledgerIds);
+            flags.ledgerIds(ledgerIds);
+            flags.password(cmdLine.getOptionValue("password"));
+            flags.b64Password(cmdLine.getOptionValue("b64password"));
+            flags.dryRun(dryRun);
+            cmd.apply(bkConf, flags);
             return 0;
         }
     }
