@@ -101,6 +101,11 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
                     } else {
                         log.warn("Fail to de-register StorageContainer ('{}') when failed to start", scId, cause);
                     }
+                    log.info("Release resources hold by StorageContainer ('{}') during de-register", scId);
+                    newStorageContainer.stop().exceptionally(throwable -> {
+                        log.error("Stop StorageContainer ('{}') fail during de-register", scId);
+                        return null;
+                    });
                 } else {
                     log.info("Successfully started registered StorageContainer ('{}').", scId);
                 }

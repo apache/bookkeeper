@@ -130,6 +130,7 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
         Map<RangeId, MVCCAsyncStore<byte[], byte[]>> scStores = stores.get(scId);
         if (null == scStores) {
             scStores = Maps.newHashMap();
+            stores.putIfAbsent(scId, scStores);
         }
         RangeId rid = RangeId.of(streamId, rangeId);
         MVCCAsyncStore<byte[], byte[]> oldStore = scStores.get(rid);
@@ -207,7 +208,18 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             .isReadonly(serveReadOnlyTable)
             .build();
 
-        return store.init(spec).thenApply(ignored -> {
+        return store.init(spec).whenComplete((ignored, throwable) -> {
+            // since the store has not been added, so can't release its resources during close sc
+            if (null != throwable) {
+                log.info("Clearing resources hold by stream({})/range({}) at storage container ({}) ",
+                    streamId, rangeId, scId);
+                store.closeAsync().whenComplete((i, t) -> {
+                    if (null != t) {
+                        log.error("Clear resources hold by {} fail", store.name());
+                    }
+                });
+            }
+        }).thenApply(ignored -> {
             log.info("Successfully initialize stream({})/range({}) at storage container ({})",
                 streamId, rangeId, scId);
             addStore(scId, streamId, rangeId, store);
@@ -222,11 +234,13 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             scStores = stores.remove(scId);
         }
         if (null == scStores) {
+            log.info("scStores for {} on store factory is null, return directly", scId);
             return FutureUtils.Void();
         }
 
         List<CompletableFuture<Void>> closeFutures = Lists.newArrayList();
         for (MVCCAsyncStore<byte[], byte[]> store : scStores.values()) {
+            log.info("Closing {} of sc {}", store.name(), scId);
             closeFutures.add(store.closeAsync());
         }
 
