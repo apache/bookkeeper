@@ -141,7 +141,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKSecurityException extends BKException {
         public BKSecurityException() {
-            super(Code.SecurityException);
+            super(BKException.Code.SecurityException);
         }
     }
 
@@ -150,7 +150,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKReadException extends BKException {
         public BKReadException() {
-            super(Code.ReadException);
+            super(BKException.Code.ReadException);
         }
     }
 
@@ -159,7 +159,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKNoSuchEntryException extends BKException {
         public BKNoSuchEntryException() {
-            super(Code.NoSuchEntryException);
+            super(BKException.Code.NoSuchEntryException);
         }
     }
 
@@ -168,7 +168,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKQuorumException extends BKException {
         public BKQuorumException() {
-            super(Code.QuorumException);
+            super(BKException.Code.QuorumException);
         }
     }
 
@@ -177,7 +177,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKBookieException extends BKException {
         public BKBookieException() {
-            super(Code.NoBookieAvailableException);
+            super(BKException.Code.NoBookieAvailableException);
         }
     }
 
@@ -186,7 +186,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKDigestNotInitializedException extends BKException {
         public BKDigestNotInitializedException() {
-            super(Code.DigestNotInitializedException);
+            super(BKException.Code.DigestNotInitializedException);
         }
     }
 
@@ -195,7 +195,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKDigestMatchException extends BKException {
         public BKDigestMatchException() {
-            super(Code.DigestMatchException);
+            super(BKException.Code.DigestMatchException);
         }
     }
 
@@ -204,7 +204,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKIllegalOpException extends BKException {
         public BKIllegalOpException() {
-            super(Code.IllegalOpException);
+            super(BKException.Code.IllegalOpException);
         }
     }
 
@@ -213,7 +213,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKAddEntryQuorumTimeoutException extends BKException {
         public BKAddEntryQuorumTimeoutException() {
-            super(Code.AddEntryQuorumTimeoutException);
+            super(BKException.Code.AddEntryQuorumTimeoutException);
         }
     }
 
@@ -222,7 +222,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKDuplicateEntryIdException extends BKException {
         public BKDuplicateEntryIdException() {
-            super(Code.DuplicateEntryIdException);
+            super(BKException.Code.DuplicateEntryIdException);
         }
     }
 
@@ -231,7 +231,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKUnexpectedConditionException extends BKException {
         public BKUnexpectedConditionException() {
-            super(Code.UnexpectedConditionException);
+            super(BKException.Code.UnexpectedConditionException);
         }
     }
 
@@ -240,7 +240,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKNotEnoughBookiesException extends BKException {
         public BKNotEnoughBookiesException() {
-            super(Code.NotEnoughBookiesException);
+            super(BKException.Code.NotEnoughBookiesException);
         }
     }
 
@@ -249,7 +249,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKWriteException extends BKException {
         public BKWriteException() {
-            super(Code.WriteException);
+            super(BKException.Code.WriteException);
         }
     }
 
@@ -258,7 +258,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKProtocolVersionException extends BKException {
         public BKProtocolVersionException() {
-            super(Code.ProtocolVersionException);
+            super(BKException.Code.ProtocolVersionException);
         }
     }
 
@@ -267,7 +267,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKMetadataVersionException extends BKException {
         public BKMetadataVersionException() {
-            super(Code.MetadataVersionException);
+            super(BKException.Code.MetadataVersionException);
         }
     }
 
@@ -276,7 +276,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKNoSuchLedgerExistsException extends BKException {
         public BKNoSuchLedgerExistsException() {
-            super(Code.NoSuchLedgerExistsException);
+            super(BKException.Code.NoSuchLedgerExistsException);
         }
     }
 
@@ -285,7 +285,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKBookieHandleNotAvailableException extends BKException {
         public BKBookieHandleNotAvailableException() {
-            super(Code.BookieHandleNotAvailableException);
+            super(BKException.Code.BookieHandleNotAvailableException);
         }
     }
 
@@ -294,7 +294,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class ZKException extends BKException {
         public ZKException() {
-            super(Code.ZKException);
+            super(BKException.Code.ZKException);
         }
     }
 
@@ -303,11 +303,11 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class MetaStoreException extends BKException {
         public MetaStoreException() {
-            super(Code.MetaStoreException);
+            super(BKException.Code.MetaStoreException);
         }
 
         public MetaStoreException(Throwable cause) {
-            super(Code.MetaStoreException, cause);
+            super(BKException.Code.MetaStoreException, cause);
         }
     }
 
@@ -316,7 +316,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKLedgerExistException extends BKException {
         public BKLedgerExistException() {
-            super(Code.LedgerExistException);
+            super(BKException.Code.LedgerExistException);
         }
     }
 
@@ -325,7 +325,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKLedgerRecoveryException extends BKException {
         public BKLedgerRecoveryException() {
-            super(Code.LedgerRecoveryException);
+            super(BKException.Code.LedgerRecoveryException);
         }
     }
 
@@ -334,7 +334,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKLedgerClosedException extends BKException {
         public BKLedgerClosedException() {
-            super(Code.LedgerClosedException);
+            super(BKException.Code.LedgerClosedException);
         }
     }
 
@@ -343,7 +343,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKIncorrectParameterException extends BKException {
         public BKIncorrectParameterException() {
-            super(Code.IncorrectParameterException);
+            super(BKException.Code.IncorrectParameterException);
         }
     }
 
@@ -352,7 +352,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKInterruptedException extends BKException {
         public BKInterruptedException() {
-            super(Code.InterruptedException);
+            super(BKException.Code.InterruptedException);
         }
     }
 
@@ -361,7 +361,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKLedgerFencedException extends BKException {
         public BKLedgerFencedException() {
-            super(Code.LedgerFencedException);
+            super(BKException.Code.LedgerFencedException);
         }
     }
 
@@ -370,7 +370,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKUnauthorizedAccessException extends BKException {
         public BKUnauthorizedAccessException() {
-            super(Code.UnauthorizedAccessException);
+            super(BKException.Code.UnauthorizedAccessException);
         }
     }
 
@@ -379,7 +379,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKUnclosedFragmentException extends BKException {
         public BKUnclosedFragmentException() {
-            super(Code.UnclosedFragmentException);
+            super(BKException.Code.UnclosedFragmentException);
         }
     }
 
@@ -388,7 +388,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKWriteOnReadOnlyBookieException extends BKException {
         public BKWriteOnReadOnlyBookieException() {
-            super(Code.WriteOnReadOnlyBookieException);
+            super(BKException.Code.WriteOnReadOnlyBookieException);
         }
     }
 
@@ -397,7 +397,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKTooManyRequestsException extends BKException {
         public BKTooManyRequestsException() {
-            super(Code.TooManyRequestsException);
+            super(BKException.Code.TooManyRequestsException);
         }
     }
 
@@ -406,7 +406,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKReplicationException extends BKException {
         public BKReplicationException() {
-            super(Code.ReplicationException);
+            super(BKException.Code.ReplicationException);
         }
     }
 
@@ -415,7 +415,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKClientClosedException extends BKException {
         public BKClientClosedException() {
-            super(Code.ClientClosedException);
+            super(BKException.Code.ClientClosedException);
         }
     }
 
@@ -424,7 +424,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKTimeoutException extends BKException {
         public BKTimeoutException() {
-            super(Code.TimeoutException);
+            super(BKException.Code.TimeoutException);
         }
     }
 
@@ -433,7 +433,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKLedgerIdOverflowException extends BKException {
         public BKLedgerIdOverflowException() {
-            super(Code.LedgerIdOverflowException);
+            super(BKException.Code.LedgerIdOverflowException);
         }
     }
 
@@ -442,11 +442,11 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKMetadataSerializationException extends BKException {
         public BKMetadataSerializationException() {
-            super(Code.MetadataSerializationException);
+            super(BKException.Code.MetadataSerializationException);
         }
 
         public BKMetadataSerializationException(Throwable cause) {
-            super(Code.MetadataSerializationException, cause);
+            super(BKException.Code.MetadataSerializationException, cause);
         }
     }
 
