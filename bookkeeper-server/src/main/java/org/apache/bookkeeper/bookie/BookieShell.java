@@ -60,11 +60,9 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -95,7 +93,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -109,6 +106,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListFilesOnDiscCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
@@ -143,8 +141,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -981,76 +977,11 @@ public class BookieShell implements Tool {
         public int runCmd(CommandLine cmdLine) throws Exception {
             final boolean printMeta = cmdLine.hasOption("m");
             final String bookieidToBePartOfEnsemble = cmdLine.getOptionValue("bookieid");
-            final BookieSocketAddress bookieAddress = StringUtils.isBlank(bookieidToBePartOfEnsemble) ? null
-                    : new BookieSocketAddress(bookieidToBePartOfEnsemble);
 
-            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
-
-                    final AtomicInteger returnCode = new AtomicInteger(BKException.Code.OK);
-                    final CountDownLatch processDone = new CountDownLatch(1);
-
-                    Processor<Long> ledgerProcessor = new Processor<Long>() {
-                            @Override
-                            public void process(Long ledgerId, VoidCallback cb) {
-                                if (!printMeta && (bookieAddress == null)) {
-                                    printLedgerMetadata(ledgerId, null, false);
-                                    cb.processResult(BKException.Code.OK, null, null);
-                                } else {
-                                    ledgerManager.readLedgerMetadata(ledgerId).whenComplete(
-                                            (metadata, exception) -> {
-                                                if (exception == null) {
-                                                    if ((bookieAddress == null)
-                                                        || BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(
-                                                                ledgerId, bookieAddress, metadata.getValue())) {
-                                                        /*
-                                                         * the print method has to be in
-                                                         * synchronized scope, otherwise
-                                                         * output of printLedgerMetadata
-                                                         * could interleave since this
-                                                         * callback for different
-                                                         * ledgers can happen in
-                                                         * different threads.
-                                                         */
-                                                        synchronized (BookieShell.this) {
-                                                            printLedgerMetadata(ledgerId, metadata.getValue(),
-                                                                                printMeta);
-                                                        }
-                                                    }
-                                                    cb.processResult(BKException.Code.OK, null, null);
-                                                } else if (BKException.getExceptionCode(exception)
-                                                           == BKException.Code.NoSuchLedgerExistsException) {
-                                                    cb.processResult(BKException.Code.OK, null, null);
-                                                } else {
-                                                    LOG.error("Unable to read the ledger: {} information", ledgerId);
-                                                    cb.processResult(BKException.getExceptionCode(exception),
-                                                                     null, null);
-                                                }
-                                            });
-                                }
-                            }
-                        };
-
-                    ledgerManager.asyncProcessLedgers(ledgerProcessor, new AsyncCallback.VoidCallback() {
-                        @Override
-                        public void processResult(int rc, String s, Object obj) {
-                            returnCode.set(rc);
-                            processDone.countDown();
-                        }
-                    }, null, BKException.Code.OK, BKException.Code.ReadException);
-
-                    processDone.await();
-                    if (returnCode.get() != BKException.Code.OK) {
-                        LOG.error("Received error return value while processing ledgers: {}", returnCode.get());
-                        throw BKException.create(returnCode.get());
-                    }
-
-                } catch (Exception ioe) {
-                    LOG.error("Received Exception while processing ledgers", ioe);
-                    throw new UncheckedExecutionException(ioe);
-                }
-                return null;
-            });
+            ListLedgersCommand.ListLedgersFlags flags = new ListLedgersCommand.ListLedgersFlags()
+                                                            .bookieId(bookieidToBePartOfEnsemble).meta(printMeta);
+            ListLedgersCommand cmd = new ListLedgersCommand(ledgerIdFormatter);
+            cmd.apply(bkConf, flags);
 
             return 0;
         }
