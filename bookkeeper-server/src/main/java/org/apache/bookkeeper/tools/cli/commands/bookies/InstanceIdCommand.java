@@ -36,7 +36,7 @@ public class InstanceIdCommand extends BookieCommand<CliFlags> {
 
     static final Logger LOG = LoggerFactory.getLogger(InstanceIdCommand.class);
 
-    private static final String NAME = "intanceid";
+    private static final String NAME = "instanceid";
     private static final String DESC = "Print the instanceid of the cluster";
 
     public InstanceIdCommand() {
