@@ -472,14 +472,25 @@ Copy the source release from the `dev` repository to the `release` repository at
 
 2. Merge the Release Notes pull request and make sure the Release Notes is updated.
 
-### Update Dockerfile
+### Git tag
 
-> NOTE: The dockerfile PR should only be merged after the release package is showed up under https://archive.apache.org/dist/bookkeeper/
+> NOTE: Only create the release tag after the release package is showed up under https://archive.apache.org/dist/bookkeeper/ as creating the tag triggers a docker autobuild which needs the package to exist. If you forget to do so, the build will fail. In this case you can delete the tag from github and push it again.
 
-1. Update the `BK_VERSION` and `GPG_KEY` in `docker/Dockerfile` (e.g. [Pull Request 436](https://github.com/apache/bookkeeper/pull/436) ),
-    send a pull request for review and get an approval from the community.
+Create and push a new signed for the released version by copying the tag for the final release tag, as follows
 
-2. Once the pull request is approved, merge this pull request into master and make sure it is cherry-picked into corresponding branch.
+```shell
+git tag -s "${TAG}" "${RC_TAG}"
+git push apache "${TAG}"
+```
+
+Remove rc tags:
+
+```shell
+for num in $(seq 0 ${RC_NUM}); do
+    git tag -d "v${VERSION}-rc${num}"
+    git push apache :"v${VERSION}-rc${num}"
+done
+```
 
 ### Update DC/OS BookKeeper package
 
@@ -547,24 +558,6 @@ It is easy if only version need be bump.
     $ git add repo/packages/B/bookkeeper/2
     $ git commit -m "new bookkeeper version"
     ```
-
-### Git tag
-
-Create and push a new signed for the released version by copying the tag for the final release tag, as follows
-
-```shell
-git tag -s "${TAG}" "${RC_TAG}"
-git push apache "${TAG}"
-```
-
-Remove rc tags:
-
-```shell
-for num in $(seq 0 ${RC_NUM}); do
-    git tag -d "v${VERSION}-rc${num}"
-    git push apache :"v${VERSION}-rc${num}"
-done
-```
 
 ### Verify Docker Image
 
