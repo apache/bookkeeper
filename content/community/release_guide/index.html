@@ -318,9 +318,8 @@
       <li><a href="#deploy-artifacts-to-maven-central-repository" id="markdown-toc-deploy-artifacts-to-maven-central-repository">Deploy artifacts to Maven Central Repository</a></li>
       <li><a href="#deploy-source-release-to-distapacheorg" id="markdown-toc-deploy-source-release-to-distapacheorg">Deploy source release to dist.apache.org</a></li>
       <li><a href="#update-website" id="markdown-toc-update-website">Update Website</a></li>
-      <li><a href="#update-dockerfile" id="markdown-toc-update-dockerfile">Update Dockerfile</a></li>
-      <li><a href="#update-dcos-bookkeeper-package" id="markdown-toc-update-dcos-bookkeeper-package">Update DC/OS BookKeeper package</a></li>
       <li><a href="#git-tag" id="markdown-toc-git-tag">Git tag</a></li>
+      <li><a href="#update-dcos-bookkeeper-package" id="markdown-toc-update-dcos-bookkeeper-package">Update DC/OS BookKeeper package</a></li>
       <li><a href="#verify-docker-image" id="markdown-toc-verify-docker-image">Verify Docker Image</a></li>
       <li><a href="#release-python-client" id="markdown-toc-release-python-client">Release Python Client</a></li>
       <li><a href="#advance-version-on-release-branch" id="markdown-toc-advance-version-on-release-branch">Advance version on release branch</a></li>
@@ -853,21 +852,25 @@ Thanks everyone!
   </li>
 </ol>
 
-<h3 id="update-dockerfile">Update Dockerfile</h3>
+<h3 id="git-tag">Git tag</h3>
 
 <blockquote>
-  <p>NOTE: The dockerfile PR should only be merged after the release package is showed up under https://archive.apache.org/dist/bookkeeper/</p>
+  <p>NOTE: Only create the release tag after the release package is showed up under https://archive.apache.org/dist/bookkeeper/ as creating the tag triggers a docker autobuild which needs the package to exist. If you forget to do so, the build will fail. In this case you can delete the tag from github and push it again.</p>
 </blockquote>
 
-<ol>
-  <li>
-    <p>Update the <code class="highlighter-rouge">BK_VERSION</code> and <code class="highlighter-rouge">GPG_KEY</code> in <code class="highlighter-rouge">docker/Dockerfile</code> (e.g. <a href="https://github.com/apache/bookkeeper/pull/436">Pull Request 436</a> ),
- send a pull request for review and get an approval from the community.</p>
-  </li>
-  <li>
-    <p>Once the pull request is approved, merge this pull request into master and make sure it is cherry-picked into corresponding branch.</p>
-  </li>
-</ol>
+<p>Create and push a new signed for the released version by copying the tag for the final release tag, as follows</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git tag <span class="nt">-s</span> <span class="s2">"</span><span class="k">${</span><span class="nv">TAG</span><span class="k">}</span><span class="s2">"</span> <span class="s2">"</span><span class="k">${</span><span class="nv">RC_TAG</span><span class="k">}</span><span class="s2">"</span>
+git push apache <span class="s2">"</span><span class="k">${</span><span class="nv">TAG</span><span class="k">}</span><span class="s2">"</span>
+</code></pre></div></div>
+
+<p>Remove rc tags:</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for </span>num <span class="k">in</span> <span class="k">$(</span><span class="nb">seq </span>0 <span class="k">${</span><span class="nv">RC_NUM</span><span class="k">})</span><span class="p">;</span> <span class="k">do
+    </span>git tag <span class="nt">-d</span> <span class="s2">"v</span><span class="k">${</span><span class="nv">VERSION</span><span class="k">}</span><span class="s2">-rc</span><span class="k">${</span><span class="nv">num</span><span class="k">}</span><span class="s2">"</span>
+    git push apache :<span class="s2">"v</span><span class="k">${</span><span class="nv">VERSION</span><span class="k">}</span><span class="s2">-rc</span><span class="k">${</span><span class="nv">num</span><span class="k">}</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div></div>
 
 <h3 id="update-dcos-bookkeeper-package">Update DC/OS BookKeeper package</h3>
 
@@ -940,22 +943,6 @@ Thanks everyone!
 </code></pre></div>    </div>
   </li>
 </ol>
-
-<h3 id="git-tag">Git tag</h3>
-
-<p>Create and push a new signed for the released version by copying the tag for the final release tag, as follows</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git tag <span class="nt">-s</span> <span class="s2">"</span><span class="k">${</span><span class="nv">TAG</span><span class="k">}</span><span class="s2">"</span> <span class="s2">"</span><span class="k">${</span><span class="nv">RC_TAG</span><span class="k">}</span><span class="s2">"</span>
-git push apache <span class="s2">"</span><span class="k">${</span><span class="nv">TAG</span><span class="k">}</span><span class="s2">"</span>
-</code></pre></div></div>
-
-<p>Remove rc tags:</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for </span>num <span class="k">in</span> <span class="k">$(</span><span class="nb">seq </span>0 <span class="k">${</span><span class="nv">RC_NUM</span><span class="k">})</span><span class="p">;</span> <span class="k">do
-    </span>git tag <span class="nt">-d</span> <span class="s2">"v</span><span class="k">${</span><span class="nv">VERSION</span><span class="k">}</span><span class="s2">-rc</span><span class="k">${</span><span class="nv">num</span><span class="k">}</span><span class="s2">"</span>
-    git push apache :<span class="s2">"v</span><span class="k">${</span><span class="nv">VERSION</span><span class="k">}</span><span class="s2">-rc</span><span class="k">${</span><span class="nv">num</span><span class="k">}</span><span class="s2">"</span>
-<span class="k">done</span>
-</code></pre></div></div>
 
 <h3 id="verify-docker-image">Verify Docker Image</h3>
 
