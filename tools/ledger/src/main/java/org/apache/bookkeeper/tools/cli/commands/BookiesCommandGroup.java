@@ -24,6 +24,7 @@ import org.apache.bookkeeper.tools.cli.BKCtl;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -44,6 +45,7 @@ public class BookiesCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new ListBookiesCommand())
         .addCommand(new InfoCommand())
         .addCommand(new NukeExistingClusterCommand())
+        .addCommand(new MetaFormatCommand())
         .build();
 
     public BookiesCommandGroup() {
