@@ -1409,6 +1409,13 @@ public class Bookie extends BookieCriticalThread {
         return handle.waitForLastAddConfirmedUpdate(previousLAC, watcher);
     }
 
+    public void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException {
+        LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
+        handle.cancelWaitForLastAddConfirmedUpdate(watcher);
+    }
+
     @VisibleForTesting
     public LedgerStorage getLedgerStorage() {
         return ledgerStorage;

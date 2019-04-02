@@ -163,9 +163,10 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
                 }
                 synchronized (this) {
                     expirationTimerTask = requestTimer.newTimeout(timeout -> {
-                        // When the timeout expires just get whatever is the current
-                        // readLastConfirmed
-                        LongPollReadEntryProcessorV3.this.scheduleDeferredRead(true);
+                            requestProcessor.bookie.cancelWaitForLastAddConfirmedUpdate(ledgerId, this);
+                            // When the timeout expires just get whatever is the current
+                            // readLastConfirmed
+                            LongPollReadEntryProcessorV3.this.scheduleDeferredRead(true);
                     }, readRequest.getTimeOut(), TimeUnit.MILLISECONDS);
                 }
                 return null;
