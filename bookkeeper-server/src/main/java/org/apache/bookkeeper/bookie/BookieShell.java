@@ -738,7 +738,7 @@ public class BookieShell implements Tool {
                 .dumpToFile(cmdLine.getOptionValue("dumptofile"))
                 .restoreFromFile(cmdLine.getOptionValue("restorefromfile"));
 
-            LedgerMetaDataCommand cmd = new LedgerMetaDataCommand();
+            LedgerMetaDataCommand cmd = new LedgerMetaDataCommand(ledgerIdFormatter);
             cmd.apply(bkConf, flag);
             return 0;
         }
