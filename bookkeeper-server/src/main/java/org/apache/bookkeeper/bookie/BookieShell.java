@@ -98,6 +98,7 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
@@ -109,10 +110,12 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.ListFilesOnDiscCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LocalConsistencyCheckCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
+import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
@@ -1293,6 +1296,8 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
+            ReadLogMetadataCommand cmd = new ReadLogMetadataCommand(ledgerIdFormatter);
+            ReadLogMetadataCommand.ReadLogMetadataFlags flags = new ReadLogMetadataCommand.ReadLogMetadataFlags();
             String[] leftArgs = cmdLine.getArgs();
             if (leftArgs.length <= 0) {
                 LOG.error("ERROR: missing entry log id or entry log file name");
@@ -1303,22 +1308,11 @@ public class BookieShell implements Tool {
             long logId;
             try {
                 logId = Long.parseLong(leftArgs[0]);
+                flags.logId(logId);
             } catch (NumberFormatException nfe) {
-                // not a entry log id
-                File f = new File(leftArgs[0]);
-                String name = f.getName();
-                if (!name.endsWith(".log")) {
-                    // not a log file
-                    LOG.error("ERROR: invalid entry log file name " + leftArgs[0]);
-                    printUsage();
-                    return -1;
-                }
-                String idString = name.split("\\.")[0];
-                logId = Long.parseLong(idString, 16);
+                flags.logFilename(leftArgs[0]);
             }
-
-            printEntryLogMetadata(logId);
-
+            cmd.apply(bkConf, flags);
             return 0;
         }
 
@@ -1667,30 +1661,16 @@ public class BookieShell implements Tool {
         int runCmd(CommandLine cmdLine) throws Exception {
             boolean getter = cmdLine.hasOption("g");
             boolean setter = cmdLine.hasOption("s");
+            int set = 0;
+            if (setter) {
+                set = Integer.parseInt(cmdLine.getOptionValue("set"));
+            }
 
-            if ((!getter && !setter) || (getter && setter)) {
-                LOG.error("One and only one of -get and -set must be specified");
-                printUsage();
-                return 1;
-            }
-            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-            try {
-                if (getter) {
-                    int lostBookieRecoveryDelay = admin.getLostBookieRecoveryDelay();
-                    LOG.info("LostBookieRecoveryDelay value in ZK: {}", String.valueOf(lostBookieRecoveryDelay));
-                } else {
-                    int lostBookieRecoveryDelay = Integer.parseInt(cmdLine.getOptionValue("set"));
-                    admin.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
-                    LOG.info("Successfully set LostBookieRecoveryDelay value in ZK: {}",
-                            String.valueOf(lostBookieRecoveryDelay));
-                }
-            } finally {
-                if (admin != null) {
-                    admin.close();
-                }
-            }
-            return 0;
+            LostBookieRecoveryDelayCommand.LBRDFlags flags = new LostBookieRecoveryDelayCommand.LBRDFlags()
+                .get(getter).set(set);
+            LostBookieRecoveryDelayCommand cmd = new LostBookieRecoveryDelayCommand();
+            boolean result = cmd.apply(bkConf, flags);
+            return result ? 0 : 1;
         }
     }
 
@@ -2188,31 +2168,12 @@ public class BookieShell implements Tool {
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
             final long lid = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
-            if (lid == -1) {
-                System.err.println("Must specify a ledger id");
-                return -1;
-            }
 
             boolean force = cmdLine.hasOption("f");
-            boolean confirm = false;
-            if (!force) {
-                confirm = IOUtils.confirmPrompt(
-                        "Are you sure to delete Ledger : " + ledgerIdFormatter.formatLedgerId(lid) + "?");
-            }
-
-            BookKeeper bk = null;
-            try {
-                if (force || confirm) {
-                    ClientConfiguration conf = new ClientConfiguration();
-                    conf.addConfiguration(bkConf);
-                    bk = new BookKeeper(conf);
-                    bk.deleteLedger(lid);
-                }
-            } finally {
-                if (bk != null) {
-                    bk.close();
-                }
-            }
+            DeleteLedgerCommand cmd = new DeleteLedgerCommand(ledgerIdFormatter);
+            DeleteLedgerCommand.DeleteLedgerFlags flags = new DeleteLedgerCommand.DeleteLedgerFlags()
+                .ledgerId(lid).force(force);
+            cmd.apply(bkConf, flags);
 
             return 0;
         }
