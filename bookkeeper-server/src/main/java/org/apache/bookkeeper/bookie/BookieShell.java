@@ -112,6 +112,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
+import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
@@ -2199,31 +2200,12 @@ public class BookieShell implements Tool {
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
             final long lid = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
-            if (lid == -1) {
-                System.err.println("Must specify a ledger id");
-                return -1;
-            }
 
             boolean force = cmdLine.hasOption("f");
-            boolean confirm = false;
-            if (!force) {
-                confirm = IOUtils.confirmPrompt(
-                        "Are you sure to delete Ledger : " + ledgerIdFormatter.formatLedgerId(lid) + "?");
-            }
-
-            BookKeeper bk = null;
-            try {
-                if (force || confirm) {
-                    ClientConfiguration conf = new ClientConfiguration();
-                    conf.addConfiguration(bkConf);
-                    bk = new BookKeeper(conf);
-                    bk.deleteLedger(lid);
-                }
-            } finally {
-                if (bk != null) {
-                    bk.close();
-                }
-            }
+            DeleteLedgerCommand cmd = new DeleteLedgerCommand(ledgerIdFormatter);
+            DeleteLedgerCommand.DeleteLedgerFlags flags = new DeleteLedgerCommand.DeleteLedgerFlags()
+                .ledgerId(lid).force(force);
+            cmd.apply(bkConf, flags);
 
             return 0;
         }
