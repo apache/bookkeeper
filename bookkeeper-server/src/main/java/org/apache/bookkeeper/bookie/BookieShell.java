@@ -111,6 +111,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand.NukeExistingClusterFlags;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
