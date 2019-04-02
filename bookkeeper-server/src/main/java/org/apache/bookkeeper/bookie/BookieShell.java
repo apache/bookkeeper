@@ -109,6 +109,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListFilesOnDiscCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.DecommissionCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
@@ -365,7 +366,9 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            boolean result = BookKeeperAdmin.initNewCluster(bkConf);
+            org.apache.bookkeeper.tools.cli.commands.bookies.InitCommand initCommand =
+                new org.apache.bookkeeper.tools.cli.commands.bookies.InitCommand();
+            boolean result = initCommand.apply(bkConf, new CliFlags());
             return (result) ? 0 : 1;
         }
     }
@@ -1307,6 +1310,8 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
+            ReadLogMetadataCommand cmd = new ReadLogMetadataCommand(ledgerIdFormatter);
+            ReadLogMetadataCommand.ReadLogMetadataFlags flags = new ReadLogMetadataCommand.ReadLogMetadataFlags();
             String[] leftArgs = cmdLine.getArgs();
             if (leftArgs.length <= 0) {
                 LOG.error("ERROR: missing entry log id or entry log file name");
@@ -1317,22 +1322,11 @@ public class BookieShell implements Tool {
             long logId;
             try {
                 logId = Long.parseLong(leftArgs[0]);
+                flags.logId(logId);
             } catch (NumberFormatException nfe) {
-                // not a entry log id
-                File f = new File(leftArgs[0]);
-                String name = f.getName();
-                if (!name.endsWith(".log")) {
-                    // not a log file
-                    LOG.error("ERROR: invalid entry log file name " + leftArgs[0]);
-                    printUsage();
-                    return -1;
-                }
-                String idString = name.split("\\.")[0];
-                logId = Long.parseLong(idString, 16);
+                flags.logFilename(leftArgs[0]);
             }
-
-            printEntryLogMetadata(logId);
-
+            cmd.apply(bkConf, flags);
             return 0;
         }
 
