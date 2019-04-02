@@ -28,11 +28,15 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.ByteBuf;
+<<<<<<< Updated upstream
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
+=======
+import io.netty.buffer.Unpooled;
+>>>>>>> Stashed changes
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -59,14 +63,21 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+<<<<<<< Updated upstream
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+=======
+import java.util.concurrent.CountDownLatch;
+>>>>>>> Stashed changes
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+<<<<<<< Updated upstream
 import java.util.stream.LongStream;
 
+=======
+>>>>>>> Stashed changes
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
@@ -76,11 +87,9 @@ import org.apache.bookkeeper.client.BKException.MetaStoreException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerEntry;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
-import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -90,14 +99,17 @@ import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+<<<<<<< Updated upstream
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookieProtocol;
+=======
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+>>>>>>> Stashed changes
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
@@ -106,8 +118,12 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListFilesOnDiscCommand;
+<<<<<<< Updated upstream
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
+=======
+import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLedgerCommand;
+>>>>>>> Stashed changes
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
@@ -778,91 +794,29 @@ public class BookieShell implements Tool {
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
             final long ledgerId = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
-            if (ledgerId == -1) {
-                System.err.println("Must specify a ledger id");
-                return -1;
-            }
-
             final long firstEntry = getOptionLongValue(cmdLine, "firstentryid", 0);
             long lastEntry = getOptionLongValue(cmdLine, "lastentryid", -1);
 
             boolean printMsg = cmdLine.hasOption("m");
             boolean forceRecovery = cmdLine.hasOption("r");
             final BookieSocketAddress bookie;
+            String bookieAddress;
             if (cmdLine.hasOption("b")) {
                 // A particular bookie was specified
-                bookie = new BookieSocketAddress(cmdLine.getOptionValue("b"));
+                bookieAddress = cmdLine.getOptionValue("b");
             } else {
-                bookie = null;
+                bookieAddress = null;
             }
 
-            ClientConfiguration conf = new ClientConfiguration();
-            conf.addConfiguration(bkConf);
-
-            try (BookKeeperAdmin bk = new BookKeeperAdmin(conf)) {
-                if (forceRecovery) {
-                    // Force the opening of the ledger to trigger recovery
-                    try (LedgerHandle lh = bk.openLedger(ledgerId)) {
-                        if (lastEntry == -1 || lastEntry > lh.getLastAddConfirmed()) {
-                            lastEntry = lh.getLastAddConfirmed();
-                        }
-                    }
-                }
-
-                if (bookie == null) {
-                    // No bookie was specified, use normal bk client
-                    Iterator<LedgerEntry> entries = bk.readEntries(ledgerId, firstEntry, lastEntry).iterator();
-                    while (entries.hasNext()) {
-                        LedgerEntry entry = entries.next();
-                        formatEntry(entry, printMsg);
-                    }
-                } else {
-                    // Use BookieClient to target a specific bookie
-                    EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-                    OrderedExecutor executor = OrderedExecutor.newBuilder()
-                        .numThreads(1)
-                        .name("BookieClientScheduler")
-                        .build();
-
-                    ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
-                        new DefaultThreadFactory("BookKeeperClientSchedulerPool"));
-
-                    BookieClient bookieClient = new BookieClientImpl(conf, eventLoopGroup,
-                            UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE);
-
-                    LongStream.range(firstEntry, lastEntry).forEach(entryId -> {
-                        CompletableFuture<Void> future = new CompletableFuture<>();
-
-                        bookieClient.readEntry(bookie, ledgerId, entryId,
-                            (rc, ledgerId1, entryId1, buffer, ctx) -> {
-                                if (rc != BKException.Code.OK) {
-                                    LOG.error("Failed to read entry {} -- {}", entryId1, BKException.getMessage(rc));
-                                    future.completeExceptionally(BKException.create(rc));
-                                    return;
-                                }
-
-                                System.out.println("--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId)
-                                    + ", Eid=" + entryId + " ---------");
-                                if (printMsg) {
-                                    System.out.println("Data: " + ByteBufUtil.prettyHexDump(buffer));
-                                }
-
-                                future.complete(null);
-                                }, null, BookieProtocol.FLAG_NONE);
-
-                        try {
-                            future.get();
-                        } catch (Exception e) {
-                            LOG.error("Error future.get while reading entries from ledger {}", ledgerId, e);
-                        }
-                    });
-
-                    eventLoopGroup.shutdownGracefully();
-                    executor.shutdown();
-                    bookieClient.close();
-                }
-            }
-
+            ReadLedgerCommand cmd = new ReadLedgerCommand(entryFormatter, ledgerIdFormatter);
+            ReadLedgerCommand.ReadLedgerFlags flags = new ReadLedgerCommand.ReadLedgerFlags();
+            flags.bookieAddresss(bookieAddress);
+            flags.firstEntryId(firstEntry);
+            flags.forceRecovery(forceRecovery);
+            flags.lastEntryId(lastEntry);
+            flags.ledgerId(ledgerId);
+            flags.msg(printMsg);
+            cmd.apply(bkConf, flags);
             return 0;
         }
 

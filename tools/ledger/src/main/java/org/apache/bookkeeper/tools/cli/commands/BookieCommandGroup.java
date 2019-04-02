@@ -28,8 +28,12 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListFilesOnDiscCommand;
+<<<<<<< Updated upstream
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
+=======
+import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLedgerCommand;
+>>>>>>> Stashed changes
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
@@ -55,9 +59,14 @@ public class BookieCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new LedgerCommand())
         .addCommand(new ListFilesOnDiscCommand())
         .addCommand(new ConvertToDBStorageCommand())
+<<<<<<< Updated upstream
         .addCommand(new ListLedgersCommand())
         .addCommand(new ConvertToInterleavedStorageCommand())
         .addCommand(new ReadJournalCommand())
+=======
+        .addCommand(new ConvertToInterleavedStorageCommand())
+        .addCommand(new ReadLedgerCommand())
+>>>>>>> Stashed changes
         .build();
 
     public BookieCommandGroup() {
