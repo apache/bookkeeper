@@ -364,7 +364,9 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            boolean result = BookKeeperAdmin.initNewCluster(bkConf);
+            org.apache.bookkeeper.tools.cli.commands.bookies.InitCommand initCommand =
+                new org.apache.bookkeeper.tools.cli.commands.bookies.InitCommand();
+            boolean result = initCommand.apply(bkConf, new CliFlags());
             return (result) ? 0 : 1;
         }
     }
