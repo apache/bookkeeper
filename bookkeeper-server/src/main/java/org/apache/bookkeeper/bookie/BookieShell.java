@@ -111,6 +111,8 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand.NukeExistingClusterFlags;
 import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
@@ -405,19 +407,11 @@ public class BookieShell implements Tool {
             String zkledgersrootpath = cmdLine.getOptionValue("zkledgersrootpath");
             String instanceid = cmdLine.getOptionValue("instanceid");
 
-            /*
-             * for NukeExistingCluster command 'zkledgersrootpath' should be provided and either force option or
-             * instanceid should be provided.
-             */
-            if ((zkledgersrootpath == null) || (force == (instanceid != null))) {
-                LOG.error(
-                        "zkledgersrootpath should be specified and either force option "
-                        + "or instanceid should be specified (but not both)");
-                printUsage();
-                return -1;
-            }
-
-            boolean result = BookKeeperAdmin.nukeExistingCluster(bkConf, zkledgersrootpath, instanceid, force);
+            NukeExistingClusterCommand cmd = new NukeExistingClusterCommand();
+            NukeExistingClusterFlags flags = new NukeExistingClusterFlags().force(force)
+                                                                           .zkLedgersRootPath(zkledgersrootpath)
+                                                                           .instandId(instanceid);
+            boolean result = cmd.apply(bkConf, flags);
             return (result) ? 0 : 1;
         }
     }
