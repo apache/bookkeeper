@@ -60,11 +60,9 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -94,12 +92,12 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
@@ -108,11 +106,15 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListFilesOnDiscCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgerLocationsIndexCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
+import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
@@ -143,8 +145,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -322,8 +322,11 @@ public class BookieShell implements Tool {
             boolean interactive = (!cmdLine.hasOption("n"));
             boolean force = cmdLine.hasOption("f");
 
-            boolean result = BookKeeperAdmin.format(bkConf, interactive, force);
-            return (result) ? 0 : 1;
+            MetaFormatCommand cmd = new MetaFormatCommand();
+            MetaFormatCommand.MetaFormatFlags flags = new MetaFormatCommand.MetaFormatFlags()
+                .interactive(interactive).force(force);
+            boolean result = cmd.apply(bkConf, flags);
+            return result ? 0 : 1;
         }
     }
 
@@ -362,7 +365,9 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            boolean result = BookKeeperAdmin.initNewCluster(bkConf);
+            org.apache.bookkeeper.tools.cli.commands.bookies.InitCommand initCommand =
+                new org.apache.bookkeeper.tools.cli.commands.bookies.InitCommand();
+            boolean result = initCommand.apply(bkConf, new CliFlags());
             return (result) ? 0 : 1;
         }
     }
@@ -981,76 +986,11 @@ public class BookieShell implements Tool {
         public int runCmd(CommandLine cmdLine) throws Exception {
             final boolean printMeta = cmdLine.hasOption("m");
             final String bookieidToBePartOfEnsemble = cmdLine.getOptionValue("bookieid");
-            final BookieSocketAddress bookieAddress = StringUtils.isBlank(bookieidToBePartOfEnsemble) ? null
-                    : new BookieSocketAddress(bookieidToBePartOfEnsemble);
 
-            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
-
-                    final AtomicInteger returnCode = new AtomicInteger(BKException.Code.OK);
-                    final CountDownLatch processDone = new CountDownLatch(1);
-
-                    Processor<Long> ledgerProcessor = new Processor<Long>() {
-                            @Override
-                            public void process(Long ledgerId, VoidCallback cb) {
-                                if (!printMeta && (bookieAddress == null)) {
-                                    printLedgerMetadata(ledgerId, null, false);
-                                    cb.processResult(BKException.Code.OK, null, null);
-                                } else {
-                                    ledgerManager.readLedgerMetadata(ledgerId).whenComplete(
-                                            (metadata, exception) -> {
-                                                if (exception == null) {
-                                                    if ((bookieAddress == null)
-                                                        || BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(
-                                                                ledgerId, bookieAddress, metadata.getValue())) {
-                                                        /*
-                                                         * the print method has to be in
-                                                         * synchronized scope, otherwise
-                                                         * output of printLedgerMetadata
-                                                         * could interleave since this
-                                                         * callback for different
-                                                         * ledgers can happen in
-                                                         * different threads.
-                                                         */
-                                                        synchronized (BookieShell.this) {
-                                                            printLedgerMetadata(ledgerId, metadata.getValue(),
-                                                                                printMeta);
-                                                        }
-                                                    }
-                                                    cb.processResult(BKException.Code.OK, null, null);
-                                                } else if (BKException.getExceptionCode(exception)
-                                                           == BKException.Code.NoSuchLedgerExistsException) {
-                                                    cb.processResult(BKException.Code.OK, null, null);
-                                                } else {
-                                                    LOG.error("Unable to read the ledger: {} information", ledgerId);
-                                                    cb.processResult(BKException.getExceptionCode(exception),
-                                                                     null, null);
-                                                }
-                                            });
-                                }
-                            }
-                        };
-
-                    ledgerManager.asyncProcessLedgers(ledgerProcessor, new AsyncCallback.VoidCallback() {
-                        @Override
-                        public void processResult(int rc, String s, Object obj) {
-                            returnCode.set(rc);
-                            processDone.countDown();
-                        }
-                    }, null, BKException.Code.OK, BKException.Code.ReadException);
-
-                    processDone.await();
-                    if (returnCode.get() != BKException.Code.OK) {
-                        LOG.error("Received error return value while processing ledgers: {}", returnCode.get());
-                        throw BKException.create(returnCode.get());
-                    }
-
-                } catch (Exception ioe) {
-                    LOG.error("Received Exception while processing ledgers", ioe);
-                    throw new UncheckedExecutionException(ioe);
-                }
-                return null;
-            });
+            ListLedgersCommand.ListLedgersFlags flags = new ListLedgersCommand.ListLedgersFlags()
+                                                            .bookieId(bookieidToBePartOfEnsemble).meta(printMeta);
+            ListLedgersCommand cmd = new ListLedgersCommand(ledgerIdFormatter);
+            cmd.apply(bkConf, flags);
 
             return 0;
         }
@@ -1369,6 +1309,8 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
+            ReadLogMetadataCommand cmd = new ReadLogMetadataCommand(ledgerIdFormatter);
+            ReadLogMetadataCommand.ReadLogMetadataFlags flags = new ReadLogMetadataCommand.ReadLogMetadataFlags();
             String[] leftArgs = cmdLine.getArgs();
             if (leftArgs.length <= 0) {
                 LOG.error("ERROR: missing entry log id or entry log file name");
@@ -1379,22 +1321,11 @@ public class BookieShell implements Tool {
             long logId;
             try {
                 logId = Long.parseLong(leftArgs[0]);
+                flags.logId(logId);
             } catch (NumberFormatException nfe) {
-                // not a entry log id
-                File f = new File(leftArgs[0]);
-                String name = f.getName();
-                if (!name.endsWith(".log")) {
-                    // not a log file
-                    LOG.error("ERROR: invalid entry log file name " + leftArgs[0]);
-                    printUsage();
-                    return -1;
-                }
-                String idString = name.split("\\.")[0];
-                logId = Long.parseLong(idString, 16);
+                flags.logFilename(leftArgs[0]);
             }
-
-            printEntryLogMetadata(logId);
-
+            cmd.apply(bkConf, flags);
             return 0;
         }
 
@@ -1743,30 +1674,16 @@ public class BookieShell implements Tool {
         int runCmd(CommandLine cmdLine) throws Exception {
             boolean getter = cmdLine.hasOption("g");
             boolean setter = cmdLine.hasOption("s");
+            int set = 0;
+            if (setter) {
+                set = Integer.parseInt(cmdLine.getOptionValue("set"));
+            }
 
-            if ((!getter && !setter) || (getter && setter)) {
-                LOG.error("One and only one of -get and -set must be specified");
-                printUsage();
-                return 1;
-            }
-            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-            try {
-                if (getter) {
-                    int lostBookieRecoveryDelay = admin.getLostBookieRecoveryDelay();
-                    LOG.info("LostBookieRecoveryDelay value in ZK: {}", String.valueOf(lostBookieRecoveryDelay));
-                } else {
-                    int lostBookieRecoveryDelay = Integer.parseInt(cmdLine.getOptionValue("set"));
-                    admin.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
-                    LOG.info("Successfully set LostBookieRecoveryDelay value in ZK: {}",
-                            String.valueOf(lostBookieRecoveryDelay));
-                }
-            } finally {
-                if (admin != null) {
-                    admin.close();
-                }
-            }
-            return 0;
+            LostBookieRecoveryDelayCommand.LBRDFlags flags = new LostBookieRecoveryDelayCommand.LBRDFlags()
+                .get(getter).set(set);
+            LostBookieRecoveryDelayCommand cmd = new LostBookieRecoveryDelayCommand();
+            boolean result = cmd.apply(bkConf, flags);
+            return result ? 0 : 1;
         }
     }
 
@@ -2264,31 +2181,12 @@ public class BookieShell implements Tool {
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
             final long lid = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
-            if (lid == -1) {
-                System.err.println("Must specify a ledger id");
-                return -1;
-            }
 
             boolean force = cmdLine.hasOption("f");
-            boolean confirm = false;
-            if (!force) {
-                confirm = IOUtils.confirmPrompt(
-                        "Are you sure to delete Ledger : " + ledgerIdFormatter.formatLedgerId(lid) + "?");
-            }
-
-            BookKeeper bk = null;
-            try {
-                if (force || confirm) {
-                    ClientConfiguration conf = new ClientConfiguration();
-                    conf.addConfiguration(bkConf);
-                    bk = new BookKeeper(conf);
-                    bk.deleteLedger(lid);
-                }
-            } finally {
-                if (bk != null) {
-                    bk.close();
-                }
-            }
+            DeleteLedgerCommand cmd = new DeleteLedgerCommand(ledgerIdFormatter);
+            DeleteLedgerCommand.DeleteLedgerFlags flags = new DeleteLedgerCommand.DeleteLedgerFlags()
+                .ledgerId(lid).force(force);
+            cmd.apply(bkConf, flags);
 
             return 0;
         }

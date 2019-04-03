@@ -18,34 +18,30 @@
  */
 package org.apache.bookkeeper.tools.cli.commands;
 
-import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_LEDGER_SERVICE;
+import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
 
-import org.apache.bookkeeper.tools.cli.BKCtl;
-import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
-import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
- * Client operations that interacts with a cluster, such as simpletest.
+ * Commands on some specific operation.
  */
-public class LedgerCommandGroup extends CliCommandGroup<BKFlags> {
+public class AutoRecoveryCommandGroup extends CliCommandGroup<BKFlags> {
 
-    private static final String NAME = "ledger";
-    private static final String DESC = "Commands on interacting with ledgers";
+    private static final String NAME = "autorecovery";
+    private static final String DESC = "Command on some specific operation.";
 
-    private static CliSpec<BKFlags> spec = CliSpec.<BKFlags>newBuilder()
-        .withName(NAME)
-        .withDescription(DESC)
-        .withParent(BKCtl.NAME)
-        .withCategory(CATEGORY_LEDGER_SERVICE)
-        .addCommand(new SimpleTestCommand())
-        .addCommand(new DeleteLedgerCommand())
-        .build();
+    private static final CliSpec<BKFlags> spec = CliSpec.<BKFlags>newBuilder()
+                                                     .withName(NAME)
+                                                     .withDescription(DESC)
+                                                     .withCategory(CATEGORY_INFRA_SERVICE)
+                                                     .addCommand(new LostBookieRecoveryDelayCommand())
+                                                     .build();
 
-    public LedgerCommandGroup() {
+    public AutoRecoveryCommandGroup() {
         super(spec);
     }
-
 }
+
