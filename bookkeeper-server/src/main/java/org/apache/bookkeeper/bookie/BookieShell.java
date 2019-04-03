@@ -63,7 +63,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -87,7 +86,6 @@ import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -95,9 +93,8 @@ import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.ReplicationException;
-import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
-import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
@@ -912,58 +909,13 @@ public class BookieShell implements Tool {
             final boolean printMissingReplica = cmdLine.hasOption("printmissingreplica");
             final boolean printReplicationWorkerId = cmdLine.hasOption("printreplicationworkerid");
 
-            final Predicate<List<String>> predicate;
-            if (!StringUtils.isBlank(includingBookieId) && !StringUtils.isBlank(excludingBookieId)) {
-                predicate = replicasList -> (replicasList.contains(includingBookieId)
-                        && !replicasList.contains(excludingBookieId));
-            } else if (!StringUtils.isBlank(includingBookieId)) {
-                predicate = replicasList -> replicasList.contains(includingBookieId);
-            } else if (!StringUtils.isBlank(excludingBookieId)) {
-                predicate = replicasList -> !replicasList.contains(excludingBookieId);
-            } else {
-                predicate = null;
-            }
-
-            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                LedgerUnderreplicationManager underreplicationManager;
-                try {
-                    underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-                } catch (KeeperException | CompatibilityException e) {
-                    throw new UncheckedExecutionException("Failed to new ledger underreplicated manager", e);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new UncheckedExecutionException("Interrupted on newing ledger underreplicated manager", e);
-                }
-                Iterator<UnderreplicatedLedger> iter = underreplicationManager.listLedgersToRereplicate(predicate);
-                while (iter.hasNext()) {
-                    UnderreplicatedLedger underreplicatedLedger = iter.next();
-                    long urLedgerId = underreplicatedLedger.getLedgerId();
-                    System.out.println(ledgerIdFormatter.formatLedgerId(urLedgerId));
-                    long ctime = underreplicatedLedger.getCtime();
-                    if (ctime != UnderreplicatedLedger.UNASSIGNED_CTIME) {
-                        System.out.println("\tCtime : " + ctime);
-                    }
-                    if (printMissingReplica) {
-                        underreplicatedLedger.getReplicaList().forEach((missingReplica) -> {
-                            System.out.println("\tMissingReplica : " + missingReplica);
-                        });
-                    }
-                    if (printReplicationWorkerId) {
-                        try {
-                            String replicationWorkerId = underreplicationManager
-                                    .getReplicationWorkerIdRereplicatingLedger(urLedgerId);
-                            if (replicationWorkerId != null) {
-                                System.out.println("\tReplicationWorkerId : " + replicationWorkerId);
-                            }
-                        } catch (UnavailableException e) {
-                            LOG.error("Failed to get ReplicationWorkerId rereplicating ledger {} -- {}", urLedgerId,
-                                    e.getMessage());
-                        }
-                    }
-                }
-                return null;
-            });
-
+            ListUnderReplicatedCommand.LURFlags flags = new ListUnderReplicatedCommand.LURFlags()
+                                                            .missingReplica(includingBookieId)
+                                                            .excludingMissingReplica(excludingBookieId)
+                                                            .printMissingReplica(printMissingReplica)
+                                                            .printReplicationWorkerId(printReplicationWorkerId);
+            ListUnderReplicatedCommand cmd = new ListUnderReplicatedCommand(ledgerIdFormatter);
+            cmd.apply(bkConf, flags);
             return 0;
         }
     }
