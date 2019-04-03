@@ -27,7 +27,6 @@ import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSo
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
@@ -68,7 +67,6 @@ import java.util.stream.LongStream;
 
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.ldb.LocationsIndexRebuildOp;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.MetaStoreException;
@@ -99,13 +97,13 @@ import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryD
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookie.FormatUtil;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListFilesOnDiscCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
@@ -142,7 +140,6 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -1182,6 +1179,8 @@ public class BookieShell implements Tool {
                 printUsage();
                 return -1;
             }
+            ReadLogCommand cmd = new ReadLogCommand(ledgerIdFormatter, entryFormatter);
+            ReadLogCommand.ReadLogFlags flags = new ReadLogCommand.ReadLogFlags();
 
             boolean printMsg = false;
             if (cmdLine.hasOption("m")) {
@@ -1190,40 +1189,22 @@ public class BookieShell implements Tool {
             long logId;
             try {
                 logId = Long.parseLong(leftArgs[0]);
+                flags.entryLogId(logId);
             } catch (NumberFormatException nfe) {
                 // not a entry log id
-                File f = new File(leftArgs[0]);
-                String name = f.getName();
-                if (!name.endsWith(".log")) {
-                    // not a log file
-                    System.err.println("ERROR: invalid entry log file name " + leftArgs[0]);
-                    printUsage();
-                    return -1;
-                }
-                String idString = name.split("\\.")[0];
-                logId = Long.parseLong(idString, 16);
+                flags.filename(leftArgs[0]);
             }
-
             final long lId = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
             final long eId = getOptionLongValue(cmdLine, "entryid", -1);
             final long startpos = getOptionLongValue(cmdLine, "startpos", -1);
             final long endpos = getOptionLongValue(cmdLine, "endpos", -1);
-
-            // scan entry log
-            if (startpos != -1) {
-                if ((endpos != -1) && (endpos < startpos)) {
-                    System.err
-                            .println("ERROR: StartPosition of the range should be lesser than or equal to EndPosition");
-                    return -1;
-                }
-                scanEntryLogForPositionRange(logId, startpos, endpos, printMsg);
-            } else if (lId != -1) {
-                scanEntryLogForSpecificEntry(logId, lId, eId, printMsg);
-            } else {
-                scanEntryLog(logId, printMsg);
-            }
-
-            return 0;
+            flags.endPos(endpos);
+            flags.startPos(startpos);
+            flags.entryId(eId);
+            flags.ledgerId(lId);
+            flags.msg(printMsg);
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
 
         @Override
@@ -2665,46 +2646,11 @@ public class BookieShell implements Tool {
         System.exit(res);
     }
 
-    ///
-    /// Bookie File Operations
-    ///
-
-    /**
-     * Get the ledger file of a specified ledger.
-     *
-     * @param ledgerId Ledger Id
-     *
-     * @return file object.
-     */
-    private File getLedgerFile(long ledgerId) {
-        String ledgerName = IndexPersistenceMgr.getLedgerName(ledgerId);
-        File lf = null;
-        for (File d : indexDirectories) {
-            lf = new File(d, ledgerName);
-            if (lf.exists()) {
-                break;
-            }
-            lf = null;
-        }
-        return lf;
-    }
-
     private synchronized void initEntryLogger() throws IOException {
         if (null == entryLogger) {
             // provide read only entry logger
             entryLogger = new ReadOnlyEntryLogger(bkConf);
         }
-    }
-
-    /**
-     * Scan over entry log.
-     *
-     * @param logId Entry Log Id
-     * @param scanner Entry Log Scanner
-     */
-    protected void scanEntryLog(long logId, EntryLogScanner scanner) throws IOException {
-        initEntryLogger();
-        entryLogger.scanEntryLog(logId, scanner);
     }
 
     ///
@@ -2721,119 +2667,6 @@ public class BookieShell implements Tool {
         });
     }
 
-    /**
-     * Scan over an entry log file.
-     *
-     * @param logId
-     *          Entry Log File id.
-     * @param printMsg
-     *          Whether printing the entry data.
-     */
-    protected void scanEntryLog(long logId, final boolean printMsg) throws Exception {
-        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)");
-        scanEntryLog(logId, new EntryLogScanner() {
-            @Override
-            public boolean accept(long ledgerId) {
-                return true;
-            }
-
-            @Override
-            public void process(long ledgerId, long startPos, ByteBuf entry) {
-                FormatUtil.formatEntry(startPos, entry, printMsg, ledgerIdFormatter, entryFormatter);
-            }
-        });
-    }
-
-    /**
-     * Scan over an entry log file for a particular entry.
-     *
-     * @param logId Entry Log File id.
-     * @param ledgerId id of the ledger
-     * @param entryId entryId of the ledger we are looking for (-1 for all of the entries of the ledger)
-     * @param printMsg Whether printing the entry data.
-     * @throws Exception
-     */
-    protected void scanEntryLogForSpecificEntry(long logId, final long ledgerId, final long entryId,
-                                                final boolean printMsg) throws Exception {
-        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for LedgerId "
-                + ledgerId + ((entryId == -1) ? "" : " for EntryId " + entryId));
-        final MutableBoolean entryFound = new MutableBoolean(false);
-        scanEntryLog(logId, new EntryLogScanner() {
-            @Override
-            public boolean accept(long candidateLedgerId) {
-                return ((candidateLedgerId == ledgerId) && ((!entryFound.booleanValue()) || (entryId == -1)));
-            }
-
-            @Override
-            public void process(long candidateLedgerId, long startPos, ByteBuf entry) {
-                long entrysLedgerId = entry.getLong(entry.readerIndex());
-                long entrysEntryId = entry.getLong(entry.readerIndex() + 8);
-                if ((candidateLedgerId == entrysLedgerId) && (candidateLedgerId == ledgerId)
-                        && ((entrysEntryId == entryId) || (entryId == -1))) {
-                    entryFound.setValue(true);
-                    FormatUtil.formatEntry(startPos, entry, printMsg, ledgerIdFormatter, entryFormatter);
-                }
-            }
-        });
-        if (!entryFound.booleanValue()) {
-            System.out.println("LedgerId " + ledgerId + ((entryId == -1) ? "" : " EntryId " + entryId)
-                    + " is not available in the entry log " + logId + " (" + Long.toHexString(logId) + ".log)");
-        }
-    }
-
-    /**
-     * Scan over an entry log file for entries in the given position range.
-     *
-     * @param logId Entry Log File id.
-     * @param rangeStartPos Start position of the entry we are looking for
-     * @param rangeEndPos End position of the entry we are looking for (-1 for till the end of the entrylog)
-     * @param printMsg Whether printing the entry data.
-     * @throws Exception
-     */
-    protected void scanEntryLogForPositionRange(long logId, final long rangeStartPos, final long rangeEndPos,
-                                                final boolean printMsg) throws Exception {
-        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for PositionRange: "
-                + rangeStartPos + " - " + rangeEndPos);
-        final MutableBoolean entryFound = new MutableBoolean(false);
-        scanEntryLog(logId, new EntryLogScanner() {
-            private MutableBoolean stopScanning = new MutableBoolean(false);
-
-            @Override
-            public boolean accept(long ledgerId) {
-                return !stopScanning.booleanValue();
-            }
-
-            @Override
-            public void process(long ledgerId, long entryStartPos, ByteBuf entry) {
-                if (!stopScanning.booleanValue()) {
-                    if ((rangeEndPos != -1) && (entryStartPos > rangeEndPos)) {
-                        stopScanning.setValue(true);
-                    } else {
-                        int entrySize = entry.readableBytes();
-                        /**
-                         * entrySize of an entry (inclusive of payload and
-                         * header) value is stored as int value in log file, but
-                         * it is not counted in the entrySize, hence for calculating
-                         * the end position of the entry we need to add additional
-                         * 4 (intsize of entrySize). Please check
-                         * EntryLogger.scanEntryLog.
-                         */
-                        long entryEndPos = entryStartPos + entrySize + 4 - 1;
-                        if (((rangeEndPos == -1) || (entryStartPos <= rangeEndPos)) && (rangeStartPos <= entryEndPos)) {
-                            FormatUtil.formatEntry(entryStartPos, entry, printMsg, ledgerIdFormatter, entryFormatter);
-                            entryFound.setValue(true);
-                        }
-                    }
-                }
-            }
-        });
-        if (!entryFound.booleanValue()) {
-            System.out.println("Entry log " + logId + " (" + Long.toHexString(logId)
-                    + ".log) doesn't has any entry in the range " + rangeStartPos + " - " + rangeEndPos
-                    + ". Probably the position range, you have provided is lesser than the LOGFILE_HEADER_SIZE (1024) "
-                    + "or greater than the current log filesize.");
-        }
-    }
 
     /**
      * Format the entry into a readable format.
