@@ -114,6 +114,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterComma
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand.NukeExistingClusterFlags;
 import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.client.UpdateLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
@@ -2020,6 +2021,9 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
+            UpdateLedgersCommand cmd = new UpdateLedgersCommand();
+            UpdateLedgersCommand.UpdataLedgersFlags flags = new UpdateLedgersCommand.UpdataLedgersFlags();
+
             final String bookieId = cmdLine.getOptionValue("bookieId");
             if (StringUtils.isBlank(bookieId)) {
                 LOG.error("Invalid argument list!");
@@ -2032,23 +2036,8 @@ public class BookieShell implements Tool {
                 return -1;
             }
             boolean useHostName = getOptionalValue(bookieId, "hostname");
-            if (!bkConf.getUseHostNameAsBookieID() && useHostName) {
-                LOG.error("Expects configuration useHostNameAsBookieID=true as the option value passed is 'hostname'");
-                return -1;
-            } else if (bkConf.getUseHostNameAsBookieID() && !useHostName) {
-                LOG.error("Expects configuration useHostNameAsBookieID=false as the option value passed is 'ip'");
-                return -1;
-            }
             final int rate = getOptionIntValue(cmdLine, "updatespersec", 5);
-            if (rate <= 0) {
-                LOG.error("Invalid updatespersec {}, should be > 0", rate);
-                return -1;
-            }
             final int limit = getOptionIntValue(cmdLine, "limit", Integer.MIN_VALUE);
-            if (limit <= 0 && limit != Integer.MIN_VALUE) {
-                LOG.error("Invalid limit {}, should be > 0", limit);
-                return -1;
-            }
             final boolean verbose = getOptionBooleanValue(cmdLine, "verbose", false);
             final long printprogress;
             if (!verbose) {
@@ -2060,37 +2049,14 @@ public class BookieShell implements Tool {
                 // defaulting to 10 seconds
                 printprogress = getOptionLongValue(cmdLine, "printprogress", 10);
             }
-            final ClientConfiguration conf = new ClientConfiguration();
-            conf.addConfiguration(bkConf);
-            final BookKeeper bk = new BookKeeper(conf);
-            final BookKeeperAdmin admin = new BookKeeperAdmin(conf);
-            final UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, admin);
-            final ServerConfiguration serverConf = new ServerConfiguration(bkConf);
-            final BookieSocketAddress newBookieId = Bookie.getBookieAddress(serverConf);
-            serverConf.setUseHostNameAsBookieID(!useHostName);
-            final BookieSocketAddress oldBookieId = Bookie.getBookieAddress(serverConf);
+            flags.hostname(useHostName);
+            flags.printProgress(printprogress);
+            flags.limit(limit);
+            flags.updatePerSec(rate);
+            flags.verbose(verbose);
 
-            UpdateLedgerNotifier progressable = new UpdateLedgerNotifier() {
-                long lastReport = System.nanoTime();
-
-                @Override
-                public void progress(long updated, long issued) {
-                    if (printprogress <= 0) {
-                        return; // disabled
-                    }
-                    if (TimeUnit.MILLISECONDS.toSeconds(MathUtils.elapsedMSec(lastReport)) >= printprogress) {
-                        LOG.info("Number of ledgers issued={}, updated={}", issued, updated);
-                        lastReport = MathUtils.nowInNano();
-                    }
-                }
-            };
-            try {
-                updateLedgerOp.updateBookieIdInLedgers(oldBookieId, newBookieId, rate, limit, progressable);
-            } catch (IOException e) {
-                LOG.error("Failed to update ledger metadata", e);
-                return -1;
-            }
-            return 0;
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
     }
 
