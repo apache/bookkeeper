@@ -20,37 +20,28 @@ package org.apache.bookkeeper.tools.cli.commands;
 
 import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
 
-import org.apache.bookkeeper.tools.cli.BKCtl;
-import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookies.InitCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
- * Commands that interact with a cluster of bookies.
+ * Commands on some specific operation.
  */
-public class BookiesCommandGroup extends CliCommandGroup<BKFlags> {
+public class AutoRecoveryCommandGroup extends CliCommandGroup<BKFlags> {
 
-    private static final String NAME = "bookies";
-    private static final String DESC = "Commands on operating a cluster of bookies";
+    private static final String NAME = "autorecovery";
+    private static final String DESC = "Command on some specific operation.";
 
     private static final CliSpec<BKFlags> spec = CliSpec.<BKFlags>newBuilder()
-        .withName(NAME)
-        .withDescription(DESC)
-        .withParent(BKCtl.NAME)
-        .withCategory(CATEGORY_INFRA_SERVICE)
-        .addCommand(new ListBookiesCommand())
-        .addCommand(new InfoCommand())
-        .addCommand(new NukeExistingClusterCommand())
-        .addCommand(new MetaFormatCommand())
-        .addCommand(new InitCommand())
-        .build();
+                                                     .withName(NAME)
+                                                     .withDescription(DESC)
+                                                     .withCategory(CATEGORY_INFRA_SERVICE)
+                                                     .addCommand(new LostBookieRecoveryDelayCommand())
+                                                     .build();
 
-    public BookiesCommandGroup() {
+    public AutoRecoveryCommandGroup() {
         super(spec);
     }
 }
+
