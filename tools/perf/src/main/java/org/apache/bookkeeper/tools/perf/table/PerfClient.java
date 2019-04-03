@@ -324,7 +324,7 @@ public class PerfClient implements Runnable {
 
                     final CountDownLatch latch = new CountDownLatch(tasks.size());
                     @Cleanup("shutdown")
-                    ExecutorService executor = Executors.newCachedThreadPool();
+                    ExecutorService executor = Executors.newFixedThreadPool(tasks.size());
                     for (BenchmarkTask task : tasks) {
                         executor.submit(() -> {
                             try {

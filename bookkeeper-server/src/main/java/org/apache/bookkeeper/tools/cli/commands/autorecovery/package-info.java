@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,6 +18,6 @@
  */
 
 /**
- * This package provides all toggle commands.
+ * This package provides all autorecovery commands.
  */
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
