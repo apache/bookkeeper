@@ -85,6 +85,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListFilesOnDiscCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.LocalConsistencyCheckCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogCommand;
@@ -961,21 +962,9 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            LOG.info("=== Performing local consistency check ===");
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-            LedgerStorage ledgerStorage = Bookie.mountLedgerStorageOffline(conf, null);
-            List <LedgerStorage.DetectedInconsistency> errors = ledgerStorage.localConsistencyCheck(
-                    java.util.Optional.empty());
-            if (errors.size() > 0) {
-                LOG.info("=== Check returned errors: ===");
-                for (LedgerStorage.DetectedInconsistency error : errors) {
-                    LOG.error("Ledger {}, entry {}: ", error.getLedgerId(), error.getEntryId(), error.getException());
-                }
-                return 1;
-            } else {
-                LOG.info("=== Check passed ===");
-                return 0;
-            }
+            LocalConsistencyCheckCommand cmd = new LocalConsistencyCheckCommand();
+            boolean result = cmd.apply(bkConf, new CliFlags());
+            return (result) ? 0 : 1;
         }
 
         @Override
