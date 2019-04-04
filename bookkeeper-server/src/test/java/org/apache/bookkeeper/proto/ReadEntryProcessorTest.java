@@ -37,7 +37,6 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.apache.bookkeeper.proto.BookieProtocol.READENTRY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -107,7 +106,7 @@ public class ReadEntryProcessorTest {
         Response response = (Response) writtenObject.get();
         assertEquals(1, response.getEntryId());
         assertEquals(ledgerId, response.getLedgerId());
-        assertEquals(READENTRY, response.getOpCode());
+        assertEquals(BookieProtocol.READENTRY, response.getOpCode());
         assertEquals(errorCode, response.getErrorCode());
     }
 
@@ -147,7 +146,7 @@ public class ReadEntryProcessorTest {
         Response response = (Response) writtenObject.get();
         assertEquals(1, response.getEntryId());
         assertEquals(ledgerId, response.getLedgerId());
-        assertEquals(READENTRY, response.getOpCode());
+        assertEquals(BookieProtocol.READENTRY, response.getOpCode());
         assertEquals(errorCode, response.getErrorCode());
     }
 
@@ -175,7 +174,7 @@ public class ReadEntryProcessorTest {
         Response response = (Response) writtenObject.get();
         assertEquals(1, response.getEntryId());
         assertEquals(ledgerId, response.getLedgerId());
-        assertEquals(READENTRY, response.getOpCode());
+        assertEquals(BookieProtocol.READENTRY, response.getOpCode());
         assertEquals(BookieProtocol.EOK, response.getErrorCode());
     }
 }

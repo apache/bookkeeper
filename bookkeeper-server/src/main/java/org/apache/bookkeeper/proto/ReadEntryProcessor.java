@@ -70,7 +70,8 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
                 LOG.warn("Ledger: {}  fenced by: {}", request.getLedgerId(), channel.remoteAddress());
 
                 if (request.hasMasterKey()) {
-                    fenceResult = requestProcessor.getBookie().fenceLedger(request.getLedgerId(), request.getMasterKey());
+                    fenceResult = requestProcessor.getBookie().fenceLedger(request.getLedgerId(),
+                            request.getMasterKey());
                 } else {
                     LOG.error("Password not provided, Not safe to fence {}", request.getLedgerId());
                     throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
