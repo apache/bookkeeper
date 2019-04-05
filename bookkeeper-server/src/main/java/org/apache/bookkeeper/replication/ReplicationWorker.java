@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
+import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -330,14 +330,14 @@ public class ReplicationWorker implements Runnable {
                 return false;
             }
 
-        } catch (BKNoSuchLedgerExistsException e) {
+        } catch (BKNoSuchLedgerExistsOnMetadataServerException e) {
             // Ledger might have been deleted by user
-            LOG.info("BKNoSuchLedgerExistsException while opening "
+            LOG.info("BKNoSuchLedgerExistsOnMetadataServerException while opening "
                 + "ledger {} for replication. Other clients "
                 + "might have deleted the ledger. "
                 + "So, no harm to continue", ledgerIdToReplicate);
             underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
-            getExceptionCounter("BKNoSuchLedgerExistsException").inc();
+            getExceptionCounter("BKNoSuchLedgerExistsOnMetadataServerException").inc();
             return false;
         } catch (BKNotEnoughBookiesException e) {
             logBKExceptionAndReleaseLedger(e, ledgerIdToReplicate);
@@ -456,7 +456,7 @@ public class ReplicationWorker implements Runnable {
                     Thread.currentThread().interrupt();
                     LOG.info("InterruptedException while fencing the ledger {}"
                             + " for rereplication of postponed ledgers", ledgerId, e);
-                } catch (BKNoSuchLedgerExistsException bknsle) {
+                } catch (BKNoSuchLedgerExistsOnMetadataServerException bknsle) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Ledger {} was deleted, safe to continue", ledgerId, bknsle);
                     }

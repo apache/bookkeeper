@@ -171,7 +171,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                             } catch (BKException e) {
                                 rc = e.getCode();
                             }
-                            if (rc != BKException.Code.NoSuchLedgerExistsException) {
+                            if (rc != BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                                 LOG.warn("Ledger {} Missing in metadata list, but ledgerManager returned rc: {}.",
                                          bkLid, rc);
                                 continue;

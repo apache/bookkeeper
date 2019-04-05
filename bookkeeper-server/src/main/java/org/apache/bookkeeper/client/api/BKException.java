@@ -116,7 +116,9 @@ public class BKException extends Exception {
         case Code.NotEnoughBookiesException:
             return "Not enough non-faulty bookies available";
         case Code.NoSuchLedgerExistsException:
-            return "No such ledger exists";
+            return "No such ledger exists on Bookies";
+        case Code.NoSuchLedgerExistsOnMetadataServerException:
+            return "No such ledger exists on Metadata Server";
         case Code.BookieHandleNotAvailableException:
             return "Bookie handle is not available";
         case Code.ZKException:
@@ -241,6 +243,9 @@ public class BKException extends Exception {
          */
         int TimeoutException = -23;
         int SecurityException = -24;
+
+        /** No such ledger exists one metadata server. */
+        int NoSuchLedgerExistsOnMetadataServerException = -25;
 
         /**
          * Operation is illegal.
