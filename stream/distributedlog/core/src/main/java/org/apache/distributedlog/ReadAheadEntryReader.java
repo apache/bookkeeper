@@ -67,6 +67,15 @@ class ReadAheadEntryReader implements
 
     private static final Logger logger = LoggerFactory.getLogger(ReadAheadEntryReader.class);
 
+    private enum State {
+        IDLE,
+        READING,
+        PAUSED,
+        CLOSED,
+        ERROR
+    }
+    private State state = State.IDLE;
+
     //
     // Static Functions
     //
@@ -460,6 +469,11 @@ class ReadAheadEntryReader implements
     }
 
     private void unsafeAsyncClose(CompletableFuture<Void> closePromise) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("[{}][state:{}] Closing read ahead", streamName, state);
+        }
+        state = State.CLOSED;
+
         List<CompletableFuture<Void>> closeFutures = Lists.newArrayListWithExpectedSize(
                 segmentReaders.size() + segmentReadersToClose.size() + 1);
         if (null != currentSegmentReader) {
@@ -512,6 +526,16 @@ class ReadAheadEntryReader implements
         }
         // the exception is set and notify the state change
         notifyStateChangeOnFailure(cause);
+
+        orderedSubmit(new CloseableRunnable() {
+                @Override
+                public void safeRun() {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("[{}][state:{}] Read ahead errored", streamName, state);
+                    }
+                    state = State.ERROR;
+                }
+            });
     }
 
     void checkLastException() throws IOException {
@@ -571,15 +595,15 @@ class ReadAheadEntryReader implements
         }
         // notify on data available
         notifyStateChangeOnSuccess();
-        if (entryQueue.size() >= maxCachedEntries) {
-            pauseReadAheadOnCacheFull();
-        } else {
-            scheduleReadNext();
-        }
+
+        completeRead();
+        scheduleRead();
     }
 
     @Override
     public void onFailure(Throwable cause) {
+        completeRead();
+
         if (cause instanceof EndOfLogSegmentException) {
             // we reach end of the log segment
             moveToNextLogSegment();
@@ -590,24 +614,6 @@ class ReadAheadEntryReader implements
         } else {
             setLastException(new UnexpectedException("Unexpected non I/O exception", cause));
         }
-    }
-
-    private synchronized void invokeReadAhead() {
-        if (readAheadPaused) {
-            scheduleReadNext();
-            readAheadPaused = false;
-        }
-    }
-
-    private synchronized void pauseReadAheadOnCacheFull() {
-        this.readAheadPaused = true;
-        if (!isCacheFull()) {
-            invokeReadAhead();
-        }
-    }
-
-    private synchronized void pauseReadAheadOnNoMoreLogSegments() {
-        this.readAheadPaused = true;
     }
 
     //
@@ -630,7 +636,7 @@ class ReadAheadEntryReader implements
         } finally {
             // resume readahead if the cache becomes empty
             if (null != entry && !isCacheFull()) {
-                invokeReadAhead();
+                scheduleRead();
             }
         }
     }
@@ -784,7 +790,7 @@ class ReadAheadEntryReader implements
             unsafeMoveToNextLogSegment();
         }
         // resume readahead if necessary
-        invokeReadAhead();
+        scheduleRead();
     }
 
     /**
@@ -839,7 +845,9 @@ class ReadAheadEntryReader implements
         currentSegmentReader.openReader();
         currentSegmentReader.startRead();
         currentSegmentSequenceNumber = currentSegmentReader.getSegment().getLogSegmentSequenceNumber();
-        unsafeReadNext(currentSegmentReader);
+
+        scheduleRead();
+
         if (!segmentReaders.isEmpty()) {
             for (SegmentReader reader : segmentReaders) {
                 reader.openReader();
@@ -921,7 +929,6 @@ class ReadAheadEntryReader implements
             currentSegmentSequenceNumber = currentSegmentReader.getSegment().getLogSegmentSequenceNumber();
             nextSegmentReader = null;
             // start reading
-            unsafeReadNext(currentSegmentReader);
             unsafePrefetchNextSegment(true);
             hasSegmentToRead = true;
         } else {
@@ -931,7 +938,6 @@ class ReadAheadEntryReader implements
                 logger.debug("move to read segment {}", currentSegmentReader.getSegment());
                 currentSegmentSequenceNumber = currentSegmentReader.getSegment().getLogSegmentSequenceNumber();
                 nextSegmentReader = null;
-                unsafeReadNext(currentSegmentReader);
                 unsafePrefetchNextSegment(true);
                 hasSegmentToRead = true;
             }
@@ -942,25 +948,60 @@ class ReadAheadEntryReader implements
                         readHandler.getFullyQualifiedName());
                 isCatchingUp = false;
             }
-            pauseReadAheadOnNoMoreLogSegments();
         }
+
+        scheduleRead();
     }
 
-    void scheduleReadNext() {
+    void completeRead() {
         orderedSubmit(new CloseableRunnable() {
-            @Override
-            public void safeRun() {
-                if (null == currentSegmentReader) {
-                    pauseReadAheadOnNoMoreLogSegments();
-                    return;
+                @Override
+                public void safeRun() {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("[{}][state:{}] Read completed", streamName, state);
+                    }
+                    if (state == State.READING) {
+                        state = State.IDLE;
+                    }
                 }
-                unsafeReadNext(currentSegmentReader);
-            }
-        });
+            });
     }
 
-    private void unsafeReadNext(SegmentReader reader) {
-        reader.readNext().whenComplete(this);
+    void scheduleRead() {
+        orderedSubmit(new CloseableRunnable() {
+                @Override
+                public void safeRun() {
+
+                    boolean cacheFull = isCacheFull();
+                    SegmentReader reader = currentSegmentReader;
+                    boolean hasMoreSegments = reader != null;
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("[{}][state:{}] scheduling read, cacheFull {}, hasMoreSegments {}",
+                                     streamName, state, cacheFull, hasMoreSegments);
+                    }
+                    switch (state) {
+                    case IDLE:
+                        if (cacheFull || !hasMoreSegments) {
+                            state = State.PAUSED;
+                        } else {
+                            reader.readNext().whenComplete(ReadAheadEntryReader.this);
+                            state = State.READING;
+                        }
+                        break;
+                    case PAUSED:
+                        if (!cacheFull && hasMoreSegments) {
+                            reader.readNext().whenComplete(ReadAheadEntryReader.this);
+                            state = State.READING;
+                        }
+                        break;
+                    case READING:
+                    case ERROR:
+                    case CLOSED:
+                        // do nothing
+                        break;
+                    }
+                }
+            });
     }
 
     @Override

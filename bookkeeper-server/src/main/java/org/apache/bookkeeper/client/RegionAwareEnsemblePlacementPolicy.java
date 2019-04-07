@@ -228,7 +228,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
     @Override
     public PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize, int writeQuorumSize,
-            int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
+            int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludedBookies)
             throws BKException.BKNotEnoughBookiesException {
 
         int effectiveMinRegionsForDurability = disableDurabilityFeature.isAvailable() ? 1 : minRegionsForDurability;
@@ -257,7 +257,9 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
         rwLock.readLock().lock();
         try {
-            Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
+            Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = addDefaultRackBookiesIfMinNumRacksIsEnforced(
+                    excludedBookies);
+            Set<Node> excludeNodes = convertBookiesToNodes(comprehensiveExclusionBookiesSet);
             Set<String> availableRegions = new HashSet<String>();
             for (String region: perRegionPlacement.keySet()) {
                 if ((null == disallowBookiePlacementInRegionFeatureName)
@@ -294,8 +296,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         effectiveMinRegionsForDurability, minNumRacksPerWriteQuorum);
                 TopologyAwareEnsemblePlacementPolicy nextPolicy = perRegionPlacement.get(
                         availableRegions.iterator().next());
-                return nextPolicy.newEnsemble(ensembleSize, writeQuorumSize, writeQuorumSize, excludeBookies, ensemble,
-                        ensemble);
+                return nextPolicy.newEnsemble(ensembleSize, writeQuorumSize, writeQuorumSize,
+                        comprehensiveExclusionBookiesSet, ensemble, ensemble);
             }
 
             int remainingEnsemble = ensembleSize;
@@ -349,9 +351,10 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                             int newEnsembleSize = currentAllocation.getLeft() + addToEnsembleSize;
                             int newWriteQuorumSize = currentAllocation.getRight() + addToWriteQuorum;
                             try {
-                                List<BookieSocketAddress> allocated = policyWithinRegion.newEnsemble(newEnsembleSize,
-                                        newWriteQuorumSize, newWriteQuorumSize, excludeBookies, tempEnsemble,
-                                        tempEnsemble).getResult();
+                                List<BookieSocketAddress> allocated = policyWithinRegion
+                                        .newEnsemble(newEnsembleSize, newWriteQuorumSize, newWriteQuorumSize,
+                                                comprehensiveExclusionBookiesSet, tempEnsemble, tempEnsemble)
+                                        .getResult();
                                 ensemble = tempEnsemble;
                                 remainingEnsemble -= addToEnsembleSize;
                                 remainingWriteQuorum -= addToWriteQuorum;
@@ -379,12 +382,12 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                     if (regionsReachedMaxAllocation.contains(region)) {
                         if (currentAllocation.getLeft() > 0) {
                             LOG.info("Allocating {} bookies in region {} : ensemble {} exclude {}",
-                                    currentAllocation.getLeft(), region, excludeBookies, ensemble);
+                                    currentAllocation.getLeft(), region, comprehensiveExclusionBookiesSet, ensemble);
                             policyWithinRegion.newEnsemble(
                                     currentAllocation.getLeft(),
                                     currentAllocation.getRight(),
                                     currentAllocation.getRight(),
-                                    excludeBookies,
+                                    comprehensiveExclusionBookiesSet,
                                     ensemble,
                                     ensemble);
                             LOG.info("Allocated {} bookies in region {} : {}",
@@ -428,7 +431,9 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         try {
             boolean enforceDurability = enforceDurabilityInReplace && !disableDurabilityFeature.isAvailable();
             int effectiveMinRegionsForDurability = enforceDurability ? minRegionsForDurability : 1;
-            Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
+            Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = addDefaultRackBookiesIfMinNumRacksIsEnforced(
+                    excludeBookies);
+            Set<Node> excludeNodes = convertBookiesToNodes(comprehensiveExclusionBookiesSet);
             RRTopologyAwareCoverageEnsemble ensemble = new RRTopologyAwareCoverageEnsemble(ensembleSize,
                 writeQuorumSize,
                 ackQuorumSize,

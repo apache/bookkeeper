@@ -21,7 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.BookieShell.bytes2Hex;
+import static org.apache.bookkeeper.tools.cli.commands.bookie.FormatUtil.bytes2Hex;
 
 import io.netty.buffer.ByteBuf;
 import java.io.Closeable;

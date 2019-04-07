@@ -18,7 +18,7 @@ You can manually recover failed bookies using the [`bookkeeper`](../../reference
 Here's an example:
 
 ```bash
-$ bookkeeper-server/bin/bookkeeper shell recover \
+$ bin/bookkeeper shell recover \
   zk1.example.com:2181 \ # IP and port for ZooKeeper
   192.168.1.10:3181      # IP and port for the failed bookie
 ```
@@ -26,7 +26,7 @@ $ bookkeeper-server/bin/bookkeeper shell recover \
 If you wish, you can also specify which bookie you'd like to rereplicate to. Here's an example:
 
 ```bash
-$ bookkeeper-server/bin/bookkeeper shell recover \
+$ bin/bookkeeper shell recover \
   zk1.example.com:2181 \ # IP and port for ZooKeeper
   192.168.1.10:3181 \    # IP and port for the failed bookie
   192.168.1.11:3181      # IP and port for the bookie to rereplicate to
@@ -58,7 +58,7 @@ AutoRecovery can be run in two ways:
 You can start up AutoRecovery using the [`autorecovery`](../../reference/cli#bookkeeper-autorecovery) command of the [`bookkeeper`](../../reference/cli) CLI tool.
 
 ```bash
-$ bookkeeper-server/bin/bookkeeper autorecovery
+$ bin/bookkeeper autorecovery
 ```
 
 > The most important thing to ensure when starting up AutoRecovery is that the ZooKeeper connection string specified by the [`zkServers`](../../reference/config#zkServers) parameter points to the right ZooKeeper cluster.
@@ -78,13 +78,13 @@ You can disable AutoRecovery at any time, for example during maintenance. Disabl
 You can disable AutoRecover using the [`bookkeeper`](../../reference/cli#bookkeeper-shell-autorecovery) CLI tool:
 
 ```bash
-$ bookkeeper-server/bin/bookkeeper shell autorecovery -disable
+$ bin/bookkeeper shell autorecovery -disable
 ```
 
 Once disabled, you can reenable AutoRecovery using the [`enable`](../../reference/cli#bookkeeper-shell-autorecovery) shell command:
 
 ```bash
-$ bookkeeper-server/bin/bookkeeper shell autorecovery -enable
+$ bin/bookkeeper shell autorecovery -enable
 ```
 
 ## AutoRecovery architecture

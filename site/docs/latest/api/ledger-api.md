@@ -302,7 +302,7 @@ Before you start, you will need to have a BookKeeper cluster running locally on 
 To start up a cluster consisting of six {% pop bookies %} locally:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper localbookie 6
+$ bin/bookkeeper localbookie 6
 ```
 
 You can specify a different number of bookies if you'd like.

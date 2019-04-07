@@ -451,7 +451,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         for (BookieServer bookieServer : bs) {
             Bookie bookie = bookieServer.getBookie();
             bookie.ledgerStorage.flush();
-            bookie.ledgerMonitor.shutdown();
+            bookie.dirsMonitor.shutdown();
             LedgerDirsManager ledgerDirsManager = bookie.getLedgerDirsManager();
             List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
             // Major and Minor compaction are not disabled even though discs are full. Check LedgerDirsListener of
@@ -970,7 +970,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                 }
 
                 @Override
-                public LedgerRangeIterator getLedgerRanges() {
+                public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutSec) {
                     final AtomicBoolean hasnext = new AtomicBoolean(true);
                     return new LedgerManager.LedgerRangeIterator() {
                         @Override
