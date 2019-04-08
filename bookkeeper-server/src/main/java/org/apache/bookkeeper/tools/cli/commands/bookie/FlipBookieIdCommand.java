@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.bookkeeper.tools.cli.commands.client;
+package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -43,21 +43,19 @@ import org.slf4j.LoggerFactory;
 /**
  * Command to update ledger command.
  */
-public class UpdateLedgersCommand extends BookieCommand<UpdateLedgersCommand.UpdataLedgersFlags> {
+public class FlipBookieIdCommand extends BookieCommand<FlipBookieIdCommand.FlipBookieIdFlags> {
 
-    static final Logger LOG = LoggerFactory.getLogger(UpdateLedgersCommand.class);
+    static final Logger LOG = LoggerFactory.getLogger(FlipBookieIdCommand.class);
 
-    private static final String NAME = "update";
+    private static final String NAME = "flip-bookie-id";
     private static final String DESC = "Update bookie id in ledgers (this may take a long time).";
 
-//    private static final Long
-
-    public UpdateLedgersCommand() {
-        this(new UpdataLedgersFlags());
+    public FlipBookieIdCommand() {
+        this(new FlipBookieIdFlags());
     }
 
-    private UpdateLedgersCommand(UpdataLedgersFlags flags) {
-        super(CliSpec.<UpdataLedgersFlags>newBuilder()
+    private FlipBookieIdCommand(FlipBookieIdFlags flags) {
+        super(CliSpec.<FlipBookieIdFlags>newBuilder()
                   .withName(NAME)
                   .withDescription(DESC)
                   .withFlags(flags)
@@ -69,13 +67,13 @@ public class UpdateLedgersCommand extends BookieCommand<UpdateLedgersCommand.Upd
      */
     @Accessors(fluent = true)
     @Setter
-    public static class UpdataLedgersFlags extends CliFlags {
+    public static class FlipBookieIdFlags extends CliFlags {
 
         @Parameter(names = { "-host", "--hostname" },
-            description = "Expects configuration useHostNameAsBookieID=true as the optin value")
+            description = "Expects configuration useHostNameAsBookieID=true as the option value (default: ip address)")
         private boolean hostname;
 
-        @Parameter(names = { "-s", "updatepersec" },
+        @Parameter(names = { "-s", "--updatepersec" },
             description = "Number of ledgers updating per second (default: 5 per sec)")
         private int updatePerSec = 5;
 
@@ -92,7 +90,7 @@ public class UpdateLedgersCommand extends BookieCommand<UpdateLedgersCommand.Upd
     }
 
     @Override
-    public boolean apply(ServerConfiguration conf, UpdataLedgersFlags cmdFlags) {
+    public boolean apply(ServerConfiguration conf, FlipBookieIdFlags cmdFlags) {
         try {
             return updateLedger(conf, cmdFlags);
         } catch (Exception e) {
@@ -100,7 +98,7 @@ public class UpdateLedgersCommand extends BookieCommand<UpdateLedgersCommand.Upd
         }
     }
 
-    private boolean updateLedger(ServerConfiguration conf, UpdataLedgersFlags flags)
+    private boolean updateLedger(ServerConfiguration conf, FlipBookieIdFlags flags)
         throws InterruptedException, BKException, IOException {
 
         if (!conf.getUseHostNameAsBookieID() && flags.hostname) {

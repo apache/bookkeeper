@@ -76,6 +76,7 @@ import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicated
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.FlipBookieIdCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
@@ -96,7 +97,6 @@ import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterComma
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand.NukeExistingClusterFlags;
 import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
-import org.apache.bookkeeper.tools.cli.commands.client.UpdateLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
@@ -1928,8 +1928,8 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            UpdateLedgersCommand cmd = new UpdateLedgersCommand();
-            UpdateLedgersCommand.UpdataLedgersFlags flags = new UpdateLedgersCommand.UpdataLedgersFlags();
+            FlipBookieIdCommand cmd = new FlipBookieIdCommand();
+            FlipBookieIdCommand.FlipBookieIdFlags flags = new FlipBookieIdCommand.FlipBookieIdFlags();
 
             final String bookieId = cmdLine.getOptionValue("bookieId");
             if (StringUtils.isBlank(bookieId)) {

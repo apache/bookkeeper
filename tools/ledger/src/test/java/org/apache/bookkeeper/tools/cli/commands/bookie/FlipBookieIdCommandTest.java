@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.bookkeeper.tools.cli.commands.client;
+package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -44,11 +44,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
- * Unit test for {@link UpdateLedgersCommand}.
+ * Unit test for {@link FlipBookieIdCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ UpdateLedgersCommand.class, Bookie.class, UpdateLedgerOp.class })
-public class UpdateLedgersCommandTest extends BookieCommandTestBase {
+@PrepareForTest({ FlipBookieIdCommand.class, Bookie.class, UpdateLedgerOp.class })
+public class FlipBookieIdCommandTest extends BookieCommandTestBase {
 
     @Mock
     private ClientConfiguration clientConfiguration;
@@ -68,7 +68,7 @@ public class UpdateLedgersCommandTest extends BookieCommandTestBase {
     @Mock
     private BookieSocketAddress bookieSocketAddress;
 
-    public UpdateLedgersCommandTest() {
+    public FlipBookieIdCommandTest() {
         super(3, 0);
     }
 
@@ -92,7 +92,7 @@ public class UpdateLedgersCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testCommand() throws Exception {
-        UpdateLedgersCommand cmd = new UpdateLedgersCommand();
+        FlipBookieIdCommand cmd = new FlipBookieIdCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
         verifyNew(ClientConfiguration.class, times(1)).withNoArguments();
         verify(clientConfiguration, times(1)).addConfiguration(eq(conf));
