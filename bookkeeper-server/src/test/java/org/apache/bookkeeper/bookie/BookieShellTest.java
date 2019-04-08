@@ -51,6 +51,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.RecoverCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.util.EntryFormatter;
@@ -73,7 +74,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link BookieShell}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ BookieShell.class, MetadataDrivers.class })
+@PrepareForTest({ BookieShell.class, MetadataDrivers.class, RecoverCommand.class })
 public class BookieShellTest {
 
     private ClientConfiguration clientConf;
