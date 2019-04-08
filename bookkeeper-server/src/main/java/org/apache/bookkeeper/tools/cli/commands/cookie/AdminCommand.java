@@ -80,6 +80,10 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
             "--hostname" }, description = "Expects config useHostNameAsBookieID=true as the option value")
         private boolean hostname;
 
+        @Parameter(names = { "-p", "-ip" },
+            description = "Expects config useHostNameAsBookieID=false as the option value")
+        private boolean ip;
+
         @Parameter(names = { "-e", "--expandstorage" }, description = "Add new empty ledger/index directories")
         private boolean expandstorage;
 
@@ -108,12 +112,16 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
     private void initDirectory(ServerConfiguration bkConf) {
         this.journalDirectories = Bookie.getCurrentDirectories(bkConf.getJournalDirs());
         this.ledgerDirectories = Bookie.getCurrentDirectories(bkConf.getLedgerDirs());
-        this.indexDirectories = Bookie.getCurrentDirectories(bkConf.getIndexDirs());
+        if (null == bkConf.getIndexDirs()) {
+            this.indexDirectories = this.ledgerDirectories;
+        } else {
+            this.indexDirectories = Bookie.getCurrentDirectories(bkConf.getIndexDirs());
+        }
     }
 
     private boolean update(ServerConfiguration conf, AdminFlags flags) throws Exception {
         boolean useHostName = flags.hostname;
-        if (flags.hostname) {
+        if (flags.hostname || flags.ip) {
             if (!conf.getUseHostNameAsBookieID() && useHostName) {
                 LOG.error("Expects configuration useHostNameAsBookieID=true as the option value");
                 return false;

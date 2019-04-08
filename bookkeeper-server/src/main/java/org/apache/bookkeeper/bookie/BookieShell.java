@@ -1534,6 +1534,7 @@ public class BookieShell implements Tool {
                 }
                 boolean useHostName = getOptionalValue(bookieId, HOSTNAME);
                 flags.hostname(useHostName);
+                flags.ip(!useHostName);
             }
             flags.expandstorage(thisCommandOption.getLongOpt().equals(EXPANDSTORAGE));
             flags.list(thisCommandOption.getLongOpt().equals(LIST));
