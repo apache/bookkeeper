@@ -2179,8 +2179,11 @@ public class BookieShell implements Tool {
                                          .collect(Collectors.toList());
             boolean dryRun = cmdLine.hasOption("dryRun");
             flags.ledgerIds(ledgerIds);
-            flags.password(cmdLine.getOptionValue("password"));
-            flags.b64Password(cmdLine.getOptionValue("b64password"));
+            if (cmdLine.hasOption("password")) {
+                flags.password(cmdLine.getOptionValue("password"));
+            } else if (cmdLine.hasOption("b64password")) {
+                flags.b64Password(cmdLine.getOptionValue("b64password"));
+            }
             flags.dryRun(dryRun);
             cmd.apply(bkConf, flags);
             return 0;
