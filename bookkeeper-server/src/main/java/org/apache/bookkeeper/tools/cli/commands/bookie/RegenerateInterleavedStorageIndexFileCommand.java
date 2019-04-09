@@ -99,7 +99,7 @@ public class RegenerateInterleavedStorageIndexFileCommand
     }
 
     private boolean generate(ServerConfiguration conf, RISIFFlags flags) throws NoSuchAlgorithmException, IOException {
-        checkNPE(flags);
+        validateFlags(flags);
         byte[] password;
         if (!flags.password.equals(DEFAULT)) {
             password = flags.password.getBytes(StandardCharsets.UTF_8);
@@ -122,7 +122,7 @@ public class RegenerateInterleavedStorageIndexFileCommand
         return true;
     }
 
-    private void checkNPE(RISIFFlags flags) {
+    private void validateFlags(RISIFFlags flags) {
         if (flags.password == null) {
             flags.password = DEFAULT;
         }
