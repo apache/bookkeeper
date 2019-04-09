@@ -108,13 +108,15 @@ public class FastSnapshot extends Snapshot {
     }
 
     /**
-     * Calculates the sum of values of an array
+     * Calculates the sum of values of an array.
      * @param a an array of values
      * @return the sum of all array values
      */
     private long sumOf(long[] a) {
         long sum = 0;
-        for (long x : a) sum += x;
+        for (long x : a) {
+            sum += x;
+        }
         return sum;
     }
 
