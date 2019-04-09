@@ -99,6 +99,7 @@ public class RegenerateInterleavedStorageIndexFileCommand
     }
 
     private boolean generate(ServerConfiguration conf, RISIFFlags flags) throws NoSuchAlgorithmException, IOException {
+        checkNPE(flags);
         byte[] password;
         if (!flags.password.equals(DEFAULT)) {
             password = flags.password.getBytes(StandardCharsets.UTF_8);
@@ -119,5 +120,14 @@ public class RegenerateInterleavedStorageIndexFileCommand
 
         LOG.info("-- Done rebuilding index file for {} --", ledgerIds);
         return true;
+    }
+
+    private void checkNPE(RISIFFlags flags) {
+        if (flags.password == null) {
+            flags.password = DEFAULT;
+        }
+        if (flags.b64Password == null) {
+            flags.b64Password = DEFAULT;
+        }
     }
 }
