@@ -131,6 +131,9 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
          */
         boolean complete(int bookieIndex, BookieSocketAddress host, final ByteBuf buffer) {
             ByteBuf content;
+            if (isComplete()) {
+                return false;
+            }
             try {
                 content = lh.macManager.verifyDigestAndReturnData(eId, buffer);
             } catch (BKDigestMatchException e) {
