@@ -67,6 +67,7 @@ public class BookieCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new ReadLogCommand())
         .addCommand(new ReadLogMetadataCommand())
         .addCommand(new LocalConsistencyCheckCommand())
+        .addCommand(new RegenerateInterleavedStorageIndexFileCommand())
         .build();
 
     public BookieCommandGroup() {
