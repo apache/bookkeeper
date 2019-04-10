@@ -46,15 +46,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.storage.ldb.LocationsIndexRebuildOp;
-import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerEntry;
-import org.apache.bookkeeper.client.UpdateLedgerOp;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -70,6 +67,7 @@ import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicated
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.FlipBookieIdCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
@@ -102,7 +100,6 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -1788,6 +1785,9 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
+            FlipBookieIdCommand cmd = new FlipBookieIdCommand();
+            FlipBookieIdCommand.FlipBookieIdFlags flags = new FlipBookieIdCommand.FlipBookieIdFlags();
+
             final String bookieId = cmdLine.getOptionValue("bookieId");
             if (StringUtils.isBlank(bookieId)) {
                 LOG.error("Invalid argument list!");
@@ -1800,23 +1800,8 @@ public class BookieShell implements Tool {
                 return -1;
             }
             boolean useHostName = getOptionalValue(bookieId, "hostname");
-            if (!bkConf.getUseHostNameAsBookieID() && useHostName) {
-                LOG.error("Expects configuration useHostNameAsBookieID=true as the option value passed is 'hostname'");
-                return -1;
-            } else if (bkConf.getUseHostNameAsBookieID() && !useHostName) {
-                LOG.error("Expects configuration useHostNameAsBookieID=false as the option value passed is 'ip'");
-                return -1;
-            }
             final int rate = getOptionIntValue(cmdLine, "updatespersec", 5);
-            if (rate <= 0) {
-                LOG.error("Invalid updatespersec {}, should be > 0", rate);
-                return -1;
-            }
             final int limit = getOptionIntValue(cmdLine, "limit", Integer.MIN_VALUE);
-            if (limit <= 0 && limit != Integer.MIN_VALUE) {
-                LOG.error("Invalid limit {}, should be > 0", limit);
-                return -1;
-            }
             final boolean verbose = getOptionBooleanValue(cmdLine, "verbose", false);
             final long printprogress;
             if (!verbose) {
@@ -1828,37 +1813,14 @@ public class BookieShell implements Tool {
                 // defaulting to 10 seconds
                 printprogress = getOptionLongValue(cmdLine, "printprogress", 10);
             }
-            final ClientConfiguration conf = new ClientConfiguration();
-            conf.addConfiguration(bkConf);
-            final BookKeeper bk = new BookKeeper(conf);
-            final BookKeeperAdmin admin = new BookKeeperAdmin(conf);
-            final UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, admin);
-            final ServerConfiguration serverConf = new ServerConfiguration(bkConf);
-            final BookieSocketAddress newBookieId = Bookie.getBookieAddress(serverConf);
-            serverConf.setUseHostNameAsBookieID(!useHostName);
-            final BookieSocketAddress oldBookieId = Bookie.getBookieAddress(serverConf);
+            flags.hostname(useHostName);
+            flags.printProgress(printprogress);
+            flags.limit(limit);
+            flags.updatePerSec(rate);
+            flags.verbose(verbose);
 
-            UpdateLedgerNotifier progressable = new UpdateLedgerNotifier() {
-                long lastReport = System.nanoTime();
-
-                @Override
-                public void progress(long updated, long issued) {
-                    if (printprogress <= 0) {
-                        return; // disabled
-                    }
-                    if (TimeUnit.MILLISECONDS.toSeconds(MathUtils.elapsedMSec(lastReport)) >= printprogress) {
-                        LOG.info("Number of ledgers issued={}, updated={}", issued, updated);
-                        lastReport = MathUtils.nowInNano();
-                    }
-                }
-            };
-            try {
-                updateLedgerOp.updateBookieIdInLedgers(oldBookieId, newBookieId, rate, limit, progressable);
-            } catch (IOException e) {
-                LOG.error("Failed to update ledger metadata", e);
-                return -1;
-            }
-            return 0;
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
     }
 
