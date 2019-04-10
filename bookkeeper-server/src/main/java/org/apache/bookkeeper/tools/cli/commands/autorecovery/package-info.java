@@ -18,6 +18,6 @@
  */
 
 /**
- * This package provides all toggle commands.
+ * This package provides all autorecovery commands.
  */
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;

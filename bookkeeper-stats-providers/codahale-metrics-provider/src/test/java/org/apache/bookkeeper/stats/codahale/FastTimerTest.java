@@ -216,4 +216,27 @@ public class FastTimerTest {
         assertEquals("FastSnapshot.getMean()", 10, (int) Math.round(s.getMean() / 1000000));
     }
 
+    @Test
+    public void testSnapshotOutOfSync() {
+        FastTimer t = getMockedFastTimer(1, FastTimer.Buckets.fine);
+        t.update(t.getBucketBound(0) - 1, TimeUnit.NANOSECONDS); // add value to 1st bucket
+        t.update(t.getBucketBound(1) - 1, TimeUnit.NANOSECONDS); // add value to 2nd bucket
+        t.update(t.getBucketBound(2) - 1, TimeUnit.NANOSECONDS); // add value to 3rd bucket
+        incSec(); // advance mocked time to next second
+        Snapshot s1 = t.getSnapshot();
+        long[] buckets = new long[t.getNumberOfBuckets()];
+        buckets[0] = 1;
+        buckets[1] = 1;
+        buckets[2] = 1;
+        Snapshot s2 = new FastSnapshot(t,
+                t.getBucketBound(0) - 1,
+                t.getBucketBound(2) - 1,
+                t.getBucketBound(0) + t.getBucketBound(1) + t.getBucketBound(2) + 3,
+                4, // count (4) is out of sync with number of recorded events in buckets (3)
+                buckets);
+        assertEquals("FastSnapshot.getMin()", s1.getMin(), s2.getMin());
+        assertEquals("FastSnapshot.getMax()", s1.getMax(), s2.getMax());
+        assertEquals("FastSnapshot.getValue(0.95)", (long) s1.getValue(0.95), (long) s2.getValue(0.95));
+    }
+
 }
