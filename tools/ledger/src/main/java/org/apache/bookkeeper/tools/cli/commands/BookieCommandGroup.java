@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_IN
 import org.apache.bookkeeper.tools.cli.BKCtl;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.FlipBookieIdCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
@@ -67,6 +68,7 @@ public class BookieCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new ReadLogCommand())
         .addCommand(new ReadLogMetadataCommand())
         .addCommand(new LocalConsistencyCheckCommand())
+        .addCommand(new FlipBookieIdCommand())
         .addCommand(new RegenerateInterleavedStorageIndexFileCommand())
         .build();
 

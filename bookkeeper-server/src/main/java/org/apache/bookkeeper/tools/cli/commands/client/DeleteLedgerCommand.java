@@ -38,7 +38,7 @@ import org.apache.bookkeeper.util.LedgerIdFormatter;
  */
 public class DeleteLedgerCommand extends BookieCommand<DeleteLedgerCommand.DeleteLedgerFlags> {
 
-    private static final String NAME = "deleteledger";
+    private static final String NAME = "delete";
     private static final String DESC = "Delete a ledger.";
     private static final String DEFAULT = "";
 
