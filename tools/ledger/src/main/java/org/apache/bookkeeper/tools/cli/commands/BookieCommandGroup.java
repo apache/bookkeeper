@@ -35,6 +35,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgerLocationsIndexCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStorageIndexFileCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
@@ -64,6 +65,7 @@ public class BookieCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new ListLedgersCommand())
         .addCommand(new ConvertToInterleavedStorageCommand())
         .addCommand(new ReadJournalCommand())
+        .addCommand(new RebuildDBLedgerLocationsIndexCommand())
         .addCommand(new ReadLedgerCommand())
         .addCommand(new ReadLogCommand())
         .addCommand(new ReadLogMetadataCommand())
