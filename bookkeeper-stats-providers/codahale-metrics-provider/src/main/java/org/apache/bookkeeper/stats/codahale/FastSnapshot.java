@@ -32,6 +32,7 @@ public class FastSnapshot extends Snapshot {
     private final long max;
     private final long sum;
     private final long cnt;
+    private final long pcnt;
     private final long[] values;
 
     @SuppressFBWarnings(
@@ -43,18 +44,19 @@ public class FastSnapshot extends Snapshot {
         this.max = max;
         this.sum = sum;
         this.cnt = cnt;
+        this.pcnt = values != null ? sumOf(values) : 0;
         this.values = values;
     }
 
     @Override
     public double getValue(double quantile) {
-        if (cnt == 0 || values == null) {
+        if (pcnt == 0 || values == null) {
             return 0;
         }
         long qcnt = 0;
         for (int i = 0; i < values.length; i++) {
             qcnt += values[i];
-            if (((double) qcnt) / ((double) cnt) > quantile) {
+            if (((double) qcnt) / ((double) pcnt) > quantile) {
                 return timer.getBucketBound(i);
             }
         }
@@ -103,6 +105,19 @@ public class FastSnapshot extends Snapshot {
     @Override
     public void dump(OutputStream output) {
         // values in this snapshot represent percentile buckets, but not discrete values
+    }
+
+    /**
+     * Calculates the sum of values of an array.
+     * @param a an array of values
+     * @return the sum of all array values
+     */
+    private long sumOf(long[] a) {
+        long sum = 0;
+        for (long x : a) {
+            sum += x;
+        }
+        return sum;
     }
 
 }
