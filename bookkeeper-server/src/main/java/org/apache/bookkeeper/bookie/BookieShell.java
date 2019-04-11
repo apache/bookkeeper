@@ -83,6 +83,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStor
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.DecommissionCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.InstanceIdCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand;
@@ -1458,17 +1459,8 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            runFunctionWithRegistrationManager(bkConf, rm -> {
-                String readInstanceId = null;
-                try {
-                    readInstanceId = rm.getClusterInstanceId();
-                } catch (BookieException e) {
-                    throw new UncheckedExecutionException(e);
-                }
-                LOG.info("Metadata Service Uri: {} InstanceId: {}",
-                    bkConf.getMetadataServiceUriUnchecked(), readInstanceId);
-                return null;
-            });
+            InstanceIdCommand cmd = new InstanceIdCommand();
+            cmd.apply(bkConf, new CliFlags());
             return 0;
         }
     }
