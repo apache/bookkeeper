@@ -20,8 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands;
 
 import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
 
-import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
-import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.WhoIsAuditorCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -35,12 +34,11 @@ public class AutoRecoveryCommandGroup extends CliCommandGroup<BKFlags> {
     private static final String DESC = "Command on some specific operation.";
 
     private static final CliSpec<BKFlags> spec = CliSpec.<BKFlags>newBuilder()
-                                                     .withName(NAME)
-                                                     .withDescription(DESC)
-                                                     .withCategory(CATEGORY_INFRA_SERVICE)
-                                                     .addCommand(new ListUnderReplicatedCommand())
-                                                     .addCommand(new LostBookieRecoveryDelayCommand())
-                                                     .build();
+        .withName(NAME)
+        .withDescription(DESC)
+        .withCategory(CATEGORY_INFRA_SERVICE)
+        .addCommand(new WhoIsAuditorCommand())
+        .build();
 
     public AutoRecoveryCommandGroup() {
         super(spec);
