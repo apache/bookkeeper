@@ -20,6 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands;
 
 import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
 
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.WhoIsAuditorCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
@@ -38,6 +39,7 @@ public class AutoRecoveryCommandGroup extends CliCommandGroup<BKFlags> {
         .withDescription(DESC)
         .withCategory(CATEGORY_INFRA_SERVICE)
         .addCommand(new WhoIsAuditorCommand())
+        .addCommand(new ToggleCommand())
         .build();
 
     public AutoRecoveryCommandGroup() {

@@ -55,11 +55,10 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
-import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.WhoIsAuditorCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
@@ -114,7 +113,6 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1290,43 +1288,10 @@ public class BookieShell implements Tool {
             boolean disable = cmdLine.hasOption("d");
             boolean enable = cmdLine.hasOption("e");
 
-            if (enable && disable) {
-                LOG.error("Only one of -enable and -disable can be specified");
-                printUsage();
-                return 1;
-            }
-
-            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                try {
-                    try (LedgerUnderreplicationManager underreplicationManager =
-                             mFactory.newLedgerUnderreplicationManager()) {
-                        if (!enable && !disable) {
-                            boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
-                            System.out.println("Autorecovery is " + (enabled ? "enabled." : "disabled."));
-                        } else if (enable) {
-                            if (underreplicationManager.isLedgerReplicationEnabled()) {
-                                LOG.warn("Autorecovery already enabled. Doing nothing");
-                            } else {
-                                LOG.info("Enabling autorecovery");
-                                underreplicationManager.enableLedgerReplication();
-                            }
-                        } else {
-                            if (!underreplicationManager.isLedgerReplicationEnabled()) {
-                                LOG.warn("Autorecovery already disabled. Doing nothing");
-                            } else {
-                                LOG.info("Disabling autorecovery");
-                                underreplicationManager.disableLedgerReplication();
-                            }
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new UncheckedExecutionException(e);
-                } catch (KeeperException | ReplicationException e) {
-                    throw new UncheckedExecutionException(e);
-                }
-                return null;
-            });
+            ToggleCommand.AutoRecoveryFlags flags = new ToggleCommand.AutoRecoveryFlags()
+                .enable(enable).status(!disable && !enable);
+            ToggleCommand cmd = new ToggleCommand();
+            cmd.apply(bkConf, flags);
 
             return 0;
         }
