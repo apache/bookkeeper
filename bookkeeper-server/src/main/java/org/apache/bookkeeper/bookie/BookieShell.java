@@ -20,14 +20,12 @@ package org.apache.bookkeeper.bookie;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
-import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,13 +50,11 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
-import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.replication.AuditorElector;
-import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.WhoIsAuditorCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FlipBookieIdCommand;
@@ -78,6 +74,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStor
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.DecommissionCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.InstanceIdCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand;
@@ -96,7 +93,6 @@ import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -111,6 +107,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1286,43 +1283,10 @@ public class BookieShell implements Tool {
             boolean disable = cmdLine.hasOption("d");
             boolean enable = cmdLine.hasOption("e");
 
-            if (enable && disable) {
-                LOG.error("Only one of -enable and -disable can be specified");
-                printUsage();
-                return 1;
-            }
-
-            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                try {
-                    try (LedgerUnderreplicationManager underreplicationManager =
-                             mFactory.newLedgerUnderreplicationManager()) {
-                        if (!enable && !disable) {
-                            boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
-                            System.out.println("Autorecovery is " + (enabled ? "enabled." : "disabled."));
-                        } else if (enable) {
-                            if (underreplicationManager.isLedgerReplicationEnabled()) {
-                                LOG.warn("Autorecovery already enabled. Doing nothing");
-                            } else {
-                                LOG.info("Enabling autorecovery");
-                                underreplicationManager.enableLedgerReplication();
-                            }
-                        } else {
-                            if (!underreplicationManager.isLedgerReplicationEnabled()) {
-                                LOG.warn("Autorecovery already disabled. Doing nothing");
-                            } else {
-                                LOG.info("Disabling autorecovery");
-                                underreplicationManager.disableLedgerReplication();
-                            }
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new UncheckedExecutionException(e);
-                } catch (KeeperException | ReplicationException e) {
-                    throw new UncheckedExecutionException(e);
-                }
-                return null;
-            });
+            ToggleCommand.AutoRecoveryFlags flags = new ToggleCommand.AutoRecoveryFlags()
+                .enable(enable).status(!disable && !enable);
+            ToggleCommand cmd = new ToggleCommand();
+            cmd.apply(bkConf, flags);
 
             return 0;
         }
@@ -1399,27 +1363,10 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            ZooKeeper zk = null;
-            try {
-                String metadataServiceUri = bkConf.getMetadataServiceUri();
-                String zkServers = ZKMetadataDriverBase.getZKServersFromServiceUri(URI.create(metadataServiceUri));
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(zkServers)
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                BookieSocketAddress bookieId = AuditorElector.getCurrentAuditor(bkConf, zk);
-                if (bookieId == null) {
-                    LOG.info("No auditor elected");
-                    return -1;
-                }
-                LOG.info("Auditor: " + getBookieSocketAddrStringRepresentation(bookieId));
-            } finally {
-                if (zk != null) {
-                    zk.close();
-                }
-            }
-
-            return 0;
+            CliFlags flags = new CliFlags();
+            WhoIsAuditorCommand cmd = new WhoIsAuditorCommand();
+            boolean result = cmd.apply(bkConf, flags);
+            return result ? 0 : -1;
         }
     }
 
@@ -1450,17 +1397,8 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            runFunctionWithRegistrationManager(bkConf, rm -> {
-                String readInstanceId = null;
-                try {
-                    readInstanceId = rm.getClusterInstanceId();
-                } catch (BookieException e) {
-                    throw new UncheckedExecutionException(e);
-                }
-                LOG.info("Metadata Service Uri: {} InstanceId: {}",
-                    bkConf.getMetadataServiceUriUnchecked(), readInstanceId);
-                return null;
-            });
+            InstanceIdCommand cmd = new InstanceIdCommand();
+            cmd.apply(bkConf, new CliFlags());
             return 0;
         }
     }
