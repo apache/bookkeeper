@@ -257,7 +257,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
          */
         final long cToken = ThreadLocalRandom.current().nextLong(Long.MAX_VALUE);
         final LedgerMetadata metadata;
-        if (inputMetadata.getMetadataFormatVersion() > 2) {
+        if (inputMetadata.getMetadataFormatVersion() > LedgerMetadataSerDe.METADATA_FORMAT_VERSION_2) {
             metadata = LedgerMetadataBuilder.from(inputMetadata).withCToken(cToken).build();
         } else {
             metadata = inputMetadata;
