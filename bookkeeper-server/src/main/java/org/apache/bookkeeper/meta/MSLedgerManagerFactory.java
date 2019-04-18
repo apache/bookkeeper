@@ -263,8 +263,8 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                                 }
                             });
                     }
-                } else if (BKException.getExceptionCode(exception) ==
-                        BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
+                } else if (BKException.getExceptionCode(exception)
+                        == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                     // the ledger is removed, do nothing
                     Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
                     if (null != listenerSet) {

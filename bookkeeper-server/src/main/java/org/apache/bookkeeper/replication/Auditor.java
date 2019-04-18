@@ -966,9 +966,8 @@ public class Auditor implements AutoCloseable {
                             }
                         }
                         iterCallback.processResult(BKException.Code.OK, null, null);
-                    } else if (BKException
-                            .getExceptionCode(exception) ==
-                            BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
+                    } else if (BKException.getExceptionCode(exception)
+                            == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                         LOG.debug("Ignoring replication of already deleted ledger {}", ledgerId);
                         iterCallback.processResult(BKException.Code.OK, null, null);
                     } else {
