@@ -845,4 +845,14 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(true, bs.isAvailableForHighPriorityWrites());
         assertEquals(false, bs.isShuttingDown());
     }
+
+    @Test
+    public void testGetBookieIsReady() throws Exception {
+        HttpEndpointService bookieStateServer = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_IS_READY);
+
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = bookieStateServer.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+    }
 }

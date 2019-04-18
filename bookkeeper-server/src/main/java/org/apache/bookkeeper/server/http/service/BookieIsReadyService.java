@@ -20,51 +20,22 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.StateManager;
-import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 
 /**
- * HttpEndpointService that exposes the current state of the bookie.
- *
- * <p>Get the current bookie status:
- *
- * <pre>
- * <code>
- * {
- *  "running" : true,
- *  "readOnly" : false,
- *  "shuttingDown" : false,
- *  "availableForHighPriorityWrites" : true
- *}
- * </code>
- * </pre>
+ * HttpEndpointService that returns 200 if the bookie is ready.
  */
-public class BookieStateService implements HttpEndpointService {
+public class BookieIsReadyService implements HttpEndpointService {
 
     private final Bookie bookie;
 
-    public BookieStateService(Bookie bookie) {
+    public BookieIsReadyService(Bookie bookie) {
         this.bookie = checkNotNull(bookie);
-    }
-
-    /**
-     * POJO definition for the bookie state response.
-     */
-    @Data
-    @NoArgsConstructor
-    public static class BookieState {
-        private boolean running;
-        private boolean readOnly;
-        private boolean shuttingDown;
-        private boolean availableForHighPriorityWrites;
     }
 
     @Override
@@ -73,20 +44,17 @@ public class BookieStateService implements HttpEndpointService {
 
         if (HttpServer.Method.GET != request.getMethod()) {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Only support GET method to retrieve bookie state.");
+            response.setBody("Only support GET method check if bookie is ready.");
             return response;
         }
 
         StateManager sm = bookie.getStateManager();
-        BookieState bs = new BookieState();
-        bs.running = sm.isRunning();
-        bs.readOnly = sm.isReadOnly();
-        bs.shuttingDown = sm.isShuttingDown();
-        bs.availableForHighPriorityWrites = sm.isAvailableForHighPriorityWrites();
-
-        String jsonResponse = JsonUtil.toJson(bs);
-        response.setBody(jsonResponse);
-        response.setCode(HttpServer.StatusCode.OK);
+        if (sm.isRunning()) {
+            response.setCode(HttpServer.StatusCode.OK);
+        } else {
+            response.setCode(HttpServer.StatusCode.SERVICE_UNAVAILABLE);
+            response.setBody("Bookie is not fully started yet");
+        }
         return response;
     }
 }

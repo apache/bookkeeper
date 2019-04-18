@@ -35,7 +35,8 @@ public interface HttpServer {
         REDIRECT(302),
         FORBIDDEN(403),
         NOT_FOUND(404),
-        INTERNAL_ERROR(500);
+        INTERNAL_ERROR(500),
+        SERVICE_UNAVAILABLE(503);
 
         private int value;
 
@@ -80,6 +81,7 @@ public interface HttpServer {
         GC,
         GC_DETAILS,
         BOOKIE_STATE,
+        BOOKIE_IS_READY,
 
         // autorecovery
         RECOVERY_BOOKIE,
