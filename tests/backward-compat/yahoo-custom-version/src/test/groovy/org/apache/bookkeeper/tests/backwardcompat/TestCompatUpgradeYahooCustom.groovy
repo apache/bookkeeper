@@ -208,6 +208,13 @@ class TestCompatUpgradeYahooCustom {
                                                    "org.apache.bookkeeper.stats.NullStatsProvider")
 
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
-        exerciseClients(preUpgradeLedgers)
+        // Since METADATA_VERSION is upgraded and it is using binary format, the older
+        // clients which are expecting text format would fail to read ledger metadata.
+        try {
+            exerciseClients(preUpgradeLedgers)
+        } catch (Exception exc) {
+            Assert.assertEquals(exc.getClass().getName(),
+              "org.apache.bookkeeper.client.BKException\$ZKException")
+        }
     }
 }
