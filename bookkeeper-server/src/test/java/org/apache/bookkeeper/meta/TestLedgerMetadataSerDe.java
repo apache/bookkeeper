@@ -60,9 +60,9 @@ public class TestLedgerMetadataSerDe {
 
     // version 3, since 4.9.x, protobuf binary format
     private static final String version3 =
-        "Qm9va2llTWV0YWRhdGFGb3JtYXRWZXJzaW9uCTMKXggCEAMYACD///////////8BKAEyMgoOMTkyL"
+        "Qm9va2llTWV0YWRhdGFGb3JtYXRWZXJzaW9uCTMKYAgCEAMYACD///////////8BKAEyMgoOMTkyL"
         + "jAuMi4xOjMxODEKDjE5Mi4wLjIuMjozMTgxCg4xOTIuMC4yLjM6MzE4MRAAOANCBmZvb2JhckgB"
-        + "UP///////////wE=";
+        + "UP///////////wFgAA==";
 
     private static void testDecodeEncode(String encoded) throws Exception {
         LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();

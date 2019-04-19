@@ -142,7 +142,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
 
             final boolean watched;
             try {
-                watched = requestProcessor.bookie.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, this);
+                watched = requestProcessor.getBookie().waitForLastAddConfirmedUpdate(ledgerId, previousLAC, this);
             } catch (Bookie.NoLedgerException e) {
                 logger.info("No ledger found while longpoll reading ledger {}, previous lac = {}.",
                         ledgerId, previousLAC);
@@ -163,9 +163,10 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
                 }
                 synchronized (this) {
                     expirationTimerTask = requestTimer.newTimeout(timeout -> {
-                        // When the timeout expires just get whatever is the current
-                        // readLastConfirmed
-                        LongPollReadEntryProcessorV3.this.scheduleDeferredRead(true);
+                            requestProcessor.getBookie().cancelWaitForLastAddConfirmedUpdate(ledgerId, this);
+                            // When the timeout expires just get whatever is the current
+                            // readLastConfirmed
+                            LongPollReadEntryProcessorV3.this.scheduleDeferredRead(true);
                     }, readRequest.getTimeOut(), TimeUnit.MILLISECONDS);
                 }
                 return null;

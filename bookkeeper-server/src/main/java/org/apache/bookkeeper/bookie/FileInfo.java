@@ -139,8 +139,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
 
     synchronized boolean waitForLastAddConfirmedUpdate(long previousLAC,
                                                        Watcher<LastAddConfirmedUpdateNotification> watcher) {
-        if ((null != lac && lac > previousLAC)
-                || isClosed || ((stateBits & STATE_FENCED_BIT) == STATE_FENCED_BIT)) {
+        if ((null != lac && lac > previousLAC) || isClosed) {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Wait For LAC {} , {}", this.lac, previousLAC);
             }
@@ -149,6 +148,10 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
 
         addWatcher(watcher);
         return true;
+    }
+
+    synchronized void cancelWaitForLastAddConfirmedUpdate(Watcher<LastAddConfirmedUpdateNotification> watcher) {
+        deleteWatcher(watcher);
     }
 
     public boolean isClosed() {

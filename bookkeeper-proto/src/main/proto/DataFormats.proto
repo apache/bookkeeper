@@ -60,6 +60,8 @@ message LedgerMetadataFormat {
         optional bytes value = 2;
     }
     repeated cMetadataMapEntry customMetadata = 11;
+
+    optional int64 cToken = 12;
 }
 
 message LedgerRereplicationLayoutFormat {

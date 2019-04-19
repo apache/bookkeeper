@@ -174,7 +174,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                                      boolean readLACPiggyBack,
                                      Stopwatch startTimeSw)
         throws IOException {
-        ByteBuf entryBody = requestProcessor.bookie.readEntry(ledgerId, entryId);
+        ByteBuf entryBody = requestProcessor.getBookie().readEntry(ledgerId, entryId);
         if (null != fenceResult) {
             handleReadResultForFenceRead(entryBody, readResponseBuilder, entryId, startTimeSw);
             return null;
@@ -184,7 +184,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 if (readLACPiggyBack) {
                     readResponseBuilder.setEntryId(entryId);
                 } else {
-                    long knownLAC = requestProcessor.bookie.readLastAddConfirmed(ledgerId);
+                    long knownLAC = requestProcessor.getBookie().readLastAddConfirmed(ledgerId);
                     readResponseBuilder.setMaxLAC(knownLAC);
                 }
                 registerSuccessfulEvent(readStats, startTimeSw);

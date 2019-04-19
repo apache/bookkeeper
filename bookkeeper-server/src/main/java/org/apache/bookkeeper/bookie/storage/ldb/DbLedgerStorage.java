@@ -210,6 +210,13 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
+    public void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException {
+        getLedgerSorage(ledgerId).cancelWaitForLastAddConfirmedUpdate(ledgerId, watcher);
+    }
+
+    @Override
     public void flush() throws IOException {
         for (LedgerStorage ls : ledgerStorageList) {
             ls.flush();

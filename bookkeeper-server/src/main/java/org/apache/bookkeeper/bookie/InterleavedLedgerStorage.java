@@ -352,6 +352,12 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         return ledgerCache.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
     }
 
+    @Override
+    public void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException {
+        ledgerCache.cancelWaitForLastAddConfirmedUpdate(ledgerId, watcher);
+    }
 
     @Override
     public long addEntry(ByteBuf entry) throws IOException {
