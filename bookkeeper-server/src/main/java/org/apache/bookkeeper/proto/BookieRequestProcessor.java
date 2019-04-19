@@ -619,7 +619,9 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequest(final BookieProtocol.ReadRequest r, final Channel c) {
-        ReadEntryProcessor read = ReadEntryProcessor.create(r, c, this);
+        ExecutorService fenceThreadPool =
+                null == highPriorityThreadPool ? null : highPriorityThreadPool.chooseThread(c);
+        ReadEntryProcessor read = ReadEntryProcessor.create(r, c, this, fenceThreadPool);
 
         // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
         // gets executed as fast as possible, so bypass the normal readThreadPool
