@@ -80,6 +80,8 @@ public abstract class LedgerDescriptor {
     abstract boolean waitForLastAddConfirmedUpdate(long previousLAC,
                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
         throws IOException;
+    abstract void cancelWaitForLastAddConfirmedUpdate(Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException;
 
     abstract void setExplicitLac(ByteBuf entry) throws IOException;
 

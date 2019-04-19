@@ -99,6 +99,11 @@ class TransientLedgerInfo extends Watchable<LastAddConfirmedUpdateNotification> 
         return true;
     }
 
+    synchronized void cancelWaitForLastAddConfirmedUpdate(Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException {
+        deleteWatcher(watcher);
+    }
+
     public ByteBuf getExplicitLac() {
         ByteBuf retLac = null;
         synchronized (this) {
