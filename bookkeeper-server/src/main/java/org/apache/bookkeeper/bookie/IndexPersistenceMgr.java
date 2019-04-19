@@ -374,6 +374,19 @@ public class IndexPersistenceMgr {
         }
     }
 
+    void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                          Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
+        CachedFileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            fi.cancelWaitForLastAddConfirmedUpdate(watcher);
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
+    }
+
     long updateLastAddConfirmed(long ledgerId, long lac) throws IOException {
         CachedFileInfo fi = null;
         try {

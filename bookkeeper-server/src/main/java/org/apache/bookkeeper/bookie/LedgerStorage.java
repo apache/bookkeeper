@@ -137,6 +137,16 @@ public interface LedgerStorage {
                                           Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
 
     /**
+     * Cancel a previous wait for last add confirmed update.
+     *
+     * @param ledgerId The ledger being watched.
+     * @param watcher The watcher to cancel.
+     * @throws IOException
+     */
+    void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
+
+    /**
      * Flushes all data in the storage. Once this is called,
      * add data written to the LedgerStorage up until this point
      * has been persisted to perminant storage

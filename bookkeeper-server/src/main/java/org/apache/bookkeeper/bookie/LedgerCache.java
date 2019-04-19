@@ -53,6 +53,8 @@ public interface LedgerCache extends Closeable {
     boolean waitForLastAddConfirmedUpdate(long ledgerId,
                                           long previousLAC,
                                           Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
+    void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                             Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
 
     void deleteLedger(long ledgerId) throws IOException;
 

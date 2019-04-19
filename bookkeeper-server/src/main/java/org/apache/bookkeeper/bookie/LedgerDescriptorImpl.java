@@ -168,4 +168,9 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
                                           Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
         return ledgerStorage.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
     }
+
+    @Override
+    void cancelWaitForLastAddConfirmedUpdate(Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
+        ledgerStorage.cancelWaitForLastAddConfirmedUpdate(ledgerId, watcher);
+    }
 }
