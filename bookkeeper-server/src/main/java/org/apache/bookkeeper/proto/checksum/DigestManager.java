@@ -98,7 +98,12 @@ public abstract class DigestManager {
      */
     public ByteBufList computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length,
             ByteBuf data) {
-        ByteBuf headersBuffer = allocator.buffer(METADATA_LENGTH + macCodeLength);
+        ByteBuf headersBuffer;
+        if (this.useV2Protocol) {
+            headersBuffer = allocator.buffer(METADATA_LENGTH + macCodeLength);
+        } else {
+            headersBuffer = Unpooled.buffer(METADATA_LENGTH + macCodeLength);
+        }
         headersBuffer.writeLong(ledgerId);
         headersBuffer.writeLong(entryId);
         headersBuffer.writeLong(lastAddConfirmed);
