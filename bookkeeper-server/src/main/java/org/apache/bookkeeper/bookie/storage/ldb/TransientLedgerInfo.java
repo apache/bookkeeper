@@ -91,7 +91,7 @@ class TransientLedgerInfo extends Watchable<LastAddConfirmedUpdateNotification> 
     synchronized boolean waitForLastAddConfirmedUpdate(long previousLAC,
             Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
         lastAccessed = System.currentTimeMillis();
-        if ((lac != NOT_ASSIGNED_LAC && lac > previousLAC) || isClosed || ledgerIndex.get(ledgerId).getFenced()) {
+        if ((lac != NOT_ASSIGNED_LAC && lac > previousLAC) || isClosed) {
             return false;
         }
 
