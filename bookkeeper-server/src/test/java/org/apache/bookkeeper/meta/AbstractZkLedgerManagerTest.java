@@ -273,9 +273,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         try {
             result(ledgerManager.removeLedgerMetadata(ledgerId, version));
-            fail("Should fail to remove metadata if no such ledger exists");
         } catch (BKException bke) {
-            assertEquals(Code.NoSuchLedgerExistsException, bke.getCode());
+            fail("Should succeed");
         }
 
         verify(mockZk, times(1))
@@ -294,7 +293,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         try {
             result(ledgerManager.removeLedgerMetadata(ledgerId, version));
-            fail("Should fail to remove metadata if no such ledger exists");
+            fail("Should fail to remove metadata upon ZKException");
         } catch (BKException bke) {
             assertEquals(Code.ZKException, bke.getCode());
         }
