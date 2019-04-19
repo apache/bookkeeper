@@ -217,6 +217,12 @@ public class InterleavedStorageRegenerateIndexOp {
             throw new UnsupportedOperationException();
         }
         @Override
+        public void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                        Watcher<LastAddConfirmedUpdateNotification> watcher)
+                throws IOException {
+            throw new UnsupportedOperationException();
+        }
+        @Override
         public void deleteLedger(long ledgerId) throws IOException {
         }
         @Override
