@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6,"i15":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6,"i15":6,"i16":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -171,78 +171,84 @@ public interface <span class="typeNameLabel">LedgerMetadata</span></pre>
 </td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getCToken--">getCToken</a></span>()</code>
+<div class="block">Get the unique creator token of the Ledger.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getCustomMetadata--">getCustomMetadata</a></span>()</code>
 <div class="block">Returns the custom metadata stored with the ledgers.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getDigestType--">getDigestType</a></span>()</code>
 <div class="block">Returns the digest type used by this ledger.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getEnsembleAt-long-">getEnsembleAt</a></span>(long&nbsp;entryId)</code>
 <div class="block">Returns the ensemble at the given <code>entryId</code>.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getEnsembleSize--">getEnsembleSize</a></span>()</code>
 <div class="block">Returns the ensemble size of this ledger.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getLastEntryId--">getLastEntryId</a></span>()</code>
 <div class="block">Returns the last entry id of this ledger.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getLength--">getLength</a></span>()</code>
 <div class="block">Returns the length of this ledger.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getMetadataFormatVersion--">getMetadataFormatVersion</a></span>()</code>
 <div class="block">Get the format version which should be used to serialize the metadata.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>byte[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getPassword--">getPassword</a></span>()</code>
 <div class="block">Get the password for the ledger.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.State.html" title="enum in org.apache.bookkeeper.client.api">LedgerMetadata.State</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getState--">getState</a></span>()</code>
 <div class="block">Returns the state of the metadata.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#getWriteQuorumSize--">getWriteQuorumSize</a></span>()</code>
 <div class="block">Returns the write quorum size of this ledger.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#hasPassword--">hasPassword</a></span>()</code>
 <div class="block">Whether the metadata contains the password and digest type for the ledger.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#isClosed--">isClosed</a></span>()</code>
 <div class="block">Returns whether the ledger is sealed or not.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html#toSafeString--">toSafeString</a></span>()</code>
 <div class="block">Similar to #toString(), but omits the password of the ledger, so that it is safe to log the output.</div>
@@ -485,7 +491,7 @@ public interface <span class="typeNameLabel">LedgerMetadata</span></pre>
 <a name="getMetadataFormatVersion--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getMetadataFormatVersion</h4>
 <pre>int&nbsp;getMetadataFormatVersion()</pre>
@@ -493,6 +499,20 @@ public interface <span class="typeNameLabel">LedgerMetadata</span></pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the format version.</dd>
+</dl>
+</li>
+</ul>
+<a name="getCToken--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getCToken</h4>
+<pre>long&nbsp;getCToken()</pre>
+<div class="block">Get the unique creator token of the Ledger.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the creator token</dd>
 </dl>
 </li>
 </ul>
