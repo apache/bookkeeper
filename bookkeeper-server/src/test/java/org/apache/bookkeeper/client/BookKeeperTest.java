@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -32,10 +33,12 @@ import io.netty.util.IllegalReferenceCountException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
@@ -45,9 +48,22 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
+import org.apache.zookeeper.AsyncCallback.StringCallback;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.ACL;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +73,7 @@ import org.slf4j.LoggerFactory;
  */
 public class BookKeeperTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
-
+    private static final long INVALID_LEDGERID = -1L;
     private final DigestType digestType;
 
     public BookKeeperTest() {
@@ -815,5 +831,129 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                result(wh.force());
             }
         }
+    }
+
+    class MockZooKeeperClient extends ZooKeeperClient {
+        class MockZooKeeper extends ZooKeeper {
+            public MockZooKeeper(String connectString, int sessionTimeout, Watcher watcher, boolean canBeReadOnly)
+                    throws IOException {
+                super(connectString, sessionTimeout, watcher, canBeReadOnly);
+            }
+
+            @Override
+            public void create(final String path, byte data[], List<ACL> acl, CreateMode createMode, StringCallback cb,
+                    Object ctx) {
+                StringCallback injectedCallback = new StringCallback() {
+                    @Override
+                    public void processResult(int rc, String path, Object ctx, String name) {
+                        /**
+                         * if ledgerIdToInjectFailure matches with the path of
+                         * the node, then throw CONNECTIONLOSS error and then
+                         * reset it to INVALID_LEDGERID.
+                         */
+                        if (path.contains(ledgerIdToInjectFailure.toString())) {
+                            ledgerIdToInjectFailure.set(INVALID_LEDGERID);
+                            cb.processResult(KeeperException.Code.CONNECTIONLOSS.intValue(), path, ctx, name);
+                        } else {
+                            cb.processResult(rc, path, ctx, name);
+                        }
+                    }
+                };
+                super.create(path, data, acl, createMode, injectedCallback, ctx);
+            }
+        }
+
+        private final String connectString;
+        private final int sessionTimeoutMs;
+        private final ZooKeeperWatcherBase watcherManager;
+        private final AtomicLong ledgerIdToInjectFailure;
+
+        MockZooKeeperClient(String connectString, int sessionTimeoutMs, ZooKeeperWatcherBase watcher,
+                AtomicLong ledgerIdToInjectFailure) throws IOException {
+            /*
+             * in OperationalRetryPolicy maxRetries is > 0. So in case of any
+             * RecoverableException scenario, it will retry.
+             */
+            super(connectString, sessionTimeoutMs, watcher,
+                    new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, Integer.MAX_VALUE),
+                    new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, 3),
+                    NullStatsLogger.INSTANCE, 1, 0, false);
+            this.connectString = connectString;
+            this.sessionTimeoutMs = sessionTimeoutMs;
+            this.watcherManager = watcher;
+            this.ledgerIdToInjectFailure = ledgerIdToInjectFailure;
+        }
+
+        @Override
+        protected ZooKeeper createZooKeeper() throws IOException {
+            return new MockZooKeeper(this.connectString, this.sessionTimeoutMs, this.watcherManager, false);
+        }
+    }
+
+    @Test
+    public void testZKConnectionLossForLedgerCreation() throws Exception {
+        int zkSessionTimeOut = 10000;
+        AtomicLong ledgerIdToInjectFailure = new AtomicLong(INVALID_LEDGERID);
+        ZooKeeperWatcherBase zooKeeperWatcherBase = new ZooKeeperWatcherBase(zkSessionTimeOut,
+                NullStatsLogger.INSTANCE);
+        MockZooKeeperClient zkFaultInjectionWrapper = new MockZooKeeperClient(zkUtil.getZooKeeperConnectString(),
+                zkSessionTimeOut, zooKeeperWatcherBase, ledgerIdToInjectFailure);
+        zkFaultInjectionWrapper.waitForConnection();
+        assertEquals("zkFaultInjectionWrapper should be in connected state", States.CONNECTED,
+                zkFaultInjectionWrapper.getState());
+        BookKeeper bk = new BookKeeper(baseClientConf, zkFaultInjectionWrapper);
+        long oldZkInstanceSessionId = zkFaultInjectionWrapper.getSessionId();
+        long ledgerId = 567L;
+        LedgerHandle lh = bk.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "".getBytes(), null);
+        lh.close();
+
+        /*
+         * trigger Expired event so that MockZooKeeperClient would run
+         * 'clientCreator' and create new zk handle. In this case it would
+         * create MockZooKeeper.
+         */
+        zooKeeperWatcherBase.process(new WatchedEvent(EventType.None, KeeperState.Expired, ""));
+        zkFaultInjectionWrapper.waitForConnection();
+        for (int i = 0; i < 10; i++) {
+            if (zkFaultInjectionWrapper.getState() == States.CONNECTED) {
+                break;
+            }
+            Thread.sleep(200);
+        }
+        assertEquals("zkFaultInjectionWrapper should be in connected state", States.CONNECTED,
+                zkFaultInjectionWrapper.getState());
+        assertNotEquals("Session Id of old and new ZK instance should be different", oldZkInstanceSessionId,
+                zkFaultInjectionWrapper.getSessionId());
+        ledgerId++;
+        ledgerIdToInjectFailure.set(ledgerId);
+        /**
+         * ledgerIdToInjectFailure is set to 'ledgerId', so zookeeper.create
+         * would return CONNECTIONLOSS error for the first time and when it is
+         * retried, as expected it would return NODEEXISTS error.
+         *
+         * AbstractZkLedgerManager.createLedgerMetadata should deal with this
+         * scenario appropriately.
+         */
+        lh = bk.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "".getBytes(), null);
+        lh.close();
+        assertEquals("injectZnodeCreationNoNodeFailure should have been reset it to INVALID_LEDGERID", INVALID_LEDGERID,
+                ledgerIdToInjectFailure.get());
+        lh = bk.openLedger(ledgerId, DigestType.CRC32, "".getBytes());
+        lh.close();
+        ledgerId++;
+        lh = bk.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "".getBytes(), null);
+        lh.close();
+        bk.close();
+    }
+
+    @Test
+    public void testLedgerDeletionIdempotency() throws Exception {
+        BookKeeper bk = new BookKeeper(baseClientConf);
+        long ledgerId = 789L;
+        LedgerHandle lh = bk.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "".getBytes(), null);
+        lh.close();
+        bk.deleteLedger(ledgerId);
+        bk.deleteLedger(ledgerId);
+        bk.close();
     }
 }

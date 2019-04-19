@@ -170,11 +170,16 @@ class TestCompatUpgradeYahooCustom {
             openAndVerifyEntries(currentCL, currentBK, ledger4.getId())
             assertCantWrite(yahooCL, ledger4)
 
-            // yahoo client can fence a bookie created by current client
+            // Since METADATA_VERSION is upgraded and it is using binary format, the older
+            // clients which are expecting text format would fail to read ledger metadata.
             def ledger5 = createAndWrite(currentCL, currentBK)
             ledgers.add(ledger5.getId())
-            openAndVerifyEntries(yahooCL, yahooBK, ledger5.getId())
-            assertCantWrite(currentCL, ledger5)
+            try {
+                openAndVerifyEntries(yahooCL, yahooBK, ledger5.getId())
+            } catch (Exception exc) {
+                Assert.assertEquals(exc.getClass().getName(),
+                  "org.apache.bookkeeper.client.BKException\$ZKException")
+            }
         } finally {
             currentBK.close()
             currentCL.close()
@@ -203,6 +208,13 @@ class TestCompatUpgradeYahooCustom {
                                                    "org.apache.bookkeeper.stats.NullStatsProvider")
 
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
-        exerciseClients(preUpgradeLedgers)
+        // Since METADATA_VERSION is upgraded and it is using binary format, the older
+        // clients which are expecting text format would fail to read ledger metadata.
+        try {
+            exerciseClients(preUpgradeLedgers)
+        } catch (Exception exc) {
+            Assert.assertEquals(exc.getClass().getName(),
+              "org.apache.bookkeeper.client.BKException\$ZKException")
+        }
     }
 }

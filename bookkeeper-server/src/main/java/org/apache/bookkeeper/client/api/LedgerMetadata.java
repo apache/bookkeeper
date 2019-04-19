@@ -174,4 +174,11 @@ public interface LedgerMetadata {
      * @return the format version.
      */
     int getMetadataFormatVersion();
+
+    /**
+     * Get the unique creator token of the Ledger.
+     *
+     * @return the creator token
+     */
+    long getCToken();
 }

@@ -163,11 +163,47 @@ class TestCompatOldClients {
         }
     }
 
+    private void testReadOpenFailure(String writeVersion, String readerVersion) throws Exception {
+        String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
+
+        def writeCL = MavenClassLoader.forBookKeeperVersion(writeVersion)
+        def writeBK = writeCL.newBookKeeper(zookeeper)
+        def readCL = MavenClassLoader.forBookKeeperVersion(readerVersion)
+        def readBK = readCL.newBookKeeper(zookeeper)
+        try {
+            def numEntries = 5
+            def ledger0 = writeBK.createLedger(3, 2,
+                                               writeCL.digestType("CRC32"),
+                                               PASSWD)
+            for (int i = 0; i < numEntries; i++) {
+                ledger0.addEntry(("foobar" + i).getBytes())
+            }
+            ledger0.close()
+
+            try {
+                def ledger1 = readBK.openLedger(ledger0.getId(), readCL.digestType("CRC32"), PASSWD)
+                Assert.fail("For older versions Openledger call is expected to fail with ZKException");
+            } catch (Exception exc) {
+                Assert.assertEquals(exc.getClass().getName(),
+                                "org.apache.bookkeeper.client.BKException\$ZKException")
+            }
+        } finally {
+            readBK.close()
+            readCL.close()
+            writeBK.close()
+            writeCL.close()
+        }
+    }
+
+    /**
+     * Since METADATA_VERSION is upgraded and it is using binary format, the older
+     * clients which are expecting text format would fail to read ledger metadata.
+     */
     @Test
     public void testOldClientReadsNewClient() throws Exception {
         oldClientVersions.each{
             def version = it
-            ThreadReaper.runWithReaper({ testReads(currentVersion, version) })
+            ThreadReaper.runWithReaper({ testReadOpenFailure(currentVersion, version) })
         }
     }
 
