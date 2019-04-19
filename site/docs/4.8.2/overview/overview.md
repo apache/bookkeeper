@@ -37,7 +37,7 @@ Object/[BLOB](https://en.wikipedia.org/wiki/Binary_large_object) storage | Stori
 
 Learn more about Apache BookKeeper&trade; and what it can do for your organization:
 
-- [Apache BookKeeper {{ site.latest_version }} Release Notes](../releaseNotes)
+- [Apache BookKeeper 4.8.2 Release Notes](../releaseNotes)
 - [Java API docs](../../api/javadoc)
 
 Or start [using](../../getting-started/installation) Apache BookKeeper today.
