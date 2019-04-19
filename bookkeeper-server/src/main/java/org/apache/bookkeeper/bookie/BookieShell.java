@@ -19,11 +19,8 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
-import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
-import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
 import java.io.IOException;
@@ -40,13 +37,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
-import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
@@ -86,18 +80,16 @@ import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterComma
 import org.apache.bookkeeper.tools.cli.commands.bookies.RecoverCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.AdminCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GetCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.UpdateCookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
-import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.EntryFormatter;
-import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.Tool;
-import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -111,7 +103,6 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1453,7 +1444,8 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            int retValue = -1;
+            AdminCommand cmd = new AdminCommand();
+            AdminCommand.AdminFlags flags = new AdminCommand.AdminFlags();
             Option[] options = cmdLine.getOptions();
             if (options.length != 1) {
                 LOG.error("Invalid command!");
@@ -1474,214 +1466,22 @@ public class BookieShell implements Tool {
                     return -1;
                 }
                 boolean useHostName = getOptionalValue(bookieId, HOSTNAME);
-                if (!bkConf.getUseHostNameAsBookieID() && useHostName) {
-                    LOG.error(
-                            "Expects config useHostNameAsBookieID=true as the option value passed is 'hostname'");
-                    return -1;
-                } else if (bkConf.getUseHostNameAsBookieID() && !useHostName) {
-                    LOG.error("Expects configuration useHostNameAsBookieID=false as the option value passed is 'ip'");
-                    return -1;
-                }
-                retValue = updateBookieIdInCookie(bookieId, useHostName);
-            } else if (thisCommandOption.getLongOpt().equals(EXPANDSTORAGE)) {
-                bkConf.setAllowStorageExpansion(true);
-                return expandStorage();
-            } else if (thisCommandOption.getLongOpt().equals(LIST)) {
-                return listOrDeleteCookies(false, false);
-            } else if (thisCommandOption.getLongOpt().equals(DELETE)) {
+                flags.hostname(useHostName);
+                flags.ip(!useHostName);
+            }
+            flags.expandstorage(thisCommandOption.getLongOpt().equals(EXPANDSTORAGE));
+            flags.list(thisCommandOption.getLongOpt().equals(LIST));
+            flags.delete(thisCommandOption.getLongOpt().equals(DELETE));
+            if (thisCommandOption.getLongOpt().equals(DELETE)) {
                 boolean force = false;
                 String optionValue = thisCommandOption.getValue();
                 if (!StringUtils.isEmpty(optionValue) && optionValue.equals(FORCE)) {
                     force = true;
                 }
-                return listOrDeleteCookies(true, force);
-            } else {
-                LOG.error("Invalid command!");
-                this.printUsage();
-                return -1;
+                flags.force(force);
             }
-            return retValue;
-        }
-
-        private int updateBookieIdInCookie(final String bookieId, final boolean useHostname)
-                throws Exception {
-            return runFunctionWithRegistrationManager(bkConf, rm -> {
-                try {
-                    ServerConfiguration conf = new ServerConfiguration(bkConf);
-                    String newBookieId = Bookie.getBookieAddress(conf).toString();
-                    // read oldcookie
-                    Versioned<Cookie> oldCookie = null;
-                    try {
-                        conf.setUseHostNameAsBookieID(!useHostname);
-                        oldCookie = Cookie.readFromRegistrationManager(rm, conf);
-                    } catch (CookieNotFoundException nne) {
-                        LOG.error("Either cookie already updated with UseHostNameAsBookieID={} or no cookie exists!",
-                            useHostname, nne);
-                        return -1;
-                    }
-                    Cookie newCookie = Cookie.newBuilder(oldCookie.getValue()).setBookieHost(newBookieId).build();
-                    boolean hasCookieUpdatedInDirs = verifyCookie(newCookie, journalDirectories[0]);
-                    for (File dir : ledgerDirectories) {
-                        hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
-                    }
-                    if (indexDirectories != ledgerDirectories) {
-                        for (File dir : indexDirectories) {
-                            hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
-                        }
-                    }
-
-                    if (hasCookieUpdatedInDirs) {
-                        try {
-                            conf.setUseHostNameAsBookieID(useHostname);
-                            Cookie.readFromRegistrationManager(rm, conf);
-                            // since newcookie exists, just do cleanup of oldcookie and return
-                            conf.setUseHostNameAsBookieID(!useHostname);
-                            oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
-                            return 0;
-                        } catch (CookieNotFoundException nne) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Ignoring, cookie will be written to zookeeper");
-                            }
-                        }
-                    } else {
-                        // writes newcookie to local dirs
-                        for (File journalDirectory : journalDirectories) {
-                            newCookie.writeToDirectory(journalDirectory);
-                            LOG.info("Updated cookie file present in journalDirectory {}", journalDirectory);
-                        }
-                        for (File dir : ledgerDirectories) {
-                            newCookie.writeToDirectory(dir);
-                        }
-                        LOG.info("Updated cookie file present in ledgerDirectories {}", (Object) ledgerDirectories);
-                        if (ledgerDirectories != indexDirectories) {
-                            for (File dir : indexDirectories) {
-                                newCookie.writeToDirectory(dir);
-                            }
-                            LOG.info("Updated cookie file present in indexDirectories {}", (Object) indexDirectories);
-                        }
-                    }
-                    // writes newcookie to zookeeper
-                    conf.setUseHostNameAsBookieID(useHostname);
-                    newCookie.writeToRegistrationManager(rm, conf, Version.NEW);
-
-                    // delete oldcookie
-                    conf.setUseHostNameAsBookieID(!useHostname);
-                    oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
-                    return 0;
-                } catch (IOException | BookieException ioe) {
-                    LOG.error("IOException during cookie updation!", ioe);
-                    return -1;
-                }
-            });
-        }
-
-        private int expandStorage() throws Exception {
-            return runFunctionWithMetadataBookieDriver(bkConf, driver -> {
-                List<File> allLedgerDirs = Lists.newArrayList();
-                allLedgerDirs.addAll(Arrays.asList(ledgerDirectories));
-                if (indexDirectories != ledgerDirectories) {
-                    allLedgerDirs.addAll(Arrays.asList(indexDirectories));
-                }
-
-                try {
-                    Bookie.checkEnvironmentWithStorageExpansion(
-                        bkConf, driver, Arrays.asList(journalDirectories), allLedgerDirs);
-                    return 0;
-                } catch (BookieException e) {
-                    LOG.error("Exception while updating cookie for storage expansion", e);
-                    return -1;
-                }
-            });
-        }
-
-        private boolean verifyCookie(Cookie oldCookie, File dir) throws IOException {
-            try {
-                Cookie cookie = Cookie.readFromDirectory(dir);
-                cookie.verify(oldCookie);
-            } catch (InvalidCookieException e) {
-                return false;
-            }
-            return true;
-        }
-
-        private int listOrDeleteCookies(boolean delete, boolean force) throws Exception {
-            BookieSocketAddress bookieAddress = Bookie.getBookieAddress(bkConf);
-            File[] journalDirs = bkConf.getJournalDirs();
-            File[] ledgerDirs = bkConf.getLedgerDirs();
-            File[] indexDirs = bkConf.getIndexDirs();
-            File[] allDirs = ArrayUtils.addAll(journalDirs, ledgerDirs);
-            if (indexDirs != null) {
-                allDirs = ArrayUtils.addAll(allDirs, indexDirs);
-            }
-
-            File[] allCurDirs = Bookie.getCurrentDirectories(allDirs);
-            List<File> allVersionFiles = new LinkedList<File>();
-            File versionFile;
-            for (File curDir : allCurDirs) {
-                versionFile = new File(curDir, BookKeeperConstants.VERSION_FILENAME);
-                if (versionFile.exists()) {
-                    allVersionFiles.add(versionFile);
-                }
-            }
-
-            if (!allVersionFiles.isEmpty()) {
-                if (delete) {
-                    boolean confirm = force;
-                    if (!confirm) {
-                        confirm = IOUtils.confirmPrompt("Are you sure you want to delete Cookies locally?");
-                    }
-                    if (confirm) {
-                        for (File verFile : allVersionFiles) {
-                            if (!verFile.delete()) {
-                                LOG.error(
-                                        "Failed to delete Local cookie file {}. So aborting deletecookie of Bookie: {}",
-                                        verFile, bookieAddress);
-                                return -1;
-                            }
-                        }
-                        LOG.info("Deleted Local Cookies of Bookie: {}", bookieAddress);
-                    } else {
-                        LOG.info("Skipping deleting local Cookies of Bookie: {}", bookieAddress);
-                    }
-                } else {
-                    LOG.info("Listing local Cookie Files of Bookie: {}", bookieAddress);
-                    for (File verFile : allVersionFiles) {
-                        LOG.info(verFile.getCanonicalPath());
-                    }
-                }
-            } else {
-                LOG.info("No local cookies for Bookie: {}", bookieAddress);
-            }
-
-            return runFunctionWithRegistrationManager(bkConf, rm -> {
-                try {
-                    Versioned<Cookie> cookie = null;
-                    try {
-                        cookie = Cookie.readFromRegistrationManager(rm, bookieAddress);
-                    } catch (CookieNotFoundException nne) {
-                        LOG.info("No cookie for {} in metadata store", bookieAddress);
-                        return 0;
-                    }
-
-                    if (delete) {
-                        boolean confirm = force;
-                        if (!confirm) {
-                            confirm = IOUtils.confirmPrompt(
-                                "Are you sure you want to delete Cookies from metadata store?");
-                        }
-
-                        if (confirm) {
-                            cookie.getValue().deleteFromRegistrationManager(rm, bkConf, cookie.getVersion());
-                            LOG.info("Deleted Cookie from metadata store for Bookie: {}", bookieAddress);
-                        } else {
-                            LOG.info("Skipping deleting cookie from metadata store for Bookie: {}", bookieAddress);
-                        }
-                    }
-                } catch (BookieException | IOException e) {
-                    return -1;
-                }
-                return 0;
-            });
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
     }
 

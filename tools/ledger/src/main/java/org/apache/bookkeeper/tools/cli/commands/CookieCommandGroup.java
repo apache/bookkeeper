@@ -20,6 +20,7 @@
 package org.apache.bookkeeper.tools.cli.commands;
 
 import org.apache.bookkeeper.tools.cli.BKCtl;
+import org.apache.bookkeeper.tools.cli.commands.cookie.AdminCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
@@ -46,6 +47,7 @@ public class CookieCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new GetCookieCommand())
         .addCommand(new UpdateCookieCommand())
         .addCommand(new GenerateCookieCommand())
+        .addCommand(new AdminCommand())
         .build();
 
     public CookieCommandGroup() {
