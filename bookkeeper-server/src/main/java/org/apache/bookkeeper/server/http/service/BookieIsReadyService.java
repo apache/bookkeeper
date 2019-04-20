@@ -49,7 +49,7 @@ public class BookieIsReadyService implements HttpEndpointService {
         }
 
         StateManager sm = bookie.getStateManager();
-        if (sm.isRunning()) {
+        if (sm.isRunning() && !sm.isShuttingDown()) {
             response.setCode(HttpServer.StatusCode.OK);
         } else {
             response.setCode(HttpServer.StatusCode.SERVICE_UNAVAILABLE);
