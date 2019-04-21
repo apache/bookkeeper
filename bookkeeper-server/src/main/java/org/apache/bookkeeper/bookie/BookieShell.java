@@ -731,10 +731,24 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            LedgerMetaDataCommand.LedgerMetadataFlag flag = new LedgerMetaDataCommand.LedgerMetadataFlag()
-                .ledgerId(getOptionLedgerIdValue(cmdLine, "ledgerid", -1))
-                .dumpToFile(cmdLine.getOptionValue("dumptofile"))
-                .restoreFromFile(cmdLine.getOptionValue("restorefromfile"));
+            final long ledgerId = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
+            if (ledgerId == -1) {
+                System.err.println("Must specify a ledger id");
+                return -1;
+            }
+            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromefile")) {
+                System.err.println("Only one of --dumptofile and --restorefromfile can be specified");
+                return -2;
+            }
+
+            LedgerMetaDataCommand.LedgerMetadataFlag flag = new LedgerMetaDataCommand.LedgerMetadataFlag();
+            flag.ledgerId(ledgerId);
+            if (cmdLine.hasOption("dumptofile")) {
+                flag.dumpToFile(cmdLine.getOptionValue("dumptofile"));
+            }
+            if (cmdLine.hasOption("restorefromfile")) {
+                flag.restoreFromFile(cmdLine.getOptionValue("restorefromfile"));
+            }
 
             LedgerMetaDataCommand cmd = new LedgerMetaDataCommand(ledgerIdFormatter);
             cmd.apply(bkConf, flag);
