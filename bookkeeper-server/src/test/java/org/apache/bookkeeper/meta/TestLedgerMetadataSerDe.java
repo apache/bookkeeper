@@ -130,6 +130,7 @@ public class TestLedgerMetadataSerDe {
             .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 3181),
                                                      new BookieSocketAddress("192.0.2.2", 3181),
                                                      new BookieSocketAddress("192.0.2.3", 3181)))
+            .withMetadataFormatVersion(LedgerMetadataSerDe.METADATA_FORMAT_VERSION_2)
             .build();
         byte[] encoded = serDe.serialize(metadata);
 
@@ -170,6 +171,7 @@ public class TestLedgerMetadataSerDe {
                                       new BookieSocketAddress("192.0.2.1", 1234),
                                       new BookieSocketAddress("192.0.2.2", 1234),
                                       new BookieSocketAddress("192.0.2.3", 1234)))
+            .withMetadataFormatVersion(LedgerMetadataSerDe.METADATA_FORMAT_VERSION_2)
             .build();
 
         LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
