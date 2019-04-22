@@ -124,7 +124,7 @@ public class TestLedgerMetadataSerDe {
     @Test
     public void testPeggedToV2SerDe() throws Exception {
         LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
-        LedgerMetadata metadata = LedgerMetadataBuilder.create()
+        LedgerMetadata metadata = LedgerMetadataBuilder.create().withMetadataFormatVersion(2)
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withPassword("foobar".getBytes(UTF_8)).withDigestType(DigestType.CRC32C)
             .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 3181),
@@ -163,7 +163,7 @@ public class TestLedgerMetadataSerDe {
     @Test
     public void testStoreSystemtimeAsLedgerCtimeDisabledWithVersion2()
             throws Exception {
-        LedgerMetadata lm = LedgerMetadataBuilder.create()
+        LedgerMetadata lm = LedgerMetadataBuilder.create().withMetadataFormatVersion(2)
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withPassword("foobar".getBytes(UTF_8)).withDigestType(DigestType.CRC32C)
             .newEnsembleEntry(0L, Lists.newArrayList(
@@ -175,10 +175,10 @@ public class TestLedgerMetadataSerDe {
         LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
         byte[] serialized = serDe.serialize(lm);
         LedgerMetadata deserialized = serDe.parseConfig(serialized, Optional.of(654321L));
-        Assert.assertEquals(deserialized.getCtime(), 654321L);
+        Assert.assertEquals(654321L, deserialized.getCtime());
 
         // give it another round
         LedgerMetadata deserialized2 = serDe.parseConfig(serDe.serialize(deserialized), Optional.of(98765L));
-        Assert.assertEquals(deserialized2.getCtime(), 98765L);
+        Assert.assertEquals(98765L, deserialized2.getCtime());
     }
 }
