@@ -18,14 +18,10 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
-
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,14 +35,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
@@ -79,6 +72,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterComma
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand.NukeExistingClusterFlags;
 import org.apache.bookkeeper.tools.cli.commands.bookies.RecoverCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.client.LedgerMetaDataCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.AdminCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
@@ -90,7 +84,6 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.Tool;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -728,7 +721,6 @@ public class BookieShell implements Tool {
      */
     class LedgerMetadataCmd extends MyCommand {
         Options lOpts = new Options();
-        LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
 
         LedgerMetadataCmd() {
             super(CMD_LEDGERMETADATA);
@@ -739,36 +731,27 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            final long lid = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
-            if (lid == -1) {
+            final long ledgerId = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
+            if (ledgerId == -1) {
                 System.err.println("Must specify a ledger id");
                 return -1;
             }
-
-            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromfile")) {
+            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromefile")) {
                 System.err.println("Only one of --dumptofile and --restorefromfile can be specified");
                 return -2;
             }
-            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                try (LedgerManager m = mFactory.newLedgerManager()) {
-                    if (cmdLine.hasOption("dumptofile")) {
-                        Versioned<LedgerMetadata> md = m.readLedgerMetadata(lid).join();
-                        Files.write(FileSystems.getDefault().getPath(cmdLine.getOptionValue("dumptofile")),
-                                    serDe.serialize(md.getValue()));
-                    } else if (cmdLine.hasOption("restorefromfile")) {
-                        byte[] serialized = Files.readAllBytes(
-                                FileSystems.getDefault().getPath(cmdLine.getOptionValue("restorefromfile")));
-                        LedgerMetadata md = serDe.parseConfig(serialized, Optional.empty());
-                        m.createLedgerMetadata(lid, md).join();
-                    } else {
-                        printLedgerMetadata(lid, m.readLedgerMetadata(lid).get().getValue(), true);
-                    }
-                } catch (Exception e) {
-                    throw new UncheckedExecutionException(e);
-                }
-                return null;
-            });
 
+            LedgerMetaDataCommand.LedgerMetadataFlag flag = new LedgerMetaDataCommand.LedgerMetadataFlag();
+            flag.ledgerId(ledgerId);
+            if (cmdLine.hasOption("dumptofile")) {
+                flag.dumpToFile(cmdLine.getOptionValue("dumptofile"));
+            }
+            if (cmdLine.hasOption("restorefromfile")) {
+                flag.restoreFromFile(cmdLine.getOptionValue("restorefromfile"));
+            }
+
+            LedgerMetaDataCommand cmd = new LedgerMetaDataCommand(ledgerIdFormatter);
+            cmd.apply(bkConf, flag);
             return 0;
         }
 

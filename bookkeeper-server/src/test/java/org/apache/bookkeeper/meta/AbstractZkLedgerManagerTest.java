@@ -124,6 +124,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         this.metadata = LedgerMetadataBuilder.create()
             .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
             .withEnsembleSize(5)
+            .withMetadataFormatVersion(2)
             .withWriteQuorumSize(3)
             .withAckQuorumSize(3)
             .newEnsembleEntry(0L, ensemble)
