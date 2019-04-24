@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_LE
 
 import org.apache.bookkeeper.tools.cli.BKCtl;
 import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.client.LedgerMetaDataCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
@@ -42,6 +43,7 @@ public class LedgerCommandGroup extends CliCommandGroup<BKFlags> {
         .withCategory(CATEGORY_LEDGER_SERVICE)
         .addCommand(new SimpleTestCommand())
         .addCommand(new DeleteLedgerCommand())
+        .addCommand(new LedgerMetaDataCommand())
         .build();
 
     public LedgerCommandGroup() {
