@@ -128,10 +128,11 @@ public interface Namespace extends AutoCloseable{
      *          name of the log
      * @return distributedlog manager instance.
      * @throws InvalidStreamNameException if log name is invalid.
+     * @throws LogNotFoundException if log doesn't exist.
      * @throws IOException when encountered issues with backend.
      */
     DistributedLogManager openLog(String logName)
-            throws InvalidStreamNameException, IOException;
+            throws InvalidStreamNameException, LogNotFoundException, IOException;
 
     /**
      * Open a log named <i>logName</i> with specific log configurations.
@@ -149,13 +150,14 @@ public interface Namespace extends AutoCloseable{
      *          dynamic log configuration
      * @return distributedlog manager instance.
      * @throws InvalidStreamNameException if log name is invalid.
+     * @throws LogNotFoundException if log doesn't exist.
      * @throws IOException when encountered issues with backend.
      */
     DistributedLogManager openLog(String logName,
                                   Optional<DistributedLogConfiguration> logConf,
                                   Optional<DynamicDistributedLogConfiguration> dynamicLogConf,
                                   Optional<StatsLogger> perStreamStatsLogger)
-            throws InvalidStreamNameException, IOException;
+            throws InvalidStreamNameException, LogNotFoundException, IOException;
 
     /**
      * Check whether the log <i>logName</i> exist.
