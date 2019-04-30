@@ -839,10 +839,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         writeAndFlush(channel, completionKey, request);
     }
 
-    public void getListOfEntriesOfLedger(final long ledgerId, GetListOfEntriesOfLedgerCallback cb, Object ctx) {
+    public void getListOfEntriesOfLedger(final long ledgerId, GetListOfEntriesOfLedgerCallback cb) {
         final long txnId = getTxnId();
         final CompletionKey completionKey = new V3CompletionKey(txnId, OperationType.GET_LIST_OF_ENTRIES_OF_LEDGER);
-        completionObjects.put(completionKey, new GetListOfEntriesOfLedgerCompletion(completionKey, cb, ctx, ledgerId));
+        completionObjects.put(completionKey, new GetListOfEntriesOfLedgerCompletion(completionKey, cb, ledgerId));
 
         // Build the request.
         BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder().setVersion(ProtocolVersion.VERSION_THREE)
@@ -2015,15 +2015,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final GetListOfEntriesOfLedgerCallback cb;
 
         public GetListOfEntriesOfLedgerCompletion(final CompletionKey key,
-                final GetListOfEntriesOfLedgerCallback origCallback, final Object origCtx, final long ledgerId) {
-            super("GetListOfEntriesOfLedger", origCtx, ledgerId, 0L, getListOfEntriesOfLedgerCompletionOpLogger,
+                final GetListOfEntriesOfLedgerCallback origCallback, final long ledgerId) {
+            super("GetListOfEntriesOfLedger", null, ledgerId, 0L, getListOfEntriesOfLedgerCompletionOpLogger,
                     getListOfEntriesOfLedgerCompletionTimeoutOpLogger);
             this.cb = new GetListOfEntriesOfLedgerCallback() {
                 @Override
                 public void getListOfEntriesOfLedgerComplete(int rc, long ledgerId,
-                        AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger, Object ctx) {
+                        AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger) {
                     logOpResult(rc);
-                    origCallback.getListOfEntriesOfLedgerComplete(rc, ledgerId, availabilityOfEntriesOfLedger, ctx);
+                    origCallback.getListOfEntriesOfLedgerComplete(rc, ledgerId, availabilityOfEntriesOfLedger);
                     key.release();
                 }
             };
@@ -2036,7 +2036,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         @Override
         public void errorOut(final int rc) {
-            errorOutAndRunCallback(() -> cb.getListOfEntriesOfLedgerComplete(rc, ledgerId, null, ctx));
+            errorOutAndRunCallback(() -> cb.getListOfEntriesOfLedgerComplete(rc, ledgerId, null));
         }
 
         @Override
@@ -2062,7 +2062,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(
                         availabilityOfEntriesOfLedgerBuffer.slice());
             }
-            cb.getListOfEntriesOfLedgerComplete(rc, ledgerId, availabilityOfEntriesOfLedger, ctx);
+            cb.getListOfEntriesOfLedgerComplete(rc, ledgerId, availabilityOfEntriesOfLedger);
         }
     }
 

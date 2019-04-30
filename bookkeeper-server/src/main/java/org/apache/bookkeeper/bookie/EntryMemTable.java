@@ -48,7 +48,6 @@ import org.slf4j.LoggerFactory;
  */
 public class EntryMemTable implements AutoCloseable{
     private static Logger logger = LoggerFactory.getLogger(Journal.class);
-    static final long LONG_MAX_VALUE = Long.MAX_VALUE - 1;
     /**
      * Entry skip list.
      */
@@ -468,7 +467,7 @@ public class EntryMemTable implements AutoCloseable{
      */
     PrimitiveIterator.OfLong getListOfEntriesOfLedger(long ledgerId) {
         EntryKey thisLedgerFloorEntry = new EntryKey(ledgerId, 0);
-        EntryKey thisLedgerCeilingEntry = new EntryKey(ledgerId, LONG_MAX_VALUE);
+        EntryKey thisLedgerCeilingEntry = new EntryKey(ledgerId, Long.MAX_VALUE);
         Iterator<EntryKey> thisLedgerEntriesInKVMap;
         Iterator<EntryKey> thisLedgerEntriesInSnapshot;
         this.lock.readLock().lock();

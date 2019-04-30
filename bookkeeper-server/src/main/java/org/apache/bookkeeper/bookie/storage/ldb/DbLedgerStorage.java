@@ -363,6 +363,7 @@ public class DbLedgerStorage implements LedgerStorage {
 
     @Override
     public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
+        // check Issue #2078
         throw new UnsupportedOperationException(
                 "getListOfEntriesOfLedger method is currently unsupported for DbLedgerStorage");
     }

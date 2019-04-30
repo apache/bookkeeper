@@ -33,6 +33,19 @@ public class IteratorUtility {
 
     private static final long INVALID_ELEMENT = -1;
 
+    /**
+     * Merges two long primitive sorted iterators and returns merged iterator.
+     * It expects
+     *  - input iterators to be sorted
+     *  - input iterators to be non-repetitive for merged iterator to be non-repetitive
+     * It removes duplicates from the input iterators.
+     *
+     * @param iter1
+     *            first primitive oflong input iterator
+     * @param iter2
+     *            second primitive oflong input iterator
+     * @return merged primitive oflong iterator.
+     */
     public static OfLong mergePrimitiveLongIterator(OfLong iter1, OfLong iter2) {
         return new PrimitiveIterator.OfLong() {
             private long curIter1Element = INVALID_ELEMENT;
@@ -85,6 +98,23 @@ public class IteratorUtility {
         };
     }
 
+    /**
+     * Merges two sorted iterators and returns merged iterator sorted using
+     * comparator. It uses 'function' to convert T type to long, to return long
+     * iterator.
+     * It expects
+     *  - input iterators to be sorted
+     *  - input iterators to be non-repetitive for merged iterator to be non-repetitive
+     * It removes duplicates from the input iterators.
+     *
+     * @param iter1
+     *          first iterator of type T
+     * @param iter2
+     *          second iterator of type T
+     * @param comparator
+     * @param function
+     * @return
+     */
     public static <T> OfLong mergeIteratorsForPrimitiveLongIterator(Iterator<T> iter1, Iterator<T> iter2,
             Comparator<T> comparator, ToLongFunction<T> function) {
         return new PrimitiveIterator.OfLong() {

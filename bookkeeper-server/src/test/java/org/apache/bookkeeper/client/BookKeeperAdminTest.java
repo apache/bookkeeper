@@ -24,6 +24,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -33,7 +34,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -42,17 +44,12 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.lang3.mutable.MutableLong;
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.junit.Assert;
@@ -422,30 +419,17 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     public void testGetListOfEntriesOfNonExistingLedger() throws Exception {
         long nonExistingLedgerId = 56789L;
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
-            MutableInt rcRetValue = new MutableInt();
-            MutableLong callbackLedgerId = new MutableLong();
-            MutableObject<AvailabilityOfEntriesOfLedger> callbackAvailabilityOfEntriesOfLedger = new MutableObject<>();
-            MutableObject<BookieSocketAddress> callbackCtx = new MutableObject<BookieSocketAddress>();
             for (int i = 0; i < bs.size(); i++) {
-                CountDownLatch latch = new CountDownLatch(1);
-                bkAdmin.asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), nonExistingLedgerId,
-                        new GetListOfEntriesOfLedgerCallback() {
-                            @Override
-                            public void getListOfEntriesOfLedgerComplete(int rc, long ledgerId,
-                                    AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger, Object ctx) {
-                                rcRetValue.setValue(rc);
-                                callbackLedgerId.setValue(ledgerId);
-                                callbackAvailabilityOfEntriesOfLedger.setValue(availabilityOfEntriesOfLedger);
-                                callbackCtx.setValue((BookieSocketAddress) ctx);
-                                latch.countDown();
-                            }
-                        }, bs.get(i).getLocalAddress());
-                latch.await();
-                assertEquals("returned RC value", BKException.Code.NoSuchLedgerExistsException,
-                        rcRetValue.getValue().intValue());
-                assertEquals("LedgerId", nonExistingLedgerId, callbackLedgerId.getValue().longValue());
-                assertEquals("AvailabilityOfEntriesOfLedger", null, callbackAvailabilityOfEntriesOfLedger.getValue());
-                assertEquals("Context object", bs.get(i).getLocalAddress(), callbackCtx.getValue());
+                CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), nonExistingLedgerId);
+                try {
+                    futureResult.get();
+                    fail("asyncGetListOfEntriesOfLedger is supposed to be failed with NoSuchLedgerExistsException");
+                } catch (ExecutionException ee) {
+                    assertTrue(ee.getCause() instanceof BKException);
+                    BKException e = (BKException) ee.getCause();
+                    assertEquals(e.getCode(), BKException.Code.NoSuchLedgerExistsException);
+                }
             }
         }
     }
@@ -464,32 +448,17 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             lh.close();
         }
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
-            MutableInt rcRetValue = new MutableInt();
-            MutableLong callbackLedgerId = new MutableLong();
-            MutableObject<AvailabilityOfEntriesOfLedger> callbackAvailabilityOfEntriesOfLedger = new MutableObject<>();
-            MutableObject<BookieSocketAddress> callbackCtx = new MutableObject<BookieSocketAddress>();
             for (int i = 0; i < bs.size(); i++) {
-                CountDownLatch latch = new CountDownLatch(1);
-                bkAdmin.asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), lId,
-                        new GetListOfEntriesOfLedgerCallback() {
-                            @Override
-                            public void getListOfEntriesOfLedgerComplete(int rc, long ledgerId,
-                                    AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger, Object ctx) {
-                                rcRetValue.setValue(rc);
-                                callbackLedgerId.setValue(ledgerId);
-                                callbackAvailabilityOfEntriesOfLedger.setValue(availabilityOfEntriesOfLedger);
-                                callbackCtx.setValue((BookieSocketAddress) ctx);
-                                latch.countDown();
-                            }
-                        }, bs.get(i).getLocalAddress());
-                latch.await();
-                assertEquals("returned RC value", BKException.Code.OK, rcRetValue.getValue().intValue());
-                assertEquals("LedgerId", lId, callbackLedgerId.getValue().longValue());
-                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = callbackAvailabilityOfEntriesOfLedger
-                        .getValue();
+                CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), lId);
+                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
                 assertEquals("Number of entries", numOfEntries,
                         availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
-                assertEquals("Context object", bs.get(i).getLocalAddress(), callbackCtx.getValue());
+                for (int j = 0; j < numOfEntries; j++) {
+                    assertTrue("Entry should be available: " + j, availabilityOfEntriesOfLedger.isEntryAvailable(j));
+                }
+                assertFalse("Entry should not be available: " + numOfEntries,
+                        availabilityOfEntriesOfLedger.isEntryAvailable(numOfEntries));
             }
         }
         bkc.close();
@@ -512,29 +481,10 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         }
 
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
-            MutableInt rcRetValue = new MutableInt();
-            MutableLong callbackLedgerId = new MutableLong();
-            MutableObject<AvailabilityOfEntriesOfLedger> callbackAvailabilityOfEntriesOfLedger = new MutableObject<>();
-            MutableObject<BookieSocketAddress> callbackCtx = new MutableObject<BookieSocketAddress>();
             for (int i = 0; i < bs.size(); i++) {
-                CountDownLatch latch = new CountDownLatch(1);
-                bkAdmin.asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), lId,
-                        new GetListOfEntriesOfLedgerCallback() {
-                            @Override
-                            public void getListOfEntriesOfLedgerComplete(int rc, long ledgerId,
-                                    AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger, Object ctx) {
-                                rcRetValue.setValue(rc);
-                                callbackLedgerId.setValue(ledgerId);
-                                callbackAvailabilityOfEntriesOfLedger.setValue(availabilityOfEntriesOfLedger);
-                                callbackCtx.setValue((BookieSocketAddress) ctx);
-                                latch.countDown();
-                            }
-                        }, bs.get(i).getLocalAddress());
-                latch.await();
-                assertEquals("returned RC value", BKException.Code.OK, rcRetValue.getValue().intValue());
-                assertEquals("LedgerId", lId, callbackLedgerId.getValue().longValue());
-                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = callbackAvailabilityOfEntriesOfLedger
-                        .getValue();
+                CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), lId);
+                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
                 /*
                  * since num of bookies in the ensemble is 2 and
                  * writeQuorum/ackQuorum is 1, it will stripe to these two
@@ -543,7 +493,6 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                  */
                 assertEquals("Number of entries", numOfEntries / 2,
                         availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
-                assertEquals("Context object", bs.get(i).getLocalAddress(), callbackCtx.getValue());
             }
         }
         bkc.close();

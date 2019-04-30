@@ -113,7 +113,46 @@ public class BookkeeperInternalCallbacks {
      */
     public interface GetListOfEntriesOfLedgerCallback {
         void getListOfEntriesOfLedgerComplete(int rc, long ledgerId,
-                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger, Object ctx);
+                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger);
+    }
+
+    /**
+     * Handle the Response Code and transform it to a BKException.
+     *
+     * @param <T>
+     * @param rc
+     * @param result
+     * @param future
+     */
+    public static <T> void finish(int rc, T result, CompletableFuture<? super T> future) {
+        if (rc != BKException.Code.OK) {
+            future.completeExceptionally(BKException.create(rc).fillInStackTrace());
+        } else {
+            future.complete(result);
+        }
+    }
+
+    /**
+     * Future for GetListOfEntriesOfLedger.
+     */
+    public static class FutureGetListOfEntriesOfLedger extends CompletableFuture<AvailabilityOfEntriesOfLedger>
+            implements GetListOfEntriesOfLedgerCallback {
+        private final long ledgerIdOfTheRequest;
+
+        FutureGetListOfEntriesOfLedger(long ledgerId) {
+            this.ledgerIdOfTheRequest = ledgerId;
+        }
+
+        @Override
+        public void getListOfEntriesOfLedgerComplete(int rc, long ledgerIdOfTheResponse,
+                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger) {
+            if ((rc == BKException.Code.OK) && (ledgerIdOfTheRequest != ledgerIdOfTheResponse)) {
+                LOG.error("For getListOfEntriesOfLedger expected ledgerId in the response: {} actual ledgerId: {}",
+                        ledgerIdOfTheRequest, ledgerIdOfTheResponse);
+                rc = BKException.Code.ReadException;
+            }
+            finish(rc, availabilityOfEntriesOfLedger, this);
+        }
     }
 
     /**

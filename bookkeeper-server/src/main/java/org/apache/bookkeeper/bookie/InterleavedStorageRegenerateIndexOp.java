@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -238,6 +239,10 @@ public class InterleavedStorageRegenerateIndexOp {
         }
         @Override
         public LedgerIndexMetadata readLedgerIndexMetadata(long ledgerId) throws IOException {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public OfLong getEntriesIterator(long ledgerId) throws IOException {
             throw new UnsupportedOperationException();
         }
     }

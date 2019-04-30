@@ -223,7 +223,7 @@ message GetBookieInfoResponse {
 message GetListOfEntriesOfLedgerResponse {
     required StatusCode status = 1;
     required int64 ledgerId = 2;
-    optional bytes availabilityOfEntriesOfLedger = 3; // treated as array of bits indicating availability of entry at that particular index location
+    optional bytes availabilityOfEntriesOfLedger = 3; // condensed encoded format representing availability of entries of ledger
 }
 
 message StartTLSResponse {
