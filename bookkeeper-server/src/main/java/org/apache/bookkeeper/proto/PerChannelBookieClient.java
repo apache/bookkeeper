@@ -753,13 +753,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
-            ByteString body;
+            ByteString body = null;
             if (toSend.hasArray()) {
                 body = UnsafeByteOperations.unsafeWrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes());
-            } else if (toSend.size() == 1) {
-                body = UnsafeByteOperations.unsafeWrap(toSend.getBuffer(0).nioBuffer());
             } else {
-                body = UnsafeByteOperations.unsafeWrap(toSend.toArray());
+                for (int i = 0; i < toSend.size(); i++) {
+                    ByteString piece = UnsafeByteOperations.unsafeWrap(toSend.getBuffer(i).nioBuffer());
+                    // use ByteString.concat to avoid byte[] allocation when toSend has multiple ByteBufs
+                    body = (body == null) ? piece : body.concat(piece);
+                }
             }
             AddRequest.Builder addBuilder = AddRequest.newBuilder()
                     .setLedgerId(ledgerId)
@@ -1982,6 +1984,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     private final Recycler<AddCompletion> addCompletionRecycler = new Recycler<AddCompletion>() {
+            @Override
             protected AddCompletion newObject(Recycler.Handle<AddCompletion> handle) {
                 return new AddCompletion(handle);
             }
@@ -2184,6 +2187,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     private final Recycler<V2CompletionKey> v2KeyRecycler = new Recycler<V2CompletionKey>() {
+            @Override
             protected V2CompletionKey newObject(
                     Recycler.Handle<V2CompletionKey> handle) {
                 return new V2CompletionKey(handle);
