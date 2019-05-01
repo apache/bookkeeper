@@ -406,7 +406,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
      *
      * ScanAndCompareGarbageCollector/GC should clean data of ledger only if both the LedgerManager.getLedgerRanges says
      * that ledger is not existing and also ledgerManager.readLedgerMetadata fails with error
-     * NoSuchLedgerExistsException.
+     * NoSuchLedgerExistsOnMetadataServerException.
      *
      */
     @Test
@@ -464,7 +464,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
      *
      * ScanAndCompareGarbageCollector/GC should clean data of ledger only if both the LedgerManager.getLedgerRanges says
      * that ledger is not existing and also ledgerManager.readLedgerMetadata fails with error
-     * NoSuchLedgerExistsException.
+     * NoSuchLedgerExistsOnMetadataServerException.
      *
      */
     @Test
@@ -508,7 +508,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
      *
      * ScanAndCompareGarbageCollector/GC should clean data of ledger only if both the LedgerManager.getLedgerRanges says
      * that ledger is not existing and also ledgerManager.readLedgerMetadata fails with error
-     * NoSuchLedgerExistsException, but is shouldn't delete if the readLedgerMetadata fails with any other error.
+     * NoSuchLedgerExistsOnMetadataServerException, but is shouldn't delete if the readLedgerMetadata fails with any
+     * other error.
      */
     @Test
     public void testGcLedgersIfReadLedgerMetadataFailsForDeletedLedgers() throws Exception {

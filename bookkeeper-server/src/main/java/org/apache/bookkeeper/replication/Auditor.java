@@ -895,7 +895,7 @@ public class Auditor implements AutoCloseable {
                         numFragmentsPerLedger.registerSuccessfulValue(lh.getNumFragments());
                         numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
                         numLedgersChecked.inc();
-                    } else if (Code.NoSuchLedgerExistsException == rc) {
+                    } else if (Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Ledger {} was deleted before we could check it", ledgerId);
                         }
@@ -966,8 +966,8 @@ public class Auditor implements AutoCloseable {
                             }
                         }
                         iterCallback.processResult(BKException.Code.OK, null, null);
-                    } else if (BKException
-                            .getExceptionCode(exception) == BKException.Code.NoSuchLedgerExistsException) {
+                    } else if (BKException.getExceptionCode(exception)
+                            == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                         LOG.debug("Ignoring replication of already deleted ledger {}", ledgerId);
                         iterCallback.processResult(BKException.Code.OK, null, null);
                     } else {

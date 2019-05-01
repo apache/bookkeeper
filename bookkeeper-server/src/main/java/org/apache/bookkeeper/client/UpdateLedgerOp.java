@@ -116,7 +116,7 @@ public class UpdateLedgerOp {
             outstanding.add(writePromise);
             writePromise.whenComplete((metadata, ex) -> {
                         if (ex != null
-                            && !(ex instanceof BKException.BKNoSuchLedgerExistsException)) {
+                            && !(ex instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
                             String error = String.format("Failed to update ledger metadata %s, replacing %s with %s",
                                                          ledgerId, oldBookieId, newBookieId);
                             LOG.error(error, ex);

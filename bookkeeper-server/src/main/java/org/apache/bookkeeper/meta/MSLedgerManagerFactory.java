@@ -263,7 +263,8 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                                 }
                             });
                     }
-                } else if (BKException.getExceptionCode(exception) == BKException.Code.NoSuchLedgerExistsException) {
+                } else if (BKException.getExceptionCode(exception)
+                        == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                     // the ledger is removed, do nothing
                     Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
                     if (null != listenerSet) {
@@ -416,7 +417,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     int bkRc;
                     if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.warn("Ledger entry does not exist in meta table: ledgerId={}", ledgerId);
-                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                     } else if (MSException.Code.OK.getCode() == rc) {
                         FutureUtils.complete(promise, null);
                     } else {
@@ -438,7 +439,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.error("No ledger metadata found for ledger " + ledgerId + " : ",
                                 MSException.create(MSException.Code.get(rc), "No key " + key + " found."));
-                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                         return;
                     }
                     if (MSException.Code.OK.getCode() != rc) {
@@ -489,7 +490,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         promise.completeExceptionally(new BKException.BKMetadataVersionException());
                     } else if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.warn("Ledger {} doesn't exist when writing its ledger metadata.", ledgerId);
-                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                     } else if (MSException.Code.OK.getCode() == rc) {
                         promise.complete(new Versioned<>(metadata, version));
                     } else {
