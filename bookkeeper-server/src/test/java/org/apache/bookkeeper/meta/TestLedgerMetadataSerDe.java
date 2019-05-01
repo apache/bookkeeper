@@ -124,7 +124,7 @@ public class TestLedgerMetadataSerDe {
     @Test
     public void testPeggedToV3SerDe() throws Exception {
         LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
-        LedgerMetadata metadata = LedgerMetadataBuilder.create().withMetadataFormatVersion(2)
+        LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withPassword("foobar".getBytes(UTF_8)).withDigestType(DigestType.CRC32C)
             .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 3181),
@@ -163,7 +163,7 @@ public class TestLedgerMetadataSerDe {
     @Test
     public void testStoreSystemtimeAsLedgerCtimeDisabledWithNewerVersion()
             throws Exception {
-        LedgerMetadata lm = LedgerMetadataBuilder.create().withMetadataFormatVersion(2)
+        LedgerMetadata lm = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withPassword("foobar".getBytes(UTF_8)).withDigestType(DigestType.CRC32C)
             .newEnsembleEntry(0L, Lists.newArrayList(
