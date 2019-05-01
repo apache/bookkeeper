@@ -180,7 +180,7 @@ public class AvailabilityOfEntriesOfLedger {
 
         ByteBuffer headerByteBuf = ByteBuffer.wrap(header);
         int headerVersion = headerByteBuf.getInt();
-        if (headerVersion >= CURRENT_HEADER_VERSION) {
+        if (headerVersion > CURRENT_HEADER_VERSION) {
             throw new IllegalArgumentException("Unsupported Header Version: " + headerVersion);
         }
         int numOfSequenceGroups = headerByteBuf.getInt();
