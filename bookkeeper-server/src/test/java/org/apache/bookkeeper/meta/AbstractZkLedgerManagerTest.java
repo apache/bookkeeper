@@ -366,7 +366,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             result(ledgerManager.readLedgerMetadata(ledgerId));
             fail("Should fail on reading ledger metadata if a ledger doesn't exist");
         } catch (BKException bke) {
-            assertEquals(Code.NoSuchLedgerExistsException, bke.getCode());
+            assertEquals(Code.NoSuchLedgerExistsOnMetadataServerException, bke.getCode());
         }
 
         verify(mockZk, times(1))

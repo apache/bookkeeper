@@ -66,7 +66,7 @@ public abstract class OpenBuilderBase implements OpenBuilder {
     protected int validate() {
         if (ledgerId < 0) {
             LOG.error("invalid ledgerId {} < 0", ledgerId);
-            return Code.NoSuchLedgerExistsException;
+            return Code.NoSuchLedgerExistsOnMetadataServerException;
         }
         return Code.OK;
     }

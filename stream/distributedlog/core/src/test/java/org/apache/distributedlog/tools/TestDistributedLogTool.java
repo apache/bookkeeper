@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
-import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
+import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
@@ -203,7 +203,7 @@ public class TestDistributedLogTool extends TestDistributedLogBase {
         // correct functionality.
         try {
             cmd.runCmd();
-        } catch (BKNoSuchLedgerExistsException ex) {
+        } catch (BKNoSuchLedgerExistsOnMetadataServerException ex) {
         }
     }
 
@@ -214,7 +214,7 @@ public class TestDistributedLogTool extends TestDistributedLogBase {
         cmd.setLedgerId(99999999);
         try {
             cmd.runCmd();
-        } catch (BKNoSuchLedgerExistsException ex) {
+        } catch (BKNoSuchLedgerExistsOnMetadataServerException ex) {
         }
     }
 

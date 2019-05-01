@@ -271,7 +271,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         try {
             bkc.get().openLedger(lh1.getId(), BookKeeper.DigestType.CRC32, dlConf.getBKDigestPW().getBytes());
             fail("LedgerHandle allocated by allocator1 should be deleted.");
-        } catch (BKException.BKNoSuchLedgerExistsException nslee) {
+        } catch (BKException.BKNoSuchLedgerExistsOnMetadataServerException nslee) {
             // as expected
         }
         long eid = lh2.addEntry("hello world".getBytes());

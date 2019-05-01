@@ -163,7 +163,7 @@ public class MockBookKeeper extends BookKeeper {
 
         MockLedgerHandle lh = ledgers.get(lId);
         if (lh == null) {
-            cb.openComplete(BKException.Code.NoSuchLedgerExistsException, null, ctx);
+            cb.openComplete(BKException.Code.NoSuchLedgerExistsOnMetadataServerException, null, ctx);
         } else if (lh.digest != digestType) {
             cb.openComplete(BKException.Code.DigestMatchException, null, ctx);
         } else if (!Arrays.equals(lh.passwd, passwd)) {
@@ -190,7 +190,7 @@ public class MockBookKeeper extends BookKeeper {
             ledgers.remove(lId);
             cb.deleteComplete(0, ctx);
         } else {
-            cb.deleteComplete(BKException.Code.NoSuchLedgerExistsException, ctx);
+            cb.deleteComplete(BKException.Code.NoSuchLedgerExistsOnMetadataServerException, ctx);
         }
     }
 
@@ -203,7 +203,7 @@ public class MockBookKeeper extends BookKeeper {
         }
 
         if (!ledgers.containsKey(lId)) {
-            throw BKException.create(BKException.Code.NoSuchLedgerExistsException);
+            throw BKException.create(BKException.Code.NoSuchLedgerExistsOnMetadataServerException);
         }
 
         ledgers.remove(lId);
@@ -238,7 +238,7 @@ public class MockBookKeeper extends BookKeeper {
 
                 MockLedgerHandle lh = ledgers.get(ledgerId);
                 if (lh == null) {
-                    promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                    promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                 } else if (lh.digest != DigestType.fromApiDigestType(digestType)) {
                     promise.completeExceptionally(new BKException.BKDigestMatchException());
                 } else if (!Arrays.equals(lh.passwd, password)) {

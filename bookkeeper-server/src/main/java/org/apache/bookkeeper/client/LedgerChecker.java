@@ -264,7 +264,8 @@ public class LedgerChecker {
 
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                                       ByteBuf buffer, Object ctx) {
-            if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc) {
+            if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc
+                    && BKException.Code.NoSuchLedgerExistsOnMetadataServerException != rc) {
                 entryMayExist.set(true);
             }
 

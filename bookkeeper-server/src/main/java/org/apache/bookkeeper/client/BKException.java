@@ -72,6 +72,8 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
             return new BKNotEnoughBookiesException();
         case Code.NoSuchLedgerExistsException:
             return new BKNoSuchLedgerExistsException();
+        case Code.NoSuchLedgerExistsOnMetadataServerException:
+            return new BKNoSuchLedgerExistsOnMetadataServerException();
         case Code.BookieHandleNotAvailableException:
             return new BKBookieHandleNotAvailableException();
         case Code.ZKException:
@@ -277,6 +279,14 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
     public static class BKNoSuchLedgerExistsException extends BKException {
         public BKNoSuchLedgerExistsException() {
             super(BKException.Code.NoSuchLedgerExistsException);
+        }
+    }
+    /**
+     * Bookkeeper no such ledger exists on metadata server exception.
+     */
+    public static class BKNoSuchLedgerExistsOnMetadataServerException extends BKException {
+        public BKNoSuchLedgerExistsOnMetadataServerException() {
+            super(Code.NoSuchLedgerExistsOnMetadataServerException);
         }
     }
 

@@ -211,7 +211,8 @@ public class TestBookieShellCluster extends BookieShellTestBase {
                 validateNEntries(bk, ledgerId, numEntries);
                 Assert.fail("Shouldn't have been able to find anything");
             } catch (ExecutionException ee) {
-                Assert.assertEquals(ee.getCause().getClass(), BKException.BKNoSuchLedgerExistsException.class);
+                Assert.assertEquals(ee.getCause().getClass(),
+                        BKException.BKNoSuchLedgerExistsOnMetadataServerException.class);
             }
 
             log.info("Restore the ledger metadata");

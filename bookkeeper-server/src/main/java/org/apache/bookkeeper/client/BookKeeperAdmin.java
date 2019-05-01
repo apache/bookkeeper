@@ -492,7 +492,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                 bkc.getLedgerManager().readLedgerMetadata(lid)
                     .whenComplete((metadata, exception) -> {
                             if (BKException.getExceptionCode(exception)
-                                == BKException.Code.NoSuchLedgerExistsException) {
+                                == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                                 // the ledger was deleted during this iteration.
                                 cb.processResult(BKException.Code.OK, null, null);
                                 return;
@@ -1541,7 +1541,8 @@ public class BookKeeperAdmin implements AutoCloseable {
             throw new RuntimeException(ie);
         } catch (ExecutionException e) {
             if (e.getCause() != null
-                    && e.getCause().getClass().equals(BKException.BKNoSuchLedgerExistsException.class)) {
+                    && e.getCause().getClass()
+                    .equals(BKException.BKNoSuchLedgerExistsOnMetadataServerException.class)) {
                 LOG.debug("Ledger: {} has been deleted", ledgerId);
                 return false;
             } else {

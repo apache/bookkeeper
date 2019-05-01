@@ -41,7 +41,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BKException.BKDuplicateEntryIdException;
 import org.apache.bookkeeper.client.BKException.BKLedgerFencedException;
-import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
+import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException;
 import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -339,7 +339,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
         }
     }
 
-    @Test(expected = BKNoSuchLedgerExistsException.class)
+    @Test(expected = BKNoSuchLedgerExistsOnMetadataServerException.class)
     public void testDeleteLedger() throws Exception {
         long lId;
 
@@ -358,7 +358,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             .execute());
     }
 
-    @Test(expected = BKNoSuchLedgerExistsException.class)
+    @Test(expected = BKNoSuchLedgerExistsOnMetadataServerException.class)
     public void testCannotDeleteLedgerTwice() throws Exception {
         long lId;
 
