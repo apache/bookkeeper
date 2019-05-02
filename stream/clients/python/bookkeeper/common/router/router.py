@@ -10,7 +10,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mmh3
+try:
+    # Try with C based implemenation if available
+    import mmh3
+except ImportError:
+    # Fallback to pure python
+    import pymmh3 as mmh3
 
 __SEED__ = 383242705
 
