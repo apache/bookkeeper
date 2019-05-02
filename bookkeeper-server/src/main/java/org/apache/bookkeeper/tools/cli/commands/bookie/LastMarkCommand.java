@@ -48,7 +48,7 @@ public class LastMarkCommand extends BookieCommand<CliFlags> {
     @Override
     public boolean apply(ServerConfiguration conf, CliFlags flags) {
         LedgerDirsManager dirsManager = new LedgerDirsManager(
-            conf, conf.getJournalDirs(),
+            conf, conf.getLedgerDirs(),
             new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         File[] journalDirs = conf.getJournalDirs();
 
