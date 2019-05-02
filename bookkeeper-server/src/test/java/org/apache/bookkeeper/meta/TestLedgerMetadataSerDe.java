@@ -122,9 +122,9 @@ public class TestLedgerMetadataSerDe {
     }
 
     @Test
-    public void testPeggedToV2SerDe() throws Exception {
+    public void testPeggedToV3SerDe() throws Exception {
         LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
-        LedgerMetadata metadata = LedgerMetadataBuilder.create().withMetadataFormatVersion(2)
+        LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withPassword("foobar".getBytes(UTF_8)).withDigestType(DigestType.CRC32C)
             .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 3181),
@@ -134,11 +134,11 @@ public class TestLedgerMetadataSerDe {
         byte[] encoded = serDe.serialize(metadata);
 
         LedgerMetadata decoded = serDe.parseConfig(encoded, Optional.empty());
-        Assert.assertEquals(2, decoded.getMetadataFormatVersion());
+        Assert.assertEquals(LedgerMetadataSerDe.METADATA_FORMAT_VERSION_3, decoded.getMetadataFormatVersion());
     }
 
     @Test
-    public void testStoreSystemtimeAsLedgerCtimeEnabledWithVersion2()
+    public void testStoreSystemtimeAsLedgerCtimeEnabledWithNewerVersion()
             throws Exception {
         LedgerMetadata lm = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
@@ -161,9 +161,9 @@ public class TestLedgerMetadataSerDe {
     }
 
     @Test
-    public void testStoreSystemtimeAsLedgerCtimeDisabledWithVersion2()
+    public void testStoreSystemtimeAsLedgerCtimeDisabledWithNewerVersion()
             throws Exception {
-        LedgerMetadata lm = LedgerMetadataBuilder.create().withMetadataFormatVersion(2)
+        LedgerMetadata lm = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withPassword("foobar".getBytes(UTF_8)).withDigestType(DigestType.CRC32C)
             .newEnsembleEntry(0L, Lists.newArrayList(
@@ -171,7 +171,6 @@ public class TestLedgerMetadataSerDe {
                                       new BookieSocketAddress("192.0.2.2", 1234),
                                       new BookieSocketAddress("192.0.2.3", 1234)))
             .build();
-
         LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
         byte[] serialized = serDe.serialize(lm);
         LedgerMetadata deserialized = serDe.parseConfig(serialized, Optional.of(654321L));
