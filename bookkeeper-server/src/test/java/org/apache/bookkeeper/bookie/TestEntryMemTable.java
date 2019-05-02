@@ -327,7 +327,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
             entriesItr.forEachRemaining(addMethod);
             assertEquals("Number of Entries", numofEntries, listOfEntries.size());
             for (int i = 0; i < numofEntries; i++) {
-                assertEquals("listOfEntries should be sorted", new Long(i + 1), listOfEntries.get(i));
+                assertEquals("listOfEntries should be sorted", Long.valueOf(i + 1), listOfEntries.get(i));
             }
         }
         assertTrue("Snapshot is expected to be empty since snapshot is not done", memTable.snapshot.isEmpty());
@@ -341,7 +341,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
             assertEquals("Number of Entries should be the same even after taking snapshot", numofEntries,
                     listOfEntries.size());
             for (int i = 0; i < numofEntries; i++) {
-                assertEquals("listOfEntries should be sorted", new Long(i + 1), listOfEntries.get(i));
+                assertEquals("listOfEntries should be sorted", Long.valueOf(i + 1), listOfEntries.get(i));
             }
         }
 
@@ -385,7 +385,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
             entriesItr.forEachRemaining(addMethod);
             assertEquals("Number of Entries should be the same", newNumOfEntries, listOfEntries.size());
             for (int i = 0; i < newNumOfEntries; i++) {
-                assertEquals("listOfEntries should be sorted", new Long(i + 1), listOfEntries.get(i));
+                assertEquals("listOfEntries should be sorted", Long.valueOf(i + 1), listOfEntries.get(i));
             }
         }
     }
@@ -448,7 +448,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
         assertTrue("Entries should be added successfully in the spawned thread", successfullyAdded.get());
 
         for (int i = 0; i < newNumOfEntries; i++) {
-            assertEquals("listOfEntries should be sorted", new Long(i + 1), listOfEntries.get(i));
+            assertEquals("listOfEntries should be sorted", Long.valueOf(i + 1), listOfEntries.get(i));
         }
     }
 }
