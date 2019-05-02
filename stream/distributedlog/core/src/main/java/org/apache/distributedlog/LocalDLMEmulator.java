@@ -308,13 +308,15 @@ public class LocalDLMEmulator {
     public static void main(String[] args) throws Exception {
         try {
             if (args.length < 1) {
-                System.out.println("Usage: LocalDLEmulator <zk_port>");
+                System.out.println("Usage: LocalDLEmulator <zk_host> <zk_port>");
                 System.exit(-1);
             }
 
-            final int zkPort = Integer.parseInt(args[0]);
+            final String zkHost = args[0];
+            final int zkPort = Integer.parseInt(args[1]);
             final File zkDir = IOUtils.createTempDir("distrlog", "zookeeper");
             final LocalDLMEmulator localDlm = LocalDLMEmulator.newBuilder()
+                .zkHost(zkHost)
                 .zkPort(zkPort)
                 .build();
 
@@ -334,7 +336,7 @@ public class LocalDLMEmulator {
 
             System.out.println(String.format(
                 "DistributedLog Sandbox is running now. You could access distributedlog://%s:%s",
-                DEFAULT_ZK_HOST,
+                zkHost,
                 zkPort));
         } catch (Exception ex) {
             System.out.println("Exception occurred running emulator " + ex);
