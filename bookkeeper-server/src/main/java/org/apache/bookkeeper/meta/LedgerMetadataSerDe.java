@@ -181,7 +181,12 @@ public class LedgerMetadataSerDe {
                 break;
             }
 
-            builder.setCtime(metadata.getCtime());
+            /** Hack to get around fact that ctime was never versioned correctly */
+            if (LedgerMetadataUtils.shouldStoreCtime(metadata)) {
+                builder.setCtime(metadata.getCtime());
+            }
+
+
             builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
 
             serializePassword(metadata.getPassword(), builder);
@@ -351,7 +356,7 @@ public class LedgerMetadataSerDe {
 
             switch (metadataFormatVersion) {
             case METADATA_FORMAT_VERSION_3:
-                return parseVersion3Config(is);
+                return parseVersion3Config(is, metadataStoreCtime);
             case METADATA_FORMAT_VERSION_2:
                 return parseVersion2Config(is, metadataStoreCtime);
             case METADATA_FORMAT_VERSION_1:
@@ -365,12 +370,19 @@ public class LedgerMetadataSerDe {
         }
     }
 
-    private static LedgerMetadata parseVersion3Config(InputStream is) throws IOException {
+    private static LedgerMetadata parseVersion3Config(InputStream is, Optional<Long> metadataStoreCtime)
+            throws IOException {
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create()
-            .withMetadataFormatVersion(METADATA_FORMAT_VERSION_3);
+                .withMetadataFormatVersion(METADATA_FORMAT_VERSION_3);
         LedgerMetadataFormat.Builder formatBuilder = LedgerMetadataFormat.newBuilder();
         formatBuilder.mergeDelimitedFrom(is);
-        decodeFormat(formatBuilder.build(), builder);
+        LedgerMetadataFormat data = formatBuilder.build();
+        decodeFormat(data, builder);
+        if (data.hasCtime()) {
+            builder.storingCreationTime(true);
+        } else if (metadataStoreCtime.isPresent()) {
+            builder.withCreationTime(metadataStoreCtime.get()).storingCreationTime(false);
+        }
         return builder.build();
     }
 

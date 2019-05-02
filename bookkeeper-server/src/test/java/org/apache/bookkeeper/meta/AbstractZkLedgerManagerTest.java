@@ -124,7 +124,6 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         this.metadata = LedgerMetadataBuilder.create()
             .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
             .withEnsembleSize(5)
-            .withMetadataFormatVersion(2)
             .withWriteQuorumSize(3)
             .withAckQuorumSize(3)
             .newEnsembleEntry(0L, ensemble)
@@ -180,7 +179,18 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         mockZkUtilsAsyncCreateFullPathOptimistic(
             ledgerStr, CreateMode.PERSISTENT,
             KeeperException.Code.NODEEXISTS.intValue(), null);
-
+        Stat stat = mock(Stat.class);
+        when(stat.getVersion()).thenReturn(1234);
+        when(stat.getCtime()).thenReturn(metadata.getCtime());
+        /*
+         * this is needed because in AbstractZkLedgerManager.readLedgerMetadata
+         * if MetadataFormatVersion is >2, then for createLedgerMetadata if we
+         * get NODEEXISTS exception then it will try to read to make sure ledger
+         * creation is robust to ZK connection loss. Please check Issue #1967.
+         */
+        mockZkGetData(
+                ledgerStr, false,
+                KeeperException.Code.OK.intValue(), serDe.serialize(metadata), stat);
         try {
             result(ledgerManager.createLedgerMetadata(ledgerId, metadata));
             fail("Should fail to create ledger metadata if the ledger already exists");
