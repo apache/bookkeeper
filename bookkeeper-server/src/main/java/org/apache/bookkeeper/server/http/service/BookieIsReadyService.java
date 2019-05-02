@@ -51,6 +51,7 @@ public class BookieIsReadyService implements HttpEndpointService {
         StateManager sm = bookie.getStateManager();
         if (sm.isRunning() && !sm.isShuttingDown()) {
             response.setCode(HttpServer.StatusCode.OK);
+            response.setBody("");
         } else {
             response.setCode(HttpServer.StatusCode.SERVICE_UNAVAILABLE);
             response.setBody("Bookie is not fully started yet");
