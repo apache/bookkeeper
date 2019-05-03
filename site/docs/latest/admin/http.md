@@ -321,6 +321,40 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         } ]
        ```
 
+### Endpoint: /api/v1/bookie/state
+1. Method: GET
+   * Description:  Exposes the current state of bookie
+   * Response:
+
+        | Code   | Description |
+        |:-------|:------------|
+        |200 | Successful operation |
+        |403 | Permission denied |
+        |404 | Not found |
+   * Body:
+      ```json
+      {
+         "running" : true,
+         "readOnly" : false,
+         "shuttingDown" : false,
+         "availableForHighPriorityWrites" : true
+       }
+      ```
+
+### Endpoint: /api/v1/bookie/is_ready
+1. Method: GET
+   * Description:  Return true if the bookie is ready
+   * Response:
+
+        | Code   | Description |
+        |:-------|:------------|
+        |200 | Successful operation |
+        |403 | Permission denied |
+        |404 | Not found |
+        |503 | Bookie is not ready |
+   * Body: <empty>
+
+
 ## Auto recovery
 
 ### Endpoint: /api/v1/autorecovery/bookie/
