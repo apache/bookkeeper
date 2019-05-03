@@ -26,12 +26,15 @@ import static org.junit.Assert.assertTrue;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
+
 import lombok.Cleanup;
+
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -48,8 +51,8 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
+import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -825,5 +828,42 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
         HttpServiceResponse response3 = gcDetailsService.handle(request3);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response3.getStatusCode());
+    }
+
+    @Test
+    public void testGetBookieState() throws Exception {
+        HttpEndpointService bookieStateServer = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_STATE);
+
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = bookieStateServer.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+
+        BookieState bs = JsonUtil.fromJson(response1.getBody(), BookieState.class);
+        assertEquals(true, bs.isRunning());
+        assertEquals(false, bs.isReadOnly());
+        assertEquals(true, bs.isAvailableForHighPriorityWrites());
+        assertEquals(false, bs.isShuttingDown());
+    }
+
+    @Test
+    public void testGetBookieIsReady() throws Exception {
+        HttpEndpointService bookieStateServer = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_IS_READY);
+
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = bookieStateServer.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+
+        // Try using POST instead of GET
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response2 = bookieStateServer.handle(request2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+
+        // Simulate bookies shutting down
+        bs.forEach(bookieServer -> bookieServer.getBookie().getStateManager().forceToShuttingDown());
+        HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response3 = bookieStateServer.handle(request3);
+        assertEquals(HttpServer.StatusCode.SERVICE_UNAVAILABLE.getValue(), response3.getStatusCode());
     }
 }
