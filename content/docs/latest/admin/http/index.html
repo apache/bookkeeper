@@ -1340,6 +1340,90 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
   </li>
 </ol>
 
+<h3 id="endpoint-apiv1bookiestate">Endpoint: /api/v1/bookie/state</h3>
+<ol>
+  <li>Method: GET
+    <ul>
+      <li>Description:  Exposes the current state of bookie</li>
+      <li>
+        <p>Response:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: left">Code</th>
+              <th style="text-align: left">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align: left">200</td>
+              <td style="text-align: left">Successful operation</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">403</td>
+              <td style="text-align: left">Permission denied</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">404</td>
+              <td style="text-align: left">Not found</td>
+            </tr>
+          </tbody>
+        </table>
+      </li>
+      <li>Body:
+        <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="s2">"running"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"readOnly"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"shuttingDown"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"availableForHighPriorityWrites"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span></code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+</ol>
+
+<h3 id="endpoint-apiv1bookieis_ready">Endpoint: /api/v1/bookie/is_ready</h3>
+<ol>
+  <li>Method: GET
+    <ul>
+      <li>Description:  Return true if the bookie is ready</li>
+      <li>
+        <p>Response:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: left">Code</th>
+              <th style="text-align: left">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align: left">200</td>
+              <td style="text-align: left">Successful operation</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">403</td>
+              <td style="text-align: left">Permission denied</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">404</td>
+              <td style="text-align: left">Not found</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">503</td>
+              <td style="text-align: left">Bookie is not ready</td>
+            </tr>
+          </tbody>
+        </table>
+      </li>
+      <li>Body: <empty></empty></li>
+    </ul>
+  </li>
+</ol>
+
 <h2 id="auto-recovery">Auto recovery</h2>
 
 <h3 id="endpoint-apiv1autorecoverybookie">Endpoint: /api/v1/autorecovery/bookie/</h3>
@@ -1757,6 +1841,8 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookieexpand_storage">Endpoint: /api/v1/bookie/expand_storage</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookiegc">Endpoint: /api/v1/bookie/gc</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookiegc_details">Endpoint: /api/v1/bookie/gc_details</a></li>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookiestate">Endpoint: /api/v1/bookie/state</a></li>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookieis_ready">Endpoint: /api/v1/bookie/is_ready</a></li>
 <li class="toc-entry toc-h2"><a href="#auto-recovery">Auto recovery</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverybookie">Endpoint: /api/v1/autorecovery/bookie/</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverylist_under_replicated_ledgermissingreplicabookie_addressexcludingmissingreplicabookie_address">Endpoint: /api/v1/autorecovery/list_under_replicated_ledger/?missingreplica=<bookie_address>&excludingmissingreplica=<bookie_address></a></li>
