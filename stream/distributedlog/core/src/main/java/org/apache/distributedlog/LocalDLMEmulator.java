@@ -308,12 +308,19 @@ public class LocalDLMEmulator {
     public static void main(String[] args) throws Exception {
         try {
             if (args.length < 1) {
-                System.out.println("Usage: LocalDLEmulator <zk_host> <zk_port>");
+                System.out.println("Usage: LocalDLEmulator [<zk_host>] <zk_port>");
                 System.exit(-1);
             }
 
-            final String zkHost = args[0];
-            final int zkPort = Integer.parseInt(args[1]);
+            String zkHost = DEFAULT_ZK_HOST;
+            int zkPort = DEFAULT_ZK_PORT;
+            if (args.length == 1) {
+                zkPort = Integer.parseInt(args[0]);
+            } else {
+                zkHost = args[0];
+                zkPort = Integer.parseInt(args[1]);
+            }
+
             final File zkDir = IOUtils.createTempDir("distrlog", "zookeeper");
             final LocalDLMEmulator localDlm = LocalDLMEmulator.newBuilder()
                 .zkHost(zkHost)
