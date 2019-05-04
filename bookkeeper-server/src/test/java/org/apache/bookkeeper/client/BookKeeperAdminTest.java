@@ -24,6 +24,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -33,6 +34,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -43,6 +47,7 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
@@ -398,5 +403,98 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             lh.close();
         }
         bk.close();
+    }
+
+    @Test
+    public void testGetListOfEntriesOfClosedLedger() throws Exception {
+        testGetListOfEntriesOfLedger(true);
+    }
+
+    @Test
+    public void testGetListOfEntriesOfNotClosedLedger() throws Exception {
+        testGetListOfEntriesOfLedger(false);
+    }
+
+    @Test
+    public void testGetListOfEntriesOfNonExistingLedger() throws Exception {
+        long nonExistingLedgerId = 56789L;
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            for (int i = 0; i < bs.size(); i++) {
+                CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), nonExistingLedgerId);
+                try {
+                    futureResult.get();
+                    fail("asyncGetListOfEntriesOfLedger is supposed to be failed with NoSuchLedgerExistsException");
+                } catch (ExecutionException ee) {
+                    assertTrue(ee.getCause() instanceof BKException);
+                    BKException e = (BKException) ee.getCause();
+                    assertEquals(e.getCode(), BKException.Code.NoSuchLedgerExistsException);
+                }
+            }
+        }
+    }
+
+    public void testGetListOfEntriesOfLedger(boolean isLedgerClosed) throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        int numOfEntries = 6;
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle lh = bkc.createLedger(numOfBookies, numOfBookies, digestType, "testPasswd".getBytes());
+        long lId = lh.getId();
+        for (int i = 0; i < numOfEntries; i++) {
+            lh.addEntry("000".getBytes());
+        }
+        if (isLedgerClosed) {
+            lh.close();
+        }
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            for (int i = 0; i < bs.size(); i++) {
+                CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), lId);
+                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
+                assertEquals("Number of entries", numOfEntries,
+                        availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
+                for (int j = 0; j < numOfEntries; j++) {
+                    assertTrue("Entry should be available: " + j, availabilityOfEntriesOfLedger.isEntryAvailable(j));
+                }
+                assertFalse("Entry should not be available: " + numOfEntries,
+                        availabilityOfEntriesOfLedger.isEntryAvailable(numOfEntries));
+            }
+        }
+        bkc.close();
+    }
+
+    @Test
+    public void testGetListOfEntriesOfLedgerWithJustOneBookieInWriteQuorum() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        int numOfEntries = 6;
+        BookKeeper bkc = new BookKeeper(conf);
+        /*
+         * in this testsuite there are going to be 2 (numOfBookies) and if
+         * writeQuorum is 1 then it will stripe entries to those two bookies.
+         */
+        LedgerHandle lh = bkc.createLedger(2, 1, digestType, "testPasswd".getBytes());
+        long lId = lh.getId();
+        for (int i = 0; i < numOfEntries; i++) {
+            lh.addEntry("000".getBytes());
+        }
+
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            for (int i = 0; i < bs.size(); i++) {
+                CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), lId);
+                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
+                /*
+                 * since num of bookies in the ensemble is 2 and
+                 * writeQuorum/ackQuorum is 1, it will stripe to these two
+                 * bookies and hence in each bookie there will be only
+                 * numOfEntries/2 entries.
+                 */
+                assertEquals("Number of entries", numOfEntries / 2,
+                        availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
+            }
+        }
+        bkc.close();
     }
 }

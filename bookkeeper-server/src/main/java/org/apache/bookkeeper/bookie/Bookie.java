@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -1592,6 +1593,27 @@ public class Bookie extends BookieCriticalThread {
             return fallback;
         } else {
             return new LedgerDirsManager(conf, idxDirs, diskChecker, statsLogger);
+        }
+    }
+
+    public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException, NoLedgerException {
+        long requestNanos = MathUtils.nowInNano();
+        boolean success = false;
+        try {
+            LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("GetEntriesOfLedger {}", ledgerId);
+            }
+            OfLong entriesOfLedger = handle.getListOfEntriesOfLedger(ledgerId);
+            success = true;
+            return entriesOfLedger;
+        } finally {
+            long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
+            if (success) {
+                bookieStats.getReadEntryStats().registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+            } else {
+                bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+            }
         }
     }
 }

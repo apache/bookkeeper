@@ -23,6 +23,8 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGE_RETRIES;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -34,11 +36,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
+
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -135,7 +141,9 @@ public class InterleavedLedgerStorageTest {
     TestableEntryLogger entryLogger;
     InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
     final long numWrites = 2000;
+    final long moreNumOfWrites = 3000;
     final long entriesPerWrite = 2;
+    final long numOfLedgers = 5;
 
     @Before
     public void setUp() throws Exception {
@@ -158,7 +166,7 @@ public class InterleavedLedgerStorageTest {
 
         // Insert some ledger & entries in the interleaved storage
         for (long entryId = 0; entryId < numWrites; entryId++) {
-            for (long ledgerId = 0; ledgerId < 5; ledgerId++) {
+            for (long ledgerId = 0; ledgerId < numOfLedgers; ledgerId++) {
                 if (entryId == 0) {
                     interleavedStorage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
                     interleavedStorage.setFenced(ledgerId);
@@ -188,6 +196,52 @@ public class InterleavedLedgerStorageTest {
                 }
             }
             Assert.assertEquals(entriesPerWrite * numWrites, curEntry.longValue());
+        }
+    }
+
+    @Test
+    public void testGetListOfEntriesOfLedger() throws IOException {
+        for (long ledgerId = 0; ledgerId < numOfLedgers; ledgerId++) {
+            OfLong entriesOfLedger = interleavedStorage.getListOfEntriesOfLedger(ledgerId);
+            ArrayList<Long> arrayList = new ArrayList<Long>();
+            Consumer<Long> addMethod = arrayList::add;
+            entriesOfLedger.forEachRemaining(addMethod);
+            assertEquals("Number of entries", numWrites, arrayList.size());
+            assertTrue("Entries of Ledger", IntStream.range(0, arrayList.size()).allMatch(i -> {
+                return arrayList.get(i).longValue() == (i * entriesPerWrite);
+            }));
+        }
+
+        long nonExistingLedger = 456789L;
+        OfLong entriesOfLedger = interleavedStorage.getListOfEntriesOfLedger(nonExistingLedger);
+        assertFalse("There shouldn't be any entry", entriesOfLedger.hasNext());
+    }
+
+    @Test
+    public void testGetListOfEntriesOfLedgerAfterFlush() throws IOException {
+        interleavedStorage.flush();
+
+        // Insert some more ledger & entries in the interleaved storage
+        for (long entryId = numWrites; entryId < moreNumOfWrites; entryId++) {
+            for (long ledgerId = 0; ledgerId < numOfLedgers; ledgerId++) {
+                ByteBuf entry = Unpooled.buffer(128);
+                entry.writeLong(ledgerId);
+                entry.writeLong(entryId * entriesPerWrite);
+                entry.writeBytes(("entry-" + entryId).getBytes());
+
+                interleavedStorage.addEntry(entry);
+            }
+        }
+
+        for (long ledgerId = 0; ledgerId < numOfLedgers; ledgerId++) {
+            OfLong entriesOfLedger = interleavedStorage.getListOfEntriesOfLedger(ledgerId);
+            ArrayList<Long> arrayList = new ArrayList<Long>();
+            Consumer<Long> addMethod = arrayList::add;
+            entriesOfLedger.forEachRemaining(addMethod);
+            assertEquals("Number of entries", moreNumOfWrites, arrayList.size());
+            assertTrue("Entries of Ledger", IntStream.range(0, arrayList.size()).allMatch(i -> {
+                return arrayList.get(i).longValue() == (i * entriesPerWrite);
+            }));
         }
     }
 

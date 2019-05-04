@@ -33,6 +33,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -888,4 +889,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     private static final Logger log = LoggerFactory.getLogger(DbLedgerStorage.class);
+
+    @Override
+    public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
+        throw new UnsupportedOperationException(
+                "getListOfEntriesOfLedger method is currently unsupported for SingleDirectoryDbLedgerStorage");
+    }
 }

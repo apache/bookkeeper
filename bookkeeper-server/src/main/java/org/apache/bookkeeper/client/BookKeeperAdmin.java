@@ -27,8 +27,8 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
 import com.google.common.util.concurrent.UncheckedExecutionException;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -80,6 +80,7 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
@@ -1662,5 +1663,20 @@ public class BookKeeperAdmin implements AutoCloseable {
             int writeQuorumSize, int ackQuorumSize) {
         return bkc.getPlacementPolicy().isEnsembleAdheringToPlacementPolicy(ensembleBookiesList, writeQuorumSize,
                 ackQuorumSize);
+    }
+
+    /**
+     * Makes async request for getting list of entries of ledger from a bookie
+     * and returns Future for the result.
+     *
+     * @param address
+     *            BookieSocketAddress of the bookie
+     * @param ledgerId
+     *            ledgerId
+     * @return returns Future
+     */
+    public CompletableFuture<AvailabilityOfEntriesOfLedger> asyncGetListOfEntriesOfLedger(BookieSocketAddress address,
+            long ledgerId) {
+        return bkc.getBookieClient().getListOfEntriesOfLedger(address, ledgerId);
     }
 }

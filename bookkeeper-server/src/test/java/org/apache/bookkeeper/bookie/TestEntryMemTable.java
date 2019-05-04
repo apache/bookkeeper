@@ -18,6 +18,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -32,9 +34,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+
+import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -50,6 +57,7 @@ import org.junit.runners.Parameterized.Parameters;
 /**
  * Test the EntryMemTable class.
  */
+@Slf4j
 @RunWith(Parameterized.class)
 public class TestEntryMemTable implements CacheCallback, SkipListFlusher, CheckpointSource {
 
@@ -296,6 +304,152 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
             return mark.compare(((TestCheckPoint) o).mark);
         }
 
+    }
+
+    @Test
+    public void testGetListOfEntriesOfLedger() throws IOException {
+        Set<EntryKeyValue> flushedKVs = Collections.newSetFromMap(new ConcurrentHashMap<EntryKeyValue, Boolean>());
+        KVFLusher flusher = new KVFLusher(flushedKVs);
+        int numofEntries = 100;
+        int numOfLedgers = 5;
+        byte[] data = new byte[10];
+        for (long entryId = 1; entryId <= numofEntries; entryId++) {
+            for (long ledgerId = 1; ledgerId <= numOfLedgers; ledgerId++) {
+                random.nextBytes(data);
+                assertTrue(ledgerId + ":" + entryId + " is duplicate in mem-table!",
+                        memTable.addEntry(ledgerId, entryId, ByteBuffer.wrap(data), this) != 0);
+            }
+        }
+        for (long ledgerId = 1; ledgerId <= numOfLedgers; ledgerId++) {
+            OfLong entriesItr = memTable.getListOfEntriesOfLedger((random.nextInt((int) ledgerId) + 1));
+            ArrayList<Long> listOfEntries = new ArrayList<Long>();
+            Consumer<Long> addMethod = listOfEntries::add;
+            entriesItr.forEachRemaining(addMethod);
+            assertEquals("Number of Entries", numofEntries, listOfEntries.size());
+            for (int i = 0; i < numofEntries; i++) {
+                assertEquals("listOfEntries should be sorted", Long.valueOf(i + 1), listOfEntries.get(i));
+            }
+        }
+        assertTrue("Snapshot is expected to be empty since snapshot is not done", memTable.snapshot.isEmpty());
+        assertTrue("Take snapshot and returned checkpoint should not be empty", memTable.snapshot() != null);
+        assertFalse("After taking snapshot, snapshot should not be empty ", memTable.snapshot.isEmpty());
+        for (long ledgerId = 1; ledgerId <= numOfLedgers; ledgerId++) {
+            OfLong entriesItr = memTable.getListOfEntriesOfLedger((random.nextInt((int) ledgerId) + 1));
+            ArrayList<Long> listOfEntries = new ArrayList<Long>();
+            Consumer<Long> addMethod = listOfEntries::add;
+            entriesItr.forEachRemaining(addMethod);
+            assertEquals("Number of Entries should be the same even after taking snapshot", numofEntries,
+                    listOfEntries.size());
+            for (int i = 0; i < numofEntries; i++) {
+                assertEquals("listOfEntries should be sorted", Long.valueOf(i + 1), listOfEntries.get(i));
+            }
+        }
+
+        memTable.flush(flusher);
+        for (long ledgerId = 1; ledgerId <= numOfLedgers; ledgerId++) {
+            OfLong entriesItr = memTable.getListOfEntriesOfLedger((random.nextInt((int) ledgerId) + 1));
+            assertFalse("After flushing there shouldn't be entries in memtable", entriesItr.hasNext());
+        }
+    }
+
+    @Test
+    public void testGetListOfEntriesOfLedgerFromBothKVMapAndSnapshot() throws IOException {
+        int numofEntries = 100;
+        int newNumOfEntries = 200;
+        int numOfLedgers = 5;
+        byte[] data = new byte[10];
+        for (long entryId = 1; entryId <= numofEntries; entryId++) {
+            for (long ledgerId = 1; ledgerId <= numOfLedgers; ledgerId++) {
+                random.nextBytes(data);
+                assertTrue(ledgerId + ":" + entryId + " is duplicate in mem-table!",
+                        memTable.addEntry(ledgerId, entryId, ByteBuffer.wrap(data), this) != 0);
+            }
+        }
+
+        assertTrue("Snapshot is expected to be empty since snapshot is not done", memTable.snapshot.isEmpty());
+        assertTrue("Take snapshot and returned checkpoint should not be empty", memTable.snapshot() != null);
+        assertFalse("After taking snapshot, snapshot should not be empty ", memTable.snapshot.isEmpty());
+
+        for (long entryId = numofEntries + 1; entryId <= newNumOfEntries; entryId++) {
+            for (long ledgerId = 1; ledgerId <= numOfLedgers; ledgerId++) {
+                random.nextBytes(data);
+                assertTrue(ledgerId + ":" + entryId + " is duplicate in mem-table!",
+                        memTable.addEntry(ledgerId, entryId, ByteBuffer.wrap(data), this) != 0);
+            }
+        }
+
+        for (long ledgerId = 1; ledgerId <= numOfLedgers; ledgerId++) {
+            OfLong entriesItr = memTable.getListOfEntriesOfLedger((random.nextInt((int) ledgerId) + 1));
+            ArrayList<Long> listOfEntries = new ArrayList<Long>();
+            Consumer<Long> addMethod = listOfEntries::add;
+            entriesItr.forEachRemaining(addMethod);
+            assertEquals("Number of Entries should be the same", newNumOfEntries, listOfEntries.size());
+            for (int i = 0; i < newNumOfEntries; i++) {
+                assertEquals("listOfEntries should be sorted", Long.valueOf(i + 1), listOfEntries.get(i));
+            }
+        }
+    }
+
+    @Test
+    public void testGetListOfEntriesOfLedgerWhileAddingConcurrently() throws IOException, InterruptedException {
+        final int numofEntries = 100;
+        final int newNumOfEntries = 200;
+        final int concurrentAddOfEntries = 300;
+        long ledgerId = 5;
+        byte[] data = new byte[10];
+        for (long entryId = 1; entryId <= numofEntries; entryId++) {
+            random.nextBytes(data);
+            assertTrue(ledgerId + ":" + entryId + " is duplicate in mem-table!",
+                    memTable.addEntry(ledgerId, entryId, ByteBuffer.wrap(data), this) != 0);
+        }
+
+        assertTrue("Snapshot is expected to be empty since snapshot is not done", memTable.snapshot.isEmpty());
+        assertTrue("Take snapshot and returned checkpoint should not be empty", memTable.snapshot() != null);
+        assertFalse("After taking snapshot, snapshot should not be empty ", memTable.snapshot.isEmpty());
+
+        for (long entryId = numofEntries + 1; entryId <= newNumOfEntries; entryId++) {
+            random.nextBytes(data);
+            assertTrue(ledgerId + ":" + entryId + " is duplicate in mem-table!",
+                    memTable.addEntry(ledgerId, entryId, ByteBuffer.wrap(data), this) != 0);
+        }
+
+        AtomicBoolean successfullyAdded = new AtomicBoolean(true);
+
+        Thread threadToAdd = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    for (long entryId = newNumOfEntries + 1; entryId <= concurrentAddOfEntries; entryId++) {
+                        random.nextBytes(data);
+                        boolean thisEntryAddedSuccessfully = (memTable.addEntry(ledgerId, entryId,
+                                ByteBuffer.wrap(data), TestEntryMemTable.this) != 0);
+                        successfullyAdded.set(successfullyAdded.get() && thisEntryAddedSuccessfully);
+                        Thread.sleep(10);
+                    }
+                } catch (IOException e) {
+                    log.error("Got Unexpected exception while adding entries");
+                    successfullyAdded.set(false);
+                } catch (InterruptedException e) {
+                    log.error("Got InterruptedException while waiting");
+                    successfullyAdded.set(false);
+                }
+            }
+        });
+        threadToAdd.start();
+
+        Thread.sleep(200);
+        OfLong entriesItr = memTable.getListOfEntriesOfLedger(ledgerId);
+        ArrayList<Long> listOfEntries = new ArrayList<Long>();
+        while (entriesItr.hasNext()) {
+            listOfEntries.add(entriesItr.next());
+            Thread.sleep(5);
+        }
+        threadToAdd.join(5000);
+        assertTrue("Entries should be added successfully in the spawned thread", successfullyAdded.get());
+
+        for (int i = 0; i < newNumOfEntries; i++) {
+            assertEquals("listOfEntries should be sorted", Long.valueOf(i + 1), listOfEntries.get(i));
+        }
     }
 }
 
