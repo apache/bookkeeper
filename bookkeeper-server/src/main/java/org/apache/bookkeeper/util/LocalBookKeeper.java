@@ -345,7 +345,7 @@ public class LocalBookKeeper {
                                           String zkDataDir,
                                           String localBookiesConfigDirName)
             throws Exception {
-        if (conf.getZkLedgersRootPath() != BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH) {
+        if (!BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH.equals(conf.getZkLedgersRootPath())) {
             throw new Exception("Couldn't use non-default zkLedgersRootPath in LocalBookkeeper. "
                     + "Default zkLedgersRootPath is " + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH
                     + ". Yours is " + conf.getZkLedgersRootPath());
