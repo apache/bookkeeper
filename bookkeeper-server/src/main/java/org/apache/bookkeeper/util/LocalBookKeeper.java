@@ -346,9 +346,9 @@ public class LocalBookKeeper {
                                           String localBookiesConfigDirName)
             throws Exception {
         if (conf.getZkLedgersRootPath() != BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH) {
-            throw new Exception("Couldn't use non-default zkLedgersRootPath in LocalBookkeeper. " +
-                    "Default zkLedgersRootPath is " + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH +
-                    ". Yours is " + conf.getZkLedgersRootPath());
+            throw new Exception("Couldn't use non-default zkLedgersRootPath in LocalBookkeeper. "
+                    + "Default zkLedgersRootPath is " + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH
+                    + ". Yours is " + conf.getZkLedgersRootPath());
         }
         conf.setMetadataServiceUri(
                 newMetadataServiceUri(
