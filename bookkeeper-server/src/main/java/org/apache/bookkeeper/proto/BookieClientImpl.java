@@ -38,6 +38,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -56,6 +57,7 @@ import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.FutureGetListOfEntriesOfLedger;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -66,6 +68,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
+import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -317,6 +320,33 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                       ledgerId);
     }
 
+    @Override
+    public CompletableFuture<AvailabilityOfEntriesOfLedger> getListOfEntriesOfLedger(BookieSocketAddress address,
+            long ledgerId) {
+        FutureGetListOfEntriesOfLedger futureResult = new FutureGetListOfEntriesOfLedger(ledgerId);
+        final PerChannelBookieClientPool client = lookupClient(address);
+        if (client == null) {
+            futureResult.getListOfEntriesOfLedgerComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
+                    ledgerId, null);
+            return futureResult;
+        }
+        client.obtain((rc, pcbc) -> {
+            if (rc != BKException.Code.OK) {
+                try {
+                    executor.executeOrdered(ledgerId, safeRun(() -> {
+                        futureResult.getListOfEntriesOfLedgerComplete(rc, ledgerId, null);
+                    }));
+                } catch (RejectedExecutionException re) {
+                    futureResult.getListOfEntriesOfLedgerComplete(getRc(BKException.Code.InterruptedException),
+                            ledgerId, null);
+                }
+            } else {
+                pcbc.getListOfEntriesOfLedger(ledgerId, futureResult);
+            }
+        }, ledgerId);
+        return futureResult;
+    }
+
     private void completeRead(final int rc,
                               final long ledgerId,
                               final long entryId,
@@ -415,6 +445,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }
     }
 
+    @Override
     public void readLac(final BookieSocketAddress addr, final long ledgerId, final ReadLacCallback cb,
             final Object ctx) {
         final PerChannelBookieClientPool client = lookupClient(addr);

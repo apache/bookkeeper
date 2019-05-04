@@ -21,17 +21,21 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.PrimitiveIterator;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.stats.EntryMemTableStats;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.IteratorUtility;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +48,6 @@ import org.slf4j.LoggerFactory;
  */
 public class EntryMemTable implements AutoCloseable{
     private static Logger logger = LoggerFactory.getLogger(Journal.class);
-
     /**
      * Entry skip list.
      */
@@ -455,5 +458,49 @@ public class EntryMemTable implements AutoCloseable{
     @Override
     public void close() throws Exception {
         // no-op
+    }
+
+    /*
+     * returns the primitive long iterator of entries of a ledger available in
+     * this EntryMemTable. It would be in the ascending order and this Iterator
+     * is weakly consistent.
+     */
+    PrimitiveIterator.OfLong getListOfEntriesOfLedger(long ledgerId) {
+        EntryKey thisLedgerFloorEntry = new EntryKey(ledgerId, 0);
+        EntryKey thisLedgerCeilingEntry = new EntryKey(ledgerId, Long.MAX_VALUE);
+        Iterator<EntryKey> thisLedgerEntriesInKVMap;
+        Iterator<EntryKey> thisLedgerEntriesInSnapshot;
+        this.lock.readLock().lock();
+        try {
+            /*
+             * Gets a view of the portion of this map that corresponds to
+             * entries of this ledger.
+             *
+             * Here 'kvmap' is of type 'ConcurrentSkipListMap', so its 'subMap'
+             * call would return a view of the portion of this map whose keys
+             * range from fromKey to toKey and it would be of type
+             * 'ConcurrentNavigableMap'. ConcurrentNavigableMap's 'keySet' would
+             * return NavigableSet view of the keys contained in this map. This
+             * view's iterator would be weakly consistent -
+             * https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/
+             * package-summary.html#Weakly.
+             *
+             * 'weakly consistent' would guarantee 'to traverse elements as they
+             * existed upon construction exactly once, and may (but are not
+             * guaranteed to) reflect any modifications subsequent to
+             * construction.'
+             *
+             */
+            thisLedgerEntriesInKVMap = this.kvmap.subMap(thisLedgerFloorEntry, thisLedgerCeilingEntry).keySet()
+                    .iterator();
+            thisLedgerEntriesInSnapshot = this.snapshot.subMap(thisLedgerFloorEntry, thisLedgerCeilingEntry).keySet()
+                    .iterator();
+        } finally {
+            this.lock.readLock().unlock();
+        }
+        return IteratorUtility.mergeIteratorsForPrimitiveLongIterator(thisLedgerEntriesInKVMap,
+                thisLedgerEntriesInSnapshot, EntryKey.COMPARATOR, (entryKey) -> {
+                    return entryKey.entryId;
+                });
     }
 }

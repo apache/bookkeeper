@@ -27,6 +27,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
+import java.util.PrimitiveIterator.OfLong;
+
 import org.apache.bookkeeper.common.util.Watcher;
 
 /**
@@ -86,4 +88,6 @@ public abstract class LedgerDescriptor {
     abstract void setExplicitLac(ByteBuf entry) throws IOException;
 
     abstract  ByteBuf getExplicitLac();
+
+    abstract OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException;
 }

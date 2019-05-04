@@ -64,6 +64,7 @@ enum OperationType {
     GET_BOOKIE_INFO = 8;
     START_TLS = 9;
     FORCE_LEDGER = 10;
+    GET_LIST_OF_ENTRIES_OF_LEDGER = 11;
 }
 
 /**
@@ -92,6 +93,7 @@ message Request {
     optional GetBookieInfoRequest getBookieInfoRequest = 105;
     optional StartTLSRequest startTLSRequest = 106;
     optional ForceLedgerRequest forceLedgerRequest = 107;
+    optional GetListOfEntriesOfLedgerRequest getListOfEntriesOfLedgerRequest = 108;
     // to pass MDC context
     repeated ContextPair requestContext = 200;
 }
@@ -152,6 +154,10 @@ message GetBookieInfoRequest {
     optional int64 requested = 1;
 }
 
+message GetListOfEntriesOfLedgerRequest {
+	required int64 ledgerId = 1;
+}
+
 message Response {
 
     required BKPacketHeader header = 1;
@@ -167,6 +173,7 @@ message Response {
     optional GetBookieInfoResponse getBookieInfoResponse = 105;
     optional StartTLSResponse startTLSResponse = 106;
     optional ForceLedgerResponse forceLedgerResponse = 107;
+    optional GetListOfEntriesOfLedgerResponse getListOfEntriesOfLedgerResponse = 108;
 }
 
 message ReadResponse {
@@ -211,6 +218,12 @@ message GetBookieInfoResponse {
     required StatusCode status = 1;
     optional int64 totalDiskCapacity = 2;
     optional int64 freeDiskSpace = 3;
+}
+
+message GetListOfEntriesOfLedgerResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+    optional bytes availabilityOfEntriesOfLedger = 3; // condensed encoded format representing availability of entries of ledger
 }
 
 message StartTLSResponse {

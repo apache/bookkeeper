@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.common.util.Watcher;
@@ -172,5 +173,10 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     @Override
     void cancelWaitForLastAddConfirmedUpdate(Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
         ledgerStorage.cancelWaitForLastAddConfirmedUpdate(ledgerId, watcher);
+    }
+
+    @Override
+    OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
+        return ledgerStorage.getListOfEntriesOfLedger(ledgerId);
     }
 }

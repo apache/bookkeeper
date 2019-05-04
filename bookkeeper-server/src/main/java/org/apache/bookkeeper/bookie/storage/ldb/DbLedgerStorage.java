@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -358,5 +359,12 @@ public class DbLedgerStorage implements LedgerStorage {
         } else {
             return conf.getLong(keyName);
         }
+    }
+
+    @Override
+    public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
+        // check Issue #2078
+        throw new UnsupportedOperationException(
+                "getListOfEntriesOfLedger method is currently unsupported for DbLedgerStorage");
     }
 }

@@ -23,6 +23,8 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.ZeroBuffer;
@@ -296,6 +298,31 @@ public class LedgerEntryPage implements AutoCloseable {
                 }
             }
         }
+    }
+
+    public OfLong getEntriesIterator() {
+        return new OfLong() {
+            long firstEntry = getFirstEntry();
+            int curDiffEntry = 0;
+
+            @Override
+            public boolean hasNext() {
+                while ((curDiffEntry < entriesPerPage) && (getOffset(curDiffEntry * 8) == 0)) {
+                    curDiffEntry++;
+                }
+                return (curDiffEntry != entriesPerPage);
+            }
+
+            @Override
+            public long nextLong() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                long nextEntry = firstEntry + curDiffEntry;
+                curDiffEntry++;
+                return nextEntry;
+            }
+        };
     }
 
     @Override

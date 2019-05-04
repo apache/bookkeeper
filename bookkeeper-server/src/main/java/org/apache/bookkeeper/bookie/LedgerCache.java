@@ -26,6 +26,8 @@ import static org.apache.bookkeeper.tools.cli.commands.bookie.FormatUtil.bytes2H
 import io.netty.buffer.ByteBuf;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.PrimitiveIterator.OfLong;
+
 import org.apache.bookkeeper.common.util.Watcher;
 
 /**
@@ -86,6 +88,8 @@ public interface LedgerCache extends Closeable {
     interface PageEntriesIterable extends AutoCloseable, Iterable<PageEntries> {}
 
     PageEntriesIterable listEntries(long ledgerId) throws IOException;
+
+    OfLong getEntriesIterator(long ledgerId) throws IOException;
 
     /**
      * Represents summary of ledger metadata.

@@ -28,7 +28,11 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -37,6 +41,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -276,5 +281,45 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
         ReadOnlyFileInfo fi = new ReadOnlyFileInfo(ledgerFile, null);
         fi.readHeader();
         return fi;
+    }
+
+    @Test
+    public void testGetListOfEntriesOfLedger() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        int numOfBookies = bs.size();
+        int numOfEntries = 5;
+        BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle lh = bkc.createLedger(numOfBookies, numOfBookies, digestType, "testPasswd".getBytes());
+        long lId = lh.getId();
+        for (int i = 0; i < numOfEntries; i++) {
+            lh.addEntry("000".getBytes());
+        }
+
+        ServerConfiguration newBookieConf = new ServerConfiguration(bsConfs.get(0));
+        /*
+         * by reusing bookieServerConfig and setting metadataServiceUri to null
+         * we can create/start new Bookie instance using the same data
+         * (journal/ledger/index) of the existing BookeieServer for our testing
+         * purpose.
+         */
+        newBookieConf.setMetadataServiceUri(null);
+        Bookie newbookie = new Bookie(newBookieConf);
+        /*
+         * since 'newbookie' uses the same data as original Bookie, it should be
+         * able to read journal of the original bookie.
+         */
+        newbookie.readJournal();
+
+        OfLong listOfEntriesItr = newbookie.getListOfEntriesOfLedger(lId);
+        ArrayList<Long> arrayList = new ArrayList<Long>();
+        Consumer<Long> addMethod = arrayList::add;
+        listOfEntriesItr.forEachRemaining(addMethod);
+
+        assertEquals("Num Of Entries", numOfEntries, arrayList.size());
+        Assert.assertTrue("Iterator should be sorted",
+                IntStream.range(0, arrayList.size() - 1).allMatch(k -> arrayList.get(k) <= arrayList.get(k + 1)));
+        bkc.close();
     }
 }
