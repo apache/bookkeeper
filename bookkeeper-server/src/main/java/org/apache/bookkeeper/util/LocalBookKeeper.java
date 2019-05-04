@@ -345,7 +345,11 @@ public class LocalBookKeeper {
                                           String zkDataDir,
                                           String localBookiesConfigDirName)
             throws Exception {
-
+        if (conf.getZkLedgersRootPath() != BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH) {
+            throw new Exception("Couldn't use non-default zkLedgersRootPath in LocalBookkeeper. " +
+                    "Default zkLedgersRootPath is " + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH +
+                    ". Yours is " + conf.getZkLedgersRootPath());
+        }
         conf.setMetadataServiceUri(
                 newMetadataServiceUri(
                         zkHost,
@@ -353,7 +357,6 @@ public class LocalBookKeeper {
                         conf.getLedgerManagerLayoutStringFromFactoryClass(),
                         conf.getZkLedgersRootPath()));
         LocalBookKeeper lb = new LocalBookKeeper(numBookies, initialBookiePort, conf, localBookiesConfigDirName);
-
         ZooKeeperServerShim zks = null;
         File zkTmpDir = null;
         List<File> bkTmpDirs = null;
