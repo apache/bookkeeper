@@ -179,13 +179,17 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
     @Override
     public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool,
-            SecurityHandlerFactory shFactory) throws SecurityException {
+            SecurityHandlerFactory shFactory, int bookieProtocolVersion) throws SecurityException {
         StatsLogger statsLoggerForPCBC = statsLogger;
         if (conf.getLimitStatsLogging()) {
             statsLoggerForPCBC = NullStatsLogger.INSTANCE;
         }
-        return new PerChannelBookieClient(conf, executor, eventLoopGroup, allocator, address, statsLoggerForPCBC,
-                authProviderFactory, registry, pcbcPool, shFactory);
+        ClientConfiguration clientConfiguration = conf;
+        if (BookieProtocol.PROTOCOL_VERSION3 == bookieProtocolVersion) {
+            clientConfiguration.setUseV2WireProtocol(false);
+        }
+        return new PerChannelBookieClient(clientConfiguration, executor, eventLoopGroup, allocator, address,
+                                   statsLoggerForPCBC, authProviderFactory, registry, pcbcPool, shFactory);
     }
 
     public PerChannelBookieClientPool lookupClient(BookieSocketAddress addr) {
@@ -467,7 +471,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             } else {
                 pcbc.readLac(ledgerId, cb, ctx);
             }
-        }, ledgerId);
+        }, ledgerId, BookieProtocol.PROTOCOL_VERSION3);
     }
 
     public void readEntry(BookieSocketAddress addr, long ledgerId, long entryId,
@@ -546,7 +550,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             } else {
                 pcbc.getBookieInfo(requested, cb, ctx);
             }
-        }, requested);
+        }, requested, BookieProtocol.PROTOCOL_VERSION3);
     }
 
     private void monitorPendingOperations() {

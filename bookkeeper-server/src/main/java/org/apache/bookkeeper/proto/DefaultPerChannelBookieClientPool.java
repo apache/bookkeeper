@@ -48,6 +48,7 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     final BookieSocketAddress address;
 
     final PerChannelBookieClient[] clients;
+    final PerChannelBookieClient[] clientsV3;
 
     final ClientConfiguration conf;
     SecurityHandlerFactory shFactory;
@@ -68,7 +69,12 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
 
         this.clients = new PerChannelBookieClient[coreSize];
         for (int i = 0; i < coreSize; i++) {
-            this.clients[i] = factory.create(address, this, shFactory);
+            this.clients[i] = factory.create(address, this, shFactory, BookieProtocol.CURRENT_PROTOCOL_VERSION);
+        }
+
+        this.clientsV3 = new PerChannelBookieClient[coreSize];
+        for (int i = 0; i < coreSize; i++) {
+            this.clientsV3[i] = factory.create(address, this, shFactory, BookieProtocol.PROTOCOL_VERSION3);
         }
     }
 
@@ -85,16 +91,31 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     }
 
     private PerChannelBookieClient getClient(long key) {
-        if (1 == clients.length) {
-            return clients[0];
+        return getClientByVersion(key, BookieProtocol.CURRENT_PROTOCOL_VERSION);
+    }
+
+    private PerChannelBookieClient getClient(long key, PerChannelBookieClient[] pcbc) {
+        if (1 == pcbc.length) {
+            return pcbc[0];
         }
-        int idx = MathUtils.signSafeMod(key, clients.length);
-        return clients[idx];
+        int idx = MathUtils.signSafeMod(key, pcbc.length);
+        return pcbc[idx];
+    }
+
+    private PerChannelBookieClient getClientByVersion(long key, int version) {
+        if (version == BookieProtocol.PROTOCOL_VERSION3) {
+            return getClient(key, clientsV3);
+        }
+        return getClient(key, clients);
     }
 
     @Override
     public void obtain(GenericCallback<PerChannelBookieClient> callback, long key) {
-        getClient(key).connectIfNeededAndDoOp(callback);
+        obtain(callback, key, BookieProtocol.CURRENT_PROTOCOL_VERSION);
+    }
+
+    public void obtain(GenericCallback<PerChannelBookieClient> callback, long key, int version) {
+        getClientByVersion(key, version).connectIfNeededAndDoOp(callback);
     }
 
     @Override
