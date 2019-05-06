@@ -21,6 +21,9 @@
 package org.apache.bookkeeper.proto;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
+import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion.VERSION_THREE;
+import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion.VERSION_TWO;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -64,17 +67,16 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         this.address = address;
         this.conf = conf;
 
-        this.shFactory = SecurityProviderFactoryFactory
-                .getSecurityProviderFactory(conf.getTLSProviderFactoryClass());
+        this.shFactory = SecurityProviderFactoryFactory.getSecurityProviderFactory(conf.getTLSProviderFactoryClass());
 
         this.clients = new PerChannelBookieClient[coreSize];
         for (int i = 0; i < coreSize; i++) {
-            this.clients[i] = factory.create(address, this, shFactory, BookieProtocol.CURRENT_PROTOCOL_VERSION);
+            this.clients[i] = factory.create(address, this, shFactory, VERSION_TWO);
         }
 
         this.clientsV3 = new PerChannelBookieClient[coreSize];
         for (int i = 0; i < coreSize; i++) {
-            this.clientsV3[i] = factory.create(address, this, shFactory, BookieProtocol.PROTOCOL_VERSION3);
+            this.clientsV3[i] = factory.create(address, this, shFactory, VERSION_THREE);
         }
     }
 
@@ -91,7 +93,7 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     }
 
     private PerChannelBookieClient getClient(long key) {
-        return getClientByVersion(key, BookieProtocol.CURRENT_PROTOCOL_VERSION);
+        return getClientByVersion(key, VERSION_TWO);
     }
 
     private PerChannelBookieClient getClient(long key, PerChannelBookieClient[] pcbc) {
@@ -101,9 +103,8 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         int idx = MathUtils.signSafeMod(key, pcbc.length);
         return pcbc[idx];
     }
-
-    private PerChannelBookieClient getClientByVersion(long key, int version) {
-        if (version == BookieProtocol.PROTOCOL_VERSION3) {
+    private PerChannelBookieClient getClientByVersion(long key, ProtocolVersion version) {
+        if (version == VERSION_THREE) {
             return getClient(key, clientsV3);
         }
         return getClient(key, clients);
@@ -111,10 +112,10 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
 
     @Override
     public void obtain(GenericCallback<PerChannelBookieClient> callback, long key) {
-        obtain(callback, key, BookieProtocol.CURRENT_PROTOCOL_VERSION);
+        obtain(callback, key, VERSION_THREE);
     }
 
-    public void obtain(GenericCallback<PerChannelBookieClient> callback, long key, int version) {
+    public void obtain(GenericCallback<PerChannelBookieClient> callback, long key, ProtocolVersion version) {
         getClientByVersion(key, version).connectIfNeededAndDoOp(callback);
     }
 

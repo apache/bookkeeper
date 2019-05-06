@@ -48,11 +48,6 @@ public interface BookieProtocol {
     byte CURRENT_PROTOCOL_VERSION = 2;
 
     /**
-     * Bookie pbookkeeper-server/src/main/java/org/apache/bookkeeper/proto/BookieClientImpl.javarotocol version 3.
-     */
-    byte PROTOCOL_VERSION3 = 3;
-
-    /**
      * Entry Entry ID. To be used when no valid entry id can be assigned.
      */
     long INVALID_ENTRY_ID = -1;

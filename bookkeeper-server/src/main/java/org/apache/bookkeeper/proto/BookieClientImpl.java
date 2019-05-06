@@ -21,6 +21,8 @@
 package org.apache.bookkeeper.proto;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
+import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion.VERSION_THREE;
 import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 
 import com.google.common.collect.Lists;
@@ -93,6 +95,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     private final ExtensionRegistry registry;
 
     private final ClientConfiguration conf;
+    private final ClientConfiguration v3Conf;
     private volatile boolean closed;
     private final ReentrantReadWriteLock closeLock;
     private final StatsLogger statsLogger;
@@ -105,6 +108,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                             OrderedExecutor executor, ScheduledExecutorService scheduler,
                             StatsLogger statsLogger) throws IOException {
         this.conf = conf;
+        this.v3Conf = new ClientConfiguration(conf);
+        this.v3Conf.setUseV2WireProtocol(false);
         this.eventLoopGroup = eventLoopGroup;
         this.allocator = allocator;
         this.executor = executor;
@@ -179,14 +184,14 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
     @Override
     public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool,
-            SecurityHandlerFactory shFactory, int bookieProtocolVersion) throws SecurityException {
+            SecurityHandlerFactory shFactory, ProtocolVersion bookieProtocolVersion) throws SecurityException {
         StatsLogger statsLoggerForPCBC = statsLogger;
         if (conf.getLimitStatsLogging()) {
             statsLoggerForPCBC = NullStatsLogger.INSTANCE;
         }
         ClientConfiguration clientConfiguration = conf;
-        if (BookieProtocol.PROTOCOL_VERSION3 == bookieProtocolVersion) {
-            clientConfiguration.setUseV2WireProtocol(false);
+        if (bookieProtocolVersion == VERSION_THREE) {
+            clientConfiguration = v3Conf;
         }
         return new PerChannelBookieClient(clientConfiguration, executor, eventLoopGroup, allocator, address,
                                    statsLoggerForPCBC, authProviderFactory, registry, pcbcPool, shFactory);
@@ -271,7 +276,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             }
 
             toSend.release();
-        }, ledgerId, BookieProtocol.PROTOCOL_VERSION3);
+        }, ledgerId, VERSION_THREE);
     }
 
     private void completeAdd(final int rc,
@@ -471,7 +476,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             } else {
                 pcbc.readLac(ledgerId, cb, ctx);
             }
-        }, ledgerId, BookieProtocol.PROTOCOL_VERSION3);
+        }, ledgerId, VERSION_THREE);
     }
 
     public void readEntry(BookieSocketAddress addr, long ledgerId, long entryId,
@@ -550,7 +555,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             } else {
                 pcbc.getBookieInfo(requested, cb, ctx);
             }
-        }, requested, BookieProtocol.PROTOCOL_VERSION3);
+        }, requested, VERSION_THREE);
     }
 
     private void monitorPendingOperations() {

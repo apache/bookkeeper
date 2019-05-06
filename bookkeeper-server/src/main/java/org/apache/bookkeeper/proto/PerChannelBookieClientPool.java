@@ -48,7 +48,7 @@ public interface PerChannelBookieClientPool {
      * @param version
      *          get specify version channel from pool
      */
-    void obtain(GenericCallback<PerChannelBookieClient> callback, long key, int version);
+    void obtain(GenericCallback<PerChannelBookieClient> callback, long key, BookkeeperProtocol.ProtocolVersion version);
 
     /**
      * Returns status of a client.
