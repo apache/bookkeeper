@@ -31,7 +31,7 @@ import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 @Slf4j
 public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> extends ChaosContainer<SelfT> {
 
-    private static final int ZK_PORT = 2181;
+    public static final int ZK_PORT = 2181;
     private static final int BOOKIE_BASE_PORT = 3181;
     private static final int BOOKIE_GRPC_BASE_PORT = 4181;
 
@@ -59,6 +59,7 @@ public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> e
         for (int i = 0; i < numBookies; i++) {
             addExposedPort(BOOKIE_BASE_PORT + i);
         }
+        tailContainerLog();
         setCommand(
             "standalone",
             "--num-bookies",

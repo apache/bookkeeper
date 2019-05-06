@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -340,5 +341,25 @@ public class ExplicitLacTest extends BookKeeperClusterTestCase {
         bkcWithExplicitLAC.close();
     }
 
+    @Test
+    public void fallbackV3() throws Exception {
+        ClientConfiguration v2Conf = new ClientConfiguration();
+        v2Conf.setUseV2WireProtocol(true);
+        v2Conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        v2Conf.setExplictLacInterval(10);
+
+        BookKeeper bookKeeper = new BookKeeper(v2Conf);
+        LedgerHandle write = (LedgerHandle) bookKeeper.createLedger(1,
+                                                                    1,
+                                                                    1,
+                                                                    DigestType.MAC,
+                                                                    "pass".getBytes());
+        write.addEntry("test".getBytes());
+        TestUtils.waitUntilExplicitLacUpdated(write, 0);
+        long lac = write.readExplicitLastConfirmed();
+        assertEquals(0, lac);
+        write.close();
+        bookKeeper.close();
+    }
 
 }

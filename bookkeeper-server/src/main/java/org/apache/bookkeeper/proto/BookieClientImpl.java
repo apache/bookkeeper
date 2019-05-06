@@ -271,7 +271,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             }
 
             toSend.release();
-        }, ledgerId);
+        }, ledgerId, BookieProtocol.PROTOCOL_VERSION3);
     }
 
     private void completeAdd(final int rc,
