@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
 import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion.VERSION_THREE;
 import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion.VERSION_TWO;
 
@@ -93,7 +92,7 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     }
 
     private PerChannelBookieClient getClient(long key) {
-        return getClientByVersion(key, VERSION_TWO);
+        return getClient(key, false);
     }
 
     private PerChannelBookieClient getClient(long key, PerChannelBookieClient[] pcbc) {
@@ -103,8 +102,8 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         int idx = MathUtils.signSafeMod(key, pcbc.length);
         return pcbc[idx];
     }
-    private PerChannelBookieClient getClientByVersion(long key, ProtocolVersion version) {
-        if (version == VERSION_THREE) {
+    private PerChannelBookieClient getClient(long key, boolean forceUseV3) {
+        if (forceUseV3) {
             return getClient(key, clientsV3);
         }
         return getClient(key, clients);
@@ -112,11 +111,12 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
 
     @Override
     public void obtain(GenericCallback<PerChannelBookieClient> callback, long key) {
-        obtain(callback, key, VERSION_THREE);
+        obtain(callback, key, false);
     }
 
-    public void obtain(GenericCallback<PerChannelBookieClient> callback, long key, ProtocolVersion version) {
-        getClientByVersion(key, version).connectIfNeededAndDoOp(callback);
+    @Override
+    public void obtain(GenericCallback<PerChannelBookieClient> callback, long key, boolean forceUseV3) {
+        getClient(key, forceUseV3).connectIfNeededAndDoOp(callback);
     }
 
     @Override
@@ -128,6 +128,7 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     public void checkTimeoutOnPendingOperations() {
         for (int i = 0; i < clients.length; i++) {
             clients[i].checkTimeoutOnPendingOperations();
+            clientsV3[i].checkTimeoutOnPendingOperations();
         }
     }
 
@@ -138,15 +139,17 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
 
     @Override
     public void disconnect(boolean wait) {
-        for (PerChannelBookieClient pcbc : clients) {
-            pcbc.disconnect(wait);
+        for (int i = 0; i < clients.length; i++) {
+            clients[i].disconnect();
+            clientsV3[i].disconnect();
         }
     }
 
     @Override
     public void close(boolean wait) {
-        for (PerChannelBookieClient pcbc : clients) {
-            pcbc.close(wait);
+        for (int i = 0; i < clients.length; i++) {
+            clients[i].close(wait);
+            clientsV3[i].close(wait);
         }
     }
 
@@ -154,6 +157,9 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     public long getNumPendingCompletionRequests() {
         long numPending = 0;
         for (PerChannelBookieClient pcbc : clients) {
+            numPending += pcbc.getNumPendingCompletionRequests();
+        }
+        for (PerChannelBookieClient pcbc : clientsV3) {
             numPending += pcbc.getNumPendingCompletionRequests();
         }
         return numPending;
