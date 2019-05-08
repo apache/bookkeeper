@@ -274,7 +274,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             }
 
             toSend.release();
-        }, ledgerId, true);
+        }, ledgerId, conf.getUseV2WireProtocol());
     }
 
     private void completeAdd(final int rc,
@@ -474,7 +474,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             } else {
                 pcbc.readLac(ledgerId, cb, ctx);
             }
-        }, ledgerId, true);
+        }, ledgerId, conf.getUseV2WireProtocol());
     }
 
     public void readEntry(BookieSocketAddress addr, long ledgerId, long entryId,
@@ -553,7 +553,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             } else {
                 pcbc.getBookieInfo(requested, cb, ctx);
             }
-        }, requested, true);
+        }, requested, conf.getUseV2WireProtocol());
     }
 
     private void monitorPendingOperations() {
