@@ -38,5 +38,5 @@ interface PerChannelBookieClientFactory {
      */
     PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool,
                                   SecurityHandlerFactory shFactory,
-                                  BookkeeperProtocol.ProtocolVersion bookieProtocolVersion) throws SecurityException;
+                                  boolean forceUseV3) throws SecurityException;
 }

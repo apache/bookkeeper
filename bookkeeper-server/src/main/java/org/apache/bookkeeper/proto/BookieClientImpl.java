@@ -21,8 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
-import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion.VERSION_THREE;
 import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 
 import com.google.common.collect.Lists;
@@ -184,13 +182,13 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
     @Override
     public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool,
-            SecurityHandlerFactory shFactory, ProtocolVersion bookieProtocolVersion) throws SecurityException {
+            SecurityHandlerFactory shFactory, boolean forceUseV3) throws SecurityException {
         StatsLogger statsLoggerForPCBC = statsLogger;
         if (conf.getLimitStatsLogging()) {
             statsLoggerForPCBC = NullStatsLogger.INSTANCE;
         }
         ClientConfiguration clientConfiguration = conf;
-        if (bookieProtocolVersion == VERSION_THREE) {
+        if (forceUseV3) {
             clientConfiguration = v3Conf;
         }
         return new PerChannelBookieClient(clientConfiguration, executor, eventLoopGroup, allocator, address,

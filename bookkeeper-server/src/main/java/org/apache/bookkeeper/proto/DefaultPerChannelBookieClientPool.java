@@ -21,8 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion.VERSION_THREE;
-import static org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion.VERSION_TWO;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -70,12 +68,16 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
 
         this.clients = new PerChannelBookieClient[coreSize];
         for (int i = 0; i < coreSize; i++) {
-            this.clients[i] = factory.create(address, this, shFactory, VERSION_TWO);
+            this.clients[i] = factory.create(address, this, shFactory, false);
         }
 
-        this.clientsV3 = new PerChannelBookieClient[coreSize];
-        for (int i = 0; i < coreSize; i++) {
-            this.clientsV3[i] = factory.create(address, this, shFactory, VERSION_THREE);
+        if (conf.getUseV2WireProtocol()) {
+            this.clientsV3 = new PerChannelBookieClient[coreSize];
+            for (int i = 0; i < coreSize; i++) {
+                this.clientsV3[i] = factory.create(address, this, shFactory, true);
+            }
+        } else {
+            this.clientsV3 = null;
         }
     }
 
@@ -128,7 +130,9 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     public void checkTimeoutOnPendingOperations() {
         for (int i = 0; i < clients.length; i++) {
             clients[i].checkTimeoutOnPendingOperations();
-            clientsV3[i].checkTimeoutOnPendingOperations();
+            if (null != clientsV3) {
+                clientsV3[i].checkTimeoutOnPendingOperations();
+            }
         }
     }
 
@@ -141,7 +145,9 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     public void disconnect(boolean wait) {
         for (int i = 0; i < clients.length; i++) {
             clients[i].disconnect();
-            clientsV3[i].disconnect();
+            if (null != clientsV3) {
+                clientsV3[i].disconnect();
+            }
         }
     }
 
@@ -149,7 +155,9 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     public void close(boolean wait) {
         for (int i = 0; i < clients.length; i++) {
             clients[i].close(wait);
-            clientsV3[i].close(wait);
+            if (null != clientsV3) {
+                clientsV3[i].close(wait);
+            }
         }
     }
 
@@ -159,8 +167,10 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         for (PerChannelBookieClient pcbc : clients) {
             numPending += pcbc.getNumPendingCompletionRequests();
         }
-        for (PerChannelBookieClient pcbc : clientsV3) {
-            numPending += pcbc.getNumPendingCompletionRequests();
+        if (null != clientsV3) {
+            for (PerChannelBookieClient pcbc : clientsV3) {
+                numPending += pcbc.getNumPendingCompletionRequests();
+            }
         }
         return numPending;
     }
