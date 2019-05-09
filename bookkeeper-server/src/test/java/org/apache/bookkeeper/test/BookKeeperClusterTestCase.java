@@ -32,6 +32,7 @@ import io.netty.buffer.ByteBufAllocator;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -831,6 +832,15 @@ public abstract class BookKeeperClusterTestCase {
 
     public TestStatsProvider getStatsProvider(int index) throws Exception {
         return getStatsProvider(bs.get(index).getLocalAddress());
+    }
+
+    public static int countNumOfFiles(File[] folderNames, String... extensions) {
+        int count = 0;
+        for (int i = 0; i < folderNames.length; i++) {
+            Collection<File> filesCollection = FileUtils.listFiles(folderNames[i], extensions, true);
+            count += filesCollection.size();
+        }
+        return count;
     }
 
 }

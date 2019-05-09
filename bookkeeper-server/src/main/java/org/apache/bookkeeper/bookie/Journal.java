@@ -196,11 +196,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             // which is safe since records before lastMark have been
             // persisted to disk (both index & entry logger)
             lastMark.getCurMark().writeLogMark(bb);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("RollLog to persist last marked log : {}", lastMark.getCurMark());
-            }
+
+            LOG.info("RollLog to persist last marked log : {}", lastMark.getCurMark());
+
             List<File> writableLedgerDirs = ledgerDirsManager
-                    .getWritableLedgerDirs();
+                    .getWritableLedgerDirsForNewLog();
             for (File dir : writableLedgerDirs) {
                 File file = new File(dir, lastMarkFileName);
                 FileOutputStream fos = null;
@@ -821,6 +821,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     scanner.process(journalVersion, offset, recBuff);
                 }
             }
+            // Update LastLogMark to EOF position after replaying journal
+            // After force flush of LedgerStorage, SyncThread will persist this to disk
+            lastLogMark.setCurLogMark(journalId, recLog.fc.position());
         } finally {
             recLog.close();
         }
@@ -851,13 +854,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             }
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Try to relay journal logs : {}", logs);
-        }
         // TODO: When reading in the journal logs that need to be synced, we
         // should use BufferedChannels instead to minimize the amount of
         // system calls done.
-        for (Long id: logs) {
+        for (Long id : logs) {
             long logPosition = 0L;
             if (id == markedLog.getLogFileId()) {
                 logPosition = markedLog.getLogFileOffset();
