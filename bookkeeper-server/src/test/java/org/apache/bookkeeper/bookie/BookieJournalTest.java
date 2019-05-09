@@ -351,7 +351,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = startBookieReadJournal(conf);
+        Bookie b = createBookieAndReadJournal(conf);
 
         b.readEntry(1, 100);
         try {
@@ -379,7 +379,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = startBookieReadJournal(conf);
+        Bookie b = createBookieAndReadJournal(conf);
 
         b.readEntry(1, 100);
         try {
@@ -409,7 +409,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = startBookieReadJournal(conf);
+        Bookie b = createBookieAndReadJournal(conf);
 
         for (int i = 1; i <= 2 * JournalChannel.SECTOR_SIZE; i++) {
             b.readEntry(1, i);
@@ -568,7 +568,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = startBookieReadJournal(conf);
+        Bookie b = createBookieAndReadJournal(conf);
 
         b.readEntry(1, 99);
 
@@ -611,7 +611,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = startBookieReadJournal(conf);
+        Bookie b = createBookieAndReadJournal(conf);
 
         b.readEntry(1, 99);
 
@@ -637,12 +637,13 @@ public class BookieJournalTest {
         }
     }
 
-    private Bookie startBookieReadJournal(ServerConfiguration conf) throws IOException, InterruptedException, BookieException {
+    private Bookie createBookieAndReadJournal(ServerConfiguration conf) throws Exception {
         Bookie b = new Bookie(conf);
-        Journal journal = b.journals.get(0);
-        LastLogMark lastLogMark = journal.getLastLogMark().markLog();
-        b.readJournal();
-        assertTrue(journal.getLastLogMark().getCurMark().compare(lastLogMark.getCurMark()) > 0);
+        for (Journal journal : b.journals) {
+            LastLogMark lastLogMark = journal.getLastLogMark().markLog();
+            b.readJournal();
+            assertTrue(journal.getLastLogMark().getCurMark().compare(lastLogMark.getCurMark()) > 0);
+        }
         return b;
     }
 

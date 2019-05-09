@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
+import static org.apache.bookkeeper.util.TestUtils.countNumOfFiles;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -143,12 +144,12 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testFourJournalReplayForBookieRestartInReadOnlyMode() throws Exception {
+    public void testMultipleJournalReplayForBookieRestartInReadOnlyMode() throws Exception {
         testJournalReplayForBookieRestartInReadOnlyMode(4);
     }
 
     /**
-     * Tests that journal replay works correctly when bookie crashes and starts up in RO mode
+     * Tests that journal replay works correctly when bookie crashes and starts up in RO mode.
      */
     private void testJournalReplayForBookieRestartInReadOnlyMode(int numOfJournalDirs) throws Exception {
         File tmpLedgerDir = createTempDir("DiskCheck", "test");
@@ -231,7 +232,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
             for (int j = 0; j < journalDirs.length; j++) {
                 Journal journal = server.getBookie().journals.get(j);
-                assertTrue(journal.getLastLogMark().getCurMark().compare(lastLogMarkList.get(j).getCurMark()) >= 0);
+                assertTrue(journal.getLastLogMark().getCurMark().compare(lastLogMarkList.get(j).getCurMark()) > 0);
                 lastLogMarkList.set(j, journal.getLastLogMark().markLog());
             }
 

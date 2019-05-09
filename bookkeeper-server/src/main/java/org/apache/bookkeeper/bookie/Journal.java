@@ -78,7 +78,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     /**
      * Filter to pickup journals.
      */
-    private interface JournalIdFilter {
+    public interface JournalIdFilter {
         boolean accept(long journalId);
     }
 
@@ -197,7 +197,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             // persisted to disk (both index & entry logger)
             lastMark.getCurMark().writeLogMark(bb);
 
-            LOG.info("RollLog to persist last marked log : {}", lastMark.getCurMark());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("RollLog to persist last marked log : {}", lastMark.getCurMark());
+            }
 
             List<File> writableLedgerDirs = ledgerDirsManager
                     .getWritableLedgerDirsForNewLog();
@@ -821,49 +823,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     scanner.process(journalVersion, offset, recBuff);
                 }
             }
-            // Update LastLogMark to EOF position after replaying journal
-            // After force flush of LedgerStorage, SyncThread will persist this to disk
-            lastLogMark.setCurLogMark(journalId, recLog.fc.position());
         } finally {
             recLog.close();
-        }
-    }
-
-    /**
-     * Replay journal files.
-     *
-     * @param scanner Scanner to process replayed entries.
-     * @throws IOException
-     */
-    public void replay(JournalScanner scanner) throws IOException {
-        final LogMark markedLog = lastLogMark.getCurMark();
-        List<Long> logs = listJournalIds(journalDirectory, new JournalIdFilter() {
-            @Override
-            public boolean accept(long journalId) {
-                if (journalId < markedLog.getLogFileId()) {
-                    return false;
-                }
-                return true;
-            }
-        });
-        // last log mark may be missed due to no sync up before
-        // validate filtered log ids only when we have markedLogId
-        if (markedLog.getLogFileId() > 0) {
-            if (logs.size() == 0 || logs.get(0) != markedLog.getLogFileId()) {
-                throw new IOException("Recovery log " + markedLog.getLogFileId() + " is missing");
-            }
-        }
-
-        // TODO: When reading in the journal logs that need to be synced, we
-        // should use BufferedChannels instead to minimize the amount of
-        // system calls done.
-        for (Long id : logs) {
-            long logPosition = 0L;
-            if (id == markedLog.getLogFileId()) {
-                logPosition = markedLog.getLogFileOffset();
-            }
-            LOG.info("Replaying journal {} from position {}", id, logPosition);
-            scanJournal(id, logPosition, scanner);
         }
     }
 
