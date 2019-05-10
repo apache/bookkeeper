@@ -18,8 +18,8 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
+var methods = {"i0":10,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":9};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -143,6 +143,16 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DefaultResolver.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.DefaultResolver</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator</a></span></code>
+<div class="block">Decorator for any existing dsn resolver.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>protected static class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.EnsembleForReplacementWithNoConstraints.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.EnsembleForReplacementWithNoConstraints</a></span></code>&nbsp;</td>
 </tr>
@@ -187,8 +197,48 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <th class="colLast" scope="col">Field and Description</th>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>protected <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>,<a href="../../../../org/apache/bookkeeper/client/WeightedRandomSelection.WeightedObject.html" title="interface in org.apache.bookkeeper.client">WeightedRandomSelection.WeightedObject</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#bookieInfoMap">bookieInfoMap</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#bookiesJoinedCounter">bookiesJoinedCounter</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#bookiesLeftCounter">bookiesLeftCounter</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected org.apache.bookkeeper.net.DNSToSwitchMapping</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#dnsResolver">dnsResolver</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#isWeighted">isWeighted</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#knownBookies">knownBookies</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) static org.slf4j.Logger</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#LOG">LOG</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected com.google.common.collect.ImmutableSet&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#readOnlyBookies">readOnlyBookies</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/locks/ReentrantReadWriteLock.html?is-external=true" title="class or interface in java.util.concurrent.locks">ReentrantReadWriteLock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#rwLock">rwLock</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected org.apache.bookkeeper.net.NetworkTopology</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#topology">topology</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../../../../org/apache/bookkeeper/client/WeightedRandomSelection.html" title="interface in org.apache.bookkeeper.client">WeightedRandomSelection</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#weightedSelection">weightedSelection</a></span></code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -217,12 +267,40 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Method Summary table, listing methods, and an explanation">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>protected <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#createBookieNode-org.apache.bookkeeper.net.BookieSocketAddress-">createBookieNode</a></span>(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;addr)</code>&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>(package private) static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#getNetworkLocations-java.util.Set-">getNetworkLocations</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;bookieNodes)</code>&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#handleBookiesThatJoined-java.util.Set-">handleBookiesThatJoined</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;joinedBookies)</code>
+<div class="block">Handle bookies that joined.</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#handleBookiesThatLeft-java.util.Set-">handleBookiesThatLeft</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;leftBookies)</code>
+<div class="block">Handle bookies that left.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#onClusterChanged-java.util.Set-java.util.Set-">onClusterChanged</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;writableBookies,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;readOnlyBookies)</code>
+<div class="block">A consistent view of the cluster (what bookies are available as writable, what bookies are available as
+ readonly) is updated when any changes happen in the cluster.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                       <a href="../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
@@ -230,12 +308,24 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <div class="block">Reorder the read last add confirmed sequence of a given write quorum <i>writeSet</i>.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                    <a href="../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                    <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code>
 <div class="block">Reorder the read sequence of a given write quorum <i>writeSet</i>.</div>
+</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>protected <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#resolveNetworkLocation-org.apache.bookkeeper.net.BookieSocketAddress-">resolveNetworkLocation</a></span>(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;addr)</code>&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>(package private) static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#shuffleWithMask-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-int-int-">shuffleWithMask</a></span>(<a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet,
+               int&nbsp;mask,
+               int&nbsp;bits)</code>
+<div class="block">Shuffle all the entries of an array that matches a mask.</div>
 </td>
 </tr>
 </table>
@@ -251,14 +341,14 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <!--   -->
 </a>
 <h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.client.<a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a></h3>
-<code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#handleBookiesThatJoined-java.util.Set-">handleBookiesThatJoined</a>, <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#handleBookiesThatLeft-java.util.Set-">handleBookiesThatLeft</a>, <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">newEnsemble</a>, <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#selectFromNetworkLocation-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a>, <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#selectFromNetworkLocation-java.lang.String-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a>, <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#selectFromNetworkLocation-java.lang.String-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></code></li>
+<code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">newEnsemble</a>, <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#selectFromNetworkLocation-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a>, <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#selectFromNetworkLocation-java.lang.String-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a>, <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#selectFromNetworkLocation-java.lang.String-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.bookkeeper.client.EnsemblePlacementPolicy">
 <!--   -->
 </a>
 <h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.client.<a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></h3>
-<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#getStickyReadBookieIndex-org.apache.bookkeeper.client.api.LedgerMetadata-java.util.Optional-">getStickyReadBookieIndex</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#onClusterChanged-java.util.Set-java.util.Set-">onClusterChanged</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#registerSlowBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerSlowBookie</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#uninitalize--">uninitalize</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#updateBookieInfo-java.util.Map-">updateBookieInfo</a></code></li>
+<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#getStickyReadBookieIndex-org.apache.bookkeeper.client.api.LedgerMetadata-java.util.Optional-">getStickyReadBookieIndex</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#registerSlowBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerSlowBookie</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#uninitalize--">uninitalize</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#updateBookieInfo-java.util.Map-">updateBookieInfo</a></code></li>
 </ul>
 </li>
 </ul>
@@ -277,10 +367,104 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <a name="LOG">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>LOG</h4>
 <pre>static final&nbsp;org.slf4j.Logger LOG</pre>
+</li>
+</ul>
+<a name="knownBookies">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>knownBookies</h4>
+<pre>protected final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt; knownBookies</pre>
+</li>
+</ul>
+<a name="rwLock">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>rwLock</h4>
+<pre>protected final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/locks/ReentrantReadWriteLock.html?is-external=true" title="class or interface in java.util.concurrent.locks">ReentrantReadWriteLock</a> rwLock</pre>
+</li>
+</ul>
+<a name="bookieInfoMap">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>bookieInfoMap</h4>
+<pre>protected&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>,<a href="../../../../org/apache/bookkeeper/client/WeightedRandomSelection.WeightedObject.html" title="interface in org.apache.bookkeeper.client">WeightedRandomSelection.WeightedObject</a>&gt; bookieInfoMap</pre>
+</li>
+</ul>
+<a name="readOnlyBookies">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>readOnlyBookies</h4>
+<pre>protected&nbsp;com.google.common.collect.ImmutableSet&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt; readOnlyBookies</pre>
+</li>
+</ul>
+<a name="isWeighted">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isWeighted</h4>
+<pre>boolean isWeighted</pre>
+</li>
+</ul>
+<a name="weightedSelection">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>weightedSelection</h4>
+<pre>protected&nbsp;<a href="../../../../org/apache/bookkeeper/client/WeightedRandomSelection.html" title="interface in org.apache.bookkeeper.client">WeightedRandomSelection</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt; weightedSelection</pre>
+</li>
+</ul>
+<a name="topology">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>topology</h4>
+<pre>protected&nbsp;org.apache.bookkeeper.net.NetworkTopology topology</pre>
+</li>
+</ul>
+<a name="dnsResolver">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>dnsResolver</h4>
+<pre>protected&nbsp;org.apache.bookkeeper.net.DNSToSwitchMapping dnsResolver</pre>
+</li>
+</ul>
+<a name="bookiesJoinedCounter">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>bookiesJoinedCounter</h4>
+<pre><a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">@StatsDoc</a>(<a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#name--">name</a>="BOOKIES_JOINED",
+          <a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#help--">help</a>="The distribution of number of bookies joined the cluster on each network topology change")
+protected&nbsp;<a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> bookiesJoinedCounter</pre>
+</li>
+</ul>
+<a name="bookiesLeftCounter">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>bookiesLeftCounter</h4>
+<pre><a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">@StatsDoc</a>(<a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#name--">name</a>="BOOKIES_LEFT",
+          <a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#help--">help</a>="The distribution of number of bookies left the cluster on each network topology change")
+protected&nbsp;<a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> bookiesLeftCounter</pre>
 </li>
 </ul>
 </li>
@@ -308,6 +492,28 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a name="getNetworkLocations-java.util.Set-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getNetworkLocations</h4>
+<pre>static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;getNetworkLocations(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;bookieNodes)</pre>
+</li>
+</ul>
+<a name="shuffleWithMask-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-int-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>shuffleWithMask</h4>
+<pre>static&nbsp;void&nbsp;shuffleWithMask(<a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet,
+                            int&nbsp;mask,
+                            int&nbsp;bits)</pre>
+<div class="block">Shuffle all the entries of an array that matches a mask.
+ It assumes all entries with the same mask are contiguous in the array.</div>
+</li>
+</ul>
 <a name="reorderReadSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">
 <!--   -->
 </a>
@@ -336,7 +542,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <a name="reorderReadLACSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>reorderReadLACSequence</h4>
 <pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;reorderReadLACSequence(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
@@ -356,6 +562,86 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <dd>The read sequence. This will be the same object as the passed in
          writeSet.</dd>
 </dl>
+</li>
+</ul>
+<a name="onClusterChanged-java.util.Set-java.util.Set-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>onClusterChanged</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;onClusterChanged(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;writableBookies,
+                                                                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;readOnlyBookies)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#onClusterChanged-java.util.Set-java.util.Set-">EnsemblePlacementPolicy</a></code></span></div>
+<div class="block">A consistent view of the cluster (what bookies are available as writable, what bookies are available as
+ readonly) is updated when any changes happen in the cluster.
+
+ <p>The implementation should take actions when the cluster view is changed. So subsequent
+ <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-"><code>EnsemblePlacementPolicy.newEnsemble(int, int, int, Map, Set)</code></a> and
+ <code>#replaceBookie(int, int, int, java.util.Map, java.util.Set,
+ org.apache.bookkeeper.net.BookieSocketAddress, java.util.Set) </code>
+ can choose proper bookies.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#onClusterChanged-java.util.Set-java.util.Set-">onClusterChanged</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>writableBookies</code> - All the bookies in the cluster available for write/read.</dd>
+<dd><code>readOnlyBookies</code> - All the bookies in the cluster available for readonly.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the dead bookies during this cluster change.</dd>
+</dl>
+</li>
+</ul>
+<a name="handleBookiesThatLeft-java.util.Set-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>handleBookiesThatLeft</h4>
+<pre>public&nbsp;void&nbsp;handleBookiesThatLeft(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;leftBookies)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#handleBookiesThatLeft-java.util.Set-">ITopologyAwareEnsemblePlacementPolicy</a></code></span></div>
+<div class="block">Handle bookies that left.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#handleBookiesThatLeft-java.util.Set-">handleBookiesThatLeft</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>leftBookies</code> - bookies that left</dd>
+</dl>
+</li>
+</ul>
+<a name="handleBookiesThatJoined-java.util.Set-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>handleBookiesThatJoined</h4>
+<pre>public&nbsp;void&nbsp;handleBookiesThatJoined(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;joinedBookies)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#handleBookiesThatJoined-java.util.Set-">ITopologyAwareEnsemblePlacementPolicy</a></code></span></div>
+<div class="block">Handle bookies that joined.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#handleBookiesThatJoined-java.util.Set-">handleBookiesThatJoined</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>joinedBookies</code> - bookies that joined.</dd>
+</dl>
+</li>
+</ul>
+<a name="createBookieNode-org.apache.bookkeeper.net.BookieSocketAddress-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createBookieNode</h4>
+<pre>protected&nbsp;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&nbsp;createBookieNode(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;addr)</pre>
+</li>
+</ul>
+<a name="resolveNetworkLocation-org.apache.bookkeeper.net.BookieSocketAddress-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>resolveNetworkLocation</h4>
+<pre>protected&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;resolveNetworkLocation(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;addr)</pre>
 </li>
 </ul>
 </li>
