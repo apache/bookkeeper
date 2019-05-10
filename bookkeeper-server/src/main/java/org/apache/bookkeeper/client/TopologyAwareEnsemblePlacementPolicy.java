@@ -17,19 +17,38 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIES_JOINED;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIES_LEFT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER;
+
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,15 +56,34 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         ITopologyAwareEnsemblePlacementPolicy<TopologyAwareEnsemblePlacementPolicy.BookieNode> {
     static final Logger LOG = LoggerFactory.getLogger(TopologyAwareEnsemblePlacementPolicy.class);
 
-    protected static class TruePredicate implements Predicate<BookieNode> {
+    protected final Map<BookieSocketAddress, BookieNode> knownBookies = new HashMap<BookieSocketAddress, BookieNode>();
+    protected final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    protected Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
+    // Initialize to empty set
+    protected ImmutableSet<BookieSocketAddress> readOnlyBookies = ImmutableSet.of();
+    boolean isWeighted;
+    protected WeightedRandomSelection<BookieNode> weightedSelection;
+    // for now, we just maintain the writable bookies' topology
+    protected NetworkTopology topology;
+    protected DNSToSwitchMapping dnsResolver;
+    @StatsDoc(
+            name = BOOKIES_JOINED,
+            help = "The distribution of number of bookies joined the cluster on each network topology change"
+    )
+    protected OpStatsLogger bookiesJoinedCounter = null;
+    @StatsDoc(
+        name = BOOKIES_LEFT,
+        help = "The distribution of number of bookies left the cluster on each network topology change"
+    )
+    protected OpStatsLogger bookiesLeftCounter = null;
 
+    protected static class TruePredicate implements Predicate<BookieNode> {
         public static final TruePredicate INSTANCE = new TruePredicate();
 
         @Override
         public boolean apply(BookieNode candidate, Ensemble chosenNodes) {
             return true;
         }
-
     }
 
     protected static class EnsembleForReplacementWithNoConstraints implements Ensemble<BookieNode> {
@@ -487,6 +525,129 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
     }
 
+    static class DefaultResolver implements DNSToSwitchMapping {
+
+        final Supplier<String> defaultRackSupplier;
+
+        public DefaultResolver(Supplier<String> defaultRackSupplier) {
+            checkNotNull(defaultRackSupplier, "defaultRackSupplier should not be null");
+            this.defaultRackSupplier = defaultRackSupplier;
+        }
+
+        @Override
+        public List<String> resolve(List<String> names) {
+            List<String> rNames = new ArrayList<String>(names.size());
+            for (@SuppressWarnings("unused") String name : names) {
+                final String defaultRack = defaultRackSupplier.get();
+                checkNotNull(defaultRack, "defaultRack cannot be null");
+                rNames.add(defaultRack);
+            }
+            return rNames;
+        }
+
+        @Override
+        public void reloadCachedMappings() {
+            // nop
+        }
+    }
+
+    /**
+     * Decorator for any existing dsn resolver.
+     * Backfills returned data with appropriate default rack info.
+     */
+    static class DNSResolverDecorator implements DNSToSwitchMapping {
+
+        final Supplier<String> defaultRackSupplier;
+        final DNSToSwitchMapping resolver;
+        @StatsDoc(
+                name = FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER,
+                help = "total number of times Resolver failed to resolve rack information of a node"
+        )
+        final Counter failedToResolveNetworkLocationCounter;
+
+        DNSResolverDecorator(DNSToSwitchMapping resolver, Supplier<String> defaultRackSupplier,
+                Counter failedToResolveNetworkLocationCounter) {
+            checkNotNull(resolver, "Resolver cannot be null");
+            checkNotNull(defaultRackSupplier, "defaultRackSupplier should not be null");
+            this.defaultRackSupplier = defaultRackSupplier;
+            this.resolver = resolver;
+            this.failedToResolveNetworkLocationCounter = failedToResolveNetworkLocationCounter;
+        }
+
+        public List<String> resolve(List<String> names) {
+            if (names == null) {
+                return Collections.emptyList();
+            }
+            final String defaultRack = defaultRackSupplier.get();
+            checkNotNull(defaultRack, "Default rack cannot be null");
+
+            List<String> rNames = resolver.resolve(names);
+            if (rNames != null && rNames.size() == names.size()) {
+                for (int i = 0; i < rNames.size(); ++i) {
+                    if (rNames.get(i) == null) {
+                        LOG.warn("Failed to resolve network location for {}, using default rack for it : {}.",
+                                names.get(i), defaultRack);
+                        failedToResolveNetworkLocationCounter.inc();
+                        rNames.set(i, defaultRack);
+                    }
+                }
+                return rNames;
+            }
+
+            LOG.warn("Failed to resolve network location for {}, using default rack for them : {}.", names,
+                    defaultRack);
+            rNames = new ArrayList<>(names.size());
+
+            for (int i = 0; i < names.size(); ++i) {
+                failedToResolveNetworkLocationCounter.inc();
+                rNames.add(defaultRack);
+            }
+            return rNames;
+        }
+
+        @Override
+        public boolean useHostName() {
+            return resolver.useHostName();
+        }
+
+        @Override
+        public void reloadCachedMappings() {
+            resolver.reloadCachedMappings();
+        }
+    }
+
+    static Set<String> getNetworkLocations(Set<Node> bookieNodes) {
+        Set<String> networkLocs = new HashSet<>();
+        for (Node bookieNode : bookieNodes) {
+            networkLocs.add(bookieNode.getNetworkLocation());
+        }
+        return networkLocs;
+    }
+
+    /**
+     * Shuffle all the entries of an array that matches a mask.
+     * It assumes all entries with the same mask are contiguous in the array.
+     */
+    static void shuffleWithMask(DistributionSchedule.WriteSet writeSet,
+                                int mask, int bits) {
+        int first = -1;
+        int last = -1;
+        for (int i = 0; i < writeSet.size(); i++) {
+            if ((writeSet.get(i) & bits) == mask) {
+                if (first == -1) {
+                    first = i;
+                }
+                last = i;
+            }
+        }
+        if (first != -1) {
+            for (int i = last + 1; i > first; i--) {
+                int swapWith = ThreadLocalRandom.current().nextInt(i);
+                writeSet.set(swapWith, writeSet.set(i, writeSet.get(swapWith)));
+            }
+        }
+    }
+
     @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
             List<BookieSocketAddress> ensemble,
@@ -504,5 +665,105 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 ensemble, bookiesHealthInfo, writeSet);
         retList.addMissingIndices(ensemble.size());
         return retList;
+    }
+
+    @Override
+    public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
+            Set<BookieSocketAddress> readOnlyBookies) {
+        rwLock.writeLock().lock();
+        try {
+            ImmutableSet<BookieSocketAddress> joinedBookies, leftBookies, deadBookies;
+            Set<BookieSocketAddress> oldBookieSet = knownBookies.keySet();
+            // left bookies : bookies in known bookies, but not in new writable bookie cluster.
+            leftBookies = Sets.difference(oldBookieSet, writableBookies).immutableCopy();
+            // joined bookies : bookies in new writable bookie cluster, but not in known bookies
+            joinedBookies = Sets.difference(writableBookies, oldBookieSet).immutableCopy();
+            // dead bookies.
+            deadBookies = Sets.difference(leftBookies, readOnlyBookies).immutableCopy();
+            LOG.debug("Cluster changed : left bookies are {}, joined bookies are {}, while dead bookies are {}.",
+                    leftBookies, joinedBookies, deadBookies);
+            handleBookiesThatLeft(leftBookies);
+            handleBookiesThatJoined(joinedBookies);
+            if (this.isWeighted && (leftBookies.size() > 0 || joinedBookies.size() > 0)) {
+                this.weightedSelection.updateMap(this.bookieInfoMap);
+            }
+            if (!readOnlyBookies.isEmpty()) {
+                this.readOnlyBookies = ImmutableSet.copyOf(readOnlyBookies);
+            }
+
+            return deadBookies;
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+
+    /*
+     * this method should be called in writelock scope of 'rwLock'
+     */
+    @Override
+    public void handleBookiesThatLeft(Set<BookieSocketAddress> leftBookies) {
+        for (BookieSocketAddress addr : leftBookies) {
+            try {
+                BookieNode node = knownBookies.remove(addr);
+                if (null != node) {
+                    topology.remove(node);
+                    if (this.isWeighted) {
+                        this.bookieInfoMap.remove(node);
+                    }
+
+                    bookiesLeftCounter.registerSuccessfulValue(1L);
+
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Cluster changed : bookie {} left from cluster.", addr);
+                    }
+                }
+            } catch (Throwable t) {
+                LOG.error("Unexpected exception while handling leaving bookie {}", addr, t);
+                if (bookiesLeftCounter != null) {
+                    bookiesLeftCounter.registerFailedValue(1L);
+                }
+                // no need to re-throw; we want to process the rest of the bookies
+                // exception anyways will be caught/logged/suppressed in the ZK's event handler
+            }
+        }
+    }
+
+    /*
+     * this method should be called in writelock scope of 'rwLock'
+     */
+    @Override
+    public void handleBookiesThatJoined(Set<BookieSocketAddress> joinedBookies) {
+        // node joined
+        for (BookieSocketAddress addr : joinedBookies) {
+            try {
+                BookieNode node = createBookieNode(addr);
+                topology.add(node);
+                knownBookies.put(addr, node);
+                if (this.isWeighted) {
+                    this.bookieInfoMap.putIfAbsent(node, new BookieInfo());
+                }
+
+                bookiesJoinedCounter.registerSuccessfulValue(1L);
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Cluster changed : bookie {} joined the cluster.", addr);
+                }
+            } catch (Throwable t) {
+                // topology.add() throws unchecked exception
+                LOG.error("Unexpected exception while handling joining bookie {}", addr, t);
+
+                bookiesJoinedCounter.registerFailedValue(1L);
+                // no need to re-throw; we want to process the rest of the bookies
+                // exception anyways will be caught/logged/suppressed in the ZK's event handler
+            }
+        }
+    }
+
+    protected BookieNode createBookieNode(BookieSocketAddress addr) {
+        return new BookieNode(addr, resolveNetworkLocation(addr));
+    }
+
+    protected String resolveNetworkLocation(BookieSocketAddress addr) {
+        return NetUtils.resolveNetworkLocation(dnsResolver, addr.getSocketAddress());
     }
 }

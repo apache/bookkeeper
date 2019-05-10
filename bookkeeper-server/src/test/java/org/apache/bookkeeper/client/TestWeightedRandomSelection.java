@@ -59,7 +59,7 @@ public class TestWeightedRandomSelection {
 
     @Before
     public void setUp() throws Exception {
-        wRS = new WeightedRandomSelection<String>();
+        wRS = new WeightedRandomSelectionImpl<String>();
     }
 
     @After

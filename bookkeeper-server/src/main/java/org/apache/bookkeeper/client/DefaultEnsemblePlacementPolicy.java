@@ -195,7 +195,7 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
         this.isWeighted = conf.getDiskWeightBasedPlacementEnabled();
         if (this.isWeighted) {
             this.maxWeightMultiple = conf.getBookieMaxWeightMultipleForWeightBasedPlacement();
-            this.weightedSelection = new WeightedRandomSelection<BookieSocketAddress>(this.maxWeightMultiple);
+            this.weightedSelection = new WeightedRandomSelectionImpl<BookieSocketAddress>(this.maxWeightMultiple);
         }
         return this;
     }

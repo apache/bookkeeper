@@ -46,10 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Supplier;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
@@ -88,10 +85,7 @@ import org.slf4j.LoggerFactory;
 public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacementPolicy {
 
     static final Logger LOG = LoggerFactory.getLogger(RackawareEnsemblePlacementPolicyImpl.class);
-    boolean isWeighted;
     int maxWeightMultiple;
-    private Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
-    private WeightedRandomSelection<BookieNode> weightedSelection;
 
     protected int minNumRacksPerWriteQuorum;
     protected boolean enforceMinNumRacksPerWriteQuorum;
@@ -112,109 +106,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     static final int UNAVAIL_MASK     = 0x40 << 24;
     static final int MASK_BITS        = 0xFFF << 20;
 
-    static class DefaultResolver implements DNSToSwitchMapping {
-
-        final Supplier<String> defaultRackSupplier;
-
-        public DefaultResolver(Supplier<String> defaultRackSupplier) {
-            checkNotNull(defaultRackSupplier, "defaultRackSupplier should not be null");
-            this.defaultRackSupplier = defaultRackSupplier;
-        }
-
-        @Override
-        public List<String> resolve(List<String> names) {
-            List<String> rNames = new ArrayList<String>(names.size());
-            for (@SuppressWarnings("unused") String name : names) {
-                final String defaultRack = defaultRackSupplier.get();
-                checkNotNull(defaultRack, "defaultRack cannot be null");
-                rNames.add(defaultRack);
-            }
-            return rNames;
-        }
-
-        @Override
-        public void reloadCachedMappings() {
-            // nop
-        }
-
-    }
-
-    /**
-     * Decorator for any existing dsn resolver.
-     * Backfills returned data with appropriate default rack info.
-     */
-    static class DNSResolverDecorator implements DNSToSwitchMapping {
-
-        final Supplier<String> defaultRackSupplier;
-        final DNSToSwitchMapping resolver;
-        @StatsDoc(
-                name = FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER,
-                help = "total number of times Resolver failed to resolve rack information of a node"
-        )
-        final Counter failedToResolveNetworkLocationCounter;
-
-        DNSResolverDecorator(DNSToSwitchMapping resolver, Supplier<String> defaultRackSupplier,
-                Counter failedToResolveNetworkLocationCounter) {
-            checkNotNull(resolver, "Resolver cannot be null");
-            checkNotNull(defaultRackSupplier, "defaultRackSupplier should not be null");
-            this.defaultRackSupplier = defaultRackSupplier;
-            this.resolver = resolver;
-            this.failedToResolveNetworkLocationCounter = failedToResolveNetworkLocationCounter;
-        }
-
-        public List<String> resolve(List<String> names) {
-            if (names == null) {
-                return Collections.emptyList();
-            }
-            final String defaultRack = defaultRackSupplier.get();
-            checkNotNull(defaultRack, "Default rack cannot be null");
-
-            List<String> rNames = resolver.resolve(names);
-            if (rNames != null && rNames.size() == names.size()) {
-                for (int i = 0; i < rNames.size(); ++i) {
-                    if (rNames.get(i) == null) {
-                        LOG.warn("Failed to resolve network location for {}, using default rack for it : {}.",
-                                names.get(i), defaultRack);
-                        failedToResolveNetworkLocationCounter.inc();
-                        rNames.set(i, defaultRack);
-                    }
-                }
-                return rNames;
-            }
-
-            LOG.warn("Failed to resolve network location for {}, using default rack for them : {}.", names,
-                    defaultRack);
-            rNames = new ArrayList<>(names.size());
-
-            for (int i = 0; i < names.size(); ++i) {
-                failedToResolveNetworkLocationCounter.inc();
-                rNames.add(defaultRack);
-            }
-            return rNames;
-        }
-
-        @Override
-        public boolean useHostName() {
-            return resolver.useHostName();
-        }
-
-        @Override
-        public void reloadCachedMappings() {
-            resolver.reloadCachedMappings();
-        }
-    }
-
-    // for now, we just maintain the writable bookies' topology
-    protected NetworkTopology topology;
-    protected DNSToSwitchMapping dnsResolver;
     protected HashedWheelTimer timer;
-    protected final Map<BookieSocketAddress, BookieNode> knownBookies;
     // Use a loading cache so slow bookies are expired. Use entryId as values.
     protected Cache<BookieSocketAddress, Long> slowBookies;
     protected BookieNode localNode;
-    protected final ReentrantReadWriteLock rwLock;
-    // Initialize to empty set
-    protected ImmutableSet<BookieSocketAddress> readOnlyBookies = ImmutableSet.of();
     protected boolean reorderReadsRandom = false;
     protected boolean enforceDurability = false;
     protected int stabilizePeriodSeconds = 0;
@@ -222,19 +117,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     // looks like these only assigned in the same thread as constructor, immediately after constructor;
     // no need to make volatile
     protected StatsLogger statsLogger = null;
+
     @StatsDoc(
-        name = BOOKIES_JOINED,
-        help = "The distribution of number of bookies joined the cluster on each network topology change"
-    )
-    protected OpStatsLogger bookiesJoinedCounter = null;
-    @StatsDoc(
-        name = BOOKIES_LEFT,
-        help = "The distribution of number of bookies left the cluster on each network topology change"
-    )
-    protected OpStatsLogger bookiesLeftCounter = null;
-    @StatsDoc(
-        name = READ_REQUESTS_REORDERED,
-        help = "The distribution of number of bookies reordered on each read request"
+            name = READ_REQUESTS_REORDERED,
+            help = "The distribution of number of bookies reordered on each read request"
     )
     protected OpStatsLogger readReorderedCounter = null;
     @StatsDoc(
@@ -257,9 +143,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     RackawareEnsemblePlacementPolicyImpl(boolean enforceDurability) {
         this.enforceDurability = enforceDurability;
         topology = new NetworkTopologyImpl();
-        knownBookies = new HashMap<BookieSocketAddress, BookieNode>();
-
-        rwLock = new ReentrantReadWriteLock();
     }
 
     protected BookieNode createBookieNode(BookieSocketAddress addr) {
@@ -341,7 +224,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         this.isWeighted = isWeighted;
         if (this.isWeighted) {
             this.maxWeightMultiple = maxWeightMultiple;
-            this.weightedSelection = new WeightedRandomSelection<BookieNode>(this.maxWeightMultiple);
+            this.weightedSelection = new WeightedRandomSelectionImpl<BookieNode>(this.maxWeightMultiple);
             LOG.info("Weight based placement with max multiple of " + this.maxWeightMultiple);
         } else {
             LOG.info("Not weighted");
@@ -551,14 +434,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             nodes.add(bn);
         }
         return nodes;
-    }
-
-    private static Set<String> getNetworkLocations(Set<Node> bookieNodes) {
-        Set<String> networkLocs = new HashSet<>();
-        for (Node bookieNode : bookieNodes) {
-            networkLocs.add(bookieNode.getNetworkLocation());
-        }
-        return networkLocs;
     }
 
     /*
@@ -883,7 +758,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             return null;
         }
 
-        WeightedRandomSelection<BookieNode> wRSelection = new WeightedRandomSelection<BookieNode>(maxWeightMultiple);
+        WeightedRandomSelection<BookieNode> wRSelection = new WeightedRandomSelectionImpl<BookieNode>(
+                maxWeightMultiple);
         wRSelection.updateMap(rackMap);
         return wRSelection;
     }
@@ -1000,7 +876,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         rackMap.put(n, new BookieInfo());
                     }
                 }
-                wRSelection = new WeightedRandomSelection<BookieNode>(this.maxWeightMultiple);
+                wRSelection = new WeightedRandomSelectionImpl<BookieNode>(this.maxWeightMultiple);
                 wRSelection.updateMap(rackMap);
             }
         } else {
@@ -1285,30 +1161,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
         readReorderedCounter.registerSuccessfulValue(1);
         return writeSet;
-    }
-
-    /**
-     * Shuffle all the entries of an array that matches a mask.
-     * It assumes all entries with the same mask are contiguous in the array.
-     */
-    static void shuffleWithMask(DistributionSchedule.WriteSet writeSet,
-                                int mask, int bits) {
-        int first = -1;
-        int last = -1;
-        for (int i = 0; i < writeSet.size(); i++) {
-            if ((writeSet.get(i) & bits) == mask) {
-                if (first == -1) {
-                    first = i;
-                }
-                last = i;
-            }
-        }
-        if (first != -1) {
-            for (int i = last + 1; i > first; i--) {
-                int swapWith = ThreadLocalRandom.current().nextInt(i);
-                writeSet.set(swapWith, writeSet.set(i, writeSet.get(swapWith)));
-            }
-        }
     }
 
     // this method should be called in readlock scope of 'rwlock'
