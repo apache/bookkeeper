@@ -29,15 +29,12 @@ import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.UN
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 
 import io.netty.util.HashedWheelTimer;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,9 +52,9 @@ import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.Configurable;
 import org.apache.bookkeeper.feature.FeatureProvider;
+import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
-import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NetworkTopologyImpl;
 import org.apache.bookkeeper.net.Node;
@@ -143,10 +140,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     RackawareEnsemblePlacementPolicyImpl(boolean enforceDurability) {
         this.enforceDurability = enforceDurability;
         topology = new NetworkTopologyImpl();
-    }
-
-    protected BookieNode createBookieNode(BookieSocketAddress addr) {
-        return new BookieNode(addr, resolveNetworkLocation(addr));
     }
 
     /**
@@ -308,132 +301,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     @Override
     public void uninitalize() {
         // do nothing
-    }
-
-    protected String resolveNetworkLocation(BookieSocketAddress addr) {
-        return NetUtils.resolveNetworkLocation(dnsResolver, addr.getSocketAddress());
-    }
-
-    public void onBookieRackChange(List<BookieSocketAddress> bookieAddressList) {
-        rwLock.writeLock().lock();
-        try {
-            for (BookieSocketAddress bookieAddress : bookieAddressList) {
-                BookieNode node = knownBookies.get(bookieAddress);
-                if (node != null) {
-                    // refresh the rack info if its a known bookie
-                    topology.remove(node);
-                    BookieNode newNode = createBookieNode(bookieAddress);
-                    topology.add(newNode);
-                    knownBookies.put(bookieAddress, newNode);
-                }
-            }
-        } finally {
-            rwLock.writeLock().unlock();
-        }
-    }
-
-    @Override
-    public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
-            Set<BookieSocketAddress> readOnlyBookies) {
-        rwLock.writeLock().lock();
-        try {
-            ImmutableSet<BookieSocketAddress> joinedBookies, leftBookies, deadBookies;
-            Set<BookieSocketAddress> oldBookieSet = knownBookies.keySet();
-            // left bookies : bookies in known bookies, but not in new writable bookie cluster.
-            leftBookies = Sets.difference(oldBookieSet, writableBookies).immutableCopy();
-            // joined bookies : bookies in new writable bookie cluster, but not in known bookies
-            joinedBookies = Sets.difference(writableBookies, oldBookieSet).immutableCopy();
-            // dead bookies.
-            deadBookies = Sets.difference(leftBookies, readOnlyBookies).immutableCopy();
-            LOG.debug("Cluster changed : left bookies are {}, joined bookies are {}, while dead bookies are {}.",
-                    leftBookies, joinedBookies, deadBookies);
-            handleBookiesThatLeft(leftBookies);
-            handleBookiesThatJoined(joinedBookies);
-            if (this.isWeighted && (leftBookies.size() > 0 || joinedBookies.size() > 0)) {
-                this.weightedSelection.updateMap(this.bookieInfoMap);
-            }
-            if (!readOnlyBookies.isEmpty()) {
-                this.readOnlyBookies = ImmutableSet.copyOf(readOnlyBookies);
-            }
-
-            return deadBookies;
-        } finally {
-            rwLock.writeLock().unlock();
-        }
-    }
-
-    /*
-     * this method should be called in writelock scope of 'rwLock'
-     */
-    @Override
-    public void handleBookiesThatLeft(Set<BookieSocketAddress> leftBookies) {
-        for (BookieSocketAddress addr : leftBookies) {
-            try {
-                BookieNode node = knownBookies.remove(addr);
-                if (null != node) {
-                    topology.remove(node);
-                    if (this.isWeighted) {
-                        this.bookieInfoMap.remove(node);
-                    }
-
-                    bookiesLeftCounter.registerSuccessfulValue(1L);
-
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Cluster changed : bookie {} left from cluster.", addr);
-                    }
-                }
-            } catch (Throwable t) {
-                LOG.error("Unexpected exception while handling leaving bookie {}", addr, t);
-                if (bookiesLeftCounter != null) {
-                    bookiesLeftCounter.registerFailedValue(1L);
-                }
-                // no need to re-throw; we want to process the rest of the bookies
-                // exception anyways will be caught/logged/suppressed in the ZK's event handler
-            }
-        }
-    }
-
-    /*
-     * this method should be called in writelock scope of 'rwLock'
-     */
-    @Override
-    public void handleBookiesThatJoined(Set<BookieSocketAddress> joinedBookies) {
-        // node joined
-        for (BookieSocketAddress addr : joinedBookies) {
-            try {
-                BookieNode node = createBookieNode(addr);
-                topology.add(node);
-                knownBookies.put(addr, node);
-                if (this.isWeighted) {
-                    this.bookieInfoMap.putIfAbsent(node, new BookieInfo());
-                }
-
-                bookiesJoinedCounter.registerSuccessfulValue(1L);
-
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Cluster changed : bookie {} joined the cluster.", addr);
-                }
-            } catch (Throwable t) {
-                // topology.add() throws unchecked exception
-                LOG.error("Unexpected exception while handling joining bookie {}", addr, t);
-
-                bookiesJoinedCounter.registerFailedValue(1L);
-                // no need to re-throw; we want to process the rest of the bookies
-                // exception anyways will be caught/logged/suppressed in the ZK's event handler
-            }
-        }
-    }
-
-    protected Set<Node> convertBookiesToNodes(Collection<BookieSocketAddress> excludeBookies) {
-        Set<Node> nodes = new HashSet<Node>();
-        for (BookieSocketAddress addr : excludeBookies) {
-            BookieNode bn = knownBookies.get(addr);
-            if (null == bn) {
-                bn = createBookieNode(addr);
-            }
-            nodes.add(bn);
-        }
-        return nodes;
     }
 
     /*

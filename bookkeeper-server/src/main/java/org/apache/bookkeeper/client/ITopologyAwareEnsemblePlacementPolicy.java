@@ -23,9 +23,9 @@ import java.util.Set;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble;
 import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate;
-import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.BookieNode;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
+import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.Node;
 
@@ -185,4 +185,11 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
      *          bookies that joined.
      */
     void handleBookiesThatJoined(Set<BookieSocketAddress> joinedBookies);
+
+    /**
+     * Handle rack change for the bookies.
+     *
+     * @param bookieAddressList
+     */
+    void onBookieRackChange(List<BookieSocketAddress> bookieAddressList);
 }

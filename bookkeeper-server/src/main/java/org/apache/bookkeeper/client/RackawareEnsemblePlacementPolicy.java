@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.Node;
@@ -34,7 +35,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * @see EnsemblePlacementPolicy
  */
 public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicyImpl
-        implements ITopologyAwareEnsemblePlacementPolicy<TopologyAwareEnsemblePlacementPolicy.BookieNode> {
+        implements ITopologyAwareEnsemblePlacementPolicy<BookieNode> {
     RackawareEnsemblePlacementPolicyImpl slave = null;
 
     public RackawareEnsemblePlacementPolicy() {
