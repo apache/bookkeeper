@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -197,17 +197,23 @@ extends <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolic
 </td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#onBookieRackChange-java.util.List-">onBookieRackChange</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieAddressList)</code>
+<div class="block">Handle rack change for the bookies.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="type parameter in ITopologyAwareEnsemblePlacementPolicy">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#selectFromNetworkLocation-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;excludeRacks,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
-                         <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;predicate,
-                         <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;ensemble,
+                         <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
+                         <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;ensemble,
                          boolean&nbsp;fallbackToRandom)</code>
 <div class="block">Select a node from cluster excluding excludeBookies and bookie nodes of
  excludeRacks.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="type parameter in ITopologyAwareEnsemblePlacementPolicy">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#selectFromNetworkLocation-java.lang.String-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
@@ -217,13 +223,13 @@ extends <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolic
 <div class="block">Select a node from a given network location.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="type parameter in ITopologyAwareEnsemblePlacementPolicy">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#selectFromNetworkLocation-java.lang.String-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;excludeRacks,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
-                         <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;predicate,
-                         <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;ensemble,
+                         <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
+                         <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;ensemble,
                          boolean&nbsp;fallbackToRandom)</code>
 <div class="block">Select a node from networkLoc rack excluding excludeBookies.</div>
 </td>
@@ -313,8 +319,8 @@ extends <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolic
 <h4>selectFromNetworkLocation</h4>
 <pre><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="type parameter in ITopologyAwareEnsemblePlacementPolicy">T</a>&nbsp;selectFromNetworkLocation(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;excludeRacks,
                             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
-                            <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;predicate,
-                            <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;ensemble,
+                            <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
+                            <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;ensemble,
                             boolean&nbsp;fallbackToRandom)
                      throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block">Select a node from cluster excluding excludeBookies and bookie nodes of
@@ -343,8 +349,8 @@ extends <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolic
 <pre><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="type parameter in ITopologyAwareEnsemblePlacementPolicy">T</a>&nbsp;selectFromNetworkLocation(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
                             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;excludeRacks,
                             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
-                            <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;predicate,
-                            <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;ensemble,
+                            <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
+                            <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;ensemble,
                             boolean&nbsp;fallbackToRandom)
                      throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block">Select a node from networkLoc rack excluding excludeBookies. If there
@@ -383,7 +389,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolic
 <a name="handleBookiesThatJoined-java.util.Set-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>handleBookiesThatJoined</h4>
 <pre>void&nbsp;handleBookiesThatJoined(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;joinedBookies)</pre>
@@ -391,6 +397,20 @@ extends <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolic
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>joinedBookies</code> - bookies that joined.</dd>
+</dl>
+</li>
+</ul>
+<a name="onBookieRackChange-java.util.List-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>onBookieRackChange</h4>
+<pre>void&nbsp;onBookieRackChange(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieAddressList)</pre>
+<div class="block">Handle rack change for the bookies.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>bookieAddressList</code> - </dd>
 </dl>
 </li>
 </ul>

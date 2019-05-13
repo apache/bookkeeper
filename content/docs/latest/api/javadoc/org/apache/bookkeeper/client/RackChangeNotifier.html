@@ -102,7 +102,8 @@ var activeTableTab = "activeTableTab";
 <hr>
 <br>
 <pre>public interface <span class="typeNameLabel">RackChangeNotifier</span></pre>
-<div class="block">Notifier used by the RackawareEnsemblePlacementPolicy to get notified if a rack changes for a bookie.</div>
+<div class="block">Notifier used by the RackawareEnsemblePlacementPolicy to get notified if a
+ rack changes for a bookie.</div>
 </li>
 </ul>
 </div>
@@ -123,7 +124,7 @@ var activeTableTab = "activeTableTab";
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackChangeNotifier.html#registerRackChangeListener-org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl-">registerRackChangeListener</a></span>(<a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a>&nbsp;rackawarePolicy)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackChangeNotifier.html#registerRackChangeListener-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy-">registerRackChangeListener</a></span>(<a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;rackawarePolicy)</code>
 <div class="block">Register a listener for the rack-aware placement policy.</div>
 </td>
 </tr>
@@ -142,13 +143,13 @@ var activeTableTab = "activeTableTab";
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="registerRackChangeListener-org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl-">
+<a name="registerRackChangeListener-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>registerRackChangeListener</h4>
-<pre>void&nbsp;registerRackChangeListener(<a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a>&nbsp;rackawarePolicy)</pre>
+<pre>void&nbsp;registerRackChangeListener(<a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;rackawarePolicy)</pre>
 <div class="block">Register a listener for the rack-aware placement policy.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
