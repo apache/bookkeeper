@@ -94,6 +94,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
     private final ClientConfiguration conf;
     private final ClientConfiguration v3Conf;
+    private final boolean useV3Enforced;
     private volatile boolean closed;
     private final ReentrantReadWriteLock closeLock;
     private final StatsLogger statsLogger;
@@ -108,6 +109,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         this.conf = conf;
         this.v3Conf = new ClientConfiguration(conf);
         this.v3Conf.setUseV2WireProtocol(false);
+        this.useV3Enforced = conf.getUseV2WireProtocol();
         this.eventLoopGroup = eventLoopGroup;
         this.allocator = allocator;
         this.executor = executor;
@@ -274,7 +276,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             }
 
             toSend.release();
-        }, ledgerId, conf.getUseV2WireProtocol());
+        }, ledgerId, useV3Enforced);
     }
 
     private void completeAdd(final int rc,
@@ -474,7 +476,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             } else {
                 pcbc.readLac(ledgerId, cb, ctx);
             }
-        }, ledgerId, conf.getUseV2WireProtocol());
+        }, ledgerId, useV3Enforced);
     }
 
     public void readEntry(BookieSocketAddress addr, long ledgerId, long entryId,
@@ -553,7 +555,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             } else {
                 pcbc.getBookieInfo(requested, cb, ctx);
             }
-        }, requested, conf.getUseV2WireProtocol());
+        }, requested, useV3Enforced);
     }
 
     private void monitorPendingOperations() {
