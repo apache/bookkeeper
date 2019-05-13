@@ -22,9 +22,10 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.RackChangeNotifier;
-import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl;
 import org.apache.bookkeeper.net.AbstractDNSToSwitchMapping;
+import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
@@ -87,10 +88,10 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping implements Rac
         // nop
     }
 
-    private static RackawareEnsemblePlacementPolicyImpl rackawarePolicy = null;
+    private static ITopologyAwareEnsemblePlacementPolicy<BookieNode> rackawarePolicy = null;
 
     @Override
-    public void registerRackChangeListener(RackawareEnsemblePlacementPolicyImpl rackawareEnsemblePolicy) {
+    public void registerRackChangeListener(ITopologyAwareEnsemblePlacementPolicy<BookieNode> rackawareEnsemblePolicy) {
         rackawarePolicy = rackawareEnsemblePolicy;
     }
 
@@ -101,5 +102,4 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping implements Rac
         }
         rackawarePolicy.onBookieRackChange(bookieAddressList);
     }
-
 }

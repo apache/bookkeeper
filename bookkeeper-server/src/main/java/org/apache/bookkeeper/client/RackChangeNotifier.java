@@ -18,8 +18,11 @@
 
 package org.apache.bookkeeper.client;
 
+import org.apache.bookkeeper.net.BookieNode;
+
 /**
- * Notifier used by the RackawareEnsemblePlacementPolicy to get notified if a rack changes for a bookie.
+ * Notifier used by the RackawareEnsemblePlacementPolicy to get notified if a
+ * rack changes for a bookie.
  */
 public interface RackChangeNotifier {
 
@@ -28,5 +31,6 @@ public interface RackChangeNotifier {
      *
      * @param rackawarePolicy
      */
-    void registerRackChangeListener(RackawareEnsemblePlacementPolicyImpl rackawarePolicy);
+    void registerRackChangeListener(
+            ITopologyAwareEnsemblePlacementPolicy<BookieNode> rackawarePolicy);
 }

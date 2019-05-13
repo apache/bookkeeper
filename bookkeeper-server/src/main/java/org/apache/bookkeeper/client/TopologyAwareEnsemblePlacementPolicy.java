@@ -28,6 +28,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +41,7 @@ import java.util.function.Supplier;
 
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
+import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetUtils;
@@ -53,7 +55,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 abstract class TopologyAwareEnsemblePlacementPolicy implements
-        ITopologyAwareEnsemblePlacementPolicy<TopologyAwareEnsemblePlacementPolicy.BookieNode> {
+        ITopologyAwareEnsemblePlacementPolicy<BookieNode> {
     static final Logger LOG = LoggerFactory.getLogger(TopologyAwareEnsemblePlacementPolicy.class);
 
     protected final Map<BookieSocketAddress, BookieNode> knownBookies = new HashMap<BookieSocketAddress, BookieNode>();
@@ -113,38 +115,6 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             return true;
         }
 
-    }
-
-    protected static class BookieNode extends NodeBase {
-        private final BookieSocketAddress addr; // identifier of a bookie node.
-
-        BookieNode(BookieSocketAddress addr, String networkLoc) {
-            super(addr.toString(), networkLoc);
-            this.addr = addr;
-        }
-
-        public BookieSocketAddress getAddr() {
-            return addr;
-        }
-
-        @Override
-        public int hashCode() {
-            return name.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof BookieNode)) {
-                return false;
-            }
-            BookieNode other = (BookieNode) obj;
-            return getName().equals(other.getName());
-        }
-
-        @Override
-        public String toString() {
-            return String.format("<Bookie:%s>", name);
-        }
     }
 
     /**
@@ -329,8 +299,6 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 allocationToRacksOrRegions.put(candidateRackOrRegion, oldCount + 1);
             }
         }
-
-
 
         final int distanceFromLeaves;
         final int ensembleSize;
@@ -759,11 +727,42 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
     }
 
+    @Override
+    public void onBookieRackChange(List<BookieSocketAddress> bookieAddressList) {
+        rwLock.writeLock().lock();
+        try {
+            for (BookieSocketAddress bookieAddress : bookieAddressList) {
+                BookieNode node = knownBookies.get(bookieAddress);
+                if (node != null) {
+                    // refresh the rack info if its a known bookie
+                    topology.remove(node);
+                    BookieNode newNode = createBookieNode(bookieAddress);
+                    topology.add(newNode);
+                    knownBookies.put(bookieAddress, newNode);
+                }
+            }
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+
     protected BookieNode createBookieNode(BookieSocketAddress addr) {
         return new BookieNode(addr, resolveNetworkLocation(addr));
     }
 
     protected String resolveNetworkLocation(BookieSocketAddress addr) {
         return NetUtils.resolveNetworkLocation(dnsResolver, addr.getSocketAddress());
+    }
+
+    protected Set<Node> convertBookiesToNodes(Collection<BookieSocketAddress> excludeBookies) {
+        Set<Node> nodes = new HashSet<Node>();
+        for (BookieSocketAddress addr : excludeBookies) {
+            BookieNode bn = knownBookies.get(addr);
+            if (null == bn) {
+                bn = createBookieNode(addr);
+            }
+            nodes.add(bn);
+        }
+        return nodes;
     }
 }
