@@ -75,7 +75,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     final long majorCompactionInterval;
     long lastMajorCompactionTime;
     final long forceCompactionInterval;
-    final AtomicLong lastMainCompactionTime;
+    final AtomicLong lastCompactionTime;
 
     final boolean isForceGCAllowWhenNoSpace;
 
@@ -232,7 +232,7 @@ public class GarbageCollectorThread extends SafeRunnable {
 
         long curSysTime = System.currentTimeMillis();
         lastMinorCompactionTime = lastMajorCompactionTime = curSysTime;
-        lastMainCompactionTime = new AtomicLong(curSysTime);
+        lastCompactionTime = new AtomicLong(curSysTime);
     }
 
     public void enableForceGC() {
@@ -252,14 +252,14 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     public void enableForceGCIfMinIntervalElapsed() {
         long curTime = System.currentTimeMillis();
-        if ((lastMainCompactionTime.longValue() - curTime) > forceCompactionInterval) {
+        if ((lastCompactionTime.longValue() - curTime) > forceCompactionInterval) {
             enableForceGC();
         } else {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(
-                        "lastMainCompactionTime: {}, curTime: {}. Interval is less than forceCompactionInterval: {},"
+                        "lastCompactionTime: {}, curTime: {}. Interval is less than forceCompactionInterval: {},"
                                 + " so skipping enableForceGC",
-                        lastMainCompactionTime.longValue(), curTime, forceCompactionInterval);
+                        lastCompactionTime.longValue(), curTime, forceCompactionInterval);
             }
         }
     }
@@ -369,7 +369,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             lastMajorCompactionTime = System.currentTimeMillis();
             // and also move minor compaction time
             lastMinorCompactionTime = lastMajorCompactionTime;
-            lastMainCompactionTime.set(lastMajorCompactionTime);
+            lastCompactionTime.set(lastMajorCompactionTime);
             gcStats.getMajorCompactionCounter().inc();
             majorCompacting.set(false);
         } else if (enableMinorCompaction && (!suspendMinor)
@@ -384,7 +384,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                  * if major compaction is disabled or if it is suspended, then
                  * consider minor compaction as main compaction.
                  */
-                lastMainCompactionTime.set(lastMinorCompactionTime);
+                lastCompactionTime.set(lastMinorCompactionTime);
             }
             gcStats.getMinorCompactionCounter().inc();
             minorCompacting.set(false);
@@ -393,7 +393,7 @@ public class GarbageCollectorThread extends SafeRunnable {
              * if both compactions (major and minor) are disabled / suspended,
              * then consider regular gc run as main compaction
              */
-            lastMainCompactionTime.set(curTime);
+            lastCompactionTime.set(curTime);
         }
 
         if (force) {
