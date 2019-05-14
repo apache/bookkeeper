@@ -97,6 +97,10 @@ public interface BookKeeperClientStats {
 
     // placementpolicy stats
     String NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK = "NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK";
+    String WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS = "WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS";
+    String WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY =
+            "WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY";
+    String WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS = "WRITE_TIME_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS";
 
     OpStatsLogger getCreateOpLogger();
     OpStatsLogger getOpenOpLogger();
@@ -119,6 +123,9 @@ public interface BookKeeperClientStats {
     Counter getLacUpdateHitsCounter();
     Counter getLacUpdateMissesCounter();
     OpStatsLogger getClientChannelWriteWaitLogger();
+    OpStatsLogger getWriteDelayedDueToNotEnoughFaultDomainsLatency();
+    Counter getWriteDelayedDueToNotEnoughFaultDomains();
+    Counter getWriteTimedOutDueToNotEnoughFaultDomains();
     void registerPendingAddsGauge(Gauge<Integer> gauge);
 
     static BookKeeperClientStats newInstance(StatsLogger stats) {

@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl.REPP_DNS_RESOLVER_CLASS;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -48,8 +49,11 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -955,5 +959,99 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         bk.deleteLedger(ledgerId);
         bk.deleteLedger(ledgerId);
         bk.close();
+    }
+
+
+    /**
+     * Test to test the working of enforceMinNumFaultDomainsForWrite configuration. The test:
+     * 1. Sets up the config to use a minimum of 2 racks per write quorum
+     * 2. Enables both enforceMinNumRacksPerWriteQuorum and enforceMinNumFaultDomainsForWrite.
+     * 3. Starts up 4 bookies in default rack (`/default-region/default-rack`) and 1 in `/default-region/rack1`
+     * 4. Creates a ledger using ensembleSize=wqSize=3.
+     * 5. The non default rack bookie is put to sleep
+     * 6. AddEntry is attempted.
+     * 7. A separate thread countdowns 10 seconds and then awakens the sleeping bookie.
+     * 8. Success of addEntry is checked.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testEnforceMinNumFaultDomainsForWrite() throws Exception {
+        byte[] data = "foobar".getBytes();
+        byte[] password = "testPasswd".getBytes();
+
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        conf.setProperty(REPP_DNS_RESOLVER_CLASS, StaticDNSResolver.class.getName());
+        conf.setEnsemblePlacementPolicy(RackawareEnsemblePlacementPolicy.class);
+
+        conf.setMinNumRacksPerWriteQuorum(2);
+        conf.setEnforceMinNumRacksPerWriteQuorum(true);
+        conf.setEnforceMinNumFaultDomainsForWrite(true);
+
+        // Abnormal values for testing to prevent timeouts
+        conf.setAddEntryTimeout(300);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(conf.toString());
+        }
+
+        // Assign all initial bookies started to the default rack by modifying the `localhost` in the StaticDNSResolver
+        StaticDNSResolver.reset();
+        StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        try (BookKeeperTestClient bk = new BookKeeperTestClient(conf)) {
+            // Modify localhost in StaticDNSResolver to assign next started bookie to a different rack("/rack1")
+            StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_REGION + "/rack1");
+            List<BookieSocketAddress> bookieRack1 = Collections.singletonList(startNewBookieAndReturnAddress());
+
+            try (LedgerHandle lh = bk.createLedger(3, 3, digestType, password)) {
+                CountDownLatch sleepLatch = new CountDownLatch(1);
+
+                Thread bookieSleeperCountdown = new Thread(() -> {
+                    try {
+                        LOG.info("Counting down 10 seconds before awakening non default rack bookie");
+                        sleepLatch.await(10, TimeUnit.SECONDS);
+                        LOG.info("Non default rack bookie awake");
+                    } catch (InterruptedException ignored) {}
+
+                    sleepLatch.countDown();
+                });
+
+                Thread writeToLedger = new Thread(() -> {
+                    try {
+                        LOG.info("Initiating write for entry");
+                        long entryId = lh.addEntry(data);
+                        LOG.info("Wrote entry with entryId = {}", entryId);
+                        assertTrue(entryId >= 0);
+                    } catch (InterruptedException | BKException ignored) {
+                        // Fail the test if the write times out
+                        fail("Write should not have thrown error");
+                    }
+                });
+
+                // Putting non default rack bookie to sleep
+                LOG.info("Putting non default rack bookie to sleep");
+                sleepBookie(bookieRack1.get(0), sleepLatch);
+
+                // Trying to write entry
+                writeToLedger.start();
+
+                // Waiting and checking to make sure that write has not succeeded
+                Thread.sleep(5000);
+                assertTrue("Write succeeded but should not have", writeToLedger.isAlive());
+
+                // Starting countdown to wake the bookie
+                bookieSleeperCountdown.start();
+                bookieSleeperCountdown.join();
+
+                // Waiting and checking to make sure that write has succeeded
+                Thread.sleep(5000);
+                assertFalse("Write did not succeed but should have", writeToLedger.isAlive());
+                writeToLedger.join();
+            }
+
+            stopAllBookies();
+        }
     }
 }

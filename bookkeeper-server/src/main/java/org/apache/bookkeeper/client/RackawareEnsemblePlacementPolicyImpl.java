@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
@@ -1059,5 +1060,31 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             }
         }
         return true;
+    }
+
+    @Override
+    public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies) {
+        ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
+
+        readLock.lock();
+        HashSet<String> rackCounter = new HashSet<>();
+        for (BookieSocketAddress bookie : ackedBookies) {
+            try {
+                rackCounter.add(knownBookies.get(bookie).getNetworkLocation());
+            } catch (Exception e) {
+                LOG.warn("Received exception while trying to get network location of bookie: {}", bookie, e);
+            }
+        }
+
+        // Check to make sure that ensemble is writing to `minNumberOfRacks`'s number of racks at least.
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("areAckedBookiesAdheringToPlacementPolicy returning {} because number of racks = {} and "
+                      + "minNumRacksPerWriteQuorum = {}",
+                      rackCounter.size() >= minNumRacksPerWriteQuorum,
+                      rackCounter.size(),
+                      minNumRacksPerWriteQuorum);
+        }
+        readLock.unlock();
+        return rackCounter.size() >= minNumRacksPerWriteQuorum;
     }
 }

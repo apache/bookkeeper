@@ -49,6 +49,7 @@ class ClientInternalConf {
     final long timeoutMonitorIntervalSec;
     final boolean enableBookieFailureTracking;
     final boolean useV2WireProtocol;
+    final boolean enforceMinNumFaultDomainsForWrite;
 
     static ClientInternalConf defaultValues() {
         return fromConfig(new ClientConfiguration());
@@ -82,6 +83,7 @@ class ClientInternalConf {
         this.enableBookieFailureTracking = conf.getEnableBookieFailureTracking();
         this.useV2WireProtocol = conf.getUseV2WireProtocol();
         this.enableStickyReads = conf.isStickyReadsEnabled();
+        this.enforceMinNumFaultDomainsForWrite = conf.getEnforceMinNumFaultDomainsForWrite();
 
         if (conf.getFirstSpeculativeReadTimeout() > 0) {
             this.readSpeculativeRequestPolicy =
