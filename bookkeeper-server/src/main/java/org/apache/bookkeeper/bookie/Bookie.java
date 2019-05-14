@@ -872,7 +872,6 @@ public class Bookie extends BookieCriticalThread {
                         recBuff.rewind();
                         handle.addEntry(Unpooled.wrappedBuffer(recBuff));
                     }
-
                 } catch (NoLedgerException nsle) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Skip replaying entries of ledger {} since it was deleted.", ledgerId);
