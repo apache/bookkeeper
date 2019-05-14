@@ -103,7 +103,8 @@ public class TestLedgerDirsManager {
 
         executor = PowerMockito.mock(ScheduledExecutorService.class);
         executorController = new MockExecutorController()
-            .controlScheduleAtFixedRate(executor, 10);
+            .controlScheduleAtFixedRate(executor, 10)
+            .controlScheduleWithFixedDelay(executor, 10, 100, 200);
         PowerMockito.when(Executors.newSingleThreadScheduledExecutor(any()))
             .thenReturn(executor);
 
@@ -234,7 +235,10 @@ public class TestLedgerDirsManager {
         assertEquals(highPriorityWritesAllowed, mockLedgerDirsListener.highPriorityWritesAllowed);
 
         mockDiskChecker.setUsage(threshold - 0.05f);
-        executorController.advance(Duration.ofMillis(diskCheckInterval));
+
+        int taskId = -1;
+        List<Integer> taskExTimes = executorController.getTaskExTime();
+        executorController.advance(Duration.ofMillis(diskCheckInterval  + taskExTimes.get(++taskId)));
 
         assertFalse(mockLedgerDirsListener.readOnly);
         assertTrue(mockLedgerDirsListener.highPriorityWritesAllowed);
@@ -267,33 +271,36 @@ public class TestLedgerDirsManager {
         executorController.advance(Duration.ofMillis(diskCheckInterval));
         assertFalse(mockLedgerDirsListener.readOnly);
 
+        int taskId = -1;
+        List<Integer> taskExTimes = executorController.getTaskExTime();
+
         // go above LWM but below threshold
         // should still be writable
         mockDiskChecker.setUsage(lwm2nospace);
-        executorController.advance(Duration.ofMillis(diskCheckInterval));
+        executorController.advance(Duration.ofMillis(diskCheckInterval + taskExTimes.get(++taskId)));
         assertFalse(mockLedgerDirsListener.readOnly);
 
         // exceed the threshold, should go to readonly
         mockDiskChecker.setUsage(nospaceExceeded);
-        executorController.advance(Duration.ofMillis(diskCheckInterval));
+        executorController.advance(Duration.ofMillis(diskCheckInterval + taskExTimes.get(++taskId)));
         assertTrue(mockLedgerDirsListener.readOnly);
 
         // drop below threshold but above LWM
         // should stay read-only
         mockDiskChecker.setUsage(lwm2nospace);
-        executorController.advance(Duration.ofMillis(diskCheckInterval));
+        executorController.advance(Duration.ofMillis(diskCheckInterval + taskExTimes.get(++taskId)));
         assertTrue(mockLedgerDirsListener.readOnly);
 
         // drop below LWM
         // should become writable
         mockDiskChecker.setUsage(lwm2warn);
-        executorController.advance(Duration.ofMillis(diskCheckInterval));
+        executorController.advance(Duration.ofMillis(diskCheckInterval + taskExTimes.get(++taskId)));
         assertFalse(mockLedgerDirsListener.readOnly);
 
         // go above LWM but below threshold
         // should still be writable
         mockDiskChecker.setUsage(lwm2nospace);
-        executorController.advance(Duration.ofMillis(diskCheckInterval));
+        executorController.advance(Duration.ofMillis(diskCheckInterval + taskExTimes.get(++taskId)));
         assertFalse(mockLedgerDirsListener.readOnly);
     }
 
@@ -332,54 +339,54 @@ public class TestLedgerDirsManager {
         dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
         ledgerMonitor.start();
 
-        Thread.sleep((diskCheckInterval * 2) + 100);
         assertFalse(mockLedgerDirsListener.readOnly);
 
+        int taskId = -1;
         // go above LWM but below threshold
         // should still be writable
         setUsageAndThenVerify(curDir1, lwm + 0.05f, curDir2, lwm + 0.05f, mockDiskChecker, mockLedgerDirsListener,
-                false);
+                false, taskId);
 
         // one dir usagespace above storagethreshold, another dir below storagethreshold
         // should still be writable
         setUsageAndThenVerify(curDir1, nospace + 0.02f, curDir2, nospace - 0.05f, mockDiskChecker,
-                mockLedgerDirsListener, false);
+                mockLedgerDirsListener, false, ++taskId);
 
         // should remain readonly
         setUsageAndThenVerify(curDir1, nospace + 0.05f, curDir2, nospace + 0.02f, mockDiskChecker,
-                mockLedgerDirsListener, true);
+                mockLedgerDirsListener, true, ++taskId);
 
         // bring the disk usages to less than the threshold,
         // but more than the LWM.
         // should still be readonly
         setUsageAndThenVerify(curDir1, nospace - 0.05f, curDir2, nospace - 0.05f, mockDiskChecker,
-                mockLedgerDirsListener, true);
+                mockLedgerDirsListener, true, ++taskId);
 
         // bring one dir diskusage to less than lwm,
         // the other dir to be more than lwm, but the
         // overall diskusage to be more than lwm
         // should still be readonly
         setUsageAndThenVerify(curDir1, lwm - 0.03f, curDir2, lwm + 0.07f, mockDiskChecker, mockLedgerDirsListener,
-                true);
+                true, ++taskId);
 
         // bring one dir diskusage to much less than lwm,
         // the other dir to be more than storage threahold, but the
         // overall diskusage is less than lwm
         // should goto readwrite
         setUsageAndThenVerify(curDir1, lwm - 0.17f, curDir2, nospace + 0.03f, mockDiskChecker, mockLedgerDirsListener,
-                false);
+                false, ++taskId);
         assertEquals("Only one LedgerDir should be writable", 1, dirsManager.getWritableLedgerDirs().size());
 
         // bring both the dirs below lwm
         // should still be readwrite
         setUsageAndThenVerify(curDir1, lwm - 0.03f, curDir2, lwm - 0.02f, mockDiskChecker, mockLedgerDirsListener,
-                false);
+                false, ++taskId);
         assertEquals("Both the LedgerDirs should be writable", 2, dirsManager.getWritableLedgerDirs().size());
 
         // bring both the dirs above lwm but < threshold
         // should still be readwrite
         setUsageAndThenVerify(curDir1, lwm + 0.02f, curDir2, lwm + 0.08f, mockDiskChecker, mockLedgerDirsListener,
-                false);
+                false, ++taskId);
     }
 
     @Test
@@ -424,23 +431,27 @@ public class TestLedgerDirsManager {
         dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
         ledgerMonitor.start();
 
-        Thread.sleep((diskCheckInterval * 2) + 100);
-        verifyUsage(curDir1, nospace + 0.05f, curDir2, nospace + 0.05f, mockLedgerDirsListener, true);
+        verifyUsage(curDir1, nospace + 0.05f, curDir2, nospace + 0.05f, mockLedgerDirsListener, true, -1);
     }
 
     private void setUsageAndThenVerify(File dir1, float dir1Usage, File dir2, float dir2Usage,
-            MockDiskChecker mockDiskChecker, MockLedgerDirsListener mockLedgerDirsListener, boolean verifyReadOnly)
+            MockDiskChecker mockDiskChecker, MockLedgerDirsListener mockLedgerDirsListener,
+            boolean verifyReadOnly, int taskId)
             throws InterruptedException {
         HashMap<File, Float> usageMap = new HashMap<File, Float>();
         usageMap.put(dir1, dir1Usage);
         usageMap.put(dir2, dir2Usage);
         mockDiskChecker.setUsageMap(usageMap);
-        verifyUsage(dir1, dir1Usage, dir2, dir2Usage, mockLedgerDirsListener, verifyReadOnly);
+        verifyUsage(dir1, dir1Usage, dir2, dir2Usage, mockLedgerDirsListener, verifyReadOnly, taskId);
     }
 
     private void verifyUsage(File dir1, float dir1Usage, File dir2, float dir2Usage,
-                             MockLedgerDirsListener mockLedgerDirsListener, boolean verifyReadOnly) {
+                             MockLedgerDirsListener mockLedgerDirsListener, boolean verifyReadOnly, int taskId) {
         executorController.advance(Duration.ofMillis(diskCheckInterval));
+        if (taskId != -1) {
+            List<Integer> taskExTime = executorController.getTaskExTime();
+            executorController.advance(Duration.ofMillis(taskExTime.get(taskId)));
+        }
 
         float sample1 = getGauge(dir1.getParent()).getSample().floatValue();
         float sample2 = getGauge(dir2.getParent()).getSample().floatValue();
