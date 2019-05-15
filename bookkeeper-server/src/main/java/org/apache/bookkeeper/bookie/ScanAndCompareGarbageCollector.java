@@ -32,6 +32,9 @@ import java.util.SortedMap;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -139,8 +142,9 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             }
 
             // Iterate over all the ledger on the metadata store
-            long zkOpTimeout = this.conf.getZkTimeout() * 2;
-            LedgerRangeIterator ledgerRangeIterator = ledgerManager.getLedgerRanges(zkOpTimeout);
+            long zkOpTimeoutMs = this.conf.getZkTimeout() * 2;
+            LedgerRangeIterator ledgerRangeIterator = ledgerManager
+                    .getLedgerRanges(zkOpTimeoutMs);
             Set<Long> ledgersInMetadata = null;
             long start;
             long end = -1;
@@ -167,13 +171,20 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                         if (verifyMetadataOnGc) {
                             int rc = BKException.Code.OK;
                             try {
-                                result(ledgerManager.readLedgerMetadata(bkLid));
-                            } catch (BKException e) {
-                                rc = e.getCode();
+                                result(ledgerManager.readLedgerMetadata(bkLid), zkOpTimeoutMs, TimeUnit.MILLISECONDS);
+                            } catch (BKException | TimeoutException e) {
+                                if (e instanceof BKException) {
+                                    rc = ((BKException) e).getCode();
+                                } else {
+                                    LOG.warn("Time-out while fetching metadata for Ledger {} : {}.", bkLid,
+                                            e.getMessage());
+
+                                    continue;
+                                }
                             }
                             if (rc != BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                                 LOG.warn("Ledger {} Missing in metadata list, but ledgerManager returned rc: {}.",
-                                         bkLid, rc);
+                                        bkLid, rc);
                                 continue;
                             }
                         }

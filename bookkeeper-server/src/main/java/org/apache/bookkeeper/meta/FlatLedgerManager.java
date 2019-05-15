@@ -89,7 +89,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     }
 
     @Override
-    public LedgerRangeIterator getLedgerRanges(long zkOpTimeOutSec) {
+    public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
         return new LedgerRangeIterator() {
             // single iterator, can visit only one time
             boolean nextCalled = false;
@@ -103,7 +103,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
 
                 try {
                     zkActiveLedgers = ledgerListToSet(
-                            ZkUtils.getChildrenInSingleNode(zk, ledgerRootPath, zkOpTimeOutSec),
+                            ZkUtils.getChildrenInSingleNode(zk, ledgerRootPath, zkOpTimeoutMs),
                             ledgerRootPath);
                     nextRange = new LedgerRange(zkActiveLedgers);
                 } catch (KeeperException.NoNodeException e) {

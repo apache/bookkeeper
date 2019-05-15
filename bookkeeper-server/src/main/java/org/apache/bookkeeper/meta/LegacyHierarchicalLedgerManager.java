@@ -153,8 +153,8 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
     }
 
     @Override
-    public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutSec) {
-        return new LegacyHierarchicalLedgerRangeIterator(zkOpTimeoutSec);
+    public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
+        return new LegacyHierarchicalLedgerRangeIterator(zkOpTimeoutMs);
     }
 
     /**
@@ -166,10 +166,10 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
         private String curL1Nodes = "";
         private boolean iteratorDone = false;
         private LedgerRange nextRange = null;
-        private final long zkOpTimeoutSec;
+        private final long zkOpTimeoutMs;
 
-        public LegacyHierarchicalLedgerRangeIterator(long zkOpTimeoutSec) {
-            this.zkOpTimeoutSec = zkOpTimeoutSec;
+        public LegacyHierarchicalLedgerRangeIterator(long zkOpTimeoutMs) {
+            this.zkOpTimeoutMs = zkOpTimeoutMs;
         }
 
         /**
@@ -266,7 +266,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
             String nodePath = nodeBuilder.toString();
             List<String> ledgerNodes = null;
             try {
-                ledgerNodes = ZkUtils.getChildrenInSingleNode(zk, nodePath, zkOpTimeoutSec);
+                ledgerNodes = ZkUtils.getChildrenInSingleNode(zk, nodePath, zkOpTimeoutMs);
             } catch (KeeperException.NoNodeException e) {
                 /* If the node doesn't exist, we must have raced with a recursive node removal, just
                  * return an empty list. */
