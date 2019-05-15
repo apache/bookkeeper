@@ -249,7 +249,7 @@ public class ZkUtils {
                 }
                 // timeout the process if get-children response not received
                 // zkOpTimeoutMs.
-                if ((System.currentTimeMillis() - startTime) >= zkOpTimeoutMs) {
+                if (zkOpTimeoutMs > 0 && (System.currentTimeMillis() - startTime) >= zkOpTimeoutMs) {
                     ctx.rc = Code.OPERATIONTIMEOUT.intValue();
                     ctx.done = true;
                 }
