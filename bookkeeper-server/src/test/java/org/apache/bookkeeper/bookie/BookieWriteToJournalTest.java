@@ -28,11 +28,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -62,6 +64,19 @@ public class BookieWriteToJournalTest {
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
+
+    class NoOpJournalReplayBookie extends Bookie {
+
+        public NoOpJournalReplayBookie(ServerConfiguration conf)
+                throws IOException, InterruptedException, BookieException {
+            super(conf);
+        }
+
+        @Override
+        void readJournal() throws IOException, BookieException {
+            // Should be no-op since journal objects are mocked
+        }
+    }
 
     /**
      * test that Bookie calls correctly Journal.logAddEntry about "ackBeforeSync" parameter.
@@ -102,7 +117,7 @@ public class BookieWriteToJournalTest {
 
         whenNew(Journal.class).withAnyArguments().thenReturn(journal);
 
-        Bookie b = new Bookie(conf);
+        Bookie b = new NoOpJournalReplayBookie(conf);
         b.start();
 
         long ledgerId = 1;
