@@ -123,7 +123,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     public BookKeeperClusterTestCase(int numBookies, int testTimeoutSecs) {
-        this(numBookies, 1, 120);
+        this(numBookies, 1, testTimeoutSecs);
     }
 
     public BookKeeperClusterTestCase(int numBookies, int numOfZKNodes, int testTimeoutSecs) {
