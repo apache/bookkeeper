@@ -56,6 +56,7 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
+import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdherence;
 import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
@@ -1004,8 +1005,8 @@ public class BookKeeperAdmin implements AutoCloseable {
                             oldBookie,
                             bookiesToExclude);
             BookieSocketAddress newBookie = replaceBookieResponse.getResult();
-            boolean isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isStrictlyAdheringToPolicy();
-            if (!isEnsembleAdheringToPlacementPolicy) {
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
+            if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(
                             "replaceBookie for bookie: {} in ensemble: {} "
@@ -1659,7 +1660,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @return <tt>true</tt> if the ledger is adhering to
      *         EnsemblePlacementPolicy
      */
-    public boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleBookiesList,
+    public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleBookiesList,
             int writeQuorumSize, int ackQuorumSize) {
         return bkc.getPlacementPolicy().isEnsembleAdheringToPlacementPolicy(ensembleBookiesList, writeQuorumSize,
                 ackQuorumSize);
