@@ -188,7 +188,7 @@ public class MockLedgerManager implements LedgerManager {
     }
 
     @Override
-    public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutSec) {
+    public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
         return null;
     }
 

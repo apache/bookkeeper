@@ -642,7 +642,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         }
 
         @Override
-        public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutSec) {
+        public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
             return new MSLedgerRangeIterator();
         }
 

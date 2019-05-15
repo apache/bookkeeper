@@ -112,8 +112,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutSec) {
-            return lm.getLedgerRanges(zkOpTimeoutSec);
+        public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
+            return lm.getLedgerRanges(zkOpTimeoutMs);
         }
 
         @Override
