@@ -710,6 +710,15 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     /**
+     * Update lastLogMark of the journal,
+     * Indicates that the file has been processed.
+     * @param id
+     */
+    void setLastLogMarkToEof(Long id) {
+        lastLogMark.getCurMark().setLogMark(id, Long.MAX_VALUE);
+    }
+
+    /**
      * Application tried to schedule a checkpoint. After all the txns added
      * before checkpoint are persisted, a <i>checkpoint</i> will be returned
      * to application. Application could use <i>checkpoint</i> to do its logic.

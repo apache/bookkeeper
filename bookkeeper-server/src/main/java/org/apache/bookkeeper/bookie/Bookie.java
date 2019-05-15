@@ -924,7 +924,7 @@ public class Bookie extends BookieCriticalThread {
             journal.scanJournal(id, logPosition, scanner);
             // Update LastLogMark to Long.MAX_VALUE position after replaying journal
             // After LedgerStorage flush, SyncThread should persist this to disk
-            journal.getLastLogMark().setCurLogMark(id, Long.MAX_VALUE);
+            journal.setLastLogMarkToEof(id);
         }
     }
 
