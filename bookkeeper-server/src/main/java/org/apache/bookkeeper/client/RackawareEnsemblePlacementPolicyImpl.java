@@ -1064,27 +1064,29 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
     @Override
     public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies) {
-        ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
-
-        readLock.lock();
         HashSet<String> rackCounter = new HashSet<>();
-        for (BookieSocketAddress bookie : ackedBookies) {
-            try {
-                rackCounter.add(knownBookies.get(bookie).getNetworkLocation());
-            } catch (Exception e) {
-                LOG.warn("Received exception while trying to get network location of bookie: {}", bookie, e);
-            }
-        }
 
-        // Check to make sure that ensemble is writing to `minNumberOfRacks`'s number of racks at least.
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("areAckedBookiesAdheringToPlacementPolicy returning {} because number of racks = {} and "
-                      + "minNumRacksPerWriteQuorum = {}",
-                      rackCounter.size() >= minNumRacksPerWriteQuorum,
-                      rackCounter.size(),
-                      minNumRacksPerWriteQuorum);
+        ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
+        readLock.lock();
+        try {
+            for (BookieSocketAddress bookie : ackedBookies) {
+                try {
+                    rackCounter.add(knownBookies.get(bookie).getNetworkLocation());
+                } catch (Exception e) {
+                    LOG.warn("Received exception while trying to get network location of bookie: {}", bookie, e);
+                }
+            }
+
+            // Check to make sure that ensemble is writing to `minNumberOfRacks`'s number of racks at least.
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("areAckedBookiesAdheringToPlacementPolicy returning {} because number of racks = {} and " + "minNumRacksPerWriteQuorum = {}",
+                          rackCounter.size() >= minNumRacksPerWriteQuorum,
+                          rackCounter.size(),
+                          minNumRacksPerWriteQuorum);
+            }
+        } finally {
+            readLock.unlock();
         }
-        readLock.unlock();
         return rackCounter.size() >= minNumRacksPerWriteQuorum;
     }
 }
