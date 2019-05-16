@@ -966,9 +966,9 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
      * Test to test the working of enforceMinNumFaultDomainsForWrite configuration. The test:
      * 1. Sets up the config to use a minimum of 2 racks per write quorum
      * 2. Enables both enforceMinNumRacksPerWriteQuorum and enforceMinNumFaultDomainsForWrite.
-     * 3. Starts up 4 bookies in default rack (`/default-region/default-rack`) and 1 in `/default-region/rack1`
+     * 3. Starts up 4 bookies in rack 0 (`/default-region/rack0`) and 1 in rack 1 `/default-region/rack1`
      * 4. Creates a ledger using ensembleSize=wqSize=3.
-     * 5. The non default rack bookie is put to sleep
+     * 5. The rack 1 bookie is put to sleep
      * 6. AddEntry is attempted.
      * 7. A separate thread countdowns 10 seconds and then awakens the sleeping bookie.
      * 8. Success of addEntry is checked.
@@ -998,7 +998,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
         // Assign all initial bookies started to the default rack by modifying the `localhost` in the StaticDNSResolver
         StaticDNSResolver.reset();
-        StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_REGION + "/rack0");
 
         try (BookKeeperTestClient bk = new BookKeeperTestClient(conf)) {
             // Modify localhost in StaticDNSResolver to assign next started bookie to a different rack("/rack1")
