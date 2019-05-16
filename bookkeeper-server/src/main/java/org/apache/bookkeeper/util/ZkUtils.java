@@ -140,11 +140,7 @@ public class ZkUtils {
                         } else {
                             // parent node is not empty so, complete the
                             // callback
-                            if (path.equals(leafNodePath)) {
-                                callback.processResult(rc, path, leafNodePath);
-                            } else {
-                                callback.processResult(Code.OK.intValue(), path, leafNodePath);
-                            }
+                            callback.processResult(Code.OK.intValue(), path, leafNodePath);
                         }
                     }, null);
                 } else {
