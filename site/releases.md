@@ -64,6 +64,14 @@ Client Guide | API docs
 
 ## News
 
+### [date] Release {{ site.latest_version }} available
+
+This is the 19th release of Apache BookKeeper !
+
+The 4.9.2 release is a bugfix release which fixes a couple of issues reported from users of 4.9.1.
+
+See [BookKeeper 4.9.2 Release Notes](../docs/4.9.2/overview/releaseNotes) for details.
+
 ### 7 April, 2019 Release 4.9.1 available
 
 This is the 18th release of Apache BookKeeper !
