@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
+import static org.apache.bookkeeper.util.TestUtils.countNumOfFiles;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -59,6 +60,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
+import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -134,6 +136,126 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             driver.close();
         }
         super.tearDown();
+    }
+
+    @Test
+    public void testOneJournalReplayForBookieRestartInReadOnlyMode() throws Exception {
+        testJournalReplayForBookieRestartInReadOnlyMode(1);
+    }
+
+    @Test
+    public void testMultipleJournalReplayForBookieRestartInReadOnlyMode() throws Exception {
+        testJournalReplayForBookieRestartInReadOnlyMode(4);
+    }
+
+    /**
+     * Tests that journal replay works correctly when bookie crashes and starts up in RO mode.
+     */
+    private void testJournalReplayForBookieRestartInReadOnlyMode(int numOfJournalDirs) throws Exception {
+        File tmpLedgerDir = createTempDir("DiskCheck", "test");
+        File tmpJournalDir = createTempDir("DiskCheck", "test");
+
+        String[] journalDirs = new String[numOfJournalDirs];
+        for (int i = 0; i < numOfJournalDirs; i++) {
+            journalDirs[i] = tmpJournalDir.getAbsolutePath() + "/journal-" + i;
+        }
+
+        final ServerConfiguration conf = newServerConfiguration()
+                .setJournalDirsName(journalDirs)
+                .setLedgerDirNames(new String[] { tmpLedgerDir.getPath() })
+                .setDiskCheckInterval(1000)
+                .setLedgerStorageClass(SortedLedgerStorage.class.getName())
+                .setAutoRecoveryDaemonEnabled(false)
+                .setZkTimeout(5000);
+
+        BookieServer server = new MockBookieServer(conf);
+        server.start();
+
+        List<LastLogMark> lastLogMarkList = new ArrayList<>(journalDirs.length);
+
+        for (int i = 0; i < journalDirs.length; i++) {
+            Journal journal = server.getBookie().journals.get(i);
+            // LastLogMark should be (0, 0) at the bookie clean start
+            journal.getLastLogMark().readLog();
+            lastLogMarkList.add(journal.getLastLogMark().markLog());
+            assertEquals(0, lastLogMarkList.get(i).getCurMark().compare(new LogMark(0, 0)));
+        }
+
+        ClientConfiguration clientConf = new ClientConfiguration();
+        clientConf.setMetadataServiceUri(metadataServiceUri);
+        BookKeeper bkClient = new BookKeeper(clientConf);
+
+        // Create multiple ledgers for adding entries to multiple journals
+        for (int i = 0; i < journalDirs.length; i++) {
+            LedgerHandle lh = bkClient.createLedger(1, 1, 1, DigestType.CRC32, "passwd".getBytes());
+            long entryId = -1;
+            // Ensure that we have non-zero number of entries
+            long numOfEntries = new Random().nextInt(10) + 3;
+            for (int j = 0; j < numOfEntries; j++) {
+                entryId = lh.addEntry("data".getBytes());
+            }
+            assertEquals(entryId, (numOfEntries - 1));
+            lh.close();
+        }
+
+        for (int i = 0; i < journalDirs.length; i++) {
+            Journal journal = server.getBookie().journals.get(i);
+            // In-memory LastLogMark should be updated with every write to journal
+            assertTrue(journal.getLastLogMark().getCurMark().compare(lastLogMarkList.get(i).getCurMark()) > 0);
+            lastLogMarkList.set(i, journal.getLastLogMark().markLog());
+        }
+
+        // Kill Bookie abruptly before entries are flushed to disk
+        server.shutdown();
+
+        conf.setDiskUsageThreshold(0.001f)
+                .setDiskUsageWarnThreshold(0.0f).setReadOnlyModeEnabled(true).setIsForceGCAllowWhenNoSpace(true)
+                .setMinUsableSizeForIndexFileCreation(5 * 1024);
+
+        server = new BookieServer(conf);
+
+        for (int i = 0; i < journalDirs.length; i++) {
+            Journal journal = server.getBookie().journals.get(i);
+            // LastLogMark should be (0, 0) before bookie restart since bookie crashed before persisting lastMark
+            assertEquals(0, journal.getLastLogMark().getCurMark().compare(new LogMark(0, 0)));
+        }
+
+        int numOfRestarts = 3;
+        // Restart server multiple times to ensure that logs are never replayed and new files are not generated
+        for (int i = 0; i < numOfRestarts; i++) {
+
+            int txnBefore = countNumOfFiles(conf.getJournalDirs(), "txn");
+            int logBefore = countNumOfFiles(conf.getLedgerDirs(), "log");
+            int idxBefore = countNumOfFiles(conf.getLedgerDirs(), "idx");
+
+            server.start();
+
+            for (int j = 0; j < journalDirs.length; j++) {
+                Journal journal = server.getBookie().journals.get(j);
+                assertTrue(journal.getLastLogMark().getCurMark().compare(lastLogMarkList.get(j).getCurMark()) > 0);
+                lastLogMarkList.set(j, journal.getLastLogMark().markLog());
+            }
+
+            server.shutdown();
+
+            // Every bookie restart initiates a new journal file
+            // Journals should not be replayed everytime since lastMark gets updated everytime
+            // New EntryLog files should not be generated.
+            assertEquals(journalDirs.length, (countNumOfFiles(conf.getJournalDirs(), "txn") - txnBefore));
+
+            // First restart should replay journal and generate new log/index files
+            // Subsequent runs should not generate new files (but can delete older ones)
+            if (i == 0) {
+                assertTrue((countNumOfFiles(conf.getLedgerDirs(), "log") - logBefore) > 0);
+                assertTrue((countNumOfFiles(conf.getLedgerDirs(), "idx") - idxBefore) > 0);
+            } else {
+                assertTrue((countNumOfFiles(conf.getLedgerDirs(), "log") - logBefore) <= 0);
+                assertTrue((countNumOfFiles(conf.getLedgerDirs(), "idx") - idxBefore) <= 0);
+            }
+
+            server = new BookieServer(conf);
+        }
+        bkClient.close();
     }
 
     /**

@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.util;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +33,7 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.ReadHandle;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 
 /**
@@ -92,4 +94,14 @@ public final class TestUtils {
         }
         Assert.assertTrue(description, predicate.getAsBoolean());
     }
+
+    public static int countNumOfFiles(File[] folderNames, String... extensions) {
+        int count = 0;
+        for (int i = 0; i < folderNames.length; i++) {
+            Collection<File> filesCollection = FileUtils.listFiles(folderNames[i], extensions, true);
+            count += filesCollection.size();
+        }
+        return count;
+    }
+
 }
