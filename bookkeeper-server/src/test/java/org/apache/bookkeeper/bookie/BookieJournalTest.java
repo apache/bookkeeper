@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -350,8 +351,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = new Bookie(conf);
-        b.readJournal();
+        Bookie b = createBookieAndReadJournal(conf);
 
         b.readEntry(1, 100);
         try {
@@ -379,8 +379,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = new Bookie(conf);
-        b.readJournal();
+        Bookie b = createBookieAndReadJournal(conf);
 
         b.readEntry(1, 100);
         try {
@@ -410,8 +409,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = new Bookie(conf);
-        b.readJournal();
+        Bookie b = createBookieAndReadJournal(conf);
 
         for (int i = 1; i <= 2 * JournalChannel.SECTOR_SIZE; i++) {
             b.readEntry(1, i);
@@ -570,8 +568,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = new Bookie(conf);
-        b.readJournal();
+        Bookie b = createBookieAndReadJournal(conf);
 
         b.readEntry(1, 99);
 
@@ -614,8 +611,8 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = new Bookie(conf);
-        b.readJournal();
+        Bookie b = createBookieAndReadJournal(conf);
+
         b.readEntry(1, 99);
 
         // still able to read last entry, but it's junk
@@ -638,6 +635,16 @@ public class BookieJournalTest {
         } catch (Bookie.NoEntryException e) {
             // correct behaviour
         }
+    }
+
+    private Bookie createBookieAndReadJournal(ServerConfiguration conf) throws Exception {
+        Bookie b = new Bookie(conf);
+        for (Journal journal : b.journals) {
+            LastLogMark lastLogMark = journal.getLastLogMark().markLog();
+            b.readJournal();
+            assertTrue(journal.getLastLogMark().getCurMark().compare(lastLogMark.getCurMark()) > 0);
+        }
+        return b;
     }
 
     /**

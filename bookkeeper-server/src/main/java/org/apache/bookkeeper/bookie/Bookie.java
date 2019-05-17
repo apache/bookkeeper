@@ -883,10 +883,49 @@ public class Bookie extends BookieCriticalThread {
         };
 
         for (Journal journal : journals) {
-            journal.replay(scanner);
+            replay(journal, scanner);
         }
         long elapsedTs = System.currentTimeMillis() - startTs;
         LOG.info("Finished replaying journal in {} ms.", elapsedTs);
+    }
+
+    /**
+     * Replay journal files and updates journal's in-memory lastLogMark object.
+     *
+     * @param journal Journal object corresponding to a journalDir
+     * @param scanner Scanner to process replayed entries.
+     * @throws IOException
+     */
+    private void replay(Journal journal, JournalScanner scanner) throws IOException {
+        final LogMark markedLog = journal.getLastLogMark().getCurMark();
+        List<Long> logs = Journal.listJournalIds(journal.getJournalDirectory(), journalId -> {
+            if (journalId < markedLog.getLogFileId()) {
+                return false;
+            }
+            return true;
+        });
+        // last log mark may be missed due to no sync up before
+        // validate filtered log ids only when we have markedLogId
+        if (markedLog.getLogFileId() > 0) {
+            if (logs.size() == 0 || logs.get(0) != markedLog.getLogFileId()) {
+                throw new IOException("Recovery log " + markedLog.getLogFileId() + " is missing");
+            }
+        }
+
+        // TODO: When reading in the journal logs that need to be synced, we
+        // should use BufferedChannels instead to minimize the amount of
+        // system calls done.
+        for (Long id : logs) {
+            long logPosition = 0L;
+            if (id == markedLog.getLogFileId()) {
+                logPosition = markedLog.getLogFileOffset();
+            }
+            LOG.info("Replaying journal {} from position {}", id, logPosition);
+            journal.scanJournal(id, logPosition, scanner);
+            // Update LastLogMark to Long.MAX_VALUE position after replaying journal
+            // After LedgerStorage flush, SyncThread should persist this to disk
+            journal.setLastLogMarkToEof(id);
+        }
     }
 
     @Override
