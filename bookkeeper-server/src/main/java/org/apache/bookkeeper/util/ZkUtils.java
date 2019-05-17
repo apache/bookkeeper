@@ -133,8 +133,17 @@ public class ZkUtils {
             public void processResult(int rc, String path, Object ctx) {
                 if (rc == Code.OK.intValue()) {
                     String parent = new File(originalPath).getParent().replace("\\", "/");
-                    asyncDeleteFullPathOptimistic(zk, parent, -1, callback, leafNodePath);
+                    zk.getData(parent, false, (dRc, dPath, dCtx, data, stat) -> {
+                        if (Code.OK.intValue() == dRc && (stat != null && stat.getNumChildren() == 0)) {
+                            asyncDeleteFullPathOptimistic(zk, parent, -1, callback, leafNodePath);
+                        } else {
+                            // parent node is not empty so, complete the
+                            // callback
+                            callback.processResult(Code.OK.intValue(), path, leafNodePath);
+                        }
+                    }, null);
                 } else {
+                    // parent node deletion fails.. so, complete the callback
                     if (path.equals(leafNodePath)) {
                         callback.processResult(rc, path, leafNodePath);
                     } else {
