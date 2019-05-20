@@ -479,7 +479,11 @@ class BKLogWriteHandler extends BKLogHandler {
             // no ledger seqno stored in /ledgers before
             LOG.info("No max ledger sequence number found while creating log segment {} for {}.",
                 logSegmentSeqNo, getFullyQualifiedName());
-        } else if (maxLogSegmentSequenceNo.getSequenceNumber() + 1 != logSegmentSeqNo) {
+        } else if (maxLogSegmentSequenceNo.getSequenceNumber() + 1 != logSegmentSeqNo // case 1
+                   && maxLogSegmentSequenceNo.getSequenceNumber() != logSegmentSeqNo) { // case 2
+            // case 1 is the common case, where the new log segment is 1 more than the previous
+            // case 2 can occur when the writer crashes with an empty in progress ledger. This is then deleted
+            //        on recovery, so the next new segment will have a matching sequence number
             LOG.warn("Unexpected max log segment sequence number {} for {} : list of cached segments = {}",
                 new Object[]{maxLogSegmentSequenceNo.getSequenceNumber(), getFullyQualifiedName(),
                     getCachedLogSegments(LogSegmentMetadata.DESC_COMPARATOR)});
@@ -634,10 +638,6 @@ class BKLogWriteHandler extends BKLogHandler {
         // Try storing max sequence number.
         LOG.debug("Try storing max sequence number in startLogSegment {} : {}", inprogressZnodePath, logSegmentSeqNo);
         storeMaxSequenceNumber(txn, maxLogSegmentSequenceNo, logSegmentSeqNo, true);
-
-        // Try storing max tx id.
-        LOG.debug("Try storing MaxTxId in startLogSegment  {} {}", inprogressZnodePath, txId);
-        storeMaxTxId(txn, maxTxId, txId);
 
         txn.execute().whenCompleteAsync(new FutureEventListener<Void>() {
 
@@ -1032,22 +1032,22 @@ class BKLogWriteHandler extends BKLogHandler {
                 return FutureUtils.exception(new IOException("Unrecoverable corruption,"
                     + " please check logs."));
             } else if (endTxId == DistributedLogConstants.EMPTY_LOGSEGMENT_TX_ID) {
-                // TODO: Empty ledger - Ideally we should just remove it?
-                endTxId = l.getFirstTxId();
+                LOG.info("Inprogress segment {} is empty, deleting", l);
+                return deleteLogSegment(l).thenApply((result) -> null);
+            } else {
+                CompletableFuture<LogSegmentMetadata> promise = new CompletableFuture<LogSegmentMetadata>();
+                doCompleteAndCloseLogSegment(
+                        l.getZNodeName(),
+                        l.getLogSegmentSequenceNumber(),
+                        l.getLogSegmentId(),
+                        l.getFirstTxId(),
+                        endTxId,
+                        recordCount,
+                        lastEntryId,
+                        lastSlotId,
+                        promise);
+                return promise;
             }
-
-            CompletableFuture<LogSegmentMetadata> promise = new CompletableFuture<LogSegmentMetadata>();
-            doCompleteAndCloseLogSegment(
-                    l.getZNodeName(),
-                    l.getLogSegmentSequenceNumber(),
-                    l.getLogSegmentId(),
-                    l.getFirstTxId(),
-                    endTxId,
-                    recordCount,
-                    lastEntryId,
-                    lastSlotId,
-                    promise);
-            return promise;
         }
 
     }

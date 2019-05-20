@@ -35,7 +35,9 @@ public class GetLastTxIdFunction implements Function<List<LogSegmentMetadata>, L
     public Long apply(List<LogSegmentMetadata> segmentList) {
         long lastTxId = DistributedLogConstants.INVALID_TXID;
         for (LogSegmentMetadata l : segmentList) {
-            lastTxId = Math.max(lastTxId, l.getLastTxId());
+            if (l != null) { // may be nulled in case of empty inprogress segment
+                lastTxId = Math.max(lastTxId, l.getLastTxId());
+            }
         }
         return lastTxId;
     }
