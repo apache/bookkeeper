@@ -41,6 +41,16 @@ public interface PerChannelBookieClientPool {
     void obtain(GenericCallback<PerChannelBookieClient> callback, long key);
 
     /**
+     * Obtain a channel from channel pool by version to execute operations.
+     *
+     * @param callback
+     *          callback to return channel from channel pool
+     * @param forceUseV3
+     *          whether or not use v3 protocol for connection
+     */
+    void obtain(GenericCallback<PerChannelBookieClient> callback, long key, boolean forceUseV3);
+
+    /**
      * Returns status of a client.
      * It is suggested to delay/throttle requests to this channel if isWritable is false.
      *
