@@ -1318,7 +1318,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         String metrics = metricsStringBuilder.toString();
         // do primitive checks if metrics string contains some stats
         assertTrue("Metrics should contain basic counters",
-                metrics.contains(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS));
+                metrics.contains(ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED));
 
         // Now, hit the rest endpoint for configs
         url = new URL("http://localhost:" + nextFreePort + HttpRouter.SERVER_CONFIG);
