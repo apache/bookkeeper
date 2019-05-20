@@ -93,6 +93,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     private final ExtensionRegistry registry;
 
     private final ClientConfiguration conf;
+    private final ClientConfiguration v3Conf;
+    private final boolean useV3Enforced;
     private volatile boolean closed;
     private final ReentrantReadWriteLock closeLock;
     private final StatsLogger statsLogger;
@@ -105,6 +107,9 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                             OrderedExecutor executor, ScheduledExecutorService scheduler,
                             StatsLogger statsLogger) throws IOException {
         this.conf = conf;
+        this.v3Conf = new ClientConfiguration(conf);
+        this.v3Conf.setUseV2WireProtocol(false);
+        this.useV3Enforced = conf.getUseV2WireProtocol();
         this.eventLoopGroup = eventLoopGroup;
         this.allocator = allocator;
         this.executor = executor;
@@ -179,13 +184,17 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
     @Override
     public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool,
-            SecurityHandlerFactory shFactory) throws SecurityException {
+            SecurityHandlerFactory shFactory, boolean forceUseV3) throws SecurityException {
         StatsLogger statsLoggerForPCBC = statsLogger;
         if (conf.getLimitStatsLogging()) {
             statsLoggerForPCBC = NullStatsLogger.INSTANCE;
         }
-        return new PerChannelBookieClient(conf, executor, eventLoopGroup, allocator, address, statsLoggerForPCBC,
-                authProviderFactory, registry, pcbcPool, shFactory);
+        ClientConfiguration clientConfiguration = conf;
+        if (forceUseV3) {
+            clientConfiguration = v3Conf;
+        }
+        return new PerChannelBookieClient(clientConfiguration, executor, eventLoopGroup, allocator, address,
+                                   statsLoggerForPCBC, authProviderFactory, registry, pcbcPool, shFactory);
     }
 
     public PerChannelBookieClientPool lookupClient(BookieSocketAddress addr) {
@@ -267,7 +276,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             }
 
             toSend.release();
-        }, ledgerId);
+        }, ledgerId, useV3Enforced);
     }
 
     private void completeAdd(final int rc,
@@ -467,7 +476,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             } else {
                 pcbc.readLac(ledgerId, cb, ctx);
             }
-        }, ledgerId);
+        }, ledgerId, useV3Enforced);
     }
 
     public void readEntry(BookieSocketAddress addr, long ledgerId, long entryId,
@@ -546,7 +555,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             } else {
                 pcbc.getBookieInfo(requested, cb, ctx);
             }
-        }, requested);
+        }, requested, useV3Enforced);
     }
 
     private void monitorPendingOperations() {
