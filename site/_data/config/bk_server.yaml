@@ -124,7 +124,7 @@ groups:
     description: The Recv ByteBuf allocator max buf size.
     default: 1048576
   - param: nettyMaxFrameSizeBytes
-    description: The maximum netty frame size in bytes. Any message received larger than this will be rejected.
+    description: The maximum netty frame size in bytes. Any message received larger than this will be rejected, so when the client-side attempt to send more than the default size bytes, it should set up the corresponding parameter `setNettyMaxFrameSizeBytes(int maxSize)`, pay attention to the parameter should be less than the value of server-side.
     default: 5242880
 
 - name: Http server settings
