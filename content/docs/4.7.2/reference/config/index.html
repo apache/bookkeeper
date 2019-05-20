@@ -815,7 +815,7 @@ reduce the number of threads in the main workers pool and Netty event loop to on
     
     <tr id="nettyMaxFrameSizeBytes">
       <td><code>nettyMaxFrameSizeBytes</code></td>
-      <td><p>The maximum netty frame size in bytes. Any message received larger than this will be rejected.</p>
+      <td><p>The maximum netty frame size in bytes. Any message received larger than this will be rejected, so when the client-side attempt to send more than the default size bytes, it should set up the corresponding parameter <code class="highlighter-rouge">setNettyMaxFrameSizeBytes(int maxSize)</code>, pay attention to the parameter should be less than the value of server-side.</p>
 </td>
       <td><code>5242880</code></td>
     </tr>
