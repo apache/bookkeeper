@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 public class TestTxnId extends TestDistributedLogBase {
     private static final Logger logger = LoggerFactory.getLogger(TestRollLogSegments.class);
 
-    @Test(timeout = 600000)
+    @Test
     public void testRecoveryAfterBookieCrash() throws Exception {
         String name = "txnid-after-crash";
         DistributedLogConfiguration conf = new DistributedLogConfiguration()
@@ -56,8 +56,12 @@ public class TestTxnId extends TestDistributedLogBase {
 
                 extraBookies.forEach(b -> b.shutdown());
 
-                writer.write(DLMTestUtil.getLogRecordInstance(3, 100000));
-                Thread.sleep(1000);
+                try {
+                    writer.write(DLMTestUtil.getLogRecordInstance(3, 100000)).join();
+                    Assert.fail("Shouldn't have succeeded");
+                } catch (Exception e) {
+                    // expected
+                }
 
                 writer.write(DLMTestUtil.getLogRecordInstance(4, 100000)).join();
                 Assert.fail("Shouldn't be able to write");

@@ -104,7 +104,6 @@ public class TestDistributedLogBase {
         Pair<ZooKeeperServerShim, Integer> serverAndPort = LocalDLMEmulator.runZookeeperOnAnyPort(zkTmpDir);
         zks = serverAndPort.getLeft();
         zkPort = serverAndPort.getRight();
-        LOG.info("IKDEBUG num bookies is {}", numBookies);
         bkutil = LocalDLMEmulator.newBuilder()
                 .numBookies(numBookies)
                 .zkHost("127.0.0.1")
