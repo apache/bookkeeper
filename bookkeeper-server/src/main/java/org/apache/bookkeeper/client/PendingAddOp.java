@@ -381,7 +381,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
         if (ackQuorum && !completed) {
             if (clientCtx.getConf().enforceMinNumFaultDomainsForWrite
-                && !(clientCtx.getPlacementPolicy().areAckedBookiesAdheringToPlacementPolicy(addEntrySuccessBookies))) {
+                && !(clientCtx.getPlacementPolicy()
+                              .areAckedBookiesAdheringToPlacementPolicy(addEntrySuccessBookies,
+                                                                        lh.getLedgerMetadata().getWriteQuorumSize(),
+                                                                        lh.getLedgerMetadata().getAckQuorumSize()))) {
                 LOG.warn("Write success for entry ID {} delayed, not acknowledged by bookies in enough fault domains",
                          entryId);
                 // Increment to indicate write did not complete due to not enough fault domains

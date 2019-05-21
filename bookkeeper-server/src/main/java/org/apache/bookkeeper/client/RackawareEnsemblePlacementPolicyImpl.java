@@ -1063,8 +1063,11 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
-    public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies) {
+    public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies,
+                                                            int writeQuorumSize,
+                                                            int ackQuorumSize) {
         HashSet<String> rackCounter = new HashSet<>();
+        int minWriteQuorumNumRacksPerWriteQuorum = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
 
         ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
         readLock.lock();
@@ -1088,6 +1091,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         } finally {
             readLock.unlock();
         }
-        return rackCounter.size() >= minNumRacksPerWriteQuorum;
+        return rackCounter.size() >= minWriteQuorumNumRacksPerWriteQuorum;
     }
 }

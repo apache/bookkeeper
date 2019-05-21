@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.BookKeeperClientStats.WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -31,6 +33,7 @@ import static org.junit.Assert.fail;
 import io.netty.util.IllegalReferenceCountException;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -50,8 +53,11 @@ import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -961,118 +967,149 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
     /**
      * Mock of RackawareEnsemblePlacementPolicy. Overrides areAckedBookiesAdheringToPlacementPolicy to only return true
-     * when ackedBookies consists of 3 bookies. Also adds a counter to track the number of invocations of
-     * areAckedBookiesAdheringToPlacementPolicy and getter/setter for that.
+     * when ackedBookies consists of writeQuorumSizeToUseForTesting bookies.
      */
     public static class MockRackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicy {
-        private AtomicInteger counter = new AtomicInteger(0);
-        private int writeQuorumSizeToUseForTesting = 3;
+        private int writeQuorumSizeToUseForTesting;
+        private CountDownLatch conditionFirstInvocationLatch;
 
-        public int getCounter() {
-            return counter.get();
+        void setWriteQuorumSizeToUseForTesting(int writeQuorumSizeToUseForTesting) {
+            this.writeQuorumSizeToUseForTesting = writeQuorumSizeToUseForTesting;
         }
 
-        void resetCounter() {
-            this.counter.set(0);
+        void setConditionFirstInvocationLatch(CountDownLatch conditionFirstInvocationLatch) {
+            this.conditionFirstInvocationLatch = conditionFirstInvocationLatch;
         }
 
         @Override
-        public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies) {
-            counter.incrementAndGet();
+        public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies,
+                                                                int writeQuorumSize,
+                                                                int ackQuorumSize) {
+            conditionFirstInvocationLatch.countDown();
             return ackedBookies.size() == writeQuorumSizeToUseForTesting;
         }
     }
 
     /**
      * Test to verify that PendingAddOp waits for success condition from areAckedBookiesAdheringToPlacementPolicy
-     * before returning success to client.
-     * The test :
-     * 1. Sets `enforceMinNumFaultDomainsForWrite` to true , `minNumRacksPerWriteQuorum` to 2 and the placement policy
-     *    to the mocked MockRackawareEnsemblePlacementPolicy.
-     * 2. Resets the counter counting how many times was enforceMinNumFaultDomainsForWrite not met before succeeding.
-     * 3. Creates a ledger using EnsembleSize=WriteQuorumSize=3 and ackQuorumSize=2.
-     * 4. Picks a bookie from the current ensemble to be put to sleep before attempting write.
-     * 5. Puts the picked bookie to sleep and attempts write.
-     * 6. Verifies that the write has not succeeded since the overriden areAckedBookiesAdheringToPlacementPolicy is not
-     *    met.
-     * 7. Awakens the sleeping bookie and check to make sure that the write succeeds.
-     * 8. Verifies that the number of times, ackQuorum was met but areAckedBookiesAdheringToPlacementPolicy was not met
-     *    is 2(value received from the counter in the placement policy). This should be 2 because it would be called
-     *    once when 2 bookies have responded but the third one is still sleeping, and once when the bookie is woken up.
-     *
-     * @throws Exception
+     * before returning success to client. Also tests working of WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS and
+     * WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS counters.
      */
     @Test
     public void testEnforceMinNumFaultDomainsForWrite() throws Exception {
         byte[] data = "foobar".getBytes();
         byte[] password = "testPasswd".getBytes();
 
+        startNewBookie();
+        startNewBookie();
+
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         conf.setEnsemblePlacementPolicy(MockRackawareEnsemblePlacementPolicy.class);
 
-        conf.setMinNumRacksPerWriteQuorum(2);
+        conf.setAddEntryTimeout(2);
+        conf.setAddEntryQuorumTimeout(4);
         conf.setEnforceMinNumFaultDomainsForWrite(true);
 
-        // Abnormal values for testing to prevent timeouts
-        conf.setAddEntryTimeout(300);
-        BookKeeperTestClient bk = new BookKeeperTestClient(conf);
+        TestStatsProvider statsProvider = new TestStatsProvider();
 
+        // Abnormal values for testing to prevent timeouts
+        BookKeeperTestClient bk = new BookKeeperTestClient(conf, statsProvider);
+        StatsLogger statsLogger = bk.getStatsLogger();
+
+        int ensembleSize = 3;
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 2;
+
+        CountDownLatch countDownLatch = new CountDownLatch(1);
         MockRackawareEnsemblePlacementPolicy currPlacementPolicy =
                 (MockRackawareEnsemblePlacementPolicy) bk.getPlacementPolicy();
-        currPlacementPolicy.resetCounter();
+        currPlacementPolicy.setConditionFirstInvocationLatch(countDownLatch);
+        currPlacementPolicy.setWriteQuorumSizeToUseForTesting(writeQuorumSize);
+
         BookieSocketAddress bookieToSleep;
 
-        try (LedgerHandle lh = bk.createLedger(3, 3, 2, digestType, password)) {
-            CountDownLatch sleepLatch = new CountDownLatch(1);
+        try (LedgerHandle lh = bk.createLedger(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password)) {
+            CountDownLatch sleepLatchCase1 = new CountDownLatch(1);
+            CountDownLatch sleepLatchCase2 = new CountDownLatch(1);
 
-            Thread bookieSleeperCountdown = new Thread(() -> {
+            // Put all non ensemble bookies to sleep
+            LOG.info("Putting all non ensemble bookies to sleep.");
+            for (BookieServer bookieServer : bs) {
                 try {
-                    LOG.info("Counting down 10 seconds before waking sleeping bookie");
-                    sleepLatch.await(10, TimeUnit.SECONDS);
-                    LOG.info("Picked bookie awake");
-                } catch (InterruptedException ignored) {
-                }
-
-                sleepLatch.countDown();
-            });
+                    if (!lh.getCurrentEnsemble().contains(bookieServer.getLocalAddress())) {
+                        sleepBookie(bookieServer.getLocalAddress(), sleepLatchCase2);
+                    }
+                } catch (UnknownHostException ignored) {}
+            }
 
             Thread writeToLedger = new Thread(() -> {
                 try {
                     LOG.info("Initiating write for entry");
                     long entryId = lh.addEntry(data);
                     LOG.info("Wrote entry with entryId = {}", entryId);
-                    assertTrue(entryId >= 0);
                 } catch (InterruptedException | BKException ignored) {
-                    // Fail the test if the write times out
-                    fail("Write should not have thrown error");
                 }
             });
 
             bookieToSleep = lh.getCurrentEnsemble().get(0);
 
-            // Putting non default rack bookie to sleep
             LOG.info("Putting picked bookie to sleep");
-            sleepBookie(bookieToSleep, sleepLatch);
+            sleepBookie(bookieToSleep, sleepLatchCase1);
+
+            assertEquals(statsLogger
+                           .getCounter(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS)
+                           .get()
+                           .longValue(), 0);
 
             // Trying to write entry
             writeToLedger.start();
 
             // Waiting and checking to make sure that write has not succeeded
-            Thread.sleep(5000);
-            assertTrue("Write succeeded but should not have", writeToLedger.isAlive());
+            countDownLatch.await(2, TimeUnit.SECONDS);
+            assertEquals("Write succeeded but should not have", -1, lh.lastAddConfirmed);
 
-            // Starting countdown to wake the bookie
-            bookieSleeperCountdown.start();
-            bookieSleeperCountdown.join();
+            // Wake the bookie
+            sleepLatchCase1.countDown();
 
             // Waiting and checking to make sure that write has succeeded
-            Thread.sleep(5000);
-            assertFalse("Write did not succeed but should have", writeToLedger.isAlive());
-            assertEquals(currPlacementPolicy.getCounter(), 2);
-            writeToLedger.join();
-        }
+            writeToLedger.join(1000);
+            assertEquals("Write did not succeed but should have", 0, lh.lastAddConfirmed);
 
-        stopAllBookies();
+            assertEquals(statsLogger
+                           .getCounter(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS)
+                           .get()
+                           .longValue(), 1);
+
+            // AddEntry thread for second scenario
+            Thread writeToLedger2 = new Thread(() -> {
+                try {
+                    LOG.info("Initiating write for entry");
+                    long entryId = lh.addEntry(data);
+                    LOG.info("Wrote entry with entryId = {}", entryId);
+                } catch (InterruptedException | BKException ignored) {
+                }
+            });
+
+            bookieToSleep = lh.getCurrentEnsemble().get(1);
+
+            LOG.info("Putting picked bookie to sleep");
+            sleepBookie(bookieToSleep, sleepLatchCase2);
+
+            // Trying to write entry
+            writeToLedger2.start();
+
+            // Waiting and checking to make sure that write has failed
+            writeToLedger2.join(6000);
+            assertEquals("Write succeeded but should not have", 0, lh.lastAddConfirmed);
+
+            sleepLatchCase2.countDown();
+
+            assertEquals(statsLogger.getCounter(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS).get().longValue(),
+                         2);
+
+            assertEquals(statsLogger.getCounter(WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS).get().longValue(),
+                         1);
+        }
     }
 }

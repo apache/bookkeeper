@@ -2234,34 +2234,26 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    /**
-     * This tests areAckedBookiesAdheringToPlacementPolicy function in RackawareEnsemblePlacementPolicy.
-     */
-    @Test
-    public void testAreAckedBookiesAdheringToPlacementPolicy() throws Exception {
+    private void testAreAckedBookiesAdheringToPlacementPolicyHelper(int minNumRacksPerWriteQuorumConfValue,
+                                                                    int ensembleSize,
+                                                                    int writeQuorumSize,
+                                                                    int ackQuorumSize,
+                                                                    int numOfBookiesInDefaultRack,
+                                                                    int numOfRacks,
+                                                                    int numOfBookiesPerRack) throws Exception {
         String defaultRackForThisTest = NetworkTopology.DEFAULT_REGION_AND_RACK;
         repp.uninitalize();
         updateMyRack(defaultRackForThisTest);
 
         ClientConfiguration conf = new ClientConfiguration(this.conf);
-        conf.setMinNumRacksPerWriteQuorum(2);
-        conf.setEnforceMinNumRacksPerWriteQuorum(true);
-        conf.setEnforceMinNumFaultDomainsForWrite(true);
+        conf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
 
         TestStatsProvider statsProvider = new TestStatsProvider();
         TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, statsLogger);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, statsLogger);
         repp.withDefaultRack(defaultRackForThisTest);
-
-        int ensembleSize = 7;
-        int writeQuorumSize = 3;
-        int ackQuorumSize = 2;
-
-        int numOfBookiesInDefaultRack = 7;
-        int numOfRacks = 3;
-        int numOfBookiesPerRack = 3;
 
         List<BookieSocketAddress> bookieSocketAddressesDefaultRack = new ArrayList<>();
         List<BookieSocketAddress> bookieSocketAddressesNonDefaultRack = new ArrayList<>();
@@ -2299,7 +2291,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 bookiesForEntry.add(ensemble.get(ws.get(i)));
             }
 
-            assertFalse(repp.areAckedBookiesAdheringToPlacementPolicy(bookiesForEntry));
+            assertFalse(repp.areAckedBookiesAdheringToPlacementPolicy(bookiesForEntry, writeQuorumSize, ackQuorumSize));
         }
 
         // Case 2 : Bookies in the ensemble from the different racks
@@ -2319,7 +2311,17 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 bookiesForEntry.add(ensemble.get(ws.get(i)));
             }
 
-            assertTrue(repp.areAckedBookiesAdheringToPlacementPolicy(bookiesForEntry));
+            assertTrue(repp.areAckedBookiesAdheringToPlacementPolicy(bookiesForEntry, writeQuorumSize, ackQuorumSize));
         }
+    }
+
+    /**
+     * This tests areAckedBookiesAdheringToPlacementPolicy function in RackawareEnsemblePlacementPolicy.
+     */
+    @Test
+    public void testAreAckedBookiesAdheringToPlacementPolicy() throws Exception {
+        testAreAckedBookiesAdheringToPlacementPolicyHelper(2, 7, 3, 2, 7, 3, 3);
+        testAreAckedBookiesAdheringToPlacementPolicyHelper(4, 6, 3, 2, 6, 3, 3);
+        testAreAckedBookiesAdheringToPlacementPolicyHelper(5, 7, 5, 3, 7, 5, 2);
     }
 }
