@@ -2233,4 +2233,93 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                     + bookiesOfDefaultRackInEnsemble, bookiesOfDefaultRackInEnsemble.isEmpty());
         }
     }
+
+    /**
+     * This tests areAckedBookiesAdheringToPlacementPolicy function in RackawareEnsemblePlacementPolicy.
+     */
+    @Test
+    public void testAreAckedBookiesAdheringToPlacementPolicy() throws Exception {
+        String defaultRackForThisTest = NetworkTopology.DEFAULT_REGION_AND_RACK;
+        repp.uninitalize();
+        updateMyRack(defaultRackForThisTest);
+
+        ClientConfiguration conf = new ClientConfiguration(this.conf);
+        conf.setMinNumRacksPerWriteQuorum(2);
+        conf.setEnforceMinNumRacksPerWriteQuorum(true);
+        conf.setEnforceMinNumFaultDomainsForWrite(true);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, statsLogger);
+        repp.withDefaultRack(defaultRackForThisTest);
+
+        int ensembleSize = 7;
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 2;
+
+        int numOfBookiesInDefaultRack = 7;
+        int numOfRacks = 3;
+        int numOfBookiesPerRack = 3;
+
+        List<BookieSocketAddress> bookieSocketAddressesDefaultRack = new ArrayList<>();
+        List<BookieSocketAddress> bookieSocketAddressesNonDefaultRack = new ArrayList<>();
+        Set<BookieSocketAddress> writableBookies;
+        Set<BookieSocketAddress> bookiesForEntry = new HashSet<>();
+
+        for (int i = 0; i < numOfRacks; i++) {
+            for (int j = 0; j < numOfBookiesPerRack; j++) {
+                int index = i * numOfBookiesPerRack + j;
+                bookieSocketAddressesNonDefaultRack.add(new BookieSocketAddress("128.0.0." + index, 3181));
+                StaticDNSResolver.addNodeToRack(bookieSocketAddressesNonDefaultRack.get(index).getHostName(),
+                                                "/default-region/r" + i);
+            }
+        }
+
+        for (int i = 0; i < numOfBookiesInDefaultRack; i++) {
+            bookieSocketAddressesDefaultRack.add(new BookieSocketAddress("127.0.0." + (i + 100), 3181));
+            StaticDNSResolver.addNodeToRack(bookieSocketAddressesDefaultRack.get(i).getHostName(),
+                                            defaultRackForThisTest);
+        }
+
+        writableBookies = new HashSet<>(bookieSocketAddressesNonDefaultRack);
+        writableBookies.addAll(bookieSocketAddressesDefaultRack);
+        repp.onClusterChanged(writableBookies, new HashSet<>());
+
+        // Case 1 : Bookies in the ensemble from the same rack.
+        // Manually crafting the ensemble here to create the error case when the check should return false
+
+        List<BookieSocketAddress> ensemble = new ArrayList<>(bookieSocketAddressesDefaultRack);
+        for (int entryId = 0; entryId < 10; entryId++) {
+            DistributionSchedule ds = new RoundRobinDistributionSchedule(writeQuorumSize, ackQuorumSize, ensembleSize);
+            DistributionSchedule.WriteSet ws = ds.getWriteSet(entryId);
+
+            for (int i = 0; i < ws.size(); i++) {
+                bookiesForEntry.add(ensemble.get(ws.get(i)));
+            }
+
+            assertFalse(repp.areAckedBookiesAdheringToPlacementPolicy(bookiesForEntry));
+        }
+
+        // Case 2 : Bookies in the ensemble from the different racks
+
+        EnsemblePlacementPolicy.PlacementResult<List<BookieSocketAddress>>
+                ensembleResponse = repp.newEnsemble(ensembleSize,
+                                                    writeQuorumSize,
+                                                    ackQuorumSize,
+                                                    null,
+                                                    new HashSet<>());
+        ensemble = ensembleResponse.getResult();
+        for (int entryId = 0; entryId < 10; entryId++) {
+            DistributionSchedule ds = new RoundRobinDistributionSchedule(writeQuorumSize, ackQuorumSize, ensembleSize);
+            DistributionSchedule.WriteSet ws = ds.getWriteSet(entryId);
+
+            for (int i = 0; i < ws.size(); i++) {
+                bookiesForEntry.add(ensemble.get(ws.get(i)));
+            }
+
+            assertTrue(repp.areAckedBookiesAdheringToPlacementPolicy(bookiesForEntry));
+        }
+    }
 }

@@ -1079,7 +1079,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
             // Check to make sure that ensemble is writing to `minNumberOfRacks`'s number of racks at least.
             if (LOG.isDebugEnabled()) {
-                LOG.debug("areAckedBookiesAdheringToPlacementPolicy returning {} because number of racks = {} and " + "minNumRacksPerWriteQuorum = {}",
+                LOG.debug("areAckedBookiesAdheringToPlacementPolicy returning {} because number of racks = {} and "
+                          + "minNumRacksPerWriteQuorum = {}",
                           rackCounter.size() >= minNumRacksPerWriteQuorum,
                           rackCounter.size(),
                           minNumRacksPerWriteQuorum);
