@@ -97,6 +97,7 @@ public class TestTxnId extends TestDistributedLogBase {
         conf.setMetadataServiceUri("zk://" + zkServers + "/ledgers");
         conf.setBookiePort(0);
         conf.setDiskUsageThreshold(0.99f);
+        conf.setAllowLoopback(true);
         conf.setJournalDirName(journalDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
