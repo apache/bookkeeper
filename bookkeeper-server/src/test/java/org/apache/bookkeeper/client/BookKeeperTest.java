@@ -1066,14 +1066,14 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeToLedger.start();
 
             // Waiting and checking to make sure that write has not succeeded
-            countDownLatch.await(2, TimeUnit.SECONDS);
+            countDownLatch.await(conf.getAddEntryTimeout(), TimeUnit.SECONDS);
             assertEquals("Write succeeded but should not have", -1, lh.lastAddConfirmed);
 
             // Wake the bookie
             sleepLatchCase1.countDown();
 
             // Waiting and checking to make sure that write has succeeded
-            writeToLedger.join(1000);
+            writeToLedger.join(conf.getAddEntryTimeout() * 1000);
             assertEquals("Write did not succeed but should have", 0, lh.lastAddConfirmed);
 
             assertEquals(statsLogger
@@ -1100,7 +1100,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeToLedger2.start();
 
             // Waiting and checking to make sure that write has failed
-            writeToLedger2.join(6000);
+            writeToLedger2.join((conf.getAddEntryQuorumTimeout() + 2) * 1000);
             assertEquals("Write succeeded but should not have", 0, lh.lastAddConfirmed);
 
             sleepLatchCase2.countDown();

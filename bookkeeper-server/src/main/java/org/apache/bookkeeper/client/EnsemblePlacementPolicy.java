@@ -421,6 +421,10 @@ public interface EnsemblePlacementPolicy {
      *
      * @param ackedBookies
      *            list of BookieSocketAddress of bookies that have acknowledged a write.
+     * @param writeQuorumSize
+     *            writeQuorumSize of the ensemble
+     * @param ackQuorumSize
+     *            ackQuorumSize of the ensemble
      * @return
      */
     default boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies,

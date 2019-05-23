@@ -1073,11 +1073,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         readLock.lock();
         try {
             for (BookieSocketAddress bookie : ackedBookies) {
-                try {
-                    rackCounter.add(knownBookies.get(bookie).getNetworkLocation());
-                } catch (Exception e) {
-                    LOG.warn("Received exception while trying to get network location of bookie: {}", bookie, e);
-                }
+                rackCounter.add(knownBookies.get(bookie).getNetworkLocation());
             }
 
             // Check to make sure that ensemble is writing to `minNumberOfRacks`'s number of racks at least.
