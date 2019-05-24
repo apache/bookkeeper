@@ -36,6 +36,7 @@ interface PerChannelBookieClientFactory {
      * @return the client connected to address.
      * @throws SecurityException
      */
-    PerChannelBookieClient create(BookieSocketAddress address,
-            PerChannelBookieClientPool pcbcPool, SecurityHandlerFactory shFactory) throws SecurityException;
+    PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool,
+                                  SecurityHandlerFactory shFactory,
+                                  boolean forceUseV3) throws SecurityException;
 }
