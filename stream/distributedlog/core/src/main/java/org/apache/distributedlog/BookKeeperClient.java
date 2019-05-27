@@ -239,8 +239,7 @@ public class BookKeeperClient {
             public void deleteComplete(int rc, Object ctx) {
                 if (BKException.Code.OK == rc) {
                     promise.complete(null);
-                } else if (BKException.Code.NoSuchLedgerExistsException == rc
-                    || Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
+                } else if (Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
                     if (ignoreNonExistentLedger) {
                         promise.complete(null);
                     } else {
