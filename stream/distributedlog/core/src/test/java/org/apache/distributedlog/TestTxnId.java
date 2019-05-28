@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsProvider;
-import org.apache.distributedlog.api.LogWriter;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -41,7 +40,10 @@ public class TestTxnId extends TestDistributedLogBase {
         DistributedLogConfiguration conf = new DistributedLogConfiguration()
             .setEnsembleSize(5)
             .setWriteQuorumSize(5)
-            .setAckQuorumSize(5);
+            .setAckQuorumSize(5)
+            .setLogSegmentRollingIntervalMinutes(0)
+            .setLogSegmentRollingConcurrency(-1)
+            .setMaxLogSegmentBytes(400000);
 
         long entryId = 0;
         List<BookieServer> extraBookies = new ArrayList<>();
@@ -73,9 +75,13 @@ public class TestTxnId extends TestDistributedLogBase {
             extraBookies.add(startExtraBookie());
 
             try (BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
-                 LogWriter writer = dlm.startLogSegmentNonPartitioned()) {
-                writer.write(DLMTestUtil.getLogRecordInstance(dlm.getLastTxId() + 1, 100000));
-                writer.commit();
+                 BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned()) {
+                long firstTxid = dlm.getLastTxId() + 1;
+                for (int i = 0; i < 20; i++) {
+                    logger.info("Writing entry {}", i);
+                    writer.write(DLMTestUtil.getLogRecordInstance(firstTxid + i, 100000)).join();
+                    Thread.sleep(100);
+                }
             }
         } finally {
             extraBookies.forEach(b -> b.shutdown());

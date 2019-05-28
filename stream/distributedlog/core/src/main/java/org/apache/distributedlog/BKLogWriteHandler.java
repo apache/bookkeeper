@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -145,9 +146,24 @@ class BKLogWriteHandler extends BKLogHandler {
                         segmentList,
                         recoverLogSegmentFunction,
                         scheduler
-                    ).thenApply(GetLastTxIdFunction.INSTANCE);
+                    ).thenApply(removeEmptySegments)
+                     .thenApply(GetLastTxIdFunction.INSTANCE);
                 }
             };
+    private final Function<List<LogSegmentMetadata>, List<LogSegmentMetadata>> removeEmptySegments =
+        new Function<List<LogSegmentMetadata>, List<LogSegmentMetadata>>() {
+            @Override
+            public List<LogSegmentMetadata> apply(List<LogSegmentMetadata> segmentList) {
+                Iterator<LogSegmentMetadata> iter = segmentList.iterator();
+                while (iter.hasNext()) {
+                    LogSegmentMetadata segment = iter.next();
+                    if (segment == null) {
+                        iter.remove();
+                    }
+                }
+                return segmentList;
+            }
+        };
 
     // Stats
     private final StatsLogger perLogStatsLogger;
@@ -1033,7 +1049,14 @@ class BKLogWriteHandler extends BKLogHandler {
                     + " please check logs."));
             } else if (endTxId == DistributedLogConstants.EMPTY_LOGSEGMENT_TX_ID) {
                 LOG.info("Inprogress segment {} is empty, deleting", l);
-                return deleteLogSegment(l).thenApply((result) -> null);
+
+                return deleteLogSegment(l).thenApply(
+                        (result) -> {
+                            synchronized (inprogressLSSNs) {
+                                inprogressLSSNs.remove((Long) l.getLogSegmentSequenceNumber());
+                            }
+                            return null;
+                        });
             } else {
                 CompletableFuture<LogSegmentMetadata> promise = new CompletableFuture<LogSegmentMetadata>();
                 doCompleteAndCloseLogSegment(
