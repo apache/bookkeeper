@@ -921,10 +921,11 @@ public class Bookie extends BookieCriticalThread {
                 logPosition = markedLog.getLogFileOffset();
             }
             LOG.info("Replaying journal {} from position {}", id, logPosition);
-            journal.scanJournal(id, logPosition, scanner);
-            // Update LastLogMark to Long.MAX_VALUE position after replaying journal
+            long scanOffset = journal.scanJournal(id, logPosition, scanner);
+            // Update LastLogMark after completely replaying journal
+            // scanOffset will point to EOF position
             // After LedgerStorage flush, SyncThread should persist this to disk
-            journal.setLastLogMarkToEof(id);
+            journal.setLastLogMark(id, scanOffset);
         }
     }
 
