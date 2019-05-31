@@ -770,6 +770,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * @param journalId Journal Log Id
      * @param journalPos Offset to start scanning
      * @param scanner Scanner to handle entries
+     * @return scanOffset - represents the byte till which journal was read
      * @throws IOException
      */
     public long scanJournal(long journalId, long journalPos, JournalScanner scanner)
