@@ -644,6 +644,9 @@ groups:
     description: |
       'ignoreLocalNodeInPlacementPolicy' specifies whether to ignore localnode in the internal logic of placement policy. If it is not possible or useful to use Bookkeeper client node's (or AutoReplicator) rack/region info. for placement policy then it is better to ignore localnode instead of false alarming with log lines and metrics.
     default: false
+  - param: enforceMinNumFaultDomainsForWrite
+    description: |
+      'enforceMinNumFaultDomainsForWrite' enforces EnsemblePlacementPolicy to check if a write has made it to bookies in 'minNumRacksPerWriteQuorum' number of fault domains, before acknowledging the write back.
 
 - name: AutoRecovery auditor settings
   params:

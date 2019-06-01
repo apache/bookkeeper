@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.BookKeeperClientStats.WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -31,9 +33,11 @@ import static org.junit.Assert.fail;
 import io.netty.util.IllegalReferenceCountException;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,8 +52,12 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -955,5 +963,153 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         bk.deleteLedger(ledgerId);
         bk.deleteLedger(ledgerId);
         bk.close();
+    }
+
+    /**
+     * Mock of RackawareEnsemblePlacementPolicy. Overrides areAckedBookiesAdheringToPlacementPolicy to only return true
+     * when ackedBookies consists of writeQuorumSizeToUseForTesting bookies.
+     */
+    public static class MockRackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicy {
+        private int writeQuorumSizeToUseForTesting;
+        private CountDownLatch conditionFirstInvocationLatch;
+
+        void setWriteQuorumSizeToUseForTesting(int writeQuorumSizeToUseForTesting) {
+            this.writeQuorumSizeToUseForTesting = writeQuorumSizeToUseForTesting;
+        }
+
+        void setConditionFirstInvocationLatch(CountDownLatch conditionFirstInvocationLatch) {
+            this.conditionFirstInvocationLatch = conditionFirstInvocationLatch;
+        }
+
+        @Override
+        public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies,
+                                                                int writeQuorumSize,
+                                                                int ackQuorumSize) {
+            conditionFirstInvocationLatch.countDown();
+            return ackedBookies.size() == writeQuorumSizeToUseForTesting;
+        }
+    }
+
+    /**
+     * Test to verify that PendingAddOp waits for success condition from areAckedBookiesAdheringToPlacementPolicy
+     * before returning success to client. Also tests working of WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS and
+     * WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS counters.
+     */
+    @Test
+    public void testEnforceMinNumFaultDomainsForWrite() throws Exception {
+        byte[] data = "foobar".getBytes();
+        byte[] password = "testPasswd".getBytes();
+
+        startNewBookie();
+        startNewBookie();
+
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        conf.setEnsemblePlacementPolicy(MockRackawareEnsemblePlacementPolicy.class);
+
+        conf.setAddEntryTimeout(2);
+        conf.setAddEntryQuorumTimeout(4);
+        conf.setEnforceMinNumFaultDomainsForWrite(true);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+
+        // Abnormal values for testing to prevent timeouts
+        BookKeeperTestClient bk = new BookKeeperTestClient(conf, statsProvider);
+        StatsLogger statsLogger = bk.getStatsLogger();
+
+        int ensembleSize = 3;
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 2;
+
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        MockRackawareEnsemblePlacementPolicy currPlacementPolicy =
+                (MockRackawareEnsemblePlacementPolicy) bk.getPlacementPolicy();
+        currPlacementPolicy.setConditionFirstInvocationLatch(countDownLatch);
+        currPlacementPolicy.setWriteQuorumSizeToUseForTesting(writeQuorumSize);
+
+        BookieSocketAddress bookieToSleep;
+
+        try (LedgerHandle lh = bk.createLedger(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password)) {
+            CountDownLatch sleepLatchCase1 = new CountDownLatch(1);
+            CountDownLatch sleepLatchCase2 = new CountDownLatch(1);
+
+            // Put all non ensemble bookies to sleep
+            LOG.info("Putting all non ensemble bookies to sleep.");
+            for (BookieServer bookieServer : bs) {
+                try {
+                    if (!lh.getCurrentEnsemble().contains(bookieServer.getLocalAddress())) {
+                        sleepBookie(bookieServer.getLocalAddress(), sleepLatchCase2);
+                    }
+                } catch (UnknownHostException ignored) {}
+            }
+
+            Thread writeToLedger = new Thread(() -> {
+                try {
+                    LOG.info("Initiating write for entry");
+                    long entryId = lh.addEntry(data);
+                    LOG.info("Wrote entry with entryId = {}", entryId);
+                } catch (InterruptedException | BKException ignored) {
+                }
+            });
+
+            bookieToSleep = lh.getCurrentEnsemble().get(0);
+
+            LOG.info("Putting picked bookie to sleep");
+            sleepBookie(bookieToSleep, sleepLatchCase1);
+
+            assertEquals(statsLogger
+                           .getCounter(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS)
+                           .get()
+                           .longValue(), 0);
+
+            // Trying to write entry
+            writeToLedger.start();
+
+            // Waiting and checking to make sure that write has not succeeded
+            countDownLatch.await(conf.getAddEntryTimeout(), TimeUnit.SECONDS);
+            assertEquals("Write succeeded but should not have", -1, lh.lastAddConfirmed);
+
+            // Wake the bookie
+            sleepLatchCase1.countDown();
+
+            // Waiting and checking to make sure that write has succeeded
+            writeToLedger.join(conf.getAddEntryTimeout() * 1000);
+            assertEquals("Write did not succeed but should have", 0, lh.lastAddConfirmed);
+
+            assertEquals(statsLogger
+                           .getCounter(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS)
+                           .get()
+                           .longValue(), 1);
+
+            // AddEntry thread for second scenario
+            Thread writeToLedger2 = new Thread(() -> {
+                try {
+                    LOG.info("Initiating write for entry");
+                    long entryId = lh.addEntry(data);
+                    LOG.info("Wrote entry with entryId = {}", entryId);
+                } catch (InterruptedException | BKException ignored) {
+                }
+            });
+
+            bookieToSleep = lh.getCurrentEnsemble().get(1);
+
+            LOG.info("Putting picked bookie to sleep");
+            sleepBookie(bookieToSleep, sleepLatchCase2);
+
+            // Trying to write entry
+            writeToLedger2.start();
+
+            // Waiting and checking to make sure that write has failed
+            writeToLedger2.join((conf.getAddEntryQuorumTimeout() + 2) * 1000);
+            assertEquals("Write succeeded but should not have", 0, lh.lastAddConfirmed);
+
+            sleepLatchCase2.countDown();
+
+            assertEquals(statsLogger.getCounter(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS).get().longValue(),
+                         2);
+
+            assertEquals(statsLogger.getCounter(WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS).get().longValue(),
+                         1);
+        }
     }
 }

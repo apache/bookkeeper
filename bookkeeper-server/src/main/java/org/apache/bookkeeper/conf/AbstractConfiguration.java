@@ -159,6 +159,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // enforce minimum number of racks per write quorum
     public static final String ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM = "enforceMinNumRacksPerWriteQuorum";
 
+    // enforce minimum number of fault domains for write
+    public static final String ENFORCE_MIN_NUM_FAULT_DOMAINS_FOR_WRITE = "enforceMinNumFaultDomainsForWrite";
+
     // ignore usage of local node in the internal logic of placement policy
     public static final String IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY = "ignoreLocalNodeInPlacementPolicy";
 
@@ -844,6 +847,20 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public boolean getEnforceMinNumRacksPerWriteQuorum() {
         return getBoolean(ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM, false);
+    }
+
+    /**
+     * Set the flag to enforce minimum number of fault domains for write.
+     */
+    public void setEnforceMinNumFaultDomainsForWrite(boolean enforceMinNumFaultDomainsForWrite) {
+        setProperty(ENFORCE_MIN_NUM_FAULT_DOMAINS_FOR_WRITE, enforceMinNumFaultDomainsForWrite);
+    }
+
+    /**
+     * Get the flag to enforce minimum number of fault domains for write.
+     */
+    public boolean getEnforceMinNumFaultDomainsForWrite() {
+        return getBoolean(ENFORCE_MIN_NUM_FAULT_DOMAINS_FOR_WRITE, false);
     }
 
     /**

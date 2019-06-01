@@ -141,6 +141,24 @@ public class BookKeeperClientStatsImpl implements BookKeeperClientStats {
     )
     private final Counter speculativeReadCounter;
 
+    @StatsDoc(
+        name = WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY,
+        help = "The delay in write completion because min number of fault domains was not reached"
+    )
+    private final OpStatsLogger writeDelayedDueToNotEnoughFaultDomainsLatency;
+
+    @StatsDoc(
+        name = WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS,
+        help = "The number of times write completion was delayed because min number of fault domains was not reached"
+    )
+    private final Counter writeDelayedDueToNotEnoughFaultDomains;
+
+    @StatsDoc(
+        name = WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS,
+        help = "The number of times write completion timed out because min number of fault domains was not reached"
+    )
+    private final Counter writeTimedOutDueToNotEnoughFaultDomains;
+
 
     public BookKeeperClientStatsImpl(StatsLogger stats) {
         this.stats = stats;
@@ -166,6 +184,12 @@ public class BookKeeperClientStatsImpl implements BookKeeperClientStats {
         this.clientChannelWriteWaitStats = stats.getOpStatsLogger(CLIENT_CHANNEL_WRITE_WAIT);
 
         speculativeReadCounter = stats.getCounter(SPECULATIVE_READ_COUNT);
+
+        this.writeDelayedDueToNotEnoughFaultDomainsLatency =
+                stats.getOpStatsLogger(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY);
+        this.writeDelayedDueToNotEnoughFaultDomains = stats.getCounter(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS);
+        this.writeTimedOutDueToNotEnoughFaultDomains =
+                stats.getCounter(WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS);
     }
 
     @Override
@@ -251,6 +275,18 @@ public class BookKeeperClientStatsImpl implements BookKeeperClientStats {
     @Override
     public Counter getEnsembleBookieDistributionCounter(String bookie) {
         return stats.getCounter(LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + "-" + bookie);
+    }
+    @Override
+    public OpStatsLogger getWriteDelayedDueToNotEnoughFaultDomainsLatency() {
+        return writeDelayedDueToNotEnoughFaultDomainsLatency;
+    }
+    @Override
+    public Counter getWriteDelayedDueToNotEnoughFaultDomains() {
+        return writeDelayedDueToNotEnoughFaultDomains;
+    }
+    @Override
+    public Counter getWriteTimedOutDueToNotEnoughFaultDomains() {
+        return writeTimedOutDueToNotEnoughFaultDomains;
     }
     @Override
     public void registerPendingAddsGauge(Gauge<Integer> gauge) {

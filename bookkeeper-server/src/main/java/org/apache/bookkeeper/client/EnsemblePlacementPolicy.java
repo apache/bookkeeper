@@ -415,6 +415,25 @@ public interface EnsemblePlacementPolicy {
     }
 
     /**
+     * Returns true if the bookies that have acknowledged a write adhere to the minimum fault domains as defined in the
+     * placement policy in use. Ex: In the case of RackawareEnsemblePlacementPolicy, bookies belong to at least
+     * 'minNumRacksPerWriteQuorum' number of racks.
+     *
+     * @param ackedBookies
+     *            list of BookieSocketAddress of bookies that have acknowledged a write.
+     * @param writeQuorumSize
+     *            writeQuorumSize of the ensemble
+     * @param ackQuorumSize
+     *            ackQuorumSize of the ensemble
+     * @return
+     */
+    default boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies,
+                                                             int writeQuorumSize,
+                                                             int ackQuorumSize) {
+        return true;
+    }
+
+    /**
      * Result of a placement calculation against a placement policy.
      */
     final class PlacementResult<T> {
