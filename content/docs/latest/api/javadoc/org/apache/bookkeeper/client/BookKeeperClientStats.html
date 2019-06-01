@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6,"i15":6,"i16":6,"i17":6,"i18":6,"i19":6,"i20":6,"i21":17,"i22":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6,"i15":6,"i16":6,"i17":6,"i18":6,"i19":6,"i20":6,"i21":6,"i22":6,"i23":6,"i24":17,"i25":6};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],16:["t5","Default Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -331,7 +331,19 @@ var activeTableTab = "activeTableTab";
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS">WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY">WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#WRITE_LAC_OP">WRITE_LAC_OP</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS">WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS</a></span></code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -429,14 +441,26 @@ var activeTableTab = "activeTableTab";
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#getSpeculativeReadCounter--">getSpeculativeReadCounter</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i20" class="altColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#getWriteDelayedDueToNotEnoughFaultDomains--">getWriteDelayedDueToNotEnoughFaultDomains</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i21" class="rowColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#getWriteDelayedDueToNotEnoughFaultDomainsLatency--">getWriteDelayedDueToNotEnoughFaultDomainsLatency</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#getWriteLacOpLogger--">getWriteLacOpLogger</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i23" class="rowColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#getWriteTimedOutDueToNotEnoughFaultDomains--">getWriteTimedOutDueToNotEnoughFaultDomains</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#newInstance-org.apache.bookkeeper.stats.StatsLogger-">newInstance</a></span>(<a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;stats)</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#registerPendingAddsGauge-org.apache.bookkeeper.stats.Gauge-">registerPendingAddsGauge</a></span>(<a href="../../../../org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;gauge)</code>&nbsp;</td>
 </tr>
@@ -1121,13 +1145,52 @@ var activeTableTab = "activeTableTab";
 <a name="NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK</h4>
 <pre>static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK</pre>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../constant-values.html#org.apache.bookkeeper.client.BookKeeperClientStats.NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS</h4>
+<pre>static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.bookkeeper.client.BookKeeperClientStats.WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY</h4>
+<pre>static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.bookkeeper.client.BookKeeperClientStats.WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS</h4>
+<pre>static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.bookkeeper.client.BookKeeperClientStats.WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS">Constant Field Values</a></dd>
 </dl>
 </li>
 </ul>
@@ -1326,6 +1389,33 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <h4>getClientChannelWriteWaitLogger</h4>
 <pre><a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a>&nbsp;getClientChannelWriteWaitLogger()</pre>
+</li>
+</ul>
+<a name="getWriteDelayedDueToNotEnoughFaultDomainsLatency--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getWriteDelayedDueToNotEnoughFaultDomainsLatency</h4>
+<pre><a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a>&nbsp;getWriteDelayedDueToNotEnoughFaultDomainsLatency()</pre>
+</li>
+</ul>
+<a name="getWriteDelayedDueToNotEnoughFaultDomains--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getWriteDelayedDueToNotEnoughFaultDomains</h4>
+<pre><a href="../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&nbsp;getWriteDelayedDueToNotEnoughFaultDomains()</pre>
+</li>
+</ul>
+<a name="getWriteTimedOutDueToNotEnoughFaultDomains--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getWriteTimedOutDueToNotEnoughFaultDomains</h4>
+<pre><a href="../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&nbsp;getWriteTimedOutDueToNotEnoughFaultDomains()</pre>
 </li>
 </ul>
 <a name="registerPendingAddsGauge-org.apache.bookkeeper.stats.Gauge-">

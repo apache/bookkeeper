@@ -162,38 +162,42 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#enableStickyReads">enableStickyReads</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#enforceMinNumFaultDomainsForWrite">enforceMinNumFaultDomainsForWrite</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#explicitLacInterval">explicitLacInterval</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#maxAllowedEnsembleChanges">maxAllowedEnsembleChanges</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) com.google.common.base.Optional&lt;<a href="../../../../org/apache/bookkeeper/client/SpeculativeRequestExecutionPolicy.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutionPolicy</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#readLACSpeculativeRequestPolicy">readLACSpeculativeRequestPolicy</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) com.google.common.base.Optional&lt;<a href="../../../../org/apache/bookkeeper/client/SpeculativeRequestExecutionPolicy.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutionPolicy</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#readSpeculativeRequestPolicy">readSpeculativeRequestPolicy</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#recoveryReadBatchSize">recoveryReadBatchSize</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#throttleValue">throttleValue</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#timeoutMonitorIntervalSec">timeoutMonitorIntervalSec</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#useV2WireProtocol">useV2WireProtocol</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ClientInternalConf.html#waitForWriteSetMs">waitForWriteSetMs</a></span></code>&nbsp;</td>
 </tr>
@@ -394,10 +398,19 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <a name="useV2WireProtocol">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>useV2WireProtocol</h4>
 <pre>final&nbsp;boolean useV2WireProtocol</pre>
+</li>
+</ul>
+<a name="enforceMinNumFaultDomainsForWrite">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>enforceMinNumFaultDomainsForWrite</h4>
+<pre>final&nbsp;boolean enforceMinNumFaultDomainsForWrite</pre>
 </li>
 </ul>
 </li>

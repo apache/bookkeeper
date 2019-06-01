@@ -176,6 +176,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ClientInternalConf.html#addEntryQuorumTimeoutNanos">addEntryQuorumTimeoutNanos</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ClientInternalConf.html" title="class in org.apache.bookkeeper.client">ClientInternalConf</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#addEntrySuccessBookies">addEntrySuccessBookies</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/AsyncCallback.AddLacCallback.html#addLacComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.lang.Object-">addLacComplete(int, LedgerHandle, Object)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/AsyncCallback.AddLacCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddLacCallback</a></dt>
 <dd>
 <div class="block">Callback declaration.</div>
@@ -308,6 +310,13 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackQuorumCoverageSet.html#apply-org.apache.bookkeeper.net.BookieNode-">apply(BookieNode)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackQuorumCoverageSet.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackQuorumCoverageSet</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.TruePredicate.html#apply-org.apache.bookkeeper.net.BookieNode-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-">apply(BookieNode, ITopologyAwareEnsemblePlacementPolicy.Ensemble)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.TruePredicate.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.TruePredicate</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#areAckedBookiesAdheringToPlacementPolicy-java.util.Set-int-int-">areAckedBookiesAdheringToPlacementPolicy(Set&lt;BookieSocketAddress&gt;, int, int)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></dt>
+<dd>
+<div class="block">Returns true if the bookies that have acknowledged a write adhere to the minimum fault domains as defined in the
+ placement policy in use.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#areAckedBookiesAdheringToPlacementPolicy-java.util.Set-int-int-">areAckedBookiesAdheringToPlacementPolicy(Set&lt;BookieSocketAddress&gt;, int, int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#areEntriesOfLedgerStoredInTheBookie-long-org.apache.bookkeeper.net.BookieSocketAddress-org.apache.bookkeeper.meta.LedgerManager-">areEntriesOfLedgerStoredInTheBookie(long, BookieSocketAddress, LedgerManager)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>&nbsp;</dd>
@@ -1853,11 +1862,15 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerRecoveryOp.html#endEntryToRead">endEntryToRead</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerRecoveryOp.html" title="class in org.apache.bookkeeper.client">LedgerRecoveryOp</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#ENFORCE_MIN_NUM_FAULT_DOMAINS_FOR_WRITE">ENFORCE_MIN_NUM_FAULT_DOMAINS_FOR_WRITE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM">ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#enforceDurability">enforceDurability</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#enforceDurabilityInReplace">enforceDurabilityInReplace</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ClientInternalConf.html#enforceMinNumFaultDomainsForWrite">enforceMinNumFaultDomainsForWrite</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ClientInternalConf.html" title="class in org.apache.bookkeeper.client">ClientInternalConf</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#enforceMinNumRacksPerWriteQuorum">enforceMinNumRacksPerWriteQuorum</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
@@ -2631,6 +2644,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getEnableTaskExecutionStats--">getEnableTaskExecutionStats()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Whether to enable recording task execution stats.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getEnforceMinNumFaultDomainsForWrite--">getEnforceMinNumFaultDomainsForWrite()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Get the flag to enforce minimum number of fault domains for write.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getEnforceMinNumRacksPerWriteQuorum--">getEnforceMinNumRacksPerWriteQuorum()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>
@@ -3882,6 +3899,14 @@
 <dd>
 <div class="block">Get the number of bytes used as capacity for the write buffer.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getWriteDelayedDueToNotEnoughFaultDomains--">getWriteDelayedDueToNotEnoughFaultDomains()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getWriteDelayedDueToNotEnoughFaultDomains--">getWriteDelayedDueToNotEnoughFaultDomains()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getWriteDelayedDueToNotEnoughFaultDomainsLatency--">getWriteDelayedDueToNotEnoughFaultDomainsLatency()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getWriteDelayedDueToNotEnoughFaultDomainsLatency--">getWriteDelayedDueToNotEnoughFaultDomainsLatency()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/WriteFlag.html#getWriteFlags-int-">getWriteFlags(int)</a></span> - Static method in enum org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a></dt>
 <dd>
 <div class="block">Converts a set of flags from a binary representation.</div>
@@ -3912,6 +3937,10 @@
 <dd>
 <div class="block">Return a <a href="org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client"><code>DistributionSchedule.WriteSet</code></a> suitable for reading a particular entry.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getWriteTimedOutDueToNotEnoughFaultDomains--">getWriteTimedOutDueToNotEnoughFaultDomains()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getWriteTimedOutDueToNotEnoughFaultDomains--">getWriteTimedOutDueToNotEnoughFaultDomains()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getZkAvailableBookiesPath--">getZkAvailableBookiesPath()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
@@ -12797,6 +12826,10 @@
 <dd>
 <div class="block">Enable/Disable recording task execution stats.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setEnforceMinNumFaultDomainsForWrite-boolean-">setEnforceMinNumFaultDomainsForWrite(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Set the flag to enforce minimum number of fault domains for write.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setEnforceMinNumRacksPerWriteQuorum-boolean-">setEnforceMinNumRacksPerWriteQuorum(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>
 <div class="block">Set the flag to enforce minimum number of racks per write quorum.</div>
@@ -14689,7 +14722,13 @@ the order they are declared.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#WRITE_BUFFER_SIZE">WRITE_BUFFER_SIZE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS">WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY">WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#WRITE_LAC_OP">WRITE_LAC_OP</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS">WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/api/WriteAdvHandle.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">WriteAdvHandle</span></a> - Interface in <a href="org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></dt>
 <dd>
@@ -14722,6 +14761,8 @@ the order they are declared.</div>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerRecoveryOp.html#writeCount">writeCount</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerRecoveryOp.html" title="class in org.apache.bookkeeper.client">LedgerRecoveryOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#writeCounter-java.io.Writer-java.lang.String-org.apache.bookkeeper.stats.Counter-">writeCounter(Writer, String, Counter)</a></span> - Static method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusTextFormatUtil</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#writeDelayedStartTime">writeDelayedStartTime</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.Code.html#WriteException">WriteException</a></span> - Static variable in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.Code.html" title="interface in org.apache.bookkeeper.client.api">BKException.Code</a></dt>
 <dd>

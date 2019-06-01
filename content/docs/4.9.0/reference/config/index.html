@@ -2061,6 +2061,13 @@ when using either RackawareEnsemblePlacementPolicy and RegionAwareEnsemblePlacem
 </td>
       <td></td>
     </tr>
+    
+    <tr id="enforceMinNumFaultDomainsForWrite">
+      <td><code>enforceMinNumFaultDomainsForWrite</code></td>
+      <td><p>‘enforceMinNumFaultDomainsForWrite’ enforces EnsemblePlacementPolicy to check if a write has made it to bookies in ‘minNumRacksPerWriteQuorum’ number of fault domains, before acknowledging the write back.</p>
+</td>
+      <td></td>
+    </tr>
      <!-- for param in group.params -->
   </tbody>
 </table>
