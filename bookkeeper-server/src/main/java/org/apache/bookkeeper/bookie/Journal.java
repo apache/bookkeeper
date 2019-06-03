@@ -710,12 +710,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     /**
-     * Update lastLogMark of the journal,
+     * Update lastLogMark of the journal
      * Indicates that the file has been processed.
      * @param id
+     * @param scanOffset
      */
-    void setLastLogMarkToEof(Long id) {
-        lastLogMark.getCurMark().setLogMark(id, Long.MAX_VALUE);
+    void setLastLogMark(Long id, long scanOffset) {
+        lastLogMark.setCurLogMark(id, scanOffset);
     }
 
     /**
@@ -769,9 +770,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * @param journalId Journal Log Id
      * @param journalPos Offset to start scanning
      * @param scanner Scanner to handle entries
+     * @return scanOffset - represents the byte till which journal was read
      * @throws IOException
      */
-    public void scanJournal(long journalId, long journalPos, JournalScanner scanner)
+    public long scanJournal(long journalId, long journalPos, JournalScanner scanner)
         throws IOException {
         JournalChannel recLog;
         if (journalPos <= 0) {
@@ -832,6 +834,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     scanner.process(journalVersion, offset, recBuff);
                 }
             }
+            return recLog.fc.position();
         } finally {
             recLog.close();
         }
