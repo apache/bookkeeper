@@ -1277,7 +1277,7 @@ import org.slf4j.LoggerFactory;
                                     if (numLedgersDeleted % 1000 == 0) {
                                         System.out.println("Deleted " + numLedgersDeleted + " ledgers.");
                                     }
-                                } catch (BKException.BKNoSuchLedgerExistsException e) {
+                                } catch (BKException.BKNoSuchLedgerExistsOnMetadataServerException e) {
                                     int numLedgersDeleted = numLedgers.incrementAndGet();
                                     if (numLedgersDeleted % 1000 == 0) {
                                         System.out.println("Deleted " + numLedgersDeleted + " ledgers.");

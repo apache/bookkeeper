@@ -1237,7 +1237,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             driver.getReaderBKC().get().openLedgerNoRecovery(ledgerId,
                 BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes(UTF_8));
             fail("Should fail to open ledger after we delete the log");
-        } catch (BKException.BKNoSuchLedgerExistsException e) {
+        } catch (BKException.BKNoSuchLedgerExistsOnMetadataServerException e) {
             // ignore
         }
         // delete again should not throw any exception

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -134,7 +135,7 @@ public class BKLogSegmentEntryStore implements
     @Override
     public void deleteComplete(int rc, Object ctx) {
         DeleteLogSegmentRequest deleteRequest = (DeleteLogSegmentRequest) ctx;
-        if (BKException.Code.NoSuchLedgerExistsException == rc) {
+        if (Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
             logger.warn("No ledger {} found to delete for {}.",
                     deleteRequest.segment.getLogSegmentId(), deleteRequest.segment);
         } else if (BKException.Code.OK != rc) {
