@@ -134,17 +134,16 @@ public class LocalBookKeeper {
                     .connectString(zkHost + ":" + zkPort)
                     .sessionTimeoutMs(zkSessionTimeOut)
                     .build()) {
-            List<Op> multiOps = Lists.newArrayListWithExpectedSize(3);
             String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseConf);
-            multiOps.add(
-                Op.create(zkLedgersRootPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
+            ZkUtils.createFullPathOptimistic(zkc, zkLedgersRootPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
+                    CreateMode.PERSISTENT);
+            List<Op> multiOps = Lists.newArrayListWithExpectedSize(2);
             multiOps.add(
                 Op.create(zkLedgersRootPath + "/" + AVAILABLE_NODE,
                     new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
             multiOps.add(
                 Op.create(zkLedgersRootPath + "/" + AVAILABLE_NODE + "/" + READONLY,
                     new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
-
             zkc.multi(multiOps);
             // No need to create an entry for each requested bookie anymore as the
             // BookieServers will register themselves with ZooKeeper on startup.
@@ -345,7 +344,6 @@ public class LocalBookKeeper {
                                           String zkDataDir,
                                           String localBookiesConfigDirName)
             throws Exception {
-
         conf.setMetadataServiceUri(
                 newMetadataServiceUri(
                         zkHost,
@@ -353,7 +351,6 @@ public class LocalBookKeeper {
                         conf.getLedgerManagerLayoutStringFromFactoryClass(),
                         conf.getZkLedgersRootPath()));
         LocalBookKeeper lb = new LocalBookKeeper(numBookies, initialBookiePort, conf, localBookiesConfigDirName);
-
         ZooKeeperServerShim zks = null;
         File zkTmpDir = null;
         List<File> bkTmpDirs = null;
