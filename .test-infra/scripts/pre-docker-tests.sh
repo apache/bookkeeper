@@ -23,8 +23,9 @@ set -ex
 id
 ulimit -a
 pwd
-df -h
+df -Th
 ps -eo euser,pid,ppid,pgid,start,pcpu,pmem,cmd
+docker info
 docker system prune -f
 # clean up any dangling networks from previous runs
 docker network prune -f --filter name=testnetwork_*
