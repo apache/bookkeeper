@@ -30,7 +30,7 @@ mavenJob('bookkeeper_precommit_pullrequest_java11') {
     shell("id")
     shell("ulimit -a")
     shell("pwd")
-    shell("df -h")
+    shell("df -Th")
     shell("ps aux")
   }
 

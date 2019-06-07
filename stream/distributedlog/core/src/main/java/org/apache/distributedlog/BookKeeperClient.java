@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy;
@@ -238,7 +239,7 @@ public class BookKeeperClient {
             public void deleteComplete(int rc, Object ctx) {
                 if (BKException.Code.OK == rc) {
                     promise.complete(null);
-                } else if (BKException.Code.NoSuchLedgerExistsException == rc) {
+                } else if (Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
                     if (ignoreNonExistentLedger) {
                         promise.complete(null);
                     } else {

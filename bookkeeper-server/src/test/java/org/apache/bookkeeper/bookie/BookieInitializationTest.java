@@ -65,6 +65,7 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirExcepti
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.Lifecycle;
@@ -1319,6 +1320,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // do primitive checks if metrics string contains some stats
         assertTrue("Metrics should contain basic counters",
                 metrics.contains(ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED));
+        assertTrue("Metrics should contain basic counters from BookKeeper client",
+                metrics.contains(BookKeeperClientStats.CREATE_OP));
 
         // Now, hit the rest endpoint for configs
         url = new URL("http://localhost:" + nextFreePort + HttpRouter.SERVER_CONFIG);
