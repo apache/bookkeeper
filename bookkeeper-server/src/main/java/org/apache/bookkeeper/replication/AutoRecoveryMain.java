@@ -36,6 +36,7 @@ import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
@@ -91,7 +92,7 @@ public class AutoRecoveryMain {
             throws IOException, InterruptedException, KeeperException, UnavailableException,
             CompatibilityException {
         this.conf = conf;
-        this.bkc = Auditor.createBookKeeperClient(conf);
+        this.bkc = Auditor.createBookKeeperClient(conf, statsLogger.scope(BookKeeperClientStats.CLIENT_SCOPE));
         MetadataClientDriver metadataClientDriver = bkc.getMetadataClientDriver();
         metadataClientDriver.setSessionStateListener(() -> {
             LOG.error("Client connection to the Metadata server has expired, so shutting down AutoRecoveryMain!");
