@@ -40,7 +40,7 @@ freeStyleJob('bookkeeper_release_branch_47_integrationtests') {
         shell('id')
         shell('ulimit -a')
         shell('pwd')
-        shell('df -h')
+        shell('df -Th')
         shell('ps -eo euser,pid,ppid,pgid,start,pcpu,pmem,cmd')
         shell('docker network prune -f --filter name=testnetwork_*') // clean up any dangling networks from previous runs
         shell('docker system events > docker.log & echo $! > docker-log.pid')
