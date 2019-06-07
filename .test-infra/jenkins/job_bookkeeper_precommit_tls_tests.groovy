@@ -50,7 +50,7 @@ freeStyleJob('bookkeeper_precommit_tls_tests') {
     shell("id")
     shell("ulimit -a")
     shell("pwd")
-    shell("df -h")
+    shell("df -Th")
     shell("ps aux")
 
     // Build everything
