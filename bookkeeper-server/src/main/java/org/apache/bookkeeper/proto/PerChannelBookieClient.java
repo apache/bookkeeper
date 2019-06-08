@@ -388,12 +388,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             shFactory.init(NodeType.Client, conf, allocator);
         }
 
-        StringBuilder nameBuilder = new StringBuilder();
-        nameBuilder.append(addr.getHostName().replace('.', '_').replace('-', '_'))
-            .append("_").append(addr.getPort());
-
         this.statsLogger = parentStatsLogger.scope(BookKeeperClientStats.CHANNEL_SCOPE)
-            .scope(nameBuilder.toString());
+            .scope(buildStatsLoggerScopeName(addr));
 
         readEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_READ_OP);
         addEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_ADD_OP);
@@ -491,6 +487,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
 
         };
+    }
+
+    public static String buildStatsLoggerScopeName(BookieSocketAddress addr) {
+        StringBuilder nameBuilder = new StringBuilder();
+        nameBuilder.append(addr.getHostName().replace('.', '_').replace('-', '_')).append("_").append(addr.getPort());
+        return nameBuilder.toString();
     }
 
     private void completeOperation(GenericCallback<PerChannelBookieClient> op, int rc) {
