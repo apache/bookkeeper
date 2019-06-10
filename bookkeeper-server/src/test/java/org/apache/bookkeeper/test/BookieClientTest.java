@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
+import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
@@ -55,7 +56,10 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCall
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
+import org.apache.bookkeeper.proto.PerChannelBookieClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
+import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.IOUtils;
 import org.junit.After;
@@ -269,10 +273,23 @@ public class BookieClientTest {
     }
 
     @Test
-    public void testGetBookieInfo() throws IOException, InterruptedException {
+    public void testGetBookieInfoWithLimitStatsLogging() throws IOException, InterruptedException {
+        testGetBookieInfo(true);
+    }
+
+    @Test
+    public void testGetBookieInfoWithoutLimitStatsLogging() throws IOException, InterruptedException {
+        testGetBookieInfo(false);
+    }
+
+    public void testGetBookieInfo(boolean limitStatsLogging) throws IOException, InterruptedException {
         BookieSocketAddress addr = bs.getLocalAddress();
-        BookieClient bc = new BookieClientImpl(new ClientConfiguration(), new NioEventLoopGroup(),
-                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE);
+        ClientConfiguration clientConf = new ClientConfiguration();
+        clientConf.setLimitStatsLogging(limitStatsLogging);
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
+        BookieClient bc = new BookieClientImpl(clientConf, new NioEventLoopGroup(), UnpooledByteBufAllocator.DEFAULT,
+                executor, scheduler, statsLogger);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
                 | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 
@@ -281,6 +298,7 @@ public class BookieClientTest {
             long requested;
             long freeDiskSpace, totalDiskCapacity;
             CountDownLatch latch = new CountDownLatch(1);
+
             CallbackObj(long requested) {
                 this.requested = requested;
                 this.rc = 0;
@@ -299,7 +317,7 @@ public class BookieClientTest {
                         obj.freeDiskSpace = bInfo.getFreeDiskSpace();
                     }
                     if ((obj.requested
-                                & BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE) != 0) {
+                            & BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE) != 0) {
                         obj.totalDiskCapacity = bInfo.getTotalDiskSpace();
                     }
                 }
@@ -313,5 +331,13 @@ public class BookieClientTest {
         assertTrue("GetBookieInfo failed with error " + obj.rc, obj.rc == Code.OK);
         assertTrue("GetBookieInfo failed with error " + obj.rc, obj.freeDiskSpace <= obj.totalDiskCapacity);
         assertTrue("GetBookieInfo failed with error " + obj.rc, obj.totalDiskCapacity > 0);
+
+        TestOpStatsLogger perChannelBookieClientScopeOfThisAddr = (TestOpStatsLogger) statsLogger
+                .scope(BookKeeperClientStats.CHANNEL_SCOPE)
+                .scope(PerChannelBookieClient.buildStatsLoggerScopeName(addr))
+                .getOpStatsLogger(BookKeeperClientStats.GET_BOOKIE_INFO_OP);
+        int expectedBookieInfoSuccessCount = (limitStatsLogging) ? 0 : 1;
+        assertEquals("BookieInfoSuccessCount", expectedBookieInfoSuccessCount,
+                perChannelBookieClientScopeOfThisAddr.getSuccessCount());
     }
 }
