@@ -78,7 +78,7 @@
       <id>twitter</id>
       <name>Twitter repo</name>
       <layout>default</layout>
-      <url>http://maven.twttr.com</url>
+      <url>https://maven.twttr.com</url>
     </repository>
   </repositories>
 </project> 
