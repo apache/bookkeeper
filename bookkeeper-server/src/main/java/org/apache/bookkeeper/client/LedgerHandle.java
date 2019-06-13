@@ -95,6 +95,8 @@ import org.slf4j.LoggerFactory;
 public class LedgerHandle implements WriteHandle {
     static final Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
+    private static final int STICKY_READ_BOOKIE_INDEX_UNSET = -1;
+
     final ClientContext clientCtx;
 
     final byte[] ledgerKey;
@@ -199,7 +201,7 @@ public class LedgerHandle implements WriteHandle {
                 && getLedgerMetadata().getEnsembleSize() == getLedgerMetadata().getWriteQuorumSize()) {
             stickyBookieIndex = clientCtx.getPlacementPolicy().getStickyReadBookieIndex(metadata, Optional.empty());
         } else {
-            stickyBookieIndex = -1;
+            stickyBookieIndex = STICKY_READ_BOOKIE_INDEX_UNSET;
         }
 
         if (clientCtx.getConf().throttleValue > 0) {
@@ -265,7 +267,7 @@ public class LedgerHandle implements WriteHandle {
         // If sticky bookie reads are enabled, switch the sticky bookie to the
         // next bookie in the ensemble so that we avoid to keep reading from the
         // same failed bookie
-        if (stickyBookieIndex != -1) {
+        if (stickyBookieIndex != STICKY_READ_BOOKIE_INDEX_UNSET) {
             // This will be idempotent when we have multiple read errors on the
             // same bookie. The net result is that we just go to the next bookie
             stickyBookieIndex = clientCtx.getPlacementPolicy().getStickyReadBookieIndex(getLedgerMetadata(),
@@ -2020,7 +2022,7 @@ public class LedgerHandle implements WriteHandle {
      * This will include all bookies that are cotna
      */
     WriteSet getWriteSetForReadOperation(long entryId) {
-        if (stickyBookieIndex != -1) {
+        if (stickyBookieIndex != STICKY_READ_BOOKIE_INDEX_UNSET) {
             // When sticky reads are enabled we want to make sure to take
             // advantage of read-ahead (or, anyway, from efficiencies in
             // reading sequential data from disk through the page cache).
