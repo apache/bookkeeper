@@ -60,6 +60,7 @@
         <include>jline-2.11/LICENSE</include>
         <include>bouncycastle-1.60/LICENSE.html</include>
         <include>jsr-305/LICENSE</include>
+        <include>netty-3.10.1.Final/*</include>
         <include>netty-4.1.32.Final/*</include>
         <include>paranamer-2.8/LICENSE.txt</include>
         <include>protobuf-3.0.0/LICENSE</include>
