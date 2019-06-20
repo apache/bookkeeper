@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -145,9 +146,24 @@ class BKLogWriteHandler extends BKLogHandler {
                         segmentList,
                         recoverLogSegmentFunction,
                         scheduler
-                    ).thenApply(GetLastTxIdFunction.INSTANCE);
+                    ).thenApply(removeEmptySegments)
+                     .thenApply(GetLastTxIdFunction.INSTANCE);
                 }
             };
+    private final Function<List<LogSegmentMetadata>, List<LogSegmentMetadata>> removeEmptySegments =
+        new Function<List<LogSegmentMetadata>, List<LogSegmentMetadata>>() {
+            @Override
+            public List<LogSegmentMetadata> apply(List<LogSegmentMetadata> segmentList) {
+                Iterator<LogSegmentMetadata> iter = segmentList.iterator();
+                while (iter.hasNext()) {
+                    LogSegmentMetadata segment = iter.next();
+                    if (segment == null) {
+                        iter.remove();
+                    }
+                }
+                return segmentList;
+            }
+        };
 
     // Stats
     private final StatsLogger perLogStatsLogger;
@@ -479,7 +495,11 @@ class BKLogWriteHandler extends BKLogHandler {
             // no ledger seqno stored in /ledgers before
             LOG.info("No max ledger sequence number found while creating log segment {} for {}.",
                 logSegmentSeqNo, getFullyQualifiedName());
-        } else if (maxLogSegmentSequenceNo.getSequenceNumber() + 1 != logSegmentSeqNo) {
+        } else if (maxLogSegmentSequenceNo.getSequenceNumber() + 1 != logSegmentSeqNo // case 1
+                   && maxLogSegmentSequenceNo.getSequenceNumber() != logSegmentSeqNo) { // case 2
+            // case 1 is the common case, where the new log segment is 1 more than the previous
+            // case 2 can occur when the writer crashes with an empty in progress ledger. This is then deleted
+            //        on recovery, so the next new segment will have a matching sequence number
             LOG.warn("Unexpected max log segment sequence number {} for {} : list of cached segments = {}",
                 new Object[]{maxLogSegmentSequenceNo.getSequenceNumber(), getFullyQualifiedName(),
                     getCachedLogSegments(LogSegmentMetadata.DESC_COMPARATOR)});
@@ -634,10 +654,6 @@ class BKLogWriteHandler extends BKLogHandler {
         // Try storing max sequence number.
         LOG.debug("Try storing max sequence number in startLogSegment {} : {}", inprogressZnodePath, logSegmentSeqNo);
         storeMaxSequenceNumber(txn, maxLogSegmentSequenceNo, logSegmentSeqNo, true);
-
-        // Try storing max tx id.
-        LOG.debug("Try storing MaxTxId in startLogSegment  {} {}", inprogressZnodePath, txId);
-        storeMaxTxId(txn, maxTxId, txId);
 
         txn.execute().whenCompleteAsync(new FutureEventListener<Void>() {
 
@@ -1032,22 +1048,29 @@ class BKLogWriteHandler extends BKLogHandler {
                 return FutureUtils.exception(new IOException("Unrecoverable corruption,"
                     + " please check logs."));
             } else if (endTxId == DistributedLogConstants.EMPTY_LOGSEGMENT_TX_ID) {
-                // TODO: Empty ledger - Ideally we should just remove it?
-                endTxId = l.getFirstTxId();
-            }
+                LOG.info("Inprogress segment {} is empty, deleting", l);
 
-            CompletableFuture<LogSegmentMetadata> promise = new CompletableFuture<LogSegmentMetadata>();
-            doCompleteAndCloseLogSegment(
-                    l.getZNodeName(),
-                    l.getLogSegmentSequenceNumber(),
-                    l.getLogSegmentId(),
-                    l.getFirstTxId(),
-                    endTxId,
-                    recordCount,
-                    lastEntryId,
-                    lastSlotId,
-                    promise);
-            return promise;
+                return deleteLogSegment(l).thenApply(
+                        (result) -> {
+                            synchronized (inprogressLSSNs) {
+                                inprogressLSSNs.remove((Long) l.getLogSegmentSequenceNumber());
+                            }
+                            return null;
+                        });
+            } else {
+                CompletableFuture<LogSegmentMetadata> promise = new CompletableFuture<LogSegmentMetadata>();
+                doCompleteAndCloseLogSegment(
+                        l.getZNodeName(),
+                        l.getLogSegmentSequenceNumber(),
+                        l.getLogSegmentId(),
+                        l.getFirstTxId(),
+                        endTxId,
+                        recordCount,
+                        lastEntryId,
+                        lastSlotId,
+                        promise);
+                return promise;
+            }
         }
 
     }
