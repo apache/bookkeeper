@@ -95,12 +95,12 @@ public class TestDistributedLogBase {
     protected static String zkServers;
     protected static int zkPort;
     protected static int numBookies = 3;
-    private static final List<File> tmpDirs = new ArrayList<File>();
+    protected static final List<File> TMP_DIRS = new ArrayList<File>();
 
     @BeforeClass
     public static void setupCluster() throws Exception {
         File zkTmpDir = IOUtils.createTempDir("zookeeper", "distrlog");
-        tmpDirs.add(zkTmpDir);
+        TMP_DIRS.add(zkTmpDir);
         Pair<ZooKeeperServerShim, Integer> serverAndPort = LocalDLMEmulator.runZookeeperOnAnyPort(zkTmpDir);
         zks = serverAndPort.getLeft();
         zkPort = serverAndPort.getRight();
@@ -125,7 +125,7 @@ public class TestDistributedLogBase {
     public static void teardownCluster() throws Exception {
         bkutil.teardown();
         zks.stop();
-        for (File dir : tmpDirs) {
+        for (File dir : TMP_DIRS) {
             FileUtils.forceDeleteOnExit(dir);
         }
     }
