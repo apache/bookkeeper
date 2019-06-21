@@ -30,6 +30,7 @@ import org.apache.bookkeeper.client.DistributionSchedule.WriteSet;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -384,12 +385,12 @@ public interface EnsemblePlacementPolicy {
         if (!currentStickyBookieIndex.isPresent()) {
             // Pick one bookie randomly from the current ensemble as the initial
             // "sticky bookie"
-            return ThreadLocalRandom.current().nextInt() % metadata.getEnsembleSize();
+            return ThreadLocalRandom.current().nextInt(metadata.getEnsembleSize());
         } else {
             // When choosing a new sticky bookie index (eg: after the current
             // one has read failures), by default we pick the next one in the
             // ensemble, to avoid picking up the same one again.
-            return (currentStickyBookieIndex.get() + 1) % metadata.getEnsembleSize();
+            return MathUtils.signSafeMod(currentStickyBookieIndex.get() + 1, metadata.getEnsembleSize());
         }
     }
 
