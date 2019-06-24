@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.meta;
 
 import com.google.common.collect.Lists;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -59,6 +60,18 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      */
     void markLedgerReplicated(long ledgerId)
             throws ReplicationException.UnavailableException;
+
+    /**
+     * Get the UnderreplicatedLedger info if this ledger is marked
+     * underreplicated otherwise it returns null.
+     *
+     * @param ledgerId
+     *            ledger id
+     * @return the UnderreplicatedLedger info instance if this ledger is marked
+     *         underreplicated otherwise it returns null.
+     * @throws ReplicationException.UnavailableException
+     */
+    UnderreplicatedLedger getLedgerUnreplicationInfo(long ledgerId) throws ReplicationException.UnavailableException;
 
     /**
      * Get a list of all the underreplicated ledgers which have been
@@ -199,6 +212,22 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      * @throws ReplicationException.UnavailableException
      */
     long getPlacementPolicyCheckCTime() throws ReplicationException.UnavailableException;
+
+    /**
+     * Setter for the ReplicasCheck last executed ctime.
+     *
+     * @param replicasCheckCTime
+     * @throws ReplicationException.UnavailableException
+     */
+    void setReplicasCheckCTime(long replicasCheckCTime) throws ReplicationException.UnavailableException;
+
+    /**
+     * Getter for the ReplicasCheck last executed ctime.
+     *
+     * @return the long value of replicasCheckCTime
+     * @throws ReplicationException.UnavailableException
+     */
+    long getReplicasCheckCTime() throws ReplicationException.UnavailableException;
 
     /**
      * Receive notification asynchronously when the lostBookieRecoveryDelay value is Changed.

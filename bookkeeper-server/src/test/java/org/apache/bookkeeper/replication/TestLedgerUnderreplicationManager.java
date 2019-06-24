@@ -795,6 +795,21 @@ public class TestLedgerUnderreplicationManager {
         assertEquals(curTime, underReplicaMgr1.getPlacementPolicyCheckCTime());
     }
 
+    @Test
+    public void testReplicasCheckCTime() throws Exception {
+        @Cleanup
+        LedgerUnderreplicationManager underReplicaMgr1 = lmf1.newLedgerUnderreplicationManager();
+        @Cleanup
+        LedgerUnderreplicationManager underReplicaMgr2 = lmf2.newLedgerUnderreplicationManager();
+        assertEquals(-1, underReplicaMgr1.getReplicasCheckCTime());
+        long curTime = System.currentTimeMillis();
+        underReplicaMgr2.setReplicasCheckCTime(curTime);
+        assertEquals(curTime, underReplicaMgr1.getReplicasCheckCTime());
+        curTime = System.currentTimeMillis();
+        underReplicaMgr2.setReplicasCheckCTime(curTime);
+        assertEquals(curTime, underReplicaMgr1.getReplicasCheckCTime());
+    }
+
     private void verifyMarkLedgerUnderreplicated(Collection<String> missingReplica)
             throws KeeperException, InterruptedException, ReplicationException {
         Long ledgerA = 0xfeadeefdacL;

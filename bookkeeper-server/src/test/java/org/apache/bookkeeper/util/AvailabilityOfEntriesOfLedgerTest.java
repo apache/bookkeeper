@@ -24,8 +24,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.PrimitiveIterator;
 import java.util.Set;
 
@@ -186,6 +189,113 @@ public class AvailabilityOfEntriesOfLedgerTest {
             for (int j = 0; j < nonExistingElementsTempArray.length; j++) {
                 assertFalse(nonExistingElementsTempArray[j] + " is not supposed to be available",
                         availabilityOfEntriesOfLedger.isEntryAvailable(nonExistingElementsTempArray[j]));
+            }
+        }
+    }
+
+    @Test
+    public void testGetUnavailableEntries() {
+        /*
+         * AvailabilityOfEntriesOfLedger is going to be created with this
+         * entries. It is equivalent to considering that Bookie has these
+         * entries.
+         */
+        long[][] availableEntries = {
+                { 1, 2},
+                { 0, 1, 2 },
+                { 1, 2, 3, 5, 6, 7, 8 },
+                { 1, 5 },
+                { 3 },
+                { 1, 2, 4, 5, 7, 8 },
+                {},
+                { 1, 2, 3, 5, 6, 11, 12, 13, 14, 15, 16, 17, 100, 1000, 1001, 10000, 20000, 20001 }
+        };
+
+        /*
+         * getUnavailableEntries method is going to be called with these entries
+         * as expected to contain.
+         */
+        long[][] expectedToContainEntries = {
+                { 1, 2},
+                { 0, 1, 2, 3, 5 },
+                { 1, 2, 5, 7, 8 },
+                { 2, 7 },
+                { 3 },
+                { 1, 5, 7, 8, 9, 10 },
+                { 0, 1, 2, 3, 4, 5 },
+                { 4, 18, 1002, 19999, 20003 }
+        };
+
+        /*
+         * Considering what AvailabilityOfEntriesOfLedger contains
+         * (availableEntries), what it is expected to contain
+         * (expectedToContainEntries), following are the entries which are
+         * supposed to be reported as unavailable (unavailableEntries).
+         */
+        long[][] unavailableEntries = {
+                { },
+                { 3, 5 },
+                { },
+                { 2, 7 },
+                { },
+                { 9, 10 },
+                { 0, 1, 2, 3, 4, 5 },
+                { 4, 18, 1002, 19999, 20003 }
+        };
+
+        for (int i = 0; i < availableEntries.length; i++) {
+            long[] availableEntriesTempArray = availableEntries[i];
+            long[] expectedToContainEntriesTempArray = expectedToContainEntries[i];
+            long[] unavailableEntriesTempArray = unavailableEntries[i];
+            List<Long> unavailableEntriesTempList = new ArrayList<Long>();
+            for (int j = 0; j < unavailableEntriesTempArray.length; j++) {
+                unavailableEntriesTempList.add(unavailableEntriesTempArray[j]);
+            }
+
+            PrimitiveIterator.OfLong primitiveIterator = Arrays.stream(availableEntriesTempArray).iterator();
+            AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(
+                    primitiveIterator);
+
+            long startEntryId;
+            long lastEntryId;
+            if (expectedToContainEntriesTempArray[0] == 0) {
+                startEntryId = expectedToContainEntriesTempArray[0];
+                lastEntryId = expectedToContainEntriesTempArray[expectedToContainEntriesTempArray.length - 1];
+            } else {
+                startEntryId = expectedToContainEntriesTempArray[0] - 1;
+                lastEntryId = expectedToContainEntriesTempArray[expectedToContainEntriesTempArray.length - 1] + 1;
+            }
+            BitSet expectedToContainEntriesBitSet = new BitSet((int) (lastEntryId - startEntryId + 1));
+            for (int ind = 0; ind < expectedToContainEntriesTempArray.length; ind++) {
+                int entryId = (int) expectedToContainEntriesTempArray[ind];
+                expectedToContainEntriesBitSet.set(entryId - (int) startEntryId);
+            }
+
+            List<Long> actualUnavailableEntries = availabilityOfEntriesOfLedger.getUnavailableEntries(startEntryId,
+                    lastEntryId, expectedToContainEntriesBitSet);
+            assertEquals("Unavailable Entries", unavailableEntriesTempList, actualUnavailableEntries);
+        }
+    }
+
+    @Test
+    public void testEmptyAvailabilityOfEntriesOfLedger() {
+        AvailabilityOfEntriesOfLedger emptyOne = AvailabilityOfEntriesOfLedger.EMPTY_AVAILABILITYOFENTRIESOFLEDGER;
+        assertEquals("expected totalNumOfAvailableEntries", 0, emptyOne.getTotalNumOfAvailableEntries());
+        assertFalse("empty one is not supposed to contain any entry", emptyOne.isEntryAvailable(100L));
+        long startEntryId = 100;
+        long lastEntryId = 105;
+        BitSet bitSetOfAvailability = new BitSet((int) (lastEntryId - startEntryId + 1));
+        for (int i = 0; i < bitSetOfAvailability.length(); i++) {
+            if ((i % 2) == 0) {
+                bitSetOfAvailability.set(i);
+            }
+        }
+        List<Long> unavailableEntries = emptyOne.getUnavailableEntries(startEntryId, lastEntryId, bitSetOfAvailability);
+        assertEquals("Num of unavailable entries", bitSetOfAvailability.cardinality(), unavailableEntries.size());
+        for (int i = 0; i < bitSetOfAvailability.length(); i++) {
+            long entryId = startEntryId + i;
+            if (bitSetOfAvailability.get(i)) {
+                assertTrue("Unavailable entry", unavailableEntries.contains(Long.valueOf(entryId)));
             }
         }
     }

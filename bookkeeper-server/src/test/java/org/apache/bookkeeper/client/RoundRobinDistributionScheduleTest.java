@@ -28,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Sets;
 
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -170,5 +171,50 @@ public class RoundRobinDistributionScheduleTest {
         w = writeSetFromValues(1, 2, 3, 4, 5);
         w.moveAndShift(4, 4);
         assertEquals(w, writeSetFromValues(1, 2, 3, 4, 5));
+    }
+
+    @Test
+    public void testGetEntriesStripedToTheBookie() {
+
+        RoundRobinDistributionSchedule schedule;
+        BitSet entriesStriped;
+
+        int ensSize = 3;
+        int writeQuorum = 3;
+        int ackQuorum = 3;
+        int startEntryId = 3;
+        int lastEntryId = 5;
+        schedule = new RoundRobinDistributionSchedule(writeQuorum, ackQuorum, ensSize);
+
+        for (int bookieIndex = 0; bookieIndex < ensSize; bookieIndex++) {
+            entriesStriped = schedule.getEntriesStripedToTheBookie(bookieIndex, startEntryId, lastEntryId);
+            assertEquals("Cardinality", 3, entriesStriped.cardinality());
+            for (int i = 0; i < entriesStriped.length(); i++) {
+                assertEquals("EntryAvailability", schedule.hasEntry((startEntryId + i), bookieIndex),
+                        entriesStriped.get(i));
+            }
+        }
+
+        ensSize = 5;
+        writeQuorum = 3;
+        ackQuorum = 2;
+        startEntryId = 100;
+        lastEntryId = 122;
+        schedule = new RoundRobinDistributionSchedule(writeQuorum, ackQuorum, ensSize);
+        for (int bookieIndex = 0; bookieIndex < ensSize; bookieIndex++) {
+            entriesStriped = schedule.getEntriesStripedToTheBookie(bookieIndex, startEntryId, lastEntryId);
+            for (int i = 0; i < entriesStriped.length(); i++) {
+                assertEquals("EntryAvailability", schedule.hasEntry((startEntryId + i), bookieIndex),
+                        entriesStriped.get(i));
+            }
+        }
+
+        schedule = new RoundRobinDistributionSchedule(2, 2, 3);
+        entriesStriped = schedule.getEntriesStripedToTheBookie(2, 0, 0);
+        assertEquals("Cardinality", 0, entriesStriped.cardinality());
+        entriesStriped = schedule.getEntriesStripedToTheBookie(2, 3, 3);
+        assertEquals("Cardinality", 0, entriesStriped.cardinality());
+        entriesStriped = schedule.getEntriesStripedToTheBookie(2, 4, 4);
+        assertEquals("Cardinality", 1, entriesStriped.cardinality());
     }
 }
