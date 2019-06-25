@@ -139,6 +139,7 @@
 <li type="circle">org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">DataSketchesOpStatsLogger</span></a> (implements org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a>)</li>
 <li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">DefaultEnsemblePlacementPolicy</span></a> (implements org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a>)</li>
 <li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultSpeculativeRequestExecutionPolicy.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">DefaultSpeculativeRequestExecutionPolicy</span></a> (implements org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SpeculativeRequestExecutionPolicy.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutionPolicy</a>)</li>
+<li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DynamicWeightedRandomSelectionImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">DynamicWeightedRandomSelectionImpl</span></a>&lt;T&gt; (implements org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/WeightedRandomSelection.html" title="interface in org.apache.bookkeeper.client">WeightedRandomSelection</a>&lt;T&gt;)</li>
 <li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">EnsemblePlacementPolicy.PlacementResult</span></a>&lt;T&gt;</li>
 <li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsembleUtils.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">EnsembleUtils</span></a></li>
 <li type="circle">org.apache.commons.configuration.event.EventSource
@@ -416,6 +417,11 @@
 </li>
 </ul>
 </li>
+<li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ZoneawareEnsemblePlacementPolicyImpl</span></a>
+<ul>
+<li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ZoneawareEnsemblePlacementPolicy</span></a> (implements org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a>&lt;T&gt;)</li>
+</ul>
+</li>
 </ul>
 </li>
 <li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DefaultResolver.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">TopologyAwareEnsemblePlacementPolicy.DefaultResolver</span></a> (implements org.apache.bookkeeper.net.DNSToSwitchMapping)</li>
@@ -428,6 +434,7 @@
 <li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TryReadLastConfirmedOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">TryReadLastConfirmedOp</span></a> (implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback)</li>
 <li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/UpdateLedgerOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">UpdateLedgerOp</span></a></li>
 <li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/WeightedRandomSelectionImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">WeightedRandomSelectionImpl</span></a>&lt;T&gt; (implements org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/WeightedRandomSelection.html" title="interface in org.apache.bookkeeper.client">WeightedRandomSelection</a>&lt;T&gt;)</li>
+<li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.ZoneAwareNodeLocation.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ZoneawareEnsemblePlacementPolicyImpl.ZoneAwareNodeLocation</span></a></li>
 </ul>
 </li>
 </ul>
@@ -559,6 +566,7 @@
 <ul>
 <li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client"><span class="typeNameLink">BookKeeper.DigestType</span></a></li>
 <li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.State.html" title="enum in org.apache.bookkeeper.client"><span class="typeNameLink">BookieInfoReader.State</span></a></li>
+<li type="circle">org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client"><span class="typeNameLink">EnsemblePlacementPolicy.PlacementPolicyAdherence</span></a></li>
 <li type="circle">org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api"><span class="typeNameLink">WriteFlag</span></a></li>
 <li type="circle">org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.State.html" title="enum in org.apache.bookkeeper.client.api"><span class="typeNameLink">LedgerMetadata.State</span></a></li>
 <li type="circle">org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api"><span class="typeNameLink">DigestType</span></a></li>

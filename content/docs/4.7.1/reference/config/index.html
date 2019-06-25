@@ -2068,6 +2068,27 @@ when using either RackawareEnsemblePlacementPolicy and RegionAwareEnsemblePlacem
 </td>
       <td></td>
     </tr>
+    
+    <tr id="minNumZonesPerWriteQuorum">
+      <td><code>minNumZonesPerWriteQuorum</code></td>
+      <td><p>minimum number of zones per write quorum in ZoneawareEnsemblePlacementPolicy. ZoneawareEnsemblePlacementPolicy would get bookies from atleast ‘minNumZonesPerWriteQuorum’ racks for a writeQuorum.</p>
+</td>
+      <td><code>2</code></td>
+    </tr>
+    
+    <tr id="desiredNumZonesPerWriteQuorum">
+      <td><code>desiredNumZonesPerWriteQuorum</code></td>
+      <td><p>desired number of zones per write quorum in ZoneawareEnsemblePlacementPolicy. ZoneawareEnsemblePlacementPolicy will try to get bookies from ‘desiredNumZonesPerWriteQuorum’ zones for a writeQuorum.</p>
+</td>
+      <td><code>3</code></td>
+    </tr>
+    
+    <tr id="enforceStrictZoneawarePlacement">
+      <td><code>enforceStrictZoneawarePlacement</code></td>
+      <td><p>in ZoneawareEnsemblePlacementPolicy if strict placement is enabled then minZones/desiredZones in writeQuorum would be maintained otherwise it will pick nodes randomly.</p>
+</td>
+      <td><code>true</code></td>
+    </tr>
      <!-- for param in group.params -->
   </tbody>
 </table>

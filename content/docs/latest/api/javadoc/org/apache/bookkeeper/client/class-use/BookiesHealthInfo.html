@@ -146,11 +146,17 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#reorderReadLACSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                       <a href="../../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                       <a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+                      <a href="../../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
+                      <a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><span class="typeNameLabel">EnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                       <a href="../../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
@@ -158,27 +164,33 @@
 <div class="block">Reorder the read last add confirmed sequence of a given write quorum <i>writeSet</i>.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><span class="typeNameLabel">RegionAwareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                       <a href="../../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                       <a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#reorderReadSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                    <a href="../../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                    <a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#reorderReadSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                    <a href="../../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                    <a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><span class="typeNameLabel">TopologyAwareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+                   <a href="../../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
+                   <a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#reorderReadSequence-java.util.List-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                    <a href="../../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                    <a href="../../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code>&nbsp;</td>
 </tr>

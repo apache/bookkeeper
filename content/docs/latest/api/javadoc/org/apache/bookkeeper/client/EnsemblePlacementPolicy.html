@@ -49,8 +49,8 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/DynamicWeightedRandomSelectionImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" target="_top">Frames</a></li>
@@ -105,7 +105,7 @@ var activeTableTab = "activeTableTab";
 </dl>
 <dl>
 <dt>All Known Implementing Classes:</dt>
-<dd><a href="../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a>, <a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a>, <a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a>, <a href="../../../../org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a>, <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></dd>
+<dd><a href="../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a>, <a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a>, <a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a>, <a href="../../../../org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a>, <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a>, <a href="../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">ZoneawareEnsemblePlacementPolicy</a>, <a href="../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">ZoneawareEnsemblePlacementPolicyImpl</a></dd>
 </dl>
 <hr>
 <br>
@@ -292,6 +292,12 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></span></code>
+<div class="block">enum for PlacementPolicyAdherence.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="type parameter in EnsemblePlacementPolicy.PlacementResult">T</a>&gt;</span></code>
 <div class="block">Result of a placement calculation against a placement policy.</div>
 </td>
@@ -339,13 +345,14 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 </td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>default boolean</code></td>
+<td class="colFirst"><code>default <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code>
-<div class="block">returns true if the Ensemble is strictly adhering to placement policy,
- like in the case of RackawareEnsemblePlacementPolicy, bookies in the
- writeset are from 'minNumRacksPerWriteQuorum' number of racks.</div>
+<div class="block">returns AdherenceLevel if the Ensemble is strictly/softly/fails adhering
+ to placement policy, like in the case of
+ RackawareEnsemblePlacementPolicy, bookies in the writeset are from
+ 'minNumRacksPerWriteQuorum' number of racks.</div>
 </td>
 </tr>
 <tr id="i4" class="altColor">
@@ -675,15 +682,20 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 <ul class="blockList">
 <li class="blockList">
 <h4>isEnsembleAdheringToPlacementPolicy</h4>
-<pre>default&nbsp;boolean&nbsp;isEnsembleAdheringToPlacementPolicy(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleList,
-                                                    int&nbsp;writeQuorumSize,
-                                                    int&nbsp;ackQuorumSize)</pre>
-<div class="block">returns true if the Ensemble is strictly adhering to placement policy,
- like in the case of RackawareEnsemblePlacementPolicy, bookies in the
- writeset are from 'minNumRacksPerWriteQuorum' number of racks. And in the
- case of RegionawareEnsemblePlacementPolicy, check for
+<pre>default&nbsp;<a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a>&nbsp;isEnsembleAdheringToPlacementPolicy(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleList,
+                                                                                             int&nbsp;writeQuorumSize,
+                                                                                             int&nbsp;ackQuorumSize)</pre>
+<div class="block">returns AdherenceLevel if the Ensemble is strictly/softly/fails adhering
+ to placement policy, like in the case of
+ RackawareEnsemblePlacementPolicy, bookies in the writeset are from
+ 'minNumRacksPerWriteQuorum' number of racks. And in the case of
+ RegionawareEnsemblePlacementPolicy, check for
  minimumRegionsForDurability, reppRegionsToWrite, rack distribution within
- a region and other parameters of RegionAwareEnsemblePlacementPolicy.</div>
+ a region and other parameters of RegionAwareEnsemblePlacementPolicy. In
+ ZoneAwareEnsemblePlacementPolicy if bookies in the writeset are from
+ 'desiredNumOfZones' then it is considered as MEETS_STRICT if they are
+ from 'minNumOfZones' then it is considered as MEETS_SOFT otherwise
+ considered as FAIL.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ensembleList</code> - list of BookieSocketAddress of bookies in the ensemble</dd>
@@ -742,8 +754,8 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/DynamicWeightedRandomSelectionImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" target="_top">Frames</a></li>
