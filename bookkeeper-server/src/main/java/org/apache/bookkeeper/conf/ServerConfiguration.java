@@ -3131,6 +3131,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
             throw new ConfigurationException("For persisiting explicitLac, journalFormatVersionToWrite should be >= 6"
                     + "and FileInfoFormatVersionToWrite should be >= 1");
         }
+        if (getMinorCompactionInterval() <= getGcWaitTime()) {
+            throw new ConfigurationException("minorCompactionInterval should be greater than gcWaitTime.");
+        }
     }
 
     /**
