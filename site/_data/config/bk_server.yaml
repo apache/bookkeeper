@@ -647,6 +647,18 @@ groups:
   - param: enforceMinNumFaultDomainsForWrite
     description: |
       'enforceMinNumFaultDomainsForWrite' enforces EnsemblePlacementPolicy to check if a write has made it to bookies in 'minNumRacksPerWriteQuorum' number of fault domains, before acknowledging the write back.
+  - param: minNumZonesPerWriteQuorum
+    description: |
+      minimum number of zones per write quorum in ZoneawareEnsemblePlacementPolicy. ZoneawareEnsemblePlacementPolicy would get bookies from atleast 'minNumZonesPerWriteQuorum' racks for a writeQuorum.
+    default: 2
+  - param: desiredNumZonesPerWriteQuorum
+    description: |
+      desired number of zones per write quorum in ZoneawareEnsemblePlacementPolicy. ZoneawareEnsemblePlacementPolicy will try to get bookies from 'desiredNumZonesPerWriteQuorum' zones for a writeQuorum.
+    default: 3
+  - param: enforceStrictZoneawarePlacement
+    description: |
+      in ZoneawareEnsemblePlacementPolicy if strict placement is enabled then minZones/desiredZones in writeQuorum would be maintained otherwise it will pick nodes randomly.
+    default: true
 
 - name: AutoRecovery auditor settings
   params:

@@ -395,12 +395,17 @@ public interface EnsemblePlacementPolicy {
     }
 
     /**
-     * returns true if the Ensemble is strictly adhering to placement policy,
-     * like in the case of RackawareEnsemblePlacementPolicy, bookies in the
-     * writeset are from 'minNumRacksPerWriteQuorum' number of racks. And in the
-     * case of RegionawareEnsemblePlacementPolicy, check for
+     * returns AdherenceLevel if the Ensemble is strictly/softly/fails adhering
+     * to placement policy, like in the case of
+     * RackawareEnsemblePlacementPolicy, bookies in the writeset are from
+     * 'minNumRacksPerWriteQuorum' number of racks. And in the case of
+     * RegionawareEnsemblePlacementPolicy, check for
      * minimumRegionsForDurability, reppRegionsToWrite, rack distribution within
-     * a region and other parameters of RegionAwareEnsemblePlacementPolicy.
+     * a region and other parameters of RegionAwareEnsemblePlacementPolicy. In
+     * ZoneAwareEnsemblePlacementPolicy if bookies in the writeset are from
+     * 'desiredNumOfZones' then it is considered as MEETS_STRICT if they are
+     * from 'minNumOfZones' then it is considered as MEETS_SOFT otherwise
+     * considered as FAIL.
      *
      * @param ensembleList
      *            list of BookieSocketAddress of bookies in the ensemble
@@ -410,9 +415,9 @@ public interface EnsemblePlacementPolicy {
      *            ackQuorumSize of the ensemble
      * @return
      */
-    default boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList, int writeQuorumSize,
-            int ackQuorumSize) {
-        return false;
+    default PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList,
+            int writeQuorumSize, int ackQuorumSize) {
+        return PlacementPolicyAdherence.FAIL;
     }
 
     /**
@@ -435,27 +440,48 @@ public interface EnsemblePlacementPolicy {
     }
 
     /**
+     * enum for PlacementPolicyAdherence. Currently we are supporting tri-value
+     * enum for PlacementPolicyAdherence. If placement policy is met strictly
+     * then it is MEETS_STRICT, if it doesn't adhere to placement policy then it
+     * is FAIL. But there are certain placement policies, like
+     * ZoneAwareEnsemblePlacementPolicy which has definition of soft adherence
+     * level to support zone down scenarios.
+     */
+    enum PlacementPolicyAdherence {
+        FAIL(1), MEETS_SOFT(3), MEETS_STRICT(5);
+        private int numVal;
+
+        private PlacementPolicyAdherence(int numVal) {
+            this.numVal = numVal;
+        }
+
+        public int getNumVal() {
+            return numVal;
+        }
+    }
+
+    /**
      * Result of a placement calculation against a placement policy.
      */
     final class PlacementResult<T> {
         private final T result;
-        private final boolean adhering;
+        private final PlacementPolicyAdherence policyAdherence;
 
-        public static <T> PlacementResult<T> of(T result, boolean adhering) {
-            return new PlacementResult<>(result, adhering);
+        public static <T> PlacementResult<T> of(T result, PlacementPolicyAdherence policyAdherence) {
+            return new PlacementResult<>(result, policyAdherence);
         }
 
-        private PlacementResult(T result, boolean adhering) {
+        private PlacementResult(T result, PlacementPolicyAdherence policyAdherence) {
             this.result = result;
-            this.adhering = adhering;
+            this.policyAdherence = policyAdherence;
         }
 
         public T getResult() {
             return result;
         }
 
-        public boolean isStrictlyAdheringToPolicy() {
-            return adhering;
+        public PlacementPolicyAdherence isAdheringToPolicy() {
+            return policyAdherence;
         }
     }
 }

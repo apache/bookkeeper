@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
 abstract class TopologyAwareEnsemblePlacementPolicy implements
         ITopologyAwareEnsemblePlacementPolicy<BookieNode> {
     static final Logger LOG = LoggerFactory.getLogger(TopologyAwareEnsemblePlacementPolicy.class);
-
+    public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     protected final Map<BookieSocketAddress, BookieNode> knownBookies = new HashMap<BookieSocketAddress, BookieNode>();
     protected final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     protected Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
@@ -741,6 +741,31 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                     knownBookies.put(bookieAddress, newNode);
                 }
             }
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieInfoMap) {
+        if (!isWeighted) {
+            LOG.info("bookieFreeDiskInfo callback called even without weighted placement policy being used.");
+            return;
+        }
+        rwLock.writeLock().lock();
+        try {
+            List<BookieNode> allBookies = new ArrayList<BookieNode>(knownBookies.values());
+            // create a new map to reflect the new mapping
+            Map<BookieNode, WeightedObject> map = new HashMap<BookieNode, WeightedObject>();
+            for (BookieNode bookie : allBookies) {
+                if (bookieInfoMap.containsKey(bookie.getAddr())) {
+                    map.put(bookie, bookieInfoMap.get(bookie.getAddr()));
+                } else {
+                    map.put(bookie, new BookieInfo());
+                }
+            }
+            this.bookieInfoMap = map;
+            this.weightedSelection.updateMap(this.bookieInfoMap);
         } finally {
             rwLock.writeLock().unlock();
         }
