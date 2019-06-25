@@ -576,14 +576,14 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     }
 
     @Override
-    public boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList, int writeQuorumSize,
-            int ackQuorumSize) {
+    public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList,
+            int writeQuorumSize, int ackQuorumSize) {
         /**
          * TODO: have to implement actual logic for this method for
          * RegionAwareEnsemblePlacementPolicy. For now return true value.
          *
          * - https://github.com/apache/bookkeeper/issues/1898
          */
-        return true;
+        return PlacementPolicyAdherence.MEETS_STRICT;
     }
 }

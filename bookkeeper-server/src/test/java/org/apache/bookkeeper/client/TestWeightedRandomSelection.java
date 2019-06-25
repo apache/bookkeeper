@@ -21,45 +21,71 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test weighted random selection methods.
  */
+@RunWith(Parameterized.class)
 public class TestWeightedRandomSelection {
 
     static final Logger LOG = LoggerFactory.getLogger(TestWeightedRandomSelection.class);
 
     static class TestObj implements WeightedObject {
         long val;
+
         TestObj(long value) {
             this.val = value;
         }
+
         @Override
         public long getWeight() {
             return val;
         }
     }
 
+    Class<? extends WeightedRandomSelection> weightedRandomSelectionClass;
     WeightedRandomSelection<String> wRS;
     Configuration conf = new CompositeConfiguration();
     int multiplier = 3;
 
+    @Parameters
+    public static Collection<Object[]> weightedRandomSelectionClass() {
+        return Arrays.asList(
+                new Object[][] { { WeightedRandomSelectionImpl.class }, { DynamicWeightedRandomSelectionImpl.class } });
+    }
+
+    public TestWeightedRandomSelection(Class<? extends WeightedRandomSelection> weightedRandomSelectionClass) {
+        this.weightedRandomSelectionClass = weightedRandomSelectionClass;
+    }
+
     @Before
     public void setUp() throws Exception {
-        wRS = new WeightedRandomSelectionImpl<String>();
+        if (weightedRandomSelectionClass.equals(WeightedRandomSelectionImpl.class)) {
+            wRS = new WeightedRandomSelectionImpl<String>();
+        } else {
+            wRS = new DynamicWeightedRandomSelectionImpl<String>();
+        }
     }
 
     @After
@@ -90,7 +116,7 @@ public class TestWeightedRandomSelection {
             double actualPct = ((double) e.getValue() / (double) totalTries) * 100;
             double delta = (Math.abs(expectedPct - actualPct) / expectedPct) * 100;
             System.out.println("Key:" + e.getKey() + " Value:" + e.getValue() + " Expected: " + expectedPct
-                    + " Actual: " + actualPct);
+                    + " Actual: " + actualPct + " delta: " + delta);
             // should be within 5% of expected
             assertTrue("Not doing uniform selection when weights are equal", delta < 5);
         }
@@ -145,7 +171,8 @@ public class TestWeightedRandomSelection {
 
             double expected;
             if (map.get(e.getKey()).getWeight() == 0) {
-                // if the value is 0 for any key, we make it equal to the first non zero value
+                // if the value is 0 for any key, we make it equal to the first
+                // non zero value
                 expected = (double) minWeight / (double) totalWeight;
             } else {
                 expected = (double) map.get(e.getKey()).getWeight() / (double) totalWeight;
@@ -153,14 +180,16 @@ public class TestWeightedRandomSelection {
             if (multiplier > 0 && expected > multiplier * medianExpectedWeight) {
                 expected = multiplier * medianExpectedWeight;
             }
-            // We can't compare these weights because they are derived from different
-            // values. But if we express them as a multiple of the min in each, then
+            // We can't compare these weights because they are derived from
+            // different
+            // values. But if we express them as a multiple of the min in each,
+            // then
             // they should be comparable
             double expectedMultiple = expected / medianExpectedWeight;
             double observedMultiple = observed / medianObservedWeight;
             double delta = (Math.abs(expectedMultiple - observedMultiple) / expectedMultiple) * 100;
-            System.out.println("Key:" + e.getKey() + " Value:" + e.getValue()
-                    + " Expected " + expectedMultiple + " actual " + observedMultiple + " delta " + delta + "%");
+            System.out.println("Key:" + e.getKey() + " Value:" + e.getValue() + " Expected " + expectedMultiple
+                    + " actual " + observedMultiple + " delta " + delta + "%");
 
             // the observed should be within 5% of expected
             assertTrue("Not doing uniform selection when weights are equal", delta < 5);
@@ -178,7 +207,7 @@ public class TestWeightedRandomSelection {
         for (Integer i = 0; i < numKeys; i++) {
             if (i < numKeys / 3) {
                 val = 0L;
-            } else if (i < 2 * (numKeys / 3)){
+            } else if (i < 2 * (numKeys / 3)) {
                 val = minWeight;
             } else {
                 val = 2 * minWeight;
@@ -189,7 +218,7 @@ public class TestWeightedRandomSelection {
         }
 
         wRS.updateMap(map);
-        int totalTries = 10000000;
+        int totalTries = 1000000;
         for (int i = 0; i < totalTries; i++) {
             String key = wRS.getNextRandom();
             randomSelection.put(key, randomSelection.get(key) + 1);
@@ -208,7 +237,7 @@ public class TestWeightedRandomSelection {
         for (Integer i = 0; i < numKeys; i++) {
             if (i < numKeys / 3) {
                 val = minWeight;
-            } else if (i < 2 * (numKeys / 3)){
+            } else if (i < 2 * (numKeys / 3)) {
                 val = 2 * minWeight;
             } else {
                 val = 10 * minWeight;
@@ -219,7 +248,7 @@ public class TestWeightedRandomSelection {
         }
 
         wRS.updateMap(map);
-        int totalTries = 10000000;
+        int totalTries = 1000000;
         for (int i = 0; i < totalTries; i++) {
             String key = wRS.getNextRandom();
             randomSelection.put(key, randomSelection.get(key) + 1);
@@ -247,7 +276,7 @@ public class TestWeightedRandomSelection {
         }
 
         wRS.updateMap(map);
-        int totalTries = 10000000;
+        int totalTries = 1000000;
         for (int i = 0; i < totalTries; i++) {
             String key = wRS.getNextRandom();
             randomSelection.put(key, randomSelection.get(key) + 1);
@@ -275,11 +304,39 @@ public class TestWeightedRandomSelection {
         }
 
         wRS.updateMap(map);
-        int totalTries = 10000000;
+        int totalTries = 1000000;
         for (int i = 0; i < totalTries; i++) {
             String key = wRS.getNextRandom();
             randomSelection.put(key, randomSelection.get(key) + 1);
         }
         verifyResult(map, randomSelection, multiplier, minWeight, medianWeight, total, totalTries);
+    }
+
+    @Test
+    public void testSelectionFromSelectedNodesWithEqualWeights() throws Exception {
+        /*
+         * this testcase is for only DynamicWeightedRandomSelectionImpl
+         */
+        Assume.assumeTrue(weightedRandomSelectionClass.equals(DynamicWeightedRandomSelectionImpl.class));
+        Map<String, WeightedObject> map = new HashMap<String, WeightedObject>();
+
+        Long val = 100L;
+        int numKeys = 50, totalTries = 1000;
+        Map<String, Integer> randomSelection = new HashMap<String, Integer>();
+        for (Integer i = 0; i < numKeys; i++) {
+            map.put(i.toString(), new TestObj(val));
+            randomSelection.put(i.toString(), 0);
+        }
+
+        Set<String> selectFrom = new HashSet<String>();
+        for (int i = 0; i < numKeys / 2; i++) {
+            selectFrom.add(Integer.toString(i));
+        }
+
+        wRS.updateMap(map);
+        for (int i = 0; i < totalTries; i++) {
+            String selectedKey = wRS.getNextRandom(selectFrom);
+            assertTrue("NextRandom key should be from selected list", selectFrom.contains(selectedKey));
+        }
     }
 }

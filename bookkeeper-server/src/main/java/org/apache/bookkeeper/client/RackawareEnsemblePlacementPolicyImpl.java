@@ -404,7 +404,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 for (BookieNode bn : bns) {
                     addrs.add(bn.getAddr());
                 }
-                return PlacementResult.of(addrs, false);
+                return PlacementResult.of(addrs, PlacementPolicyAdherence.FAIL);
             }
 
             for (int i = 0; i < ensembleSize; i++) {
@@ -489,32 +489,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
         } finally {
             rwLock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieInfoMap) {
-        if (!isWeighted) {
-            LOG.info("bookieFreeDiskInfo callback called even without weighted placement policy being used.");
-            return;
-        }
-         List<BookieNode> allBookies = new ArrayList<BookieNode>(knownBookies.values());
-
-         // create a new map to reflect the new mapping
-        Map<BookieNode, WeightedObject> map = new HashMap<BookieNode, WeightedObject>();
-        for (BookieNode bookie : allBookies) {
-            if (bookieInfoMap.containsKey(bookie.getAddr())) {
-                map.put(bookie, bookieInfoMap.get(bookie.getAddr()));
-            } else {
-                map.put(bookie, new BookieInfo());
-            }
-        }
-        rwLock.writeLock().lock();
-        try {
-            this.bookieInfoMap = map;
-            this.weightedSelection.updateMap(this.bookieInfoMap);
-        } finally {
-            rwLock.writeLock().unlock();
         }
     }
 
@@ -1033,8 +1007,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
     // this method should be called in readlock scope of 'rwlock'
     @Override
-    public boolean isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList, int writeQuorumSize,
-            int ackQuorumSize) {
+    public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList,
+            int writeQuorumSize, int ackQuorumSize) {
         int ensembleSize = ensembleList.size();
         int minNumRacksPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
         HashSet<String> racksInQuorum = new HashSet<String>();
@@ -1056,10 +1030,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             }
             if ((racksInQuorum.size() < minNumRacksPerWriteQuorumForThisEnsemble)
                     || (enforceMinNumRacksPerWriteQuorum && racksInQuorum.contains(getDefaultRack()))) {
-                return false;
+                return PlacementPolicyAdherence.FAIL;
             }
         }
-        return true;
+        return PlacementPolicyAdherence.MEETS_STRICT;
     }
 
     @Override

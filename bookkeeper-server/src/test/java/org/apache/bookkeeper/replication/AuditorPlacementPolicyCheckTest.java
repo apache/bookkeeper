@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
+import org.apache.bookkeeper.client.ZoneawareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -178,18 +179,26 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
 
         ServerConfiguration servConf = new ServerConfiguration(bsConfs.get(0));
         servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
-        setServerConfigProperties(servConf);
+        setServerConfigPropertiesForRackPlacement(servConf);
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
             TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
             Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
                     .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
+            Gauge<? extends Number> ledgersSoftlyAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY);
             /*
              * since all of the bookies are in different racks, there shouldn't be any ledger not adhering
              * to placement policy.
              */
             assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value", 0,
                     ledgersNotAdheringToPlacementPolicyGuage.getSample());
+            /*
+             * since all of the bookies are in different racks, there shouldn't be any ledger softly adhering
+             * to placement policy.
+             */
+            assertEquals("NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY guage value", 0,
+                    ledgersSoftlyAdheringToPlacementPolicyGuage.getSample());
         } finally {
             Auditor auditor = auditorRef.getValue();
             if (auditor != null) {
@@ -259,7 +268,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
 
         ServerConfiguration servConf = new ServerConfiguration(bsConfs.get(0));
         servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
-        setServerConfigProperties(servConf);
+        setServerConfigPropertiesForRackPlacement(servConf);
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
             TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
@@ -267,6 +276,10 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                     .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
             assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value",
                     numOfLedgersNotAdheringToPlacementPolicy, ledgersNotAdheringToPlacementPolicyGuage.getSample());
+            Gauge<? extends Number> ledgersSoftlyAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY guage value",
+                    0, ledgersSoftlyAdheringToPlacementPolicyGuage.getSample());
         } finally {
             Auditor auditor = auditorRef.getValue();
             if (auditor != null) {
@@ -357,7 +370,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
 
         ServerConfiguration servConf = new ServerConfiguration(bsConfs.get(0));
         servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
-        setServerConfigProperties(servConf);
+        setServerConfigPropertiesForRackPlacement(servConf);
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
             TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
@@ -365,6 +378,10 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                     .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
             assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY gauge value",
                     numOfLedgersNotAdheringToPlacementPolicy, ledgersNotAdheringToPlacementPolicyGuage.getSample());
+            Gauge<? extends Number> ledgersSoftlyAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY gauge value",
+                    0, ledgersSoftlyAdheringToPlacementPolicyGuage.getSample());
         } finally {
             Auditor auditor = auditorRef.getValue();
             if (auditor != null) {
@@ -373,10 +390,140 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         }
     }
 
-    private void setServerConfigProperties(ServerConfiguration servConf) {
+    @Test
+    public void testZoneawarePlacementPolicyCheck() throws Exception {
+        int numOfBookies = 6;
+        int numOfLedgersNotAdheringToPlacementPolicy = 0;
+        int numOfLedgersSoftlyAdheringToPlacementPolicy = 0;
+        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
+        RegistrationManager regManager = driver.getRegistrationManager();
+
+        /*
+         * 6 bookies - 3 zones and 2 uds
+         */
+        for (int i = 0; i < numOfBookies; i++) {
+            BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            bookieAddresses.add(bookieAddress);
+            regManager.registerBookie(bookieAddress.toString(), false);
+            String zone = "/zone" + (i % 3);
+            String upgradeDomain = "/ud" + (i % 2);
+            String networkLocation = zone + upgradeDomain;
+            StaticDNSResolver.addNodeToRack(bookieAddress.getHostName(), networkLocation);
+        }
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerManager lm = mFactory.newLedgerManager();
+
+        ServerConfiguration servConf = new ServerConfiguration(bsConfs.get(0));
+        servConf.setDesiredNumZonesPerWriteQuorum(3);
+        servConf.setMinNumZonesPerWriteQuorum(2);
+        setServerConfigPropertiesForZonePlacement(servConf);
+
+        /*
+         * this closed ledger adheres to ZoneAwarePlacementPolicy, since
+         * ensemble is spread across 3 zones and 2 UDs
+         */
+        LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withEnsembleSize(6)
+                .withWriteQuorumSize(6)
+                .withAckQuorumSize(2)
+                .newEnsembleEntry(0L, bookieAddresses)
+                .withClosedState()
+                .withLastEntryId(100)
+                .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
+                .build();
+        lm.createLedgerMetadata(1L, initMeta).get();
+
+        /*
+         * this is non-closed ledger, so though ensemble is not adhering to
+         * placement policy (since ensemble is not multiple of writeQuorum),
+         * this shouldn't be reported
+         */
+        initMeta = LedgerMetadataBuilder.create()
+                .withEnsembleSize(6)
+                .withWriteQuorumSize(5)
+                .withAckQuorumSize(2)
+                .newEnsembleEntry(0L, bookieAddresses)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
+                .build();
+        lm.createLedgerMetadata(2L, initMeta).get();
+
+        /*
+         * this is closed ledger, since ensemble is not multiple of writeQuorum,
+         * this ledger is not adhering to placement policy.
+         */
+        initMeta = LedgerMetadataBuilder.create()
+                .withEnsembleSize(6)
+                .withWriteQuorumSize(5)
+                .withAckQuorumSize(2)
+                .newEnsembleEntry(0L, bookieAddresses)
+                .withClosedState()
+                .withLastEntryId(100)
+                .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
+                .build();
+        lm.createLedgerMetadata(3L, initMeta).get();
+        numOfLedgersNotAdheringToPlacementPolicy++;
+
+        /*
+         * this closed ledger adheres softly to ZoneAwarePlacementPolicy, since
+         * ensemble/writeQuorum of size 4 has spread across just
+         * minNumZonesPerWriteQuorum (2).
+         */
+        List<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>();
+        newEnsemble.add(bookieAddresses.get(0));
+        newEnsemble.add(bookieAddresses.get(1));
+        newEnsemble.add(bookieAddresses.get(3));
+        newEnsemble.add(bookieAddresses.get(4));
+        initMeta = LedgerMetadataBuilder.create()
+                .withEnsembleSize(4)
+                .withWriteQuorumSize(4)
+                .withAckQuorumSize(2)
+                .newEnsembleEntry(0L, newEnsemble)
+                .withClosedState()
+                .withLastEntryId(100)
+                .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
+                .build();
+        lm.createLedgerMetadata(4L, initMeta).get();
+        numOfLedgersSoftlyAdheringToPlacementPolicy++;
+
+        MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
+        try {
+            TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
+            Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value",
+                    numOfLedgersNotAdheringToPlacementPolicy, ledgersNotAdheringToPlacementPolicyGuage.getSample());
+            Gauge<? extends Number> ledgersSoftlyAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY guage value",
+                    numOfLedgersSoftlyAdheringToPlacementPolicy,
+                    ledgersSoftlyAdheringToPlacementPolicyGuage.getSample());
+        } finally {
+            Auditor auditor = auditorRef.getValue();
+            if (auditor != null) {
+                auditor.close();
+            }
+        }
+    }
+
+    private void setServerConfigPropertiesForRackPlacement(ServerConfiguration servConf) {
+        setServerConfigProperties(servConf, RackawareEnsemblePlacementPolicy.class.getName());
+    }
+
+    private void setServerConfigPropertiesForZonePlacement(ServerConfiguration servConf) {
+        setServerConfigProperties(servConf, ZoneawareEnsemblePlacementPolicy.class.getName());
+    }
+
+    private void setServerConfigProperties(ServerConfiguration servConf, String ensemblePlacementPolicyClass) {
         servConf.setProperty(REPP_DNS_RESOLVER_CLASS, StaticDNSResolver.class.getName());
-        servConf.setProperty(ClientConfiguration.ENSEMBLE_PLACEMENT_POLICY,
-                RackawareEnsemblePlacementPolicy.class.getName());
+        servConf.setProperty(ClientConfiguration.ENSEMBLE_PLACEMENT_POLICY, ensemblePlacementPolicyClass);
         servConf.setAuditorPeriodicCheckInterval(0);
         servConf.setAuditorPeriodicBookieCheckInterval(0);
         servConf.setAuditorPeriodicPlacementPolicyCheckInterval(1000);
