@@ -64,12 +64,14 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
         private boolean readwrite = false;
         @Parameter(names = { "-ro", "--readonly" }, description = "Print readonly bookies")
         private boolean readonly = false;
+        @Parameter(names = { "-a", "--all" }, description = "Print all bookies")
+        private boolean all = false;
 
     }
 
     @Override
     protected void run(RegistrationClient regClient, Flags flags) throws Exception {
-        if (!flags.readwrite && !flags.readonly) {
+        if (!flags.readwrite && !flags.readonly && !flags.all) {
             // case: no args is provided. list all the bookies by default.
             flags.readwrite = true;
             flags.readonly = true;
@@ -92,6 +94,16 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
             ).getValue();
             if (!bookies.isEmpty()) {
                 System.out.println("Readonly Bookies :");
+                printBookies(bookies);
+                hasBookies = true;
+            }
+        }
+        if (flags.all) {
+            Set<BookieSocketAddress> bookies = result(
+                regClient.getAllBookies()
+            ).getValue();
+            if (!bookies.isEmpty()) {
+                System.out.println("All Bookies :");
                 printBookies(bookies);
                 hasBookies = true;
             }

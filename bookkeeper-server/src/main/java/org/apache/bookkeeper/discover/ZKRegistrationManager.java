@@ -102,6 +102,7 @@ public class ZKRegistrationManager implements RegistrationManager {
     private final String cookiePath;
     // registration paths
     protected final String bookieRegistrationPath;
+    protected final String bookieFaultyRegistrationPath;
     protected final String bookieReadonlyRegistrationPath;
     // session timeout in milliseconds
     private final int zkTimeoutMs;
@@ -122,6 +123,7 @@ public class ZKRegistrationManager implements RegistrationManager {
         this.ledgersRootPath = ledgersRootPath;
         this.cookiePath = ledgersRootPath + "/" + COOKIE_NODE;
         this.bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
+        this.bookieFaultyRegistrationPath = ledgersRootPath + "/" + COOKIE_NODE;
         this.bookieReadonlyRegistrationPath = this.bookieRegistrationPath + "/" + READONLY;
         this.zkTimeoutMs = conf.getZkTimeout();
 

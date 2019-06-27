@@ -213,6 +213,16 @@ public class BookKeeperAdmin implements AutoCloseable {
             throws BKException {
         return bkc.bookieWatcher.getBookies();
     }
+    
+    /**
+     * Get a list of all bookies including the not available ones.
+     *
+     * @return a collection of bookie addresses
+     */
+    public Collection<BookieSocketAddress> getAllBookies()
+            throws BKException {
+        return bkc.bookieWatcher.getAllBookies();
+    }
 
     /**
      * Get a list of readonly bookies synchronously.
