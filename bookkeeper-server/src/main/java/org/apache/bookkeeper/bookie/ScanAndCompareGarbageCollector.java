@@ -153,6 +153,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             long end = -1;
             boolean done = false;
             AtomicBoolean isBookieInEnsembles = new AtomicBoolean(false);
+            Versioned<LedgerMetadata> metadata = null;
             while (!done) {
                 start = end + 1;
                 if (ledgerRangeIterator.hasNext()) {
@@ -174,8 +175,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                     if (!ledgersInMetadata.contains(bkLid)) {
                         if (verifyMetadataOnGc) {
                             isBookieInEnsembles.set(false);
+                            metadata = null;
                             int rc = BKException.Code.OK;
-                            Versioned<LedgerMetadata> metadata = null;
                             try {
                                 metadata = result(ledgerManager.readLedgerMetadata(bkLid), zkOpTimeoutMs,
                                         TimeUnit.MILLISECONDS);
