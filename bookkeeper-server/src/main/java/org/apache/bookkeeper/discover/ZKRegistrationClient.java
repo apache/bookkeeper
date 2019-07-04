@@ -201,12 +201,12 @@ public class ZKRegistrationClient implements RegistrationClient {
     public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getWritableBookies() {
         return getChildren(bookieRegistrationPath, null);
     }
-    
+
     @Override
     public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getAllBookies() {
         return getChildren(bookieAllRegistrationPath, null);
     }
-    
+
     @Override
     public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getReadOnlyBookies() {
         return getChildren(bookieReadonlyRegistrationPath, null);

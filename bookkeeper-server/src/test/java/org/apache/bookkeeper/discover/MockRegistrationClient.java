@@ -114,7 +114,7 @@ public class MockRegistrationClient implements RegistrationClient {
         executor.submit(() -> promise.complete(versioned(bookies, currentVersion)));
         return promise;
     }
-    
+
     @Override
     public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getAllBookies() {
         CompletableFuture<Versioned<Set<BookieSocketAddress>>> promise = new CompletableFuture<>();
