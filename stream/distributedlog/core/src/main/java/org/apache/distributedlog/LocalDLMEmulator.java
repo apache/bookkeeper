@@ -145,7 +145,7 @@ public class LocalDLMEmulator {
                     LOG.info("Starting {} bookies : allowLoopback = {}", numBookies, serverConf.getAllowLoopback());
                     LocalBookKeeper.startLocalBookies(zkHost, zkPort,
                             numBookies, shouldStartZK, initialBookiePort, serverConf);
-                    LOG.info("{} bookies are started.");
+                    LOG.info("{} bookies are started.", numBookies);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     // go away quietly

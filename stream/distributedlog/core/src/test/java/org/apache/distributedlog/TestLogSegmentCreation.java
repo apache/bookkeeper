@@ -103,7 +103,7 @@ public class TestLogSegmentCreation extends TestDistributedLogBase {
         assertFalse(hasDuplicatedSegment);
 
         LOG.info("Segments : duplicated = {}, inprogress = {}, {}",
-                 new Object[] { hasDuplicatedSegment, hasInprogress, segments });
+            hasDuplicatedSegment, hasInprogress, segments);
 
         dlm1.close();
         dlm2.close();

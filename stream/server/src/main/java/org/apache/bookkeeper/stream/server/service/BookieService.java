@@ -55,13 +55,11 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
         }
         log.info("Hello, I'm your bookie, listening on port {} :"
                 + " metadata service uri = {}, journals = {}, ledgers = {}, index = {}",
-            new Object[]{
-                serverConf.getBookiePort(),
-                serverConf.getMetadataServiceUriUnchecked(),
-                Arrays.asList(serverConf.getJournalDirNames()),
-                Arrays.asList(serverConf.getLedgerDirs()),
-                indexDirs
-            });
+            serverConf.getBookiePort(),
+            serverConf.getMetadataServiceUriUnchecked(),
+            Arrays.asList(serverConf.getJournalDirNames()),
+            Arrays.asList(serverConf.getLedgerDirs()),
+            indexDirs);
         try {
             this.bs = new BookieServer(serverConf, statsLogger);
             bs.start();

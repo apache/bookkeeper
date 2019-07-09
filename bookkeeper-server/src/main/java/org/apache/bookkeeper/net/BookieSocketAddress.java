@@ -117,9 +117,7 @@ public class BookieSocketAddress {
     // Return the String "serialized" version of this object.
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(hostname).append(COLON).append(port);
-        return sb.toString();
+        return hostname + COLON + port;
     }
 
     // Implement an equals method comparing two BookiSocketAddress objects.

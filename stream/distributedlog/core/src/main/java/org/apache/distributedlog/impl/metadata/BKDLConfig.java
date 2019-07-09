@@ -60,9 +60,9 @@ public class BKDLConfig implements DLConfig {
         }
         LOG.info("Propagate BKDLConfig to DLConfig : encodeRegionID = {},"
                         + " firstLogSegmentSequenceNumber = {}, createStreamIfNotExists = {}, isFederated = {}.",
-                new Object[] { dlConf.getEncodeRegionIDInLogSegmentMetadata(),
-                        dlConf.getFirstLogSegmentSequenceNumber(), dlConf.getCreateStreamIfNotExists(),
-                        bkdlConfig.isFederatedNamespace() });
+            dlConf.getEncodeRegionIDInLogSegmentMetadata(),
+            dlConf.getFirstLogSegmentSequenceNumber(), dlConf.getCreateStreamIfNotExists(),
+            bkdlConfig.isFederatedNamespace());
     }
 
     public static BKDLConfig resolveDLConfig(ZooKeeperClient zkc, URI uri) throws IOException {
