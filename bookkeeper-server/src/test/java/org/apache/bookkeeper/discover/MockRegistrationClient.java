@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.discover;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -59,9 +60,7 @@ public class MockRegistrationClient implements RegistrationClient {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
-                for (BookieSocketAddress b : bookies) {
-                    this.bookies.add(b);
-                }
+                Collections.addAll(this.bookies, bookies);
                 bookieWatchers.forEach(w -> w.onBookiesChanged(versioned(this.bookies, currentVersion)));
                 promise.complete(null);
             });
@@ -72,9 +71,7 @@ public class MockRegistrationClient implements RegistrationClient {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
-                for (BookieSocketAddress b : bookies) {
-                    this.bookies.add(b);
-                }
+                this.bookies.addAll(Arrays.asList(bookies));
                 bookieWatchers.forEach(w -> w.onBookiesChanged(versioned(this.bookies, currentVersion)));
                 promise.complete(null);
             });
@@ -85,9 +82,7 @@ public class MockRegistrationClient implements RegistrationClient {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
-                for (BookieSocketAddress b : bookies) {
-                    this.readOnlyBookies.add(b);
-                }
+                this.readOnlyBookies.addAll(Arrays.asList(bookies));
                 readOnlyBookieWatchers.forEach(w -> w.onBookiesChanged(versioned(readOnlyBookies, currentVersion)));
                 promise.complete(null);
             });
@@ -98,9 +93,7 @@ public class MockRegistrationClient implements RegistrationClient {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
-                for (BookieSocketAddress b : bookies) {
-                    this.readOnlyBookies.add(b);
-                }
+                this.readOnlyBookies.addAll(Arrays.asList(bookies));
                 readOnlyBookieWatchers.forEach(w -> w.onBookiesChanged(versioned(readOnlyBookies, currentVersion)));
                 promise.complete(null);
             });

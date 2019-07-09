@@ -25,6 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -123,9 +124,7 @@ public final class MetadataDrivers {
         String driversStr = System.getProperty(BK_METADATA_CLIENT_DRIVERS_PROPERTY);
         if (null != driversStr) {
             String[] driversArray = StringUtils.split(driversStr, ':');
-            for (String driver : driversArray) {
-                driverList.add(driver);
-            }
+            Collections.addAll(driverList, driversArray);
         }
 
         // initialize the drivers
@@ -152,9 +151,7 @@ public final class MetadataDrivers {
         String driversStr = System.getProperty(BK_METADATA_BOOKIE_DRIVERS_PROPERTY);
         if (null != driversStr) {
             String[] driversArray = StringUtils.split(driversStr, ':');
-            for (String driver : driversArray) {
-                driverList.add(driver);
-            }
+            Collections.addAll(driverList, driversArray);
         }
 
         // initialize the drivers
