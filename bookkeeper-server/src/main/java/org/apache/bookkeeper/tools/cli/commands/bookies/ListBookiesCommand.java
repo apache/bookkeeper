@@ -75,6 +75,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
             // case: no args is provided. list all the bookies by default.
             flags.readwrite = true;
             flags.readonly = true;
+            flags.all = true;
         }
 
         boolean hasBookies = false;

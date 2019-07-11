@@ -395,7 +395,7 @@ public class BookieShellTest {
             .apply(same(shell.bkConf), same(mockListBookiesFlags));
         verify(mockListBookiesFlags, times(1)).readonly(true);
         verify(mockListBookiesFlags, times(1)).readwrite(false);
-        verify(mockListBookiesFlags, times(1)).all(true);
+        verify(mockListBookiesFlags, times(1)).all(false);
     }
 
     @Test
@@ -411,7 +411,7 @@ public class BookieShellTest {
         verify(mockListBookiesFlags, times(1)).readwrite(true);
         verify(mockListBookiesFlags, times(1)).all(false);
     }
-    
+
     @Test
     public void testListBookiesCmdAll() throws Exception {
         assertEquals(0, shell.run(new String[] {
@@ -425,5 +425,5 @@ public class BookieShellTest {
         verify(mockListBookiesFlags, times(1)).readwrite(false);
         verify(mockListBookiesFlags, times(1)).all(true);
     }
-    
+
 }

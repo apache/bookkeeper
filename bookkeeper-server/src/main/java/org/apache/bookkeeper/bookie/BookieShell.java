@@ -1112,7 +1112,7 @@ public class BookieShell implements Tool {
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
             int passedCommands = 0;
-            
+
             boolean readwrite = cmdLine.hasOption("rw");
             if (readwrite) {
                 passedCommands++;
@@ -1125,13 +1125,13 @@ public class BookieShell implements Tool {
             if (all) {
                 passedCommands++;
             }
-            
-            if (passedCommands > 1) {
+
+            if (passedCommands != 1) {
                 LOG.error("One and only one of -readwrite, -readonly and -all must be specified");
                 printUsage();
                 return 1;
             }
-            
+
             ListBookiesCommand.Flags flags = new ListBookiesCommand.Flags()
                 .readwrite(readwrite)
                 .readonly(readonly)

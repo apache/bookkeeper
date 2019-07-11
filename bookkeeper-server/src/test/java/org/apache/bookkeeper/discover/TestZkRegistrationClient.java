@@ -152,7 +152,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         assertSetEquals(
             addresses, result.getValue());
     }
-    
+
     @Test
     public void testGetAllBookies() throws Exception {
         Set<BookieSocketAddress> addresses = prepareNBookies(10);
@@ -216,13 +216,13 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
             Code.NONODE.intValue(), null, null);
 
         try {
-            result(zkRegistrationClient.getReadOnlyBookies());
+            result(zkRegistrationClient.getAllBookies());
             fail("Should fail to get all bookies");
         } catch (ZKException zke) {
             // expected to throw zookeeper exception
         }
     }
-    
+
     @Test
     public void testGetReadOnlyBookiesFailure() throws Exception {
         mockGetChildren(

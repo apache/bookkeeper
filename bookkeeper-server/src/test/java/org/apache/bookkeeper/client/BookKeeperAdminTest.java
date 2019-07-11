@@ -510,7 +510,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         Assert.assertTrue("AvailableBookiesPath should have been created successfully " + bookieCookiePath,
                 (zkc.exists(bookieCookiePath, false) != null));
 
-        try ( BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
             Collection<BookieSocketAddress> availableBookies = bkAdmin.getAvailableBookies();
             Assert.assertEquals(availableBookies.size(), bs.size());
 

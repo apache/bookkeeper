@@ -91,7 +91,7 @@ class EtcdRegistrationClient implements RegistrationClient {
     public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getWritableBookies() {
         return writableBookiesReader.read();
     }
-    
+
     @Override
     public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getAllBookies() {
         return FutureUtils.exception(new BKException.BKIllegalOpException());
