@@ -34,8 +34,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
@@ -45,6 +47,7 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -149,6 +152,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             long start;
             long end = -1;
             boolean done = false;
+            AtomicBoolean isBookieInEnsembles = new AtomicBoolean(false);
+            Versioned<LedgerMetadata> metadata = null;
             while (!done) {
                 start = end + 1;
                 if (ledgerRangeIterator.hasNext()) {
@@ -169,9 +174,12 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                 for (Long bkLid : subBkActiveLedgers) {
                     if (!ledgersInMetadata.contains(bkLid)) {
                         if (verifyMetadataOnGc) {
+                            isBookieInEnsembles.set(false);
+                            metadata = null;
                             int rc = BKException.Code.OK;
                             try {
-                                result(ledgerManager.readLedgerMetadata(bkLid), zkOpTimeoutMs, TimeUnit.MILLISECONDS);
+                                metadata = result(ledgerManager.readLedgerMetadata(bkLid), zkOpTimeoutMs,
+                                        TimeUnit.MILLISECONDS);
                             } catch (BKException | TimeoutException e) {
                                 if (e instanceof BKException) {
                                     rc = ((BKException) e).getCode();
@@ -182,7 +190,19 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                                     continue;
                                 }
                             }
-                            if (rc != BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
+                            // check bookie should be part of ensembles in one
+                            // of the segment else ledger should be deleted from
+                            // local storage
+                            if (metadata != null && metadata.getValue() != null) {
+                                metadata.getValue().getAllEnsembles().forEach((entryId, ensembles) -> {
+                                    if (ensembles != null && ensembles.contains(selfBookieAddress)) {
+                                        isBookieInEnsembles.set(true);
+                                    }
+                                });
+                                if (isBookieInEnsembles.get()) {
+                                    continue;
+                                }
+                            } else if (rc != BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                                 LOG.warn("Ledger {} Missing in metadata list, but ledgerManager returned rc: {}.",
                                         bkLid, rc);
                                 continue;
