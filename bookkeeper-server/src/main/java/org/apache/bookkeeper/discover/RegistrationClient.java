@@ -52,6 +52,13 @@ public interface RegistrationClient extends AutoCloseable {
     CompletableFuture<Versioned<Set<BookieSocketAddress>>> getWritableBookies();
 
     /**
+     * Get the list of all bookies identifiers.
+     *
+     * @return a future represents the list of writable bookies.
+     */
+    CompletableFuture<Versioned<Set<BookieSocketAddress>>> getAllBookies();
+
+    /**
      * Get the list of readonly bookie identifiers.
      *
      * @return a future represents the list of readonly bookies.
