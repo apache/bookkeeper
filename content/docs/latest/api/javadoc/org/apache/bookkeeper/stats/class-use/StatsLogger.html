@@ -135,16 +135,16 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
-<td class="colLast"><span class="typeNameLabel">BookKeeper.Builder.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#statsLogger">statsLogger</a></span></code>&nbsp;</td>
+<td class="colFirst"><code>protected <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#statsLogger">statsLogger</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
 <td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#statsLogger">statsLogger</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>protected <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#statsLogger">statsLogger</a></span></code>&nbsp;</td>
+<td class="colFirst"><code>(package private) <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeper.Builder.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.Builder.html#statsLogger">statsLogger</a></span></code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -170,21 +170,13 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
-<td class="colLast"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
-          io.netty.util.HashedWheelTimer&nbsp;timer,
-          <a href="../../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
-          <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></code></td>
 <td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
@@ -192,15 +184,15 @@
           <a href="../../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <td class="colLast"><span class="typeNameLabel">EnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
@@ -210,9 +202,17 @@
 <div class="block">Initialize the policy.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></code></td>
 <td class="colLast"><span class="typeNameLabel">RegionAwareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          io.netty.util.HashedWheelTimer&nbsp;timer,
+          <a href="../../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
+          <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
+<td class="colLast"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
@@ -454,7 +454,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
-<td class="colLast"><span class="typeNameLabel">NullStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/NullStatsLogger.html#scope-java.lang.String-">scope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CachingStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/CachingStatsLogger.html#scope-java.lang.String-">scope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
@@ -464,7 +464,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CachingStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/CachingStatsLogger.html#scope-java.lang.String-">scope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">NullStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/NullStatsLogger.html#scope-java.lang.String-">scope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -484,7 +484,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">NullStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/NullStatsLogger.html#removeScope-java.lang.String-org.apache.bookkeeper.stats.StatsLogger-">removeScope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
+<td class="colLast"><span class="typeNameLabel">CachingStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/CachingStatsLogger.html#removeScope-java.lang.String-org.apache.bookkeeper.stats.StatsLogger-">removeScope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
            <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -496,7 +496,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">CachingStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/CachingStatsLogger.html#removeScope-java.lang.String-org.apache.bookkeeper.stats.StatsLogger-">removeScope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
+<td class="colLast"><span class="typeNameLabel">NullStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/NullStatsLogger.html#removeScope-java.lang.String-org.apache.bookkeeper.stats.StatsLogger-">removeScope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
            <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>&nbsp;</td>
 </tr>
 </tbody>
@@ -558,11 +558,11 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
-<td class="colLast"><span class="typeNameLabel">FastCodahaleStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/codahale/FastCodahaleStatsLogger.html#scope-java.lang.String-">scope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scope)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CodahaleStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#scope-java.lang.String-">scope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scope)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CodahaleStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#scope-java.lang.String-">scope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scope)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">FastCodahaleStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/codahale/FastCodahaleStatsLogger.html#scope-java.lang.String-">scope</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scope)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

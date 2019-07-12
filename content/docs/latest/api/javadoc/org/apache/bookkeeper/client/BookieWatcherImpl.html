@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -181,19 +181,23 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#getBookies--">getBookies</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#getAllBookies--">getAllBookies</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#getReadOnlyBookies--">getReadOnlyBookies</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#getBookies--">getBookies</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#getReadOnlyBookies--">getReadOnlyBookies</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#initialBlockingBookieRead--">initialBlockingBookieRead</a></span>()</code>
 <div class="block">Blocks until bookies are read from zookeeper, used in the <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client"><code>BookKeeper</code></a> constructor.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#newEnsemble-int-int-int-java.util.Map-">newEnsemble</a></span>(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
@@ -202,13 +206,13 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <div class="block">Create an ensemble with given <i>ensembleSize</i> and <i>writeQuorumSize</i>.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#quarantineBookie-org.apache.bookkeeper.net.BookieSocketAddress-">quarantineBookie</a></span>(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookie)</code>
 <div class="block">Quarantine <i>bookie</i> so it will not be preferred to be chosen for new ensembles.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieSocketAddress</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#replaceBookie-int-int-int-java.util.Map-java.util.List-int-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
@@ -290,6 +294,22 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#getBookies--">getBookies</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="getAllBookies--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getAllBookies</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getAllBookies()
+                                                                 throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#getAllBookies--">getAllBookies</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>

@@ -110,7 +110,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
-<td class="colLast"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleList,
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code>&nbsp;</td>
 </tr>
@@ -121,12 +121,6 @@
                                    int&nbsp;ackQuorumSize)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleList,
-                                   int&nbsp;writeQuorumSize,
-                                   int&nbsp;ackQuorumSize)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code>default <a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
 <td class="colLast"><span class="typeNameLabel">EnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleList,
                                    int&nbsp;writeQuorumSize,
@@ -137,7 +131,7 @@
  'minNumRacksPerWriteQuorum' number of racks.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleBookiesList,
                                    int&nbsp;writeQuorumSize,
@@ -147,9 +141,15 @@
  and ackQuorumSize.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
 <td class="colLast"><span class="typeNameLabel">RegionAwareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleList,
+                                   int&nbsp;writeQuorumSize,
+                                   int&nbsp;ackQuorumSize)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
+<td class="colLast"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code>&nbsp;</td>
 </tr>

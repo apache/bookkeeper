@@ -106,6 +106,13 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">BookieWatcherImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#newEnsemble-int-int-int-java.util.Map-">newEnsemble</a></span>(int&nbsp;ensembleSize,
+           int&nbsp;writeQuorumSize,
+           int&nbsp;ackQuorumSize,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">BookieWatcher.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcher.html#newEnsemble-int-int-int-java.util.Map-">newEnsemble</a></span>(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
            int&nbsp;ackQuorumSize,
@@ -113,38 +120,7 @@
 <div class="block">Create an ensemble with given <i>ensembleSize</i> and <i>writeQuorumSize</i>.</div>
 </td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">BookieWatcherImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#newEnsemble-int-int-int-java.util.Map-">newEnsemble</a></span>(int&nbsp;ensembleSize,
-           int&nbsp;writeQuorumSize,
-           int&nbsp;ackQuorumSize,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</code>&nbsp;</td>
-</tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a></span>(int&nbsp;ensembleSize,
-           int&nbsp;quorumSize,
-           int&nbsp;ackQuorumSize,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a></span>(int&nbsp;ensembleSize,
-           int&nbsp;writeQuorumSize,
-           int&nbsp;ackQuorumSize,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a></span>(int&nbsp;ensembleSize,
-           int&nbsp;writeQuorumSize,
-           int&nbsp;ackQuorumSize,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a></span>(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
@@ -152,9 +128,17 @@
            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a></span>(int&nbsp;ensembleSize,
+           int&nbsp;writeQuorumSize,
+           int&nbsp;ackQuorumSize,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
+</tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a></span>(int&nbsp;ensembleSize,
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a></span>(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
            int&nbsp;ackQuorumSize,
            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
@@ -180,7 +164,23 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#newEnsemble-int-int-int-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">newEnsemble</a></span>(int&nbsp;ensembleSize,
+<td class="colLast"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a></span>(int&nbsp;ensembleSize,
+           int&nbsp;quorumSize,
+           int&nbsp;ackQuorumSize,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a></span>(int&nbsp;ensembleSize,
+           int&nbsp;writeQuorumSize,
+           int&nbsp;ackQuorumSize,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#newEnsemble-int-int-int-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">newEnsemble</a></span>(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
            int&nbsp;ackQuorumSize,
            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies,
@@ -189,7 +189,7 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#newEnsemble-int-int-int-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">newEnsemble</a></span>(int&nbsp;ensembleSize,
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#newEnsemble-int-int-int-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">newEnsemble</a></span>(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
            int&nbsp;ackQuorumSize,
            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies,
@@ -227,7 +227,7 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
              int&nbsp;ackQuorumSize,
              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
@@ -236,16 +236,6 @@
              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
-             int&nbsp;writeQuorumSize,
-             int&nbsp;ackQuorumSize,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;currentEnsemble,
-             org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieToReplace,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
@@ -255,19 +245,9 @@
              org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieToReplace,
              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
-             int&nbsp;writeQuorumSize,
-             int&nbsp;ackQuorumSize,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;currentEnsemble,
-             org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieToReplace,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
-</tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
              int&nbsp;ackQuorumSize,
              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
@@ -298,6 +278,36 @@
              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
+             int&nbsp;writeQuorumSize,
+             int&nbsp;ackQuorumSize,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;currentEnsemble,
+             org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieToReplace,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.List-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
+             int&nbsp;writeQuorumSize,
+             int&nbsp;ackQuorumSize,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;currentEnsemble,
+             org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieToReplace,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>org.apache.bookkeeper.net.BookieSocketAddress</code></td>
+<td class="colLast"><span class="typeNameLabel">BookieWatcherImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#replaceBookie-int-int-int-java.util.Map-java.util.List-int-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
+             int&nbsp;writeQuorumSize,
+             int&nbsp;ackQuorumSize,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;existingBookies,
+             int&nbsp;bookieIdx,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieSocketAddress</code></td>
 <td class="colLast"><span class="typeNameLabel">BookieWatcher.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcher.html#replaceBookie-int-int-int-java.util.Map-java.util.List-int-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
@@ -308,16 +318,6 @@
              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>
 <div class="block">Choose a bookie to replace bookie <i>bookieIdx</i> in <i>existingBookies</i>.</div>
 </td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>org.apache.bookkeeper.net.BookieSocketAddress</code></td>
-<td class="colLast"><span class="typeNameLabel">BookieWatcherImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#replaceBookie-int-int-int-java.util.Map-java.util.List-int-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
-             int&nbsp;writeQuorumSize,
-             int&nbsp;ackQuorumSize,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;existingBookies,
-             int&nbsp;bookieIdx,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
@@ -348,6 +348,14 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieNode</code></td>
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;excludeRacks,
+                         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
+                         <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
+                         <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;ensemble,
+                         boolean&nbsp;fallbackToRandom)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>org.apache.bookkeeper.net.BookieNode</code></td>
 <td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;excludeRacks,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
                          <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
@@ -356,14 +364,6 @@
 <div class="block">It randomly selects a <code>BookieNode</code> that is not on the <i>excludeRacks</i> set, excluding the nodes in
  <i>excludeBookies</i> set.</div>
 </td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>org.apache.bookkeeper.net.BookieNode</code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;excludeRacks,
-                         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
-                         <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
-                         <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;ensemble,
-                         boolean&nbsp;fallbackToRandom)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieNode</code></td>
@@ -375,7 +375,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieNode</code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.lang.String-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.lang.String-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
                          <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
                          <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;ensemble,
@@ -383,7 +383,7 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieNode</code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.lang.String-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.lang.String-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
                          <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
                          <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;ensemble,
@@ -420,7 +420,7 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieNode</code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.lang.String-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
+<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.lang.String-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;excludeRacks,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
                          <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
@@ -429,7 +429,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieNode</code></td>
-<td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.lang.String-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#selectFromNetworkLocation-java.lang.String-java.util.Set-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">selectFromNetworkLocation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;networkLoc,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;excludeRacks,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
                          <a href="../../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;&nbsp;predicate,
