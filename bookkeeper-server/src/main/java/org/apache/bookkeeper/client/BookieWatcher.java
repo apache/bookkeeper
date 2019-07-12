@@ -26,6 +26,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 
 interface BookieWatcher {
     Set<BookieSocketAddress> getBookies() throws BKException;
+    Set<BookieSocketAddress> getAllBookies() throws BKException;
     Set<BookieSocketAddress> getReadOnlyBookies() throws BKException;
 
     /**

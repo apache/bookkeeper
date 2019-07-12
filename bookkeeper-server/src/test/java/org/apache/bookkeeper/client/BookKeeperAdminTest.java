@@ -31,6 +31,7 @@ import static org.junit.Assert.fail;
 import com.google.common.net.InetAddresses;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -44,6 +45,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -497,4 +499,40 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         }
         bkc.close();
     }
+
+    @Test
+    public void testGetBookies() throws Exception {
+        String ledgersRootPath = "/ledgers";
+        Assert.assertTrue("Cluster rootpath should have been created successfully " + ledgersRootPath,
+                (zkc.exists(ledgersRootPath, false) != null));
+        String bookieCookiePath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseConf)
+                + "/" + BookKeeperConstants.COOKIE_NODE;
+        Assert.assertTrue("AvailableBookiesPath should have been created successfully " + bookieCookiePath,
+                (zkc.exists(bookieCookiePath, false) != null));
+
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            Collection<BookieSocketAddress> availableBookies = bkAdmin.getAvailableBookies();
+            Assert.assertEquals(availableBookies.size(), bs.size());
+
+            for (int i = 0; i < bs.size(); i++) {
+                availableBookies.contains(bs.get(i).getLocalAddress());
+            }
+
+            BookieServer killedBookie = bs.get(1);
+            killBookieAndWaitForZK(1);
+
+            Collection<BookieSocketAddress> remainingBookies = bkAdmin.getAvailableBookies();
+            Assert.assertFalse(remainingBookies.contains(killedBookie.getLocalAddress()));
+
+            Collection<BookieSocketAddress> allBookies = bkAdmin.getAllBookies();
+            for (int i = 0; i < bs.size(); i++) {
+                remainingBookies.contains(bs.get(i).getLocalAddress());
+                allBookies.contains(bs.get(i).getLocalAddress());
+            }
+
+            Assert.assertEquals(remainingBookies.size(), allBookies.size() - 1);
+            Assert.assertTrue(allBookies.contains(killedBookie.getLocalAddress()));
+        }
+    }
+
 }

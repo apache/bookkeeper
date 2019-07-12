@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.metadata.etcd.helpers.KeySetReader;
@@ -89,6 +90,11 @@ class EtcdRegistrationClient implements RegistrationClient {
     @Override
     public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getWritableBookies() {
         return writableBookiesReader.read();
+    }
+
+    @Override
+    public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getAllBookies() {
+        return FutureUtils.exception(new BKException.BKIllegalOpException());
     }
 
     @Override

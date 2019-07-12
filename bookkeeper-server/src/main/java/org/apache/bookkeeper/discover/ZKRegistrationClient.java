@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.discover;
 
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
+import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import com.google.common.collect.Sets;
@@ -173,6 +174,7 @@ public class ZKRegistrationClient implements RegistrationClient {
 
     // registration paths
     private final String bookieRegistrationPath;
+    private final String bookieAllRegistrationPath;
     private final String bookieReadonlyRegistrationPath;
 
     public ZKRegistrationClient(ZooKeeper zk,
@@ -182,6 +184,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         this.scheduler = scheduler;
 
         this.bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
+        this.bookieAllRegistrationPath = ledgersRootPath + "/" + COOKIE_NODE;
         this.bookieReadonlyRegistrationPath = this.bookieRegistrationPath + "/" + READONLY;
     }
 
@@ -200,6 +203,11 @@ public class ZKRegistrationClient implements RegistrationClient {
     }
 
     @Override
+    public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getAllBookies() {
+        return getChildren(bookieAllRegistrationPath, null);
+    }
+
+    @Override
     public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getReadOnlyBookies() {
         return getChildren(bookieReadonlyRegistrationPath, null);
     }
@@ -209,8 +217,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         zk.getChildren(regPath, watcher, (rc, path, ctx, children, stat) -> {
             if (Code.OK != rc) {
                 ZKException zke = new ZKException();
-                zke.fillInStackTrace();
-                future.completeExceptionally(zke);
+                future.completeExceptionally(zke.fillInStackTrace());
                 return;
             }
 

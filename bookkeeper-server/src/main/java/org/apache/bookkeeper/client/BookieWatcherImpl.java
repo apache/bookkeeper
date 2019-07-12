@@ -143,6 +143,16 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     @Override
+    public Set<BookieSocketAddress> getAllBookies() throws BKException {
+        try {
+            return FutureUtils.result(registrationClient.getAllBookies(), EXCEPTION_FUNC).getValue();
+        } catch (BKInterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw ie;
+        }
+    }
+
+    @Override
     public Set<BookieSocketAddress> getReadOnlyBookies()
             throws BKException {
         try {

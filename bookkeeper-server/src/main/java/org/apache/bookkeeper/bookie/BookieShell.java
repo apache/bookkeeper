@@ -1104,24 +1104,38 @@ public class BookieShell implements Tool {
             super(CMD_LISTBOOKIES);
             opts.addOption("rw", "readwrite", false, "Print readwrite bookies");
             opts.addOption("ro", "readonly", false, "Print readonly bookies");
+            opts.addOption("a", "all", false, "Print all bookies");
             // @deprecated 'rw'/'ro' option print both hostname and ip, so this option is not needed anymore
             opts.addOption("h", "hostnames", false, "Also print hostname of the bookie");
         }
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            boolean readwrite = cmdLine.hasOption("rw");
-            boolean readonly = cmdLine.hasOption("ro");
+            int passedCommands = 0;
 
-            if ((!readwrite && !readonly) || (readwrite && readonly)) {
-                LOG.error("One and only one of -readwrite and -readonly must be specified");
+            boolean readwrite = cmdLine.hasOption("rw");
+            if (readwrite) {
+                passedCommands++;
+            }
+            boolean readonly = cmdLine.hasOption("ro");
+            if (readonly) {
+                passedCommands++;
+            }
+            boolean all = cmdLine.hasOption("a");
+            if (all) {
+                passedCommands++;
+            }
+
+            if (passedCommands != 1) {
+                LOG.error("One and only one of -readwrite, -readonly and -all must be specified");
                 printUsage();
                 return 1;
             }
 
             ListBookiesCommand.Flags flags = new ListBookiesCommand.Flags()
                 .readwrite(readwrite)
-                .readonly(readonly);
+                .readonly(readonly)
+                .all(all);
 
             ListBookiesCommand command = new ListBookiesCommand(flags);
 
@@ -1136,7 +1150,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "listbookies  [-readwrite|-readonly] [-hostnames]";
+            return "listbookies  [-readwrite|-readonly|-all] [-hostnames]";
         }
 
         @Override

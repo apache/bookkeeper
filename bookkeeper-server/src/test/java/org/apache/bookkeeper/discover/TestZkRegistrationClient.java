@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.common.testing.MoreAsserts.assertSetEquals;
 import static org.apache.bookkeeper.discover.ZKRegistrationClient.ZK_CONNECT_BACKOFF_MS;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
+import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -88,6 +89,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
 
     private String ledgersPath;
     private String regPath;
+    private String regAllPath;
     private String regReadonlyPath;
     private ZKRegistrationClient zkRegistrationClient;
     private ScheduledExecutorService mockExecutor;
@@ -100,6 +102,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
 
         this.ledgersPath = "/" + runtime.getMethodName();
         this.regPath = ledgersPath + "/" + AVAILABLE_NODE;
+        this.regAllPath = ledgersPath + "/" + COOKIE_NODE;
         this.regReadonlyPath = regPath + "/" + READONLY;
         this.mockExecutor = mock(ScheduledExecutorService.class);
         this.controller = new MockExecutorController()
@@ -151,6 +154,27 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
     }
 
     @Test
+    public void testGetAllBookies() throws Exception {
+        Set<BookieSocketAddress> addresses = prepareNBookies(10);
+        List<String> children = Lists.newArrayList();
+        for (BookieSocketAddress address : addresses) {
+            children.add(address.toString());
+        }
+        Stat stat = mock(Stat.class);
+        when(stat.getCversion()).thenReturn(1234);
+        mockGetChildren(
+            regAllPath, false,
+            Code.OK.intValue(), children, stat);
+
+        Versioned<Set<BookieSocketAddress>> result =
+            result(zkRegistrationClient.getAllBookies());
+
+        assertEquals(new LongVersion(1234), result.getVersion());
+        assertSetEquals(
+            addresses, result.getValue());
+    }
+
+    @Test
     public void testGetReadOnlyBookies() throws Exception {
         Set<BookieSocketAddress> addresses = prepareNBookies(10);
         List<String> children = Lists.newArrayList();
@@ -180,6 +204,20 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         try {
             result(zkRegistrationClient.getWritableBookies());
             fail("Should fail to get writable bookies");
+        } catch (ZKException zke) {
+            // expected to throw zookeeper exception
+        }
+    }
+
+    @Test
+    public void testGetAllBookiesFailure() throws Exception {
+        mockGetChildren(
+            regAllPath, false,
+            Code.NONODE.intValue(), null, null);
+
+        try {
+            result(zkRegistrationClient.getAllBookies());
+            fail("Should fail to get all bookies");
         } catch (ZKException zke) {
             // expected to throw zookeeper exception
         }
