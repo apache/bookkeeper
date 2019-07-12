@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -93,12 +94,18 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         super(lmFactoryCls);
     }
 
+    private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
+        BookieSocketAddress selfBookie = Bookie.getBookieAddress(baseConf);
+        createLedgers(numLedgers, createdLedgers, selfBookie);
+    }
+
     /**
      * Create ledgers.
      */
-    private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
+    private void createLedgers(int numLedgers, final Set<Long> createdLedgers, BookieSocketAddress selfBookie)
+            throws IOException {
         final AtomicInteger expected = new AtomicInteger(numLedgers);
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234));
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(selfBookie);
 
         for (int i = 0; i < numLedgers; i++) {
             getLedgerIdGenerator().generateLedgerId(new GenericCallback<Long>() {
@@ -691,5 +698,56 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
             return null;
         }
+    }
+
+    /**
+     * Verifies that gc should cleaned up overreplicatd ledgers which is not
+     * owned by the bookie anymore.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGcLedgersForOverreplicated() throws Exception {
+        baseConf.setVerifyMetadataOnGc(true);
+        final SortedSet<Long> createdLedgers = Collections.synchronizedSortedSet(new TreeSet<Long>());
+        final SortedSet<Long> cleaned = Collections.synchronizedSortedSet(new TreeSet<Long>());
+
+        // Create few ledgers
+        final int numLedgers = 5;
+
+        BookieSocketAddress bookieAddress = new BookieSocketAddress("192.0.0.1", 1234);
+        createLedgers(numLedgers, createdLedgers, bookieAddress);
+
+        LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
+            @Override
+            public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
+                return new LedgerRangeIterator() {
+                    @Override
+                    public LedgerRange next() throws IOException {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean hasNext() throws IOException {
+                        return false;
+                    }
+                };
+            }
+        };
+
+        final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
+        GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
+            @Override
+            public void clean(long ledgerId) {
+                LOG.info("Cleaned {}", ledgerId);
+                cleaned.add(ledgerId);
+            }
+        };
+
+        validateLedgerRangeIterator(createdLedgers);
+
+        garbageCollector.gc(cleaner);
+        assertEquals("Should have cleaned all ledgers", cleaned.size(), numLedgers);
     }
 }
