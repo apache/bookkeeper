@@ -89,10 +89,10 @@ public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends Chaos
 
     @Override
     public void start() {
-        
+
         this.waitStrategy = new HostPortWaitStrategy()
                 .withStartupTimeout(Duration.of(300, SECONDS));
-        
+
         this.withCreateContainerCmdModifier(createContainerCmd -> {
             createContainerCmd.withHostName(hostname);
             createContainerCmd.withName(getContainerName());
