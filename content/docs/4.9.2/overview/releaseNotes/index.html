@@ -55,6 +55,11 @@
           </a>
           <hr class="dropdown-divider">
           
+          <a class="navbar-item" href="/docs/4.9.2/overview/overview">
+            Release 4.9.2
+            
+          </a>
+          
           <a class="navbar-item" href="/docs/4.9.1/overview/overview">
             Release 4.9.1
             
@@ -505,28 +510,29 @@
 
       <div class="content">
         <section class="bk-main-content">
-          <p>The 4.9.2 release is a bugfix release which fixes a bunch of issues reported from users of 4.9.1.</p>
+          <p>This is the 18th release of Apache BookKeeper!</p>
 
-<p>Apache BookKeeper users who are using 4.9.1 are encouraged to upgrade to 4.9.2. The technical details of this release are summarized
-below.</p>
+<p>The 4.9.2 release incorporates a few critical bug fixes, since previous major release, 4.9.0.</p>
 
-<h2 id="highlights">Highlights</h2>
+<p>Apache BookKeeper/DistributedLog users are encouraged to <a href="../../admin/upgrade">upgrade to 4.9.2</a>. The technical details of
+this release are summarized below.</p>
+
+<h3 id="dependencies-changes">Dependencies Changes</h3>
+
+<p>No dependency change.</p>
+
+<h3 id="bug-fixes">Bug Fixes</h3>
 
 <ul>
-  <li>Added HTTP handler to expose bookie state <a href="https://github.com/apache/bookkeeper/pull/1995">apache/bookkeeper#1995</a></li>
-  <li>Fix DbLedgerStorage encountering unexpected entry id <a href="https://github.com/apache/bookkeeper/pull/2002">apache/bookkeeper#2002</a></li>
-  <li>Close db properly to avoid open RocksDB failure at the second time <a href="https://github.com/apache/bookkeeper/pull/2022">apache/bookkeeper#2022</a></li>
-  <li>Cancel LAC watch when longpoll LAC times out <a href="https://github.com/apache/bookkeeper/pull/2051">apache/bookkeeper#2051</a></li>
-  <li>Wait for LAC update even if ledger fenced <a href="https://github.com/apache/bookkeeper/pull/2052">apache/bookkeeper#2052</a></li>
-  <li>Bugfix for Percentile Calculation in FastCodahale Timer Implementation <a href="https://github.com/apache/bookkeeper/pull/2054">apache/bookkeeper#2054</a></li>
-  <li>Use pure python implementation of MurmurHash <a href="https://github.com/apache/bookkeeper/pull/2069">apache/bookkeeper#2069</a></li>
-  <li>Bookieshell lastmark command isn’t functional, always returning 0-0 <a href="https://github.com/apache/bookkeeper/pull/2076">apache/bookkeeper#2076</a></li>
+  <li><a href="https://github.com/apache/bookkeeper/pull/1973">Issue #1973: [DLOG] Avoid double read in readahead</a></li>
+  <li><a href="https://github.com/apache/bookkeeper/pull/1952">Issue #1952: Filter empty string for networkTopologyScriptFileName</a></li>
+  <li><a href="https://github.com/apache/bookkeeper/pull/1950">Issue #1950: putEntryOffset translate FileInfoDeletedException</a></li>
 </ul>
 
 <h2 id="full-list-of-changes">Full list of changes</h2>
 
 <ul>
-  <li><a href="https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.9.2+is%3Aclosed">https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.9.2+is%3Aclosed</a></li>
+  <li><a href="https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.9.1+is%3Aclosed">https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.9.2+is%3Aclosed</a></li>
 </ul>
 
         </section>
@@ -541,7 +547,8 @@ below.</p>
 <div class="toc">
   <h2 class="title">Apache BookKeeper 4.9.2 Release Notes</h2>
   <ul class="section-nav">
-<li class="toc-entry toc-h2"><a href="#highlights">Highlights</a></li>
+<li class="toc-entry toc-h3"><a href="#dependencies-changes">Dependencies Changes</a></li>
+<li class="toc-entry toc-h3"><a href="#bug-fixes">Bug Fixes</a></li>
 <li class="toc-entry toc-h2"><a href="#full-list-of-changes">Full list of changes</a></li>
 </ul>
 </div>
