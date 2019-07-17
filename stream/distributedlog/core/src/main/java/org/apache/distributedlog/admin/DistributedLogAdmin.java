@@ -460,7 +460,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
             boolean force = cmdline.hasOption("f");
             URI uri = URI.create(args[0]);
             // resolving the uri to see if there is another bindings in this uri.
-            ZooKeeperClient zkc = ZooKeeperClientBuilder.newBuilder().uri(uri)
+            ZooKeeperClient zkc = ZooKeeperClientBuilder.newBuilder().uri(uri).zkAclId(null)
                     .sessionTimeoutMs(10000).build();
             BKDLConfig bkdlConfig;
             try {
