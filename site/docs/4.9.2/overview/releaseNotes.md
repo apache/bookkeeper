@@ -2,23 +2,23 @@
 title: Apache BookKeeper 4.9.2 Release Notes
 ---
 
-The 4.9.2 release is a bugfix release which fixes a bunch of issues reported from users of 4.9.1.
+This is the 18th release of Apache BookKeeper!
 
-Apache BookKeeper users who are using 4.9.1 are encouraged to upgrade to 4.9.2. The technical details of this release are summarized
-below.
+The 4.9.2 release incorporates a few critical bug fixes, since previous major release, 4.9.0.
 
-## Highlights
+Apache BookKeeper/DistributedLog users are encouraged to [upgrade to 4.9.2](../../admin/upgrade). The technical details of
+this release are summarized below.
 
- - Added HTTP handler to expose bookie state [apache/bookkeeper#1995](https://github.com/apache/bookkeeper/pull/1995)
- - Fix DbLedgerStorage encountering unexpected entry id [apache/bookkeeper#2002](https://github.com/apache/bookkeeper/pull/2002)
- - Close db properly to avoid open RocksDB failure at the second time [apache/bookkeeper#2022](https://github.com/apache/bookkeeper/pull/2022)
- - Cancel LAC watch when longpoll LAC times out [apache/bookkeeper#2051](https://github.com/apache/bookkeeper/pull/2051)
- - Wait for LAC update even if ledger fenced [apache/bookkeeper#2052](https://github.com/apache/bookkeeper/pull/2052)
- - Bugfix for Percentile Calculation in FastCodahale Timer Implementation [apache/bookkeeper#2054](https://github.com/apache/bookkeeper/pull/2054)
- - Use pure python implementation of MurmurHash [apache/bookkeeper#2069](https://github.com/apache/bookkeeper/pull/2069)
- - Bookieshell lastmark command isn't functional, always returning 0-0 [apache/bookkeeper#2076](https://github.com/apache/bookkeeper/pull/2076)
+### Dependencies Changes
 
+No dependency change.
+
+### Bug Fixes
+
+- [Issue #1973: [DLOG] Avoid double read in readahead](https://github.com/apache/bookkeeper/pull/1973)
+- [Issue #1952: Filter empty string for networkTopologyScriptFileName](https://github.com/apache/bookkeeper/pull/1952)
+- [Issue #1950: putEntryOffset translate FileInfoDeletedException](https://github.com/apache/bookkeeper/pull/1950)
 
 ## Full list of changes
 
-- [https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.9.2+is%3Aclosed](https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.9.2+is%3Aclosed)
+- [https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.9.2+is%3Aclosed](https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.9.1+is%3Aclosed)
