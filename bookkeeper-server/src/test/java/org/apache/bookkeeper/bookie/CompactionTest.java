@@ -1380,9 +1380,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             File[] files = Bookie.getCurrentDirectory(ledgerDirectory).listFiles(
                 file -> file.getName().endsWith(COMPACTED_SUFFIX));
             if (files != null) {
-                for (File file : files) {
-                    compactedLogFiles.add(file);
-                }
+                Collections.addAll(compactedLogFiles, files);
             }
         }
         return compactedLogFiles;

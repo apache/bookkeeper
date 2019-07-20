@@ -407,15 +407,9 @@ public class LedgerAllocatorPool implements LedgerAllocator {
         synchronized (this) {
             allocatorsToClose = Lists.newArrayListWithExpectedSize(
                     pendingList.size() + allocatingList.size() + obtainMap.size());
-            for (LedgerAllocator allocator : pendingList) {
-                allocatorsToClose.add(allocator);
-            }
-            for (LedgerAllocator allocator : allocatingList) {
-                allocatorsToClose.add(allocator);
-            }
-            for (LedgerAllocator allocator : obtainMap.values()) {
-                allocatorsToClose.add(allocator);
-            }
+            allocatorsToClose.addAll(pendingList);
+            allocatorsToClose.addAll(allocatingList);
+            allocatorsToClose.addAll(obtainMap.values());
         }
         return FutureUtils.processList(
             allocatorsToClose,
@@ -430,15 +424,9 @@ public class LedgerAllocatorPool implements LedgerAllocator {
         synchronized (this) {
             allocatorsToDelete = Lists.newArrayListWithExpectedSize(
                     pendingList.size() + allocatingList.size() + obtainMap.size());
-            for (LedgerAllocator allocator : pendingList) {
-                allocatorsToDelete.add(allocator);
-            }
-            for (LedgerAllocator allocator : allocatingList) {
-                allocatorsToDelete.add(allocator);
-            }
-            for (LedgerAllocator allocator : obtainMap.values()) {
-                allocatorsToDelete.add(allocator);
-            }
+            allocatorsToDelete.addAll(pendingList);
+            allocatorsToDelete.addAll(allocatingList);
+            allocatorsToDelete.addAll(obtainMap.values());
         }
         return FutureUtils.processList(
             allocatorsToDelete,

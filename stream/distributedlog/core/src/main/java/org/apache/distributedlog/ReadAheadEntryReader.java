@@ -482,9 +482,7 @@ class ReadAheadEntryReader implements
         if (null != nextSegmentReader) {
             segmentReadersToClose.add(nextSegmentReader);
         }
-        for (SegmentReader reader : segmentReaders) {
-            segmentReadersToClose.add(reader);
-        }
+        segmentReadersToClose.addAll(segmentReaders);
         segmentReaders.clear();
         for (SegmentReader reader : segmentReadersToClose) {
             closeFutures.add(reader.close());
@@ -586,9 +584,7 @@ class ReadAheadEntryReader implements
         }
 
         lastEntryAddedTime.reset().start();
-        for (Entry.Reader entry : entries) {
-            entryQueue.add(entry);
-        }
+        entryQueue.addAll(entries);
         if (!entries.isEmpty()) {
             Entry.Reader lastEntry = entries.get(entries.size() - 1);
             nextEntryPosition.advance(lastEntry.getLSSN(), lastEntry.getEntryId() + 1);
