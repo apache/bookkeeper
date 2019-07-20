@@ -26,6 +26,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -100,9 +101,7 @@ public class MockBookieClient implements BookieClient {
     }
 
     public void errorBookies(BookieSocketAddress... bookies) {
-        for (BookieSocketAddress b : bookies) {
-            errorBookies.add(b);
-        }
+        errorBookies.addAll(Arrays.asList(bookies));
     }
 
     public void removeErrors(BookieSocketAddress... bookies) {

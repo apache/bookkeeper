@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -87,9 +88,7 @@ public class NamespaceDriverManager {
         String driversStr = System.getProperty("distributedlog.namespace.drivers");
         if (null != driversStr) {
             String[] driversArray = StringUtils.split(driversStr, ':');
-            for (String driver : driversArray) {
-                driverList.add(driver);
-            }
+            driverList.addAll(Arrays.asList(driversArray));
         }
         // initialize the drivers
         for (String driverClsName : driverList) {
