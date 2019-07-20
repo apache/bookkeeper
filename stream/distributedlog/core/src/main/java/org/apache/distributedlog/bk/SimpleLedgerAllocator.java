@@ -314,7 +314,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     private synchronized void setPhase(Phase phase) {
         this.phase = phase;
         LOG.info("Ledger allocator {} moved to phase {} : version = {}.",
-                new Object[] { allocatePath, phase, version });
+            allocatePath, phase, version);
     }
 
     private synchronized void allocateLedger() {
@@ -371,11 +371,11 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         Version.Occurred occurred = newVersion.compare(version);
         if (occurred == Version.Occurred.AFTER) {
             LOG.info("Ledger allocator for {} moved version from {} to {}.",
-                    new Object[] { allocatePath, version, newVersion });
+                allocatePath, version, newVersion);
             version = newVersion;
         } else {
             LOG.warn("Ledger allocator for {} received an old version {}, current version is {}.",
-                    new Object[] { allocatePath, newVersion , version });
+                allocatePath, newVersion, version);
         }
     }
 

@@ -289,8 +289,7 @@ public class TestLedgerAllocatorPool extends TestDistributedLogBase {
                             Utils.ioResult(txn.execute());
                             lh.close();
                             allocatedLedgers.putIfAbsent(lh.getId(), lh);
-                            logger.info("[thread {}] allocate {}th ledger {}",
-                                    new Object[] { tid, i, lh.getId() });
+                            logger.info("[thread {}] allocate {}th ledger {}", tid, i, lh.getId());
                         }
                     } catch (Exception ioe) {
                         numFailures.incrementAndGet();

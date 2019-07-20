@@ -94,7 +94,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
                 .get(0L).get(0);
 
-        LOG.info("Killing Bookie", replicaToKill);
+        LOG.info("Killing Bookie : {}", replicaToKill);
         killBookie(replicaToKill);
 
         BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
@@ -149,7 +149,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
                 .get(0L).get(0);
 
         startNewBookie();
-        LOG.info("Killing Bookie", replicaToKill);
+        LOG.info("Killing Bookie : {}", replicaToKill);
         killBookie(replicaToKill);
 
         // Lets reform ensemble
@@ -163,7 +163,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
         LOG.info("New Bookie addr : {}", newBkAddr);
 
-        LOG.info("Killing Bookie", replicaToKill2);
+        LOG.info("Killing Bookie : {}", replicaToKill2);
         killBookie(replicaToKill2);
 
         Set<LedgerFragment> result = getFragmentsToReplicate(lh);

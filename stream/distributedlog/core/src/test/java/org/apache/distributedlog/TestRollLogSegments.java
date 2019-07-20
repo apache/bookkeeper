@@ -279,7 +279,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
                 }
                 @Override
                 public void onFailure(Throwable cause) {
-                    logger.error("Failed to write entries : {}", cause);
+                    logger.error("Failed to write entries", cause);
                 }
             });
             if (i == 1) {

@@ -451,7 +451,6 @@ public class IndexPersistenceMgr {
         try {
             fi = getFileInfo(ledgerId, null);
             fi.setExplicitLac(lac);
-            return;
         } finally {
             if (null != fi) {
                 fi.release();
@@ -465,7 +464,7 @@ public class IndexPersistenceMgr {
             fi = getFileInfo(ledgerId, null);
             return fi.getExplicitLac();
         } catch (IOException e) {
-            LOG.error("Exception during getLastAddConfirmed: {}", e);
+            LOG.error("Exception during getLastAddConfirmed", e);
             return null;
         } finally {
             if (null != fi) {

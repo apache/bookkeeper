@@ -183,7 +183,7 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
 
         try {
             namespace.openLog("/ test2");
-            fail("should fail to create invalid stream / test2");
+            fail("Should fail to create invalid stream / test2");
         } catch (InvalidStreamNameException isne) {
             // expected
         }
@@ -196,7 +196,7 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
             chars[0] = 0;
             String streamName = new String(chars);
             namespace.openLog(streamName);
-            fail("should fail to create invalid stream " + streamName);
+            fail("Should fail to create invalid stream " + streamName);
         } catch (InvalidStreamNameException isne) {
             // expected
         }
@@ -209,7 +209,7 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
             chars[3] = '\u0010';
             String streamName = new String(chars);
             namespace.openLog(streamName);
-            fail("should fail to create invalid stream " + streamName);
+            fail("Should fail to create invalid stream " + streamName);
         } catch (InvalidStreamNameException isne) {
             // expected
         }
@@ -344,13 +344,13 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
         try {
             // Reopening and writing again with a different un will fail.
             initDlogMeta("/" + runtime.getMethodName(), "not-test-un", streamName);
-            fail("write should have failed due to perms");
+            fail("Write should have failed due to perms");
         } catch (ZKException ex) {
-            LOG.info("caught exception trying to write with no perms {}", ex);
+            LOG.info("Caught exception trying to write with no perms", ex);
             assertEquals(KeeperException.Code.NOAUTH, ex.getKeeperExceptionCode());
         } catch (Exception ex) {
-            LOG.info("caught wrong exception trying to write with no perms {}", ex);
-            fail("wrong exception " + ex.getClass().getName() + " expected " + LockingException.class.getName());
+            LOG.info("Caught wrong exception trying to write with no perms", ex);
+            fail("Wrong exception " + ex.getClass().getName() + " expected " + LockingException.class.getName());
         }
 
         // Should work again.

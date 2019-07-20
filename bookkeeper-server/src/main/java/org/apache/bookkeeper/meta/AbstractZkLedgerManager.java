@@ -290,7 +290,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                                 // and then it got removed.  I'd argue that returning an error here is the right
                                 // path since recreating it is likely to cause problems.
                                 LOG.warn("Ledger {} appears to have already existed and then been removed, failing"
-                                        + " with LedgerExistException");
+                                        + " with LedgerExistException", ledgerId);
                                 promise.completeExceptionally(new BKException.BKLedgerExistException());
                             } else {
                                 LOG.error("Could not validate node for ledger {} after LedgerExistsException", ledgerId,
@@ -355,7 +355,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                         if (LOG.isDebugEnabled()) {
                             LOG.debug(
                                     "Remove registered ledger metadata listeners on ledger {} after ledger is deleted.",
-                                    ledgerId, listenerSet);
+                                    ledgerId);
                         }
                     } else {
                         if (LOG.isDebugEnabled()) {

@@ -112,7 +112,7 @@ class PendingWriteLacOp implements WriteLacCallback {
                 return;
             }
         } else {
-            LOG.warn("WriteLac did not succeed: Ledger {} on {}", new Object[] { ledgerId, addr });
+            LOG.warn("WriteLac did not succeed: Ledger {} on {}", ledgerId, addr);
         }
 
         if (receivedResponseSet.isEmpty()){
