@@ -66,7 +66,7 @@ public abstract class DNSResolver implements DNSToSwitchMapping {
             for (String override : overrides) {
                 String[] parts = override.split(":");
                 if (parts.length != 2) {
-                    LOG.warn("Incorrect override specified", override);
+                    LOG.warn("Incorrect override specified : {}", override);
                 } else {
                     hostNameToRegion.putIfAbsent(parts[0], parts[1]);
                 }

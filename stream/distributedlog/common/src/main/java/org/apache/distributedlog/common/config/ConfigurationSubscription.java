@@ -99,7 +99,7 @@ public class ConfigurationSubscription {
                 }
             } catch (ConfigurationException ex) {
                 if (!fileNotFound(ex)) {
-                    LOG.error("Config init failed {}", ex);
+                    LOG.error("Config init failed", ex);
                 }
             }
         }
