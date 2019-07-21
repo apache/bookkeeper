@@ -684,6 +684,12 @@ groups:
   - param: storeSystemTimeAsLedgerUnderreplicatedMarkTime
     description: Enable the Auditor to use system time as underreplicated ledger mark time. If this is enabled, Auditor will write a ctime field into the underreplicated ledger znode.
     default: true
+  - param: underreplicatedLedgerRecoveryGracePeriod
+    description: The grace period (in seconds) for underreplicated ledgers recovery. If ledger is marked underreplicated for more than this period then it will be reported by placementPolicyCheck in Auditor. Setting this to 0 will disable this check.
+    default: 0
+  - param: auditorReplicasCheckInterval
+    description: Sets the regularity/interval at which the auditor will run a replicas check of all ledgers, which are closed. This should not be run very often since it validates availability of replicas of all ledgers by querying bookies. Setting this to 0 will completely disable the periodic replicas check. By default it is disabled.
+    default: 0
 
 - name: AutoRecovery replication worker settings
   params:

@@ -18,9 +18,11 @@
 package org.apache.bookkeeper.util;
 
 import io.netty.buffer.ByteBuf;
-
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.PrimitiveIterator;
 import java.util.TreeMap;
@@ -44,6 +46,11 @@ import org.apache.commons.lang3.mutable.MutableObject;
  */
 public class AvailabilityOfEntriesOfLedger {
     public static final long INVALID_ENTRYID = -1;
+    public static final AvailabilityOfEntriesOfLedger EMPTY_AVAILABILITYOFENTRIESOFLEDGER;
+    static {
+        long tmpArray[] = {};
+        EMPTY_AVAILABILITYOFENTRIESOFLEDGER = new AvailabilityOfEntriesOfLedger(Arrays.stream(tmpArray).iterator());
+    }
 
     /*
      *
@@ -107,6 +114,10 @@ public class AvailabilityOfEntriesOfLedger {
 
         private long getLastSequenceStart() {
             return lastSequenceStart;
+        }
+
+        private long getLastEntryInSequenceGroup() {
+            return lastSequenceStart + sequenceSize;
         }
 
         private void setLastSequenceStart(long lastSequenceStart) {
@@ -365,6 +376,50 @@ public class AvailabilityOfEntriesOfLedger {
             return false;
         }
         return seqGroup.getValue().isEntryAvailable(entryId);
+    }
+
+    public List<Long> getUnavailableEntries(long startEntryId, long lastEntryId, BitSet availabilityOfEntries) {
+        if (!isAvailabilityOfEntriesOfLedgerClosed()) {
+            throw new IllegalStateException(
+                    "AvailabilityOfEntriesOfLedger is not yet closed, it is illegal to call getUnavailableEntries");
+        }
+        List<Long> unavailableEntries = new ArrayList<Long>();
+        SequenceGroup curSeqGroup = null;
+        boolean noSeqGroupRemaining = false;
+        int bitSetIndex = 0;
+        for (long entryId = startEntryId; entryId <= lastEntryId; entryId++, bitSetIndex++) {
+            if (noSeqGroupRemaining) {
+                if (availabilityOfEntries.get(bitSetIndex)) {
+                    unavailableEntries.add(entryId);
+                }
+                continue;
+            }
+            if ((curSeqGroup == null) || (entryId > curSeqGroup.getLastEntryInSequenceGroup())) {
+                Entry<Long, SequenceGroup> curSeqGroupEntry = sortedSequenceGroups.floorEntry(entryId);
+                if (curSeqGroupEntry == null) {
+                    if (availabilityOfEntries.get(bitSetIndex)) {
+                        unavailableEntries.add(entryId);
+                    }
+                    if (sortedSequenceGroups.ceilingEntry(entryId) == null) {
+                        noSeqGroupRemaining = true;
+                    }
+                    continue;
+                } else {
+                    curSeqGroup = curSeqGroupEntry.getValue();
+                    if (entryId > curSeqGroup.getLastEntryInSequenceGroup()) {
+                        if (availabilityOfEntries.get(bitSetIndex)) {
+                            unavailableEntries.add(entryId);
+                        }
+                        noSeqGroupRemaining = true;
+                        continue;
+                    }
+                }
+            }
+            if (availabilityOfEntries.get(bitSetIndex) && (!curSeqGroup.isEntryAvailable(entryId))) {
+                unavailableEntries.add(entryId);
+            }
+        }
+        return unavailableEntries;
     }
 
     public long getTotalNumOfAvailableEntries() {

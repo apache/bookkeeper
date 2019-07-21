@@ -29,6 +29,8 @@ import java.util.BitSet;
 import java.util.Map;
 
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A specific {@link DistributionSchedule} that places entries in round-robin
@@ -37,7 +39,8 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
  * on.
  *
  */
-class RoundRobinDistributionSchedule implements DistributionSchedule {
+public class RoundRobinDistributionSchedule implements DistributionSchedule {
+    private static final Logger LOG = LoggerFactory.getLogger(RoundRobinDistributionSchedule.class);
     private final int writeQuorumSize;
     private final int ackQuorumSize;
     private final int ensembleSize;
@@ -408,5 +411,32 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
         } finally {
             w.recycle();
         }
+    }
+
+    @Override
+    public BitSet getEntriesStripedToTheBookie(int bookieIndex, long startEntryId, long lastEntryId) {
+        if ((startEntryId < 0) || (lastEntryId < 0) || (bookieIndex < 0) || (bookieIndex >= ensembleSize)
+                || (lastEntryId < startEntryId)) {
+            LOG.error(
+                    "Illegal arguments for getEntriesStripedToTheBookie, bookieIndex : {},"
+                            + " ensembleSize : {}, startEntryId : {}, lastEntryId : {}",
+                    bookieIndex, ensembleSize, startEntryId, lastEntryId);
+            throw new IllegalArgumentException("Illegal arguments for getEntriesStripedToTheBookie");
+        }
+        BitSet entriesStripedToTheBookie = new BitSet((int) (lastEntryId - startEntryId + 1));
+        for (long entryId = startEntryId; entryId <= lastEntryId; entryId++) {
+            int modValOfFirstReplica = (int) (entryId % ensembleSize);
+            int modValOfLastReplica = (int) ((entryId + writeQuorumSize - 1) % ensembleSize);
+            if (modValOfLastReplica >= modValOfFirstReplica) {
+                if ((bookieIndex >= modValOfFirstReplica) && (bookieIndex <= modValOfLastReplica)) {
+                    entriesStripedToTheBookie.set((int) (entryId - startEntryId));
+                }
+            } else {
+                if ((bookieIndex >= modValOfFirstReplica) || (bookieIndex <= modValOfLastReplica)) {
+                    entriesStripedToTheBookie.set((int) (entryId - startEntryId));
+                }
+            }
+        }
+        return entriesStripedToTheBookie;
     }
 }

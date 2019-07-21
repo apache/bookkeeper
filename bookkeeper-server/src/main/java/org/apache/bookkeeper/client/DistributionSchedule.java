@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import java.util.BitSet;
 import java.util.Map;
 
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -236,4 +237,21 @@ public interface DistributionSchedule {
      * @return true if it has entry otherwise false.
      */
     boolean hasEntry(long entryId, int bookieIndex);
+
+    /**
+     * Get the bitset representing the entries from entry 'startEntryId' to
+     * 'lastEntryId', that would be striped to the bookie with index -
+     * bookieIndex. Value of the bit with the 'bitIndex+n', indicate whether
+     * entry with entryid 'startEntryId+n' is striped to this bookie or not.
+     *
+     * @param bookieIndex
+     *            index of the bookie in the ensemble starting with 0
+     * @param startEntryId
+     *            starting entryid
+     * @param lastEntryId
+     *            last entryid
+     * @return the bitset representing the entries that would be striped to the
+     *         bookie
+     */
+    BitSet getEntriesStripedToTheBookie(int bookieIndex, long startEntryId, long lastEntryId);
 }

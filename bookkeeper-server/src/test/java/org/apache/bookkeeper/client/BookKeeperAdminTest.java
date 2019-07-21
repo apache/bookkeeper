@@ -36,7 +36,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -535,4 +538,41 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         }
     }
 
+    @Test
+    public void testGetListOfEntriesOfLedgerWithEntriesNotStripedToABookie() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        BookKeeper bkc = new BookKeeper(conf);
+        /*
+         * in this testsuite there are going to be 2 (numOfBookies) bookies and
+         * we are having ensemble of size 2.
+         */
+        LedgerHandle lh = bkc.createLedger(2, 1, digestType, "testPasswd".getBytes());
+        long lId = lh.getId();
+        /*
+         * ledger is writeclosed without adding any entry.
+         */
+        lh.close();
+        CountDownLatch callbackCalled = new CountDownLatch(1);
+        AtomicBoolean exceptionInCallback = new AtomicBoolean(false);
+        AtomicInteger exceptionCode = new AtomicInteger(BKException.Code.OK);
+        BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
+        /*
+         * since no entry is added, callback is supposed to fail with
+         * NoSuchLedgerExistsException.
+         */
+        bkAdmin.asyncGetListOfEntriesOfLedger(bs.get(0).getLocalAddress(), lId)
+                .whenComplete((availabilityOfEntriesOfLedger, throwable) -> {
+                    exceptionInCallback.set(throwable != null);
+                    if (throwable != null) {
+                        exceptionCode.set(BKException.getExceptionCode(throwable));
+                    }
+                    callbackCalled.countDown();
+                });
+        callbackCalled.await();
+        assertTrue("Exception occurred", exceptionInCallback.get());
+        assertEquals("Exception code", BKException.Code.NoSuchLedgerExistsException, exceptionCode.get());
+        bkAdmin.close();
+        bkc.close();
+    }
 }

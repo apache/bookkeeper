@@ -112,3 +112,9 @@ message PlacementPolicyCheckFormat {
     optional int64 placementPolicyCheckCTime = 1;
 }
 
+/**
+ * information of ReplicasCheck execution
+ */
+message ReplicasCheckFormat {
+    optional int64 replicasCheckCTime = 1;
+}

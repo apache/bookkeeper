@@ -187,6 +187,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
     protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
     protected static final String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
+    protected static final String UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD =
+            "underreplicatedLedgerRecoveryGracePeriod";
+    protected static final String AUDITOR_REPLICAS_CHECK_INTERVAL = "auditorReplicasCheckInterval";
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -2211,6 +2214,53 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getAuditorPeriodicPlacementPolicyCheckInterval() {
         return getLong(AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL, 0);
+    }
+
+    /**
+     * Sets the grace period (in seconds) for underreplicated ledgers recovery.
+     * If ledger is marked underreplicated for more than this period then it
+     * will be reported by placementPolicyCheck in Auditor. Setting this to 0
+     * will disable this check.
+     *
+     * @param gracePeriod
+     *            The interval in seconds. e.g. 3600 = 1 hour
+     */
+    public void setUnderreplicatedLedgerRecoveryGracePeriod(long gracePeriod) {
+        setProperty(UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD, gracePeriod);
+    }
+
+    /**
+     * Gets the grace period (in seconds) for underreplicated ledgers recovery.
+     * If ledger is marked underreplicated for more than this period then it
+     * will be reported by placementPolicyCheck in Auditor. Setting this to 0
+     * will disable this check.
+     *
+     * @return The interval in seconds. By default it is disabled.
+     */
+    public long getUnderreplicatedLedgerRecoveryGracePeriod() {
+        return getLong(UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD, 0);
+    }
+
+    /**
+     * Sets the interval at which the auditor will run a replicas check of all
+     * ledgers. This should not be run very often since it validates
+     * availability of replicas of all ledgers by querying bookies. Setting this
+     * to 0 will disable the periodic replicas check.
+     *
+     * @param interval
+     *            The interval in seconds. e.g. 86400 = 1 day, 604800 = 1 week
+     */
+    public void setAuditorPeriodicReplicasCheckInterval(long interval) {
+        setProperty(AUDITOR_REPLICAS_CHECK_INTERVAL, interval);
+    }
+
+    /**
+     * Get the interval at which the auditor does replicas check of all ledgers.
+     *
+     * @return The interval in seconds. By default it is disabled.
+     */
+    public long getAuditorPeriodicReplicasCheckInterval() {
+        return getLong(AUDITOR_REPLICAS_CHECK_INTERVAL, 0);
     }
 
     /**
