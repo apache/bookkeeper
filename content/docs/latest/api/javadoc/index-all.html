@@ -556,6 +556,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL">AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#AUDITOR_REPLICAS_CHECK_INTERVAL">AUDITOR_REPLICAS_CHECK_INTERVAL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#AUTO_RECOVERY_DAEMON_ENABLED">AUTO_RECOVERY_DAEMON_ENABLED</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/feature/Feature.html#availability--">availability()</a></span> - Method in interface org.apache.bookkeeper.feature.<a href="org/apache/bookkeeper/feature/Feature.html" title="interface in org.apache.bookkeeper.feature">Feature</a></dt>
@@ -2362,6 +2364,10 @@
 <div class="block">Get the regularity at which the auditor does placement policy check of
  all ledgers, which are closed.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getAuditorPeriodicReplicasCheckInterval--">getAuditorPeriodicReplicasCheckInterval()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get the interval at which the auditor does replicas check of all ledgers.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#getAvailableBookies--">getAvailableBookies()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>
 <div class="block">Get a list of the available bookies.</div>
@@ -2747,6 +2753,14 @@
 <div class="block">Returns the ensemble size of this ledger.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadataImpl.html#getEnsembleSize--">getEnsembleSize()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadataImpl.html" title="class in org.apache.bookkeeper.client">LedgerMetadataImpl</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DistributionSchedule.html#getEntriesStripedToTheBookie-int-long-long-">getEntriesStripedToTheBookie(int, long, long)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></dt>
+<dd>
+<div class="block">Get the bitset representing the entries from entry 'startEntryId' to
+ 'lastEntryId', that would be striped to the bookie with index -
+ bookieIndex.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html#getEntriesStripedToTheBookie-int-long-long-">getEntriesStripedToTheBookie(int, long, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html" title="class in org.apache.bookkeeper.client">RoundRobinDistributionSchedule</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html#getEntry--">getEntry()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a></dt>
 <dd>
@@ -3912,6 +3926,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getUnderlyingLedgerManager--">getUnderlyingLedgerManager()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getUnderreplicatedLedgerRecoveryGracePeriod--">getUnderreplicatedLedgerRecoveryGracePeriod()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Gets the grace period (in seconds) for underreplicated ledgers recovery.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.ZoneAwareNodeLocation.html#getUpgradeDomain--">getUpgradeDomain()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.ZoneAwareNodeLocation.html" title="class in org.apache.bookkeeper.client">ZoneawareEnsemblePlacementPolicyImpl.ZoneAwareNodeLocation</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getUseHostNameAsBookieID--">getUseHostNameAsBookieID()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
@@ -12798,6 +12816,11 @@
 <div class="block">Sets the regularity/interval at which the auditor will run a placement
  policy check of all ledgers, which are closed.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setAuditorPeriodicReplicasCheckInterval-long-">setAuditorPeriodicReplicasCheckInterval(long)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Sets the interval at which the auditor will run a replicas check of all
+ ledgers.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setAutoRecoveryDaemonEnabled-boolean-">setAutoRecoveryDaemonEnabled(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Sets that whether the auto-recovery service can start along with Bookie
@@ -13707,6 +13730,10 @@
 <dd>
 <div class="block">Set the truststore type for client.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setUnderreplicatedLedgerRecoveryGracePeriod-long-">setUnderreplicatedLedgerRecoveryGracePeriod(long)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Sets the grace period (in seconds) for underreplicated ledgers recovery.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/StatsLoggerBenchmark.LoggerState.html#setup--">setup()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/StatsLoggerBenchmark.LoggerState.html" title="class in org.apache.bookkeeper.stats">StatsLoggerBenchmark.LoggerState</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/generated/TimerBenchmark_jmhType_B2.html#setupInvocationMutex">setupInvocationMutex</a></span> - Variable in class org.apache.bookkeeper.stats.codahale.generated.<a href="org/apache/bookkeeper/stats/codahale/generated/TimerBenchmark_jmhType_B2.html" title="class in org.apache.bookkeeper.stats.codahale.generated">TimerBenchmark_jmhType_B2</a></dt>
@@ -14529,6 +14556,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsLogger.html#underlying">underlying</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsLogger.html" title="class in org.apache.bookkeeper.stats">CachingStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsProvider.html#underlying">underlying</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsProvider.html" title="class in org.apache.bookkeeper.stats">CachingStatsProvider</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD">UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.Code.html#UnexpectedConditionException">UnexpectedConditionException</a></span> - Static variable in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.Code.html" title="interface in org.apache.bookkeeper.client.api">BKException.Code</a></dt>
 <dd>

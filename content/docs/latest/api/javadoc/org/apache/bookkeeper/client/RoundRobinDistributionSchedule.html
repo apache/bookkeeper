@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":9};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -113,7 +113,7 @@ var activeTableTab = "activeTableTab";
 </dl>
 <hr>
 <br>
-<pre>class <span class="typeNameLabel">RoundRobinDistributionSchedule</span>
+<pre>public class <span class="typeNameLabel">RoundRobinDistributionSchedule</span>
 extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
 implements <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></pre>
 <div class="block">A specific <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client"><code>DistributionSchedule</code></a> that places entries in round-robin
@@ -211,19 +211,29 @@ implements <a href="../../../../org/apache/bookkeeper/client/DistributionSchedul
 </td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html#getEntriesStripedToTheBookie-int-long-long-">getEntriesStripedToTheBookie</a></span>(int&nbsp;bookieIndex,
+                            long&nbsp;startEntryId,
+                            long&nbsp;lastEntryId)</code>
+<div class="block">Get the bitset representing the entries from entry 'startEntryId' to
+ 'lastEntryId', that would be striped to the bookie with index -
+ bookieIndex.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html#getWriteSet-long-">getWriteSet</a></span>(long&nbsp;entryId)</code>
 <div class="block">Return the set of bookie indices to send the message to.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html#hasEntry-long-int-">hasEntry</a></span>(long&nbsp;entryId,
         int&nbsp;bookieIndex)</code>
 <div class="block">Whether entry presents on given bookie index.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>(package private) static <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html#writeSetFromValues-java.lang.Integer...-">writeSetFromValues</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>...&nbsp;values)</code>&nbsp;</td>
 </tr>
@@ -358,7 +368,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/DistributionSchedul
 <a name="hasEntry-long-int-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>hasEntry</h4>
 <pre>public&nbsp;boolean&nbsp;hasEntry(long&nbsp;entryId,
@@ -374,6 +384,33 @@ implements <a href="../../../../org/apache/bookkeeper/client/DistributionSchedul
             of the entry</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if it has entry otherwise false.</dd>
+</dl>
+</li>
+</ul>
+<a name="getEntriesStripedToTheBookie-int-long-long-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getEntriesStripedToTheBookie</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a>&nbsp;getEntriesStripedToTheBookie(int&nbsp;bookieIndex,
+                                           long&nbsp;startEntryId,
+                                           long&nbsp;lastEntryId)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getEntriesStripedToTheBookie-int-long-long-">DistributionSchedule</a></code></span></div>
+<div class="block">Get the bitset representing the entries from entry 'startEntryId' to
+ 'lastEntryId', that would be striped to the bookie with index -
+ bookieIndex. Value of the bit with the 'bitIndex+n', indicate whether
+ entry with entryid 'startEntryId+n' is striped to this bookie or not.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getEntriesStripedToTheBookie-int-long-long-">getEntriesStripedToTheBookie</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>bookieIndex</code> - index of the bookie in the ensemble starting with 0</dd>
+<dd><code>startEntryId</code> - starting entryid</dd>
+<dd><code>lastEntryId</code> - last entryid</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the bitset representing the entries that would be striped to the
+         bookie</dd>
 </dl>
 </li>
 </ul>

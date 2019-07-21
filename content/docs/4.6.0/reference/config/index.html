@@ -2153,6 +2153,20 @@ when using either RackawareEnsemblePlacementPolicy and RegionAwareEnsemblePlacem
 </td>
       <td><code>true</code></td>
     </tr>
+    
+    <tr id="underreplicatedLedgerRecoveryGracePeriod">
+      <td><code>underreplicatedLedgerRecoveryGracePeriod</code></td>
+      <td><p>The grace period (in seconds) for underreplicated ledgers recovery. If ledger is marked underreplicated for more than this period then it will be reported by placementPolicyCheck in Auditor. Setting this to 0 will disable this check.</p>
+</td>
+      <td><code>0</code></td>
+    </tr>
+    
+    <tr id="auditorReplicasCheckInterval">
+      <td><code>auditorReplicasCheckInterval</code></td>
+      <td><p>Sets the regularity/interval at which the auditor will run a replicas check of all ledgers, which are closed. This should not be run very often since it validates availability of replicas of all ledgers by querying bookies. Setting this to 0 will completely disable the periodic replicas check. By default it is disabled.</p>
+</td>
+      <td><code>0</code></td>
+    </tr>
      <!-- for param in group.params -->
   </tbody>
 </table>
