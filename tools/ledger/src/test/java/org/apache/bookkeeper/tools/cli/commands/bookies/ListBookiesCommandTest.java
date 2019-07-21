@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.primitives.UnsignedBytes;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -68,6 +69,7 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
 
     private Set<BookieSocketAddress> writableBookies;
     private Set<BookieSocketAddress> readonlyBookies;
+    private Set<BookieSocketAddress> allBookies;
 
     @Before
     public void setup() throws Exception {
@@ -76,10 +78,16 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         writableBookies = createBookies(3181, 10);
         readonlyBookies = createBookies(4181, 10);
 
+        allBookies = new HashSet<>();
+        allBookies.addAll(writableBookies);
+        allBookies.addAll(readonlyBookies);
+
         when(regClient.getWritableBookies())
             .thenReturn(value(new Versioned<>(writableBookies, new LongVersion(0L))));
         when(regClient.getReadOnlyBookies())
             .thenReturn(value(new Versioned<>(readonlyBookies, new LongVersion(0L))));
+        when(regClient.getAllBookies())
+            .thenReturn(value(new Versioned<>(allBookies, new LongVersion(0L))));
 
         PowerMockito.mockStatic(CommandHelpers.class, CALLS_REAL_METHODS);
     }
@@ -104,51 +112,66 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
 
     @Test
     public void testListReadWriteShortArgs() {
-        testCommand(true, false,
+        testCommand(false, true, false,
             "list",
             "-rw");
     }
 
     @Test
     public void testListReadWriteLongArgs() {
-        testCommand(true, false,
+        testCommand(false, true, false,
             "list",
             "--readwrite");
     }
 
     @Test
     public void testListReadOnlyShortArgs() {
-        testCommand(false, true,
+        testCommand(false, false, true,
             "list",
             "-ro");
     }
 
     @Test
+    public void testListAllLongArgs() {
+        testCommand(true, false, false,
+            "list",
+            "--all");
+    }
+
+    @Test
+    public void testListAllShortArgs() {
+        testCommand(true, false, false,
+            "list",
+            "-a");
+    }
+
+    @Test
     public void testListReadOnlyLongArgs() {
-        testCommand(false, true,
+        testCommand(false, false, true,
             "list",
             "--readonly");
     }
 
     @Test
     public void testListNoArgs() {
-        testCommand(true, true,
+        testCommand(true, true, true,
             "list");
     }
 
     @Test
     public void testListTwoFlagsCoexistsShortArgs() {
-        testCommand(true, true,
+        testCommand(false, true, true,
             "list", "-rw", "-ro");
     }
 
     @Test
     public void testListTwoFlagsCoexistsLongArgs() {
-        testCommand(true, true,
+        testCommand(false, true, true,
             "list", "--readwrite", "--readonly");
     }
 
-    private void testCommand(boolean readwrite,
+    private void testCommand(boolean all,
+                             boolean readwrite,
                              boolean readonly,
                              String... args) {
 
@@ -159,7 +182,21 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
             fail("Should not throw any exception here");
         }
 
-        if (readwrite && !readonly) {
+        if (all) {
+            if (readwrite && readonly) {
+                verifyPrintBookies(3181, 10, 2);
+                verifyPrintBookies(4181, 10, 2);
+            } else if (readwrite && !readonly) {
+                verifyPrintBookies(3181, 10, 2);
+                verifyPrintBookies(4181, 10, 1);
+            } else if (readonly && !readwrite) {
+                verifyPrintBookies(3181, 10, 1);
+                verifyPrintBookies(4181, 10, 2);
+            } else {
+                verifyPrintBookies(3181, 10, 1);
+                verifyPrintBookies(4181, 10, 1);
+            }
+        } else if (readwrite && !readonly) {
             verifyPrintBookies(3181, 10, 1);
             verifyPrintBookies(4181, 10, 0);
         } else if (readonly && !readwrite) {
@@ -187,7 +224,7 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
                 times(0));
         CommandHelpers.getBookieSocketAddrStringRepresentation(any());
 
-        assertTrue(cmd.apply(bkFlags, new String[] { "-ro"}));
+        assertTrue(cmd.apply(bkFlags, new String[]{"-ro"}));
 
         PowerMockito.verifyStatic(
                 CommandHelpers.class,
