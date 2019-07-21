@@ -637,7 +637,7 @@ public class EntryLogger {
             if (compactionLogChannel != null) {
                 compactionLogChannel.appendLedgersMap();
                 compactionLogChannel.flushAndForceWrite(false);
-                LOG.info("Flushed compaction log file {} with logId.",
+                LOG.info("Flushed compaction log file {} with logId {}.",
                     compactionLogChannel.getLogFile(),
                     compactionLogChannel.getLogId());
                 // since this channel is only used for writing, after flushing the channel,

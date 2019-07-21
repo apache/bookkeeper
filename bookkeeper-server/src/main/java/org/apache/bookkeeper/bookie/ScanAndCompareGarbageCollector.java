@@ -214,7 +214,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             }
         } catch (Throwable t) {
             // ignore exception, collecting garbage next time
-            LOG.warn("Exception when iterating over the metadata {}", t);
+            LOG.warn("Exception when iterating over the metadata", t);
         } finally {
             if (zk != null) {
                 try {

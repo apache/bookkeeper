@@ -152,7 +152,7 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
         try {
             assertTrue(value.getDlsn().compareTo(nextDLSN) >= 0);
             LOG.info("Received record {} from log {} for reader {}",
-                    new Object[] { value.getDlsn(), dlm.getStreamName(), readerName });
+                value.getDlsn(), dlm.getStreamName(), readerName);
             assertFalse(value.isControl());
             assertEquals(0, value.getDlsn().getSlotId());
             DLMTestUtil.verifyLargeLogRecord(value);
