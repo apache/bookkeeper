@@ -289,6 +289,136 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testPlacementPolicyCheckForURLedgersElapsedRecoveryGracePeriod() throws Exception {
+        testPlacementPolicyCheckWithURLedgers(true);
+    }
+
+    @Test
+    public void testPlacementPolicyCheckForURLedgersNotElapsedRecoveryGracePeriod() throws Exception {
+        testPlacementPolicyCheckWithURLedgers(false);
+    }
+
+    public void testPlacementPolicyCheckWithURLedgers(boolean timeElapsed) throws Exception {
+        int numOfBookies = 4;
+        /*
+         * in timeElapsed=true scenario, set some low value, otherwise set some
+         * highValue.
+         */
+        int underreplicatedLedgerRecoveryGracePeriod = timeElapsed ? 1 : 1000;
+        int numOfURLedgersElapsedRecoveryGracePeriod = 0;
+        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
+        RegistrationManager regManager = driver.getRegistrationManager();
+
+        for (int i = 0; i < numOfBookies; i++) {
+            BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            bookieAddresses.add(bookieAddress);
+            regManager.registerBookie(bookieAddress.toString(), false);
+        }
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerManager lm = mFactory.newLedgerManager();
+        LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
+        int ensembleSize = 4;
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 2;
+
+        long ledgerId1 = 1L;
+        LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withEnsembleSize(ensembleSize)
+                .withWriteQuorumSize(writeQuorumSize)
+                .withAckQuorumSize(ackQuorumSize)
+                .newEnsembleEntry(0L, bookieAddresses)
+                .withClosedState()
+                .withLastEntryId(100)
+                .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
+                .build();
+        lm.createLedgerMetadata(ledgerId1, initMeta).get();
+        underreplicationManager.markLedgerUnderreplicated(ledgerId1, bookieAddresses.get(0).toString());
+        if (timeElapsed) {
+            numOfURLedgersElapsedRecoveryGracePeriod++;
+        }
+
+        /*
+         * this is non-closed ledger, it should also be reported as
+         * URLedgersElapsedRecoveryGracePeriod
+         */
+        ensembleSize = 3;
+        long ledgerId2 = 21234561L;
+        initMeta = LedgerMetadataBuilder.create()
+                .withEnsembleSize(ensembleSize)
+                .withWriteQuorumSize(writeQuorumSize)
+                .withAckQuorumSize(ackQuorumSize)
+                .newEnsembleEntry(0L,
+                        Arrays.asList(bookieAddresses.get(0), bookieAddresses.get(1), bookieAddresses.get(2)))
+                .newEnsembleEntry(100L,
+                        Arrays.asList(bookieAddresses.get(3), bookieAddresses.get(1), bookieAddresses.get(2)))
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
+                .build();
+        lm.createLedgerMetadata(ledgerId2, initMeta).get();
+        underreplicationManager.markLedgerUnderreplicated(ledgerId2, bookieAddresses.get(0).toString());
+        if (timeElapsed) {
+            numOfURLedgersElapsedRecoveryGracePeriod++;
+        }
+
+        /*
+         * this ledger is not marked underreplicated.
+         */
+        long ledgerId3 = 31234561L;
+        initMeta = LedgerMetadataBuilder.create()
+                .withEnsembleSize(ensembleSize)
+                .withWriteQuorumSize(writeQuorumSize)
+                .withAckQuorumSize(ackQuorumSize)
+                .newEnsembleEntry(0L,
+                        Arrays.asList(bookieAddresses.get(1), bookieAddresses.get(2), bookieAddresses.get(3)))
+                .withClosedState()
+                .withLastEntryId(100)
+                .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
+                .build();
+        lm.createLedgerMetadata(ledgerId3, initMeta).get();
+
+        if (timeElapsed) {
+            /*
+             * in timeelapsed scenario, by waiting for
+             * underreplicatedLedgerRecoveryGracePeriod, recovery time must be
+             * elapsed.
+             */
+            Thread.sleep((underreplicatedLedgerRecoveryGracePeriod + 1) * 1000);
+        } else {
+            /*
+             * in timeElapsed=false scenario, since
+             * underreplicatedLedgerRecoveryGracePeriod is set to some high
+             * value, there is no value in waiting. So just wait for some time
+             * and make sure urledgers are not reported as recoverytime elapsed
+             * urledgers.
+             */
+            Thread.sleep(5000);
+        }
+
+        ServerConfiguration servConf = new ServerConfiguration(bsConfs.get(0));
+        servConf.setUnderreplicatedLedgerRecoveryGracePeriod(underreplicatedLedgerRecoveryGracePeriod);
+        setServerConfigPropertiesForRackPlacement(servConf);
+        MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
+        try {
+            TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
+            Gauge<? extends Number> underreplicatedLedgersElapsedRecoveryGracePeriodGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_UNDERREPLICATED_LEDGERS_ELAPSED_RECOVERY_GRACE_PERIOD);
+            assertEquals("NUM_UNDERREPLICATED_LEDGERS_ELAPSED_RECOVERY_GRACE_PERIOD guage value",
+                    numOfURLedgersElapsedRecoveryGracePeriod,
+                    underreplicatedLedgersElapsedRecoveryGracePeriodGuage.getSample());
+        } finally {
+            Auditor auditor = auditorRef.getValue();
+            if (auditor != null) {
+                auditor.close();
+            }
+        }
+    }
+
+    @Test
     public void testPlacementPolicyCheckWithLedgersNotAdheringToPolicyWithMultipleSegments() throws Exception {
         int numOfBookies = 7;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
