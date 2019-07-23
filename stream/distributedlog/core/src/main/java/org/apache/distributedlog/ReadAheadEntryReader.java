@@ -547,8 +547,8 @@ class ReadAheadEntryReader implements
                 && isCatchingUp
                 && reader.hasCaughtUpOnInprogress()) {
             logger.info("ReadAhead for {} is caught up at entry {} @ log segment {}.",
-                    new Object[] { readHandler.getFullyQualifiedName(),
-                            reader.getLastAddConfirmed(), reader.getSegment() });
+                readHandler.getFullyQualifiedName(),
+                reader.getLastAddConfirmed(), reader.getSegment());
             isCatchingUp = false;
         }
     }
@@ -704,7 +704,7 @@ class ReadAheadEntryReader implements
         if (reader.getSegment().getLogSegmentSequenceNumber() != newMetadata.getLogSegmentSequenceNumber()) {
             logger.error("Inconsistent state found in entry reader for {} : "
                 + "current segment = {}, new segment = {}",
-                new Object[] { streamName, reader.getSegment(), newMetadata });
+                streamName, reader.getSegment(), newMetadata);
             setLastException(new DLIllegalStateException("Inconsistent state found in entry reader for "
                     + streamName + " : current segment = " + reader.getSegment() + ", new segment = " + newMetadata));
             return false;
@@ -746,7 +746,7 @@ class ReadAheadEntryReader implements
             if (currentSegmentSequenceNumber != segment.getLogSegmentSequenceNumber()) {
                 logger.error("Inconsistent state found in entry reader for {} : "
                     + "current segment sn = {}, new segment sn = {}",
-                    new Object[] { streamName, currentSegmentSequenceNumber, segment.getLogSegmentSequenceNumber() });
+                    streamName, currentSegmentSequenceNumber, segment.getLogSegmentSequenceNumber());
                 setLastException(new DLIllegalStateException("Inconsistent state found in entry reader for "
                         + streamName + " : current segment sn = " + currentSegmentSequenceNumber
                         + ", new segment sn = " + segment.getLogSegmentSequenceNumber()));
@@ -889,7 +889,7 @@ class ReadAheadEntryReader implements
             }
             if (!conf.getIgnoreTruncationStatus()) {
                 logger.error("{}: Trying to position reader on {} when {} is marked partially truncated",
-                        new Object[]{ streamName, fromDLSN, segment });
+                    streamName, fromDLSN, segment);
 
                 setLastException(new AlreadyTruncatedTransactionException(streamName
                         + " : trying to position read ahead at " + fromDLSN

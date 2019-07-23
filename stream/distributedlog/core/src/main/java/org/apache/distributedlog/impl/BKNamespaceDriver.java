@@ -217,7 +217,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
         initialized = true;
 
         LOG.info("Initialized BK namespace driver: clientId = {}, regionId = {}, federated = {}.",
-                new Object[]{clientId, regionId, bkdlConfig.isFederatedNamespace()});
+            clientId, regionId, bkdlConfig.isFederatedNamespace());
         return this;
     }
 
@@ -587,9 +587,10 @@ public class BKNamespaceDriver implements NamespaceDriver {
             .statsLogger(statsLogger)
             .zkAclId(conf.getZkAclId());
         LOG.info("Created shared zooKeeper client builder {}: zkServers = {}, numRetries = {}, sessionTimeout = {},"
-                + " retryBackoff = {}, maxRetryBackoff = {}, zkAclId = {}.", new Object[] {
-                zkcName, zkServers, conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
-                conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(), conf.getZkAclId() });
+                + " retryBackoff = {}, maxRetryBackoff = {}, zkAclId = {}.", zkcName, zkServers,
+            conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
+            conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(),
+            conf.getZkAclId());
         return builder;
     }
 
@@ -611,7 +612,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
                 .featureProvider(featureProviderOptional)
                 .statsLogger(statsLogger);
         LOG.info("Created shared client builder {} : zkServers = {}, ledgersPath = {}, numIOThreads = {}",
-                new Object[] { bkcName, zkServers, ledgersPath, conf.getBKClientNumberIOThreads() });
+            bkcName, zkServers, ledgersPath, conf.getBKClientNumberIOThreads());
         return builder;
     }
 

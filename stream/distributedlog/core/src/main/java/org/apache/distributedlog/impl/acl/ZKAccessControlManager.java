@@ -196,7 +196,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                                             streamEntries.remove(streamName);
                                         } else if (cause instanceof ZKAccessControl.CorruptedAccessControlException) {
                                             logger.warn("Access control is corrupted for stream {} @ {},skipped it ...",
-                                                        new Object[] { streamName, zkRootPath, cause });
+                                                streamName, zkRootPath, cause);
                                             streamEntries.remove(streamName);
                                         } else {
                                             if (1 == numFailures.incrementAndGet()) {

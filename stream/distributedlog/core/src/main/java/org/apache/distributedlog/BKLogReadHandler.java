@@ -205,8 +205,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
 
             @Override
             public void onFailure(Throwable cause) {
-                LOG.info("failed to acquire readlock {} at {}",
-                        new Object[]{ getLockClientId(), getReadLockPath(), cause });
+                LOG.info("failed to acquire readlock {} at {}", getLockClientId(), getReadLockPath(), cause);
                 threadAcquirePromise.completeExceptionally(cause);
             }
         });

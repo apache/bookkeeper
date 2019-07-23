@@ -256,7 +256,7 @@ public class DLAuditor {
                                 collectLedgersFromAllocator(uri, namespace, aps, ledgers);
                                 synchronized (ledgers) {
                                     logger.info("Collected {} ledgers from allocators for {} : {} ",
-                                            new Object[]{ledgers.size(), uri, ledgers});
+                                        ledgers.size(), uri, ledgers);
                                 }
                                 collectLedgersFromDL(uri, namespace, ledgers);
                             } catch (IOException e) {
@@ -361,7 +361,7 @@ public class DLAuditor {
         }
 
         logger.info("Collected {} streams from uri {} : {}",
-                    new Object[] { streamQueue.size(), uri, streams });
+            streamQueue.size(), uri, streams);
 
         executeAction(streamQueue, 10, new Action<String>() {
             @Override
@@ -561,7 +561,7 @@ public class DLAuditor {
         try {
             doneFuture.get();
             logger.info("calculated {} ledgers\n\ttotal bytes = {}\n\ttotal entries = {}",
-                    new Object[] { numLedgers.get(), totalBytes.get(), totalEntries.get() });
+                numLedgers.get(), totalBytes.get(), totalEntries.get());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on calculating ledger space : ", e);

@@ -332,7 +332,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         final int configuredTransmissionThreshold = dynConf.getOutputBufferSize();
         if (configuredTransmissionThreshold > MAX_LOGRECORDSET_SIZE) {
             LOG.warn("Setting output buffer size {} greater than max transmission size {} for log segment {}",
-                new Object[] {configuredTransmissionThreshold, MAX_LOGRECORDSET_SIZE, fullyQualifiedLogSegment});
+                configuredTransmissionThreshold, MAX_LOGRECORDSET_SIZE, fullyQualifiedLogSegment);
             this.transmissionThreshold = MAX_LOGRECORDSET_SIZE;
         } else {
             this.transmissionThreshold = configuredTransmissionThreshold;
@@ -610,8 +610,8 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                                             final CompletableFuture<Void> closePromise) {
         LOG.info("Closing BKPerStreamLogWriter (abort={}) for {} :"
                         + " lastDLSN = {} outstandingTransmits = {} writesPendingTransmit = {}",
-                new Object[]{abort, fullyQualifiedLogSegment, getLastDLSN(),
-                        outstandingTransmitsUpdater.get(this), getWritesPendingTransmit()});
+            abort, fullyQualifiedLogSegment, getLastDLSN(),
+            outstandingTransmitsUpdater.get(this), getWritesPendingTransmit());
 
         // Save the current packet to reset, leave a new empty packet to avoid a race with
         // addCompleteDeferredProcessing.
@@ -832,7 +832,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
         if (record.getTransactionId() < lastTxId) {
             LOG.info("Log Segment {} TxId decreased Last: {} Record: {}",
-                    new Object[] {fullyQualifiedLogSegment, lastTxId, record.getTransactionId()});
+                fullyQualifiedLogSegment, lastTxId, record.getTransactionId());
         }
         if (!record.isControl()) {
             // only update last tx id for user records
@@ -1187,7 +1187,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         // Sanity check to make sure we're receiving these callbacks in order.
         if (entryId > -1 && lastEntryId >= entryId) {
             LOG.error("Log segment {} saw out of order entry {} lastEntryId {}",
-                new Object[] {fullyQualifiedLogSegment, entryId, lastEntryId});
+                fullyQualifiedLogSegment, entryId, lastEntryId);
         }
         lastEntryId = entryId;
 
@@ -1236,9 +1236,8 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 @Override
                 public void onFailure(Throwable cause) {
                     LOG.error("addComplete processing failed for {} entry {} lastTxId {} rc {} with error",
-                        new Object[] {
-                                fullyQualifiedLogSegment, entryId,
-                                transmitPacket.getRecordSet().getMaxTxId(), rc, cause});
+                        fullyQualifiedLogSegment, entryId,
+                        transmitPacket.getRecordSet().getMaxTxId(), rc, cause);
                 }
             });
             // Race condition if we notify before the addComplete is enqueued.
@@ -1266,7 +1265,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 cancelPendingPromises = (BKException.Code.OK != rc);
             } else {
                 LOG.warn("Log segment {} entryId {}: Tried to set transmit result to ({}) but is already ({})",
-                    new Object[] {fullyQualifiedLogSegment, entryId, rc, transmitResultUpdater.get(this)});
+                    fullyQualifiedLogSegment, entryId, rc, transmitResultUpdater.get(this));
             }
 
             if (transmitResultUpdater.get(this) != BKException.Code.OK) {
