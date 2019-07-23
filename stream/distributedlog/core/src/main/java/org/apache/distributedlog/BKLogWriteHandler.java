@@ -942,8 +942,7 @@ class BKLogWriteHandler extends BKLogHandler {
                     new Object[] { logSegmentSeqNo, inprogressLogSegment.getZkPath() });
         } else {
             LOG.warn("Unexpected max ledger sequence number {} found while completing log segment {} for {}",
-                maxLogSegmentSequenceNo.getSequenceNumber(), logSegmentSeqNo,
-                getFullyQualifiedName());
+                maxLogSegmentSequenceNo.getSequenceNumber(), logSegmentSeqNo, getFullyQualifiedName());
             if (validateLogSegmentSequenceNumber) {
                 FutureUtils.completeExceptionally(promise,
                         new DLIllegalStateException("Unexpected max log segment sequence number "

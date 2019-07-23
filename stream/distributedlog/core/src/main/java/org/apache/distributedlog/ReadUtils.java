@@ -430,13 +430,11 @@ public class ReadUtils {
                 @Override
                 public void onSuccess(final LogSegmentRandomAccessEntryReader reader) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} Opened log segment {} for reading record",
-                                streamName, l);
+                        LOG.debug("{} Opened log segment {} for reading record", streamName, l);
                     }
                     promise.whenComplete((value, cause) -> reader.asyncClose());
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} {} scanning {}.", (backward ? "backward" : "forward"),
-                            streamName, l);
+                        LOG.debug("{} {} scanning {}.", (backward ? "backward" : "forward"), streamName, l);
                     }
                     asyncReadRecordFromLogSegment(
                             streamName, reader, l, executorService,

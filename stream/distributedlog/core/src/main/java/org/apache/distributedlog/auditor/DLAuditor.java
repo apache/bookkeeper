@@ -360,8 +360,7 @@ public class DLAuditor {
             streamQueue.add(streams.next());
         }
 
-        logger.info("Collected {} streams from uri {} : {}",
-            streamQueue.size(), uri, streams);
+        logger.info("Collected {} streams from uri {} : {}", streamQueue.size(), uri, streams);
 
         executeAction(streamQueue, 10, new Action<String>() {
             @Override
