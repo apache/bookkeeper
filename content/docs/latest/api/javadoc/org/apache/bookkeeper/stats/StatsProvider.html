@@ -127,13 +127,13 @@ var activeTableTab = "activeTableTab";
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html#getStatsLogger-java.lang.String-">getStatsLogger</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scope)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html#getStatsLogger-java.lang.String-">getStatsLogger</a></span>(java.lang.String&nbsp;scope)</code>
 <div class="block">Return the stats logger to a given <i>scope</i>.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>default <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html#getStatsName-java.lang.String...-">getStatsName</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>...&nbsp;statsComponents)</code>
+<td class="colFirst"><code>default java.lang.String</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html#getStatsName-java.lang.String...-">getStatsName</a></span>(java.lang.String...&nbsp;statsComponents)</code>
 <div class="block">Return the fully qualified stats name comprised of given <tt>statsComponents</tt>.</div>
 </td>
 </tr>
@@ -151,7 +151,7 @@ var activeTableTab = "activeTableTab";
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>default void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html#writeAllMetrics-java.io.Writer-">writeAllMetrics</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/Writer.html?is-external=true" title="class or interface in java.io">Writer</a>&nbsp;writer)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html#writeAllMetrics-java.io.Writer-">writeAllMetrics</a></span>(java.io.Writer&nbsp;writer)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -198,13 +198,13 @@ var activeTableTab = "activeTableTab";
 <ul class="blockList">
 <li class="blockList">
 <h4>writeAllMetrics</h4>
-<pre>default&nbsp;void&nbsp;writeAllMetrics(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/Writer.html?is-external=true" title="class or interface in java.io">Writer</a>&nbsp;writer)
-                      throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<pre>default&nbsp;void&nbsp;writeAllMetrics(java.io.Writer&nbsp;writer)
+                      throws java.io.IOException</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>writer</code> - </dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+<dd><code>java.io.IOException</code></dd>
 </dl>
 </li>
 </ul>
@@ -214,7 +214,7 @@ var activeTableTab = "activeTableTab";
 <ul class="blockList">
 <li class="blockList">
 <h4>getStatsLogger</h4>
-<pre><a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;getStatsLogger(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scope)</pre>
+<pre><a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;getStatsLogger(java.lang.String&nbsp;scope)</pre>
 <div class="block">Return the stats logger to a given <i>scope</i>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -230,7 +230,7 @@ var activeTableTab = "activeTableTab";
 <ul class="blockListLast">
 <li class="blockList">
 <h4>getStatsName</h4>
-<pre>default&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getStatsName(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>...&nbsp;statsComponents)</pre>
+<pre>default&nbsp;java.lang.String&nbsp;getStatsName(java.lang.String...&nbsp;statsComponents)</pre>
 <div class="block">Return the fully qualified stats name comprised of given <tt>statsComponents</tt>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>

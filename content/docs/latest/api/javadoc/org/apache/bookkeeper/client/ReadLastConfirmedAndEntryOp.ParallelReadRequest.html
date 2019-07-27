@@ -97,7 +97,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
+<li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
 <li><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></li>
@@ -114,7 +114,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></dd>
+<dd>java.lang.AutoCloseable</dd>
 </dl>
 <dl>
 <dt>Enclosing class:</dt>
@@ -168,7 +168,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ParallelReadRequest.html#ParallelReadRequest-java.util.List-long-long-">ParallelReadRequest</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ParallelReadRequest.html#ParallelReadRequest-java.util.List-long-long-">ParallelReadRequest</a></span>(java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                    long&nbsp;lId,
                    long&nbsp;eId)</code>&nbsp;</td>
 </tr>
@@ -191,14 +191,14 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ParallelReadRequest.html#logErrorAndReattemptRead-int-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.String-int-">logErrorAndReattemptRead</a></span>(int&nbsp;bookieIndex,
                         org.apache.bookkeeper.net.BookieSocketAddress&nbsp;host,
-                        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;errMsg,
+                        java.lang.String&nbsp;errMsg,
                         int&nbsp;rc)</code>
 <div class="block">Log error <i>errMsg</i> and reattempt read from <i>host</i>.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.net.BookieSocketAddress</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ParallelReadRequest.html#maybeSendSpeculativeRead-java.util.BitSet-">maybeSendSpeculativeRead</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a>&nbsp;heardFromHostsBitSet)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ParallelReadRequest.html#maybeSendSpeculativeRead-java.util.BitSet-">maybeSendSpeculativeRead</a></span>(java.util.BitSet&nbsp;heardFromHostsBitSet)</code>
 <div class="block">Send to next replica speculatively, if required and possible.</div>
 </td>
 </tr>
@@ -220,8 +220,8 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#clone--" title="class or interface in java.lang">clone</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#finalize--" title="class or interface in java.lang">finalize</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.Object</h3>
+<code>clone, equals, finalize, getClass, hashCode, notify, notifyAll, wait, wait, wait</code></li>
 </ul>
 </li>
 </ul>
@@ -260,7 +260,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ParallelReadRequest</h4>
-<pre>ParallelReadRequest(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+<pre>ParallelReadRequest(java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                     long&nbsp;lId,
                     long&nbsp;eId)</pre>
 </li>
@@ -296,7 +296,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <h4>logErrorAndReattemptRead</h4>
 <pre>void&nbsp;logErrorAndReattemptRead(int&nbsp;bookieIndex,
                               org.apache.bookkeeper.net.BookieSocketAddress&nbsp;host,
-                              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;errMsg,
+                              java.lang.String&nbsp;errMsg,
                               int&nbsp;rc)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#logErrorAndReattemptRead-int-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.String-int-">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></code></span></div>
 <div class="block">Log error <i>errMsg</i> and reattempt read from <i>host</i>.</div>
@@ -317,7 +317,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <ul class="blockListLast">
 <li class="blockList">
 <h4>maybeSendSpeculativeRead</h4>
-<pre>org.apache.bookkeeper.net.BookieSocketAddress&nbsp;maybeSendSpeculativeRead(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a>&nbsp;heardFromHostsBitSet)</pre>
+<pre>org.apache.bookkeeper.net.BookieSocketAddress&nbsp;maybeSendSpeculativeRead(java.util.BitSet&nbsp;heardFromHostsBitSet)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#maybeSendSpeculativeRead-java.util.BitSet-">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></code></span></div>
 <div class="block">Send to next replica speculatively, if required and possible.
  This returns the host we may have sent to for unit testing.</div>

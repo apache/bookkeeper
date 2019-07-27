@@ -138,12 +138,12 @@
 <td class="colLast"><span class="typeNameLabel">BookKeeper.DigestType.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html#fromApiDigestType-org.apache.bookkeeper.client.api.DigestType-">fromApiDigestType</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerCreateOp.CreateBuilderImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html#withDigestType-org.apache.bookkeeper.client.api.DigestType-">withDigestType</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerMetadataBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withDigestType-org.apache.bookkeeper.client.api.DigestType-">withDigestType</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LedgerCreateOp.CreateBuilderImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html#withDigestType-org.apache.bookkeeper.client.api.DigestType-">withDigestType</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -159,15 +159,15 @@
                   int&nbsp;writeQuorumSize,
                   int&nbsp;ackQuorumSize,
                   <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.State.html" title="enum in org.apache.bookkeeper.client.api">LedgerMetadata.State</a>&nbsp;state,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;lastEntryId,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;length,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;&nbsp;ensembles,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&gt;&nbsp;digestType,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;byte[]&gt;&nbsp;password,
+                  java.util.Optional&lt;java.lang.Long&gt;&nbsp;lastEntryId,
+                  java.util.Optional&lt;java.lang.Long&gt;&nbsp;length,
+                  java.util.Map&lt;java.lang.Long,java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;&nbsp;ensembles,
+                  java.util.Optional&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&gt;&nbsp;digestType,
+                  java.util.Optional&lt;byte[]&gt;&nbsp;password,
                   long&nbsp;ctime,
                   boolean&nbsp;storeCtime,
                   long&nbsp;cToken,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</code>&nbsp;</td>
+                  java.util.Map&lt;java.lang.String,byte[]&gt;&nbsp;customMetadata)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -191,7 +191,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a></code></td>
-<td class="colLast"><span class="typeNameLabel">DigestType.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html#valueOf-java.lang.String-">valueOf</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>
+<td class="colLast"><span class="typeNameLabel">DigestType.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html#valueOf-java.lang.String-">valueOf</a></span>(java.lang.String&nbsp;name)</code>
 <div class="block">Returns the enum constant of this type with the specified name.</div>
 </td>
 </tr>

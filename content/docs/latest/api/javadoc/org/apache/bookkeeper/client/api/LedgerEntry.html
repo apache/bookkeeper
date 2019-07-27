@@ -101,7 +101,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Superinterfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></dd>
+<dd>java.lang.AutoCloseable</dd>
 </dl>
 <dl>
 <dt>All Known Implementing Classes:</dt>
@@ -112,7 +112,7 @@ var activeTableTab = "activeTableTab";
 <pre><a href="../../../../../org/apache/bookkeeper/common/annotation/InterfaceAudience.Public.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceAudience.Public</a>
  <a href="../../../../../org/apache/bookkeeper/common/annotation/InterfaceStability.Unstable.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceStability.Unstable</a>
 public interface <span class="typeNameLabel">LedgerEntry</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></pre>
+extends java.lang.AutoCloseable</pre>
 <div class="block">An entry in a ledger.
 
  <p>The entry implementation may hold references to byte buffers under the hood. The users holding the
@@ -169,9 +169,9 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseab
 </td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a></code></td>
+<td class="colFirst"><code>java.nio.ByteBuffer</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryNioBuffer--">getEntryNioBuffer</a></span>()</code>
-<div class="block">Exposes this entry's data as an NIO <a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio"><code>ByteBuffer</code></a>.</div>
+<div class="block">Exposes this entry's data as an NIO <code>ByteBuffer</code>.</div>
 </td>
 </tr>
 <tr id="i6" class="altColor">
@@ -263,8 +263,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseab
 <ul class="blockList">
 <li class="blockList">
 <h4>getEntryNioBuffer</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;getEntryNioBuffer()</pre>
-<div class="block">Exposes this entry's data as an NIO <a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio"><code>ByteBuffer</code></a>. The returned buffer
+<pre>java.nio.ByteBuffer&nbsp;getEntryNioBuffer()</pre>
+<div class="block">Exposes this entry's data as an NIO <code>ByteBuffer</code>. The returned buffer
  shares the content with this underneath bytebuf (which you can get it by <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryBuffer--"><code>getEntryBuffer()</code></a>).
  Changing the position and limit of the returned NIO buffer does not affect the indexes and
  marks of this underneath buffer.  This method is identical
@@ -314,7 +314,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseab
 <pre>void&nbsp;close()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true#close--" title="class or interface in java.lang">close</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></code></dd>
+<dd><code>close</code>&nbsp;in interface&nbsp;<code>java.lang.AutoCloseable</code></dd>
 </dl>
 </li>
 </ul>

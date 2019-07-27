@@ -97,7 +97,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
+<li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
 <li>org.apache.bookkeeper.client.BookieWatcherImpl</li>
@@ -116,7 +116,7 @@ var activeTableTab = "activeTableTab";
 <pre><a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">@StatsDoc</a>(<a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#name--">name</a>="bookie_watcher",
           <a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#help--">help</a>="Bookie watcher related stats")
 class <span class="typeNameLabel">BookieWatcherImpl</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
+extends java.lang.Object
 implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></pre>
 <div class="block">This class is responsible for maintaining a consistent view of what bookies
  are available by reading Zookeeper (and setting watches on the bookie nodes).
@@ -141,7 +141,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <th class="colLast" scope="col">Field and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) com.google.common.cache.Cache&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) com.google.common.cache.Cache&lt;org.apache.bookkeeper.net.BookieSocketAddress,java.lang.Boolean&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#quarantinedBookies">quarantinedBookies</a></span></code>&nbsp;</td>
 </tr>
 </table>
@@ -180,15 +180,15 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#getAllBookies--">getAllBookies</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#getBookies--">getBookies</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#getReadOnlyBookies--">getReadOnlyBookies</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
@@ -198,11 +198,11 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 </td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colFirst"><code>java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#newEnsemble-int-int-int-java.util.Map-">newEnsemble</a></span>(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
            int&nbsp;ackQuorumSize,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</code>
+           java.util.Map&lt;java.lang.String,byte[]&gt;&nbsp;customMetadata)</code>
 <div class="block">Create an ensemble with given <i>ensembleSize</i> and <i>writeQuorumSize</i>.</div>
 </td>
 </tr>
@@ -217,10 +217,10 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html#replaceBookie-int-int-int-java.util.Map-java.util.List-int-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
              int&nbsp;ackQuorumSize,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;existingBookies,
+             java.util.Map&lt;java.lang.String,byte[]&gt;&nbsp;customMetadata,
+             java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;existingBookies,
              int&nbsp;bookieIdx,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>
+             java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>
 <div class="block">Choose a bookie to replace bookie <i>bookieIdx</i> in <i>existingBookies</i>.</div>
 </td>
 </tr>
@@ -229,8 +229,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#clone--" title="class or interface in java.lang">clone</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#finalize--" title="class or interface in java.lang">finalize</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.Object</h3>
+<code>clone, equals, finalize, getClass, hashCode, notify, notifyAll, toString, wait, wait, wait</code></li>
 </ul>
 </li>
 </ul>
@@ -252,7 +252,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <ul class="blockListLast">
 <li class="blockList">
 <h4>quarantinedBookies</h4>
-<pre>final&nbsp;com.google.common.cache.Cache&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt; quarantinedBookies</pre>
+<pre>final&nbsp;com.google.common.cache.Cache&lt;org.apache.bookkeeper.net.BookieSocketAddress,java.lang.Boolean&gt; quarantinedBookies</pre>
 </li>
 </ul>
 </li>
@@ -289,8 +289,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <ul class="blockList">
 <li class="blockList">
 <h4>getBookies</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getBookies()
-                                                              throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre>public&nbsp;java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getBookies()
+                                                                        throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#getBookies--">getBookies</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
@@ -305,8 +305,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <ul class="blockList">
 <li class="blockList">
 <h4>getAllBookies</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getAllBookies()
-                                                                 throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre>public&nbsp;java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getAllBookies()
+                                                                           throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#getAllBookies--">getAllBookies</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
@@ -321,8 +321,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <ul class="blockList">
 <li class="blockList">
 <h4>getReadOnlyBookies</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getReadOnlyBookies()
-                                                                      throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre>public&nbsp;java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getReadOnlyBookies()
+                                                                                throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#getReadOnlyBookies--">getReadOnlyBookies</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
@@ -352,11 +352,11 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <ul class="blockList">
 <li class="blockList">
 <h4>newEnsemble</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;newEnsemble(int&nbsp;ensembleSize,
-                                                                       int&nbsp;writeQuorumSize,
-                                                                       int&nbsp;ackQuorumSize,
-                                                                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)
-                                                                throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
+<pre>public&nbsp;java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;newEnsemble(int&nbsp;ensembleSize,
+                                                                                 int&nbsp;writeQuorumSize,
+                                                                                 int&nbsp;ackQuorumSize,
+                                                                                 java.util.Map&lt;java.lang.String,byte[]&gt;&nbsp;customMetadata)
+                                                                          throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#newEnsemble-int-int-int-java.util.Map-">BookieWatcher</a></code></span></div>
 <div class="block">Create an ensemble with given <i>ensembleSize</i> and <i>writeQuorumSize</i>.</div>
 <dl>
@@ -381,10 +381,10 @@ implements <a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html"
 <pre>public&nbsp;org.apache.bookkeeper.net.BookieSocketAddress&nbsp;replaceBookie(int&nbsp;ensembleSize,
                                                                    int&nbsp;writeQuorumSize,
                                                                    int&nbsp;ackQuorumSize,
-                                                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-                                                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;existingBookies,
+                                                                   java.util.Map&lt;java.lang.String,byte[]&gt;&nbsp;customMetadata,
+                                                                   java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;existingBookies,
                                                                    int&nbsp;bookieIdx,
-                                                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)
+                                                                   java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)
                                                             throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#replaceBookie-int-int-int-java.util.Map-java.util.List-int-java.util.Set-">BookieWatcher</a></code></span></div>
 <div class="block">Choose a bookie to replace bookie <i>bookieIdx</i> in <i>existingBookies</i>.</div>

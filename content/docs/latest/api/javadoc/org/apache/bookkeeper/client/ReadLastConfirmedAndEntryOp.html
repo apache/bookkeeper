@@ -97,7 +97,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
+<li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
 <li>org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp</li>
@@ -114,7 +114,7 @@ var activeTableTab = "activeTableTab";
 <hr>
 <br>
 <pre>class <span class="typeNameLabel">ReadLastConfirmedAndEntryOp</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
+extends java.lang.Object
 implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback, <a href="../../../../org/apache/bookkeeper/client/SpeculativeRequestExecutor.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutor</a></pre>
 <div class="block">Long poll read operation.</div>
 </li>
@@ -169,11 +169,11 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <th class="colLast" scope="col">Field and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a></code></td>
+<td class="colFirst"><code>(package private) java.util.BitSet</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#emptyResponsesFromHostsBitSet">emptyResponsesFromHostsBitSet</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a></code></td>
+<td class="colFirst"><code>(package private) java.util.BitSet</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#heardFromHostsBitSet">heardFromHostsBitSet</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -193,7 +193,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#request">request</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicBoolean.html?is-external=true" title="class or interface in java.util.concurrent.atomic">AtomicBoolean</a></code></td>
+<td class="colFirst"><code>(package private) java.util.concurrent.atomic.AtomicBoolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#requestComplete">requestComplete</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -217,7 +217,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#ReadLastConfirmedAndEntryOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ClientContext-java.util.List-org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback-long-long-">ReadLastConfirmedAndEntryOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                            <a href="../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
-                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+                           java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                            <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback.html" title="interface in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback</a>&nbsp;cb,
                            long&nbsp;prevEntryId,
                            long&nbsp;timeOutInMillis)</code>&nbsp;</td>
@@ -250,7 +250,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#initiate--">initiate</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>com.google.common.util.concurrent.ListenableFuture&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;</code></td>
+<td class="colFirst"><code>com.google.common.util.concurrent.ListenableFuture&lt;java.lang.Boolean&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#issueSpeculativeRequest--">issueSpeculativeRequest</a></span>()</code>
 <div class="block">Speculative Read Logic.</div>
 </td>
@@ -265,7 +265,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
                  long&nbsp;ledgerId,
                  long&nbsp;entryId,
                  io.netty.buffer.ByteBuf&nbsp;buffer,
-                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
+                 java.lang.Object&nbsp;ctx)</code>&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
@@ -274,7 +274,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
           <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a>&nbsp;entry)</code>&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
 </table>
@@ -282,8 +282,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#clone--" title="class or interface in java.lang">clone</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#finalize--" title="class or interface in java.lang">finalize</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.Object</h3>
+<code>clone, equals, finalize, getClass, hashCode, notify, notifyAll, wait, wait, wait</code></li>
 </ul>
 </li>
 </ul>
@@ -323,7 +323,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <ul class="blockList">
 <li class="blockList">
 <h4>heardFromHostsBitSet</h4>
-<pre>final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a> heardFromHostsBitSet</pre>
+<pre>final&nbsp;java.util.BitSet heardFromHostsBitSet</pre>
 </li>
 </ul>
 <a name="emptyResponsesFromHostsBitSet">
@@ -332,7 +332,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <ul class="blockList">
 <li class="blockList">
 <h4>emptyResponsesFromHostsBitSet</h4>
-<pre>final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a> emptyResponsesFromHostsBitSet</pre>
+<pre>final&nbsp;java.util.BitSet emptyResponsesFromHostsBitSet</pre>
 </li>
 </ul>
 <a name="maxMissedReadsAllowed">
@@ -359,7 +359,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <ul class="blockList">
 <li class="blockList">
 <h4>requestComplete</h4>
-<pre>final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicBoolean.html?is-external=true" title="class or interface in java.util.concurrent.atomic">AtomicBoolean</a> requestComplete</pre>
+<pre>final&nbsp;java.util.concurrent.atomic.AtomicBoolean requestComplete</pre>
 </li>
 </ul>
 <a name="requestTimeNano">
@@ -387,7 +387,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <h4>ReadLastConfirmedAndEntryOp</h4>
 <pre>ReadLastConfirmedAndEntryOp(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                             <a href="../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
-                            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+                            java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                             <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback.html" title="interface in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback</a>&nbsp;cb,
                             long&nbsp;prevEntryId,
                             long&nbsp;timeOutInMillis)</pre>
@@ -434,7 +434,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <ul class="blockList">
 <li class="blockList">
 <h4>issueSpeculativeRequest</h4>
-<pre>public&nbsp;com.google.common.util.concurrent.ListenableFuture&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;&nbsp;issueSpeculativeRequest()</pre>
+<pre>public&nbsp;com.google.common.util.concurrent.ListenableFuture&lt;java.lang.Boolean&gt;&nbsp;issueSpeculativeRequest()</pre>
 <div class="block">Speculative Read Logic.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
@@ -462,10 +462,10 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <pre>void&nbsp;sendReadTo(int&nbsp;bookieIndex,
                 org.apache.bookkeeper.net.BookieSocketAddress&nbsp;to,
                 <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a>&nbsp;entry)
-         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></pre>
+         throws java.lang.InterruptedException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 </dl>
 </li>
 </ul>
@@ -479,7 +479,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
                               long&nbsp;ledgerId,
                               long&nbsp;entryId,
                               io.netty.buffer.ByteBuf&nbsp;buffer,
-                              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                              java.lang.Object&nbsp;ctx)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>readEntryComplete</code>&nbsp;in interface&nbsp;<code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback</code></dd>
@@ -492,10 +492,10 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <ul class="blockListLast">
 <li class="blockList">
 <h4>toString</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;toString()</pre>
+<pre>public&nbsp;java.lang.String&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>
+<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
 </dl>
 </li>
 </ul>

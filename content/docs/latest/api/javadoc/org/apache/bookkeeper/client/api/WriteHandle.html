@@ -101,7 +101,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Superinterfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a>, <a href="../../../../../org/apache/bookkeeper/client/api/ForceableHandle.html" title="interface in org.apache.bookkeeper.client.api">ForceableHandle</a>, <a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a>, <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></dd>
+<dd>java.lang.AutoCloseable, <a href="../../../../../org/apache/bookkeeper/client/api/ForceableHandle.html" title="interface in org.apache.bookkeeper.client.api">ForceableHandle</a>, <a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a>, <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></dd>
 </dl>
 <dl>
 <dt>All Known Implementing Classes:</dt>
@@ -160,18 +160,18 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>default long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-java.nio.ByteBuffer-">append</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;data)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-java.nio.ByteBuffer-">append</a></span>(java.nio.ByteBuffer&nbsp;data)</code>
 <div class="block">Add entry synchronously to an open ledger.</div>
 </td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code>default <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colFirst"><code>default java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#appendAsync-byte:A-">appendAsync</a></span>(byte[]&nbsp;data)</code>
 <div class="block">Add an entry asynchronously to an open ledger.</div>
 </td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>default <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colFirst"><code>default java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#appendAsync-byte:A-int-int-">appendAsync</a></span>(byte[]&nbsp;data,
            int&nbsp;offset,
            int&nbsp;length)</code>
@@ -179,14 +179,14 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 </td>
 </tr>
 <tr id="i6" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#appendAsync-io.netty.buffer.ByteBuf-">appendAsync</a></span>(io.netty.buffer.ByteBuf&nbsp;data)</code>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 </td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code>default <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#appendAsync-java.nio.ByteBuffer-">appendAsync</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;data)</code>
+<td class="colFirst"><code>default java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#appendAsync-java.nio.ByteBuffer-">appendAsync</a></span>(java.nio.ByteBuffer&nbsp;data)</code>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 </td>
 </tr>
@@ -197,7 +197,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 </td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;</code></td>
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;java.lang.Void&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#closeAsync--">closeAsync</a></span>()</code>
 <div class="block">Asynchronous close the write handle, any adds in flight will return errors.</div>
 </td>
@@ -251,7 +251,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <ul class="blockList">
 <li class="blockList">
 <h4>appendAsync</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;appendAsync(io.netty.buffer.ByteBuf&nbsp;data)</pre>
+<pre>java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;&nbsp;appendAsync(io.netty.buffer.ByteBuf&nbsp;data)</pre>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -270,7 +270,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <h4>append</h4>
 <pre>default&nbsp;long&nbsp;append(io.netty.buffer.ByteBuf&nbsp;data)
              throws <a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a>,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></pre>
+                    java.lang.InterruptedException</pre>
 <div class="block">Add entry synchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -280,7 +280,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <dd>the id of the newly appended entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a></code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 </dl>
 </li>
 </ul>
@@ -290,7 +290,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <ul class="blockList">
 <li class="blockList">
 <h4>appendAsync</h4>
-<pre>default&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;appendAsync(<a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;data)</pre>
+<pre>default&nbsp;java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;&nbsp;appendAsync(java.nio.ByteBuffer&nbsp;data)</pre>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -306,9 +306,9 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <ul class="blockList">
 <li class="blockList">
 <h4>append</h4>
-<pre>default&nbsp;long&nbsp;append(<a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;data)
+<pre>default&nbsp;long&nbsp;append(java.nio.ByteBuffer&nbsp;data)
              throws <a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a>,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></pre>
+                    java.lang.InterruptedException</pre>
 <div class="block">Add entry synchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -317,7 +317,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <dd>the id of the newly appended entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a></code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 </dl>
 </li>
 </ul>
@@ -327,7 +327,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <ul class="blockList">
 <li class="blockList">
 <h4>appendAsync</h4>
-<pre>default&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;appendAsync(byte[]&nbsp;data)</pre>
+<pre>default&nbsp;java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;&nbsp;appendAsync(byte[]&nbsp;data)</pre>
 <div class="block">Add an entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -346,7 +346,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <h4>append</h4>
 <pre>default&nbsp;long&nbsp;append(byte[]&nbsp;data)
              throws <a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a>,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></pre>
+                    java.lang.InterruptedException</pre>
 <div class="block">Add an entry synchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -355,7 +355,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <dd>the entry id of this newly appended entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a></code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 </dl>
 </li>
 </ul>
@@ -365,9 +365,9 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <ul class="blockList">
 <li class="blockList">
 <h4>appendAsync</h4>
-<pre>default&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;appendAsync(byte[]&nbsp;data,
-                                            int&nbsp;offset,
-                                            int&nbsp;length)</pre>
+<pre>default&nbsp;java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;&nbsp;appendAsync(byte[]&nbsp;data,
+                                                                           int&nbsp;offset,
+                                                                           int&nbsp;length)</pre>
 <div class="block">Add an entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -390,7 +390,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
                     int&nbsp;offset,
                     int&nbsp;length)
              throws <a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a>,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></pre>
+                    java.lang.InterruptedException</pre>
 <div class="block">Add an entry synchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -401,7 +401,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <dd>the entry id of this newly appended entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a></code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 </dl>
 </li>
 </ul>
@@ -426,7 +426,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <ul class="blockList">
 <li class="blockList">
 <h4>closeAsync</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;closeAsync()</pre>
+<pre>java.util.concurrent.CompletableFuture&lt;java.lang.Void&gt;&nbsp;closeAsync()</pre>
 <div class="block">Asynchronous close the write handle, any adds in flight will return errors.
 
  <p>Closing a ledger will ensure that all clients agree on what the last
@@ -456,7 +456,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <h4>close</h4>
 <pre>default&nbsp;void&nbsp;close()
             throws <a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a>,
-                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></pre>
+                   java.lang.InterruptedException</pre>
 <div class="block">Synchronous close the write handle, any adds in flight will return errors.
 
  <p>Closing a ledger will ensure that all clients agree on what the last
@@ -472,12 +472,12 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
  process is trying to write, the operation completes successfully.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true#close--" title="class or interface in java.lang">close</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></code></dd>
+<dd><code>close</code>&nbsp;in interface&nbsp;<code>java.lang.AutoCloseable</code></dd>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../org/apache/bookkeeper/client/api/Handle.html#close--">close</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a></code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a></code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../org/apache/bookkeeper/client/api/Handle.html#closeAsync--"><code>Handle.closeAsync()</code></a></dd>
 </dl>

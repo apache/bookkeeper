@@ -347,7 +347,7 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html?is-external=true" title="class or interface in java.util.function">Function</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>,<a href="../../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) static java.util.function.Function&lt;java.lang.Throwable,<a href="../../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">BKException.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/BKException.html#HANDLER">HANDLER</a></span></code>&nbsp;</td>
 </tr>
 </tbody>
@@ -381,7 +381,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>default long</code></td>
-<td class="colLast"><span class="typeNameLabel">WriteHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-java.nio.ByteBuffer-">append</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;data)</code>
+<td class="colLast"><span class="typeNameLabel">WriteHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-java.nio.ByteBuffer-">append</a></span>(java.nio.ByteBuffer&nbsp;data)</code>
 <div class="block">Add entry synchronously to an open ledger.</div>
 </td>
 </tr>
@@ -392,21 +392,21 @@
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/BookKeeper.html#close--">close</a></span>()</code>
-<div class="block">Close the client and release every resource.</div>
-</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code>default void</code></td>
 <td class="colLast"><span class="typeNameLabel">WriteHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#close--">close</a></span>()</code>
 <div class="block">Synchronous close the write handle, any adds in flight will return errors.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>default void</code></td>
 <td class="colLast"><span class="typeNameLabel">Handle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/Handle.html#close--">close</a></span>()</code>
 <div class="block">Close this handle synchronously.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/BookKeeper.html#close--">close</a></span>()</code>
+<div class="block">Close the client and release every resource.</div>
 </td>
 </tr>
 <tr class="altColor">
@@ -470,7 +470,7 @@
 <tr class="altColor">
 <td class="colFirst"><code>default long</code></td>
 <td class="colLast"><span class="typeNameLabel">WriteAdvHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html#write-long-java.nio.ByteBuffer-">write</a></span>(long&nbsp;entryId,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;data)</code>
+     java.nio.ByteBuffer&nbsp;data)</code>
 <div class="block">Add entry synchronously to an open ledger.</div>
 </td>
 </tr>

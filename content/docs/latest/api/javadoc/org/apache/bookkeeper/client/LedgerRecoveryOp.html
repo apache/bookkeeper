@@ -97,7 +97,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
+<li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
 <li>org.apache.bookkeeper.client.LedgerRecoveryOp</li>
@@ -114,7 +114,7 @@ var activeTableTab = "activeTableTab";
 <hr>
 <br>
 <pre>class <span class="typeNameLabel">LedgerRecoveryOp</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
+extends java.lang.Object
 implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener, <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a></pre>
 <div class="block">This class encapsulated the ledger recovery operation. It first does a read
  with entry-id of -1 (BookieProtocol.LAST_ADD_CONFIRMED) to all bookies. Then
@@ -182,11 +182,11 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#metadataForRecovery">metadataForRecovery</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#promise">promise</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicLong.html?is-external=true" title="class or interface in java.util.concurrent.atomic">AtomicLong</a></code></td>
+<td class="colFirst"><code>(package private) java.util.concurrent.atomic.AtomicLong</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#readCount">readCount</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -198,7 +198,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#startEntryToRead">startEntryToRead</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicLong.html?is-external=true" title="class or interface in java.util.concurrent.atomic">AtomicLong</a></code></td>
+<td class="colFirst"><code>(package private) java.util.concurrent.atomic.AtomicLong</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#writeCount">writeCount</a></span></code>&nbsp;</td>
 </tr>
 </table>
@@ -239,12 +239,12 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#addComplete-int-org.apache.bookkeeper.client.LedgerHandle-long-java.lang.Object-">addComplete</a></span>(int&nbsp;rc,
            <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
            long&nbsp;entryId,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+           java.lang.Object&nbsp;ctx)</code>
 <div class="block">Callback to implement if latency information is not desired.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&gt;</code></td>
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#initiate--">initiate</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
@@ -252,7 +252,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#onEntryComplete-int-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerEntry-java.lang.Object-">onEntryComplete</a></span>(int&nbsp;rc,
                <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                <a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&nbsp;entry,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+               java.lang.Object&nbsp;ctx)</code>
 <div class="block">On given <i>entry</i> completed.</div>
 </td>
 </tr>
@@ -267,8 +267,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#clone--" title="class or interface in java.lang">clone</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#finalize--" title="class or interface in java.lang">finalize</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.Object</h3>
+<code>clone, equals, finalize, getClass, hashCode, notify, notifyAll, toString, wait, wait, wait</code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.bookkeeper.client.AsyncCallback.AddCallback">
@@ -324,7 +324,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <ul class="blockList">
 <li class="blockList">
 <h4>promise</h4>
-<pre>final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&gt; promise</pre>
+<pre>final&nbsp;java.util.concurrent.CompletableFuture&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&gt; promise</pre>
 </li>
 </ul>
 <a name="readCount">
@@ -333,7 +333,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <ul class="blockList">
 <li class="blockList">
 <h4>readCount</h4>
-<pre>final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicLong.html?is-external=true" title="class or interface in java.util.concurrent.atomic">AtomicLong</a> readCount</pre>
+<pre>final&nbsp;java.util.concurrent.atomic.AtomicLong readCount</pre>
 </li>
 </ul>
 <a name="writeCount">
@@ -342,7 +342,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <ul class="blockList">
 <li class="blockList">
 <h4>writeCount</h4>
-<pre>final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicLong.html?is-external=true" title="class or interface in java.util.concurrent.atomic">AtomicLong</a> writeCount</pre>
+<pre>final&nbsp;java.util.concurrent.atomic.AtomicLong writeCount</pre>
 </li>
 </ul>
 <a name="readDone">
@@ -438,7 +438,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <ul class="blockList">
 <li class="blockList">
 <h4>initiate</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&gt;&nbsp;initiate()</pre>
+<pre>public&nbsp;java.util.concurrent.CompletableFuture&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&gt;&nbsp;initiate()</pre>
 </li>
 </ul>
 <a name="onEntryComplete-int-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerEntry-java.lang.Object-">
@@ -450,7 +450,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <pre>public&nbsp;void&nbsp;onEntryComplete(int&nbsp;rc,
                             <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                             <a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&nbsp;entry,
-                            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                            java.lang.Object&nbsp;ctx)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener</code></span></div>
 <div class="block">On given <i>entry</i> completed.</div>
 <dl>
@@ -473,7 +473,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <pre>public&nbsp;void&nbsp;addComplete(int&nbsp;rc,
                         <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                         long&nbsp;entryId,
-                        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                        java.lang.Object&nbsp;ctx)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html#addComplete-int-org.apache.bookkeeper.client.LedgerHandle-long-java.lang.Object-">AsyncCallback.AddCallback</a></code></span></div>
 <div class="block">Callback to implement if latency information is not desired.</div>
 <dl>

@@ -97,7 +97,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
+<li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
 <li><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">org.apache.bookkeeper.client.LedgerHandle</a></li>
@@ -114,7 +114,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a>, <a href="../../../../org/apache/bookkeeper/client/api/ForceableHandle.html" title="interface in org.apache.bookkeeper.client.api">ForceableHandle</a>, <a href="../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a>, <a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a>, org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener</dd>
+<dd>java.lang.AutoCloseable, <a href="../../../../org/apache/bookkeeper/client/api/ForceableHandle.html" title="interface in org.apache.bookkeeper.client.api">ForceableHandle</a>, <a href="../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a>, <a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a>, org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener</dd>
 </dl>
 <hr>
 <br>
@@ -224,7 +224,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#asyncAddEntry-byte:A-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">asyncAddEntry</a></span>(byte[]&nbsp;data,
              <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+             java.lang.Object&nbsp;ctx)</code>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 </td>
 </tr>
@@ -234,21 +234,21 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
              int&nbsp;offset,
              int&nbsp;length,
              <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+             java.lang.Object&nbsp;ctx)</code>
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.</div>
 </td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#asyncClose-org.apache.bookkeeper.client.AsyncCallback.CloseCallback-java.lang.Object-">asyncClose</a></span>(<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.CloseCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CloseCallback</a>&nbsp;cb,
-          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+          java.lang.Object&nbsp;ctx)</code>
 <div class="block">Asynchronous close, any adds in flight will return errors.</div>
 </td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#asyncReadLastEntry-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">asyncReadLastEntry</a></span>(<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
+                  java.lang.Object&nbsp;ctx)</code>&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
@@ -257,18 +257,18 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 </td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#closeRecovered--">closeRecovered</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#getCurrentEnsemble--">getCurrentEnsemble</a></span>()</code>
 <div class="block">Get the current ensemble from the ensemble list.</div>
 </td>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#handleBookieFailure-java.util.Map-">handleBookieFailure</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;failedBookies)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#handleBookieFailure-java.util.Map-">handleBookieFailure</a></span>(java.util.Map&lt;java.lang.Integer,org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;failedBookies)</code>
 <div class="block">For a read only ledger handle, this method will only ever be called during recovery,
  when we are reading forward from LAC and writing back those entries.</div>
 </td>
@@ -290,18 +290,18 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">recover</a></span>(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;finalCb)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">recover</a></span>(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.lang.Void&gt;&nbsp;finalCb)</code>&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-boolean-">recover</a></span>(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;finalCb,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-boolean-">recover</a></span>(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.lang.Void&gt;&nbsp;finalCb,
        org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;listener,
        boolean&nbsp;forceRecovery)</code>
 <div class="block">Recover the ledger.</div>
 </td>
 </tr>
 <tr id="i15" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
 </table>
@@ -316,8 +316,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#clone--" title="class or interface in java.lang">clone</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#finalize--" title="class or interface in java.lang">finalize</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.Object</h3>
+<code>clone, equals, finalize, getClass, hashCode, notify, notifyAll, wait, wait, wait</code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.bookkeeper.client.api.WriteHandle">
@@ -359,12 +359,12 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
                      <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                      byte[]&nbsp;password,
                      boolean&nbsp;watch)
-              throws <a href="https://docs.oracle.com/javase/8/docs/api/java/security/GeneralSecurityException.html?is-external=true" title="class or interface in java.security">GeneralSecurityException</a>,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/NumberFormatException.html?is-external=true" title="class or interface in java.lang">NumberFormatException</a></pre>
+              throws java.security.GeneralSecurityException,
+                     java.lang.NumberFormatException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/security/GeneralSecurityException.html?is-external=true" title="class or interface in java.security">GeneralSecurityException</a></code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/NumberFormatException.html?is-external=true" title="class or interface in java.lang">NumberFormatException</a></code></dd>
+<dd><code>java.security.GeneralSecurityException</code></dd>
+<dd><code>java.lang.NumberFormatException</code></dd>
 </dl>
 </li>
 </ul>
@@ -383,7 +383,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <li class="blockList">
 <h4>close</h4>
 <pre>public&nbsp;void&nbsp;close()
-           throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+           throws java.lang.InterruptedException,
                   <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#close--">LedgerHandle</a></code></span></div>
 <div class="block">Synchronous close the write handle, any adds in flight will return errors.
@@ -401,7 +401,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
  process is trying to write, the operation completes successfully.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true#close--" title="class or interface in java.lang">close</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></code></dd>
+<dd><code>close</code>&nbsp;in interface&nbsp;<code>java.lang.AutoCloseable</code></dd>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/api/Handle.html#close--">close</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a></code></dd>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
@@ -409,7 +409,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#close--">close</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../org/apache/bookkeeper/client/api/Handle.html#closeAsync--"><code>Handle.closeAsync()</code></a></dd>
@@ -423,7 +423,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <li class="blockList">
 <h4>asyncClose</h4>
 <pre>public&nbsp;void&nbsp;asyncClose(<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.CloseCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CloseCallback</a>&nbsp;cb,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                       java.lang.Object&nbsp;ctx)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncClose-org.apache.bookkeeper.client.AsyncCallback.CloseCallback-java.lang.Object-">LedgerHandle</a></code></span></div>
 <div class="block">Asynchronous close, any adds in flight will return errors.
 
@@ -446,7 +446,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <li class="blockList">
 <h4>addEntry</h4>
 <pre>public&nbsp;long&nbsp;addEntry(byte[]&nbsp;data)
-              throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+              throws java.lang.InterruptedException,
                      <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#addEntry-byte:A-">LedgerHandle</a></code></span></div>
 <div class="block">Add entry synchronously to an open ledger.</div>
@@ -458,7 +458,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the entryId of the new inserted entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -472,7 +472,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <pre>public&nbsp;long&nbsp;addEntry(byte[]&nbsp;data,
                      int&nbsp;offset,
                      int&nbsp;length)
-              throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+              throws java.lang.InterruptedException,
                      <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#addEntry-byte:A-int-int-">LedgerHandle</a></code></span></div>
 <div class="block">Add entry synchronously to an open ledger.</div>
@@ -486,7 +486,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the entryId of the new inserted entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -499,7 +499,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <h4>asyncAddEntry</h4>
 <pre>public&nbsp;void&nbsp;asyncAddEntry(byte[]&nbsp;data,
                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                          java.lang.Object&nbsp;ctx)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncAddEntry-byte:A-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">LedgerHandle</a></code></span></div>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 <dl>
@@ -522,7 +522,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
                           int&nbsp;offset,
                           int&nbsp;length,
                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                          java.lang.Object&nbsp;ctx)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncAddEntry-byte:A-int-int-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">LedgerHandle</a></code></span></div>
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.</div>
 <dl>
@@ -562,10 +562,10 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <ul class="blockList">
 <li class="blockList">
 <h4>toString</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;toString()</pre>
+<pre>public&nbsp;java.lang.String&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>
+<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
 </dl>
 </li>
 </ul>
@@ -589,7 +589,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <li class="blockList">
 <h4>asyncReadLastEntry</h4>
 <pre>public&nbsp;void&nbsp;asyncReadLastEntry(<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
-                               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                               java.lang.Object&nbsp;ctx)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadLastEntry-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">asyncReadLastEntry</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></dd>
@@ -602,7 +602,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <ul class="blockList">
 <li class="blockList">
 <h4>handleBookieFailure</h4>
-<pre>void&nbsp;handleBookieFailure(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;failedBookies)</pre>
+<pre>void&nbsp;handleBookieFailure(java.util.Map&lt;java.lang.Integer,org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;failedBookies)</pre>
 <div class="block">For a read only ledger handle, this method will only ever be called during recovery,
  when we are reading forward from LAC and writing back those entries. As such,
  unlike with LedgerHandle, we do not want to persist changes to the metadata as they occur,
@@ -633,7 +633,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <ul class="blockList">
 <li class="blockList">
 <h4>recover</h4>
-<pre>void&nbsp;recover(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;finalCb)</pre>
+<pre>void&nbsp;recover(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.lang.Void&gt;&nbsp;finalCb)</pre>
 </li>
 </ul>
 <a name="recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-boolean-">
@@ -642,7 +642,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <ul class="blockList">
 <li class="blockList">
 <h4>recover</h4>
-<pre>void&nbsp;recover(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;finalCb,
+<pre>void&nbsp;recover(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.lang.Void&gt;&nbsp;finalCb,
              org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;listener,
              boolean&nbsp;forceRecovery)</pre>
 <div class="block">Recover the ledger.</div>
@@ -660,7 +660,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <ul class="blockList">
 <li class="blockList">
 <h4>closeRecovered</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;closeRecovered()</pre>
+<pre>java.util.concurrent.CompletableFuture&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;closeRecovered()</pre>
 </li>
 </ul>
 <a name="getCurrentEnsemble--">
@@ -669,7 +669,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <ul class="blockListLast">
 <li class="blockList">
 <h4>getCurrentEnsemble</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getCurrentEnsemble()</pre>
+<pre>java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getCurrentEnsemble()</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#getCurrentEnsemble--">LedgerHandle</a></code></span></div>
 <div class="block">Get the current ensemble from the ensemble list. The current ensemble
  is the last ensemble in the list. The ledger handle uses this ensemble when

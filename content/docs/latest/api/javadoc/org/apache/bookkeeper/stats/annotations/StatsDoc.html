@@ -93,8 +93,8 @@
 <li class="blockList">
 <hr>
 <br>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/annotation/Retention.html?is-external=true" title="class or interface in java.lang.annotation">@Retention</a>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/annotation/Retention.html?is-external=true#value--" title="class or interface in java.lang.annotation">value</a>=<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/annotation/RetentionPolicy.html?is-external=true#RUNTIME" title="class or interface in java.lang.annotation">RUNTIME</a>)
- <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/annotation/Documented.html?is-external=true" title="class or interface in java.lang.annotation">@Documented</a>
+<pre>@Retention(value=RUNTIME)
+ @Documented
 public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <div class="block">Documenting the stats.</div>
 </li>
@@ -116,13 +116,13 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <th class="colLast" scope="col">Required Element and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#help--">help</a></span></code>
 <div class="block">The help message of this stats.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#name--">name</a></span></code>
 <div class="block">The name of this stats.</div>
 </td>
@@ -143,26 +143,26 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <th class="colLast" scope="col">Optional Element and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#category--">category</a></span></code>
 <div class="block">The name of the category to group stats together.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#happensAfter--">happensAfter</a></span></code>
 <div class="block">The metric name of an operation that happens
  after the operation of this metric.</div>
 </td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#parent--">parent</a></span></code>
 <div class="block">The parent metric name.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#scope--">scope</a></span></code>
 <div class="block">The scope of this stats.</div>
 </td>
@@ -188,7 +188,7 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>name</h4>
-<pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name</pre>
+<pre>public abstract&nbsp;java.lang.String&nbsp;name</pre>
 <div class="block">The name of this stats.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -205,7 +205,7 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>help</h4>
-<pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;help</pre>
+<pre>public abstract&nbsp;java.lang.String&nbsp;help</pre>
 <div class="block">The help message of this stats.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -223,7 +223,7 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>category</h4>
-<pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;category</pre>
+<pre>public abstract&nbsp;java.lang.String&nbsp;category</pre>
 <div class="block">The name of the category to group stats together.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -244,7 +244,7 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>scope</h4>
-<pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scope</pre>
+<pre>public abstract&nbsp;java.lang.String&nbsp;scope</pre>
 <div class="block">The scope of this stats.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -265,7 +265,7 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>parent</h4>
-<pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;parent</pre>
+<pre>public abstract&nbsp;java.lang.String&nbsp;parent</pre>
 <div class="block">The parent metric name.
 
  <p>It can used for analyzing the relationships
@@ -289,7 +289,7 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>happensAfter</h4>
-<pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;happensAfter</pre>
+<pre>public abstract&nbsp;java.lang.String&nbsp;happensAfter</pre>
 <div class="block">The metric name of an operation that happens
  after the operation of this metric.
 

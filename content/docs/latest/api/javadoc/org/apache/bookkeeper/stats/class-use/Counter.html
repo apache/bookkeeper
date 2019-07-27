@@ -137,12 +137,12 @@
 <td class="colLast"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#failedToResolveNetworkLocationCounter">failedToResolveNetworkLocationCounter</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>protected <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#failedToResolveNetworkLocationCounter">failedToResolveNetworkLocationCounter</a></span></code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
 <td class="colLast"><span class="typeNameLabel">TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html#failedToResolveNetworkLocationCounter">failedToResolveNetworkLocationCounter</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#failedToResolveNetworkLocationCounter">failedToResolveNetworkLocationCounter</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
@@ -167,7 +167,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">BookKeeperClientStats.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#getEnsembleBookieDistributionCounter-java.lang.String-">getEnsembleBookieDistributionCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;bookie)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStats.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#getEnsembleBookieDistributionCounter-java.lang.String-">getEnsembleBookieDistributionCounter</a></span>(java.lang.String&nbsp;bookie)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
@@ -207,7 +207,7 @@
 <tbody>
 <tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html#DNSResolverDecorator-org.apache.bookkeeper.net.DNSToSwitchMapping-java.util.function.Supplier-org.apache.bookkeeper.stats.Counter-">DNSResolverDecorator</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;resolver,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;defaultRackSupplier,
+                    java.util.function.Supplier&lt;java.lang.String&gt;&nbsp;defaultRackSupplier,
                     <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&nbsp;failedToResolveNetworkLocationCounter)</code>&nbsp;</td>
 </tr>
 </tbody>
@@ -230,7 +230,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getEnsembleBookieDistributionCounter-java.lang.String-">getEnsembleBookieDistributionCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;bookie)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getEnsembleBookieDistributionCounter-java.lang.String-">getEnsembleBookieDistributionCounter</a></span>(java.lang.String&nbsp;bookie)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
@@ -290,7 +290,7 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>protected <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ConcurrentMap.html?is-external=true" title="class or interface in java.util.concurrent">ConcurrentMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&gt;</code></td>
+<td class="colFirst"><code>protected java.util.concurrent.ConcurrentMap&lt;java.lang.String,<a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">CachingStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/CachingStatsLogger.html#counters">counters</a></span></code>&nbsp;</td>
 </tr>
 </tbody>
@@ -304,21 +304,21 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CodahaleStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/CodahaleStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;statName)</code>
+<td class="colLast"><span class="typeNameLabel">CodahaleStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/CodahaleStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(java.lang.String&nbsp;statName)</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 &nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CachingStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/CachingStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">StatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">StatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">NullStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/NullStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">NullStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/NullStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CachingStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/CachingStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -336,7 +336,7 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CodahaleStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;statName)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CodahaleStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(java.lang.String&nbsp;statName)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -355,7 +355,7 @@
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></span></code>
-<div class="block"><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats"><code>Counter</code></a> implementation based on <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/LongAdder.html?is-external=true" title="class or interface in java.util.concurrent.atomic"><code>LongAdder</code></a>.</div>
+<div class="block"><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats"><code>Counter</code></a> implementation based on <code>LongAdder</code>.</div>
 </td>
 </tr>
 </tbody>
@@ -369,7 +369,7 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">PrometheusStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">PrometheusStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -382,8 +382,8 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) static void</code></td>
-<td class="colLast"><span class="typeNameLabel">PrometheusTextFormatUtil.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#writeCounter-java.io.Writer-java.lang.String-org.apache.bookkeeper.stats.Counter-">writeCounter</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/Writer.html?is-external=true" title="class or interface in java.io">Writer</a>&nbsp;w,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
+<td class="colLast"><span class="typeNameLabel">PrometheusTextFormatUtil.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#writeCounter-java.io.Writer-java.lang.String-org.apache.bookkeeper.stats.Counter-">writeCounter</a></span>(java.io.Writer&nbsp;w,
+            java.lang.String&nbsp;name,
             <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&nbsp;counter)</code>&nbsp;</td>
 </tr>
 </tbody>

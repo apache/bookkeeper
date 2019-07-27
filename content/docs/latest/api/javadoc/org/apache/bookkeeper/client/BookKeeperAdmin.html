@@ -97,7 +97,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
+<li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
 <li>org.apache.bookkeeper.client.BookKeeperAdmin</li>
@@ -109,13 +109,13 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></dd>
+<dd>java.lang.AutoCloseable</dd>
 </dl>
 <hr>
 <br>
 <pre>public class <span class="typeNameLabel">BookKeeperAdmin</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
-implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></pre>
+extends java.lang.Object
+implements java.lang.AutoCloseable</pre>
 <div class="block">Admin client for BookKeeper clusters.</div>
 </li>
 </ul>
@@ -184,7 +184,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#BookKeeperAdmin-java.lang.String-">BookKeeperAdmin</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;zkServers)</code>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#BookKeeperAdmin-java.lang.String-">BookKeeperAdmin</a></span>(java.lang.String&nbsp;zkServers)</code>
 <div class="block">Constructor that takes in a ZooKeeper servers connect string so we know
  how to connect to ZooKeeper to retrieve information about the BookKeeper
  cluster.</div>
@@ -219,11 +219,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncGetLedgersContainBookies-java.util.Set-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">asyncGetLedgersContainBookies</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookies,
-                             org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/SortedMap.html?is-external=true" title="class or interface in java.util">SortedMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;callback)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncGetLedgersContainBookies-java.util.Set-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">asyncGetLedgersContainBookies</a></span>(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookies,
+                             org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.util.SortedMap&lt;java.lang.Long,<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;callback)</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger&gt;</code></td>
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncGetListOfEntriesOfLedger-org.apache.bookkeeper.net.BookieSocketAddress-long-">asyncGetListOfEntriesOfLedger</a></span>(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;address,
                              long&nbsp;ledgerId)</code>
 <div class="block">Makes async request for getting list of entries of ledger from a bookie
@@ -234,7 +234,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncOpenLedger-long-org.apache.bookkeeper.client.AsyncCallback.OpenCallback-java.lang.Object-">asyncOpenLedger</a></span>(long&nbsp;lId,
                <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.OpenCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.OpenCallback</a>&nbsp;cb,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+               java.lang.Object&nbsp;ctx)</code>
 <div class="block">Open a ledger as an administrator.</div>
 </td>
 </tr>
@@ -242,7 +242,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncOpenLedgerNoRecovery-long-org.apache.bookkeeper.client.AsyncCallback.OpenCallback-java.lang.Object-">asyncOpenLedgerNoRecovery</a></span>(long&nbsp;lId,
                          <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.OpenCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.OpenCallback</a>&nbsp;cb,
-                         <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+                         java.lang.Object&nbsp;ctx)</code>
 <div class="block">Open a ledger as an administrator without recovering the ledger.</div>
 </td>
 </tr>
@@ -250,7 +250,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncRecoverBookieData-org.apache.bookkeeper.net.BookieSocketAddress-org.apache.bookkeeper.client.AsyncCallback.RecoverCallback-java.lang.Object-">asyncRecoverBookieData</a></span>(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieSrc,
                       <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.RecoverCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.RecoverCallback</a>&nbsp;cb,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;context)</code>
+                      java.lang.Object&nbsp;context)</code>
 <div class="block">Async method to rebuild and recover the ledger fragments data that was
  stored on the source bookie.</div>
 </td>
@@ -258,27 +258,27 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncRecoverBookieData-long-java.util.Set-boolean-boolean-org.apache.bookkeeper.client.AsyncCallback.RecoverCallback-java.lang.Object-">asyncRecoverBookieData</a></span>(long&nbsp;lid,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
+                      java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
                       boolean&nbsp;dryrun,
                       boolean&nbsp;skipOpenLedgers,
                       <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.RecoverCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.RecoverCallback</a>&nbsp;callback,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;context)</code>
+                      java.lang.Object&nbsp;context)</code>
 <div class="block">Recover a specific ledger.</div>
 </td>
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncRecoverBookieData-java.util.Set-org.apache.bookkeeper.client.AsyncCallback.RecoverCallback-java.lang.Object-">asyncRecoverBookieData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncRecoverBookieData-java.util.Set-org.apache.bookkeeper.client.AsyncCallback.RecoverCallback-java.lang.Object-">asyncRecoverBookieData</a></span>(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
                       <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.RecoverCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.RecoverCallback</a>&nbsp;cb,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;context)</code>&nbsp;</td>
+                      java.lang.Object&nbsp;context)</code>&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncRecoverBookieData-java.util.Set-boolean-boolean-org.apache.bookkeeper.client.AsyncCallback.RecoverCallback-java.lang.Object-">asyncRecoverBookieData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncRecoverBookieData-java.util.Set-boolean-boolean-org.apache.bookkeeper.client.AsyncCallback.RecoverCallback-java.lang.Object-">asyncRecoverBookieData</a></span>(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
                       boolean&nbsp;dryrun,
                       boolean&nbsp;skipOpenLedgers,
                       <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.RecoverCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.RecoverCallback</a>&nbsp;cb,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;context)</code>&nbsp;</td>
+                      java.lang.Object&nbsp;context)</code>&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
@@ -303,19 +303,19 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 </td>
 </tr>
 <tr id="i13" class="rowColor">
-<td class="colFirst"><code>(package private) static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#formatEnsemble-java.util.List-java.util.Set-char-">formatEnsemble</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
+<td class="colFirst"><code>(package private) static java.lang.String</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#formatEnsemble-java.util.List-java.util.Set-char-">formatEnsemble</a></span>(java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+              java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
               char&nbsp;marker)</code>&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colFirst"><code>java.util.Collection&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#getAllBookies--">getAllBookies</a></span>()</code>
 <div class="block">Get a list of all bookies including the not available ones.</div>
 </td>
 </tr>
 <tr id="i15" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colFirst"><code>java.util.Collection&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#getAvailableBookies--">getAvailableBookies</a></span>()</code>
 <div class="block">Get a list of the available bookies.</div>
 </td>
@@ -329,8 +329,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#getLedgerMetadata-org.apache.bookkeeper.client.LedgerHandle-">getLedgerMetadata</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh)</code>&nbsp;</td>
 </tr>
 <tr id="i18" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/SortedMap.html?is-external=true" title="class or interface in java.util">SortedMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#getLedgersContainBookies-java.util.Set-">getLedgersContainBookies</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookies)</code>&nbsp;</td>
+<td class="colFirst"><code>java.util.SortedMap&lt;java.lang.Long,<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#getLedgersContainBookies-java.util.Set-">getLedgersContainBookies</a></span>(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookies)</code>&nbsp;</td>
 </tr>
 <tr id="i19" class="rowColor">
 <td class="colFirst"><code>int</code></td>
@@ -339,7 +339,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 </td>
 </tr>
 <tr id="i20" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colFirst"><code>java.util.Collection&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#getReadOnlyBookies--">getReadOnlyBookies</a></span>()</code>
 <div class="block">Get a list of readonly bookies synchronously.</div>
 </td>
@@ -359,7 +359,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 </tr>
 <tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleBookiesList,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#isEnsembleAdheringToPlacementPolicy-java.util.List-int-int-">isEnsembleAdheringToPlacementPolicy</a></span>(java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleBookiesList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code>
 <div class="block">returns boolean value specifying if the ensemble of the segment is
@@ -368,7 +368,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 </td>
 </tr>
 <tr id="i24" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colFirst"><code>java.lang.Iterable&lt;java.lang.Long&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#listLedgers--">listLedgers</a></span>()</code>
 <div class="block">This method returns an iterable object for the list of ledger identifiers of
  the ledgers currently available.</div>
@@ -377,8 +377,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <tr id="i25" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#nukeExistingCluster-org.apache.bookkeeper.conf.ServerConfiguration-java.lang.String-java.lang.String-boolean-">nukeExistingCluster</a></span>(<a href="../../../../org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
-                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;ledgersRootPath,
-                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;instanceId,
+                   java.lang.String&nbsp;ledgersRootPath,
+                   java.lang.String&nbsp;instanceId,
                    boolean&nbsp;force)</code>
 <div class="block">Nukes existing cluster metadata.</div>
 </td>
@@ -396,7 +396,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 </td>
 </tr>
 <tr id="i28" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
+<td class="colFirst"><code>java.lang.Iterable&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#readEntries-long-long-long-">readEntries</a></span>(long&nbsp;ledgerId,
            long&nbsp;firstEntry,
            long&nbsp;lastEntry)</code>
@@ -413,17 +413,17 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <tr id="i30" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-long-java.util.Set-boolean-boolean-">recoverBookieData</a></span>(long&nbsp;lid,
-                 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
+                 java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
                  boolean&nbsp;dryrun,
                  boolean&nbsp;skipOpenLedgers)</code>&nbsp;</td>
 </tr>
 <tr id="i31" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-java.util.Set-">recoverBookieData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-java.util.Set-">recoverBookieData</a></span>(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc)</code>&nbsp;</td>
 </tr>
 <tr id="i32" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-java.util.Set-boolean-boolean-">recoverBookieData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-java.util.Set-boolean-boolean-">recoverBookieData</a></span>(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
                  boolean&nbsp;dryrun,
                  boolean&nbsp;skipOpenLedgers)</code>&nbsp;</td>
 </tr>
@@ -464,8 +464,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#clone--" title="class or interface in java.lang">clone</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#finalize--" title="class or interface in java.lang">finalize</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.Object</h3>
+<code>clone, equals, finalize, getClass, hashCode, notify, notifyAll, toString, wait, wait, wait</code></li>
 </ul>
 </li>
 </ul>
@@ -487,9 +487,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>BookKeeperAdmin</h4>
-<pre>public&nbsp;BookKeeperAdmin(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;zkServers)
-                throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a>,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+<pre>public&nbsp;BookKeeperAdmin(java.lang.String&nbsp;zkServers)
+                throws java.io.IOException,
+                       java.lang.InterruptedException,
                        <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Constructor that takes in a ZooKeeper servers connect string so we know
  how to connect to ZooKeeper to retrieve information about the BookKeeper
@@ -500,9 +500,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dd><code>zkServers</code> - Comma separated list of hostname:port pairs for the ZooKeeper
             servers cluster.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - throws this exception if there is an error instantiating the
+<dd><code>java.io.IOException</code> - throws this exception if there is an error instantiating the
              ZooKeeper client.</dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code> - Throws this exception if there is an error instantiating the
+<dd><code>java.lang.InterruptedException</code> - Throws this exception if there is an error instantiating the
              BookKeeper client.</dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code> - Throws this exception if there is an error instantiating the
              BookKeeper client.</dd>
@@ -516,8 +516,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList">
 <h4>BookKeeperAdmin</h4>
 <pre>public&nbsp;BookKeeperAdmin(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf)
-                throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a>,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+                throws java.io.IOException,
+                       java.lang.InterruptedException,
                        <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Constructor that takes in a configuration object so we know
  how to connect to ZooKeeper to retrieve information about the BookKeeper
@@ -527,9 +527,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>conf</code> - Client Configuration Object</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - throws this exception if there is an error instantiating the
+<dd><code>java.io.IOException</code> - throws this exception if there is an error instantiating the
              ZooKeeper client.</dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code> - Throws this exception if there is an error instantiating the
+<dd><code>java.lang.InterruptedException</code> - Throws this exception if there is an error instantiating the
              BookKeeper client.</dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code> - Throws this exception if there is an error instantiating the
              BookKeeper client.</dd>
@@ -586,14 +586,14 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList">
 <h4>close</h4>
 <pre>public&nbsp;void&nbsp;close()
-           throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+           throws java.lang.InterruptedException,
                   <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Gracefully release resources that this client uses.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true#close--" title="class or interface in java.lang">close</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></code></dd>
+<dd><code>close</code>&nbsp;in interface&nbsp;<code>java.lang.AutoCloseable</code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code> - if there is an error shutting down the clients that this
+<dd><code>java.lang.InterruptedException</code> - if there is an error shutting down the clients that this
              class uses.</dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
@@ -605,8 +605,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>getAvailableBookies</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getAvailableBookies()
-                                                                              throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre>public&nbsp;java.util.Collection&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getAvailableBookies()
+                                                                                        throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Get a list of the available bookies.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -622,8 +622,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>getAllBookies</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getAllBookies()
-                                                                        throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre>public&nbsp;java.util.Collection&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getAllBookies()
+                                                                                  throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Get a list of all bookies including the not available ones.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -639,8 +639,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>getReadOnlyBookies</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getReadOnlyBookies()
-                                                                             throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre>public&nbsp;java.util.Collection&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;getReadOnlyBookies()
+                                                                                       throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Get a list of readonly bookies synchronously.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -696,7 +696,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <h4>asyncOpenLedger</h4>
 <pre>public&nbsp;void&nbsp;asyncOpenLedger(long&nbsp;lId,
                             <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.OpenCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.OpenCallback</a>&nbsp;cb,
-                            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                            java.lang.Object&nbsp;ctx)</pre>
 <div class="block">Open a ledger as an administrator. This means that no digest password
  checks are done. Otherwise, the call is identical to BookKeeper#asyncOpenLedger</div>
 <dl>
@@ -716,7 +716,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList">
 <h4>openLedger</h4>
 <pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;openLedger(long&nbsp;lId)
-                        throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+                        throws java.lang.InterruptedException,
                                <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Open a ledger as an administrator. This means that no digest password
  checks are done. Otherwise, the call is identical to
@@ -725,7 +725,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>lId</code> - - ledger identifier</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#openLedger-long-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-"><code>BookKeeper.openLedger(long, org.apache.bookkeeper.client.BookKeeper.DigestType, byte[])</code></a></dd>
@@ -740,7 +740,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <h4>asyncOpenLedgerNoRecovery</h4>
 <pre>public&nbsp;void&nbsp;asyncOpenLedgerNoRecovery(long&nbsp;lId,
                                       <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.OpenCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.OpenCallback</a>&nbsp;cb,
-                                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                                      java.lang.Object&nbsp;ctx)</pre>
 <div class="block">Open a ledger as an administrator without recovering the ledger. This means
  that no digest password  checks are done. Otherwise, the call is identical
  to BookKeeper#asyncOpenLedgerNoRecovery</div>
@@ -761,7 +761,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList">
 <h4>openLedgerNoRecovery</h4>
 <pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;openLedgerNoRecovery(long&nbsp;lId)
-                                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+                                  throws java.lang.InterruptedException,
                                          <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Open a ledger as an administrator without recovering the ledger. This
  means that no digest password checks are done. Otherwise, the call is
@@ -770,7 +770,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>lId</code> - ledger identifier</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#openLedgerNoRecovery-long-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-"><code>BookKeeper.openLedgerNoRecovery(long, org.apache.bookkeeper.client.BookKeeper.DigestType, byte[])</code></a></dd>
@@ -783,11 +783,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>readEntries</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;&nbsp;readEntries(long&nbsp;ledgerId,
-                                         long&nbsp;firstEntry,
-                                         long&nbsp;lastEntry)
-                                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
-                                         <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre>public&nbsp;java.lang.Iterable&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;&nbsp;readEntries(long&nbsp;ledgerId,
+                                                   long&nbsp;firstEntry,
+                                                   long&nbsp;lastEntry)
+                                            throws java.lang.InterruptedException,
+                                                   <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Read entries from a ledger synchronously. If the lastEntry is -1, it will read all the entries in the ledger from
  the firstEntry.</div>
 <dl>
@@ -797,7 +797,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dd><code>lastEntry</code> - </dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -808,12 +808,12 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>getLedgersContainBookies</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/SortedMap.html?is-external=true" title="class or interface in java.util">SortedMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;getLedgersContainBookies(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookies)
-                                                        throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
-                                                               <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre>public&nbsp;java.util.SortedMap&lt;java.lang.Long,<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;getLedgersContainBookies(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookies)
+                                                                            throws java.lang.InterruptedException,
+                                                                                   <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -824,8 +824,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>asyncGetLedgersContainBookies</h4>
-<pre>public&nbsp;void&nbsp;asyncGetLedgersContainBookies(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookies,
-                                          org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/SortedMap.html?is-external=true" title="class or interface in java.util">SortedMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;callback)</pre>
+<pre>public&nbsp;void&nbsp;asyncGetLedgersContainBookies(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookies,
+                                          org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.util.SortedMap&lt;java.lang.Long,<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;callback)</pre>
 </li>
 </ul>
 <a name="recoverBookieData-org.apache.bookkeeper.net.BookieSocketAddress-">
@@ -835,7 +835,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList">
 <h4>recoverBookieData</h4>
 <pre>public&nbsp;void&nbsp;recoverBookieData(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieSrc)
-                       throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+                       throws java.lang.InterruptedException,
                               <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Synchronous method to rebuild and recover the ledger fragments data that
  was stored on the source bookie. That bookie could have failed completely
@@ -851,7 +851,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dd><code>bookieSrc</code> - Source bookie that had a failure. We want to replicate the
             ledger fragments that were stored there.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -862,12 +862,12 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>recoverBookieData</h4>
-<pre>public&nbsp;void&nbsp;recoverBookieData(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc)
-                       throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+<pre>public&nbsp;void&nbsp;recoverBookieData(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc)
+                       throws java.lang.InterruptedException,
                               <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -878,14 +878,14 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>recoverBookieData</h4>
-<pre>public&nbsp;void&nbsp;recoverBookieData(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
+<pre>public&nbsp;void&nbsp;recoverBookieData(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
                               boolean&nbsp;dryrun,
                               boolean&nbsp;skipOpenLedgers)
-                       throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+                       throws java.lang.InterruptedException,
                               <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -897,14 +897,14 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList">
 <h4>recoverBookieData</h4>
 <pre>public&nbsp;void&nbsp;recoverBookieData(long&nbsp;lid,
-                              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
+                              java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
                               boolean&nbsp;dryrun,
                               boolean&nbsp;skipOpenLedgers)
-                       throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+                       throws java.lang.InterruptedException,
                               <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -917,7 +917,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <h4>asyncRecoverBookieData</h4>
 <pre>public&nbsp;void&nbsp;asyncRecoverBookieData(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieSrc,
                                    <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.RecoverCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.RecoverCallback</a>&nbsp;cb,
-                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;context)</pre>
+                                   java.lang.Object&nbsp;context)</pre>
 <div class="block">Async method to rebuild and recover the ledger fragments data that was
  stored on the source bookie. That bookie could have failed completely and
  now the ledger data that was stored on it is under replicated. An
@@ -943,9 +943,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>asyncRecoverBookieData</h4>
-<pre>public&nbsp;void&nbsp;asyncRecoverBookieData(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
+<pre>public&nbsp;void&nbsp;asyncRecoverBookieData(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
                                    <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.RecoverCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.RecoverCallback</a>&nbsp;cb,
-                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;context)</pre>
+                                   java.lang.Object&nbsp;context)</pre>
 </li>
 </ul>
 <a name="asyncRecoverBookieData-java.util.Set-boolean-boolean-org.apache.bookkeeper.client.AsyncCallback.RecoverCallback-java.lang.Object-">
@@ -954,11 +954,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>asyncRecoverBookieData</h4>
-<pre>public&nbsp;void&nbsp;asyncRecoverBookieData(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
+<pre>public&nbsp;void&nbsp;asyncRecoverBookieData(java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
                                    boolean&nbsp;dryrun,
                                    boolean&nbsp;skipOpenLedgers,
                                    <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.RecoverCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.RecoverCallback</a>&nbsp;cb,
-                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;context)</pre>
+                                   java.lang.Object&nbsp;context)</pre>
 </li>
 </ul>
 <a name="asyncRecoverBookieData-long-java.util.Set-boolean-boolean-org.apache.bookkeeper.client.AsyncCallback.RecoverCallback-java.lang.Object-">
@@ -968,11 +968,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList">
 <h4>asyncRecoverBookieData</h4>
 <pre>public&nbsp;void&nbsp;asyncRecoverBookieData(long&nbsp;lid,
-                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
+                                   java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookieSrc,
                                    boolean&nbsp;dryrun,
                                    boolean&nbsp;skipOpenLedgers,
                                    <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.RecoverCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.RecoverCallback</a>&nbsp;callback,
-                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;context)</pre>
+                                   java.lang.Object&nbsp;context)</pre>
 <div class="block">Recover a specific ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -992,9 +992,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>formatEnsemble</h4>
-<pre>static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;formatEnsemble(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
-                             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
-                             char&nbsp;marker)</pre>
+<pre>static&nbsp;java.lang.String&nbsp;formatEnsemble(java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+                                       java.util.Set&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
+                                       char&nbsp;marker)</pre>
 </li>
 </ul>
 <a name="replicateLedgerFragment-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-">
@@ -1005,7 +1005,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <h4>replicateLedgerFragment</h4>
 <pre>public&nbsp;void&nbsp;replicateLedgerFragment(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                                     <a href="../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment)
-                             throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+                             throws java.lang.InterruptedException,
                                     <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Replicate the Ledger fragment to target Bookie passed.</div>
 <dl>
@@ -1013,7 +1013,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dd><code>lh</code> - - ledgerHandle</dd>
 <dd><code>ledgerFragment</code> - - LedgerFragment to replicate</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -1027,7 +1027,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <pre>public static&nbsp;boolean&nbsp;format(<a href="../../../../org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                              boolean&nbsp;isInteractive,
                              boolean&nbsp;force)
-                      throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang">Exception</a></pre>
+                      throws java.lang.Exception</pre>
 <div class="block">Format the BookKeeper metadata in zookeeper.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1038,7 +1038,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>Returns true if format succeeds else false.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang">Exception</a></code></dd>
+<dd><code>java.lang.Exception</code></dd>
 </dl>
 </li>
 </ul>
@@ -1049,7 +1049,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList">
 <h4>initNewCluster</h4>
 <pre>public static&nbsp;boolean&nbsp;initNewCluster(<a href="../../../../org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf)
-                              throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang">Exception</a></pre>
+                              throws java.lang.Exception</pre>
 <div class="block">Intializes new cluster by creating required znodes for the cluster. If
  ledgersrootpath is already existing then it will error out.</div>
 <dl>
@@ -1057,7 +1057,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dd><code>conf</code> - </dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang">Exception</a></code></dd>
+<dd><code>java.lang.Exception</code></dd>
 </dl>
 </li>
 </ul>
@@ -1068,10 +1068,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList">
 <h4>nukeExistingCluster</h4>
 <pre>public static&nbsp;boolean&nbsp;nukeExistingCluster(<a href="../../../../org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
-                                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;ledgersRootPath,
-                                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;instanceId,
+                                          java.lang.String&nbsp;ledgersRootPath,
+                                          java.lang.String&nbsp;instanceId,
                                           boolean&nbsp;force)
-                                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang">Exception</a></pre>
+                                   throws java.lang.Exception</pre>
 <div class="block">Nukes existing cluster metadata. But it does only if the provided
  ledgersRootPath matches with configuration's zkLedgersRootPath and
  provided instanceid matches with the cluster metadata. If force is
@@ -1084,7 +1084,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dd><code>force</code> - </dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang">Exception</a></code></dd>
+<dd><code>java.lang.Exception</code></dd>
 </dl>
 </li>
 </ul>
@@ -1095,7 +1095,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <li class="blockList">
 <h4>initBookie</h4>
 <pre>public static&nbsp;boolean&nbsp;initBookie(<a href="../../../../org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf)
-                          throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang">Exception</a></pre>
+                          throws java.lang.Exception</pre>
 <div class="block">Initializes bookie, by making sure that the journalDir, ledgerDirs and
  indexDirs are empty and there is no registered Bookie with this BookieId.</div>
 <dl>
@@ -1103,7 +1103,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dd><code>conf</code> - </dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang">Exception</a></code></dd>
+<dd><code>java.lang.Exception</code></dd>
 </dl>
 </li>
 </ul>
@@ -1113,15 +1113,15 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>listLedgers</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;listLedgers()
-                           throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<pre>public&nbsp;java.lang.Iterable&lt;java.lang.Long&gt;&nbsp;listLedgers()
+                                               throws java.io.IOException</pre>
 <div class="block">This method returns an iterable object for the list of ledger identifiers of
  the ledgers currently available.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an iterable object for the list of ledger identifiers</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if the list of ledger identifiers cannot be read from the
+<dd><code>java.io.IOException</code> - if the list of ledger identifiers cannot be read from the
   metadata store</dd>
 </dl>
 </li>
@@ -1148,7 +1148,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <pre>public&nbsp;void&nbsp;setLostBookieRecoveryDelay(int&nbsp;lostBookieRecoveryDelay)
                                 throws org.apache.bookkeeper.replication.ReplicationException.CompatibilityException,
                                        org.apache.zookeeper.KeeperException,
-                                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+                                       java.lang.InterruptedException,
                                        org.apache.bookkeeper.replication.ReplicationException.UnavailableException</pre>
 <div class="block">Setter for LostBookieRecoveryDelay value (in seconds) in Zookeeper.</div>
 <dl>
@@ -1157,7 +1157,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>org.apache.bookkeeper.replication.ReplicationException.CompatibilityException</code></dd>
 <dd><code>org.apache.zookeeper.KeeperException</code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code>org.apache.bookkeeper.replication.ReplicationException.UnavailableException</code></dd>
 </dl>
 </li>
@@ -1171,7 +1171,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <pre>public&nbsp;int&nbsp;getLostBookieRecoveryDelay()
                                throws org.apache.bookkeeper.replication.ReplicationException.CompatibilityException,
                                       org.apache.zookeeper.KeeperException,
-                                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+                                      java.lang.InterruptedException,
                                       org.apache.bookkeeper.replication.ReplicationException.UnavailableException</pre>
 <div class="block">Returns the current LostBookieRecoveryDelay value (in seconds) in Zookeeper.</div>
 <dl>
@@ -1180,7 +1180,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>org.apache.bookkeeper.replication.ReplicationException.CompatibilityException</code></dd>
 <dd><code>org.apache.zookeeper.KeeperException</code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code>org.apache.bookkeeper.replication.ReplicationException.UnavailableException</code></dd>
 </dl>
 </li>
@@ -1194,9 +1194,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <pre>public&nbsp;void&nbsp;triggerAudit()
                   throws org.apache.bookkeeper.replication.ReplicationException.CompatibilityException,
                          org.apache.zookeeper.KeeperException,
-                         <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+                         java.lang.InterruptedException,
                          org.apache.bookkeeper.replication.ReplicationException.UnavailableException,
-                         <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+                         java.io.IOException</pre>
 <div class="block">Trigger AuditTask by resetting lostBookieRecoveryDelay to its current
  value. If Autorecovery is not enabled or if there is no Auditor then this
  method will throw UnavailableException.</div>
@@ -1204,9 +1204,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>org.apache.bookkeeper.replication.ReplicationException.CompatibilityException</code></dd>
 <dd><code>org.apache.zookeeper.KeeperException</code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code>org.apache.bookkeeper.replication.ReplicationException.UnavailableException</code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+<dd><code>java.io.IOException</code></dd>
 </dl>
 </li>
 </ul>
@@ -1220,10 +1220,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
                         throws org.apache.bookkeeper.replication.ReplicationException.CompatibilityException,
                                org.apache.bookkeeper.replication.ReplicationException.UnavailableException,
                                org.apache.zookeeper.KeeperException,
-                               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
-                               <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a>,
+                               java.lang.InterruptedException,
+                               java.io.IOException,
                                org.apache.bookkeeper.replication.ReplicationException.BKAuditException,
-                               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/TimeoutException.html?is-external=true" title="class or interface in java.util.concurrent">TimeoutException</a>,
+                               java.util.concurrent.TimeoutException,
                                <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Triggers AuditTask by resetting lostBookieRecoveryDelay and then make
  sure the ledgers stored in the given decommissioning bookie are properly
@@ -1238,10 +1238,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <dd><code>org.apache.bookkeeper.replication.ReplicationException.CompatibilityException</code></dd>
 <dd><code>org.apache.bookkeeper.replication.ReplicationException.UnavailableException</code></dd>
 <dd><code>org.apache.zookeeper.KeeperException</code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
+<dd><code>java.io.IOException</code></dd>
 <dd><code>org.apache.bookkeeper.replication.ReplicationException.BKAuditException</code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/TimeoutException.html?is-external=true" title="class or interface in java.util.concurrent">TimeoutException</a></code></dd>
+<dd><code>java.util.concurrent.TimeoutException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -1274,7 +1274,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockList">
 <li class="blockList">
 <h4>isEnsembleAdheringToPlacementPolicy</h4>
-<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a>&nbsp;isEnsembleAdheringToPlacementPolicy(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleBookiesList,
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a>&nbsp;isEnsembleAdheringToPlacementPolicy(java.util.List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensembleBookiesList,
                                                                                             int&nbsp;writeQuorumSize,
                                                                                             int&nbsp;ackQuorumSize)</pre>
 <div class="block">returns boolean value specifying if the ensemble of the segment is
@@ -1297,8 +1297,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoClos
 <ul class="blockListLast">
 <li class="blockList">
 <h4>asyncGetListOfEntriesOfLedger</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger&gt;&nbsp;asyncGetListOfEntriesOfLedger(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;address,
-                                                                                                                 long&nbsp;ledgerId)</pre>
+<pre>public&nbsp;java.util.concurrent.CompletableFuture&lt;org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger&gt;&nbsp;asyncGetListOfEntriesOfLedger(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;address,
+                                                                                                                                      long&nbsp;ledgerId)</pre>
 <div class="block">Makes async request for getting list of entries of ledger from a bookie
  and returns Future for the result.</div>
 <dl>

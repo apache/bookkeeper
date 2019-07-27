@@ -97,7 +97,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
+<li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
 <li><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">org.apache.bookkeeper.client.LedgerHandle</a></li>
@@ -114,7 +114,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a>, <a href="../../../../org/apache/bookkeeper/client/api/ForceableHandle.html" title="interface in org.apache.bookkeeper.client.api">ForceableHandle</a>, <a href="../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a>, <a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteAdvHandle</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></dd>
+<dd>java.lang.AutoCloseable, <a href="../../../../org/apache/bookkeeper/client/api/ForceableHandle.html" title="interface in org.apache.bookkeeper.client.api">ForceableHandle</a>, <a href="../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a>, <a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteAdvHandle</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></dd>
 </dl>
 <hr>
 <br>
@@ -199,7 +199,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
                org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
                <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                byte[]&nbsp;password,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code>&nbsp;</td>
+               java.util.EnumSet&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -238,7 +238,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
              int&nbsp;offset,
              int&nbsp;length,
              <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+             java.lang.Object&nbsp;ctx)</code>
 <div class="block">LedgerHandleAdv will not allow addEntry without providing an entryId.</div>
 </td>
 </tr>
@@ -246,7 +246,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html#asyncAddEntry-io.netty.buffer.ByteBuf-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">asyncAddEntry</a></span>(io.netty.buffer.ByteBuf&nbsp;data,
              <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+             java.lang.Object&nbsp;ctx)</code>
 <div class="block">LedgerHandleAdv will not allow addEntry without providing an entryId.</div>
 </td>
 </tr>
@@ -255,7 +255,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html#asyncAddEntry-long-byte:A-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">asyncAddEntry</a></span>(long&nbsp;entryId,
              byte[]&nbsp;data,
              <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+             java.lang.Object&nbsp;ctx)</code>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 </td>
 </tr>
@@ -266,7 +266,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
              int&nbsp;offset,
              int&nbsp;length,
              <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+             java.lang.Object&nbsp;ctx)</code>
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.</div>
 </td>
 </tr>
@@ -277,7 +277,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
              int&nbsp;offset,
              int&nbsp;length,
              <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+             java.lang.Object&nbsp;ctx)</code>
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.</div>
 </td>
 </tr>
@@ -286,7 +286,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html#asyncAddEntry-long-io.netty.buffer.ByteBuf-org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency-java.lang.Object-">asyncAddEntry</a></span>(long&nbsp;entryId,
              io.netty.buffer.ByteBuf&nbsp;data,
              <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+             java.lang.Object&nbsp;ctx)</code>
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.</div>
 </td>
 </tr>
@@ -297,7 +297,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 </td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html#writeAsync-long-io.netty.buffer.ByteBuf-">writeAsync</a></span>(long&nbsp;entryId,
           io.netty.buffer.ByteBuf&nbsp;data)</code>
 <div class="block">Add entry asynchronously to an open ledger.</div>
@@ -315,8 +315,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#clone--" title="class or interface in java.lang">clone</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#finalize--" title="class or interface in java.lang">finalize</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.Object</h3>
+<code>clone, equals, finalize, getClass, hashCode, notify, notifyAll, toString, wait, wait, wait</code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.bookkeeper.client.api.WriteAdvHandle">
@@ -395,13 +395,13 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
                 <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                 byte[]&nbsp;password,
-                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)
-         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/security/GeneralSecurityException.html?is-external=true" title="class or interface in java.security">GeneralSecurityException</a>,
-                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/NumberFormatException.html?is-external=true" title="class or interface in java.lang">NumberFormatException</a></pre>
+                java.util.EnumSet&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)
+         throws java.security.GeneralSecurityException,
+                java.lang.NumberFormatException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/security/GeneralSecurityException.html?is-external=true" title="class or interface in java.security">GeneralSecurityException</a></code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/NumberFormatException.html?is-external=true" title="class or interface in java.lang">NumberFormatException</a></code></dd>
+<dd><code>java.security.GeneralSecurityException</code></dd>
+<dd><code>java.lang.NumberFormatException</code></dd>
 </dl>
 </li>
 </ul>
@@ -421,7 +421,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <h4>addEntry</h4>
 <pre>public&nbsp;long&nbsp;addEntry(long&nbsp;entryId,
                      byte[]&nbsp;data)
-              throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+              throws java.lang.InterruptedException,
                      <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Add entry synchronously to an open ledger.</div>
 <dl>
@@ -433,7 +433,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>entryId that is just created.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -448,7 +448,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
                      byte[]&nbsp;data,
                      int&nbsp;offset,
                      int&nbsp;length)
-              throws <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+              throws java.lang.InterruptedException,
                      <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Add entry synchronously to an open ledger.</div>
 <dl>
@@ -462,7 +462,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The entryId of newly inserted entry.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code>java.lang.InterruptedException</code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
@@ -476,7 +476,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <pre>public&nbsp;void&nbsp;asyncAddEntry(long&nbsp;entryId,
                           byte[]&nbsp;data,
                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                          java.lang.Object&nbsp;ctx)</pre>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
@@ -500,7 +500,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
                           int&nbsp;offset,
                           int&nbsp;length,
                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                          java.lang.Object&nbsp;ctx)</pre>
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
@@ -513,7 +513,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <dd><code>cb</code> - object implementing callbackinterface</dd>
 <dd><code>ctx</code> - some control object</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ArrayIndexOutOfBoundsException.html?is-external=true" title="class or interface in java.lang">ArrayIndexOutOfBoundsException</a></code> - if offset or length is negative or offset and length sum to a
+<dd><code>java.lang.ArrayIndexOutOfBoundsException</code> - if offset or length is negative or offset and length sum to a
              value higher than the length of data.</dd>
 </dl>
 </li>
@@ -529,7 +529,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
                           int&nbsp;offset,
                           int&nbsp;length,
                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                          java.lang.Object&nbsp;ctx)</pre>
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
@@ -542,7 +542,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <dd><code>cb</code> - object implementing callbackinterface</dd>
 <dd><code>ctx</code> - some control object</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ArrayIndexOutOfBoundsException.html?is-external=true" title="class or interface in java.lang">ArrayIndexOutOfBoundsException</a></code> - if offset or length is negative or offset and length sum to a
+<dd><code>java.lang.ArrayIndexOutOfBoundsException</code> - if offset or length is negative or offset and length sum to a
              value higher than the length of data.</dd>
 </dl>
 </li>
@@ -556,7 +556,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <pre>public&nbsp;void&nbsp;asyncAddEntry(long&nbsp;entryId,
                           io.netty.buffer.ByteBuf&nbsp;data,
                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                          java.lang.Object&nbsp;ctx)</pre>
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.
  This can be used only with <a href="../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandleAdv</code></a> returned through
  ledgers created with <code>createLedgerAdv(int, int, int, DigestType, byte[])</code>.</div>
@@ -593,8 +593,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <ul class="blockList">
 <li class="blockList">
 <h4>writeAsync</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;writeAsync(long&nbsp;entryId,
-                                          io.netty.buffer.ByteBuf&nbsp;data)</pre>
+<pre>public&nbsp;java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;&nbsp;writeAsync(long&nbsp;entryId,
+                                                                         io.netty.buffer.ByteBuf&nbsp;data)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html#writeAsync-long-io.netty.buffer.ByteBuf-">WriteAdvHandle</a></code></span></div>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 <dl>
@@ -616,7 +616,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <h4>asyncAddEntry</h4>
 <pre>public&nbsp;void&nbsp;asyncAddEntry(io.netty.buffer.ByteBuf&nbsp;data,
                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                          java.lang.Object&nbsp;ctx)</pre>
 <div class="block">LedgerHandleAdv will not allow addEntry without providing an entryId.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
@@ -634,7 +634,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
                           int&nbsp;offset,
                           int&nbsp;length,
                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                          java.lang.Object&nbsp;ctx)</pre>
 <div class="block">LedgerHandleAdv will not allow addEntry without providing an entryId.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
