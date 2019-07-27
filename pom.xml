@@ -188,7 +188,7 @@
     <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
     <maven-install-plugin.version>2.5.1</maven-install-plugin.version>
     <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
-    <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.1.1</maven-javadoc-plugin.version>
     <maven-shade-plugin.version>3.1.0</maven-shade-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>2.21.0</maven-surefire-plugin.version>
@@ -904,6 +904,7 @@
           <doctitle>BookKeeper Java API (version ${project.version})</doctitle>
           <overview>site/_site/overview/index.html</overview>
           <show>package</show>
+          <detectJavaApiLink>false</detectJavaApiLink>
         </configuration>
         <executions>
           <execution>
