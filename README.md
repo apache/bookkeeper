@@ -26,9 +26,9 @@ It is suitable for being used in following scenarios:
 
 ### Developers
 
-* [Programmer Guide](http://bookkeeper.apache.org/docs/master/bookkeeperProgrammer.html)
-* [Tutorial](http://bookkeeper.apache.org/docs/master/bookkeeperTutorial.html)
-* [Java API](http://bookkeeper.apache.org/docs/master/apidocs/)
+* [Programmer Guide](https://bookkeeper.apache.org/archives/docs/master/bookkeeperProgrammer.html)
+* [Tutorial](https://bookkeeper.apache.org/archives/docs/master/bookkeeperTutorial.html)
+* [Java API](https://bookkeeper.apache.org/archives/docs/master/apidocs/)
 
 You can also read [Turning Ledgers into Logs](http://bookkeeper.apache.org/docs/master/bookkeeperLedgers2Logs.html) to learn how to turn **ledgers** into continuous **log streams**.
 If you are looking for a high level **log stream** API, you can checkout [DistributedLog](http://distributedlog.io).
