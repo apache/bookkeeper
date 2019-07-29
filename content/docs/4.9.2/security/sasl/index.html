@@ -709,6 +709,14 @@ for this example (note that each bookie should have its own keytab):</p>
     <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
 </code></pre></div>    </div>
   </li>
+  <li>
+    <p>By default bookie service name is <code class="highlighter-rouge">bookkeeper</code>, you could override it by passing a JVM parameter to the client JVM or set System Property manually.</p>
+
+    <p>For example, if your bookie’s principle is bk@bk1.hostname.com@EXAMPLE.COM, then pass:</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Dbookkeeper</span>.sasl.servicename<span class="o">=</span>bk
+</code></pre></div>    </div>
+  </li>
 </ol>
 
 <h2 id="enabling-logging-for-sasl">Enabling Logging for SASL</h2>
