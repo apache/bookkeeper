@@ -109,11 +109,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
             }
 
             Node firstChild = children.get(0);
-            if (firstChild instanceof InnerNode) {
-                return false;
-            }
-
-            return true;
+            return !(firstChild instanceof InnerNode);
         }
 
         /**

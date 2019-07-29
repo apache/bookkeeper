@@ -2157,9 +2157,6 @@ public class BookieShell implements Tool {
     }
 
     private static boolean getOptionalValue(String optValue, String optName) {
-        if (StringUtils.equals(optValue, optName)) {
-            return true;
-        }
-        return false;
+        return StringUtils.equals(optValue, optName);
     }
 }
