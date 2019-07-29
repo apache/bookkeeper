@@ -52,6 +52,8 @@ public class SaslConstants {
 
     static final String SASL_BOOKKEEPER_PROTOCOL = "bookkeeper";
     static final String SASL_BOOKKEEPER_REALM = "bookkeeper";
+    static final String SASL_SERVICE_NAME = "bookkeeper.sasl.servicename";
+    static final String SASL_SERVICE_NAME_DEFAULT = "bookkeeper";
 
     static final String SASL_MD5_DUMMY_HOSTNAME = "bookkeeper";
 

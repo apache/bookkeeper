@@ -68,6 +68,8 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
     private static MiniKdc kdc;
     private static Properties conf;
 
+    private static final String non_default_sasl_service_name = "non_default_servicename";
+
     @ClassRule
     public static TemporaryFolder kdcDir = new TemporaryFolder();
 
@@ -86,8 +88,8 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
         bookieConf.setUseHostNameAsBookieID(true);
         String localhostName = Bookie.getBookieAddress(bookieConf).getHostName();
 
-        String principalServerNoRealm = "bookkeeper/" + localhostName;
-        String principalServer = "bookkeeper/" + localhostName + "@" + kdc.getRealm();
+        String principalServerNoRealm = non_default_sasl_service_name + "/" + localhostName;
+        String principalServer = non_default_sasl_service_name + "/" + localhostName + "@" + kdc.getRealm();
         LOG.info("principalServer: " + principalServer);
         String principalClientNoRealm = "bookkeeperclient/" + localhostName;
         String principalClient = principalClientNoRealm + "@" + kdc.getRealm();
@@ -252,6 +254,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
     }
 
     BookieServer startAndStoreBookie(ServerConfiguration conf) throws Exception {
+        System.setProperty(SaslConstants.SASL_SERVICE_NAME, non_default_sasl_service_name);
         bsConfs.add(conf);
         BookieServer s = startBookie(conf);
         bs.add(s);

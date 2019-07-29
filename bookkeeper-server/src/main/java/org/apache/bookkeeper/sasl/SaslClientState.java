@@ -50,7 +50,9 @@ public class SaslClientState {
     private String password;
 
     public SaslClientState(String serverHostname, Subject subject) throws SaslException {
-        String serverPrincipal = SaslConstants.SASL_BOOKKEEPER_PROTOCOL + "/" + serverHostname;
+        String saslServiceName = System.getProperty(SaslConstants.SASL_SERVICE_NAME,
+                                                    SaslConstants.SASL_SERVICE_NAME_DEFAULT);
+        String serverPrincipal = saslServiceName + "/" + serverHostname;
         this.clientSubject = subject;
         if (clientSubject == null) {
             throw new SaslException("Cannot create JAAS Sujbect for SASL");
