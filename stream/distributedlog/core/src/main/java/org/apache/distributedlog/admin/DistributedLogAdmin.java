@@ -138,8 +138,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
             final LogSegmentMetadata newSegment =
                     FutureUtils.result(metadataUpdater.changeSequenceNumber(inprogressSegment,
                             newLogSegmentSequenceNumber));
-            LOG.info("Fixed {} : {} -> {} ",
-                     new Object[] { streamName, inprogressSegment, newSegment });
+            LOG.info("Fixed {} : {} -> {} ", streamName, inprogressSegment, newSegment);
             if (verbose) {
                 System.out.println("Fixed " + streamName + " : " + inprogressSegment.getZNodeName()
                                    + " -> " + newSegment.getZNodeName());

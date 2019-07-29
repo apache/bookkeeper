@@ -140,8 +140,7 @@ public class BKLogSegmentEntryStore implements
                     deleteRequest.segment.getLogSegmentId(), deleteRequest.segment);
         } else if (BKException.Code.OK != rc) {
             logger.error("Couldn't delete ledger {} from bookkeeper for {} : {}",
-                    new Object[]{ deleteRequest.segment.getLogSegmentId(), deleteRequest.segment,
-                            BKException.getMessage(rc) });
+                deleteRequest.segment.getLogSegmentId(), deleteRequest.segment, BKException.getMessage(rc));
             FutureUtils.completeExceptionally(deleteRequest.deletePromise,
                     new BKTransmitException("Couldn't delete log segment " + deleteRequest.segment, rc));
             return;

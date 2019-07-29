@@ -92,9 +92,9 @@ public class ListDiskFilesService implements HttpEndpointService {
             if (all || journal) {
                 File[] journalDirs = conf.getJournalDirs();
                 List<File> journalFiles = listFilesAndSort(journalDirs, "txn");
-                StringBuffer files = new StringBuffer();
+                StringBuilder files = new StringBuilder();
                 for (File journalFile : journalFiles) {
-                    files.append(journalFile.getName() + "\t");
+                    files.append(journalFile.getName()).append("\t");
                 }
                 output.put("journal files", files.toString());
             }
@@ -102,9 +102,9 @@ public class ListDiskFilesService implements HttpEndpointService {
             if (all || entrylog) {
                 File[] ledgerDirs = conf.getLedgerDirs();
                 List<File> ledgerFiles = listFilesAndSort(ledgerDirs, "log");
-                StringBuffer files = new StringBuffer();
+                StringBuilder files = new StringBuilder();
                 for (File ledgerFile : ledgerFiles) {
-                    files.append(ledgerFile.getName() + "\t");
+                    files.append(ledgerFile.getName()).append("\t");
                 }
                 output.put("entrylog files", files.toString());
             }
@@ -112,9 +112,9 @@ public class ListDiskFilesService implements HttpEndpointService {
             if (all || index) {
                 File[] indexDirs = (conf.getIndexDirs() == null) ? conf.getLedgerDirs() : conf.getIndexDirs();
                 List<File> indexFiles = listFilesAndSort(indexDirs, "idx");
-                StringBuffer files = new StringBuffer();
+                StringBuilder files = new StringBuilder();
                 for (File indexFile : indexFiles) {
-                    files.append(indexFile.getName() + "\t");
+                    files.append(indexFile.getName()).append("\t");
                 }
                 output.put("index files", files.toString());
             }

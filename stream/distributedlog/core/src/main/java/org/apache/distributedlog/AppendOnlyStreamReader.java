@@ -47,7 +47,7 @@ public class AppendOnlyStreamReader extends InputStream {
             checkNotNull(logRecord);
 
             LOG.debug("Got record dlsn = {}, txid = {}, len = {}",
-                new Object[] {logRecord.getDlsn(), logRecord.getTransactionId(), logRecord.getPayload().length});
+                logRecord.getDlsn(), logRecord.getTransactionId(), logRecord.getPayload().length);
 
             this.logRecord = logRecord;
             this.payloadStream = logRecord.getPayLoadInputStream();

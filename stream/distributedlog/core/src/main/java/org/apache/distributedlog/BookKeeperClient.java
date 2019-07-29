@@ -177,17 +177,17 @@ public class BookKeeperClient {
         if (ownZK) {
             LOG.info("BookKeeper Client created {} with its own ZK Client : ledgersPath = {}, numRetries = {}, "
                             + "sessionTimeout = {}, backoff = {}, maxBackoff = {}, dnsResolver = {}",
-                    new Object[] { name, ledgersPath,
-                    conf.getBKClientZKNumRetries(), conf.getBKClientZKSessionTimeoutMilliSeconds(),
-                    conf.getBKClientZKRetryBackoffStartMillis(), conf.getBKClientZKRetryBackoffMaxMillis(),
-                    conf.getBkDNSResolverOverrides() });
+                name, ledgersPath,
+                conf.getBKClientZKNumRetries(), conf.getBKClientZKSessionTimeoutMilliSeconds(),
+                conf.getBKClientZKRetryBackoffStartMillis(), conf.getBKClientZKRetryBackoffMaxMillis(),
+                conf.getBkDNSResolverOverrides());
         } else {
             LOG.info("BookKeeper Client created {} with shared zookeeper client : ledgersPath = {}, numRetries = {}, "
                             + "sessionTimeout = {}, backoff = {}, maxBackoff = {}, dnsResolver = {}",
-                    new Object[] { name, ledgersPath,
-                    conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
-                    conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(),
-                    conf.getBkDNSResolverOverrides() });
+                name, ledgersPath,
+                conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
+                conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(),
+                conf.getBkDNSResolverOverrides());
         }
     }
 

@@ -251,7 +251,7 @@ public class ReadUtils {
         final long endEntryId = context.curEndEntryId.get();
         if (LOG.isDebugEnabled()) {
             LOG.debug("{} reading entries [{} - {}] from {}.",
-                    new Object[] { streamName, startEntryId, endEntryId, metadata});
+                streamName, startEntryId, endEntryId, metadata);
         }
         FutureEventListener<List<Entry.Reader>> readEntriesListener =
             new FutureEventListener<List<Entry.Reader>>() {
@@ -259,7 +259,7 @@ public class ReadUtils {
                 public void onSuccess(final List<Entry.Reader> entries) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} finished reading entries [{} - {}] from {}",
-                                new Object[]{ streamName, startEntryId, endEntryId, metadata});
+                            streamName, startEntryId, endEntryId, metadata);
                     }
                     for (Entry.Reader entry : entries) {
                         try {
@@ -275,8 +275,7 @@ public class ReadUtils {
                     LogRecordWithDLSN record = selector.result();
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} got record from entries [{} - {}] of {} : {}",
-                                new Object[]{streamName, startEntryId, endEntryId,
-                                        metadata, record});
+                            streamName, startEntryId, endEntryId, metadata, record);
                     }
                     promise.complete(record);
                 }
@@ -348,8 +347,8 @@ public class ReadUtils {
                 public void onSuccess(LogRecordWithDLSN value) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} read record from [{} - {}] of {} : {}",
-                                new Object[]{streamName, context.curStartEntryId.get(), context.curEndEntryId.get(),
-                                        metadata, value});
+                            streamName, context.curStartEntryId.get(), context.curEndEntryId.get(),
+                            metadata, value);
                     }
                     if (null != value) {
                         promise.complete(value);
@@ -431,13 +430,11 @@ public class ReadUtils {
                 @Override
                 public void onSuccess(final LogSegmentRandomAccessEntryReader reader) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} Opened log segment {} for reading record",
-                                streamName, l);
+                        LOG.debug("{} Opened log segment {} for reading record", streamName, l);
                     }
                     promise.whenComplete((value, cause) -> reader.asyncClose());
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} {} scanning {}.", new Object[]{
-                                (backward ? "backward" : "forward"), streamName, l});
+                        LOG.debug("{} {} scanning {}.", (backward ? "backward" : "forward"), streamName, l);
                     }
                     asyncReadRecordFromLogSegment(
                             streamName, reader, l, executorService,

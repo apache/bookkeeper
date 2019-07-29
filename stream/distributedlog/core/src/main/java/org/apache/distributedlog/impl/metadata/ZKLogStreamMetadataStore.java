@@ -585,7 +585,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         try {
             PathUtils.validatePath(logRootPath);
         } catch (IllegalArgumentException e) {
-            LOG.error("Illegal path value {} for stream {}", new Object[]{logRootPath, logName, e});
+            LOG.error("Illegal path value {} for stream {}", logRootPath, logName, e);
             return FutureUtils.exception(new InvalidStreamNameException(logName, "Log name is invalid"));
         }
 

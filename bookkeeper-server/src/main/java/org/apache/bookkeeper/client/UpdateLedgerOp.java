@@ -104,8 +104,7 @@ public class UpdateLedgerOp {
                             (metadata) -> {
                                 return metadata.getAllEnsembles().values().stream()
                                     .flatMap(Collection::stream)
-                                    .filter(b -> b.equals(oldBookieId))
-                                    .count() > 0;
+                                    .anyMatch(b -> b.equals(oldBookieId));
                             },
                             (metadata) -> {
                                 return replaceBookieInEnsembles(metadata, oldBookieId, newBookieId);

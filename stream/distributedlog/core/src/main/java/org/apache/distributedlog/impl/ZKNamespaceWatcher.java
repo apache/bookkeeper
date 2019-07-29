@@ -68,7 +68,7 @@ public class ZKNamespaceWatcher extends NamespaceWatcher
         try {
             scheduler.schedule(r, ms, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException ree) {
-            logger.error("Task {} scheduled in {} ms is rejected : ", new Object[]{r, ms, ree});
+            logger.error("Task {} scheduled in {} ms is rejected : ", r, ms, ree);
         }
     }
 

@@ -399,7 +399,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                     setPhase(Phase.ERROR);
                     deleteLedger(lh.getId());
                     LOG.error("Fail mark ledger {} as allocated under {} : ",
-                            new Object[] { lh.getId(), allocatePath, cause });
+                        lh.getId(), allocatePath, cause);
                     // fail the allocation since failed to mark it as allocated
                     failAllocation(cause);
                 }
@@ -414,7 +414,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         deleteFuture.whenComplete((value, cause) -> {
             if (null != cause) {
                 LOG.error("Error deleting ledger {} for ledger allocator {}, retrying : ",
-                        new Object[] { ledgerId, allocatePath, cause });
+                    ledgerId, allocatePath, cause);
                 if (!isClosing()) {
                     deleteLedger(ledgerId);
                 }

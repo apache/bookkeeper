@@ -755,7 +755,7 @@ class BKDistributedLogManager implements DistributedLogManager {
                 return subscriptionsStore.getLastCommitPosition(subscriberId.get())
                         .thenCompose(lastCommitPosition -> {
                             LOG.info("Reader {} @ {} positioned to last commit position {}.",
-                                    new Object[] { subscriberId.get(), name, lastCommitPosition });
+                                subscriberId.get(), name, lastCommitPosition);
                             try {
                                 reader.setStartDLSN(lastCommitPosition);
                             } catch (UnexpectedException e) {

@@ -515,7 +515,7 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                 if (elapsedMicroSec > 0) {
                     if (elapsedMillis > metadataLatencyWarnThresholdMillis) {
                         LOG.warn("{} received inprogress log segment in {} millis: {}",
-                                 new Object[] { getFullyQualifiedName(), elapsedMillis, metadata });
+                            getFullyQualifiedName(), elapsedMillis, metadata);
                     }
                     getInprogressSegmentStat.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
                 } else {
@@ -527,7 +527,7 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                 if (elapsedMicroSec > 0) {
                     if (elapsedMillis > metadataLatencyWarnThresholdMillis) {
                         LOG.warn("{} received completed log segment in {} millis : {}",
-                                 new Object[] { getFullyQualifiedName(), elapsedMillis, metadata });
+                            getFullyQualifiedName(), elapsedMillis, metadata);
                     }
                     getCompletedSegmentStat.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
                 } else {
