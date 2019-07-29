@@ -195,6 +195,13 @@ To configure SASL authentication on the clients:
     ```shell
     clientAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLClientProviderFactory
     ```
+5. By default bookie service name is `bookkeeper`, you could override it by passing a JVM parameter to the client JVM or set System Property manually.
+
+    For example, if your bookie's principle is bk@bk1.hostname.com@EXAMPLE.COM, then pass:
+
+    ```shell
+    -Dbookkeeper.sasl.servicename=bk
+    ```
 
 ## Enabling Logging for SASL
 
