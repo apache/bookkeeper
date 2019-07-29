@@ -63,11 +63,11 @@ public class DLMTestUtil {
     private static final  byte[] payloadStatic = repeatString("abc", 512).getBytes();
 
     static String repeatString(String s, int n) {
-        String ret = s;
+        StringBuilder ret = new StringBuilder(s);
         for (int i = 1; i < n; i++) {
-            ret += s;
+            ret.append(s);
         }
-        return ret;
+        return ret.toString();
     }
 
     public static Map<Long, LogSegmentMetadata> readLogSegments(ZooKeeperClient zkc, String ledgerPath)

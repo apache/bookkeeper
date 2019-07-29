@@ -23,13 +23,12 @@ import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeS
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import io.netty.util.HashedWheelTimer;
-
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,9 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import junit.framework.TestCase;
-
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdherence;
@@ -2130,7 +2127,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 2, numBookiesInDefaultRackGauge.getSample());
 
         // newAddr4 rack is changed and it is not in default anymore
-        StaticDNSResolver.changeRack(Arrays.asList(newAddr4), Arrays.asList("/default-region/r4"));
+        StaticDNSResolver
+            .changeRack(Collections.singletonList(newAddr4), Collections.singletonList("/default-region/r4"));
         assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 1, numBookiesInDefaultRackGauge.getSample());
 
         writeableBookies.clear();
@@ -2138,7 +2136,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(writeableBookies, readOnlyBookies);
         assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 0, numBookiesInDefaultRackGauge.getSample());
 
-        StaticDNSResolver.changeRack(Arrays.asList(newAddr1), Arrays.asList("/default-region/r2"));
+        StaticDNSResolver
+            .changeRack(Collections.singletonList(newAddr1), Collections.singletonList("/default-region/r2"));
         readOnlyBookies.clear();
         writeableBookies.add(newAddr1);
         writeableBookies.add(newAddr2);

@@ -501,8 +501,8 @@ class BKLogWriteHandler extends BKLogHandler {
             // case 2 can occur when the writer crashes with an empty in progress ledger. This is then deleted
             //        on recovery, so the next new segment will have a matching sequence number
             LOG.warn("Unexpected max log segment sequence number {} for {} : list of cached segments = {}",
-                new Object[]{maxLogSegmentSequenceNo.getSequenceNumber(), getFullyQualifiedName(),
-                    getCachedLogSegments(LogSegmentMetadata.DESC_COMPARATOR)});
+                maxLogSegmentSequenceNo.getSequenceNumber(), getFullyQualifiedName(),
+                getCachedLogSegments(LogSegmentMetadata.DESC_COMPARATOR));
             // there is max log segment number recorded there and it isn't match. throw exception.
             throw new DLIllegalStateException("Unexpected max log segment sequence number "
                 + maxLogSegmentSequenceNo.getSequenceNumber() + " for " + getFullyQualifiedName()
@@ -942,8 +942,7 @@ class BKLogWriteHandler extends BKLogHandler {
                     new Object[] { logSegmentSeqNo, inprogressLogSegment.getZkPath() });
         } else {
             LOG.warn("Unexpected max ledger sequence number {} found while completing log segment {} for {}",
-                    new Object[] {
-                            maxLogSegmentSequenceNo.getSequenceNumber(), logSegmentSeqNo, getFullyQualifiedName() });
+                maxLogSegmentSequenceNo.getSequenceNumber(), logSegmentSeqNo, getFullyQualifiedName());
             if (validateLogSegmentSequenceNumber) {
                 FutureUtils.completeExceptionally(promise,
                         new DLIllegalStateException("Unexpected max log segment sequence number "
@@ -990,8 +989,8 @@ class BKLogWriteHandler extends BKLogHandler {
             @Override
             public void onSuccess(Void value) {
                 LOG.info("Completed {} to {} for {} : {}",
-                        new Object[] { inprogressZnodeName, completedLogSegment.getSegmentName(),
-                                getFullyQualifiedName(), completedLogSegment });
+                    inprogressZnodeName, completedLogSegment.getSegmentName(),
+                    getFullyQualifiedName(), completedLogSegment);
                 FutureUtils.complete(promise, completedLogSegment);
             }
 
@@ -1087,7 +1086,7 @@ class BKLogWriteHandler extends BKLogHandler {
     private CompletableFuture<List<LogSegmentMetadata>> setLogSegmentsOlderThanDLSNTruncated(
             List<LogSegmentMetadata> logSegments, final DLSN dlsn) {
         LOG.debug("Setting truncation status on logs older than {} from {} for {}",
-                new Object[]{dlsn, logSegments, getFullyQualifiedName()});
+            dlsn, logSegments, getFullyQualifiedName());
         List<LogSegmentMetadata> truncateList = new ArrayList<LogSegmentMetadata>(logSegments.size());
         LogSegmentMetadata partialTruncate = null;
         LOG.info("{}: Truncating log segments older than {}", getFullyQualifiedName(), dlsn);
@@ -1106,7 +1105,7 @@ class BKLogWriteHandler extends BKLogHandler {
                         return FutureUtils.exception(new DLIllegalStateException(logMsg));
                     }
                     LOG.info("{}: Partially truncating log segment {} older than {}.",
-                            new Object[] {getFullyQualifiedName(), l, dlsn});
+                        getFullyQualifiedName(), l, dlsn);
                     partialTruncate = l;
                 } else {
                     break;
@@ -1163,7 +1162,7 @@ class BKLogWriteHandler extends BKLogHandler {
                     }
                 }
                 LOG.info("Deleting log segments older than {} for {} : {}",
-                        new Object[] { minTimestampToKeep, getFullyQualifiedName(), purgeList });
+                    minTimestampToKeep, getFullyQualifiedName(), purgeList);
                 return deleteLogSegments(purgeList);
             }
         });
@@ -1295,7 +1294,7 @@ class BKLogWriteHandler extends BKLogHandler {
                     return;
                 } else {
                     LOG.error("Couldn't purge {} for {}: with error {}",
-                            new Object[]{ segmentMetadata, getFullyQualifiedName(), t });
+                        segmentMetadata, getFullyQualifiedName(), t);
                     promise.completeExceptionally(t);
                 }
             }

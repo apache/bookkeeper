@@ -681,7 +681,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         @Override
         public void onFailure(Throwable cause) {
             LOG.error("Encountered failures on writing record as (lid = {}, eid = {}) :",
-                    new Object[]{currentLogSegmentSeqNo, currentEntryId, cause});
+                currentLogSegmentSeqNo, currentEntryId, cause);
             errorsFound.set(true);
             syncLatch.countDown();
         }

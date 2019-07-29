@@ -150,7 +150,7 @@ public class FederatedZKLogMetadataStore
                     URI oldURI = log2Locations.putIfAbsent(logName, uri);
                     if (null != oldURI && !Objects.equal(uri, oldURI)) {
                         logger.error("Log {} is found duplicated in multiple locations : old location = {},"
-                                + " new location = {}", new Object[] { logName, oldURI, uri });
+                                + " new location = {}", logName, oldURI, uri);
                         duplicatedLogFound.set(true);
                     }
                 }
@@ -232,7 +232,7 @@ public class FederatedZKLogMetadataStore
         try {
             scheduler.schedule(r, ms, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException ree) {
-            logger.error("Task {} scheduled in {} ms is rejected : ", new Object[]{r, ms, ree});
+            logger.error("Task {} scheduled in {} ms is rejected : ", r, ms, ree);
         }
     }
 
@@ -668,7 +668,7 @@ public class FederatedZKLogMetadataStore
                     if (result.isPresent()) {
                         if (fetchResult.isPresent()) {
                             logger.error("Log {} is found in multiple sub namespaces : {} & {}.",
-                                    new Object[] { logName, result.get(), fetchResult.get() });
+                                logName, result.get(), fetchResult.get());
                             duplicatedLogName.compareAndSet(null, logName);
                             duplicatedLogFound.set(true);
                             fetchPromise.completeExceptionally(new UnexpectedException("Log " + logName
