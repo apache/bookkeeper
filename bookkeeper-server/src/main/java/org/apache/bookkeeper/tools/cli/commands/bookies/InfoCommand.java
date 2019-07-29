@@ -52,7 +52,7 @@ public class InfoCommand extends BookieCommand<CliFlags> {
     }
 
     String getReadable(long val) {
-        String unit[] = {"", "KB", "MB", "GB", "TB"};
+        String[] unit = {"", "KB", "MB", "GB", "TB"};
         int cnt = 0;
         double d = val;
         while (d >= 1000 && cnt < unit.length - 1) {

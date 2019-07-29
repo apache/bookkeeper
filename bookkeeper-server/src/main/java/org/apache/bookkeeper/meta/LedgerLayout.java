@@ -100,7 +100,7 @@ public class LedgerLayout {
             log.debug("Parsing Layout: {}", layout);
         }
 
-        String lines[] = layout.split(lSplitter);
+        String[] lines = layout.split(lSplitter);
 
         try {
             int layoutFormatVersion = Integer.parseInt(lines[0]);

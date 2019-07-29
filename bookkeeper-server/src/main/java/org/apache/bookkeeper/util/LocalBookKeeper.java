@@ -95,9 +95,9 @@ public class LocalBookKeeper {
     private static String defaultLocalBookiesConfigDir = "/tmp/localbookies-config";
 
     //BookKeeper variables
-    File journalDirs[];
-    BookieServer bs[];
-    ServerConfiguration bsConfs[];
+    File[] journalDirs;
+    BookieServer[] bs;
+    ServerConfiguration[] bsConfs;
     Integer initialPort = 5000;
     private ServerConfiguration baseConf;
 
@@ -497,7 +497,7 @@ public class LocalBookKeeper {
 
     public static boolean waitForServerUp(String hp, long timeout) {
         long start = System.currentTimeMillis();
-        String split[] = hp.split(":");
+        String[] split = hp.split(":");
         String host = split[0];
         int port = Integer.parseInt(split[1]);
         while (true) {

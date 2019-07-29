@@ -596,7 +596,7 @@ public class IndexPersistenceMgr {
         if (count == 0) {
             return;
         }
-        ByteBuffer buffs[] = new ByteBuffer[count];
+        ByteBuffer[] buffs = new ByteBuffer[count];
         for (int j = 0; j < count; j++) {
             buffs[j] = entries.get(start + j).getPageToWrite();
             if (entries.get(start + j).getLedger() != ledger) {

@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
  */
 
 public class ZeroBuffer {
-    private static final byte zeroBytes[] = new byte[64 * 1024];
+    private static final byte[] zeroBytes = new byte[64 * 1024];
 
     /**
      * Fill zeros into given buffer.

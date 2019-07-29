@@ -150,7 +150,7 @@ public class SaslServerState {
                 throws IOException {
             String configurationEntry = serverConfiguration.getString(SaslConstants.JAAS_BOOKIE_SECTION_NAME,
                 SaslConstants.JAAS_DEFAULT_BOOKIE_SECTION_NAME);
-            AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(configurationEntry);
+            AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(configurationEntry);
 
             if (configurationEntries == null) {
                 String errorMessage = "Could not find a '" + configurationEntry

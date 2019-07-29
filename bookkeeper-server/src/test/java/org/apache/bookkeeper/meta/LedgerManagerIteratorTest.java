@@ -268,7 +268,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
             createLedger(lm, id);
         }
 
-        String paths[] = {
+        String[] paths = {
                 "/ledgers/633/4994/3938/4948", // Empty L4 path, must be skipped
 
         };
@@ -315,7 +315,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
             createLedger(lm, id);
         }
 
-        String paths[] = {
+        String[] paths = {
                 "/ledgers/000/0000/0000", // top level, W-4292762
                 "/ledgers/234/5678/9999", // shares two path segments with the first one, comes after
                 "/ledgers/339/0000/0000", // shares one path segment with the second one, comes first
