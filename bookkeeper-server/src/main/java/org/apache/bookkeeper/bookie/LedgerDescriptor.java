@@ -61,7 +61,7 @@ public abstract class LedgerDescriptor {
         return bb;
     }
 
-    abstract void checkAccess(byte masterKey[]) throws BookieException, IOException;
+    abstract void checkAccess(byte[] masterKey) throws BookieException, IOException;
 
     abstract long getLedgerId();
 

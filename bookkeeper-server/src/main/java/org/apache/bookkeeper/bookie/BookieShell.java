@@ -2026,7 +2026,7 @@ public class BookieShell implements Tool {
         }
     }
 
-    public static void main(String argv[]) throws Exception {
+    public static void main(String[] argv) throws Exception {
         BookieShell shell = new BookieShell();
 
         // handle some common options for multiple cmds
