@@ -54,6 +54,7 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -661,6 +662,11 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         public TestAuditor(String bookieIdentifier, ServerConfiguration conf, BookKeeper bkc, boolean ownBkc,
                 StatsLogger statsLogger) throws UnavailableException {
             super(bookieIdentifier, conf, bkc, ownBkc, statsLogger);
+        }
+
+        public TestAuditor(String bookieIdentifier, ServerConfiguration conf, BookKeeper bkc, boolean ownBkc,
+                BookKeeperAdmin bkadmin, boolean ownadmin, StatsLogger statsLogger) throws UnavailableException {
+            super(bookieIdentifier, conf, bkc, ownBkc, bkadmin, ownadmin, statsLogger);
         }
 
         public TestAuditor(final String bookieIdentifier, ServerConfiguration conf, StatsLogger statsLogger)

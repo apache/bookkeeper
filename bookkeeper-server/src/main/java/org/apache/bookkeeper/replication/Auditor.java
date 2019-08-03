@@ -136,7 +136,8 @@ public class Auditor implements AutoCloseable {
     private final ServerConfiguration conf;
     private final BookKeeper bkc;
     private final boolean ownBkc;
-    private BookKeeperAdmin admin;
+    private final BookKeeperAdmin admin;
+    private final boolean ownAdmin;
     private BookieLedgerIndexer bookieLedgerIndexer;
     private LedgerManager ledgerManager;
     private LedgerUnderreplicationManager ledgerUnderreplicationManager;
@@ -297,10 +298,27 @@ public class Auditor implements AutoCloseable {
     }
 
     public Auditor(final String bookieIdentifier,
-                   ServerConfiguration conf,
-                   BookKeeper bkc,
-                   boolean ownBkc,
-                   StatsLogger statsLogger)
+            ServerConfiguration conf,
+            BookKeeper bkc,
+            boolean ownBkc,
+            StatsLogger statsLogger)
+                    throws UnavailableException {
+        this(bookieIdentifier,
+                conf,
+                bkc,
+                ownBkc,
+                new BookKeeperAdmin(bkc, statsLogger),
+                true,
+                statsLogger);
+    }
+
+    public Auditor(final String bookieIdentifier,
+            ServerConfiguration conf,
+            BookKeeper bkc,
+            boolean ownBkc,
+            BookKeeperAdmin admin,
+            boolean ownAdmin,
+            StatsLogger statsLogger)
         throws UnavailableException {
         this.conf = conf;
         this.underreplicatedLedgerRecoveryGracePeriod = conf.getUnderreplicatedLedgerRecoveryGracePeriod();
@@ -419,6 +437,8 @@ public class Auditor implements AutoCloseable {
 
         this.bkc = bkc;
         this.ownBkc = ownBkc;
+        this.admin = admin;
+        this.ownAdmin = ownAdmin;
         initialize(conf, bkc);
 
         executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -443,7 +463,6 @@ public class Auditor implements AutoCloseable {
 
             this.ledgerUnderreplicationManager = ledgerManagerFactory
                     .newLedgerUnderreplicationManager();
-            this.admin = new BookKeeperAdmin(bkc, statsLogger);
             LOG.info("AuthProvider used by the Auditor is {}",
                 admin.getConf().getClientAuthProviderFactoryClass());
             if (this.ledgerUnderreplicationManager
@@ -1910,7 +1929,9 @@ public class Auditor implements AutoCloseable {
                 LOG.warn("Executor not shutting down, interrupting");
                 executor.shutdownNow();
             }
-            admin.close();
+            if (ownAdmin) {
+                admin.close();
+            }
             if (ownBkc) {
                 bkc.close();
             }

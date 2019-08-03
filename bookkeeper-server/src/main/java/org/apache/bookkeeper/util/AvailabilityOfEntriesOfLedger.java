@@ -184,6 +184,13 @@ public class AvailabilityOfEntriesOfLedger {
         this.closeStateOfEntriesOfALedger();
     }
 
+    public AvailabilityOfEntriesOfLedger(long[] entriesOfLedger) {
+        for (long entry : entriesOfLedger) {
+            this.addEntryToAvailabileEntriesOfLedger(entry);
+        }
+        this.closeStateOfEntriesOfALedger();
+    }
+
     public AvailabilityOfEntriesOfLedger(byte[] serializeStateOfEntriesOfLedger) {
         byte[] header = new byte[HEADER_SIZE];
         byte[] serializedSequenceGroupByteArray = new byte[SequenceGroup.SEQUENCEGROUP_BYTES];
