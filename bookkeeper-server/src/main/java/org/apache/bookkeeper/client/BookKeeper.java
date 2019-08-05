@@ -846,7 +846,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    public LedgerHandle createLedger(DigestType digestType, byte passwd[])
+    public LedgerHandle createLedger(DigestType digestType, byte[] passwd)
             throws BKException, InterruptedException {
         return createLedger(3, 2, digestType, passwd);
     }
@@ -865,7 +865,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedger(int ensSize, int qSize,
-                                     DigestType digestType, byte passwd[])
+                                     DigestType digestType, byte[] passwd)
             throws InterruptedException, BKException {
         return createLedger(ensSize, qSize, qSize, digestType, passwd, Collections.emptyMap());
     }
@@ -885,7 +885,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
-            DigestType digestType, byte passwd[])
+            DigestType digestType, byte[] passwd)
             throws InterruptedException, BKException {
         return createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, Collections.emptyMap());
     }
@@ -904,7 +904,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
-                                     DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
+                                     DigestType digestType, byte[] passwd, final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncCreateCallback result = new SyncCreateCallback(future);
@@ -939,7 +939,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
-                                        DigestType digestType, byte passwd[])
+                                        DigestType digestType, byte[] passwd)
             throws InterruptedException, BKException {
         return createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
                                digestType, passwd, Collections.emptyMap());
@@ -961,7 +961,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
-                                        DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
+                                        DigestType digestType, byte[] passwd, final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
         CompletableFuture<LedgerHandleAdv> future = new CompletableFuture<>();
         SyncCreateAdvCallback result = new SyncCreateAdvCallback(future);
@@ -1053,7 +1053,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                         int writeQuorumSize,
                                         int ackQuorumSize,
                                         DigestType digestType,
-                                        byte passwd[],
+                                        byte[] passwd,
                                         final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
         CompletableFuture<LedgerHandleAdv> future = new CompletableFuture<>();
@@ -1166,7 +1166,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @param ctx
      *          optional control object
      */
-    public void asyncOpenLedger(final long lId, final DigestType digestType, final byte passwd[],
+    public void asyncOpenLedger(final long lId, final DigestType digestType, final byte[] passwd,
                                 final OpenCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
@@ -1211,7 +1211,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @param ctx
      *          optional control object
      */
-    public void asyncOpenLedgerNoRecovery(final long lId, final DigestType digestType, final byte passwd[],
+    public void asyncOpenLedgerNoRecovery(final long lId, final DigestType digestType, final byte[] passwd,
                                           final OpenCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
@@ -1241,7 +1241,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    public LedgerHandle openLedger(long lId, DigestType digestType, byte passwd[])
+    public LedgerHandle openLedger(long lId, DigestType digestType, byte[] passwd)
             throws BKException, InterruptedException {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncOpenCallback result = new SyncOpenCallback(future);
@@ -1268,7 +1268,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    public LedgerHandle openLedgerNoRecovery(long lId, DigestType digestType, byte passwd[])
+    public LedgerHandle openLedgerNoRecovery(long lId, DigestType digestType, byte[] passwd)
             throws BKException, InterruptedException {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncOpenCallback result = new SyncOpenCallback(future);

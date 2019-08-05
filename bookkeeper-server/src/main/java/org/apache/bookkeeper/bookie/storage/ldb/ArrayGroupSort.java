@@ -52,7 +52,7 @@ public class ArrayGroupSort {
 
     ////// Private
 
-    private void quickSort(long array[], int low, int high) {
+    private void quickSort(long[] array, int low, int high) {
         if (low < high) {
             int pivotIdx = partition(array, low, high);
             quickSort(array, low, pivotIdx - groupSize);
@@ -60,7 +60,7 @@ public class ArrayGroupSort {
         }
     }
 
-    private int partition(long array[], int low, int high) {
+    private int partition(long[] array, int low, int high) {
         int pivotIdx = high;
         int i = low;
 
@@ -75,7 +75,7 @@ public class ArrayGroupSort {
         return i;
     }
 
-    private void swap(long array[], int a, int b) {
+    private void swap(long[] array, int a, int b) {
         long tmp;
         for (int k = 0; k < groupSize; k++) {
             tmp = array[a + k];
@@ -84,7 +84,7 @@ public class ArrayGroupSort {
         }
     }
 
-    private boolean isLess(long array[], int idx1, int idx2) {
+    private boolean isLess(long[] array, int idx1, int idx2) {
         for (int i = 0; i < keySize; i++) {
             long k1 = array[idx1 + i];
             long k2 = array[idx2 + i];

@@ -109,7 +109,7 @@ public class ConcurrentLedgerTest {
         recursiveDelete(ledgerDir);
     }
 
-    byte zeros[] = new byte[16];
+    byte[] zeros = new byte[16];
 
     int iterations = 51;
     {

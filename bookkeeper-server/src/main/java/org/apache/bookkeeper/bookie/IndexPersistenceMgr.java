@@ -177,7 +177,7 @@ public class IndexPersistenceMgr {
      * the FileInfo from cache, that FileInfo is then evicted and closed before we
      * could even increase the reference counter.
      */
-    CachedFileInfo getFileInfo(final Long ledger, final byte masterKey[]) throws IOException {
+    CachedFileInfo getFileInfo(final Long ledger, final byte[] masterKey) throws IOException {
         try {
             CachedFileInfo fi;
             persistenceMgrStats.getPendingGetFileInfoCounter().inc();
@@ -596,7 +596,7 @@ public class IndexPersistenceMgr {
         if (count == 0) {
             return;
         }
-        ByteBuffer buffs[] = new ByteBuffer[count];
+        ByteBuffer[] buffs = new ByteBuffer[count];
         for (int j = 0; j < count; j++) {
             buffs[j] = entries.get(start + j).getPageToWrite();
             if (entries.get(start + j).getLedger() != ledger) {

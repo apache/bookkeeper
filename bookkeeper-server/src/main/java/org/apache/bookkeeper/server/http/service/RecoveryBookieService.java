@@ -105,7 +105,7 @@ public class RecoveryBookieService implements HttpEndpointService {
 
         if (HttpServer.Method.PUT == request.getMethod() && !requestJsonBody.bookieSrc.isEmpty()) {
             runFunctionWithRegistrationManager(conf, rm -> {
-                String bookieSrcString[] = requestJsonBody.bookieSrc.get(0).split(":");
+                String[] bookieSrcString = requestJsonBody.bookieSrc.get(0).split(":");
                 BookieSocketAddress bookieSrc = new BookieSocketAddress(
                     bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
                 boolean deleteCookie = requestJsonBody.deleteCookie;

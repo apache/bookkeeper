@@ -168,7 +168,7 @@ public class LedgerStorageCheckpointTest {
     }
 
     private LogMark readLastMarkFile(File lastMarkFile) throws IOException {
-        byte buff[] = new byte[16];
+        byte[] buff = new byte[16];
         ByteBuffer bb = ByteBuffer.wrap(buff);
         LogMark rolledLogMark = new LogMark();
         FileInputStream fis = new FileInputStream(lastMarkFile);

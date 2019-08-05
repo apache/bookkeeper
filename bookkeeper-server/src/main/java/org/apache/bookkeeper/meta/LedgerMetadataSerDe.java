@@ -460,7 +460,7 @@ public class LedgerMetadataSerDe {
 
             String line = reader.readLine();
             while (line != null) {
-                String parts[] = line.split(FIELD_SPLITTER);
+                String[] parts = line.split(FIELD_SPLITTER);
 
                 if (parts[1].equals(V1_CLOSED_TAG)) {
                     Long l = Long.parseLong(parts[0]);

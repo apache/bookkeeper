@@ -504,7 +504,7 @@ public class FederatedZKLogMetadataStore
     }
 
     private String getNamespaceFromZkPath(String zkPath) throws UnexpectedException {
-        String parts[] = zkPath.split(SUB_NAMESPACE_PREFIX);
+        String[] parts = zkPath.split(SUB_NAMESPACE_PREFIX);
         if (parts.length <= 0) {
             throw new UnexpectedException("Invalid namespace @ " + zkPath);
         }

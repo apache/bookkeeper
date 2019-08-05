@@ -53,7 +53,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 
             HashSet<Thread> threadset = new HashSet<Thread>();
             int threadCount = Thread.activeCount();
-            Thread threads[] = new Thread[threadCount * 2];
+            Thread[] threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
                 if (threads[i].getName().indexOf("SendThread") != -1) {

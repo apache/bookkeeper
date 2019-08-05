@@ -110,7 +110,7 @@ public class BookieClientTest {
     }
 
     private static void recursiveDelete(File dir) {
-        File children[] = dir.listFiles();
+        File[] children = dir.listFiles();
         if (children != null) {
             for (File child : children) {
                 recursiveDelete(child);
