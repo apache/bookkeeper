@@ -363,7 +363,7 @@ public class Cookie {
      *         if the 'bookieHost' was created using a hostname
      */
     public boolean isBookieHostCreatedFromIp() throws IOException {
-        String parts[] = bookieHost.split(":");
+        String[] parts = bookieHost.split(":");
         if (parts.length != 2) {
             throw new IOException(bookieHost + " does not have the form host:port");
         }

@@ -70,7 +70,7 @@ public class OpStatTest extends BookKeeperClusterTestCase {
         f.accept(logger.getSuccessCount(), logger.getSuccessAverage());
     }
 
-    private void validateOpStat(TestStatsProvider stats, String paths[], BiConsumer<Long, Double> f) {
+    private void validateOpStat(TestStatsProvider stats, String[] paths, BiConsumer<Long, Double> f) {
         for (String path : paths) {
             validateOpStat(stats, path, f);
         }
@@ -83,7 +83,7 @@ public class OpStatTest extends BookKeeperClusterTestCase {
         f.accept(counter.get(), counter.getMax());
     }
 
-    private void validateNonMonotonicCounterGauges(TestStatsProvider stats, String paths[], BiConsumer<Long, Long> f) {
+    private void validateNonMonotonicCounterGauges(TestStatsProvider stats, String[] paths, BiConsumer<Long, Long> f) {
         for (String path : paths) {
             validateNonMonotonicCounterGauge(stats, path, f);
         }

@@ -849,7 +849,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             }
 
             @Override
-            public void create(final String path, byte data[], List<ACL> acl, CreateMode createMode, StringCallback cb,
+            public void create(final String path, byte[] data, List<ACL> acl, CreateMode createMode, StringCallback cb,
                     Object ctx) {
                 StringCallback injectedCallback = new StringCallback() {
                     @Override

@@ -46,7 +46,7 @@ public class LedgerDescriptorReadOnlyImpl extends LedgerDescriptorImpl {
     }
 
     @Override
-    void checkAccess(byte masterKey[]) throws BookieException, IOException {
+    void checkAccess(byte[] masterKey) throws BookieException, IOException {
         assert false;
         throw new IOException("Invalid action on read only descriptor");
     }

@@ -73,7 +73,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     public long getLedgerId(String nodeName) throws IOException {
         long ledgerId;
         try {
-            String parts[] = nodeName.split(ledgerPrefix);
+            String[] parts = nodeName.split(ledgerPrefix);
             ledgerId = Long.parseLong(parts[parts.length - 1]);
         } catch (NumberFormatException e) {
             throw new IOException(e);

@@ -394,9 +394,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
                 try {
                     // clean up the hierarchy
-                    String parts[] = getUrLedgerZnode(ledgerId).split("/");
+                    String[] parts = getUrLedgerZnode(ledgerId).split("/");
                     for (int i = 1; i <= 4; i++) {
-                        String p[] = Arrays.copyOf(parts, parts.length - i);
+                        String[] p = Arrays.copyOf(parts, parts.length - i);
                         String path = Joiner.on("/").join(p);
                         Stat s = zkc.exists(path, null);
                         if (s != null) {

@@ -75,8 +75,8 @@ public class OrderedExecutor implements ExecutorService {
     protected static final long WARN_TIME_MICRO_SEC_DEFAULT = TimeUnit.SECONDS.toMicros(1);
 
     final String name;
-    final ExecutorService threads[];
-    final long threadIds[];
+    final ExecutorService[] threads;
+    final long[] threadIds;
     final Random rand = new Random();
     final OpStatsLogger taskExecutionStats;
     final OpStatsLogger taskPendingStats;

@@ -633,7 +633,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             }
         };
         Counter counter = new Counter();
-        byte hello[] = "hello".getBytes(UTF_8);
+        byte[] hello = "hello".getBytes(UTF_8);
         long ledger = Long.parseLong(args[2]);
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
         OrderedExecutor executor = OrderedExecutor.newBuilder()

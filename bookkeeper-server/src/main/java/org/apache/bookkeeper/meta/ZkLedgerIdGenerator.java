@@ -126,7 +126,7 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
     private static long getLedgerIdFromGenPath(String nodeName, String ledgerPrefix) throws IOException {
         long ledgerId;
         try {
-            String parts[] = nodeName.split(ledgerPrefix);
+            String[] parts = nodeName.split(ledgerPrefix);
             ledgerId = Long.parseLong(parts[parts.length - 1]);
         } catch (NumberFormatException e) {
             throw new IOException(e);

@@ -437,5 +437,8 @@ page at http://checkstyle.sourceforge.net/config.html -->
         <!-- Required to support SuppressWarningsComment -->
         <module name="FileContentsHolder"/>
 
+        <!-- Enforces Java style array type definition -->
+        <module name="ArrayTypeStyleCheck"/>
+
     </module>
 </module>

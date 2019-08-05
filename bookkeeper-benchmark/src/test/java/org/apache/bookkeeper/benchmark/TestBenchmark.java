@@ -97,7 +97,7 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
         t.start();
 
         Thread.sleep(10000);
-        byte data[] = new byte[1024];
+        byte[] data = new byte[1024];
         Arrays.fill(data, (byte) 'x');
 
         long lastLedgerId = 0;

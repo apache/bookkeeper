@@ -103,7 +103,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * @return list of filtered ids
      */
     static List<Long> listJournalIds(File journalDir, JournalIdFilter filter) {
-        File logFiles[] = journalDir.listFiles();
+        File[] logFiles = journalDir.listFiles();
         if (logFiles == null || logFiles.length == 0) {
             return Collections.emptyList();
         }
@@ -190,7 +190,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
 
         void rollLog(LastLogMark lastMark) throws NoWritableLedgerDirException {
-            byte buff[] = new byte[16];
+            byte[] buff = new byte[16];
             ByteBuffer bb = ByteBuffer.wrap(buff);
             // we should record <logId, logPosition> marked in markLog
             // which is safe since records before lastMark have been
@@ -229,7 +229,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
          * and then max log position in max journal log.
          */
         void readLog() {
-            byte buff[] = new byte[16];
+            byte[] buff = new byte[16];
             ByteBuffer bb = ByteBuffer.wrap(buff);
             LogMark mark = new LogMark();
             for (File dir: ledgerDirsManager.getAllLedgerDirs()) {

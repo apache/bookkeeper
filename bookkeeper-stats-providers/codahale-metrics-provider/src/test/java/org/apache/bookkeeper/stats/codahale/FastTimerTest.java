@@ -100,9 +100,9 @@ public class FastTimerTest {
     public void testTimer() {
         // load definitions for testing the timer
         // following 3 array lengths must match: each element defines values for one phase
-        final int timeRange[] = new int[] {   90,  190,   50,   90, 100, 100 };
-        final int timeBase[] = new int[]  {   10,   10,   50,   10,   0,   0 };
-        final int rate[] = new int[]      { 1000, 1000, 1000, 1000,   0,   1 };
+        final int[] timeRange = new int[] {   90,  190,   50,   90, 100, 100 };
+        final int[] timeBase = new int[]  {   10,   10,   50,   10,   0,   0 };
+        final int[] rate = new int[]      { 1000, 1000, 1000, 1000,   0,   1 };
 
         final int window = 5; // use a 5 second window for testing
         FastTimer t = getMockedFastTimer(window, FastTimer.Buckets.fine);

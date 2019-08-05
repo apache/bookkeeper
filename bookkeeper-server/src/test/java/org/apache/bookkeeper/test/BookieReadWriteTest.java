@@ -286,7 +286,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             // bkc.initMessageDigest("SHA1");
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
-            byte bytes[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'};
+            byte[] bytes = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'};
 
             lh.asyncAddEntry(bytes, 0, bytes.length, this, sync);
             lh.asyncAddEntry(bytes, 0, 4, this, sync); // abcd

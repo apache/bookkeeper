@@ -48,7 +48,7 @@ public class AvailabilityOfEntriesOfLedger {
     public static final long INVALID_ENTRYID = -1;
     public static final AvailabilityOfEntriesOfLedger EMPTY_AVAILABILITYOFENTRIESOFLEDGER;
     static {
-        long tmpArray[] = {};
+        long[] tmpArray = {};
         EMPTY_AVAILABILITYOFENTRIESOFLEDGER = new AvailabilityOfEntriesOfLedger(Arrays.stream(tmpArray).iterator());
     }
 

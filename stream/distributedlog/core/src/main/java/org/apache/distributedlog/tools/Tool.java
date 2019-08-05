@@ -223,7 +223,7 @@ public abstract class Tool {
         return cmd.runCmd(newArgs);
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         int rc = -1;
         if (args.length <= 0) {
             System.err.println("No tool to run.");

@@ -74,7 +74,7 @@ public class DecommissionService implements HttpEndpointService {
             HashMap<String, String> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
             if (configMap != null && configMap.containsKey("bookie_src")) {
                 try {
-                    String bookieSrcString[] = configMap.get("bookie_src").split(":");
+                    String[] bookieSrcString = configMap.get("bookie_src").split(":");
                     BookieSocketAddress bookieSrc = new BookieSocketAddress(
                       bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
 

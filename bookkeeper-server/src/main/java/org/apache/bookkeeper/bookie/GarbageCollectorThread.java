@@ -436,7 +436,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         logsToCompact.sort(Comparator.comparing(EntryLogMetadata::getUsage));
 
         final int numBuckets = 10;
-        int entryLogUsageBuckets[] = new int[numBuckets];
+        int[] entryLogUsageBuckets = new int[numBuckets];
 
         for (EntryLogMetadata meta : logsToCompact) {
             int bucketIndex = Math.min(

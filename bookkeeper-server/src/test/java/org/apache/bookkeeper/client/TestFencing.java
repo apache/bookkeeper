@@ -182,7 +182,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
 
 
         CyclicBarrier barrier = new CyclicBarrier(numRecovery + 1);
-        LedgerOpenThread threads[] = new LedgerOpenThread[numRecovery];
+        LedgerOpenThread[] threads = new LedgerOpenThread[numRecovery];
         for (int i = 0; i < numRecovery; i++) {
             threads[i] = new LedgerOpenThread(i, digestType, writelh.getId(), barrier);
             threads[i].start();

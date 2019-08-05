@@ -64,13 +64,13 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     static final Logger LOG = LoggerFactory.getLogger(BenchThroughputLatency.class);
 
     BookKeeper bk;
-    LedgerHandle lh[];
+    LedgerHandle[] lh;
     AtomicLong counter;
 
     Semaphore sem;
     int numberOfLedgers = 1;
     final int sendLimit;
-    final long latencies[];
+    final long[] latencies;
 
     static class Context {
         long localStartTime;
@@ -115,9 +115,9 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     }
 
     long previous = 0;
-    byte bytes[];
+    byte[] bytes;
 
-    void setEntryData(byte data[]) {
+    void setEntryData(byte[] data) {
         bytes = data;
     }
 
@@ -310,7 +310,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         // Do a warmup run
         Thread thread;
 
-        byte data[] = new byte[entrysize];
+        byte[] data = new byte[entrysize];
         Arrays.fill(data, (byte) 'x');
 
         ClientConfiguration conf = new ClientConfiguration();
