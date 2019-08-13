@@ -161,7 +161,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * scheduled to run with no initialdelay
          */
         assertTrue("replicasCheck should have executed", latch.await(20, TimeUnit.SECONDS));
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 200; i++) {
             Thread.sleep(100);
             if (replicasCheckStatsLogger.getSuccessCount() >= 1) {
                 break;
