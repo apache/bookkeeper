@@ -656,6 +656,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         servConf.setProperty(ClientConfiguration.ENSEMBLE_PLACEMENT_POLICY, ensemblePlacementPolicyClass);
         servConf.setAuditorPeriodicCheckInterval(0);
         servConf.setAuditorPeriodicBookieCheckInterval(0);
+        servConf.setAuditorPeriodicReplicasCheckInterval(0);
         servConf.setAuditorPeriodicPlacementPolicyCheckInterval(1000);
     }
 
