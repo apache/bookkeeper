@@ -165,7 +165,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
     public void testGenerateCookieWithInstanceId() throws Exception {
         File cookieFile = testFolder.newFile("cookie-with-instance-id");
         String journalDir = "/path/to/journal";
-        String ledgersDir = "/path/to/ledgers";
+        String ledgersDir = "/path/to/ledgers,/path/to/more/ledgers";
         String instanceId = "test-instance-id";
 
         Cookie cookie = Cookie.newBuilder()

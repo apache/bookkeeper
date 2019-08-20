@@ -116,7 +116,7 @@ public class GenerateCookieCommand extends CookieCommand<Flags> {
             builder.setInstanceId(instanceId);
         }
         builder.setJournalDirs(cmdFlags.journalDirs);
-        builder.setLedgerDirs(cmdFlags.ledgerDirs);
+        builder.setLedgerDirs(Cookie.encodeDirPaths(new String[] { cmdFlags.ledgerDirs }));
 
         Cookie cookie = builder.build();
         cookie.writeToFile(new File(cmdFlags.outputFile));
