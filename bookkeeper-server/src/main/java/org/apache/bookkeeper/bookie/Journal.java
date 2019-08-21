@@ -1004,7 +1004,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             // 2. If we have buffered more than the buffWriteThreshold or bufferedEntriesThreshold
                             shouldFlush = true;
                             journalStats.getFlushMaxOutstandingBytesCounter().inc();
-                        } else if (qe == null) {
+                        } else if (qe == null && flushWhenQueueEmpty) {
                             // We should get here only if we flushWhenQueueEmpty is true else we would wait
                             // for timeout that would put is past the maxWait threshold
                             // 3. If the queue is empty i.e. no benefit of grouping. This happens when we have one
