@@ -125,6 +125,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_SYNC_DATA = "journalSyncData";
     protected static final String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
     protected static final String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
+    protected static final String JOURNAL_FORCE_WRITE_INTERVAL_MS = "journalForceWriteIntervalMs";
     protected static final String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
     protected static final String JOURNAL_BUFFERED_ENTRIES_THRESHOLD = "journalBufferedEntriesThreshold";
     protected static final String JOURNAL_FLUSH_WHEN_QUEUE_EMPTY = "journalFlushWhenQueueEmpty";
@@ -710,6 +711,17 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public int getJournalWriteBufferSizeKB() {
         return this.getInt(JOURNAL_WRITE_BUFFER_SIZE, 64);
+    }
+
+    /**
+     * Set the size of the write buffers used for the journal.
+     *
+     * @param bufferSizeKB the size of the write buffer used for the journal, in KB.
+     * @return server configuration
+     */
+    public ServerConfiguration setJournalWriteBufferSizeKB(int bufferSizeKB) {
+        setProperty(JOURNAL_WRITE_BUFFER_SIZE, bufferSizeKB);
+        return this;
     }
 
     /**
@@ -1942,6 +1954,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * The interval that journal force write happens, in milliseconds.
+     *
+     * <p>This setting only takes effect when {@link #getJournalSyncData()} returns false.
+     *
+     * @return the interval that journal force write happens, in milliseconds.
+     */
+    public int getJournalForceWriteIntervalMs() {
+        return getInt(JOURNAL_FORCE_WRITE_INTERVAL_MS, 10);
+    }
+
+    /**
+     * Set the journal force write interval, in milliseconds.
+     *
+     * @param journalForceWriteIntervalMs
+     *          journal force write interval in milliseconds.
+     * @return server configuration.
+     */
+    public ServerConfiguration setJournalForceWriteIntervalMs(int journalForceWriteIntervalMs) {
+        setProperty(JOURNAL_FORCE_WRITE_INTERVAL_MS, journalForceWriteIntervalMs);
+        return this;
+    }
+
+    /**
      * Maximum latency to impose on a journal write to achieve grouping. Default is 2ms.
      *
      * @return max wait for grouping
@@ -1969,6 +2004,17 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getJournalBufferedWritesThreshold() {
         return getLong(JOURNAL_BUFFERED_WRITES_THRESHOLD, 512 * 1024);
+    }
+
+    /**
+     * Set maximum bytes to buffer to impose on a journal write to achieve grouping.
+     *
+     * @param maxBytes maximum bytes to buffer to impose on a journal write
+     * @return max bytes to buffer
+     */
+    public ServerConfiguration setJournalBufferedWritesThreshold(long maxBytes) {
+        setProperty(JOURNAL_BUFFERED_WRITES_THRESHOLD, maxBytes);
+        return this;
     }
 
     /**

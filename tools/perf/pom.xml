@@ -40,6 +40,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.bookkeeper.stats</groupId>
+      <artifactId>prometheus-metrics-provider</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.hdrhistogram</groupId>
       <artifactId>HdrHistogram</artifactId>
     </dependency>
