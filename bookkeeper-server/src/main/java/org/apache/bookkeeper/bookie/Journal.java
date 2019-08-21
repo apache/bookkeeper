@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -647,6 +648,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * The thread pool used to handle callback.
      */
     private final ExecutorService cbThreadPool;
+    private final ExecutorService batchCbThreadPool;
 
     // journal entry queue to commit
     final BlockingQueue<QueueEntry> queue;
@@ -712,6 +714,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         } else {
             this.cbThreadPool = MoreExecutors.newDirectExecutorService();
         }
+        this.batchCbThreadPool = Executors.newSingleThreadExecutor();
 
         // Unless there is a cap on the max wait (which requires group force writes)
         // we cannot skip flushing for queue empty
@@ -923,7 +926,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     private void submitCallbacks(RecyclableArrayList<QueueEntry> entries) {
-        cbThreadPool.submit(() -> {
+        batchCbThreadPool.submit(() -> {
             entries.forEach(QueueEntry::run);
             entries.recycle();
         });
@@ -1083,11 +1086,17 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             journalStats.getForceWriteBatchBytesStats()
                                 .registerSuccessfulValue(batchSize);
 
+                            submitCallbacks(toFlush);
+                            // toFlush = entryListRecycler.newInstance();
+
                             boolean shouldRolloverJournal = (lastFlushPosition > maxJournalSize);
+                            if (shouldRolloverJournal) {
+                                logFile.close();
+                            }
                             // Trigger data sync to disk in the "Force-Write" thread.
                             // Callback will be triggered after data is committed to disk
-                            forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
-                                                                           toFlush, shouldRolloverJournal, false));
+                            // forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
+                            //                                                toFlush, shouldRolloverJournal, false));
                             toFlush = entryListRecycler.newInstance();
                             numEntriesToFlush = 0;
                             batchSize = 0L;
