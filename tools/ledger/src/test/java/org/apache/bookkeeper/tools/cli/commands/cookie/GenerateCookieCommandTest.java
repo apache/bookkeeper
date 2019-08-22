@@ -136,7 +136,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
             .setBookieHost(BOOKIE_ID)
             .setInstanceId(instanceId)
             .setJournalDirs(journalDir)
-            .setLedgerDirs(ledgersDir)
+            .setLedgerDirs(Cookie.encodeDirPaths(new String[] {ledgersDir}))
             .build();
 
         when(rm.getClusterInstanceId()).thenReturn(instanceId);
@@ -172,7 +172,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
             .setBookieHost(BOOKIE_ID)
             .setInstanceId(instanceId)
             .setJournalDirs(journalDir)
-            .setLedgerDirs(ledgersDir)
+            .setLedgerDirs(Cookie.encodeDirPaths(new String[] {ledgersDir}))
             .build();
 
         when(rm.getClusterInstanceId()).thenReturn(instanceId);
