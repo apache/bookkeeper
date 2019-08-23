@@ -574,18 +574,15 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
      *          Znode Name
      * @return true  if the znode is a special znode otherwise false
      */
-     public static boolean isSpecialZnode(String znode) {
-        if (BookKeeperConstants.AVAILABLE_NODE.equals(znode)
-                || BookKeeperConstants.COOKIE_NODE.equals(znode)
-                || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
-                || BookKeeperConstants.INSTANCEID.equals(znode)
-                || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)
-                || LegacyHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
-                || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
-                || znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX)) {
-            return true;
-        }
-        return false;
+    public static boolean isSpecialZnode(String znode) {
+        return BookKeeperConstants.AVAILABLE_NODE.equals(znode)
+            || BookKeeperConstants.COOKIE_NODE.equals(znode)
+            || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
+            || BookKeeperConstants.INSTANCEID.equals(znode)
+            || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)
+            || LegacyHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
+            || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
+            || znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX);
     }
 
     /**

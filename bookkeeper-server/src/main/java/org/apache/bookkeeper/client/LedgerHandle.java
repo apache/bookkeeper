@@ -107,7 +107,7 @@ public class LedgerHandle implements WriteHandle {
     private enum HandleState {
         OPEN,
         CLOSED
-    };
+    }
 
     private HandleState handleState = HandleState.OPEN;
     private final CompletableFuture<Void> closePromise = new CompletableFuture<>();

@@ -292,13 +292,13 @@ public class TestTLS extends BookKeeperClusterTestCase {
         int numEntries = 100;
         long lid;
         byte[] testEntry = "testEntry".getBytes();
-        try (LedgerHandle lh = client.createLedger(clusterSize, clusterSize, DigestType.CRC32, passwd);) {
+        try (LedgerHandle lh = client.createLedger(clusterSize, clusterSize, DigestType.CRC32, passwd)) {
             for (int i = 0; i <= numEntries; i++) {
                 lh.addEntry(testEntry);
             }
             lid = lh.getId();
         }
-        try (LedgerHandle lh = client.openLedger(lid, DigestType.CRC32, passwd);) {
+        try (LedgerHandle lh = client.openLedger(lid, DigestType.CRC32, passwd)) {
             Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries);
             while (entries.hasMoreElements()) {
                 LedgerEntry e = entries.nextElement();
@@ -310,7 +310,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     private LedgerMetadata testClient(ClientConfiguration conf, int clusterSize) throws Exception {
-        try (BookKeeper client = new BookKeeper(conf);) {
+        try (BookKeeper client = new BookKeeper(conf)) {
             return testClient(client, clusterSize);
         }
     }
