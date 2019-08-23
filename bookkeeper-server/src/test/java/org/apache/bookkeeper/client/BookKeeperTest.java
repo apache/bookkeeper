@@ -810,7 +810,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     public void testCannotUseWriteFlagsOnV2Protocol() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         conf.setUseV2WireProtocol(true);
-        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf);) {
+        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf)) {
             try (WriteHandle wh = result(bkc.newCreateLedgerOp()
                     .withEnsembleSize(3)
                     .withWriteQuorumSize(3)
@@ -827,7 +827,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     public void testCannotUseForceOnV2Protocol() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         conf.setUseV2WireProtocol(true);
-        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf);) {
+        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf)) {
             try (WriteHandle wh = result(bkc.newCreateLedgerOp()
                     .withEnsembleSize(3)
                     .withWriteQuorumSize(3)

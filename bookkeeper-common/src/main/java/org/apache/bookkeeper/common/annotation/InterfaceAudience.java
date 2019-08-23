@@ -34,7 +34,7 @@ public class InterfaceAudience {
      */
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface Public {};
+    public @interface Public {}
 
     /**
      * Intended for use only within the project(s) specified in the annotation.
@@ -42,14 +42,14 @@ public class InterfaceAudience {
      */
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface LimitedPrivate {};
+    public @interface LimitedPrivate {}
 
     /**
      * Intended for use only within bookkeeper itself.
      */
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface Private {};
+    public @interface Private {}
 
     private InterfaceAudience() {} // Audience can't exist on its own
 

@@ -793,7 +793,7 @@ public class LedgerCacheTest {
             public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx){
                 LOG.info("fail write to bk");
                 assertTrue(rc != OK);
-            };
+            }
 
         }, null, "passwd".getBytes());
         bookie.shutdown();

@@ -93,11 +93,7 @@ public class RoundRobinDistributionScheduleTest {
     boolean[] buildAvailable(int ensemble, Set<Integer> responses) {
         boolean[] available = new boolean[ensemble];
         for (int i = 0; i < ensemble; i++) {
-            if (responses.contains(i)) {
-                available[i] = false;
-            } else {
-                available[i] = true;
-            }
+            available[i] = !responses.contains(i);
         }
         return available;
     }

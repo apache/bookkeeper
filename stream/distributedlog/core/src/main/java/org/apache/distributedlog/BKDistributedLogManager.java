@@ -1031,7 +1031,7 @@ class BKDistributedLogManager implements DistributedLogManager {
                         return null;
                     });
         }
-    };
+    }
 
     /**
      * Close the distributed log manager, freeing any resources it may hold.

@@ -91,10 +91,7 @@ public class FileSystemUpgrade {
                     || name.equals("lastId") || name.startsWith("lastMark")) {
                     return true;
                 }
-                if (containsIndexFiles(dir, name)) {
-                    return true;
-                }
-                return false;
+                return containsIndexFiles(dir, name);
             }
         };
 

@@ -94,9 +94,7 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
         long ledgerId = cmdFlags.ledgerId;
         if (conf.getLedgerStorageClass().equals(DbLedgerStorage.class.getName())) {
             // dump ledger info
-            if (!dumpLedgerInfo(ledgerId, conf)) {
-                return false;
-            }
+            return dumpLedgerInfo(ledgerId, conf);
         } else if (conf.getLedgerStorageClass().equals(SortedLedgerStorage.class.getName())
                 || conf.getLedgerStorageClass().equals(InterleavedLedgerStorage.class.getName())) {
             ServerConfiguration tConf = new ServerConfiguration(conf);

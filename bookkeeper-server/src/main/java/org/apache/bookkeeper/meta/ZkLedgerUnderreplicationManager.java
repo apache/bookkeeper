@@ -721,11 +721,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             LOG.debug("isLedgerReplicationEnabled()");
         }
         try {
-            if (null != zkc.exists(basePath + '/'
-                    + BookKeeperConstants.DISABLE_NODE, false)) {
-                return false;
-            }
-            return true;
+            return null == zkc.exists(basePath + '/'
+                + BookKeeperConstants.DISABLE_NODE, false);
         } catch (KeeperException ke) {
             LOG.error("Error while checking the state of "
                     + "ledger re-replication", ke);

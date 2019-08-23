@@ -158,7 +158,7 @@ public interface LedgerMetadata {
         /** The ledger is closed. No new entries may be added to it.
             The length and lastEntryId are fixed. Ensembles may change, but only for rereplication.
         */
-        CLOSED;
+        CLOSED
     }
 
     /**

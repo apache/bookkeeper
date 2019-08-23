@@ -377,6 +377,6 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
             public void execute(Runnable command) {
                 super.execute(timedRunnable(command));
             }
-        };
+        }
 
 }

@@ -273,11 +273,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         @Override
         public boolean accept(long journalId) {
-            if (journalId < lastMark.getCurMark().getLogFileId()) {
-                return true;
-            } else {
-                return false;
-            }
+            return journalId < lastMark.getCurMark().getLogFileId();
         }
     }
 

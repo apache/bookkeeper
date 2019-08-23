@@ -68,10 +68,8 @@ public class RangeValidator implements Validator {
             Number n = (Number) value;
             if (min != null && n.doubleValue() < min.doubleValue()) {
                 return false;
-            } else if (max != null && n.doubleValue() > max.doubleValue()) {
-                return false;
             } else {
-                return true;
+                return max == null || !(n.doubleValue() > max.doubleValue());
             }
         } else {
             return false;
