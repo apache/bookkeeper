@@ -105,7 +105,7 @@ public class JournalWriter implements Runnable {
             },
             description = "The list of journal directories, separated by comma",
             required = true)
-        public List<String> journalDirs = null;
+        public List<String> journalDirs;
 
         @Parameter(
             names = {
@@ -405,7 +405,7 @@ public class JournalWriter implements Runnable {
                             cumulativeRecorder.recordValue(latencyMicros);
                         } else {
                             log.warn("Error at writing records : {}", BookieException.create(rc));
-                            System.exit(-1);
+                            Runtime.getRuntime().exit(-1);
                         }
                     },
                     null
@@ -479,7 +479,9 @@ public class JournalWriter implements Runnable {
         conf.setStatsProviderClass(PrometheusMetricsProvider.class);
         File[] currentDirs = Bookie.getCurrentDirectories(conf.getLedgerDirs());
         for (File dir : currentDirs) {
-            dir.mkdirs();
+            if (dir.mkdirs()) {
+                log.info("Successfully created dir {}", dir);
+            }
         }
     }
 
