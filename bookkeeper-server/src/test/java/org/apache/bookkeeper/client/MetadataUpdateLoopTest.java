@@ -464,7 +464,7 @@ public class MetadataUpdateLoopTest {
                         }
                     });
             return promise;
-        };
+        }
     }
 
     @Data
@@ -509,6 +509,6 @@ public class MetadataUpdateLoopTest {
             } else {
                 return super.writeLedgerMetadata(ledgerId, metadata, currentVersion);
             }
-        };
+        }
     }
 }
