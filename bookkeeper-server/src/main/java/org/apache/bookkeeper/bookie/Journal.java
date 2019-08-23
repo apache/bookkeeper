@@ -46,14 +46,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.bookie.Journal.BufferedChannelBuilder;
-import org.apache.bookkeeper.bookie.Journal.ForceWriteRequest;
-import org.apache.bookkeeper.bookie.Journal.JournalScanner;
-import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
@@ -67,7 +61,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.commons.lang.mutable.MutableLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -376,8 +369,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         private long logId;
         private long enqueueTime;
 
-        public int process(boolean shouldForceWrite,
-                           MutableLong lastForceWriteNanos) throws IOException {
+        public int process(boolean shouldForceWrite) throws IOException {
             journalStats.getForceWriteQueueSize().dec();
             journalStats.getFwEnqueueTimeStats()
                 .registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
@@ -388,23 +380,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
             try {
                 if (shouldForceWrite) {
-                    // if entry can callback before forceWrite, trigger the callback first
-                    if (syncData
-                        || shouldClose
-                        || (MathUtils.elapsedMSec(lastForceWriteNanos.longValue()) >= journalForceWriteIntervalMs)) {
-                        for (int i = 0; i < forceWriteWaiters.size(); i++) {
-                            QueueEntry qe = forceWriteWaiters.get(i);
-                            if (qe != null && qe.ackBeforeSync) {
-                                forceWriteWaiters.set(i, null);
-                                cbThreadPool.execute(qe);
-                            }
-                        }
-                        long startTime = MathUtils.nowInNano();
-                        lastForceWriteNanos.setValue(startTime);
-                        this.logFile.forceWrite(false);
-                        journalStats.getJournalSyncStats()
-                            .registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
-                    }
+                    long startTime = MathUtils.nowInNano();
+                    this.logFile.forceWrite(false);
+                    journalStats.getJournalSyncStats()
+                        .registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                 }
                 lastLogMark.setCurLogMark(this.logId, this.lastFlushedPosition);
 
@@ -490,7 +469,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         Thread threadToNotifyOnEx;
         // should we group force writes
         private final boolean enableGroupForceWrites;
-        private final MutableLong lastForceWriteNanos = new MutableLong();
         // make flush interval as a parameter
         public ForceWriteThread(Thread threadToNotifyOnEx, boolean enableGroupForceWrites) {
             super("ForceWriteThread");
@@ -511,7 +489,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
             boolean shouldForceWrite = true;
             int numReqInLastForceWrite = 0;
-            this.lastForceWriteNanos.setValue(MathUtils.nowInNano());
             while (running) {
                 ForceWriteRequest req = null;
                 try {
@@ -537,7 +514,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             }
                         }
                     }
-                    numReqInLastForceWrite += req.process(shouldForceWrite, lastForceWriteNanos);
+                    numReqInLastForceWrite += req.process(shouldForceWrite);
 
                     if (enableGroupForceWrites
                             // if its a marker we should switch back to flushing
@@ -633,7 +610,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private final boolean removePagesFromCache;
     private final int journalFormatVersionToWrite;
     private final int journalAlignmentSize;
-    private final int journalForceWriteIntervalMs;
 
     // Should data be fsynced on disk before triggering the callback
     private final boolean syncData;
@@ -648,7 +624,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * The thread pool used to handle callback.
      */
     private final ExecutorService cbThreadPool;
-    private final ExecutorService batchCbThreadPool;
 
     // journal entry queue to commit
     final BlockingQueue<QueueEntry> queue;
@@ -672,22 +647,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         super("BookieJournal-" + conf.getBookiePort());
         this.allocator = allocator;
 
-        final int numCallbackThreads = conf.getNumJournalCallbackThreads();
-
-        BlockingQueue<Runnable> cbQueue = new LinkedBlockingQueue<>();
         if (conf.isBusyWaitEnabled()) {
             // To achieve lower latency, use busy-wait blocking queue implementation
             queue = new BlockingMpscQueue<>(conf.getJournalQueueSize());
             forceWriteRequests = new BlockingMpscQueue<>(conf.getJournalQueueSize());
-            // if (numCallbackThreads > 0) {
-            //     cbQueue = new BlockingMpscQueue<>(conf.getJournalQueueSize() * 10);
-            // }
         } else {
             queue = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
             forceWriteRequests = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
-            // if (numCallbackThreads > 0) {
-            //     cbQueue = new ArrayBlockingQueue<>(conf.getJournalQueueSize() * 10);
-            // }
         }
 
         this.ledgerDirsManager = ledgerDirsManager;
@@ -704,17 +670,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.bufferedEntriesThreshold = conf.getJournalBufferedEntriesThreshold();
         this.journalFormatVersionToWrite = conf.getJournalFormatVersionToWrite();
         this.journalAlignmentSize = conf.getJournalAlignmentSize();
-        this.journalForceWriteIntervalMs = conf.getJournalForceWriteIntervalMs();
-        if (numCallbackThreads > 0) {
-            this.cbThreadPool = new ThreadPoolExecutor(
-                numCallbackThreads, numCallbackThreads,
-                0L, TimeUnit.MILLISECONDS,
-                cbQueue,
-                new DefaultThreadFactory("bookie-journal-callback"));
+        if (conf.getNumJournalCallbackThreads() > 0) {
+            this.cbThreadPool = Executors.newFixedThreadPool(conf.getNumJournalCallbackThreads(),
+                                                         new DefaultThreadFactory("bookie-journal-callback"));
         } else {
             this.cbThreadPool = MoreExecutors.newDirectExecutorService();
         }
-        this.batchCbThreadPool = Executors.newSingleThreadExecutor();
 
         // Unless there is a cap on the max wait (which requires group force writes)
         // we cannot skip flushing for queue empty
@@ -925,13 +886,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         return queue.size();
     }
 
-    private void submitCallbacks(RecyclableArrayList<QueueEntry> entries) {
-        batchCbThreadPool.submit(() -> {
-            entries.forEach(QueueEntry::run);
-            entries.recycle();
-        });
-    }
-
     /**
      * A thread used for persisting journal entries to journal files.
      *
@@ -1067,6 +1021,15 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             journalFlushWatcher.reset().start();
                             bc.flush();
 
+                            for (int i = 0; i < toFlush.size(); i++) {
+                                QueueEntry entry = toFlush.get(i);
+                                if (entry != null && (!syncData || entry.ackBeforeSync)) {
+                                    toFlush.set(i, null);
+                                    numEntriesToFlush--;
+                                    cbThreadPool.execute(entry);
+                                }
+                            }
+
                             lastFlushPosition = bc.position();
                             journalStats.getJournalFlushStats().registerSuccessfulEvent(
                                     journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
@@ -1086,19 +1049,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             journalStats.getForceWriteBatchBytesStats()
                                 .registerSuccessfulValue(batchSize);
 
-                            submitCallbacks(toFlush);
-                            // toFlush = entryListRecycler.newInstance();
-
                             boolean shouldRolloverJournal = (lastFlushPosition > maxJournalSize);
-                            if (shouldRolloverJournal) {
-                                logFile.close();
-                            }
                             // Trigger data sync to disk in the "Force-Write" thread.
-                            // Callback will be triggered after data is committed to disk
-                            // forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
-                            //                                                toFlush, shouldRolloverJournal, false));
+                            forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
+                                                                           toFlush, shouldRolloverJournal, false));
                             toFlush = entryListRecycler.newInstance();
                             numEntriesToFlush = 0;
+
                             batchSize = 0L;
                             // check whether journal file is over file limit
                             if (shouldRolloverJournal) {

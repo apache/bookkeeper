@@ -176,14 +176,6 @@ public class JournalWriter implements Runnable {
         )
         public int numJournalCallbackThreads = 8;
 
-        @Parameter(
-            names = {
-                "-fwi", "--force-write-interval-ms"
-            },
-            description = "Journal force write interval (ms)"
-        )
-        public int journalForceWriteIntervalMs = 100;
-
     }
 
 
@@ -484,7 +476,6 @@ public class JournalWriter implements Runnable {
         conf.setJournalQueueSize(flags.journalQueueSize);
         conf.setJournalSyncData(flags.journalSyncEnabled);
         conf.setLedgerDirNames(flags.journalDirs.toArray(new String[0]));
-        conf.setJournalForceWriteIntervalMs(flags.journalForceWriteIntervalMs);
         conf.setStatsProviderClass(PrometheusMetricsProvider.class);
         File[] currentDirs = Bookie.getCurrentDirectories(conf.getLedgerDirs());
         for (File dir : currentDirs) {

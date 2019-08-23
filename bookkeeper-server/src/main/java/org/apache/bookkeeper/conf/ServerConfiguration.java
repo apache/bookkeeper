@@ -125,7 +125,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_SYNC_DATA = "journalSyncData";
     protected static final String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
     protected static final String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
-    protected static final String JOURNAL_FORCE_WRITE_INTERVAL_MS = "journalForceWriteIntervalMs";
     protected static final String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
     protected static final String JOURNAL_BUFFERED_ENTRIES_THRESHOLD = "journalBufferedEntriesThreshold";
     protected static final String JOURNAL_FLUSH_WHEN_QUEUE_EMPTY = "journalFlushWhenQueueEmpty";
@@ -1950,29 +1949,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setJournalAdaptiveGroupWrites(boolean enabled) {
         setProperty(JOURNAL_ADAPTIVE_GROUP_WRITES, enabled);
-        return this;
-    }
-
-    /**
-     * The interval that journal force write happens, in milliseconds.
-     *
-     * <p>This setting only takes effect when {@link #getJournalSyncData()} returns false.
-     *
-     * @return the interval that journal force write happens, in milliseconds.
-     */
-    public int getJournalForceWriteIntervalMs() {
-        return getInt(JOURNAL_FORCE_WRITE_INTERVAL_MS, 10);
-    }
-
-    /**
-     * Set the journal force write interval, in milliseconds.
-     *
-     * @param journalForceWriteIntervalMs
-     *          journal force write interval in milliseconds.
-     * @return server configuration.
-     */
-    public ServerConfiguration setJournalForceWriteIntervalMs(int journalForceWriteIntervalMs) {
-        setProperty(JOURNAL_FORCE_WRITE_INTERVAL_MS, journalForceWriteIntervalMs);
         return this;
     }
 
