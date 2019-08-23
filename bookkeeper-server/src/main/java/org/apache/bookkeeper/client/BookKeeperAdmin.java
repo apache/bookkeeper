@@ -1168,11 +1168,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                 if (ledgerRootExists) {
                     if (!isInteractive) {
                         // If non interactive and force is set, then delete old data.
-                        if (force) {
-                            doFormat = true;
-                        } else {
-                            doFormat = false;
-                        }
+                        doFormat = force;
                     } else {
                         // Confirm with the admin.
                         doFormat = IOUtils

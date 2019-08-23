@@ -898,12 +898,8 @@ public class Bookie extends BookieCriticalThread {
      */
     private void replay(Journal journal, JournalScanner scanner) throws IOException {
         final LogMark markedLog = journal.getLastLogMark().getCurMark();
-        List<Long> logs = Journal.listJournalIds(journal.getJournalDirectory(), journalId -> {
-            if (journalId < markedLog.getLogFileId()) {
-                return false;
-            }
-            return true;
-        });
+        List<Long> logs = Journal.listJournalIds(journal.getJournalDirectory(), journalId ->
+            journalId >= markedLog.getLogFileId());
         // last log mark may be missed due to no sync up before
         // validate filtered log ids only when we have markedLogId
         if (markedLog.getLogFileId() > 0) {
@@ -1518,11 +1514,7 @@ public class Bookie extends BookieCriticalThread {
                     if (!isInteractive) {
                         // If non interactive and force is set, then delete old
                         // data.
-                        if (force) {
-                            confirm = true;
-                        } else {
-                            confirm = false;
-                        }
+                        confirm = force;
                     } else {
                         confirm = IOUtils
                                 .confirmPrompt("Are you sure to format Bookie data..?");

@@ -68,7 +68,7 @@ public class BookieDeferredSyncTest extends BookKeeperClusterTestCase {
                 .withLedgerId(ledgerId)
                 .withRecovery(true)
                 .withPassword(new byte[0])
-                .execute());) {
+                .execute())) {
 
             try (LedgerEntries entries = readLh.read(0, n - 1)) {
                 for (int i = 0; i < n; i++) {
@@ -121,7 +121,7 @@ public class BookieDeferredSyncTest extends BookKeeperClusterTestCase {
                     .withLedgerId(ledgerId)
                     .withRecovery(true)
                     .withPassword(new byte[0])
-                    .execute());) {
+                    .execute())) {
 
                 try (LedgerEntries entries = readLh.read(0, n - 1)) {
                     for (int i = 0; i < n; i++) {
@@ -143,7 +143,7 @@ public class BookieDeferredSyncTest extends BookKeeperClusterTestCase {
                     .withLedgerId(ledgerId)
                     .withRecovery(true)
                     .withPassword(new byte[0])
-                    .execute());) {
+                    .execute())) {
                 assertEquals(-1, readLh.getLastAddConfirmed());
 
                 // entry will be readable with readUnconfirmed
@@ -176,15 +176,13 @@ public class BookieDeferredSyncTest extends BookKeeperClusterTestCase {
                 .withWriteFlags(writeFlags)
                 .withDigestType(DigestType.CRC32C)
                 .withPassword(new byte[0])
-                .execute());) {
+                .execute())) {
             int n = 10;
             for (int i = 0; i < n; i++) {
                 lh.append(("entry-" + i).getBytes(UTF_8));
             }
             result(lh.force());
             assertEquals(n - 1, lh.getLastAddConfirmed());
-
-            lh.close();
         }
     }
 

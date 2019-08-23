@@ -100,7 +100,6 @@ public class TestAuth extends BookKeeperClusterTestCase {
                     PASSWD)) {
             ledgerWritten.set(l.getId());
             l.addEntry(ENTRY);
-            l.close();
         }
     }
 
