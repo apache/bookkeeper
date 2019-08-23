@@ -985,7 +985,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             groupWhenTimeout = true;
                         } else if (maxGroupWaitInNanos > 0 && groupWhenTimeout
                             && (qe == null // no entry to group
-                                || (qe != null && MathUtils.elapsedNanos(qe.enqueueTime) < maxGroupWaitInNanos))) {
+                                || MathUtils.elapsedNanos(qe.enqueueTime) < maxGroupWaitInNanos)) {
                             // when group timeout, it would be better to look forward, as there might be lots of
                             // entries already timeout
                             // due to a previous slow write (writing to filesystem which impacted by force write).
