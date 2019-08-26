@@ -713,6 +713,17 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Set the size of the write buffers used for the journal.
+     *
+     * @param bufferSizeKB the size of the write buffer used for the journal, in KB.
+     * @return server configuration
+     */
+    public ServerConfiguration setJournalWriteBufferSizeKB(int bufferSizeKB) {
+        setProperty(JOURNAL_WRITE_BUFFER_SIZE, bufferSizeKB);
+        return this;
+    }
+
+    /**
      * Max number of older journal files kept.
      *
      * @return max number of older journal files to kept
@@ -1969,6 +1980,17 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getJournalBufferedWritesThreshold() {
         return getLong(JOURNAL_BUFFERED_WRITES_THRESHOLD, 512 * 1024);
+    }
+
+    /**
+     * Set maximum bytes to buffer to impose on a journal write to achieve grouping.
+     *
+     * @param maxBytes maximum bytes to buffer to impose on a journal write
+     * @return max bytes to buffer
+     */
+    public ServerConfiguration setJournalBufferedWritesThreshold(long maxBytes) {
+        setProperty(JOURNAL_BUFFERED_WRITES_THRESHOLD, maxBytes);
+        return this;
     }
 
     /**
