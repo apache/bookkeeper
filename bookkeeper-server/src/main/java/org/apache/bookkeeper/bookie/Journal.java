@@ -852,7 +852,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     @VisibleForTesting
-    void logAddEntry(long ledgerId, long entryId, ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx)
+    public void logAddEntry(long ledgerId, long entryId, ByteBuf entry,
+                            boolean ackBeforeSync, WriteCallback cb, Object ctx)
             throws InterruptedException {
         //Retain entry until it gets written to journal
         entry.retain();
@@ -1049,25 +1050,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 .registerSuccessfulValue(batchSize);
 
                             boolean shouldRolloverJournal = (lastFlushPosition > maxJournalSize);
-                            if (syncData) {
-                                // Trigger data sync to disk in the "Force-Write" thread.
-                                // Callback will be triggered after data is committed to disk
-                                forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
-                                                                               toFlush, shouldRolloverJournal, false));
-                                toFlush = entryListRecycler.newInstance();
-                                numEntriesToFlush = 0;
-                            } else {
-                                // Data is already written on the file (though it might still be in the OS page-cache)
-                                lastLogMark.setCurLogMark(logId, lastFlushPosition);
-                                toFlush.clear();
-                                numEntriesToFlush = 0;
-                                if (shouldRolloverJournal) {
-                                    forceWriteRequests.put(
-                                            createForceWriteRequest(
-                                                    logFile, logId, lastFlushPosition,
-                                                    EMPTY_ARRAY_LIST, shouldRolloverJournal, false));
-                                }
-                            }
+                            // Trigger data sync to disk in the "Force-Write" thread.
+                            forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
+                                                                           toFlush, shouldRolloverJournal, false));
+                            toFlush = entryListRecycler.newInstance();
+                            numEntriesToFlush = 0;
 
                             batchSize = 0L;
                             // check whether journal file is over file limit
