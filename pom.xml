@@ -123,6 +123,7 @@
     <commons-lang.version>2.6</commons-lang.version>
     <commons-lang3.version>3.6</commons-lang3.version>
     <commons-io.version>2.4</commons-io.version>
+    <bouncycastle.version>1.60</bouncycastle.version>
     <curator.version>4.0.1</curator.version>
     <dropwizard.version>3.1.0</dropwizard.version>
     <etcd.version>0.0.2</etcd.version>
@@ -300,7 +301,17 @@
         <artifactId>commons-lang3</artifactId>
         <version>${commons-lang3.version}</version>
       </dependency>
-
+      <!-- bouncy -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk15on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-ext-jdk15on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
       <!-- reflection libs -->
       <dependency>
         <groupId>org.reflections</groupId>
