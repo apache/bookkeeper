@@ -788,7 +788,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @param certFilesRefreshSec
      *            tls certificate files refresh duration in seconds (set 0 to
-     *            check on every new connection)
+     *            disable auto refresh)
      * @return current configuration
      */
     public T setTLSCertFilesRefreshDurationSeconds(long certFilesRefreshSec) {
@@ -799,12 +799,12 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     /**
      * Get tls certificate files refresh duration in seconds.
      *
-     * @return tls certificate files refresh duration in seconds. Default 5
-     *         minutes. (set 0 to check on every new connection)
+     * @return tls certificate files refresh duration in seconds. Default 0
+     *         to disable auto refresh.
      *
      */
     public long getTLSCertFilesRefreshDurationSeconds() {
-        return getLong(TLS_CERT_FILES_REFRESH_DURATION_SECONDS, 300);
+        return getLong(TLS_CERT_FILES_REFRESH_DURATION_SECONDS, 0);
     }
 
     /**
