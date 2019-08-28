@@ -282,7 +282,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         updateServerContext();
     }
 
-    private SslContext getSSLContext() {
+    private synchronized SslContext getSSLContext() {
         long now = System.currentTimeMillis();
         if (isServerCtx && (certRefreshTime > 0 && now > (certLastRefreshTime + certRefreshTime))) {
             if (tTLSCertificatePath.checkAndRefresh() || tLSKeyStoreFilePath.checkAndRefresh()
