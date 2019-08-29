@@ -40,6 +40,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
@@ -79,8 +80,14 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     private static final String TLSCONTEXT_HANDLER_NAME = "tls";
     private String[] protocols;
     private String[] ciphers;
-    private SslContext sslContext;
+    private volatile SslContext sslContext;
     private ByteBufAllocator allocator;
+    private AbstractConfiguration config;
+    private FileModifiedTimeUpdater tTLSCertificatePath, tLSKeyStoreFilePath, tLSKeyStorePasswordFilePath,
+            tLSTrustStoreFilePath, tLSTrustStorePasswordFilePath;
+    private long certRefreshTime;
+    private volatile long certLastRefreshTime;
+    private boolean isServerCtx;
 
     private String getPasswordFromFile(String path) throws IOException {
         byte[] pwd;
@@ -173,7 +180,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         return SslProvider.JDK;
     }
 
-    private void createClientContext(AbstractConfiguration conf)
+    private void createClientContext()
             throws SecurityException, KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
             UnrecoverableKeyException, InvalidKeySpecException, NoSuchProviderException {
         final SslContextBuilder sslContextBuilder;
@@ -182,11 +189,11 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         final boolean clientAuthentication;
 
         // get key-file and trust-file locations and passwords
-        if (!(conf instanceof ClientConfiguration)) {
+        if (!(config instanceof ClientConfiguration)) {
             throw new SecurityException("Client configruation not provided");
         }
 
-        clientConf = (ClientConfiguration) conf;
+        clientConf = (ClientConfiguration) config;
         provider = getTLSProvider(clientConf.getTLSProvider());
         clientAuthentication = clientConf.getTLSClientAuthentication();
 
@@ -262,7 +269,36 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         sslContext = sslContextBuilder.build();
     }
 
-    private void createServerContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException,
+    private void createServerContext()
+            throws SecurityException, KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
+            UnrecoverableKeyException, InvalidKeySpecException, IllegalArgumentException {
+        isServerCtx = true;
+        ServerConfiguration serverConf = (ServerConfiguration) config;
+        tTLSCertificatePath = new FileModifiedTimeUpdater(serverConf.getTLSCertificatePath());
+        tLSKeyStoreFilePath = new FileModifiedTimeUpdater(serverConf.getTLSKeyStore());
+        tLSKeyStorePasswordFilePath = new FileModifiedTimeUpdater(serverConf.getTLSKeyStorePasswordPath());
+        tLSTrustStoreFilePath = new FileModifiedTimeUpdater(serverConf.getTLSTrustStore());
+        tLSTrustStorePasswordFilePath = new FileModifiedTimeUpdater(serverConf.getTLSTrustStorePasswordPath());
+        updateServerContext();
+    }
+
+    private synchronized SslContext getSSLContext() {
+        long now = System.currentTimeMillis();
+        if (isServerCtx && (certRefreshTime > 0 && now > (certLastRefreshTime + certRefreshTime))) {
+            if (tTLSCertificatePath.checkAndRefresh() || tLSKeyStoreFilePath.checkAndRefresh()
+                    || tLSKeyStorePasswordFilePath.checkAndRefresh() || tLSTrustStoreFilePath.checkAndRefresh()
+                    || tLSTrustStorePasswordFilePath.checkAndRefresh()) {
+                try {
+                    updateServerContext();
+                } catch (Exception e) {
+                    LOG.info("Failed to refresh tls certs", e);
+                }
+            }
+        }
+        return sslContext;
+    }
+
+    private synchronized void updateServerContext() throws SecurityException, KeyStoreException,
             NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException,
             InvalidKeySpecException, IllegalArgumentException {
         final SslContextBuilder sslContextBuilder;
@@ -271,11 +307,11 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         final boolean clientAuthentication;
 
         // get key-file and trust-file locations and passwords
-        if (!(conf instanceof ServerConfiguration)) {
+        if (!(config instanceof ServerConfiguration)) {
             throw new SecurityException("Server configruation not provided");
         }
 
-        serverConf = (ServerConfiguration) conf;
+        serverConf = (ServerConfiguration) config;
         provider = getTLSProvider(serverConf.getTLSProvider());
         clientAuthentication = serverConf.getTLSClientAuthentication();
 
@@ -349,14 +385,17 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         }
 
         sslContext = sslContextBuilder.build();
+        certLastRefreshTime = System.currentTimeMillis();
     }
 
     @Override
     public synchronized void init(NodeType type, AbstractConfiguration conf, ByteBufAllocator allocator)
             throws SecurityException {
         this.allocator = allocator;
+        this.config = conf;
         final String enabledProtocols;
         final String enabledCiphers;
+        certRefreshTime = TimeUnit.SECONDS.toMillis(conf.getTLSCertFilesRefreshDurationSeconds());
 
         enabledCiphers = conf.getTLSEnabledCipherSuites();
         enabledProtocols = conf.getTLSEnabledProtocols();
@@ -364,10 +403,10 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         try {
             switch (type) {
             case Client:
-                createClientContext(conf);
+                createClientContext();
                 break;
             case Server:
-                createServerContext(conf);
+                createServerContext();
                 break;
             default:
                 throw new SecurityException(new IllegalArgumentException("Invalid NodeType"));
@@ -401,7 +440,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
     @Override
     public SslHandler newTLSHandler() {
-        SslHandler sslHandler = sslContext.newHandler(allocator);
+        SslHandler sslHandler = getSSLContext().newHandler(allocator);
 
         if (protocols != null && protocols.length != 0) {
             sslHandler.engine().setEnabledProtocols(protocols);

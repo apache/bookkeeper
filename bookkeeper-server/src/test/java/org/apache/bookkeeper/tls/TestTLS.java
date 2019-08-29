@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
@@ -59,7 +60,10 @@ import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.tls.TLSContextFactory.KeyStoreType;
+import org.apache.bookkeeper.util.IOUtils;
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
@@ -338,6 +342,48 @@ public class TestTLS extends BookKeeperClusterTestCase {
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         testClient(clientConf, numBookies);
+    }
+
+    /**
+     * Verify Bookie refreshes certs at configured duration.
+     */
+    @Test
+    public void testRefreshDurationForBookieCerts() throws Exception {
+        Assume.assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
+        ServerConfiguration serverConf = new ServerConfiguration();
+        String originalTlsKeyFilePath = bsConfs.get(0).getTLSKeyStore();
+        String invalidServerKey = getResourcePath("client-key.pem");
+        File originalTlsCertFile = new File(originalTlsKeyFilePath);
+        File newTlsKeyFile = IOUtils.createTempFileAndDeleteOnExit(originalTlsKeyFilePath, "refresh");
+        // clean up temp file even if test fails
+        newTlsKeyFile.deleteOnExit();
+        File invalidServerKeyFile = new File(invalidServerKey);
+        // copy invalid cert to new temp file
+        FileUtils.copyFile(invalidServerKeyFile, newTlsKeyFile);
+        long refreshDurationInSec = 1;
+        for (ServerConfiguration conf : bsConfs) {
+            conf.setTLSCertFilesRefreshDurationSeconds(1);
+            conf.setTLSKeyStore(newTlsKeyFile.getAbsolutePath());
+        }
+        restartBookies(serverConf);
+
+        ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
+        try {
+            testClient(clientConf, numBookies);
+            Assert.fail("Should have fail due to invalid cert");
+        } catch (Exception e) {
+            // Ok.
+        }
+
+        // Sleep so, cert file can be refreshed
+        Thread.sleep(refreshDurationInSec * 1000 + 1000);
+
+        // copy valid key-file at given new location
+        FileUtils.copyFile(originalTlsCertFile, newTlsKeyFile);
+        newTlsKeyFile.setLastModified(System.currentTimeMillis() + 1000);
+        // client should be successfully able to add entries over tls
+        testClient(clientConf, numBookies);
+        newTlsKeyFile.delete();
     }
 
     /**
