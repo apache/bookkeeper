@@ -117,6 +117,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final Class<? extends LedgerIdFormatter> DEFAULT_LEDGERID_FORMATTER =
             LedgerIdFormatter.LongLedgerIdFormatter.class;
 
+    protected static final String TLS_CERT_FILES_REFRESH_DURATION_SECONDS = "tlsCertFilesRefreshDurationSeconds";
     /**
      * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
      * Please refer to official JDK JavaDocs
@@ -780,6 +781,30 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     public T setTLSClientAuthentication(boolean enabled) {
         setProperty(TLS_CLIENT_AUTHENTICATION, enabled);
         return getThis();
+    }
+
+    /**
+     * Set tls certificate files refresh duration in seconds.
+     *
+     * @param certFilesRefreshSec
+     *            tls certificate files refresh duration in seconds (set 0 to
+     *            disable auto refresh)
+     * @return current configuration
+     */
+    public T setTLSCertFilesRefreshDurationSeconds(long certFilesRefreshSec) {
+        setProperty(TLS_CERT_FILES_REFRESH_DURATION_SECONDS, certFilesRefreshSec);
+        return getThis();
+    }
+
+    /**
+     * Get tls certificate files refresh duration in seconds.
+     *
+     * @return tls certificate files refresh duration in seconds. Default 0
+     *         to disable auto refresh.
+     *
+     */
+    public long getTLSCertFilesRefreshDurationSeconds() {
+        return getLong(TLS_CERT_FILES_REFRESH_DURATION_SECONDS, 0);
     }
 
     /**
