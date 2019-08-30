@@ -116,6 +116,10 @@
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+    </dependency>
     <!-- testing dependencies -->
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
