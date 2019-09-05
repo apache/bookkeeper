@@ -135,6 +135,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
     protected static final String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
     protected static final String JOURNAL_QUEUE_SIZE = "journalQueueSize";
+    protected static final String JOURNAL_SKIP_ENTRY_ENABLE = "journalSkipEntryEnable";
     // backpressure control
     protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
     protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
@@ -784,6 +785,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setJournalFormatVersionToWrite(int version) {
         this.setProperty(JOURNAL_FORMAT_VERSION_TO_WRITE, version);
+        return this;
+    }
+
+    /**
+     * Is bookie enable to skip adding entry to journal and acknowledge
+     * immediately once written to ledger cache.
+     *
+     * @return journal format version to write.
+     */
+    public boolean getJournalSkipEntryEnable() {
+        return this.getBoolean(JOURNAL_SKIP_ENTRY_ENABLE, false);
+    }
+
+    /**
+     * Enable skip add-entry to journal and acknowledge immediately once written
+     * to ledger cache.
+     *
+     * @param journalSkipEntryEnable
+     *            flag to skip adding entry to journal
+     * @return server configuration.
+     */
+    public ServerConfiguration setJournalSkipEntryEnable(boolean journalSkipEntryEnable) {
+        this.setProperty(JOURNAL_SKIP_ENTRY_ENABLE, journalSkipEntryEnable);
         return this;
     }
 

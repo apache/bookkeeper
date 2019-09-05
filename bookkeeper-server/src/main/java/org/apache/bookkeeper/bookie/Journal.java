@@ -592,6 +592,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     final int maxBackupJournals;
 
     final File journalDirectory;
+    final boolean journalSkipEntryEnable;
     final ServerConfiguration conf;
     final ForceWriteThread forceWriteThread;
     // Time after which we will stop grouping and issue the flush
@@ -655,6 +656,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
         this.journalDirectory = journalDirectory;
+        this.journalSkipEntryEnable = conf.getJournalSkipEntryEnable();
         this.maxJournalSize = conf.getMaxJournalSizeMB() * MB;
         this.journalPreAllocSize = conf.getJournalPreAllocSizeMB() * MB;
         this.journalWriteBufferSize = conf.getJournalWriteBufferSizeKB() * KB;
@@ -855,14 +857,18 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     public void logAddEntry(long ledgerId, long entryId, ByteBuf entry,
                             boolean ackBeforeSync, WriteCallback cb, Object ctx)
             throws InterruptedException {
+        QueueEntry queueEntry = QueueEntry.create(entry, ackBeforeSync, ledgerId, entryId, cb, ctx,
+                MathUtils.nowInNano(), journalStats.getJournalAddEntryStats(), journalStats.getJournalQueueSize());
+        // skip adding entry to journal if skip-journal is enabled
+        if (this.journalSkipEntryEnable) {
+            cbThreadPool.execute(queueEntry);
+            return;
+        }
         //Retain entry until it gets written to journal
         entry.retain();
 
         journalStats.getJournalQueueSize().inc();
-        queue.put(QueueEntry.create(
-                entry, ackBeforeSync,  ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
-                journalStats.getJournalAddEntryStats(),
-                journalStats.getJournalQueueSize()));
+        queue.put(queueEntry);
     }
 
     void forceLedger(long ledgerId, WriteCallback cb, Object ctx) {

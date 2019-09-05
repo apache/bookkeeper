@@ -25,10 +25,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.Journal;
+import org.apache.bookkeeper.bookie.stats.JournalStats;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -36,6 +41,9 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -278,6 +286,115 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
 
         // restart bookies again to trigger replaying journal
         restartBookies(newConf);
+    }
+
+    /**
+     * Skip writing entry to journal and restart bookie with the change.
+     * This test verifies 1. bookie restart with disable/enable change is
+     * gracefully handled by bookie and bookie comes up gracefully. 2. bookie
+     * doesn't add entry into journal when journalSkipEntryEnable config is
+     * enabled.
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSkipJournal() throws Exception {
+        // set flush interval to a large value
+        ServerConfiguration newConf = TestBKConfiguration.newServerConfiguration();
+        newConf.setFlushInterval(999999999);
+        newConf.setAllowEphemeralPorts(false);
+        Field journalsField = Bookie.class.getDeclaredField("journals");
+        journalsField.setAccessible(true);
+        Field journalStatsField = Journal.class.getDeclaredField("journalStats");
+        journalStatsField.setAccessible(true);
+        final int totalAddEntry = 10;
+
+        // restart bookies
+        restartBookies(newConf);
+        // Write enough ledger entries so that we roll over journals
+        JournalStatsTest stats = new JournalStatsTest(new NullStatsLogger());
+        Bookie bookie = bs.get(0).getBookie();
+        Journal journal = ((List<Journal>) journalsField.get(bookie)).get(0);
+        journalStatsField.set(journal, stats);
+        writeLedgerEntries(1, 1024, totalAddEntry);
+        assertTrue(stats.totalAddEntry() > 0);
+
+        newConf.setJournalSkipEntryEnable(true);
+        // restart bookie with skip-journal option enabled.
+        restartBookies(newConf);
+        JournalStatsTest statsWithSkipJournalEnabled = new JournalStatsTest(new NullStatsLogger());
+        bookie = bs.get(0).getBookie();
+        journal = ((List<Journal>) journalsField.get(bookie)).get(0);
+        journalStatsField.set(journal, statsWithSkipJournalEnabled);
+        writeLedgerEntries(1, 1024, totalAddEntry);
+        assertEquals(statsWithSkipJournalEnabled.totalAddEntry(), 0);
+
+        newConf.setJournalSkipEntryEnable(false);
+        // restart bookie with skip-journal option disabled.
+        restartBookies(newConf);
+        JournalStatsTest statsWithSkipJournalDisabled = new JournalStatsTest(new NullStatsLogger());
+        bookie = bs.get(0).getBookie();
+        journal = ((List<Journal>) journalsField.get(bookie)).get(0);
+        journalStatsField.set(journal, statsWithSkipJournalDisabled);
+        writeLedgerEntries(1, 1024, totalAddEntry);
+        assertTrue(statsWithSkipJournalDisabled.totalAddEntry() > 0);
+    }
+
+    /**
+     * Test JournalStats class to capture add-entry counts for journal.
+     */
+    public static class JournalStatsTest extends JournalStats {
+        private TestCounter queueSizeCounter = new TestCounter();
+        public JournalStatsTest(StatsLogger statsLogger) {
+            super(statsLogger);
+        }
+        @Override
+        public Counter getJournalQueueSize() {
+            return queueSizeCounter;
+        }
+
+        public long totalAddEntry() {
+            return queueSizeCounter.totalAddCount;
+        }
+
+        /**
+         * Test count to capture add count.
+         */
+        public static class TestCounter implements Counter {
+            public volatile long totalAddCount = 0;
+            long count = 0;
+
+            @Override
+            public void clear() {
+                count = 0;
+            }
+
+            @Override
+            public void inc() {
+                System.out.println("incrementing");
+                count++;
+                totalAddCount++;
+            }
+
+            @Override
+            public void dec() {
+                count--;
+
+            }
+
+            @Override
+            public void add(long delta) {
+                count += delta;
+                totalAddCount += delta;
+
+            }
+
+            @Override
+            public Long get() {
+                return count;
+            }
+
+        }
     }
 
 }
