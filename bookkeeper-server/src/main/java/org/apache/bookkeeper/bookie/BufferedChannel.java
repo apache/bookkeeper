@@ -83,7 +83,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
         this.writeCapacity = writeCapacity;
         this.position = new AtomicLong(fc.position());
         this.writeBufferStartPosition.set(position.get());
-        this.writeBuffer = allocator.directBuffer(writeCapacity);
+        this.writeBuffer = allocator.buffer(writeCapacity);
         this.unpersistedBytes = new AtomicLong(0);
         this.unpersistedBytesBound = unpersistedBytesBound;
         this.doRegularFlushes = unpersistedBytesBound > 0;

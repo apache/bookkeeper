@@ -861,7 +861,7 @@ public class EntryLogger {
         BufferedReadChannel bc = getChannelForLogId(entryLogId);
 
         // Allocate buffer to read (version, ledgersMapOffset, ledgerCount)
-        ByteBuf headers = allocator.directBuffer(LOGFILE_HEADER_SIZE);
+        ByteBuf headers = allocator.buffer(LOGFILE_HEADER_SIZE);
         try {
             bc.read(headers, 0);
 
@@ -977,7 +977,7 @@ public class EntryLogger {
         long pos = LOGFILE_HEADER_SIZE;
 
         // Start with a reasonably sized buffer size
-        ByteBuf data = allocator.directBuffer(1024 * 1024);
+        ByteBuf data = allocator.buffer(1024 * 1024);
 
         try {
 
@@ -1059,7 +1059,7 @@ public class EntryLogger {
         EntryLogMetadata meta = new EntryLogMetadata(entryLogId);
 
         final int maxMapSize = LEDGERS_MAP_HEADER_SIZE + LEDGERS_MAP_ENTRY_SIZE * LEDGERS_MAP_MAX_BATCH_SIZE;
-        ByteBuf ledgersMap = allocator.directBuffer(maxMapSize);
+        ByteBuf ledgersMap = allocator.buffer(maxMapSize);
 
         try {
             while (offset < bc.size()) {

@@ -306,7 +306,7 @@ public class ByteBufList extends AbstractReferenceCounted {
                     if (prependSize) {
                         // Prepend the frame size before writing the buffer list, so that we only have 1 single size
                         // header
-                        ByteBuf sizeBuffer = ctx.alloc().directBuffer(4, 4);
+                        ByteBuf sizeBuffer = ctx.alloc().buffer(4, 4);
                         sizeBuffer.writeInt(b.readableBytes());
                         ctx.write(sizeBuffer, ctx.voidPromise());
                     }

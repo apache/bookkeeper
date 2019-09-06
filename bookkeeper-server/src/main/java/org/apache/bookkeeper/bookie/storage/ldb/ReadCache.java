@@ -73,7 +73,7 @@ public class ReadCache implements Closeable {
         cacheIndexes = new ArrayList<>();
 
         for (int i = 0; i < segmentsCount; i++) {
-            cacheSegments.add(Unpooled.directBuffer(segmentSize, segmentSize));
+            cacheSegments.add(Unpooled.buffer(segmentSize, segmentSize));
             cacheIndexes.add(new ConcurrentLongLongPairHashMap(4096, 2 * Runtime.getRuntime().availableProcessors()));
         }
     }
@@ -142,7 +142,7 @@ public class ReadCache implements Closeable {
                     int entryOffset = (int) res.first;
                     int entryLen = (int) res.second;
 
-                    ByteBuf entry = allocator.directBuffer(entryLen, entryLen);
+                    ByteBuf entry = allocator.buffer(entryLen, entryLen);
                     entry.writeBytes(cacheSegments.get(segmentIdx), entryOffset, entryLen);
                     return entry;
                 }

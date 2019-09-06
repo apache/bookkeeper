@@ -105,11 +105,11 @@ public class WriteCache implements Closeable {
 
         for (int i = 0; i < segmentsCount - 1; i++) {
             // All intermediate segments will be full-size
-            cacheSegments[i] = Unpooled.directBuffer(maxSegmentSize, maxSegmentSize);
+            cacheSegments[i] = allocator.buffer(maxSegmentSize, maxSegmentSize);
         }
 
         int lastSegmentSize = (int) (maxCacheSize % maxSegmentSize);
-        cacheSegments[segmentsCount - 1] = Unpooled.directBuffer(lastSegmentSize, lastSegmentSize);
+        cacheSegments[segmentsCount - 1] = allocator.buffer(lastSegmentSize, lastSegmentSize);
     }
 
     public void clear() {
