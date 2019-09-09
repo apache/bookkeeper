@@ -24,7 +24,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
 
 import java.io.Closeable;
 import java.util.concurrent.atomic.AtomicLong;
