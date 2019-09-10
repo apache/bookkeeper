@@ -241,7 +241,8 @@ Apache Software License, Version 2.
 - lib/net.java.dev.jna-jna-3.2.7.jar [17]
 - lib/org.apache.commons-commons-collections4-4.1.jar [18]
 - lib/org.apache.commons-commons-lang3-3.6.jar [19]
-- lib/org.apache.zookeeper-zookeeper-3.4.13.jar [20]
+- lib/org.apache.zookeeper-zookeeper-3.5.5.jar [20]
+- lib/org.apache.zookeeper-zookeeper-jute-3.5.5.jar [20]
 - lib/org.eclipse.jetty-jetty-http-9.4.5.v20170502.jar [21]
 - lib/org.eclipse.jetty-jetty-io-9.4.5.v20170502.jar [21]
 - lib/org.eclipse.jetty-jetty-security-9.4.5.v20170502.jar [21]
@@ -299,7 +300,7 @@ Apache Software License, Version 2.
 [17] Source available at https://github.com/java-native-access/jna/tree/3.2.7
 [18] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
 [19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
-[20] Source available at https://github.com/apache/zookeeper/tree/release-3.4.13
+[20] Source available at https://github.com/apache/zookeeper/tree/release-3.5.5
 [21] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
 [22] Source available at https://github.com/facebook/rocksdb/tree/v5.13.1
 [23] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
@@ -443,12 +444,6 @@ license. For details, see deps/google-auth-library-credentials-0.9.0/LICENSE
 Bundled as
   - lib/com.google.auth-google-auth-library-credentials-0.9.0.jar
 Source available at https://github.com/google/google-auth-library-java/tree/0.9.0
-------------------------------------------------------------------------------------
-This product bundles the JLine Library, which is available under a "2-clause BSD"
-license. For details, see deps/jline-2.11/LICENSE
-
-Bundled as
-  - lib/jline-jline-2.11.jar
 ------------------------------------------------------------------------------------
 This product uses the annotations from The Checker Framework, which are licensed under
 MIT License. For details, see deps/checker-compat-qual-2.5.2/LICENSE
