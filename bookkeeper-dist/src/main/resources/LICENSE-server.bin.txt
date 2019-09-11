@@ -445,6 +445,12 @@ Bundled as
   - lib/com.google.auth-google-auth-library-credentials-0.9.0.jar
 Source available at https://github.com/google/google-auth-library-java/tree/0.9.0
 ------------------------------------------------------------------------------------
+This product bundles the JLine Library, which is available under a "2-clause BSD"
+license. For details, see deps/jline-2.11/LICENSE
+	
+Bundled as
+    - lib/jline-jline-2.11.jar
+------------------------------------------------------------------------------------
 This product uses the annotations from The Checker Framework, which are licensed under
 MIT License. For details, see deps/checker-compat-qual-2.5.2/LICENSE
 
