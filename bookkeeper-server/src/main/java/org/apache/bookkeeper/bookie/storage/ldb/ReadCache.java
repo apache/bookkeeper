@@ -24,7 +24,6 @@ import static org.apache.bookkeeper.bookie.storage.ldb.WriteCache.align64;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
 
 import java.io.Closeable;
 import java.util.ArrayList;
