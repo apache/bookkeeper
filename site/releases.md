@@ -64,7 +64,11 @@ Client Guide | API docs
 
 ## News
 
-### [date] Release {{ site.latest_version }} available
+### [date] Release 4.10.0 available
+
+[INSERT SUMMARY]
+
+### [date] Release 4.10.0 available
 
 This is the 19th release of Apache BookKeeper !
 
