@@ -95,11 +95,11 @@ public class LedgerFragment {
         return ledgerId;
     }
 
-    long getFirstEntryId() {
+    public long getFirstEntryId() {
         return firstEntryId;
     }
 
-    long getLastKnownEntryId() {
+    public long getLastKnownEntryId() {
         return lastKnownEntryId;
     }
 
