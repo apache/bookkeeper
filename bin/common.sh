@@ -123,13 +123,13 @@ BOOKIE_GC_LOGGING_OPTS=${BOOKIE_GC_LOGGING_OPTS:-"${DEFAULT_BOOKIE_GC_LOGGING_OP
 DEFAULT_CLI_GC_OPTS="-XX:+UseG1GC \
     -XX:MaxGCPauseMillis=10"
 if [ "$USING_JDK8" -ne "1" ]; then
+  DEFAULT_CLI_GC_LOGGING_OPTS=""
+else
   DEFAULT_CLI_GC_LOGGING_OPTS="-XX:+PrintGCDetails \
     -XX:+PrintGCApplicationStoppedTime  \
     -XX:+UseGCLogFileRotation \
     -XX:NumberOfGCLogFiles=5 \
     -XX:GCLogFileSize=64m"
-else
-  DEFAULT_CLI_GC_LOGGING_OPTS=""
 fi
 
 CLI_MAX_HEAP_MEMORY=${CLI_MAX_HEAP_MEMORY:-"512M"}

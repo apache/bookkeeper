@@ -28,7 +28,7 @@
   <name>Apache BookKeeper :: Tests</name>
 
   <properties>
-    <groovy.version>2.4.13</groovy.version>
+    <groovy.version>2.5.8</groovy.version>
   </properties>
 
   <modules>
