@@ -200,8 +200,12 @@ testBuildBookieJVMOpts() {
   TEST_LOG_DIR=${BK_TMPDIR}/logdir
   TEST_GC_LOG_FILENAME="test-gc.log"
   ACTUAL_JVM_OPTS=$(build_bookie_jvm_opts ${TEST_LOG_DIR} ${TEST_GC_LOG_FILENAME})
-  EXPECTED_JVM_OPTS="-Xms1g -Xmx1g -XX:MaxDirectMemorySize=2g ${DEFAULT_BOOKIE_GC_OPTS} ${DEFAULT_BOOKIE_GC_LOGGING_OPTS}  -Xloggc:${TEST_LOG_DIR}/${TEST_GC_LOG_FILENAME}"
-
+  USEJDK8=$(detect_jdk8)
+  if [ "$USING_JDK8" -ne "1" ]; then
+    EXPECTED_JVM_OPTS="-Xms1g -Xmx1g -XX:MaxDirectMemorySize=2g ${DEFAULT_BOOKIE_GC_OPTS} ${DEFAULT_BOOKIE_GC_LOGGING_OPTS}  -Xlog:gc=info:file=${TEST_LOG_DIR}/${TEST_GC_LOG_FILENAME}::filecount=5,filesize=64m"
+  else
+    EXPECTED_JVM_OPTS="-Xms1g -Xmx1g -XX:MaxDirectMemorySize=2g ${DEFAULT_BOOKIE_GC_OPTS} ${DEFAULT_BOOKIE_GC_LOGGING_OPTS}  -Xloggc:${TEST_LOG_DIR}/${TEST_GC_LOG_FILENAME}"
+  fi
   assertEquals "JVM OPTS is not set correctly" "${EXPECTED_JVM_OPTS}" "${ACTUAL_JVM_OPTS}"
 }
 
@@ -211,8 +215,12 @@ testBuildCLIJVMOpts() {
   TEST_LOG_DIR=${BK_TMPDIR}/logdir
   TEST_GC_LOG_FILENAME="test-gc.log"
   ACTUAL_JVM_OPTS=$(build_cli_jvm_opts ${TEST_LOG_DIR} ${TEST_GC_LOG_FILENAME})
-  EXPECTED_JVM_OPTS="-Xms256M -Xmx512M ${DEFAULT_CLI_GC_OPTS} ${DEFAULT_CLI_GC_LOGGING_OPTS} -Xloggc:${TEST_LOG_DIR}/${TEST_GC_LOG_FILENAME}"
-
+  USEJDK8=$(detect_jdk8)
+  if [ "$USING_JDK8" -ne "1" ]; then
+    EXPECTED_JVM_OPTS="-Xms256M -Xmx512M ${DEFAULT_CLI_GC_OPTS} ${DEFAULT_CLI_GC_LOGGING_OPTS} -Xlog:gc=info:file=${TEST_LOG_DIR}/${TEST_GC_LOG_FILENAME}::filecount=5,filesize=64m"
+  else
+    EXPECTED_JVM_OPTS="-Xms256M -Xmx512M ${DEFAULT_CLI_GC_OPTS} ${DEFAULT_CLI_GC_LOGGING_OPTS} -Xloggc:${TEST_LOG_DIR}/${TEST_GC_LOG_FILENAME}"
+  fi
   assertEquals "JVM OPTS is not set correctly" "${EXPECTED_JVM_OPTS}" "${ACTUAL_JVM_OPTS}"
 }
 
