@@ -85,7 +85,8 @@ import org.slf4j.LoggerFactory;
 public class ReplicationWorker implements Runnable {
     private static final Logger LOG = LoggerFactory
             .getLogger(ReplicationWorker.class);
-    private static final int REPLICATED_FAILED_LEDGERS_MAXSIZE = 100;
+    private static final int REPLICATED_FAILED_LEDGERS_MAXSIZE = 2000;
+    public static final int NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS = 5;
 
     private final LedgerUnderreplicationManager underreplicationManager;
     private final ServerConfiguration conf;
@@ -99,6 +100,7 @@ public class ReplicationWorker implements Runnable {
     private final long openLedgerRereplicationGracePeriod;
     private final Timer pendingReplicationTimer;
     private final long lockReleaseOfFailedLedgerGracePeriod;
+    private final long baseBackoffForLockReleaseOfFailedLedger;
     private final BiConsumer<Long, Long> onReadEntryFailureCallback;
 
     // Expose Stats
@@ -185,6 +187,8 @@ public class ReplicationWorker implements Runnable {
         this.openLedgerRereplicationGracePeriod = conf
                 .getOpenLedgerRereplicationGracePeriod();
         this.lockReleaseOfFailedLedgerGracePeriod = conf.getLockReleaseOfFailedLedgerGracePeriod();
+        this.baseBackoffForLockReleaseOfFailedLedger = this.lockReleaseOfFailedLedgerGracePeriod
+                / (long) (Math.pow(2, NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS));
         this.rwRereplicateBackoffMs = conf.getRwRereplicateBackoffMs();
         this.pendingReplicationTimer = new Timer("PendingReplicationTimer");
         this.replicationFailedLedgers = CacheBuilder.newBuilder().maximumSize(REPLICATED_FAILED_LEDGERS_MAXSIZE)
@@ -295,8 +299,9 @@ public class ReplicationWorker implements Runnable {
     }
 
     private boolean tryReadingFaultyEntries(LedgerHandle lh, LedgerFragment ledgerFragment) {
+        long ledgerId = lh.getId();
         ConcurrentSkipListSet<Long> entriesUnableToReadForThisLedger = unableToReadEntriesForReplication
-                .getIfPresent(lh.getId());
+                .getIfPresent(ledgerId);
         if (entriesUnableToReadForThisLedger == null) {
             return true;
         }
@@ -307,24 +312,35 @@ public class ReplicationWorker implements Runnable {
         if (entriesOfThisFragmentUnableToRead.isEmpty()) {
             return true;
         }
-        final CountDownLatch numEntriesToRead = new CountDownLatch(entriesOfThisFragmentUnableToRead.size());
+        final CountDownLatch multiReadComplete = new CountDownLatch(1);
+        final AtomicInteger numOfResponsesToWaitFor = new AtomicInteger(entriesOfThisFragmentUnableToRead.size());
         final AtomicInteger returnRCValue = new AtomicInteger(BKException.Code.OK);
         for (long entryIdToRead : entriesOfThisFragmentUnableToRead) {
             lh.asyncReadEntries(entryIdToRead, entryIdToRead, (rc, ledHan, seq, ctx) -> {
                 long thisEntryId = (Long) ctx;
                 if (rc == BKException.Code.OK) {
                     entriesUnableToReadForThisLedger.remove(thisEntryId);
+                    if (numOfResponsesToWaitFor.decrementAndGet() == 0) {
+                        multiReadComplete.countDown();
+                    }
                 } else {
-                    LOG.error("Received error: {} while trying to read entry in ReplicationWorker", rc);
+                    LOG.error("Received error: {} while trying to read entry: {} of ledger: {} in ReplicationWorker",
+                            rc, entryIdToRead, ledgerId);
                     returnRCValue.compareAndSet(BKException.Code.OK, rc);
+                    /*
+                     * on receiving a failure error response, multiRead can be
+                     * marked completed, since there is not need to wait for
+                     * other responses.
+                     */
+                    multiReadComplete.countDown();
                 }
-                numEntriesToRead.countDown();
             }, entryIdToRead);
         }
         try {
-            numEntriesToRead.await();
+            multiReadComplete.await();
         } catch (InterruptedException e) {
             LOG.error("Got interrupted exception while trying to read entries", e);
+            Thread.currentThread().interrupt();  // set interrupt flag
             return false;
         }
         return (returnRCValue.get() == BKException.Code.OK);
@@ -557,9 +573,15 @@ public class ReplicationWorker implements Runnable {
      * Schedules a timer task for releasing the lock.
      */
     private void deferLedgerLockReleaseOfFailedLedger(final long ledgerId) {
-        int numOfTimesFailedSoFar = replicationFailedLedgers.getUnchecked(ledgerId).incrementAndGet();
-        long delayOfLedgerLockReleaseInMSecs = Math.min(this.lockReleaseOfFailedLedgerGracePeriod,
-                Math.max(1, (this.lockReleaseOfFailedLedgerGracePeriod / 16) * (1 << (numOfTimesFailedSoFar - 1))));
+        int numOfTimesFailedSoFar = replicationFailedLedgers.getUnchecked(ledgerId).getAndIncrement();
+        /*
+         * for the first NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS retrials do
+         * exponential backoff, starting from
+         * baseBackoffForLockReleaseOfFailedLedger
+         */
+        long delayOfLedgerLockReleaseInMSecs = (numOfTimesFailedSoFar >= NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS)
+                ? this.lockReleaseOfFailedLedgerGracePeriod
+                : this.baseBackoffForLockReleaseOfFailedLedger * (int) Math.pow(2, numOfTimesFailedSoFar);
         LOG.error(
                 "ReplicationWorker failed to replicate Ledger : {} for {} number of times, "
                 + "so deferring the ledger lock release by {} msecs",

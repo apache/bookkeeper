@@ -178,7 +178,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
             } else {
                 unclosedCount++;
                 try {
-                    admin.replicateLedgerFragment(lh, lf, null);
+                    admin.replicateLedgerFragment(lh, lf, BookKeeperAdmin.NOOP_BICONSUMER);
                     fail("Shouldn't be able to rereplicate unclosed ledger");
                 } catch (BKException bke) {
                     // correct behaviour

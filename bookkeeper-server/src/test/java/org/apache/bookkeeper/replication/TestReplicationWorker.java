@@ -636,6 +636,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         // create couple of replicationworkers
         long lockReleaseOfFailedLedgerGracePeriod = 64L;
+        long baseBackoffForLockReleaseOfFailedLedger = lockReleaseOfFailedLedgerGracePeriod
+                / (int) Math.pow(2, ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS);
         ServerConfiguration newRWConf = new ServerConfiguration(baseConf);
         newRWConf.setLockReleaseOfFailedLedgerGracePeriod(Long.toString(lockReleaseOfFailedLedgerGracePeriod));
         newRWConf.setRereplicationEntryBatchSize(1000);
@@ -693,7 +695,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
              */
             for (int i = 0; i < ((numOfAttemptsToWaitFor - 1)); i++) {
                 long expectedDelayValue = Math.min(lockReleaseOfFailedLedgerGracePeriod,
-                        lockReleaseOfFailedLedgerGracePeriod * (1 << i) / 16);
+                        baseBackoffForLockReleaseOfFailedLedger * (1 << i));
                 assertEquals("RW1 delayperiod", (Long) expectedDelayValue, rw1DelayReplicationPeriods.get(i));
                 assertEquals("RW2 delayperiod", (Long) expectedDelayValue, rw2DelayReplicationPeriods.get(i));
             }
