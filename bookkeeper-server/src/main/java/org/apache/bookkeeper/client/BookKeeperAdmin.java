@@ -96,7 +96,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeperAdmin.class);
     private static final Logger VERBOSE = LoggerFactory.getLogger("verbose");
-    public static final BiConsumer<Long, Long> NOOP_BICONSUMER = (l, e) -> { };
+    private static final BiConsumer<Long, Long> NOOP_BICONSUMER = (l, e) -> { };
 
     // BookKeeper client instance
     private BookKeeper bkc;

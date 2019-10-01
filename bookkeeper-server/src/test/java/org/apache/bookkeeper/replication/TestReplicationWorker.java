@@ -508,7 +508,6 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                     try {
                         Thread.sleep(3000);
                         isBookieRestarted.set(true);
-                        Thread.sleep(500);
                         /*
                          * after sleeping for 3000 msecs, restart one of the
                          * bookie, so that replication can succeed.

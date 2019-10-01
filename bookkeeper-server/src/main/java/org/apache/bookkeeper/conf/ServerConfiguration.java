@@ -1553,12 +1553,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Set the grace period, in milliseconds, which the replication worker has
-     * to wait before releasing the lock after if failed to replicate a ledger.
+     * to wait before releasing the lock after it failed to replicate a ledger.
      * For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS
      * failures it will do exponential backoff then it will bound at
      * LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD.
      *
-     * <p>So on replication failure, instead of releasing the lock immediately
+     * <p>On replication failure, instead of releasing the lock immediately
      * after failed attempt, it will hold under replicated ledger lock for the
      * grace period and then it will release the lock.
      *
@@ -1570,7 +1570,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Get the grace period, in milliseconds, which the replication worker has
-     * to wait before releasing the lock after if failed to replicate a ledger.
+     * to wait before releasing the lock after it failed to replicate a ledger.
      * For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS
      * failures it will do exponential backoff then it will bound at
      * LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD.

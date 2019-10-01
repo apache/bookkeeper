@@ -316,6 +316,13 @@ public class ReplicationWorker implements Runnable {
         final AtomicInteger numOfResponsesToWaitFor = new AtomicInteger(entriesOfThisFragmentUnableToRead.size());
         final AtomicInteger returnRCValue = new AtomicInteger(BKException.Code.OK);
         for (long entryIdToRead : entriesOfThisFragmentUnableToRead) {
+            if (multiReadComplete.getCount() == 0) {
+                /*
+                 * if an asyncRead request had already failed then break the
+                 * loop.
+                 */
+                break;
+            }
             lh.asyncReadEntries(entryIdToRead, entryIdToRead, (rc, ledHan, seq, ctx) -> {
                 long thisEntryId = (Long) ctx;
                 if (rc == BKException.Code.OK) {
