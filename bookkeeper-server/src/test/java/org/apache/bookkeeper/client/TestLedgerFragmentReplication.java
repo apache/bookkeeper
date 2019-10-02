@@ -32,6 +32,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.BiConsumer;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -53,6 +54,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
 
     private static final byte[] TEST_PSSWD = "testpasswd".getBytes();
     private static final DigestType TEST_DIGEST_TYPE = BookKeeper.DigestType.CRC32;
+    private static final BiConsumer<Long, Long> NOOP_BICONSUMER = (l, e) -> { };
     private static final Logger LOG = LoggerFactory
             .getLogger(TestLedgerFragmentReplication.class);
 
@@ -111,7 +113,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         // 0-9 entries should be copy to new bookie
 
         for (LedgerFragment lf : result) {
-            admin.replicateLedgerFragment(lh, lf);
+            admin.replicateLedgerFragment(lh, lf, NOOP_BICONSUMER);
         }
 
         // Killing all bookies except newly replicated bookie
@@ -174,11 +176,11 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         int unclosedCount = 0;
         for (LedgerFragment lf : result) {
             if (lf.isClosed()) {
-                admin.replicateLedgerFragment(lh, lf);
+                admin.replicateLedgerFragment(lh, lf, NOOP_BICONSUMER);
             } else {
                 unclosedCount++;
                 try {
-                    admin.replicateLedgerFragment(lh, lf);
+                    admin.replicateLedgerFragment(lh, lf, NOOP_BICONSUMER);
                     fail("Shouldn't be able to rereplicate unclosed ledger");
                 } catch (BKException bke) {
                     // correct behaviour
@@ -222,7 +224,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         BookKeeperAdmin admin = new BookKeeperAdmin(baseClientConf);
         for (LedgerFragment lf : fragments) {
             try {
-                admin.replicateLedgerFragment(lh, lf);
+                admin.replicateLedgerFragment(lh, lf, NOOP_BICONSUMER);
             } catch (BKException.BKLedgerRecoveryException e) {
                 // expected
             }

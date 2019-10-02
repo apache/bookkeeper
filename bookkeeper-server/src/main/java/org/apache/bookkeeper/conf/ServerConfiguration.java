@@ -1552,12 +1552,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the grace period so that if the replication worker fails to replicate
-     * a underreplicatedledger for more than
-     * ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
-     * number of times, then instead of releasing the lock immediately after
-     * failed attempt, it will hold under replicated ledger lock for this grace
-     * period and then it will release the lock.
+     * Set the grace period, in milliseconds, which the replication worker has
+     * to wait before releasing the lock after it failed to replicate a ledger.
+     * For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS
+     * failures it will do exponential backoff then it will bound at
+     * LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD.
+     *
+     * <p>On replication failure, instead of releasing the lock immediately
+     * after failed attempt, it will hold under replicated ledger lock for the
+     * grace period and then it will release the lock.
      *
      * @param waitTime
      */
@@ -1566,16 +1569,16 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the grace period which the replication worker to wait before
-     * releasing the lock after replication worker failing to replicate for more
-     * than
-     * ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
-     * number of times.
+     * Get the grace period, in milliseconds, which the replication worker has
+     * to wait before releasing the lock after it failed to replicate a ledger.
+     * For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS
+     * failures it will do exponential backoff then it will bound at
+     * LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD.
      *
      * @return
      */
     public long getLockReleaseOfFailedLedgerGracePeriod() {
-        return getLong(LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD, 60000);
+        return getLong(LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD, 300000);
     }
 
     /**

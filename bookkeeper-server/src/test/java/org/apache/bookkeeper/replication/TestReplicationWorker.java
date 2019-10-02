@@ -19,16 +19,20 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_UNABLE_TO_READ_FOR_REPLICATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.Cleanup;
@@ -47,10 +51,16 @@ import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
+import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.zookeeper.KeeperException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -438,21 +448,13 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
     }
 
-    /**
-     * Tests that ReplicationWorker will not make more than
-     * ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
-     * number of replication failure attempts and if it fails more these many
-     * number of times then it will defer lock release by
-     * lockReleaseOfFailedLedgerGracePeriod.
-     *
-     * @throws Exception
-     */
     @Test
     public void testBookiesNotAvailableScenarioForReplicationWorker() throws Exception {
         int ensembleSize = 3;
         LedgerHandle lh = bkc.createLedger(ensembleSize, ensembleSize, BookKeeper.DigestType.CRC32, TESTPASSWD);
 
-        for (int i = 0; i < 10; i++) {
+        int numOfEntries = 7;
+        for (int i = 0; i < numOfEntries; i++) {
             lh.addEntry(data);
         }
         lh.close();
@@ -474,9 +476,10 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         }
 
         // create couple of replicationworkers
-        baseConf.setLockReleaseOfFailedLedgerGracePeriod("500");
-        ReplicationWorker rw1 = new ReplicationWorker(baseConf);
-        ReplicationWorker rw2 = new ReplicationWorker(baseConf);
+        ServerConfiguration newRWConf = new ServerConfiguration(baseConf);
+        newRWConf.setLockReleaseOfFailedLedgerGracePeriod("64");
+        ReplicationWorker rw1 = new ReplicationWorker(newRWConf);
+        ReplicationWorker rw2 = new ReplicationWorker(newRWConf);
 
         @Cleanup
         MetadataClientDriver clientDriver = MetadataDrivers
@@ -487,6 +490,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         try {
+            //mark ledger underreplicated
             for (int i = 0; i < bookiesKilled.length; i++) {
                 underReplicationManager.markLedgerUnderreplicated(lh.getId(), bookiesKilled[i].toString());
             }
@@ -502,10 +506,10 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 @Override
                 public void run() {
                     try {
-                        Thread.sleep(4000);
+                        Thread.sleep(3000);
                         isBookieRestarted.set(true);
                         /*
-                         * after sleeping for 4000 msecs, restart one of the
+                         * after sleeping for 3000 msecs, restart one of the
                          * bookie, so that replication can succeed.
                          */
                         startBookie(killedBookiesConfig[0]);
@@ -515,6 +519,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 }
             })).start();
 
+            int rw1PrevFailedAttemptsCount = 0;
+            int rw2PrevFailedAttemptsCount = 0;
             while (!isBookieRestarted.get()) {
                 /*
                  * since all the bookies containing the ledger entries are down
@@ -522,26 +528,21 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                  */
                 assertTrue("Ledger: " + lh.getId() + " should be underreplicated",
                         ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath));
-                /*
-                 * check for both the replicationworkders number of failed
-                 * attempts should be less than ReplicationWorker.
-                 * MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
-                 */
-                int failedAttempts = rw1.replicationFailedLedgers.get(lh.getId()).get();
-                assertTrue(
-                        "The number of failed attempts should be less than "
-                                + "ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING, "
-                                + "but it is "
-                                + failedAttempts,
-                        failedAttempts <= ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING);
 
-                failedAttempts = rw2.replicationFailedLedgers.get(lh.getId()).get();
+                // the number of failed attempts should have increased.
+                int rw1CurFailedAttemptsCount = rw1.replicationFailedLedgers.get(lh.getId()).get();
                 assertTrue(
-                        "The number of failed attempts should be less than "
-                                + "ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING, "
-                                + "but it is "
-                                + failedAttempts,
-                        failedAttempts <= ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING);
+                        "The current number of failed attempts: " + rw1CurFailedAttemptsCount
+                                + " should be greater than or equal to previous value: " + rw1PrevFailedAttemptsCount,
+                        rw1CurFailedAttemptsCount >= rw1PrevFailedAttemptsCount);
+                rw1PrevFailedAttemptsCount = rw1CurFailedAttemptsCount;
+
+                int rw2CurFailedAttemptsCount = rw2.replicationFailedLedgers.get(lh.getId()).get();
+                assertTrue(
+                        "The current number of failed attempts: " + rw2CurFailedAttemptsCount
+                                + " should be greater than or equal to previous value: " + rw2PrevFailedAttemptsCount,
+                        rw2CurFailedAttemptsCount >= rw2PrevFailedAttemptsCount);
+                rw2PrevFailedAttemptsCount = rw2CurFailedAttemptsCount;
 
                 Thread.sleep(50);
             }
@@ -551,7 +552,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
              * should succeed in replicating this under replicated ledger and it
              * shouldn't be under replicated anymore.
              */
-            int timeToWaitForReplicationToComplete = 2000;
+            int timeToWaitForReplicationToComplete = 20000;
             int timeWaited = 0;
             while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath)) {
                 Thread.sleep(100);
@@ -560,6 +561,164 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                     fail("Ledger should be replicated by now");
                 }
             }
+
+            rw1PrevFailedAttemptsCount = rw1.replicationFailedLedgers.get(lh.getId()).get();
+            rw2PrevFailedAttemptsCount = rw2.replicationFailedLedgers.get(lh.getId()).get();
+            Thread.sleep(2000);
+            // now since the ledger is replicated, number of failed attempts
+            // counter shouldn't be increased even after sleeping for sometime.
+            assertEquals("rw1 failedattempts", rw1PrevFailedAttemptsCount,
+                    rw1.replicationFailedLedgers.get(lh.getId()).get());
+            assertEquals("rw2 failed attempts ", rw2PrevFailedAttemptsCount,
+                    rw2.replicationFailedLedgers.get(lh.getId()).get());
+
+            /*
+             * Since these entries are eventually available, and replication has
+             * eventually succeeded, in one of the RW
+             * unableToReadEntriesForReplication should be 0.
+             */
+            int rw1UnableToReadEntriesForReplication = rw1.unableToReadEntriesForReplication.get(lh.getId()).size();
+            int rw2UnableToReadEntriesForReplication = rw2.unableToReadEntriesForReplication.get(lh.getId()).size();
+            assertTrue(
+                    "unableToReadEntriesForReplication in RW1: " + rw1UnableToReadEntriesForReplication + " in RW2: "
+                            + rw2UnableToReadEntriesForReplication,
+                    (rw1UnableToReadEntriesForReplication == 0) || (rw2UnableToReadEntriesForReplication == 0));
+        } finally {
+            rw1.shutdown();
+            rw2.shutdown();
+            underReplicationManager.close();
+        }
+    }
+
+    class InjectedReplicationWorker extends ReplicationWorker {
+        CopyOnWriteArrayList<Long> delayReplicationPeriods;
+
+        public InjectedReplicationWorker(ServerConfiguration conf, StatsLogger statsLogger,
+                CopyOnWriteArrayList<Long> delayReplicationPeriods)
+                throws CompatibilityException, KeeperException, InterruptedException, IOException {
+            super(conf, statsLogger);
+            this.delayReplicationPeriods = delayReplicationPeriods;
+        }
+
+        @Override
+        void scheduleTaskWithDelay(TimerTask timerTask, long delayPeriod) {
+            delayReplicationPeriods.add(delayPeriod);
+            super.scheduleTaskWithDelay(timerTask, delayPeriod);
+        }
+    }
+
+    @Test
+    public void testDeferLedgerLockReleaseForReplicationWorker() throws Exception {
+        int ensembleSize = 3;
+        LedgerHandle lh = bkc.createLedger(ensembleSize, ensembleSize, BookKeeper.DigestType.CRC32, TESTPASSWD);
+        int numOfEntries = 7;
+        for (int i = 0; i < numOfEntries; i++) {
+            lh.addEntry(data);
+        }
+        lh.close();
+
+        BookieSocketAddress[] bookiesKilled = new BookieSocketAddress[ensembleSize];
+        ServerConfiguration[] killedBookiesConfig = new ServerConfiguration[ensembleSize];
+
+        // kill all bookies
+        for (int i = 0; i < ensembleSize; i++) {
+            bookiesKilled[i] = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(i);
+            killedBookiesConfig[i] = getBkConf(bookiesKilled[i]);
+            LOG.info("Killing Bookie : {}", bookiesKilled[i]);
+            killBookie(bookiesKilled[i]);
+        }
+
+        // start new bookiesToKill number of bookies
+        for (int i = 0; i < ensembleSize; i++) {
+            startNewBookieAndReturnAddress();
+        }
+
+        // create couple of replicationworkers
+        long lockReleaseOfFailedLedgerGracePeriod = 64L;
+        long baseBackoffForLockReleaseOfFailedLedger = lockReleaseOfFailedLedgerGracePeriod
+                / (int) Math.pow(2, ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS);
+        ServerConfiguration newRWConf = new ServerConfiguration(baseConf);
+        newRWConf.setLockReleaseOfFailedLedgerGracePeriod(Long.toString(lockReleaseOfFailedLedgerGracePeriod));
+        newRWConf.setRereplicationEntryBatchSize(1000);
+        CopyOnWriteArrayList<Long> rw1DelayReplicationPeriods = new CopyOnWriteArrayList<Long>();
+        CopyOnWriteArrayList<Long> rw2DelayReplicationPeriods = new CopyOnWriteArrayList<Long>();
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger1 = statsProvider.getStatsLogger("rw1");
+        TestStatsLogger statsLogger2 = statsProvider.getStatsLogger("rw2");
+        ReplicationWorker rw1 = new InjectedReplicationWorker(newRWConf, statsLogger1, rw1DelayReplicationPeriods);
+        ReplicationWorker rw2 = new InjectedReplicationWorker(newRWConf, statsLogger2, rw2DelayReplicationPeriods);
+
+        Counter numEntriesUnableToReadForReplication1 = statsLogger1
+                .getCounter(NUM_ENTRIES_UNABLE_TO_READ_FOR_REPLICATION);
+        Counter numEntriesUnableToReadForReplication2 = statsLogger2
+                .getCounter(NUM_ENTRIES_UNABLE_TO_READ_FOR_REPLICATION);
+        @Cleanup
+        MetadataClientDriver clientDriver = MetadataDrivers
+                .getClientDriver(URI.create(baseClientConf.getMetadataServiceUri()));
+        clientDriver.initialize(baseClientConf, scheduler, NullStatsLogger.INSTANCE, Optional.empty());
+
+        LedgerManagerFactory mFactory = clientDriver.getLedgerManagerFactory();
+
+        LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
+        try {
+            // mark ledger underreplicated
+            for (int i = 0; i < bookiesKilled.length; i++) {
+                underReplicationManager.markLedgerUnderreplicated(lh.getId(), bookiesKilled[i].toString());
+            }
+            while (!ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath)) {
+                Thread.sleep(100);
+            }
+            rw1.start();
+            rw2.start();
+
+            // wait for RWs to complete 'numOfAttemptsToWaitFor' failed attempts
+            int numOfAttemptsToWaitFor = 10;
+            while ((rw1.replicationFailedLedgers.get(lh.getId()).get() < numOfAttemptsToWaitFor)
+                    || rw2.replicationFailedLedgers.get(lh.getId()).get() < numOfAttemptsToWaitFor) {
+                Thread.sleep(500);
+            }
+
+            /*
+             * since all the bookies containing the ledger entries are down
+             * replication wouldn't have succeeded.
+             */
+            assertTrue("Ledger: " + lh.getId() + " should be underreplicated",
+                    ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath));
+
+            /*
+             * since RW failed 'numOfAttemptsToWaitFor' number of times, we
+             * should have atleast (numOfAttemptsToWaitFor - 1)
+             * delayReplicationPeriods and their value should be
+             * (lockReleaseOfFailedLedgerGracePeriod/16) , 2 * previous value,..
+             * with max : lockReleaseOfFailedLedgerGracePeriod
+             */
+            for (int i = 0; i < ((numOfAttemptsToWaitFor - 1)); i++) {
+                long expectedDelayValue = Math.min(lockReleaseOfFailedLedgerGracePeriod,
+                        baseBackoffForLockReleaseOfFailedLedger * (1 << i));
+                assertEquals("RW1 delayperiod", (Long) expectedDelayValue, rw1DelayReplicationPeriods.get(i));
+                assertEquals("RW2 delayperiod", (Long) expectedDelayValue, rw2DelayReplicationPeriods.get(i));
+            }
+
+            /*
+             * RW wont try to replicate until and unless RW succeed in reading
+             * those failed entries before proceeding with replication of under
+             * replicated fragment, so the numEntriesUnableToReadForReplication
+             * should be just 'numOfEntries', though RW failed to replicate
+             * multiple times.
+             */
+            assertEquals("numEntriesUnableToReadForReplication for RW1", Long.valueOf((long) numOfEntries),
+                    numEntriesUnableToReadForReplication1.get());
+            assertEquals("numEntriesUnableToReadForReplication for RW2", Long.valueOf((long) numOfEntries),
+                    numEntriesUnableToReadForReplication2.get());
+
+            /*
+             * Since these entries are unavailable,
+             * unableToReadEntriesForReplication should be of size numOfEntries.
+             */
+            assertEquals("RW1 unabletoreadentries", numOfEntries,
+                    rw1.unableToReadEntriesForReplication.get(lh.getId()).size());
+            assertEquals("RW2 unabletoreadentries", numOfEntries,
+                    rw2.unableToReadEntriesForReplication.get(lh.getId()).size());
         } finally {
             rw1.shutdown();
             rw2.shutdown();
