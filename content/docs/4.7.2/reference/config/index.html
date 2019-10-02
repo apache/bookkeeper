@@ -2192,16 +2192,16 @@ when using either RackawareEnsemblePlacementPolicy and RegionAwareEnsemblePlacem
     
     <tr id="openLedgerRereplicationGracePeriod">
       <td><code>openLedgerRereplicationGracePeriod</code></td>
-      <td><p>The grace period, in seconds, that the replication worker waits before fencing and replicating a ledger fragment that’s still being written to upon bookie failure.</p>
+      <td><p>The grace period, in milliseconds, that the replication worker waits before fencing and replicating a ledger fragment that’s still being written to upon bookie failure.</p>
 </td>
-      <td><code>30</code></td>
+      <td><code>30000</code></td>
     </tr>
     
     <tr id="lockReleaseOfFailedLedgerGracePeriod">
       <td><code>lockReleaseOfFailedLedgerGracePeriod</code></td>
-      <td><p>the grace period so that if the replication worker fails to replicate a underreplicatedledger for more than ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING number of times, then instead of releasing the lock immediately after failed attempt, it will hold under replicated ledger lock for this grace period and then it will release the lock.</p>
+      <td><p>Set the grace period, in milliseconds, which the replication worker has to wait before releasing the lock after it failed to replicate a ledger. For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS failures it will do exponential backoff then it will bound at lockReleaseOfFailedLedgerGracePeriod.</p>
 </td>
-      <td><code>60</code></td>
+      <td><code>300000</code></td>
     </tr>
     
     <tr id="rwRereplicateBackoffMs">

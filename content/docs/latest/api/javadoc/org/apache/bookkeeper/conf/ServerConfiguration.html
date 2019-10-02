@@ -1082,11 +1082,8 @@ extends <a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.ht
 <tr id="i62" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/ServerConfiguration.html#getLockReleaseOfFailedLedgerGracePeriod--">getLockReleaseOfFailedLedgerGracePeriod</a></span>()</code>
-<div class="block">Get the grace period which the replication worker to wait before
- releasing the lock after replication worker failing to replicate for more
- than
- ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
- number of times.</div>
+<div class="block">Get the grace period, in milliseconds, which the replication worker has
+ to wait before releasing the lock after it failed to replicate a ledger.</div>
 </td>
 </tr>
 <tr id="i63" class="rowColor">
@@ -1928,12 +1925,8 @@ extends <a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.ht
 <tr id="i200" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/ServerConfiguration.html#setLockReleaseOfFailedLedgerGracePeriod-java.lang.String-">setLockReleaseOfFailedLedgerGracePeriod</a></span>(java.lang.String&nbsp;waitTime)</code>
-<div class="block">Set the grace period so that if the replication worker fails to replicate
- a underreplicatedledger for more than
- ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
- number of times, then instead of releasing the lock immediately after
- failed attempt, it will hold under replicated ledger lock for this grace
- period and then it will release the lock.</div>
+<div class="block">Set the grace period, in milliseconds, which the replication worker has
+ to wait before releasing the lock after it failed to replicate a ledger.</div>
 </td>
 </tr>
 <tr id="i201" class="rowColor">
@@ -5764,12 +5757,15 @@ public&nbsp;java.lang.String&nbsp;getJournalDirName()</pre>
 <li class="blockList">
 <h4>setLockReleaseOfFailedLedgerGracePeriod</h4>
 <pre>public&nbsp;void&nbsp;setLockReleaseOfFailedLedgerGracePeriod(java.lang.String&nbsp;waitTime)</pre>
-<div class="block">Set the grace period so that if the replication worker fails to replicate
- a underreplicatedledger for more than
- ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
- number of times, then instead of releasing the lock immediately after
- failed attempt, it will hold under replicated ledger lock for this grace
- period and then it will release the lock.</div>
+<div class="block">Set the grace period, in milliseconds, which the replication worker has
+ to wait before releasing the lock after it failed to replicate a ledger.
+ For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS
+ failures it will do exponential backoff then it will bound at
+ LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD.
+
+ <p>On replication failure, instead of releasing the lock immediately
+ after failed attempt, it will hold under replicated ledger lock for the
+ grace period and then it will release the lock.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>waitTime</code> - </dd>
@@ -5783,11 +5779,11 @@ public&nbsp;java.lang.String&nbsp;getJournalDirName()</pre>
 <li class="blockList">
 <h4>getLockReleaseOfFailedLedgerGracePeriod</h4>
 <pre>public&nbsp;long&nbsp;getLockReleaseOfFailedLedgerGracePeriod()</pre>
-<div class="block">Get the grace period which the replication worker to wait before
- releasing the lock after replication worker failing to replicate for more
- than
- ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
- number of times.</div>
+<div class="block">Get the grace period, in milliseconds, which the replication worker has
+ to wait before releasing the lock after it failed to replicate a ledger.
+ For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS
+ failures it will do exponential backoff then it will bound at
+ LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 </dl>

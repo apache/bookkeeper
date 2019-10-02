@@ -3226,11 +3226,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getLockReleaseOfFailedLedgerGracePeriod--">getLockReleaseOfFailedLedgerGracePeriod()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
-<div class="block">Get the grace period which the replication worker to wait before
- releasing the lock after replication worker failing to replicate for more
- than
- ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
- number of times.</div>
+<div class="block">Get the grace period, in milliseconds, which the replication worker has
+ to wait before releasing the lock after it failed to replicate a ledger.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#getLostBookieRecoveryDelay--">getLostBookieRecoveryDelay()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>
@@ -12472,12 +12469,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#replaceFromRack-org.apache.bookkeeper.net.BookieNode-java.util.Set-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-boolean-">replaceFromRack(BookieNode, Set&lt;Node&gt;, ITopologyAwareEnsemblePlacementPolicy.Predicate&lt;BookieNode&gt;, ITopologyAwareEnsemblePlacementPolicy.Ensemble&lt;BookieNode&gt;, boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.html#replicate-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-org.apache.zookeeper.AsyncCallback.VoidCallback-java.util.Set-">replicate(LedgerHandle, LedgerFragment, AsyncCallback.VoidCallback, Set&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.html" title="class in org.apache.bookkeeper.client">LedgerFragmentReplicator</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.html#replicate-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-org.apache.zookeeper.AsyncCallback.VoidCallback-java.util.Set-java.util.function.BiConsumer-">replicate(LedgerHandle, LedgerFragment, AsyncCallback.VoidCallback, Set&lt;BookieSocketAddress&gt;, BiConsumer&lt;Long, Long&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.html" title="class in org.apache.bookkeeper.client">LedgerFragmentReplicator</a></dt>
 <dd>
 <div class="block">This method replicate a ledger fragment which is a contiguous portion of
  a ledger that was stored in an ensemble that included the failed bookie.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#replicateLedgerFragment-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-">replicateLedgerFragment(LedgerHandle, LedgerFragment)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#replicateLedgerFragment-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-java.util.function.BiConsumer-">replicateLedgerFragment(LedgerHandle, LedgerFragment, BiConsumer&lt;Long, Long&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>
 <div class="block">Replicate the Ledger fragment to target Bookie passed.</div>
 </dd>
@@ -13250,12 +13247,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setLockReleaseOfFailedLedgerGracePeriod-java.lang.String-">setLockReleaseOfFailedLedgerGracePeriod(String)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
-<div class="block">Set the grace period so that if the replication worker fails to replicate
- a underreplicatedledger for more than
- ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
- number of times, then instead of releasing the lock immediately after
- failed attempt, it will hold under replicated ledger lock for this grace
- period and then it will release the lock.</div>
+<div class="block">Set the grace period, in milliseconds, which the replication worker has
+ to wait before releasing the lock after it failed to replicate a ledger.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#setLostBookieRecoveryDelay-int-">setLostBookieRecoveryDelay(int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>

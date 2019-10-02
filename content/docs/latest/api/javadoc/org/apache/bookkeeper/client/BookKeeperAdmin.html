@@ -144,7 +144,7 @@ implements java.lang.AutoCloseable</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterator.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.LedgerEntriesIterator</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) static class&nbsp;</code></td>
+<td class="colFirst"><code>static class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.ResultCallBack.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.ResultCallBack</a></span></code>
 <div class="block">This is the class for getting the replication result.</div>
 </td>
@@ -429,8 +429,9 @@ implements java.lang.AutoCloseable</pre>
 </tr>
 <tr id="i33" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#replicateLedgerFragment-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-">replicateLedgerFragment</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-                       <a href="../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#replicateLedgerFragment-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-java.util.function.BiConsumer-">replicateLedgerFragment</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                       <a href="../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment,
+                       java.util.function.BiConsumer&lt;java.lang.Long,java.lang.Long&gt;&nbsp;onReadEntryFailureCallback)</code>
 <div class="block">Replicate the Ledger fragment to target Bookie passed.</div>
 </td>
 </tr>
@@ -997,14 +998,15 @@ implements java.lang.AutoCloseable</pre>
                                        char&nbsp;marker)</pre>
 </li>
 </ul>
-<a name="replicateLedgerFragment-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-">
+<a name="replicateLedgerFragment-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-java.util.function.BiConsumer-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>replicateLedgerFragment</h4>
 <pre>public&nbsp;void&nbsp;replicateLedgerFragment(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-                                    <a href="../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment)
+                                    <a href="../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment,
+                                    java.util.function.BiConsumer&lt;java.lang.Long,java.lang.Long&gt;&nbsp;onReadEntryFailureCallback)
                              throws java.lang.InterruptedException,
                                     <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Replicate the Ledger fragment to target Bookie passed.</div>
