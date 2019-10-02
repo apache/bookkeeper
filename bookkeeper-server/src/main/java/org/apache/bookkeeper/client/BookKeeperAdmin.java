@@ -50,6 +50,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -95,6 +96,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeperAdmin.class);
     private static final Logger VERBOSE = LoggerFactory.getLogger("verbose");
+    private static final BiConsumer<Long, Long> NOOP_BICONSUMER = (l, e) -> { };
 
     // BookKeeper client instance
     private BookKeeper bkc;
@@ -909,7 +911,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                             LedgerFragment ledgerFragment = new LedgerFragment(lh,
                                 startEntryId, endEntryId, targetBookieAddresses.keySet());
                             asyncRecoverLedgerFragment(lh, ledgerFragment, cb,
-                                Sets.newHashSet(targetBookieAddresses.values()));
+                                Sets.newHashSet(targetBookieAddresses.values()), NOOP_BICONSUMER);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                             return;
@@ -961,8 +963,9 @@ public class BookKeeperAdmin implements AutoCloseable {
     private void asyncRecoverLedgerFragment(final LedgerHandle lh,
             final LedgerFragment ledgerFragment,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
-            final Set<BookieSocketAddress> newBookies) throws InterruptedException {
-        lfr.replicate(lh, ledgerFragment, ledgerFragmentMcb, newBookies);
+            final Set<BookieSocketAddress> newBookies,
+            final BiConsumer<Long, Long> onReadEntryFailureCallback) throws InterruptedException {
+        lfr.replicate(lh, ledgerFragment, ledgerFragmentMcb, newBookies, onReadEntryFailureCallback);
     }
 
     private Map<Integer, BookieSocketAddress> getReplacementBookies(
@@ -1050,18 +1053,20 @@ public class BookKeeperAdmin implements AutoCloseable {
      *            - LedgerFragment to replicate
      */
     public void replicateLedgerFragment(LedgerHandle lh,
-            final LedgerFragment ledgerFragment)
+            final LedgerFragment ledgerFragment,
+            final BiConsumer<Long, Long> onReadEntryFailureCallback)
             throws InterruptedException, BKException {
         Optional<Set<BookieSocketAddress>> excludedBookies = Optional.empty();
         Map<Integer, BookieSocketAddress> targetBookieAddresses =
                 getReplacementBookiesByIndexes(lh, ledgerFragment.getEnsemble(),
                         ledgerFragment.getBookiesIndexes(), excludedBookies);
-        replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses);
+        replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
     }
 
     private void replicateLedgerFragment(LedgerHandle lh,
             final LedgerFragment ledgerFragment,
-            final Map<Integer, BookieSocketAddress> targetBookieAddresses)
+            final Map<Integer, BookieSocketAddress> targetBookieAddresses,
+            final BiConsumer<Long, Long> onReadEntryFailureCallback)
             throws InterruptedException, BKException {
         CompletableFuture<Void> result = new CompletableFuture<>();
         ResultCallBack resultCallBack = new ResultCallBack(result);
@@ -1074,7 +1079,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         Set<BookieSocketAddress> targetBookieSet = Sets.newHashSet();
         targetBookieSet.addAll(targetBookieAddresses.values());
-        asyncRecoverLedgerFragment(lh, ledgerFragment, cb, targetBookieSet);
+        asyncRecoverLedgerFragment(lh, ledgerFragment, cb, targetBookieSet, onReadEntryFailureCallback);
 
         try {
             SyncCallbackUtils.waitForResult(result);
@@ -1132,7 +1137,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     /**
      * This is the class for getting the replication result.
      */
-    static class ResultCallBack implements AsyncCallback.VoidCallback {
+    public static class ResultCallBack implements AsyncCallback.VoidCallback {
         private final CompletableFuture<Void> sync;
 
         public ResultCallBack(CompletableFuture<Void> sync) {
