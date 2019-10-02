@@ -774,7 +774,7 @@ public class EntryLogger {
         long entrySizePos = pos - 4; // we want to get the entrySize as well as the ledgerId and entryId
 
         try {
-            if (readFromLogChannel(entryLogId, fc, sizeBuff, pos) != sizeBuff.capacity()) {
+            if (readFromLogChannel(entryLogId, fc, sizeBuff, entrySizePos) != sizeBuff.capacity()) {
                 throw new EntryLookupException.MissingEntryException(ledgerId, entryId, entryLogId, entrySizePos);
             }
         } catch (BufferedChannelBase.BufferedChannelClosedException | AsynchronousCloseException e) {
@@ -825,7 +825,7 @@ public class EntryLogger {
             fc = getFCForEntryInternal(ledgerId, entryId, entryLogId, pos);
 
             ByteBuf sizeBuff = readEntrySize(ledgerId, entryId, entryLogId, pos, fc);
-            entrySize = sizeBuff.readInt();
+            entrySize = sizeBuff.getInt(0);
             if (validateEntry) {
                 validateEntry(ledgerId, entryId, entryLogId, pos, sizeBuff);
             }
