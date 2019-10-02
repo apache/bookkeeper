@@ -59,6 +59,9 @@ for T in bookkeeper-{,dist-}server-*-bin.tar.gz; do
     if [ -f $T.sha1 ]; then
         sha1sum --check $T.sha1 > /dev/null
     fi
+    if [ -f $T.sha512 ]; then
+        sha512sum --check $T.sha512 > /dev/null
+    fi
     if [ -f $T.md5 ]; then
         md5sum --check $T.md5 > /dev/null
     fi
