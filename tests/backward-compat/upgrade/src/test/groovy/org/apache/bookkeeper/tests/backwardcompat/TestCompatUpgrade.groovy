@@ -192,7 +192,17 @@ class TestCompatUpgrade {
     }
 
     @Test
-    public void test470toCurrentMaster() throws Exception {
-        testUpgrade("4.7.0", System.getProperty("currentVersion"))
+    public void test470to471() throws Exception {
+        testUpgrade("4.7.0", "4.7.1")
+    }
+
+    @Test
+    public void test471to472() throws Exception {
+        testUpgrade("4.7.1", "4.7.2")
+    }
+
+    @Test
+    public void test472toCurrentMaster() throws Exception {
+        testUpgrade("4.7.2", System.getProperty("currentVersion"))
     }
 }
