@@ -466,7 +466,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             long size = 0;
 
             while (count < readAheadCacheBatchSize && currentEntryLogId == firstEntryLogId) {
-                ByteBuf entry = entryLogger.internalReadEntry(orginalLedgerId, -1, currentEntryLocation);
+                ByteBuf entry = entryLogger.internalReadEntry(orginalLedgerId, -1, currentEntryLocation,
+                        false /* validateEntry */);
 
                 try {
                     long currentEntryLedgerId = entry.getLong(0);

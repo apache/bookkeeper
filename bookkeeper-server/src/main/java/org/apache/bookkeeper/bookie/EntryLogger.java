@@ -756,37 +756,43 @@ public class EntryLogger {
         }
     }
 
-    private static class EntryLogEntry {
-        final int entrySize;
-        final BufferedReadChannel fc;
-
-        EntryLogEntry(int entrySize, BufferedReadChannel fc) {
-            this.entrySize = entrySize;
-            this.fc = fc;
-        }
-    }
-
-    private EntryLogEntry getFCForEntryInternal(
+    private BufferedReadChannel getFCForEntryInternal(
             long ledgerId, long entryId, long entryLogId, long pos)
             throws EntryLookupException, IOException {
-        ByteBuf sizeBuff = sizeBuffer.get();
-        sizeBuff.clear();
-        pos -= 4; // we want to get the entrySize as well as the ledgerId and entryId
-        BufferedReadChannel fc;
         try {
-            fc = getChannelForLogId(entryLogId);
+            return getChannelForLogId(entryLogId);
         } catch (FileNotFoundException e) {
             throw new EntryLookupException.MissingLogFileException(ledgerId, entryId, entryLogId, pos);
         }
+    }
+
+    private ByteBuf readEntrySize(long ledgerId, long entryId, long entryLogId, long pos, BufferedReadChannel fc)
+            throws EntryLookupException, IOException {
+        ByteBuf sizeBuff = sizeBuffer.get();
+        sizeBuff.clear();
+
+        long entrySizePos = pos - 4; // we want to get the entrySize as well as the ledgerId and entryId
 
         try {
-            if (readFromLogChannel(entryLogId, fc, sizeBuff, pos) != sizeBuff.capacity()) {
-                throw new EntryLookupException.MissingEntryException(ledgerId, entryId, entryLogId, pos);
+            if (readFromLogChannel(entryLogId, fc, sizeBuff, entrySizePos) != sizeBuff.capacity()) {
+                throw new EntryLookupException.MissingEntryException(ledgerId, entryId, entryLogId, entrySizePos);
             }
         } catch (BufferedChannelBase.BufferedChannelClosedException | AsynchronousCloseException e) {
-            throw new EntryLookupException.MissingLogFileException(ledgerId, entryId, entryLogId, pos);
+            throw new EntryLookupException.MissingLogFileException(ledgerId, entryId, entryLogId, entrySizePos);
         }
-        pos += 4;
+        return sizeBuff;
+    }
+
+    void checkEntry(long ledgerId, long entryId, long location) throws EntryLookupException, IOException {
+        long entryLogId = logIdForOffset(location);
+        long pos = posForOffset(location);
+        BufferedReadChannel fc = getFCForEntryInternal(ledgerId, entryId, entryLogId, pos);
+        ByteBuf sizeBuf = readEntrySize(ledgerId, entryId, entryLogId, pos, fc);
+        validateEntry(ledgerId, entryId, entryLogId, pos, sizeBuf);
+    }
+
+    private void validateEntry(long ledgerId, long entryId, long entryLogId, long pos, ByteBuf sizeBuff)
+            throws IOException, EntryLookupException {
         int entrySize = sizeBuff.readInt();
 
         // entrySize does not include the ledgerId
@@ -805,23 +811,24 @@ public class EntryLogger {
             throw new EntryLookupException.WrongEntryException(
                     thisEntryId, thisLedgerId, ledgerId, entryId, entryLogId, pos);
         }
-        return new EntryLogEntry(entrySize, fc);
     }
 
-    void checkEntry(long ledgerId, long entryId, long location) throws EntryLookupException, IOException {
-        long entryLogId = logIdForOffset(location);
-        long pos = posForOffset(location);
-        getFCForEntryInternal(ledgerId, entryId, entryLogId, pos);
-    }
-
-    public ByteBuf internalReadEntry(long ledgerId, long entryId, long location)
+    public ByteBuf internalReadEntry(long ledgerId, long entryId, long location, boolean validateEntry)
             throws IOException, Bookie.NoEntryException {
         long entryLogId = logIdForOffset(location);
         long pos = posForOffset(location);
 
-        final EntryLogEntry entry;
+
+        BufferedReadChannel fc = null;
+        int entrySize = -1;
         try {
-            entry = getFCForEntryInternal(ledgerId, entryId, entryLogId, pos);
+            fc = getFCForEntryInternal(ledgerId, entryId, entryLogId, pos);
+
+            ByteBuf sizeBuff = readEntrySize(ledgerId, entryId, entryLogId, pos, fc);
+            entrySize = sizeBuff.getInt(0);
+            if (validateEntry) {
+                validateEntry(ledgerId, entryId, entryLogId, pos, sizeBuff);
+            }
         } catch (EntryLookupException.MissingEntryException entryLookupError) {
             throw new Bookie.NoEntryException("Short read from entrylog " + entryLogId,
                     ledgerId, entryId);
@@ -829,9 +836,9 @@ public class EntryLogger {
             throw new IOException(e.toString());
         }
 
-        ByteBuf data = allocator.buffer(entry.entrySize, entry.entrySize);
-        int rc = readFromLogChannel(entryLogId, entry.fc, data, pos);
-        if (rc != entry.entrySize) {
+        ByteBuf data = allocator.buffer(entrySize, entrySize);
+        int rc = readFromLogChannel(entryLogId, fc, data, pos);
+        if (rc != entrySize) {
             // Note that throwing NoEntryException here instead of IOException is not
             // without risk. If all bookies in a quorum throw this same exception
             // the client will assume that it has reached the end of the ledger.
@@ -842,16 +849,15 @@ public class EntryLogger {
             data.release();
             throw new Bookie.NoEntryException("Short read for " + ledgerId + "@"
                                               + entryId + " in " + entryLogId + "@"
-                                              + pos + "(" + rc + "!=" + entry.entrySize + ")", ledgerId, entryId);
+                                              + pos + "(" + rc + "!=" + entrySize + ")", ledgerId, entryId);
         }
-        data.writerIndex(entry.entrySize);
+        data.writerIndex(entrySize);
 
         return data;
     }
 
     public ByteBuf readEntry(long ledgerId, long entryId, long location) throws IOException, Bookie.NoEntryException {
-        ByteBuf data = internalReadEntry(ledgerId, entryId, location);
-        return data;
+        return internalReadEntry(ledgerId, entryId, location, true /* validateEntry */);
     }
 
     /**
