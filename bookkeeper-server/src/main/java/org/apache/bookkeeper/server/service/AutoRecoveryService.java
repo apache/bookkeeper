@@ -26,6 +26,8 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link ServerLifecycleComponent} that runs autorecovery.
@@ -33,6 +35,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 public class AutoRecoveryService extends ServerLifecycleComponent {
 
     public static final String NAME = "autorecovery";
+    private static final Logger LOG = LoggerFactory.getLogger(AutoRecoveryService.class);
 
     private final AutoRecoveryMain main;
 
@@ -45,6 +48,7 @@ public class AutoRecoveryService extends ServerLifecycleComponent {
 
     @Override
     public void setExceptionHandler(UncaughtExceptionHandler handler) {
+        super.setExceptionHandler(handler);
         main.setExceptionHandler(handler);
     }
 
@@ -56,8 +60,14 @@ public class AutoRecoveryService extends ServerLifecycleComponent {
     protected void doStart() {
         try {
             this.main.start();
-        } catch (UnavailableException e) {
-            throw new RuntimeException("Can't not start '" + NAME + "' component.", e);
+        } catch (Throwable exc) {
+            LOG.error("Got unexpected exception while starting AutoRecoveryMain", exc);
+            if (uncaughtExceptionHandler != null) {
+                LOG.error("Calling uncaughtExceptionHandler");
+                uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), exc);
+            } else {
+                throw new RuntimeException("Failed to start AutoRecoveryMain", exc);
+            }
         }
     }
 

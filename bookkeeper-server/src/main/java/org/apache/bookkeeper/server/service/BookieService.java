@@ -26,6 +26,8 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link ServerLifecycleComponent} that starts the core bookie server.
@@ -35,6 +37,8 @@ public class BookieService extends ServerLifecycleComponent {
     public static final String NAME = "bookie-server";
 
     private final BookieServer server;
+    //private UncaughtExceptionHandler uncaughtExceptionHandler = null;
+    private static final Logger LOG = LoggerFactory.getLogger(BookieService.class);
 
     public BookieService(BookieConfiguration conf,
                          StatsLogger statsLogger)
@@ -45,6 +49,7 @@ public class BookieService extends ServerLifecycleComponent {
 
     @Override
     public void setExceptionHandler(UncaughtExceptionHandler handler) {
+        super.setExceptionHandler(handler);
         server.setExceptionHandler(handler);
     }
 
@@ -56,8 +61,14 @@ public class BookieService extends ServerLifecycleComponent {
     protected void doStart() {
         try {
             this.server.start();
-        } catch (IOException | UnavailableException | InterruptedException | BKException e) {
-            throw new RuntimeException("Failed to start bookie server", e);
+        } catch (Throwable exc) {
+            LOG.error("Got unexpected exception while starting BookieServer", exc);
+            if (uncaughtExceptionHandler != null) {
+                LOG.error("Calling uncaughtExceptionHandler");
+                uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), exc);
+            } else {
+                throw new RuntimeException("Failed to start bookie server", exc);
+            }
         }
     }
 

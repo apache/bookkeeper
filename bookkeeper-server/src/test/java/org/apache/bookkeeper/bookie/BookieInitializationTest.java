@@ -35,6 +35,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
@@ -58,6 +60,8 @@ import java.util.Random;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
@@ -637,6 +641,67 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         service.getServer().getBookie().shutdown();
 
         // the bookie service lifecycle component should be shutdown.
+        startFuture.get();
+    }
+
+    public static class MockInterleavedLedgerStorage extends InterleavedLedgerStorage {
+        AtomicInteger atmoicInt = new AtomicInteger(0);
+
+        @Override
+        public long addEntry(ByteBuf entry) throws IOException {
+            if (atmoicInt.incrementAndGet() == 10) {
+                throw new OutOfMemoryError("Some Injected Exception");
+            }
+            return super.addEntry(entry);
+        }
+    }
+
+    @Test
+    public void testBookieStartException() throws Exception {
+        File journalDir = createTempDir("bookie", "journal");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+
+        File ledgerDir = createTempDir("bookie", "ledger");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+
+        /*
+         * add few entries to journal file.
+         */
+        int numOfEntries = 100;
+        BookieJournalTest.writeV5Journal(Bookie.getCurrentDirectory(journalDir), numOfEntries,
+                "testV5Journal".getBytes());
+
+        /*
+         * This Bookie is configured to use MockInterleavedLedgerStorage.
+         * MockInterleavedLedgerStorage throws an Error for addEntry request.
+         * This is to simulate Bookie/BookieServer/BookieService 'start' failure
+         * because of 'Bookie.readJournal' failure.
+         */
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        int port = PortManager.nextFreePort();
+        conf.setBookiePort(port).setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[] { ledgerDir.getPath() }).setMetadataServiceUri(metadataServiceUri)
+                .setLedgerStorageClass(MockInterleavedLedgerStorage.class.getName());
+
+        BookieConfiguration bkConf = new BookieConfiguration(conf);
+
+        /*
+         * create cookie and write it to JournalDir/LedgerDir.
+         */
+        Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
+        Cookie cookie = cookieBuilder.build();
+        cookie.writeToDirectory(new File(journalDir, "current"));
+        cookie.writeToDirectory(new File(ledgerDir, "current"));
+
+        /*
+         * Create LifecycleComponent for BookieServer and start it.
+         */
+        LifecycleComponent server = Main.buildBookieServer(bkConf);
+        CompletableFuture<Void> startFuture = ComponentStarter.startComponent(server);
+
+        /*
+         * Since Bookie/BookieServer/BookieService is expected to fail to start
+         */
         startFuture.get();
     }
 
