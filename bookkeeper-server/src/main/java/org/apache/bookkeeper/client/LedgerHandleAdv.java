@@ -73,6 +73,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written to the ledger
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @return
      *            entryId that is just created.
      */
@@ -90,6 +91,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written to the ledger
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *            offset from which to take bytes from data
      * @param length
@@ -120,6 +122,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param cb
      *            object implementing callbackinterface
      * @param ctx
@@ -137,6 +140,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *            offset from which to take bytes from data
      * @param length
@@ -162,6 +166,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *            offset from which to take bytes from data
      * @param length
@@ -189,6 +194,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add.
      * @param data
      *            io.netty.buffer.ByteBuf of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param cb
      *            object implementing callbackinterface
      * @param ctx

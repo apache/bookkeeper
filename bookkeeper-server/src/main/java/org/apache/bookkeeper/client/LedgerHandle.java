@@ -906,6 +906,7 @@ public class LedgerHandle implements WriteHandle {
      *
      * @param data
      *         array of bytes to be written to the ledger
+     *         do not reuse the buffer, bk-client will release it appropriately
      * @return the entryId of the new inserted entry
      */
     public long addEntry(byte[] data) throws InterruptedException, BKException {
@@ -932,6 +933,7 @@ public class LedgerHandle implements WriteHandle {
      *            entryId to be added
      * @param data
      *            array of bytes to be written to the ledger
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @return the entryId of the new inserted entry
      */
     public long addEntry(final long entryId, byte[] data) throws InterruptedException, BKException {
@@ -944,6 +946,7 @@ public class LedgerHandle implements WriteHandle {
      *
      * @param data
      *         array of bytes to be written to the ledger
+     *         do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *          offset from which to take bytes from data
      * @param length
@@ -971,6 +974,7 @@ public class LedgerHandle implements WriteHandle {
      *            entryId to be added.
      * @param data
      *            array of bytes to be written to the ledger
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *            offset from which to take bytes from data
      * @param length
@@ -988,6 +992,7 @@ public class LedgerHandle implements WriteHandle {
      *
      * @param data
      *          array of bytes to be written
+     *          do not reuse the buffer, bk-client will release it appropriately
      * @param cb
      *          object implementing callbackinterface
      * @param ctx
@@ -1007,6 +1012,7 @@ public class LedgerHandle implements WriteHandle {
      *            entryId to be added
      * @param data
      *            array of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param cb
      *            object implementing callbackinterface
      * @param ctx
@@ -1022,6 +1028,7 @@ public class LedgerHandle implements WriteHandle {
      *
      * @param data
      *          array of bytes to be written
+     *          do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *          offset from which to take bytes from data
      * @param length
@@ -1059,6 +1066,7 @@ public class LedgerHandle implements WriteHandle {
      *            entryId of the entry to add.
      * @param data
      *            array of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *            offset from which to take bytes from data
      * @param length
@@ -1084,6 +1092,7 @@ public class LedgerHandle implements WriteHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *            offset from which to take bytes from data
      * @param length
@@ -1111,6 +1120,7 @@ public class LedgerHandle implements WriteHandle {
      *            entryId of the entry to add.
      * @param data
      *            io.netty.buffer.ByteBuf of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param cb
      *            object implementing callbackinterface
      * @param ctx
