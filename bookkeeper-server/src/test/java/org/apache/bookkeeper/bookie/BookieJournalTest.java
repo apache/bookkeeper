@@ -44,7 +44,6 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.commons.collections4.map.StaticBucketMap;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Test;
