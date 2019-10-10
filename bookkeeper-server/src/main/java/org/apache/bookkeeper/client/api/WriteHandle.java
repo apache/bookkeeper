@@ -45,6 +45,7 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
      *
      * @param data a bytebuf to be written. The bytebuf's reference count will be decremented by 1 after the
      *             completable future is returned
+     *             do not reuse the buffer, bk-client will release it appropriately.
      * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
     CompletableFuture<Long> appendAsync(ByteBuf data);
@@ -54,6 +55,7 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
      *
      * @param data a bytebuf to be written. The bytebuf's reference count will be decremented by 1 after the
      *             call completes.
+     *             do not reuse the buffer, bk-client will release it appropriately.
      * @return the id of the newly appended entry
      */
     default long append(ByteBuf data) throws BKException, InterruptedException {
@@ -64,6 +66,7 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
      * Add entry asynchronously to an open ledger.
      *
      * @param data array of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately.
      * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
     default CompletableFuture<Long> appendAsync(ByteBuffer data) {
@@ -74,6 +77,7 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
      * Add entry synchronously to an open ledger.
      *
      * @param data array of bytes to be written
+     *             do not reuse the buffer, bk-client will release it appropriately.
      * @return the id of the newly appended entry
      */
     default long append(ByteBuffer data) throws BKException, InterruptedException {
@@ -84,6 +88,7 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
      * Add an entry asynchronously to an open ledger.
      *
      * @param data array of bytes to be written
+     *             do not reuse the buffer, bk-client will release it appropriately.
      * @return a completable future represents the add result, in case of success the future returns the entry id
      *         of this newly appended entry
      */
@@ -95,6 +100,7 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
      * Add an entry synchronously to an open ledger.
      *
      * @param data array of bytes to be written
+     *             do not reuse the buffer, bk-client will release it appropriately.
      * @return the entry id of this newly appended entry
      */
     default long append(byte[] data) throws BKException, InterruptedException {
@@ -105,6 +111,7 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
      * Add an entry asynchronously to an open ledger.
      *
      * @param data array of bytes to be written
+     *             do not reuse the buffer, bk-client will release it appropriately.
      * @param offset the offset in the bytes array
      * @param length the length of the bytes to be appended
      * @return a completable future represents the add result, in case of success the future returns the entry id
@@ -118,6 +125,7 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
      * Add an entry synchronously to an open ledger.
      *
      * @param data array of bytes to be written
+     *             do not reuse the buffer, bk-client will release it appropriately.
      * @param offset the offset in the bytes array
      * @param length the length of the bytes to be appended
      * @return the entry id of this newly appended entry
