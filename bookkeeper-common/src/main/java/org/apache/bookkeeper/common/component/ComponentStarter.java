@@ -47,7 +47,7 @@ public class ComponentStarter {
                 component.close();
                 log.info("Closed component {} in shutdown hook successfully. Exiting.", component.getName());
                 FutureUtils.complete(future, null);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.error("Failed to close component {} in shutdown hook gracefully, Exiting anyway",
                     component.getName(), e);
                 future.completeExceptionally(e);
