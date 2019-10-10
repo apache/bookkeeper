@@ -1780,7 +1780,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <div class="block">Add entry synchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written to the ledger</dd>
+<dd><code>data</code> - array of bytes to be written to the ledger
+         do not reuse the buffer, bk-client will release it appropriately</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the entryId of the new inserted entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -1802,7 +1803,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dd><code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#appendAsync-io.netty.buffer.ByteBuf-">appendAsync</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>data</code> - a bytebuf to be written. The bytebuf's reference count will be decremented by 1 after the
-             completable future is returned</dd>
+             completable future is returned
+             do not reuse the buffer, bk-client will release it appropriately.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an handle to the result, in case of success it will return the id of the newly appended entry</dd>
 </dl>
@@ -1823,7 +1825,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId to be added</dd>
-<dd><code>data</code> - array of bytes to be written to the ledger</dd>
+<dd><code>data</code> - array of bytes to be written to the ledger
+            do not reuse the buffer, bk-client will release it appropriately</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the entryId of the new inserted entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -1846,7 +1849,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <div class="block">Add entry synchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written to the ledger</dd>
+<dd><code>data</code> - array of bytes to be written to the ledger
+         do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>offset</code> - offset from which to take bytes from data</dd>
 <dd><code>length</code> - number of bytes to take from data</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -1874,7 +1878,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId to be added.</dd>
-<dd><code>data</code> - array of bytes to be written to the ledger</dd>
+<dd><code>data</code> - array of bytes to be written to the ledger
+            do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>offset</code> - offset from which to take bytes from data</dd>
 <dd><code>length</code> - number of bytes to take from data</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -1897,7 +1902,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <div class="block">Add entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+          do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>cb</code> - object implementing callbackinterface</dd>
 <dd><code>ctx</code> - some control object</dd>
 </dl>
@@ -1918,7 +1924,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId to be added</dd>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+            do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>cb</code> - object implementing callbackinterface</dd>
 <dd><code>ctx</code> - some control object</dd>
 </dl>
@@ -1938,7 +1945,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+          do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>offset</code> - offset from which to take bytes from data</dd>
 <dd><code>length</code> - number of bytes to take from data</dd>
 <dd><code>cb</code> - object implementing callbackinterface</dd>
@@ -1979,7 +1987,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId of the entry to add.</dd>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+            do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>offset</code> - offset from which to take bytes from data</dd>
 <dd><code>length</code> - number of bytes to take from data</dd>
 <dd><code>cb</code> - object implementing callbackinterface</dd>
@@ -2006,7 +2015,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId of the entry to add</dd>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+            do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>offset</code> - offset from which to take bytes from data</dd>
 <dd><code>length</code> - number of bytes to take from data</dd>
 <dd><code>cb</code> - object implementing callbackinterface</dd>
@@ -2033,7 +2043,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId of the entry to add.</dd>
-<dd><code>data</code> - io.netty.buffer.ByteBuf of bytes to be written</dd>
+<dd><code>data</code> - io.netty.buffer.ByteBuf of bytes to be written
+            do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>cb</code> - object implementing callbackinterface</dd>
 <dd><code>ctx</code> - some control object</dd>
 </dl>

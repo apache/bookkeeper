@@ -256,7 +256,8 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>data</code> - a bytebuf to be written. The bytebuf's reference count will be decremented by 1 after the
-             completable future is returned</dd>
+             completable future is returned
+             do not reuse the buffer, bk-client will release it appropriately.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an handle to the result, in case of success it will return the id of the newly appended entry</dd>
 </dl>
@@ -275,7 +276,8 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>data</code> - a bytebuf to be written. The bytebuf's reference count will be decremented by 1 after the
-             call completes.</dd>
+             call completes.
+             do not reuse the buffer, bk-client will release it appropriately.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the id of the newly appended entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -294,7 +296,8 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <div class="block">Add entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+            do not reuse the buffer, bk-client will release it appropriately.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an handle to the result, in case of success it will return the id of the newly appended entry</dd>
 </dl>
@@ -312,7 +315,8 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <div class="block">Add entry synchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+             do not reuse the buffer, bk-client will release it appropriately.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the id of the newly appended entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -331,7 +335,8 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <div class="block">Add an entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+             do not reuse the buffer, bk-client will release it appropriately.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a completable future represents the add result, in case of success the future returns the entry id
          of this newly appended entry</dd>
@@ -350,7 +355,8 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <div class="block">Add an entry synchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+             do not reuse the buffer, bk-client will release it appropriately.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the entry id of this newly appended entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -371,7 +377,8 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <div class="block">Add an entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+             do not reuse the buffer, bk-client will release it appropriately.</dd>
 <dd><code>offset</code> - the offset in the bytes array</dd>
 <dd><code>length</code> - the length of the bytes to be appended</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -394,7 +401,8 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <div class="block">Add an entry synchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+             do not reuse the buffer, bk-client will release it appropriately.</dd>
 <dd><code>offset</code> - the offset in the bytes array</dd>
 <dd><code>length</code> - the length of the bytes to be appended</dd>
 <dt><span class="returnLabel">Returns:</span></dt>

@@ -454,7 +454,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#addEntry-byte:A-">addEntry</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written to the ledger</dd>
+<dd><code>data</code> - array of bytes to be written to the ledger
+         do not reuse the buffer, bk-client will release it appropriately</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the entryId of the new inserted entry</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -480,7 +481,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#addEntry-byte:A-int-int-">addEntry</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written to the ledger</dd>
+<dd><code>data</code> - array of bytes to be written to the ledger
+         do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>offset</code> - offset from which to take bytes from data</dd>
 <dd><code>length</code> - number of bytes to take from data</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -506,7 +508,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncAddEntry-byte:A-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">asyncAddEntry</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+          do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>cb</code> - object implementing callbackinterface</dd>
 <dd><code>ctx</code> - some control object</dd>
 </dl>
@@ -529,7 +532,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncAddEntry-byte:A-int-int-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">asyncAddEntry</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - array of bytes to be written
+          do not reuse the buffer, bk-client will release it appropriately</dd>
 <dd><code>offset</code> - offset from which to take bytes from data</dd>
 <dd><code>length</code> - number of bytes to take from data</dd>
 <dd><code>cb</code> - object implementing callbackinterface</dd>
