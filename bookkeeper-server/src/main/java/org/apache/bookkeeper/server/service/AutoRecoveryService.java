@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
-import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -45,6 +44,7 @@ public class AutoRecoveryService extends ServerLifecycleComponent {
 
     @Override
     public void setExceptionHandler(UncaughtExceptionHandler handler) {
+        super.setExceptionHandler(handler);
         main.setExceptionHandler(handler);
     }
 
@@ -54,11 +54,7 @@ public class AutoRecoveryService extends ServerLifecycleComponent {
 
     @Override
     protected void doStart() {
-        try {
-            this.main.start();
-        } catch (UnavailableException e) {
-            throw new RuntimeException("Can't not start '" + NAME + "' component.", e);
-        }
+        this.main.start();
     }
 
     @Override

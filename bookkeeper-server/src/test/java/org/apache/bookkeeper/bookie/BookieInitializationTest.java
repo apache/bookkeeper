@@ -24,9 +24,13 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
 import static org.apache.bookkeeper.util.TestUtils.countNumOfFiles;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -35,6 +39,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
@@ -58,6 +64,8 @@ import java.util.Random;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
@@ -95,6 +103,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.util.DiskChecker;
+import org.apache.bookkeeper.util.LoggerOutput;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
@@ -105,6 +114,7 @@ import org.junit.rules.TestName;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.LoggingEvent;
 
 /**
  * Testing bookie initialization cases.
@@ -117,6 +127,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
     @Rule
     public final TestName runtime = new TestName();
+    @Rule
+    public LoggerOutput loggerOutput = new LoggerOutput();
     ZKMetadataBookieDriver driver;
 
     public BookieInitializationTest() {
@@ -640,6 +652,85 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         startFuture.get();
     }
 
+    /**
+     * Mock InterleavedLedgerStorage class where addEntry is mocked to throw
+     * OutOfMemoryError.
+     */
+    public static class MockInterleavedLedgerStorage extends InterleavedLedgerStorage {
+        AtomicInteger atmoicInt = new AtomicInteger(0);
+
+        @Override
+        public long addEntry(ByteBuf entry) throws IOException {
+            if (atmoicInt.incrementAndGet() == 10) {
+                throw new OutOfMemoryError("Some Injected Exception");
+            }
+            return super.addEntry(entry);
+        }
+    }
+
+    @Test
+    public void testBookieStartException() throws Exception {
+        File journalDir = createTempDir("bookie", "journal");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+
+        File ledgerDir = createTempDir("bookie", "ledger");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+
+        /*
+         * add few entries to journal file.
+         */
+        int numOfEntries = 100;
+        BookieJournalTest.writeV5Journal(Bookie.getCurrentDirectory(journalDir), numOfEntries,
+                "testV5Journal".getBytes());
+
+        /*
+         * This Bookie is configured to use MockInterleavedLedgerStorage.
+         * MockInterleavedLedgerStorage throws an Error for addEntry request.
+         * This is to simulate Bookie/BookieServer/BookieService 'start' failure
+         * because of 'Bookie.readJournal' failure.
+         */
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        int port = PortManager.nextFreePort();
+        conf.setBookiePort(port).setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[] { ledgerDir.getPath() }).setMetadataServiceUri(metadataServiceUri)
+                .setLedgerStorageClass(MockInterleavedLedgerStorage.class.getName());
+
+        BookieConfiguration bkConf = new BookieConfiguration(conf);
+
+        /*
+         * create cookie and write it to JournalDir/LedgerDir.
+         */
+        Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
+        Cookie cookie = cookieBuilder.build();
+        cookie.writeToDirectory(new File(journalDir, "current"));
+        cookie.writeToDirectory(new File(ledgerDir, "current"));
+
+        /*
+         * Create LifecycleComponent for BookieServer and start it.
+         */
+        LifecycleComponent server = Main.buildBookieServer(bkConf);
+        CompletableFuture<Void> startFuture = ComponentStarter.startComponent(server);
+
+        /*
+         * Since Bookie/BookieServer/BookieService is expected to fail, it would
+         * cause bookie-server component's exceptionHandler to get triggered.
+         * This exceptionHandler will make sure all of the components to get
+         * closed and then finally completes the Future.
+         */
+        startFuture.get();
+
+        /*
+         * make sure that Component's exceptionHandler is called by checking if
+         * the error message of ExceptionHandler is logged. This Log message is
+         * defined in anonymous exceptionHandler class defined in
+         * ComponentStarter.startComponent method.
+         */
+        loggerOutput.expect((List<LoggingEvent> logEvents) -> {
+            assertThat(logEvents,
+                    hasItem(hasProperty("message", containsString("Triggered exceptionHandler of Component:"))));
+        });
+    }
+
     @Test
     public void testAutoRecoveryServiceExceptionHandler() throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -889,8 +980,6 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // are injecting no-op shutdown.
         server.shutdown();
 
-        long usableSpace = tmpDir.getUsableSpace();
-        long totalSpace = tmpDir.getTotalSpace();
         conf.setDiskUsageThreshold(0.001f)
                 .setDiskUsageWarnThreshold(0.0f).setReadOnlyModeEnabled(true).setIsForceGCAllowWhenNoSpace(true)
                 .setMinUsableSizeForIndexFileCreation(Long.MAX_VALUE);

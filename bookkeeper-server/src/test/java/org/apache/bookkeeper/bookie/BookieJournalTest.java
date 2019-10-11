@@ -111,7 +111,7 @@ public class BookieJournalTest {
     /**
      * Generate fence entry.
      */
-    private ByteBuf generateFenceEntry(long ledgerId) {
+    private static ByteBuf generateFenceEntry(long ledgerId) {
         ByteBuf bb = Unpooled.buffer();
         bb.writeLong(ledgerId);
         bb.writeLong(Bookie.METAENTRY_ID_FENCE_KEY);
@@ -121,7 +121,7 @@ public class BookieJournalTest {
     /**
      * Generate meta entry with given master key.
      */
-    private ByteBuf generateMetaEntry(long ledgerId, byte[] masterKey) {
+    private static ByteBuf generateMetaEntry(long ledgerId, byte[] masterKey) {
         ByteBuf bb = Unpooled.buffer();
         bb.writeLong(ledgerId);
         bb.writeLong(Bookie.METAENTRY_ID_LEDGER_KEY);
@@ -290,7 +290,7 @@ public class BookieJournalTest {
         return jc;
     }
 
-    private JournalChannel writeV5Journal(File journalDir, int numEntries, byte[] masterKey) throws Exception {
+    static JournalChannel writeV5Journal(File journalDir, int numEntries, byte[] masterKey) throws Exception {
         long logId = System.currentTimeMillis();
         JournalChannel jc = new JournalChannel(journalDir, logId);
 
