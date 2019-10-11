@@ -116,7 +116,7 @@ public class AutoRecoveryMain {
     /*
      * Start daemons
      */
-    public void start() throws UnavailableException {
+    public void start() {
         auditorElector.start();
         replicationWorker.start();
         if (null != uncaughtExceptionHandler) {

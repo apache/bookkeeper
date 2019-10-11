@@ -39,7 +39,6 @@ import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -137,7 +136,7 @@ public class BookieServer {
             : new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE), allocator);
     }
 
-    public void start() throws IOException, UnavailableException, InterruptedException, BKException {
+    public void start() throws InterruptedException {
         this.bookie.start();
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {

@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.common.component;
 
 import java.util.concurrent.CompletableFuture;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
@@ -46,7 +47,7 @@ public class ComponentStarter {
                 component.close();
                 log.info("Closed component {} in shutdown hook successfully. Exiting.", component.getName());
                 FutureUtils.complete(future, null);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.error("Failed to close component {} in shutdown hook gracefully, Exiting anyway",
                     component.getName(), e);
                 future.completeExceptionally(e);
@@ -72,6 +73,8 @@ public class ComponentStarter {
 
         // register a component exception handler
         component.setExceptionHandler((t, e) -> {
+            log.error("Triggered exceptionHandler of Component: {} because of Exception in Thread: {}",
+                    component.getName(), t, e);
             // start the shutdown hook when an uncaught exception happen in the lifecycle component.
             shutdownHookThread.start();
         });
