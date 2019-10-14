@@ -812,7 +812,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                         }
                         isPaddingRecord = true;
                     } else {
-                        throw new IOException("Invalid record found with negative length : " + len);
+                        LOG.error("Invalid record found with negative length: {}", len);
+                        throw new IOException();
                     }
                 }
                 recBuff.clear();
