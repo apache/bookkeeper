@@ -131,16 +131,17 @@ public class LedgerFragment {
      * @return entryId
      */
     public long getFirstStoredEntryId() {
-        Long firstEntry = null;
+        Long firstEntry = LedgerHandle.INVALID_ENTRY_ID;
         for (int bookieIndex : bookieIndexes) {
             Long firstStoredEntryForBookie = getFirstStoredEntryId(bookieIndex);
-            if (null == firstEntry) {
-                firstEntry = firstStoredEntryForBookie;
-            } else if (null != firstStoredEntryForBookie) {
+            if ((firstEntry != LedgerHandle.INVALID_ENTRY_ID)
+                    && (firstStoredEntryForBookie != LedgerHandle.INVALID_ENTRY_ID)) {
                 firstEntry = Math.min(firstEntry, firstStoredEntryForBookie);
+            } else if (firstStoredEntryForBookie != LedgerHandle.INVALID_ENTRY_ID) {
+                firstEntry = firstStoredEntryForBookie;
             }
         }
-        return null == firstEntry ? LedgerHandle.INVALID_ENTRY_ID : firstEntry;
+        return firstEntry;
     }
 
     /**
