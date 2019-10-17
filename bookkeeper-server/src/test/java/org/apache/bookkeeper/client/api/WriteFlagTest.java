@@ -21,6 +21,10 @@
 package org.apache.bookkeeper.client.api;
 
 import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_SYNC;
+import static org.apache.bookkeeper.client.api.WriteFlag.DIGEST_TYPE_CRC32;
+import static org.apache.bookkeeper.client.api.WriteFlag.DIGEST_TYPE_CRC32C;
+import static org.apache.bookkeeper.client.api.WriteFlag.DIGEST_TYPE_DUMMY;
+import static org.apache.bookkeeper.client.api.WriteFlag.DIGEST_TYPE_MAC;
 import static org.junit.Assert.assertEquals;
 
 import java.util.EnumSet;
@@ -58,5 +62,13 @@ public class WriteFlagTest {
     @Test
     public void testGetWriteFlagsValueDeferredSync() {
         assertEquals(1, WriteFlag.getWriteFlagsValue(EnumSet.of(DEFERRED_SYNC)));
+    }
+
+    @Test
+    public void testVerifyChecksumAndChecksumTypeFlags() {
+        assertEquals(0, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_DUMMY)));
+        assertEquals(2, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_CRC32)));
+        assertEquals(4, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_MAC)));
+        assertEquals(6, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_CRC32C)));
     }
 }

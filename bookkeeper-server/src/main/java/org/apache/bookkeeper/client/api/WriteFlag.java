@@ -30,12 +30,32 @@ import lombok.Getter;
 public enum WriteFlag {
 
     /**
-     * Writes will be acknowledged after writing to the filesystem
+     * Bit 0 - Writes will be acknowledged after writing to the filesystem
      * but not yet been persisted to disks.
      *
      * @see ForceableHandle#force()
      */
-    DEFERRED_SYNC(0x1 << 0);
+    DEFERRED_SYNC(0x1 << 0),
+    /**
+     * Bits 1,2,3 - value 0.
+     * Do not verify any checksum.
+     */
+    DIGEST_TYPE_DUMMY(0x0 << 1),
+    /**
+     * Bits 1,2,3 - value 1.
+     * Use digest type CRC32,if checksum verification is enabled on bookie.
+     */
+    DIGEST_TYPE_CRC32(0x1 << 1),
+    /**
+     * Bits 1,2,3 - value 2.
+     * Use digest type MAC,if checksum verification is enabled on bookie.
+     */
+    DIGEST_TYPE_MAC(0x2 << 1),
+    /**
+     * Bits 1,2,3 - value 3.
+     * Use digest type CRC32C,if checksum verification is enabled on bookie.
+     */
+    DIGEST_TYPE_CRC32C(0x3 << 1);
 
     /**
      * No flag is set, use default behaviour.
@@ -57,10 +77,20 @@ public enum WriteFlag {
      * @return a set of flags
      */
     public static EnumSet<WriteFlag> getWriteFlags(int flagValue) {
+        EnumSet<WriteFlag> writeFlags = EnumSet.noneOf(WriteFlag.class);
         if ((flagValue & DEFERRED_SYNC.value) == DEFERRED_SYNC.value) {
-            return ONLY_DEFERRED_SYNC;
+            writeFlags.add(DEFERRED_SYNC);
         }
-        return WriteFlag.NONE;
+        if ((flagValue & DIGEST_TYPE_DUMMY.value) == DIGEST_TYPE_DUMMY.value) {
+            writeFlags.add(DIGEST_TYPE_DUMMY);
+        } else if ((flagValue & DIGEST_TYPE_CRC32.value) == DIGEST_TYPE_CRC32.value) {
+            writeFlags.add(DIGEST_TYPE_CRC32);
+        } else if ((flagValue & DIGEST_TYPE_CRC32C.value) == DIGEST_TYPE_CRC32C.value) {
+            writeFlags.add(DIGEST_TYPE_CRC32C);
+        } else if ((flagValue & DIGEST_TYPE_MAC.value) == DIGEST_TYPE_MAC.value) {
+            writeFlags.add(DIGEST_TYPE_MAC);
+        }
+        return writeFlags;
     }
 
     /**
