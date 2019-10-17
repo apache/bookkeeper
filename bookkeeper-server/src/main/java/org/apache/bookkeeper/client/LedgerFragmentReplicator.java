@@ -121,17 +121,13 @@ public class LedgerFragmentReplicator {
         }
         Long startEntryId = lf.getFirstStoredEntryId();
         Long endEntryId = lf.getLastStoredEntryId();
-        if (endEntryId == null) {
-            /*
-             * Ideally this should never happen if bookie failure is taken care
-             * of properly. Nothing we can do though in this case.
-             */
-            LOG.warn("Dead bookie (" + lf.getAddresses()
-                    + ") is still part of the current"
-                    + " active ensemble for ledgerId: " + lh.getId());
-            ledgerFragmentMcb.processResult(BKException.Code.OK, null, null);
-            return;
-        }
+
+        /*
+         * if startEntryId is INVALID_ENTRY_ID then endEntryId should be
+         * endEntryId and viceversa.
+         */
+        assert !(startEntryId == INVALID_ENTRY_ID ^ endEntryId == INVALID_ENTRY_ID);
+
         if (startEntryId > endEntryId || endEntryId <= INVALID_ENTRY_ID) {
             // for open ledger which there is no entry, the start entry id is 0,
             // the end entry id is -1.
@@ -248,6 +244,13 @@ public class LedgerFragmentReplicator {
 
         long firstEntryId = ledgerFragment.getFirstStoredEntryId();
         long lastEntryId = ledgerFragment.getLastStoredEntryId();
+
+        /*
+         * if startEntryId is INVALID_ENTRY_ID then endEntryId should be
+         * endEntryId and viceversa.
+         */
+        assert !(firstEntryId == INVALID_ENTRY_ID ^ lastEntryId == INVALID_ENTRY_ID);
+
         long numberOfEntriesToReplicate = (lastEntryId - firstEntryId) + 1;
         long splitsWithFullEntries = numberOfEntriesToReplicate
                 / rereplicationEntryBatchSize;

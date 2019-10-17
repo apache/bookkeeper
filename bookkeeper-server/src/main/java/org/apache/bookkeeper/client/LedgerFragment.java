@@ -171,16 +171,18 @@ public class LedgerFragment {
      * @return entryId
      */
     public long getLastStoredEntryId() {
-        Long lastEntry = null;
+        Long lastEntry = LedgerHandle.INVALID_ENTRY_ID;
         for (int bookieIndex : bookieIndexes) {
             Long lastStoredEntryIdForBookie = getLastStoredEntryId(bookieIndex);
-            if (null == lastEntry) {
-                lastEntry = lastStoredEntryIdForBookie;
-            } else if (null != lastStoredEntryIdForBookie) {
-                lastEntry = Math.max(lastEntry, lastStoredEntryIdForBookie);
+            if (lastStoredEntryIdForBookie != LedgerHandle.INVALID_ENTRY_ID) {
+                if (lastEntry == LedgerHandle.INVALID_ENTRY_ID) {
+                    lastEntry = lastStoredEntryIdForBookie;
+                } else {
+                    lastEntry = Math.max(lastEntry, lastStoredEntryIdForBookie);
+                }
             }
         }
-        return null == lastEntry ? LedgerHandle.INVALID_ENTRY_ID : lastEntry;
+        return lastEntry;
     }
 
     /**
