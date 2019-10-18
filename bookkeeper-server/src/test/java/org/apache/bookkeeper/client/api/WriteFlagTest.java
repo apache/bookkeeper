@@ -67,8 +67,8 @@ public class WriteFlagTest {
     @Test
     public void testVerifyChecksumAndChecksumTypeFlags() {
         assertEquals(0, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_DUMMY)));
-        assertEquals(2, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_CRC32)));
-        assertEquals(4, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_MAC)));
-        assertEquals(6, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_CRC32C)));
+        assertEquals(4, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_CRC32)));
+        assertEquals(8, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_MAC)));
+        assertEquals(12, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_CRC32C)));
     }
 }

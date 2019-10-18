@@ -37,25 +37,25 @@ public enum WriteFlag {
      */
     DEFERRED_SYNC(0x1 << 0),
     /**
-     * Bits 1,2,3 - value 0.
+     * Bits 2,3,4 - value 0.
      * Do not verify any checksum.
      */
-    DIGEST_TYPE_DUMMY(0x0 << 1),
+    DIGEST_TYPE_DUMMY(0x0 << 2),
     /**
-     * Bits 1,2,3 - value 1.
+     * Bits 2,3,4 - value 1.
      * Use digest type CRC32,if checksum verification is enabled on bookie.
      */
-    DIGEST_TYPE_CRC32(0x1 << 1),
+    DIGEST_TYPE_CRC32(0x1 << 2),
     /**
-     * Bits 1,2,3 - value 2.
+     * Bits 2,3,4 - value 2.
      * Use digest type MAC,if checksum verification is enabled on bookie.
      */
-    DIGEST_TYPE_MAC(0x2 << 1),
+    DIGEST_TYPE_MAC(0x2 << 2),
     /**
-     * Bits 1,2,3 - value 3.
+     * Bits 2,3,4 - value 3.
      * Use digest type CRC32C,if checksum verification is enabled on bookie.
      */
-    DIGEST_TYPE_CRC32C(0x3 << 1);
+    DIGEST_TYPE_CRC32C(0x3 << 2);
 
     /**
      * No flag is set, use default behaviour.
