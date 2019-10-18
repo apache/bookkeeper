@@ -64,6 +64,11 @@ public enum WriteFlag {
 
     private static final EnumSet<WriteFlag> ONLY_DEFERRED_SYNC = EnumSet.of(DEFERRED_SYNC);
 
+    /**
+     * Bits 2,3,4 represent DigestType.
+     */
+    private static final int DIGEST_TYPE_BITS = 0x7 << 2;
+
     private final int value;
 
     WriteFlag(int value) {
@@ -81,13 +86,13 @@ public enum WriteFlag {
         if ((flagValue & DEFERRED_SYNC.value) == DEFERRED_SYNC.value) {
             writeFlags.add(DEFERRED_SYNC);
         }
-        if ((flagValue & DIGEST_TYPE_DUMMY.value) == DIGEST_TYPE_DUMMY.value) {
+        if ((flagValue & DIGEST_TYPE_BITS) == DIGEST_TYPE_DUMMY.value) {
             writeFlags.add(DIGEST_TYPE_DUMMY);
-        } else if ((flagValue & DIGEST_TYPE_CRC32.value) == DIGEST_TYPE_CRC32.value) {
+        } else if ((flagValue & DIGEST_TYPE_BITS) == DIGEST_TYPE_CRC32.value) {
             writeFlags.add(DIGEST_TYPE_CRC32);
-        } else if ((flagValue & DIGEST_TYPE_CRC32C.value) == DIGEST_TYPE_CRC32C.value) {
+        } else if ((flagValue & DIGEST_TYPE_BITS) == DIGEST_TYPE_CRC32C.value) {
             writeFlags.add(DIGEST_TYPE_CRC32C);
-        } else if ((flagValue & DIGEST_TYPE_MAC.value) == DIGEST_TYPE_MAC.value) {
+        } else if ((flagValue & DIGEST_TYPE_BITS) == DIGEST_TYPE_MAC.value) {
             writeFlags.add(DIGEST_TYPE_MAC);
         }
         return writeFlags;

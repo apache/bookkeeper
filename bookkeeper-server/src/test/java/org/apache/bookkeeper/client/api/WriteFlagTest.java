@@ -44,6 +44,18 @@ public class WriteFlagTest {
     }
 
     @Test
+    public void testDigestTypeFlags() {
+        assertEquals(EnumSet.of(DIGEST_TYPE_DUMMY),
+                WriteFlag.getWriteFlags(DIGEST_TYPE_DUMMY.getValue()));
+        assertEquals(EnumSet.of(DIGEST_TYPE_CRC32),
+                WriteFlag.getWriteFlags(DIGEST_TYPE_CRC32.getValue()));
+        assertEquals(EnumSet.of(DIGEST_TYPE_MAC),
+                WriteFlag.getWriteFlags(DIGEST_TYPE_MAC.getValue()));
+        assertEquals(EnumSet.of(DIGEST_TYPE_CRC32C),
+                WriteFlag.getWriteFlags(DIGEST_TYPE_CRC32C.getValue()));
+    }
+
+    @Test
     public void testGetWriteFlagsNone() {
         assertEquals(WriteFlag.NONE,
                 WriteFlag.getWriteFlags(NONE));
@@ -65,7 +77,7 @@ public class WriteFlagTest {
     }
 
     @Test
-    public void testVerifyChecksumAndChecksumTypeFlags() {
+    public void testGetDigestTypeValue() {
         assertEquals(0, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_DUMMY)));
         assertEquals(4, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_CRC32)));
         assertEquals(8, WriteFlag.getWriteFlagsValue(EnumSet.of(DIGEST_TYPE_MAC)));
