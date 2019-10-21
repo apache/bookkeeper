@@ -124,9 +124,13 @@ public class LedgerFragmentReplicator {
 
         /*
          * if startEntryId is INVALID_ENTRY_ID then endEntryId should be
-         * endEntryId and viceversa.
+         * INVALID_ENTRY_ID and viceversa.
          */
-        assert !(startEntryId == INVALID_ENTRY_ID ^ endEntryId == INVALID_ENTRY_ID);
+        if (startEntryId == INVALID_ENTRY_ID ^ endEntryId == INVALID_ENTRY_ID) {
+            LOG.error("For LedgerFragment: {}, seeing inconsistent startEntryId: {} and endEntryId: {}", lf,
+                    startEntryId, endEntryId);
+            assert false;
+        }
 
         if (startEntryId > endEntryId || endEntryId <= INVALID_ENTRY_ID) {
             // for open ledger which there is no entry, the start entry id is 0,
