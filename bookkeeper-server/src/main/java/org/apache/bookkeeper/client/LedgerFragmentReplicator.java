@@ -127,8 +127,8 @@ public class LedgerFragmentReplicator {
          * INVALID_ENTRY_ID and viceversa.
          */
         if (startEntryId == INVALID_ENTRY_ID ^ endEntryId == INVALID_ENTRY_ID) {
-            LOG.error("For LedgerFragment: {}, seeing inconsistent startEntryId: {} and endEntryId: {}", lf,
-                    startEntryId, endEntryId);
+            LOG.error("For LedgerFragment: {}, seeing inconsistent firstStoredEntryId: {} and lastStoredEntryId: {}",
+                    lf, startEntryId, endEntryId);
             assert false;
         }
 
@@ -250,10 +250,14 @@ public class LedgerFragmentReplicator {
         long lastEntryId = ledgerFragment.getLastStoredEntryId();
 
         /*
-         * if startEntryId is INVALID_ENTRY_ID then endEntryId should be
-         * endEntryId and viceversa.
+         * if firstEntryId is INVALID_ENTRY_ID then lastEntryId should be
+         * INVALID_ENTRY_ID and viceversa.
          */
-        assert !(firstEntryId == INVALID_ENTRY_ID ^ lastEntryId == INVALID_ENTRY_ID);
+        if (firstEntryId == INVALID_ENTRY_ID ^ lastEntryId == INVALID_ENTRY_ID) {
+            LOG.error("For LedgerFragment: {}, seeing inconsistent firstStoredEntryId: {} and lastStoredEntryId: {}",
+                    ledgerFragment, firstEntryId, lastEntryId);
+            assert false;
+        }
 
         long numberOfEntriesToReplicate = (lastEntryId - firstEntryId) + 1;
         long splitsWithFullEntries = numberOfEntriesToReplicate
