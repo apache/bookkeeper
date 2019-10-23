@@ -607,7 +607,9 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                 .withLastEntryId(lastEntryId).withLength(65576).withClosedState();
         LedgerMetadata meta = builder.build();
 
-        assertFalse("expected areEntriesOfLedgerStoredInTheBookie to return False",
+        assertFalse("expected areEntriesOfLedgerStoredInTheBookie to return False for bookie3",
                 BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId, bookie3, meta));
+        assertTrue("expected areEntriesOfLedgerStoredInTheBookie to return true for bookie2",
+                BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId, bookie2, meta));
     }
 }
