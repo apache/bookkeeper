@@ -694,7 +694,6 @@ class BKDistributedLogManager implements DistributedLogManager {
                 subscriberId,
                 false,
                 statsLogger);
-        pendingReaders.add(reader);
         return FutureUtils.value(reader);
     }
 
