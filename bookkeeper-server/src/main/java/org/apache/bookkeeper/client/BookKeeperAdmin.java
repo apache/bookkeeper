@@ -1574,10 +1574,11 @@ public class BookKeeperAdmin implements AutoCloseable {
         while (ensemblesOfSegmentsIterator.hasNext()) {
             ensemble = ensemblesOfSegmentsIterator.next();
             if (ensemble.contains(bookieAddress)) {
-                if (areEntriesOfSegmentStoredInTheBookie(ledgerMetadata, bookieAddress, segmentNo++)) {
+                if (areEntriesOfSegmentStoredInTheBookie(ledgerMetadata, bookieAddress, segmentNo)) {
                     return true;
                 }
             }
+            segmentNo++;
         }
         return false;
     }
@@ -1590,7 +1591,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         List<Entry<Long, ? extends List<BookieSocketAddress>>> segments =
             new LinkedList<>(ledgerMetadata.getAllEnsembles().entrySet());
-
+        List<BookieSocketAddress> currentSegmentEnsemble = segments.get(segmentNo).getValue();
         boolean lastSegment = (segmentNo == (segments.size() - 1));
 
         /*
@@ -1603,6 +1604,14 @@ public class BookKeeperAdmin implements AutoCloseable {
          * Following the same approach as in LedgerChecker.checkLedger
          */
         if (lastSegment && isLedgerClosed && (ledgerMetadata.getLastEntryId() < segments.get(segmentNo).getKey())) {
+            return false;
+        }
+
+        /*
+         * If current segment ensemble doesn't contain this bookie then return
+         * false.
+         */
+        if (!currentSegmentEnsemble.contains(bookieAddress)) {
             return false;
         }
 
@@ -1639,7 +1648,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         DistributionSchedule distributionSchedule = new RoundRobinDistributionSchedule(
                 ledgerMetadata.getWriteQuorumSize(), ledgerMetadata.getAckQuorumSize(),
                 ledgerMetadata.getEnsembleSize());
-        List<BookieSocketAddress> currentSegmentEnsemble = segments.get(segmentNo).getValue();
+
         int thisBookieIndexInCurrentEnsemble = currentSegmentEnsemble.indexOf(bookieAddress);
         long firstEntryId = segments.get(segmentNo).getKey();
         long lastEntryId = lastSegment ? ledgerMetadata.getLastEntryId() : segments.get(segmentNo + 1).getKey() - 1;
