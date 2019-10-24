@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
@@ -574,5 +575,41 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         assertEquals("Exception code", BKException.Code.NoSuchLedgerExistsException, exceptionCode.get());
         bkAdmin.close();
         bkc.close();
+    }
+
+    @Test
+    public void testAreEntriesOfLedgerStoredInTheBookieForMultipleSegments() throws Exception {
+        int lastEntryId = 10;
+        long ledgerId = 100L;
+        BookieSocketAddress bookie0 = new BookieSocketAddress("bookie0:3181");
+        BookieSocketAddress bookie1 = new BookieSocketAddress("bookie1:3181");
+        BookieSocketAddress bookie2 = new BookieSocketAddress("bookie2:3181");
+        BookieSocketAddress bookie3 = new BookieSocketAddress("bookie3:3181");
+
+        List<BookieSocketAddress> ensembleOfSegment1 = new ArrayList<BookieSocketAddress>();
+        ensembleOfSegment1.add(bookie0);
+        ensembleOfSegment1.add(bookie1);
+        ensembleOfSegment1.add(bookie2);
+
+        List<BookieSocketAddress> ensembleOfSegment2 = new ArrayList<BookieSocketAddress>();
+        ensembleOfSegment2.add(bookie3);
+        ensembleOfSegment2.add(bookie1);
+        ensembleOfSegment2.add(bookie2);
+
+        LedgerMetadataBuilder builder = LedgerMetadataBuilder.create();
+        builder.withEnsembleSize(3)
+                .withWriteQuorumSize(3)
+                .withAckQuorumSize(2)
+                .withDigestType(digestType.toApiDigestType())
+                .withPassword(PASSWORD.getBytes())
+                .newEnsembleEntry(0, ensembleOfSegment1)
+                .newEnsembleEntry(lastEntryId + 1, ensembleOfSegment2)
+                .withLastEntryId(lastEntryId).withLength(65576).withClosedState();
+        LedgerMetadata meta = builder.build();
+
+        assertFalse("expected areEntriesOfLedgerStoredInTheBookie to return False for bookie3",
+                BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId, bookie3, meta));
+        assertTrue("expected areEntriesOfLedgerStoredInTheBookie to return true for bookie2",
+                BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId, bookie2, meta));
     }
 }
