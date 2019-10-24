@@ -290,7 +290,13 @@ public class BookieJournalTest {
         return jc;
     }
 
-    static JournalChannel writeV5Journal(File journalDir, int numEntries, byte[] masterKey) throws Exception {
+    static JournalChannel writeV5Journal(File journalDir, int numEntries,
+                                         byte[] masterKey) throws Exception {
+        return writeV5Journal(journalDir, numEntries, masterKey, false);
+    }
+
+    static JournalChannel writeV5Journal(File journalDir, int numEntries,
+                                         byte[] masterKey, boolean corruptLength) throws Exception {
         long logId = System.currentTimeMillis();
         JournalChannel jc = new JournalChannel(journalDir, logId);
 
@@ -312,7 +318,11 @@ public class BookieJournalTest {
             lastConfirmed = i;
             length += i;
             ByteBuf lenBuff = Unpooled.buffer();
-            lenBuff.writeInt(packet.readableBytes());
+            if (corruptLength) {
+                lenBuff.writeInt(-1);
+            } else {
+                lenBuff.writeInt(packet.readableBytes());
+            }
             bc.write(lenBuff);
             bc.write(packet);
             packet.release();
