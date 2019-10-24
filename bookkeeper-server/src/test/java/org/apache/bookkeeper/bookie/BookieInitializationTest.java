@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.bookie.BookieJournalTest.writeV5Journal;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
 import static org.apache.bookkeeper.util.TestUtils.countNumOfFiles;
@@ -680,7 +681,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
          * add few entries to journal file.
          */
         int numOfEntries = 100;
-        BookieJournalTest.writeV5Journal(Bookie.getCurrentDirectory(journalDir), numOfEntries,
+        writeV5Journal(Bookie.getCurrentDirectory(journalDir), numOfEntries,
                 "testV5Journal".getBytes());
 
         /*
@@ -729,6 +730,40 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             assertThat(logEvents,
                     hasItem(hasProperty("message", containsString("Triggered exceptionHandler of Component:"))));
         });
+    }
+
+    /**
+     * Test that if the journal reads an entry with negative length, it shuts down
+     * the bookie normally. An admin should look to see what has
+     * happened in this case.
+     */
+    @Test
+    public void testNegativeLengthEntryBookieShutdown() throws Exception {
+        File journalDir = createTempDir("bookie", "journal");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+
+        File ledgerDir = createTempDir("bookie", "ledger");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+
+        writeV5Journal(Bookie.getCurrentDirectory(journalDir), 5,
+                "testV5Journal".getBytes(), true);
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+                .setMetadataServiceUri(null);
+
+        Bookie b = null;
+        try {
+            b = new Bookie(conf);
+            b.start();
+            assertFalse("Bookie should shutdown normally after catching IOException"
+                    + " due to corrupt entry with negative length", b.isRunning());
+        } finally {
+            if (b != null) {
+                b.shutdown();
+            }
+        }
     }
 
     @Test
