@@ -199,7 +199,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
     }
 
     /**
-     * A successful run with encoding multiple ledgers while generating cookie
+     * A successful run with encoding multiple ledgers while generating cookie.
      */
     @Test
     public void testGenerateCookieWithMultipleLedgerDirs() throws Exception {
@@ -228,7 +228,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
         for (String cookieField : cookieFields) {
             String[] fields = cookieField.split(" ");
             if (fields[0].equals("ledgerDirs:")) {
-                assertEquals(fields[1].charAt(1),'2');
+                assertEquals(fields[1].charAt(1), '2');
             }
         }
     }
