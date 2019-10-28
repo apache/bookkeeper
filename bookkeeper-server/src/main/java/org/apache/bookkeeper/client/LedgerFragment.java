@@ -131,7 +131,7 @@ public class LedgerFragment {
      * @return entryId
      */
     public long getFirstStoredEntryId() {
-        Long firstEntry = LedgerHandle.INVALID_ENTRY_ID;
+        long firstEntry = LedgerHandle.INVALID_ENTRY_ID;
         for (int bookieIndex : bookieIndexes) {
             Long firstStoredEntryForBookie = getFirstStoredEntryId(bookieIndex);
             if (firstStoredEntryForBookie != LedgerHandle.INVALID_ENTRY_ID) {
@@ -171,7 +171,7 @@ public class LedgerFragment {
      * @return entryId
      */
     public long getLastStoredEntryId() {
-        Long lastEntry = LedgerHandle.INVALID_ENTRY_ID;
+        long lastEntry = LedgerHandle.INVALID_ENTRY_ID;
         for (int bookieIndex : bookieIndexes) {
             Long lastStoredEntryIdForBookie = getLastStoredEntryId(bookieIndex);
             if (lastStoredEntryIdForBookie != LedgerHandle.INVALID_ENTRY_ID) {
