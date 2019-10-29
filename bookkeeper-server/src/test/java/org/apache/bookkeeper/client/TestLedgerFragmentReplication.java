@@ -26,7 +26,10 @@ import static org.junit.Assert.fail;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -345,4 +348,66 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         }
     }
 
+    @Test
+    public void testSplitLedgerFragmentState() throws Exception {
+        int lastEntryId = 10;
+        int rereplicationEntryBatchSize = 10;
+
+        List<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
+        ensemble.add(new BookieSocketAddress("bookie0:3181"));
+        ensemble.add(new BookieSocketAddress("bookie1:3181"));
+        ensemble.add(new BookieSocketAddress("bookie2:3181"));
+        ensemble.add(new BookieSocketAddress("bookie3:3181"));
+        ensemble.add(new BookieSocketAddress("bookie4:3181"));
+        ensemble.add(new BookieSocketAddress("bookie5:3181"));
+        ensemble.add(new BookieSocketAddress("bookie6:3181"));
+
+        LedgerMetadataBuilder builder = LedgerMetadataBuilder.create();
+        builder.withEnsembleSize(7).withWriteQuorumSize(3).withAckQuorumSize(2)
+                .withDigestType(TEST_DIGEST_TYPE.toApiDigestType()).withPassword(TEST_PSSWD)
+                .newEnsembleEntry(0, ensemble).withLastEntryId(lastEntryId).withLength(512).withClosedState();
+        LedgerMetadata met = builder.build();
+
+        LedgerHandle lh = new LedgerHandle(bkc.getClientCtx(), 100L, new Versioned<>(met, new LongVersion(0L)),
+                TEST_DIGEST_TYPE, TEST_PSSWD, EnumSet.noneOf(WriteFlag.class));
+
+        /*
+         * create LedgerFragment from the ledger ensemble for the bookies with
+         * indexes 1 and 5.
+         */
+        Set<Integer> bookieIndexes = new HashSet<>();
+        bookieIndexes.add(1);
+        bookieIndexes.add(5);
+        LedgerFragment lfrag = new LedgerFragment(lh, 0, 10, bookieIndexes);
+
+        /*
+         * Since this ledger contains 11 entries (lastEntryId is 10), when it is
+         * split into subFragments of size 10 it will be split into 2. In the
+         * first subfragment, firstEntryID (and firstStoredEntryId) will be 0.
+         * lastKnownEntryID will be 9 but lastStoredEntryId will be 8. Because
+         * entry 9 will not be stored in both of the nodes and entry 8 is the
+         * last entry that is stored in either one of the node.
+         *
+         * In the second sub-fragment firstEntryID, firstStoredEntryId,
+         * lastKnownEntryID and lastStoredEntryId should be 10.
+         */
+        Set<LedgerFragment> partionedFragments = LedgerFragmentReplicator.splitIntoSubFragments(lh, lfrag,
+                rereplicationEntryBatchSize);
+        assertEquals("Number of sub-fragments", 2, partionedFragments.size());
+        for (LedgerFragment partionedFragment : partionedFragments) {
+            if (partionedFragment.getFirstEntryId() == 0) {
+                validateEntryIds(partionedFragment, 0, 0, 9, 8);
+            } else {
+                validateEntryIds(partionedFragment, 10, 10, 10, 10);
+            }
+        }
+    }
+
+    private void validateEntryIds(LedgerFragment partionedFragment, long expectedFirstEntryId,
+            long expectedFirstStoredEntryId, long expectedLastKnownEntryID, long expectedLastStoredEntryId) {
+        assertEquals("FirstEntryId", expectedFirstEntryId, partionedFragment.getFirstEntryId());
+        assertEquals("FirstStoredEntryId", expectedFirstStoredEntryId, partionedFragment.getFirstStoredEntryId());
+        assertEquals("LastKnownEntryID", expectedLastKnownEntryID, partionedFragment.getLastKnownEntryId());
+        assertEquals("LastStoredEntryId", expectedLastStoredEntryId, partionedFragment.getLastStoredEntryId());
+    }
 }
