@@ -21,6 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands.cookie;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
@@ -32,6 +33,8 @@ import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
+
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.tools.cli.helpers.CookieCommandTestBase;
@@ -136,7 +139,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
             .setBookieHost(BOOKIE_ID)
             .setInstanceId(instanceId)
             .setJournalDirs(journalDir)
-            .setLedgerDirs(ledgersDir)
+            .setLedgerDirs(Cookie.encodeDirPaths(ledgersDir.split(",")))
             .build();
 
         when(rm.getClusterInstanceId()).thenReturn(instanceId);
@@ -172,7 +175,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
             .setBookieHost(BOOKIE_ID)
             .setInstanceId(instanceId)
             .setJournalDirs(journalDir)
-            .setLedgerDirs(ledgersDir)
+            .setLedgerDirs(Cookie.encodeDirPaths(ledgersDir.split(",")))
             .build();
 
         when(rm.getClusterInstanceId()).thenReturn(instanceId);
@@ -193,6 +196,41 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
 
         byte[] data = Files.readAllBytes(Paths.get(cookieFile.getPath()));
         assertArrayEquals(cookie.toString().getBytes(UTF_8), data);
+    }
+
+    /**
+     * A successful run with encoding multiple ledgers while generating cookie.
+     */
+    @Test
+    public void testGenerateCookieWithMultipleLedgerDirs() throws Exception {
+        File cookieFile = testFolder.newFile("cookie-with-instance-id");
+        String journalDir = "/path/to/journal";
+        String ledgersDir = "/path/to/ledgers,/path/to/more/ledgers";
+        String instanceId = "test-instance-id";
+
+        when(rm.getClusterInstanceId()).thenReturn(instanceId);
+        assertTrue(
+                getConsoleOutput(),
+                runCommand(new String[] {
+                        "-l", ledgersDir,
+                        "-j", journalDir,
+                        "-o", cookieFile.getPath(),
+                        "-i", instanceId,
+                        BOOKIE_ID
+                }));
+        String consoleOutput = getConsoleOutput();
+        assertTrue(consoleOutput, consoleOutput.contains(
+                "Successfully saved the generated cookie to " + cookieFile.getPath()
+        ));
+        verify(rm, times(0)).getClusterInstanceId();
+
+        List<String> cookieFields = Files.readAllLines(Paths.get(cookieFile.getPath()));
+        for (String cookieField : cookieFields) {
+            String[] fields = cookieField.split(" ");
+            if (fields[0].equals("ledgerDirs:")) {
+                assertEquals(fields[1].charAt(1), '2');
+            }
+        }
     }
 
 }

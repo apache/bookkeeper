@@ -82,7 +82,7 @@ public class Cookie {
         this.instanceId = instanceId;
     }
 
-    private static String encodeDirPaths(String[] dirs) {
+    public static String encodeDirPaths(String[] dirs) {
         StringBuilder b = new StringBuilder();
         b.append(dirs.length);
         for (String d : dirs) {
