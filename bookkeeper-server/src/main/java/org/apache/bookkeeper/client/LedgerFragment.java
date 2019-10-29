@@ -131,16 +131,18 @@ public class LedgerFragment {
      * @return entryId
      */
     public long getFirstStoredEntryId() {
-        Long firstEntry = null;
+        long firstEntry = LedgerHandle.INVALID_ENTRY_ID;
         for (int bookieIndex : bookieIndexes) {
             Long firstStoredEntryForBookie = getFirstStoredEntryId(bookieIndex);
-            if (null == firstEntry) {
-                firstEntry = firstStoredEntryForBookie;
-            } else if (null != firstStoredEntryForBookie) {
-                firstEntry = Math.min(firstEntry, firstStoredEntryForBookie);
+            if (firstStoredEntryForBookie != LedgerHandle.INVALID_ENTRY_ID) {
+                if (firstEntry == LedgerHandle.INVALID_ENTRY_ID) {
+                    firstEntry = firstStoredEntryForBookie;
+                } else {
+                    firstEntry = Math.min(firstEntry, firstStoredEntryForBookie);
+                }
             }
         }
-        return null == firstEntry ? LedgerHandle.INVALID_ENTRY_ID : firstEntry;
+        return firstEntry;
     }
 
     /**
@@ -169,16 +171,18 @@ public class LedgerFragment {
      * @return entryId
      */
     public long getLastStoredEntryId() {
-        Long lastEntry = null;
+        long lastEntry = LedgerHandle.INVALID_ENTRY_ID;
         for (int bookieIndex : bookieIndexes) {
             Long lastStoredEntryIdForBookie = getLastStoredEntryId(bookieIndex);
-            if (null == lastEntry) {
-                lastEntry = lastStoredEntryIdForBookie;
-            } else if (null != lastStoredEntryIdForBookie) {
-                lastEntry = Math.max(lastEntry, lastStoredEntryIdForBookie);
+            if (lastStoredEntryIdForBookie != LedgerHandle.INVALID_ENTRY_ID) {
+                if (lastEntry == LedgerHandle.INVALID_ENTRY_ID) {
+                    lastEntry = lastStoredEntryIdForBookie;
+                } else {
+                    lastEntry = Math.max(lastEntry, lastStoredEntryIdForBookie);
+                }
             }
         }
-        return null == lastEntry ? LedgerHandle.INVALID_ENTRY_ID : lastEntry;
+        return lastEntry;
     }
 
     /**
