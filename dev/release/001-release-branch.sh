@@ -26,5 +26,5 @@ mvn release:branch \
     -DbranchName=${BRANCH_NAME} \
     -DdevelopmentVersion=${DEVELOPMENT_VERSION}
     -Darguments="-Dmaven.javadoc.skip=true -DskipTests=true -Dstream -Dtwitter" \
-    -Dstream
+    -Dstream \
     -Dtwitter
