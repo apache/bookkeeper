@@ -25,3 +25,5 @@ cd $BK_HOME
 mvn release:branch \
     -DbranchName=${BRANCH_NAME} \
     -DdevelopmentVersion=${DEVELOPMENT_VERSION}
+    -Dstream
+    -Dtwitter
