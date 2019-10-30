@@ -23,6 +23,7 @@ BK_HOME=`cd $BINDIR/../..;pwd`
 cd $BK_HOME
 
 mvn release:perform \
-    -Darguments="-Dmaven.javadoc.skip=true -DskipTests=true -Dstream" \
+    -Darguments="-Dmaven.javadoc.skip=true -DskipTests=true -Dstream -Dtwitter" \
     -Dstream \
+    -Dtwitter \
     -Dresume=true
