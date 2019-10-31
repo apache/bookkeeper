@@ -42,7 +42,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     // The buffer used to write operations.
     protected final ByteBuf writeBuffer;
     // The absolute position of the next write operation.
-    protected final AtomicLong position;
+    protected volatile long position;
 
     /*
      * if unpersistedBytesBound is non-zero value, then after writing to
@@ -81,8 +81,8 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
             long unpersistedBytesBound) throws IOException {
         super(fc, readCapacity);
         this.writeCapacity = writeCapacity;
-        this.position = new AtomicLong(fc.position());
-        this.writeBufferStartPosition.set(position.get());
+        this.position = fc.position();
+        this.writeBufferStartPosition.set(position);
         this.writeBuffer = allocator.directBuffer(writeCapacity);
         this.unpersistedBytes = new AtomicLong(0);
         this.unpersistedBytesBound = unpersistedBytesBound;
@@ -123,9 +123,9 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
                     flush();
                 }
             }
-            position.addAndGet(copied);
-            unpersistedBytes.addAndGet(copied);
+            position += copied;
             if (doRegularFlushes) {
+                unpersistedBytes.addAndGet(copied);
                 if (unpersistedBytes.get() >= unpersistedBytesBound) {
                     flush();
                     shouldForceWrite = true;
@@ -142,7 +142,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @return
      */
     public long position() {
-        return position.get();
+        return position;
     }
 
     /**
@@ -221,9 +221,12 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
          * Hence setting writeBuffer.readableBytes() to unpersistedBytes.
          *
          */
-        synchronized (this) {
-            unpersistedBytes.set(writeBuffer.readableBytes());
+        if (unpersistedBytesBound > 0) {
+            synchronized (this) {
+                unpersistedBytes.set(writeBuffer.readableBytes());
+            }
         }
+
         fileChannel.force(forceMetadata);
         return positionForceWrite;
     }

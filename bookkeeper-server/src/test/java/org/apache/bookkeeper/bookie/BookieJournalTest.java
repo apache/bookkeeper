@@ -172,7 +172,7 @@ public class BookieJournalTest {
 
     private static void moveToPosition(JournalChannel jc, long pos) throws IOException {
         jc.fc.position(pos);
-        jc.bc.position.set(pos);
+        jc.bc.position = pos;
         jc.bc.writeBufferStartPosition.set(pos);
     }
 

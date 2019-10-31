@@ -121,7 +121,9 @@ public class BufferedChannelTest {
             expectedNumOfUnpersistedBytes = (byteBufLength * numOfWrites) - unpersistedBytesBound;
         }
 
-        Assert.assertEquals("Unpersisted bytes", expectedNumOfUnpersistedBytes, logChannel.getUnpersistedBytes());
+        if (unpersistedBytesBound > 0) {
+            Assert.assertEquals("Unpersisted bytes", expectedNumOfUnpersistedBytes, logChannel.getUnpersistedBytes());
+        }
         logChannel.close();
         fileChannel.close();
     }
