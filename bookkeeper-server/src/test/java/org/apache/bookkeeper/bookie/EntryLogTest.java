@@ -526,16 +526,20 @@ public class EntryLogTest {
 
         Assert.assertFalse("Exception happened in one of the operation", exceptionHappened.get());
 
-        /*
-         * if flush of the previous current channel is called then the
-         * unpersistedBytes should be less than what it was before, actually it
-         * would be close to zero (but when new log is created with addEntry
-         * call, ledgers map will be appended at the end of entry log)
-         */
-        Assert.assertTrue(
-                "previous currentChannel unpersistedBytes should be less than " + currentActiveChannelUnpersistedBytes
-                        + ", but it is actually " + currentActiveChannel.getUnpersistedBytes(),
-                currentActiveChannel.getUnpersistedBytes() < currentActiveChannelUnpersistedBytes);
+        if (conf.getFlushIntervalInBytes() > 0) {
+            /*
+             * if flush of the previous current channel is called then the
+             * unpersistedBytes should be less than what it was before, actually
+             * it would be close to zero (but when new log is created with
+             * addEntry call, ledgers map will be appended at the end of entry
+             * log)
+             */
+            Assert.assertTrue(
+                    "previous currentChannel unpersistedBytes should be less than "
+                            + currentActiveChannelUnpersistedBytes
+                            + ", but it is actually " + currentActiveChannel.getUnpersistedBytes(),
+                    currentActiveChannel.getUnpersistedBytes() < currentActiveChannelUnpersistedBytes);
+        }
         for (BufferedLogChannel rotatedLogChannel : rotatedLogChannels) {
             Assert.assertEquals("previous rotated entrylog should be flushandforcewritten", 0,
                     rotatedLogChannel.getUnpersistedBytes());
