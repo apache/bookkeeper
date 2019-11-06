@@ -45,7 +45,7 @@ class CRC32CDigestManager extends DigestManager {
         super(ledgerId, useV2Protocol, allocator);
 
         if (!Sse42Crc32C.isSupported() && !nonSupportedMessagePrinted) {
-            log.error("Sse42Crc32C is not supported, will use a slower CRC32C implementation.");
+            log.warn("Sse42Crc32C is not supported, will use a slower CRC32C implementation.");
             nonSupportedMessagePrinted = true;
         }
     }
