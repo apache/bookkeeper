@@ -77,7 +77,7 @@ Please log the _stack traces_ at **ERROR** level, but never at **INFO** level or
 Apache BookKeeper is a low latency system. So it is implemented as a purely asynchronous service. This is accomplished as follows:
 
 * All public classes should be **thread-safe**.
-* We prefer using [OrderedSafeExecutor](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/src/main/java/org/apache/bookkeeper/util/OrderedSafeExecutor.java) for executing any asynchronous actions. The mutations to same instance should be submitted to same thread to execute.
+* We prefer using [OrderedExecutor](https://github.com/apache/bookkeeper/blob/master/bookkeeper-common/src/main/java/org/apache/bookkeeper/common/util/OrderedExecutor.java) for executing any asynchronous actions. The mutations to same instance should be submitted to same thread to execute.
 * If synchronization and locking is required, they should be in a fine granularity way.
 * All threads should have proper meaningful name.
 * If a class is not threadsafe, it should be annotated [@NotThreadSafe](https://github.com/misberner/jsr-305/blob/master/ri/src/main/java/javax/annotation/concurrent/NotThreadSafe.java). The instances that use this class is responsible for its synchronization.
