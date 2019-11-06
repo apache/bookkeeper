@@ -367,7 +367,7 @@ Please refer to our <a href="https://github.com/apache/bookkeeper/blob/master/bu
 
 <ul>
   <li>All public classes should be <strong>thread-safe</strong>.</li>
-  <li>We prefer using <a href="https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/src/main/java/org/apache/bookkeeper/util/OrderedSafeExecutor.java">OrderedSafeExecutor</a> for executing any asynchronous actions. The mutations to same instance should be submitted to same thread to execute.</li>
+  <li>We prefer using <a href="https://github.com/apache/bookkeeper/blob/master/bookkeeper-common/src/main/java/org/apache/bookkeeper/common/util/OrderedExecutor.java">OrderedExecutor</a> for executing any asynchronous actions. The mutations to same instance should be submitted to same thread to execute.</li>
   <li>If synchronization and locking is required, they should be in a fine granularity way.</li>
   <li>All threads should have proper meaningful name.</li>
   <li>If a class is not threadsafe, it should be annotated <a href="https://github.com/misberner/jsr-305/blob/master/ri/src/main/java/javax/annotation/concurrent/NotThreadSafe.java">@NotThreadSafe</a>. The instances that use this class is responsible for its synchronization.</li>
