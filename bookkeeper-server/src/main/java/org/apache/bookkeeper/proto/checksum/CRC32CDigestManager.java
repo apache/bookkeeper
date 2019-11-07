@@ -32,6 +32,8 @@ import org.apache.commons.lang3.mutable.MutableInt;
 @Slf4j
 class CRC32CDigestManager extends DigestManager {
 
+    private static boolean nonSupportedMessagePrinted = false;
+
     private static final FastThreadLocal<MutableInt> currentCrc = new FastThreadLocal<MutableInt>() {
         @Override
         protected MutableInt initialValue() throws Exception {
@@ -41,8 +43,10 @@ class CRC32CDigestManager extends DigestManager {
 
     public CRC32CDigestManager(long ledgerId, boolean useV2Protocol, ByteBufAllocator allocator) {
         super(ledgerId, useV2Protocol, allocator);
-        if (!Sse42Crc32C.isSupported()) {
-            log.error("Sse42Crc32C is not supported, will use a slower CRC32C implementation.");
+
+        if (!Sse42Crc32C.isSupported() && !nonSupportedMessagePrinted) {
+            log.warn("Sse42Crc32C is not supported, will use a slower CRC32C implementation.");
+            nonSupportedMessagePrinted = true;
         }
     }
 
