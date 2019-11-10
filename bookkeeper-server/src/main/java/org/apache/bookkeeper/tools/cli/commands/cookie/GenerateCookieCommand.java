@@ -62,6 +62,12 @@ public class GenerateCookieCommand extends CookieCommand<Flags> {
         private String ledgerDirs;
 
         @Parameter(
+                names = { "-i", "--index-dirs" },
+                description = "The index directories used by this bookie",
+                required = true)
+        private String indexDirs;
+
+        @Parameter(
             names = { "-i", "--instance-id" },
             description = "The instance id of the cluster that this bookie belongs to."
                 + " If omitted, it will used the instance id of the cluster that this cli connects to.")
@@ -117,6 +123,7 @@ public class GenerateCookieCommand extends CookieCommand<Flags> {
         }
         builder.setJournalDirs(cmdFlags.journalDirs);
         builder.setLedgerDirs(Cookie.encodeDirPaths(cmdFlags.ledgerDirs.split(",")));
+        builder.setIndexDirs(Cookie.encodeDirPaths(cmdFlags.indexDirs.split(",")));
 
         Cookie cookie = builder.build();
         cookie.writeToFile(new File(cmdFlags.outputFile));

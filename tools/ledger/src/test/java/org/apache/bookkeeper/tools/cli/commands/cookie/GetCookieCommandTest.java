@@ -99,6 +99,7 @@ public class GetCookieCommandTest extends CookieCommandTestBase {
             .setInstanceId("test-instance-id")
             .setJournalDirs("/path/to/journal/dir")
             .setLedgerDirs("/path/to/ledger/dirs")
+                .setIndexDirs("/path/to/index/dirs")
             .build();
         when(rm.readCookie(eq(BOOKIE_ID)))
             .thenReturn(new Versioned<>(cookie.toString().getBytes(UTF_8), new LongVersion(-1L)));

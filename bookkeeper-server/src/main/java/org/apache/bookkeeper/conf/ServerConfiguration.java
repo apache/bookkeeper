@@ -152,6 +152,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_DIRS = "journalDirectories";
     protected static final String LEDGER_DIRS = "ledgerDirectories";
     protected static final String INDEX_DIRS = "indexDirectories";
+    protected static final String ENFORCE_COOKIE_INDEX_DIR_CHECK = "enforceCookieIndexDirCheck";
     protected static final String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
     // NIO and Netty Parameters
     protected static final String SERVER_TCP_NODELAY = "serverTcpNoDelay";
@@ -1196,10 +1197,37 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ledger index dir name, if no index dirs provided return null
      */
     public String[] getIndexDirNames() {
-        if (!this.containsKey(INDEX_DIRS)) {
-            return null;
+
+        String[] indexDirs = this.getStringArray(INDEX_DIRS);
+        if ((null == indexDirs) || (0 == indexDirs.length)) {
+            return new String[] { "/tmp/bk-data" };
         }
-        return this.getStringArray(INDEX_DIRS);
+        return indexDirs;
+    }
+
+    /**
+     * Set enforcement for checking of index dir field in cookie.
+     *
+     * @param value
+     *        true if we want to enforce the comparison of index dirs in cookie.
+     *        false if we do not want to enforce the comparison of index dirs in cookie.
+     * @return server configuration.
+     */
+    public ServerConfiguration setEnforceCookieIndexDirCheck(boolean value) {
+        this.setProperty(ENFORCE_COOKIE_INDEX_DIR_CHECK, value);
+        return this;
+    }
+
+    /**
+     * Get if enforcement for checking of index dir field in cookie is set or not.
+     *
+     * @return
+     *        true if we want to enforce the comparison of index dirs in cookie.
+     *        false if we do not want to enforce the comparison of index dirs in cookie.
+     *        default is false
+     */
+    public boolean getEnforceCookieIndexDirCheck() {
+        return this.getBoolean(ENFORCE_COOKIE_INDEX_DIR_CHECK, false);
     }
 
     /**

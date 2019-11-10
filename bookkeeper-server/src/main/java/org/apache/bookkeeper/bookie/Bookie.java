@@ -333,7 +333,7 @@ public class Bookie extends BookieCriticalThread {
 
     static Versioned<Cookie> readAndVerifyCookieFromRegistrationManager(
             Cookie masterCookie, RegistrationManager rm,
-            List<BookieSocketAddress> addresses, boolean allowExpansion)
+            List<BookieSocketAddress> addresses, boolean allowExpansion, ServerConfiguration conf)
             throws BookieException {
         Versioned<Cookie> rmCookie = null;
         for (BookieSocketAddress address : addresses) {
@@ -343,9 +343,9 @@ public class Bookie extends BookieCriticalThread {
                 // make sure that the new set of ledger/index dirs
                 // is a super set of the old; else, we fail the cookie check
                 if (allowExpansion) {
-                    masterCookie.verifyIsSuperSet(rmCookie.getValue());
+                    masterCookie.verifyIsSuperSet(rmCookie.getValue(), conf);
                 } else {
-                    masterCookie.verify(rmCookie.getValue());
+                    masterCookie.verify(rmCookie.getValue(), conf);
                 }
             } catch (CookieNotFoundException e) {
                 continue;
@@ -355,7 +355,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     private static Pair<List<File>, List<Cookie>> verifyAndGetMissingDirs(
-            Cookie masterCookie, boolean allowExpansion, List<File> dirs)
+            Cookie masterCookie, List<File> dirs, boolean allowExpansion, ServerConfiguration conf)
             throws InvalidCookieException, IOException {
         List<File> missingDirs = Lists.newArrayList();
         List<Cookie> existedCookies = Lists.newArrayList();
@@ -364,9 +364,9 @@ public class Bookie extends BookieCriticalThread {
             try {
                 Cookie c = Cookie.readFromDirectory(dir);
                 if (allowExpansion) {
-                    masterCookie.verifyIsSuperSet(c);
+                    masterCookie.verifyIsSuperSet(c, conf);
                 } else {
-                    masterCookie.verify(c);
+                    masterCookie.verify(c, conf);
                 }
                 existedCookies.add(c);
             } catch (FileNotFoundException fnf) {
@@ -418,7 +418,7 @@ public class Bookie extends BookieCriticalThread {
             //    an old bookie.
             List<BookieSocketAddress> possibleBookieIds = possibleBookieIds(conf);
             final Versioned<Cookie> rmCookie = readAndVerifyCookieFromRegistrationManager(
-                        masterCookie, rm, possibleBookieIds, allowExpansion);
+                        masterCookie, rm, possibleBookieIds, allowExpansion, conf);
 
             // 4. check if the cookie appear in all the directories.
             List<File> missedCookieDirs = new ArrayList<>();
@@ -429,14 +429,12 @@ public class Bookie extends BookieCriticalThread {
 
             // 4.1 verify the cookies in journal directories
             Pair<List<File>, List<Cookie>> journalResult =
-                verifyAndGetMissingDirs(masterCookie,
-                                        allowExpansion, journalDirectories);
+                verifyAndGetMissingDirs(masterCookie, journalDirectories, allowExpansion, conf);
             missedCookieDirs.addAll(journalResult.getLeft());
             existingCookies.addAll(journalResult.getRight());
-            // 4.2. verify the cookies in ledger directories
+            // 4.2. verify the cookies in ledger and index directories
             Pair<List<File>, List<Cookie>> ledgerResult =
-                verifyAndGetMissingDirs(masterCookie,
-                                        allowExpansion, allLedgerDirs);
+                verifyAndGetMissingDirs(masterCookie, allLedgerDirs, allowExpansion, conf);
             missedCookieDirs.addAll(ledgerResult.getLeft());
             existingCookies.addAll(ledgerResult.getRight());
 

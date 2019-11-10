@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -30,20 +31,25 @@ import io.netty.buffer.Unpooled;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.versioning.Version;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,6 +154,19 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         File d = newV1LedgerDirectory();
         createVersion2File(d);
         return d;
+    }
+
+    private String newDirectory() throws IOException {
+        return newDirectory(true);
+    }
+
+    private String newDirectory(boolean createCurDir) throws IOException {
+        File d = IOUtils.createTempDir("cookie", "tmpdir");
+        if (createCurDir) {
+            new File(d, "current").mkdirs();
+        }
+        tmpDirs.add(d);
+        return d.getPath();
     }
 
     private static void testUpgradeProceedure(String zkServers, String journalDir, String ledgerDir) throws Exception {
@@ -258,5 +277,124 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
             System.setOut(origout);
             System.setErr(origerr);
         }
+    }
+
+    @Test
+    public void testOldCookieNewBookie() throws BookieException.UpgradeException {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        try {
+            runFunctionWithRegistrationManager(conf, rm -> {
+                try {
+                    oldCookieNewBookieWorker(conf, rm);
+                } catch (BookieException e) {
+                    fail("Bookie was expected to run in compatibility mode: " + e.getMessage());
+                } catch (IOException e) {
+                    fail("Failed to read Cookie, Bookie was expected to run in compatibility mode: " + e.getMessage());
+                }
+                return null;
+            });
+        } catch (MetadataException | ExecutionException e) {
+            throw new BookieException.UpgradeException(e);
+        }
+    }
+
+    private void oldCookieNewBookieWorker (ServerConfiguration conf, RegistrationManager rm)
+            throws BookieException, IOException {
+
+        String journalDir = newDirectory();
+        String ledgerDir = newDirectory();
+
+        conf.setJournalDirName(journalDir)
+                .setLedgerDirNames(new String[] { ledgerDir })
+                .setBookiePort(bookiePort)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        Cookie.Builder v4builder = Cookie.generateCookie(conf);
+        v4builder = v4builder.setLayoutVersion(4);
+        v4builder = v4builder.setIndexDirs("");
+        Cookie v4Cookie = v4builder.build();
+
+        // Write v4 cookie to ZK
+        v4Cookie.writeToRegistrationManager(rm, conf, Version.NEW);
+
+        // Bring up a bookie with v5 software. It should come up without errors.
+        // Assuming the networkLocation etc fields are null
+        try {
+            Bookie b = new Bookie(conf);
+        } catch (InterruptedException | RuntimeException e) {
+            fail("Bookie was expected to run in compatibility mode: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testEnforceCookieIndexDirCheck() throws BookieException.UpgradeException {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        try {
+            runFunctionWithRegistrationManager(conf, rm -> {
+                try {
+                    enforceCookieIndexDirCheckWorker(conf, rm);
+                } catch (BookieException e) {
+                    fail("Bookie was expected to run in compatibility mode: " + e.getMessage());
+                } catch (IOException e) {
+                    fail("Failed to read Cookie, Bookie was expected to run in compatibility mode: " + e.getMessage());
+                }
+                return null;
+            });
+        } catch (MetadataException | ExecutionException e) {
+            throw new BookieException.UpgradeException(e);
+        }
+    }
+
+    private void enforceCookieIndexDirCheckWorker (ServerConfiguration conf, RegistrationManager rm)
+            throws BookieException, IOException {
+
+        String journalDir = newDirectory();
+        String ledgerDir = newDirectory();
+        String indexDir = newDirectory();
+
+        conf.setJournalDirName(journalDir)
+                .setLedgerDirNames(new String[] { ledgerDir })
+                .setIndexDirName(new String[] { indexDir })
+                .setBookiePort(bookiePort)
+                .setEnforceCookieIndexDirCheck(false)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        Cookie.Builder builder = Cookie.generateCookie(conf);
+        builder = builder.setIndexDirs(newDirectory());
+        Cookie cookie = builder.build();
+
+        // Write cookie with networkLocation to ZK and local directories
+        cookie.writeToRegistrationManager(rm, conf, Version.NEW);
+
+        cookie.writeToDirectory(new File(journalDir, "current"));
+        cookie.writeToDirectory(new File(ledgerDir, "current"));
+        cookie.writeToDirectory(new File(indexDir, "current"));
+
+        // By default, enforcement check on networkLocation verification is false
+        // This should let this bookie boot up even when networkLocation for its cookie is set to 'someaddress/az42'
+        try {
+            Bookie b = new Bookie(conf);
+        } catch (BookieException e) {
+            fail("Bookie was expected to run in compatibility mode: " + e.getMessage());
+        } catch (InterruptedException e) {
+            fail("Bookie was expected to run in compatibility mode: " + e.getMessage());
+        }
+
+        // Here we change the enforcement check on networkLocation verification to true
+        // This should fail the bookie boot up as the networkLocation for its cookie won't match 'someaddress/az42'
+        conf.setEnforceCookieIndexDirCheck(true);
+
+        try {
+            Bookie b = new Bookie(conf);
+        } catch (BookieException | RuntimeException e) {
+            return;
+        } catch (InterruptedException e) {
+            fail("Bookie was expected to run in compatibility mode: " + e.getMessage());
+        }
+        fail("Not expected reach here");
     }
 }

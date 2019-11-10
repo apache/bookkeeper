@@ -238,12 +238,12 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
         for (File journalDir : conf.getJournalDirs()) {
             journalDir = Bookie.getCurrentDirectory(journalDir);
             Cookie jCookie = Cookie.readFromDirectory(journalDir);
-            jCookie.verify(cookie);
+            jCookie.verify(cookie, newconf);
         }
         File[] ledgerDir = Bookie.getCurrentDirectories(conf.getLedgerDirs());
         for (File dir : ledgerDir) {
             Cookie lCookie = Cookie.readFromDirectory(dir);
-            lCookie.verify(cookie);
+            lCookie.verify(cookie, newconf);
         }
     }
 

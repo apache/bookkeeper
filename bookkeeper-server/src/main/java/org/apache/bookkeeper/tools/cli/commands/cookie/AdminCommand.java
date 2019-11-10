@@ -220,7 +220,7 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
     private boolean verifyCookie(Cookie oldCookie, File dir) throws IOException {
         try {
             Cookie cookie = Cookie.readFromDirectory(dir);
-            cookie.verify(oldCookie);
+            cookie.verify(oldCookie, new ServerConfiguration());
         } catch (BookieException.InvalidCookieException e) {
             return false;
         }
