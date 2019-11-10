@@ -139,9 +139,11 @@ public class Cookie {
         }
     }
 
-    private void verifyInternal(Cookie c, boolean checkIfSuperSet, ServerConfiguration conf)
-            throws BookieException.InvalidCookieException {
+//    public void verify(Cookie c, ServerConfiguration conf) throws BookieException.InvalidCookieException {
+    private void verifyInternal(Cookie c, boolean checkIfSuperSet, ServerConfiguration conf) throws BookieException.InvalidCookieException {
         String errMsg;
+//        boolean checkIfSuperSet = conf.getAllowStorageExpansion();
+        boolean enforceCookieIndexDirCheck = true;
 
         if (c.layoutVersion < 3 && c.layoutVersion != layoutVersion) {
             errMsg = "Cookie is of too old version " + c.layoutVersion;
