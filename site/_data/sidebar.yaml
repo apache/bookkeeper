@@ -30,6 +30,8 @@ groups:
     endpoint: upgrade
   - name: BookKeeper Admin REST API
     endpoint: http
+  - name: Decommissioning Bookies
+    endpoint: decomission
   #- name: Geo-replication
   #  endpoint: geo-replication
   #- name: Customized placement policies
