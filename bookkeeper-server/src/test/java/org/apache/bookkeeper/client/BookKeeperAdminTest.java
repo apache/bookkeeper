@@ -592,7 +592,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testAreEntriesOfLedgerStoredInTheBookieForMultipleSegments() throws Exception {
+    public void testAreEntriesOfLedgerStoredInTheBookieForLastEmptySegment() throws Exception {
         int lastEntryId = 10;
         long ledgerId = 100L;
         BookieSocketAddress bookie0 = new BookieSocketAddress("bookie0:3181");
@@ -729,4 +729,54 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         testBookieServiceInfo(false, true);
     }
 
+    @Test
+    public void testAreEntriesOfLedgerStoredInTheBookieForMiddleEmptySegment() throws Exception {
+        int lastEntryId = 10;
+        long ledgerId = 100L;
+        BookieSocketAddress bookie0 = new BookieSocketAddress("bookie0:3181");
+        BookieSocketAddress bookie1 = new BookieSocketAddress("bookie1:3181");
+        BookieSocketAddress bookie2 = new BookieSocketAddress("bookie2:3181");
+        BookieSocketAddress bookie3 = new BookieSocketAddress("bookie3:3181");
+        BookieSocketAddress bookie4 = new BookieSocketAddress("bookie4:3181");
+
+        List<BookieSocketAddress> ensembleOfSegment1 = new ArrayList<BookieSocketAddress>();
+        ensembleOfSegment1.add(bookie0);
+        ensembleOfSegment1.add(bookie1);
+        ensembleOfSegment1.add(bookie2);
+
+        List<BookieSocketAddress> ensembleOfSegment2 = new ArrayList<BookieSocketAddress>();
+        ensembleOfSegment2.add(bookie3);
+        ensembleOfSegment2.add(bookie1);
+        ensembleOfSegment2.add(bookie2);
+
+        List<BookieSocketAddress> ensembleOfSegment3 = new ArrayList<BookieSocketAddress>();
+        ensembleOfSegment3.add(bookie4);
+        ensembleOfSegment3.add(bookie1);
+        ensembleOfSegment3.add(bookie2);
+
+        LedgerMetadataBuilder builder = LedgerMetadataBuilder.create();
+        builder.withEnsembleSize(3)
+                .withWriteQuorumSize(3)
+                .withAckQuorumSize(2)
+                .withDigestType(digestType.toApiDigestType())
+                .withPassword(PASSWORD.getBytes())
+                .newEnsembleEntry(0, ensembleOfSegment1)
+                /*
+                 * this segment is empty, since the following segment also has 4 as
+                 * startSegmentId.
+                 */
+                .newEnsembleEntry(4, ensembleOfSegment2)
+                .newEnsembleEntry(4, ensembleOfSegment3)
+                .withLastEntryId(lastEntryId).withLength(65576).withClosedState();
+        LedgerMetadata meta = builder.build();
+
+        /*
+         * since segment 2 is empty, bookie3 is not supposed to contain any
+         * entry of this ledger.
+         */
+        assertFalse("expected areEntriesOfLedgerStoredInTheBookie to return False for bookie3",
+                BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId, bookie3, meta));
+        assertTrue("expected areEntriesOfLedgerStoredInTheBookie to return true for bookie4",
+                BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId, bookie4, meta));
+    }
 }
