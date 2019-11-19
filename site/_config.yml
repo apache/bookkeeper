@@ -40,8 +40,8 @@ archived_versions:
 - "4.0.0"
 latest_version: "4.11.0-SNAPSHOT"
 latest_release: "4.10.0"
-stable_release: "4.8.2"
-distributedlog_version: "4.8.2"
+stable_release: "4.9.2"
+distributedlog_version: "4.10.0"
 
 defaults:
 - scope:
