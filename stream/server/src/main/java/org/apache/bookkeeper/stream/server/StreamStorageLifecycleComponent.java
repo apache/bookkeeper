@@ -40,6 +40,7 @@ public class StreamStorageLifecycleComponent extends ServerLifecycleComponent {
         this.streamStorage = StorageServer.buildStorageServer(
             conf.getUnderlyingConf(),
             ssConf.getGrpcPort(),
+            ssConf.getGrpcUseHostname(),
             false,
             statsLogger.scope("stream"));
     }
