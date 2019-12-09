@@ -18,8 +18,28 @@ to store on the Metadata service a set of name value pairs that describe *availa
 
 ### Public Interfaces
 
-TODO: RegistrationManager, registerBookie(String bookieId, Map\<String, String\>)....
-      RegistrationClient: getBookieEndpoints(String bookidId).
+client:
+inteface BookieServiceInfo {
+    Iterable<String> keys();
+    String get(String key, String defaultValue);
+}
+
+in RegistrationClient interface:
+
+BookieServiceInfo getBookieServiceInfo(String bookieId)
+
+in RegistrationManager
+void registerBookie(String bookieId, boolean readOnly)
+becomes
+void registerBookie(String bookieId, Map<String, String> bookieServieInfo, boolean readOnly)
+
+Notable known keys are:
+- bookie.binary.address: hostname:port
+- bookie.tls.supported: true|false
+- boolie.auth.type: node|sasl
+- bookie.admin.url: protocol://hostname:port
+- bookie.metrics.url:  protocol://hostname:port/metrics
+
 
 _Briefly list any new interfaces that will be introduced as part of this proposal or any existing interfaces that will be removed or changed. The purpose of this section is to concisely call out the public contract that will come along with this feature._
 
