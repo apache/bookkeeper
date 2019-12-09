@@ -720,18 +720,12 @@ org.apache.bookkeeper.bookie.BookieException$InvalidCookieException
   <li>
     <p>Run the following command to re-replicate the data:</p>
 
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell recover <span class="se">\</span>
-  &lt;zkserver&gt; <span class="se">\</span>
-  &lt;oldbookie&gt; <span class="se">\</span>
-  &lt;newbookie&gt;
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell recover &lt;oldbookie&gt; 
 </code></pre></div>    </div>
 
     <p>The ZooKeeper server, old bookie, and new bookie, are all identified by their external IP and <code class="highlighter-rouge">bookiePort</code> (3181 by default). Here’s an example:</p>
 
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell recover <span class="se">\</span>
-  zk1.example.com <span class="se">\</span>
-  192.168.1.10:3181 <span class="se">\</span>
-  192.168.1.10:3181
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell recover  192.168.1.10:3181
 </code></pre></div>    </div>
 
     <p>See the <a href="../autorecovery">AutoRecovery</a> documentation for more info on the re-replication process.</p>

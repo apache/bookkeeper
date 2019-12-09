@@ -535,23 +535,20 @@
 
 <ul>
   <li>the <code class="highlighter-rouge">shell recover</code> option</li>
-  <li>an IP and port for your BookKeeper cluster’s ZooKeeper ensemble</li>
   <li>the IP and port for the failed bookie</li>
 </ul>
 
 <p>Here’s an example:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell recover <span class="se">\</span>
-  zk1.example.com:2181 <span class="se">\ </span><span class="c"># IP and port for ZooKeeper</span>
   192.168.1.10:3181      <span class="c"># IP and port for the failed bookie</span>
 </code></pre></div></div>
 
-<p>If you wish, you can also specify which bookie you’d like to rereplicate to. Here’s an example:</p>
+<p>If you wish, you can also specify which ledgers you’d like to recover. Here’s an example:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell recover <span class="se">\</span>
-  zk1.example.com:2181 <span class="se">\ </span><span class="c"># IP and port for ZooKeeper</span>
   192.168.1.10:3181 <span class="se">\ </span>   <span class="c"># IP and port for the failed bookie</span>
-  192.168.1.11:3181      <span class="c"># IP and port for the bookie to rereplicate to</span>
+  <span class="nt">--ledger</span> ledgerID      <span class="c"># ledgerID which you want to recover </span>
 </code></pre></div></div>
 
 <h3 id="the-manual-recovery-process">The manual recovery process</h3>
