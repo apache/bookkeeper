@@ -18,46 +18,82 @@ to store on the Metadata service a set of name value pairs that describe *availa
 
 ### Public Interfaces
 
-client:
+On the client side, we introduce a new data structure that describes the services
+exposed by a Bookie:
+
+```
 inteface BookieServiceInfo {
     Iterable<String> keys();
     String get(String key, String defaultValue);
 }
 
-in RegistrationClient interface:
+```
 
+In RegistrationClient interface we expose a new method:
+
+```
 BookieServiceInfo getBookieServiceInfo(String bookieId)
+```
 
-in RegistrationManager
+You can derive bookieId from a BookieSocketAddress, in the future it would be possible
+to store bookie ids in Ledger Metadata but this change should be covered in the scope
+of another BP.
+
+On the Bookie side we change the RegistrationManager interface in order to let the Bookie
+advertise the services:
+
+in RegistrationManager class this method 
+```
 void registerBookie(String bookieId, boolean readOnly)
+```
+
 becomes
-void registerBookie(String bookieId, Map<String, String> bookieServieInfo, boolean readOnly)
 
-Notable known keys are:
-- bookie.binary.address: hostname:port
-- bookie.tls.supported: true|false
-- boolie.auth.type: node|sasl
-- bookie.admin.url: protocol://hostname:port
-- bookie.metrics.url:  protocol://hostname:port/metrics
+```
+void registerBookie(String bookieId, BookieServiceInfo bookieServieInfo, boolean readOnly)
+```
+
+It will be up to the implementation of RegistrationManager and RegistrationClient to serialize
+the BookieServiceInfo structure.
+
+For the ZooKeeper based implementation we are going to store such information as a JSON Object
+
+```
+{
+    "property": "value",
+    "property2": "value2",
+}
+```
+Such information will be stored inside the '/available' znode (or 'available_readonline' in case of readonly bookie).
+The rationale around this choice is that the client is watching over these znodes, in the future the client will read the endpoint information (BookieSocketAddress) from this node
+that is updated whenever the Bookie becomes available (like after a restart).
 
 
-_Briefly list any new interfaces that will be introduced as part of this proposal or any existing interfaces that will be removed or changed. The purpose of this section is to concisely call out the public contract that will come along with this feature._
+Notable known keys will be:
+- bookie.binary.url: bk://hostname:port - address of the main Bookie RPC interface
+- bookie.binary.tls.supported: true|false - information about the availability of TLS
+- bookie.binary.auth.type: node|sasl - information about available authentication mechanism
+- bookie.admin.url: protocol://hostname:port - information about the HTTP endpoint
+- bookie.metrics.url:  protocol://hostname:port/metrics - information about Metrics endpoint
 
-A public interface is any change to the following:
+Which kind of properties should be stored in BookieServiceInfo ?
 
-- Data format, Metadata format
-- The wire protocol and api behavior
-- Any class in the public packages
-- Monitoring
-- Command line tools and arguments
-- Anything else that will likely break existing users in some way when they upgrade
+We should store here only the minimal set of information useful to reach the bookie.
+For instance internal state of the Bookie should be exposed by the HTTP endpoint
+so having the *bookie.admin.url* is enough.
+Having information about authentication or security will be useful for PlacementPolicies or for readers in order to select bookies to use.
+It is expected that these properties change when a bookie is restarted, like after a reconfiguration (change auth type, enable TLS).
+It is better not to expose the version of the Bookie in order not to open the way to protocol usage based on the Bookie version (it is better to implement 'feature detection' instead of using the version).
 
 ### Proposed Changes
 
-_Describe the new thing you want to do in appropriate detail. This may be fairly extensive and have large subsections of its own. Or it may be a few sentences. Use judgement based on the scope of the change._
+See the 'Public intefaces' section.
 
 ### Compatibility, Deprecation, and Migration Plan
 
+The proposed change will be compatible with existing clients.
+
+It is possible that future client will need these new properties exposed by the Bookie
 - What impact (if any) will there be on existing users? 
 - If we are changing behavior how will we phase out the older behavior? 
 - If we need special migration tools, describe them here.
