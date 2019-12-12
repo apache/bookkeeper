@@ -116,4 +116,5 @@ No need for additional integration tests.
 For the ZooKeeper implementation we are not introducing a new znode to store BookieServiceInfo. Adding such new node will increase complexity and the usage of resources on ZooKeeper.
 
 #### Storing information inside the Cookie
-The cookie stores information about the identity of the bookie and it is expected not to change. It is exceptional to rewrite the Cookie, like when adding a new data directory. 
+The *Cookie* stores information about the *identity* of the bookie and it is expected not to change. It is exceptional to rewrite the Cookie, like when adding a new data directory.
+In some environment it is common to have a new network address after a restart or to change the configuration and enable a new service or feature. 
