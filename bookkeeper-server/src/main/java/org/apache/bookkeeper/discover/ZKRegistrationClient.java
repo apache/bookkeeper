@@ -253,6 +253,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         return res;
     }
 
+    @SuppressWarnings("unchecked")
     private static BookieServiceInfo deserializeBookieService(byte[] bookieServiceInfo) {
         Map<String, String> map = Collections.emptyMap();
         if (bookieServiceInfo != null && bookieServiceInfo.length > 0) {
