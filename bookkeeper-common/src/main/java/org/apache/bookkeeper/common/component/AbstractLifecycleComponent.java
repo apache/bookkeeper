@@ -73,12 +73,6 @@ public abstract class AbstractLifecycleComponent<ConfT extends ComponentConfigur
         listeners.remove(listener);
     }
 
-    protected void publishEndpointInfo(String key, String value) {
-        listeners.forEach(l -> {
-            l.publishEndpointInfo(key, value);
-        });
-    }
-
     @Override
     public void start() {
         if (!lifecycle.canMoveToStarted()) {

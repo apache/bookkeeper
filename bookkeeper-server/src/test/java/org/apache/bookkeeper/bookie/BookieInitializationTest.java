@@ -66,6 +66,7 @@ import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
@@ -295,7 +296,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // simulating ZooKeeper exception by assigning a closed zk client to bk
         BookieServer bkServer = new BookieServer(conf) {
             @Override
-            protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator)
+            protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator,
+                     Supplier<BookieServiceInfo> bookieServiceInfoProvider)
                     throws IOException, KeeperException, InterruptedException,
                     BookieException {
                 Bookie bookie = new Bookie(conf);
@@ -645,7 +647,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setMetadataServiceUri(metadataServiceUri);
 
         BookieConfiguration bkConf = new BookieConfiguration(conf);
-        BookieService service = new BookieService(bkConf, NullStatsLogger.INSTANCE);
+        BookieService service = new BookieService(bkConf, NullStatsLogger.INSTANCE, () -> BookieServiceInfo.EMPTY);
         CompletableFuture<Void> startFuture = ComponentStarter.startComponent(service);
 
         // shutdown the bookie service
@@ -963,7 +965,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator)
+        protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator,
+                     Supplier<BookieServiceInfo> bookieServiceInfoProvider)
                 throws IOException, KeeperException, InterruptedException, BookieException {
             return new MockBookieWithNoopShutdown(conf, NullStatsLogger.INSTANCE);
         }
@@ -972,7 +975,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     class MockBookieWithNoopShutdown extends Bookie {
         public MockBookieWithNoopShutdown(ServerConfiguration conf, StatsLogger statsLogger)
                 throws IOException, KeeperException, InterruptedException, BookieException {
-            super(conf, statsLogger, UnpooledByteBufAllocator.DEFAULT);
+            super(conf, statsLogger, UnpooledByteBufAllocator.DEFAULT, () -> BookieServiceInfo.EMPTY);
         }
 
         // making Bookie Shutdown no-op. Ideally for this testcase we need to

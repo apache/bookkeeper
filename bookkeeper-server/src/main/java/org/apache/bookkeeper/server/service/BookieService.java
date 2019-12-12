@@ -20,8 +20,11 @@ package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.net.UnknownHostException;
 import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
@@ -30,6 +33,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 /**
  * A {@link ServerLifecycleComponent} that starts the core bookie server.
  */
+@Slf4j
 public class BookieService extends ServerLifecycleComponent {
 
     public static final String NAME = "bookie-server";
@@ -58,9 +62,6 @@ public class BookieService extends ServerLifecycleComponent {
     protected void doStart() {
         try {
             this.server.start();
-            this.server.publishEndpointInfo((key, value) -> {
-                this.publishEndpointInfo(key, value);
-            });
         } catch (InterruptedException exc) {
             throw new RuntimeException("Failed to start bookie server", exc);
         }

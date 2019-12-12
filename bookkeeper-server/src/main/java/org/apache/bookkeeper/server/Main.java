@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.server.component.ServerLifecycleComponent.lo
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -37,10 +38,10 @@ import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.common.component.LifecycleListener;
-import org.apache.bookkeeper.common.component.LifecycleListenerAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.UncheckedConfigurationException;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
@@ -307,32 +308,25 @@ public class Main {
                 return allBookieServicesInfo.getOrDefault(key, defaultValue);
             }
         };
-        final LifecycleListener bookieInfoServiceListener = new LifecycleListenerAdapter() {
-
-            @Override
-            public void publishEndpointInfo(String key, String value) {
-                log.info("Publishing endpointInfo {}={}", key, value);
-                allBookieServicesInfo.put(key, value);
-            }
-
-        };
-
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder().withName("bookie-server");
 
         // 1. build stats provider
         StatsProviderService statsProviderService =
             new StatsProviderService(conf);
         StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
-        statsProviderService.addLifecycleListener(bookieInfoServiceListener);
-
         serverBuilder.addComponent(statsProviderService);
         log.info("Load lifecycle component : {}", StatsProviderService.class.getName());
 
         // 2. build bookie server
         BookieService bookieService =
             new BookieService(conf, rootStatsLogger, bookieServiceInfoProvider);
-
-        bookieService.addLifecycleListener(bookieInfoServiceListener);
+        try {
+            BookieSocketAddress localAddress = bookieService.getServer().getLocalAddress();
+            allBookieServicesInfo.put("bookie.port", Integer.toString(localAddress.getPort()));
+            allBookieServicesInfo.put("bookie.host", localAddress.getHostName());
+        } catch (UnknownHostException err) {
+            log.error("Cannot compute local address", err);
+        }
         serverBuilder.addComponent(bookieService);
         log.info("Load lifecycle component : {}", BookieService.class.getName());
 
@@ -361,7 +355,7 @@ public class Main {
                 .build();
             HttpService httpService =
                 new HttpService(provider, conf, rootStatsLogger);
-            httpService.addLifecycleListener(bookieInfoServiceListener);
+            allBookieServicesInfo.put("bookie.http.server.port", Integer.toString(conf.getServerConf().getHttpServerPort()));
             serverBuilder.addComponent(httpService);
             log.info("Load lifecycle component : {}", HttpService.class.getName());
         }
@@ -375,7 +369,6 @@ public class Main {
                     conf,
                     rootStatsLogger);
                 for (ServerLifecycleComponent component : components) {
-                    component.addLifecycleListener(bookieInfoServiceListener);
                     serverBuilder.addComponent(component);
                     log.info("Load lifecycle component : {}", component.getClass().getName());
                 }

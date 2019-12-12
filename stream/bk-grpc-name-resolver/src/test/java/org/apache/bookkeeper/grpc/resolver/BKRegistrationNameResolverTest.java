@@ -138,7 +138,7 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
             InetSocketAddress address = new InetSocketAddress("127.0.0.1", 3181 + i);
             addressSet.add(address);
             bookieDriver.getRegistrationManager().registerBookie(
-                "127.0.0.1:" + (3181 + i), false
+                "127.0.0.1:" + (3181 + i), false, BookieServiceInfo.EMPTY
             );
         }
 

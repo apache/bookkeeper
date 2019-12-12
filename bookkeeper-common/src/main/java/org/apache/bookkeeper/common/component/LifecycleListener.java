@@ -31,8 +31,6 @@ public interface LifecycleListener {
 
     void afterStop();
 
-    void publishEndpointInfo(String key, String value);
-
     void beforeClose();
 
     void afterClose();
