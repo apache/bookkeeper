@@ -58,6 +58,9 @@ public class BookieService extends ServerLifecycleComponent {
     protected void doStart() {
         try {
             this.server.start();
+            this.server.publishEndpointInfo((key, value) -> {
+                this.publishEndpointInfo(key, value);
+            });
         } catch (InterruptedException exc) {
             throw new RuntimeException("Failed to start bookie server", exc);
         }

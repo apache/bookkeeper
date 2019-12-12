@@ -33,6 +33,7 @@ import java.net.UnknownHostException;
 import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -117,6 +118,11 @@ public class BookieServer {
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
                 statsLogger.scope(SERVER_SCOPE), shFactory, bookie.getAllocator());
         this.nettyServer.setRequestProcessor(this.requestProcessor);
+    }
+    
+    public void publishEndpointInfo(BiConsumer<String, String> serviceInfoPublisher) {
+        serviceInfoPublisher.accept("bookie.binary.address",
+                "bk;//"+nettyServer.bookieAddress.getHostName()+":"+nettyServer.bookieAddress.getPort());
     }
 
     /**

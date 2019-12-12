@@ -19,22 +19,36 @@
 package org.apache.bookkeeper.common.component;
 
 /**
- * Listener listening of the lifecycle changes.
+ * Default implementation for Listener listening of the lifecycle changes.
  */
-public interface LifecycleListener {
+public class LifecycleListenerAdapter implements LifecycleListener {
 
-    void beforeStart();
+    @Override
+    public void beforeStart() {
+    }
 
-    void afterStart();
+    @Override
+    public void afterStart() {
+    }
 
-    void beforeStop();
+    @Override
+    public void beforeStop() {
+    }
 
-    void afterStop();
+    @Override
+    public void afterStop() {
+    }
 
-    void publishEndpointInfo(String key, String value);
+    @Override
+    public void publishEndpointInfo(String key, String value) {
+    }
 
-    void beforeClose();
+    @Override
+    public void beforeClose() {
+    }
 
-    void afterClose();
+    @Override
+    public void afterClose() {
+    }
 
 }

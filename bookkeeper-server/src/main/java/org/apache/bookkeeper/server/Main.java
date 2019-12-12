@@ -24,10 +24,10 @@ import static org.apache.bookkeeper.server.component.ServerLifecycleComponent.lo
 import java.io.File;
 import java.net.MalformedURLException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +36,8 @@ import org.apache.bookkeeper.bookie.ScrubberStats;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
+import org.apache.bookkeeper.common.component.LifecycleListener;
+import org.apache.bookkeeper.common.component.LifecycleListenerAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.UncheckedConfigurationException;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
@@ -292,17 +294,8 @@ public class Main {
      * @return lifecycle stack
      */
     public static LifecycleComponentStack buildBookieServer(BookieConfiguration conf) throws Exception {
-        LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder().withName("bookie-server");
 
-        // 1. build stats provider
-        StatsProviderService statsProviderService =
-            new StatsProviderService(conf);
-        StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
-
-        serverBuilder.addComponent(statsProviderService);
-        log.info("Load lifecycle component : {}", StatsProviderService.class.getName());
-
-        final Map<String, String> allBookieServicesInfo = new HashMap<>();
+        final Map<String, String> allBookieServicesInfo = new ConcurrentHashMap<>();
         final Supplier<BookieServiceInfo> bookieServiceInfoProvider = () -> new BookieServiceInfo() {
             @Override
             public Iterator<String> keys() {
@@ -314,11 +307,32 @@ public class Main {
                 return allBookieServicesInfo.getOrDefault(key, defaultValue);
             }
         };
-        
+        final LifecycleListener bookieInfoServiceListener = new LifecycleListenerAdapter() {
+
+            @Override
+            public void publishEndpointInfo(String key, String value) {
+                log.info("Publishing endpointInfo {}={}", key, value);
+                allBookieServicesInfo.put(key, value);
+            }
+
+        };
+
+        LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder().withName("bookie-server");
+
+        // 1. build stats provider
+        StatsProviderService statsProviderService =
+            new StatsProviderService(conf);
+        StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
+        statsProviderService.addLifecycleListener(bookieInfoServiceListener);
+
+        serverBuilder.addComponent(statsProviderService);
+        log.info("Load lifecycle component : {}", StatsProviderService.class.getName());
+
         // 2. build bookie server
         BookieService bookieService =
             new BookieService(conf, rootStatsLogger, bookieServiceInfoProvider);
 
+        bookieService.addLifecycleListener(bookieInfoServiceListener);
         serverBuilder.addComponent(bookieService);
         log.info("Load lifecycle component : {}", BookieService.class.getName());
 
@@ -347,7 +361,7 @@ public class Main {
                 .build();
             HttpService httpService =
                 new HttpService(provider, conf, rootStatsLogger);
-
+            httpService.addLifecycleListener(bookieInfoServiceListener);
             serverBuilder.addComponent(httpService);
             log.info("Load lifecycle component : {}", HttpService.class.getName());
         }
@@ -361,6 +375,7 @@ public class Main {
                     conf,
                     rootStatsLogger);
                 for (ServerLifecycleComponent component : components) {
+                    component.addLifecycleListener(bookieInfoServiceListener);
                     serverBuilder.addComponent(component);
                     log.info("Load lifecycle component : {}", component.getClass().getName());
                 }
