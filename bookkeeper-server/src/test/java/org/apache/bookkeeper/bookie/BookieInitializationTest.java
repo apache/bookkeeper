@@ -647,7 +647,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setMetadataServiceUri(metadataServiceUri);
 
         BookieConfiguration bkConf = new BookieConfiguration(conf);
-        BookieService service = new BookieService(bkConf, NullStatsLogger.INSTANCE, () -> BookieServiceInfo.EMPTY);
+        BookieService service = new BookieService(bkConf, NullStatsLogger.INSTANCE, BookieServiceInfo.NO_INFO);
         CompletableFuture<Void> startFuture = ComponentStarter.startComponent(service);
 
         // shutdown the bookie service
@@ -975,7 +975,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     class MockBookieWithNoopShutdown extends Bookie {
         public MockBookieWithNoopShutdown(ServerConfiguration conf, StatsLogger statsLogger)
                 throws IOException, KeeperException, InterruptedException, BookieException {
-            super(conf, statsLogger, UnpooledByteBufAllocator.DEFAULT, () -> BookieServiceInfo.EMPTY);
+            super(conf, statsLogger, UnpooledByteBufAllocator.DEFAULT, BookieServiceInfo.NO_INFO);
         }
 
         // making Bookie Shutdown no-op. Ideally for this testcase we need to

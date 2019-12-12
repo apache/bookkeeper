@@ -62,7 +62,7 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
             Arrays.asList(serverConf.getLedgerDirs()),
             indexDirs);
         try {
-            this.bs = new BookieServer(serverConf, statsLogger, () -> BookieServiceInfo.EMPTY);
+            this.bs = new BookieServer(serverConf, statsLogger, BookieServiceInfo.NO_INFO);
             bs.start();
             log.info("Started bookie server successfully.");
         } catch (Exception e) {

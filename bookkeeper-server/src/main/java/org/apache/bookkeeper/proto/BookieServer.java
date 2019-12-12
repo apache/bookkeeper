@@ -85,7 +85,7 @@ public class BookieServer {
     public BookieServer(ServerConfiguration conf) throws IOException,
             KeeperException, InterruptedException, BookieException,
             UnavailableException, CompatibilityException, SecurityException {
-        this(conf, NullStatsLogger.INSTANCE, () -> BookieServiceInfo.EMPTY);
+        this(conf, NullStatsLogger.INSTANCE, BookieServiceInfo.NO_INFO);
     }
 
     public BookieServer(ServerConfiguration conf, StatsLogger statsLogger, Supplier<BookieServiceInfo> bookieServiceInfoProvider)
@@ -118,11 +118,6 @@ public class BookieServer {
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
                 statsLogger.scope(SERVER_SCOPE), shFactory, bookie.getAllocator());
         this.nettyServer.setRequestProcessor(this.requestProcessor);
-    }
-    
-    public void publishEndpointInfo(BiConsumer<String, String> serviceInfoPublisher) {
-        serviceInfoPublisher.accept("bookie.binary.address",
-                "bk;//"+nettyServer.bookieAddress.getHostName()+":"+nettyServer.bookieAddress.getPort());
     }
 
     /**

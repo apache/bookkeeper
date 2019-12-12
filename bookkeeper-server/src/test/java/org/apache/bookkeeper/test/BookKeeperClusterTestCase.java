@@ -651,7 +651,7 @@ public abstract class BookKeeperClusterTestCase {
             throws Exception {
         TestStatsProvider provider = new TestStatsProvider();
         BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
-                                               () -> BookieServiceInfo.EMPTY);
+                                               BookieServiceInfo.NO_INFO);
         BookieSocketAddress address = Bookie.getBookieAddress(conf);
         bsLoggers.put(address, provider);
 
@@ -686,7 +686,7 @@ public abstract class BookKeeperClusterTestCase {
             throws Exception {
         TestStatsProvider provider = new TestStatsProvider();
         BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
-                                        () -> BookieServiceInfo.EMPTY) {
+                                        BookieServiceInfo.NO_INFO) {
             @Override
             protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator, Supplier<BookieServiceInfo> s) {
                 return b;

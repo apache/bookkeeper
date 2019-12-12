@@ -608,7 +608,7 @@ public class Bookie extends BookieCriticalThread {
 
     public Bookie(ServerConfiguration conf)
             throws IOException, InterruptedException, BookieException {
-        this(conf, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT, () -> BookieServiceInfo.EMPTY);
+        this(conf, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT, BookieServiceInfo.NO_INFO);
     }
 
     private static LedgerStorage buildLedgerStorage(ServerConfiguration conf) throws IOException {

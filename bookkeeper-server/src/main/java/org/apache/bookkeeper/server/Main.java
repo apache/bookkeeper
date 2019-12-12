@@ -355,7 +355,8 @@ public class Main {
                 .build();
             HttpService httpService =
                 new HttpService(provider, conf, rootStatsLogger);
-            allBookieServicesInfo.put("bookie.http.server.port", Integer.toString(conf.getServerConf().getHttpServerPort()));
+            allBookieServicesInfo.put("bookie.http.server.port",
+                    Integer.toString(conf.getServerConf().getHttpServerPort()));
             serverBuilder.addComponent(httpService);
             log.info("Load lifecycle component : {}", HttpService.class.getName());
         }

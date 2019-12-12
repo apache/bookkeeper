@@ -149,7 +149,7 @@ public class BookieStateManager implements StateManager {
     BookieStateManager(ServerConfiguration conf, MetadataBookieDriver metadataDriver) throws IOException {
         this(conf, NullStatsLogger.INSTANCE, metadataDriver, new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
-                NullStatsLogger.INSTANCE), () -> BookieServiceInfo.EMPTY);
+                NullStatsLogger.INSTANCE), BookieServiceInfo.NO_INFO);
     }
 
     @Override

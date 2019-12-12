@@ -109,7 +109,7 @@ public class TestTxnId extends TestDistributedLogBase {
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
         BookieServer server = new BookieServer(conf, new NullStatsProvider().getStatsLogger(""),
-                        () -> BookieServiceInfo.EMPTY);
+                                               BookieServiceInfo.NO_INFO);
         server.start();
 
         while (!server.isRunning()) {

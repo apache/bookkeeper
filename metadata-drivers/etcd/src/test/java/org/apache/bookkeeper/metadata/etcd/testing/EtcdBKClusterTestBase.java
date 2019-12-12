@@ -122,7 +122,7 @@ public abstract class EtcdBKClusterTestBase extends EtcdTestBase {
         conf.setAutoRecoveryDaemonEnabled(true);
         TestStatsProvider provider = new TestStatsProvider();
         BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
-                                               () -> BookieServiceInfo.EMPTY);
+                                               BookieServiceInfo.NO_INFO);
         server.start();
         return server;
     }

@@ -157,7 +157,7 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
                 .setMetadataServiceUri(zkUtil.getMetadataServiceUri())
                 .setForceReadOnlyBookie(true);
         ReadOnlyBookie readOnlyBookie = new ReadOnlyBookie(readOnlyConf, NullStatsLogger.INSTANCE,
-                UnpooledByteBufAllocator.DEFAULT, () -> BookieServiceInfo.EMPTY);
+                UnpooledByteBufAllocator.DEFAULT, BookieServiceInfo.NO_INFO);
         readOnlyBookie.start();
         assertTrue(readOnlyBookie.isRunning());
         assertTrue(readOnlyBookie.isReadOnly());

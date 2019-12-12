@@ -20,6 +20,7 @@ package org.apache.bookkeeper.discover;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.function.Supplier;
 
 /**
  * Information about services exposed by a Bookie.
@@ -40,6 +41,12 @@ public interface BookieServiceInfo {
             return defaultValue;
         }
     };
+    
+    /**
+     * Default empty implementation.
+     */
+    static Supplier<BookieServiceInfo> NO_INFO = () -> EMPTY;
+
 
     /**
      * List all available entries.

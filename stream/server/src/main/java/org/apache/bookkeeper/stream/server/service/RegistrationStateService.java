@@ -81,7 +81,7 @@ public class RegistrationStateService
                     () -> regManager,
                     Collections.emptyList(),
                     () -> NetUtils.endpointToString(myEndpoint),
-                    () -> BookieServiceInfo.EMPTY);
+                    BookieServiceInfo.NO_INFO);
                 stateManager.initState();
                 stateManager.registerBookie(true).get();
                 log.info("Successfully register myself under registration path {}/{}",
