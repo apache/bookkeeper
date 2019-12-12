@@ -45,11 +45,13 @@ import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Version.Occurred;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 
 /**
  * ZooKeeper based {@link RegistrationClient}.
@@ -211,6 +213,24 @@ public class ZKRegistrationClient implements RegistrationClient {
     public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getReadOnlyBookies() {
         return getChildren(bookieReadonlyRegistrationPath, null);
     }
+
+    @Override
+    public CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(String bookieId) {
+        String pathAsWritable = bookieRegistrationPath + "/" + bookieId;
+        CompletableFuture<Versioned<BookieServiceInfo>> res = new CompletableFuture<>();
+        zk.getData(pathAsWritable, false, new AsyncCallback.DataCallback() {
+            @Override
+            public void processResult(int rc, String string, Object o, byte[] bytes, Stat stat) {
+                if (Code.OK == rc) {
+                    BookieServiceInfo bookieServiceInfo = deserializeBookieService
+                    res.complete(new Versioned<>())
+                }
+            }
+        }, null);
+        return res;
+    }
+    
+    
 
     private CompletableFuture<Versioned<Set<BookieSocketAddress>>> getChildren(String regPath, Watcher watcher) {
         CompletableFuture<Versioned<Set<BookieSocketAddress>>> future = FutureUtils.createFuture();

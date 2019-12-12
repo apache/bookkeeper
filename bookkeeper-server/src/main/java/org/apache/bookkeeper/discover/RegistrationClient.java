@@ -64,6 +64,17 @@ public interface RegistrationClient extends AutoCloseable {
      * @return a future represents the list of readonly bookies.
      */
     CompletableFuture<Versioned<Set<BookieSocketAddress>>> getReadOnlyBookies();
+    
+    /**
+     * Get detailed information about the services exposed by a Bookie.
+     * For old bookies it is expected to return an empty BookieServiceInfo structure.
+     *
+     * @param bookieId this is the id of the bookie, it can be computed from a {@link BookieSocketAddress}
+     * @return a future represents the available information.
+     *
+     * @since 4.11
+     */
+    CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(String bookieId);
 
     /**
      * Watch the changes of bookies.
