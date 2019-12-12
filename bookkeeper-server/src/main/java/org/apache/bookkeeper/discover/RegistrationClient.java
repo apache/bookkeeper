@@ -22,7 +22,9 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 
 /**
@@ -64,7 +66,7 @@ public interface RegistrationClient extends AutoCloseable {
      * @return a future represents the list of readonly bookies.
      */
     CompletableFuture<Versioned<Set<BookieSocketAddress>>> getReadOnlyBookies();
-    
+
     /**
      * Get detailed information about the services exposed by a Bookie.
      * For old bookies it is expected to return an empty BookieServiceInfo structure.
@@ -74,7 +76,9 @@ public interface RegistrationClient extends AutoCloseable {
      *
      * @since 4.11
      */
-    CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(String bookieId);
+    default CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(String bookieId) {
+        return FutureUtils.value(new Versioned<>(BookieServiceInfo.EMPTY, new LongVersion(-1)));
+    }
 
     /**
      * Watch the changes of bookies.

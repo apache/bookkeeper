@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.discover;
 
+import java.util.Collections;
 import java.util.Iterator;
 
 /**
@@ -26,9 +27,24 @@ import java.util.Iterator;
 public interface BookieServiceInfo {
 
     /**
+     * Default empty implementation.
+     */
+    static BookieServiceInfo EMPTY = new BookieServiceInfo() {
+        @Override
+        public Iterator<String> keys() {
+            return Collections.emptyIterator();
+        }
+
+        @Override
+        public String get(String key, String defaultValue) {
+            return defaultValue;
+        }
+    };
+
+    /**
      * List all available entries.
      * Remove operation is not supported.
-     * @return 
+     * @return
      */
     Iterator<String> keys();
 

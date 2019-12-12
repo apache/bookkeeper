@@ -83,6 +83,8 @@ import org.apache.zookeeper.data.Stat;
 @Slf4j
 public class ZKRegistrationManager implements RegistrationManager {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private static final Function<Throwable, BKException> EXCEPTION_FUNC = cause -> {
         if (cause instanceof BKException) {
             log.error("Failed to get bookie list : ", cause);
@@ -228,8 +230,7 @@ public class ZKRegistrationManager implements RegistrationManager {
         }
     }
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    private byte[] serializeBookieServiceInfo(BookieServiceInfo bookieServiceInfo) {
+    private static byte[] serializeBookieServiceInfo(BookieServiceInfo bookieServiceInfo) {
         try {
             Map<String, String> map = new HashMap<>();
             bookieServiceInfo.keys().forEachRemaining(key -> {
@@ -241,7 +242,7 @@ public class ZKRegistrationManager implements RegistrationManager {
             return new byte[0];
         }
     }
-    
+
     private void doRegisterBookie(String regPath, BookieServiceInfo bookieServiceInfo) throws BookieException {
         // ZK ephemeral node for this Bookie.
         try {
