@@ -82,6 +82,7 @@ import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServerLoader;
@@ -112,6 +113,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import static org.mockito.ArgumentMatchers.any;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -288,7 +290,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         RegistrationManager rm = mock(RegistrationManager.class);
         doThrow(new MetadataStoreException("mocked exception"))
             .when(rm)
-            .registerBookie(anyString(), anyBoolean());
+            .registerBookie(anyString(), anyBoolean(), any(BookieServiceInfo.class));
 
         // simulating ZooKeeper exception by assigning a closed zk client to bk
         BookieServer bkServer = new BookieServer(conf) {

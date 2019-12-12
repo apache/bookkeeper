@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.stats.Gauge;
@@ -61,6 +62,7 @@ import org.slf4j.LoggerFactory;
 public class BookieStateManager implements StateManager {
     private static final Logger LOG = LoggerFactory.getLogger(BookieStateManager.class);
     private final ServerConfiguration conf;
+    private final BookieServiceInfo bookieServiceInfo = BookieServiceInfo.EMPTY;
     private final List<File> statusDirs;
 
     // use an executor to execute the state changes task
@@ -263,7 +265,7 @@ public class BookieStateManager implements StateManager {
 
         rmRegistered.set(false);
         try {
-            rm.get().registerBookie(bookieId, isReadOnly);
+            rm.get().registerBookie(bookieId, isReadOnly, bookieServiceInfo);
             rmRegistered.set(true);
         } catch (BookieException e) {
             throw new IOException(e);
@@ -333,7 +335,7 @@ public class BookieStateManager implements StateManager {
             return;
         }
         try {
-            rm.get().registerBookie(bookieId, true);
+            rm.get().registerBookie(bookieId, true, bookieServiceInfo);
         } catch (BookieException e) {
             LOG.error("Error in transition to ReadOnly Mode."
                     + " Shutting down", e);
