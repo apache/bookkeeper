@@ -59,9 +59,10 @@ public interface RegistrationManager extends AutoCloseable {
      *
      * @param bookieId bookie id
      * @param readOnly whether to register it as writable or readonly
+     * @param serviceInfo information about services exposed by the Bookie
      * @throws BookieException when fail to register a bookie.
      */
-    void registerBookie(String bookieId, boolean readOnly) throws BookieException;
+    void registerBookie(String bookieId, boolean readOnly, BookieServiceInfo serviceInfo) throws BookieException;
 
     /**
      * Unregistering the bookie server as <i>bookieId</i>.

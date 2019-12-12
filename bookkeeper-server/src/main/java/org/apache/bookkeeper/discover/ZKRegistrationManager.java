@@ -25,11 +25,15 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +80,8 @@ import org.apache.zookeeper.data.Stat;
  */
 @Slf4j
 public class ZKRegistrationManager implements RegistrationManager {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final Function<Throwable, BKException> EXCEPTION_FUNC = cause -> {
         if (cause instanceof BKException) {
@@ -213,21 +219,32 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public void registerBookie(String bookieId, boolean readOnly) throws BookieException {
+    public void registerBookie(String bookieId, boolean readOnly,
+                               BookieServiceInfo bookieServiceInfo) throws BookieException {
         if (!readOnly) {
             String regPath = bookieRegistrationPath + "/" + bookieId;
-            doRegisterBookie(regPath);
+            doRegisterBookie(regPath, bookieServiceInfo);
         } else {
-            doRegisterReadOnlyBookie(bookieId);
+            doRegisterReadOnlyBookie(bookieId, bookieServiceInfo);
         }
     }
 
-    private void doRegisterBookie(String regPath) throws BookieException {
+    private static byte[] serializeBookieServiceInfo(BookieServiceInfo bookieServiceInfo) {
+        try {
+            log.info("serialize BookieServiceInfo {}", bookieServiceInfo);
+            return MAPPER.writeValueAsBytes(bookieServiceInfo);
+        } catch (JsonProcessingException ex) {
+            log.error("Cannot serialize bookieServiceInfo {}", bookieServiceInfo, ex);
+            return new byte[0];
+        }
+    }
+
+    private void doRegisterBookie(String regPath, BookieServiceInfo bookieServiceInfo) throws BookieException {
         // ZK ephemeral node for this Bookie.
         try {
             if (!checkRegNodeAndWaitExpired(regPath)) {
                 // Create the ZK ephemeral node for this Bookie.
-                zk.create(regPath, new byte[0], zkAcls, CreateMode.EPHEMERAL);
+                zk.create(regPath, serializeBookieServiceInfo(bookieServiceInfo), zkAcls, CreateMode.EPHEMERAL);
                 zkRegManagerInitialized = true;
             }
         } catch (KeeperException ke) {
@@ -248,11 +265,11 @@ public class ZKRegistrationManager implements RegistrationManager {
         }
     }
 
-    private void doRegisterReadOnlyBookie(String bookieId) throws BookieException {
+    private void doRegisterReadOnlyBookie(String bookieId, BookieServiceInfo bookieServiceInfo) throws BookieException {
         try {
             if (null == zk.exists(this.bookieReadonlyRegistrationPath, false)) {
                 try {
-                    zk.create(this.bookieReadonlyRegistrationPath, new byte[0],
+                    zk.create(this.bookieReadonlyRegistrationPath, serializeBookieServiceInfo(bookieServiceInfo),
                               zkAcls, CreateMode.PERSISTENT);
                 } catch (NodeExistsException e) {
                     // this node is just now created by someone.
@@ -260,7 +277,7 @@ public class ZKRegistrationManager implements RegistrationManager {
             }
 
             String regPath = bookieReadonlyRegistrationPath + "/" + bookieId;
-            doRegisterBookie(regPath);
+            doRegisterBookie(regPath, bookieServiceInfo);
             // clear the write state
             regPath = bookieRegistrationPath + "/" + bookieId;
             try {
