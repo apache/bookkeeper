@@ -47,11 +47,10 @@ public interface BookieServiceInfo {
      */
     static Supplier<BookieServiceInfo> NO_INFO = () -> EMPTY;
 
-
     /**
      * List all available entries.
      * Remove operation is not supported.
-     * @return
+     * @return an iterator over the available keys.
      */
     Iterator<String> keys();
 
