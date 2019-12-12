@@ -24,8 +24,12 @@ import static org.apache.bookkeeper.server.component.ServerLifecycleComponent.lo
 import java.io.File;
 import java.net.MalformedURLException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ScrubberStats;
@@ -34,6 +38,7 @@ import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.UncheckedConfigurationException;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
@@ -297,9 +302,22 @@ public class Main {
         serverBuilder.addComponent(statsProviderService);
         log.info("Load lifecycle component : {}", StatsProviderService.class.getName());
 
+        final Map<String, String> allBookieServicesInfo = new HashMap<>();
+        final Supplier<BookieServiceInfo> bookieServiceInfoProvider = () -> new BookieServiceInfo() {
+            @Override
+            public Iterator<String> keys() {
+                return allBookieServicesInfo.keySet().iterator();
+            }
+
+            @Override
+            public String get(String key, String defaultValue) {
+                return allBookieServicesInfo.getOrDefault(key, defaultValue);
+            }
+        };
+        
         // 2. build bookie server
         BookieService bookieService =
-            new BookieService(conf, rootStatsLogger);
+            new BookieService(conf, rootStatsLogger, bookieServiceInfoProvider);
 
         serverBuilder.addComponent(bookieService);
         log.info("Load lifecycle component : {}", BookieService.class.getName());

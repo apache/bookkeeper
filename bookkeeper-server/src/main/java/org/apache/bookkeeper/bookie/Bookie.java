@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
@@ -73,6 +74,7 @@ import org.apache.bookkeeper.bookie.stats.BookieStats;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -123,6 +125,7 @@ public class Bookie extends BookieCriticalThread {
     static final long METAENTRY_ID_LEDGER_EXPLICITLAC  = -0x8000;
 
     private final LedgerDirsManager ledgerDirsManager;
+    protected final Supplier<BookieServiceInfo> bookieServiceInfoProvider;
     private final LedgerDirsManager indexDirsManager;
     LedgerDirsMonitor dirsMonitor;
 
@@ -605,7 +608,7 @@ public class Bookie extends BookieCriticalThread {
 
     public Bookie(ServerConfiguration conf)
             throws IOException, InterruptedException, BookieException {
-        this(conf, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+        this(conf, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT, () -> BookieServiceInfo.EMPTY);
     }
 
     private static LedgerStorage buildLedgerStorage(ServerConfiguration conf) throws IOException {
@@ -667,10 +670,12 @@ public class Bookie extends BookieCriticalThread {
 
         return ledgerStorage;
     }
-
-    public Bookie(ServerConfiguration conf, StatsLogger statsLogger, ByteBufAllocator allocator)
+        
+    public Bookie(ServerConfiguration conf, StatsLogger statsLogger,
+            ByteBufAllocator allocator, Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws IOException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
+        this.bookieServiceInfoProvider = bookieServiceInfoProvider;
         this.statsLogger = statsLogger;
         this.conf = conf;
         this.journalDirectories = Lists.newArrayList();
@@ -791,7 +796,8 @@ public class Bookie extends BookieCriticalThread {
     }
 
     StateManager initializeStateManager() throws IOException {
-        return new BookieStateManager(conf, statsLogger, metadataDriver, ledgerDirsManager);
+        return new BookieStateManager(conf, statsLogger, metadataDriver,
+                ledgerDirsManager, bookieServiceInfoProvider);
     }
 
     void readJournal() throws IOException, BookieException {
@@ -1575,29 +1581,6 @@ public class Bookie extends BookieCriticalThread {
             return false;
         }
         return true;
-    }
-
-    /**
-     * @param args
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    public static void main(String[] args)
-            throws IOException, InterruptedException, BookieException {
-        Bookie b = new Bookie(new ServerConfiguration());
-        b.start();
-        CounterCallback cb = new CounterCallback();
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < 100000; i++) {
-            ByteBuf buff = Unpooled.buffer(1024);
-            buff.writeLong(1);
-            buff.writeLong(i);
-            cb.incCount();
-            b.addEntry(buff, false /* ackBeforeSync */, cb, null, new byte[0]);
-        }
-        cb.waitZero();
-        long end = System.currentTimeMillis();
-        System.out.println("Took " + (end - start) + "ms");
     }
 
     /**

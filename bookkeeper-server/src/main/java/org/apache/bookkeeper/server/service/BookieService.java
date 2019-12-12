@@ -20,6 +20,8 @@ package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.function.Supplier;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
@@ -35,10 +37,11 @@ public class BookieService extends ServerLifecycleComponent {
     private final BookieServer server;
 
     public BookieService(BookieConfiguration conf,
-                         StatsLogger statsLogger)
+                         StatsLogger statsLogger,
+                         Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws Exception {
         super(NAME, conf, statsLogger);
-        this.server = new BookieServer(conf.getServerConf(), statsLogger);
+        this.server = new BookieServer(conf.getServerConf(), statsLogger, bookieServiceInfoProvider);
     }
 
     @Override
