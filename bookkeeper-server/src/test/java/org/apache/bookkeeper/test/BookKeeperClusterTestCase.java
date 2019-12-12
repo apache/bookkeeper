@@ -688,7 +688,8 @@ public abstract class BookKeeperClusterTestCase {
         BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
                                         BookieServiceInfo.NO_INFO) {
             @Override
-            protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator, Supplier<BookieServiceInfo> s) {
+            protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator,
+                                       Supplier<BookieServiceInfo> s) {
                 return b;
             }
         };

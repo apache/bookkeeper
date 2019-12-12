@@ -670,7 +670,7 @@ public class Bookie extends BookieCriticalThread {
 
         return ledgerStorage;
     }
-        
+
     public Bookie(ServerConfiguration conf, StatsLogger statsLogger,
             ByteBufAllocator allocator, Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws IOException, InterruptedException, BookieException {

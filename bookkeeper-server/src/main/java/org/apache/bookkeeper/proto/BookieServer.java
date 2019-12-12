@@ -33,7 +33,6 @@ import java.net.UnknownHostException;
 import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -88,7 +87,8 @@ public class BookieServer {
         this(conf, NullStatsLogger.INSTANCE, BookieServiceInfo.NO_INFO);
     }
 
-    public BookieServer(ServerConfiguration conf, StatsLogger statsLogger, Supplier<BookieServiceInfo> bookieServiceInfoProvider)
+    public BookieServer(ServerConfiguration conf, StatsLogger statsLogger,
+            Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws IOException, KeeperException, InterruptedException,
             BookieException, UnavailableException, CompatibilityException, SecurityException {
         this.conf = conf;

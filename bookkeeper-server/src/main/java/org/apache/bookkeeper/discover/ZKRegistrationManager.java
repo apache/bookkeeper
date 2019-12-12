@@ -18,8 +18,6 @@
 
 package org.apache.bookkeeper.discover;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
@@ -27,6 +25,8 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import java.io.IOException;
@@ -38,8 +38,6 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
@@ -221,7 +219,8 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public void registerBookie(String bookieId, boolean readOnly, BookieServiceInfo bookieServiceInfo) throws BookieException {
+    public void registerBookie(String bookieId, boolean readOnly,
+                               BookieServiceInfo bookieServiceInfo) throws BookieException {
         if (!readOnly) {
             String regPath = bookieRegistrationPath + "/" + bookieId;
             doRegisterBookie(regPath, bookieServiceInfo);

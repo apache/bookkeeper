@@ -37,7 +37,6 @@ import org.apache.bookkeeper.bookie.ScrubberStats;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
-import org.apache.bookkeeper.common.component.LifecycleListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.UncheckedConfigurationException;
 import org.apache.bookkeeper.discover.BookieServiceInfo;

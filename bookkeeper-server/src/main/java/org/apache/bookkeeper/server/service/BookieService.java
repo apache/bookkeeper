@@ -20,11 +20,9 @@ package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.net.UnknownHostException;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;

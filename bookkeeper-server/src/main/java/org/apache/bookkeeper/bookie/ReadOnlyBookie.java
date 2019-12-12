@@ -58,7 +58,8 @@ public class ReadOnlyBookie extends Bookie {
 
     @Override
     StateManager initializeStateManager() throws IOException {
-        return new BookieStateManager(conf, statsLogger, metadataDriver, getLedgerDirsManager(), bookieServiceInfoProvider) {
+        return new BookieStateManager(conf, statsLogger, metadataDriver, getLedgerDirsManager(),
+                                      bookieServiceInfoProvider) {
 
             @Override
             public void doTransitionToWritableMode() {

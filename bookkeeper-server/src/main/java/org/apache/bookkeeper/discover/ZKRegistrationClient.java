@@ -18,11 +18,11 @@
 
 package org.apache.bookkeeper.discover;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -50,9 +50,7 @@ import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Version.Occurred;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
-import static org.apache.zookeeper.KeeperException.Code.OK;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
@@ -260,7 +258,8 @@ public class ZKRegistrationClient implements RegistrationClient {
             try {
                 map = Collections.unmodifiableMap(MAPPER.readValue(bookieServiceInfo, Map.class));
             } catch (IOException err) {
-                log.error("Cannot deserialize bookieServiceInfo from " + new String(bookieServiceInfo, StandardCharsets.US_ASCII), err);
+                log.error("Cannot deserialize bookieServiceInfo from "
+                        + new String(bookieServiceInfo, StandardCharsets.US_ASCII), err);
             }
         }
         final Map<String, String> mapFinal = map;

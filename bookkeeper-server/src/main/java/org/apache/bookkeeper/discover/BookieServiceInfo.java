@@ -30,7 +30,7 @@ public interface BookieServiceInfo {
     /**
      * Default empty implementation.
      */
-    static BookieServiceInfo EMPTY = new BookieServiceInfo() {
+    BookieServiceInfo EMPTY = new BookieServiceInfo() {
         @Override
         public Iterator<String> keys() {
             return Collections.emptyIterator();
@@ -41,11 +41,11 @@ public interface BookieServiceInfo {
             return defaultValue;
         }
     };
-    
+
     /**
      * Default empty implementation.
      */
-    static Supplier<BookieServiceInfo> NO_INFO = () -> EMPTY;
+    Supplier<BookieServiceInfo> NO_INFO = () -> EMPTY;
 
     /**
      * List all available entries.
