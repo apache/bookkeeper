@@ -1,27 +1,27 @@
 ---
-title: "BP-38: Bookie endpoint discovery"
-issue: https://github.com/apache/bookkeeper/<issue-number>
-state: 'Under Discussion', 'Accepted', 'Adopted', 'Rejected'
+title: "BP-38: Publish Bookie Service Info on Metadata Service"
+issue: https://github.com/apache/bookkeeper/2215
+state: 'Under Discussion'
 release: "4.11.0"
 ---
 
 ### Motivation
 
-Bookie server exposes several services and some of them are optional: the binary BookKeeper protocol endpoint, the HTTP service, the StreamStorage service, a metrics endpoint.
-Currently (in BookKeeper 4.10) the client can only discover the main Bookie endpoint,
-the main BookKeeper binary service.
-Discovery is implicit by the fact the the *id* of the bookie is made of the same host:port that point to the TCP address of the Bookie service.
+Bookie server exposes several services and some of them are optional: the binary BookKeeper protocol endpoint, the HTTP service, the StreamStorage service, a Metrics endpoint.
+
+Currently (in BookKeeper 4.10) the client can only discover the main Bookie endpoint:
+the main BookKeeper binary RPC service.
+Discovery of the TCP address is implicit, because the *id* of the bookie is made of the same host:port that point to the TCP address of the Bookie service.
 
 With this proposal we are now introducing a way for the Bookie to advertise the services it exposes, basically with this change the Bookie will be able to store on the Metadata Service a set of name-value pairs that describe the *available services*.
 
 We will also define a set of well know properties that will be useful for futher implementations.
 
-This information will be also useful for Monitoring and Management services as it will enable full discovery of the capabilities of all of the Bookies just by having access to the Metadata Service.
-
+This information will be also useful for Monitoring and Management services as it will enable full discovery of the capabilities of all of the Bookies in a cluster just by having read access to the Metadata Service.
 
 ### Public Interfaces
 
-On the client side, we introduce a new data structure that describes the services
+On the Registration API, we introduce a new data structure that describes the services
 exposed by a Bookie:
 
 ```
@@ -35,17 +35,15 @@ inteface BookieServiceInfo {
 In RegistrationClient interface we expose a new method:
 
 ```
-BookieServiceInfo getBookieServiceInfo(String bookieId)
+CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(String bookieId)
 ```
 
-You can derive bookieId from a BookieSocketAddress.
-Currently we are storing BookieSocketAddresses in ledgers metadata, but in the future it would be possible to store just bookie ids but this change should be covered in the scope
-of another BP.
+The client can derive bookieId from a BookieSocketAddress. He can access the list of available bookies using **RegistrationClient#getAllBookies()** and then use this new method to get the details of the services exposed by the Bookie.
 
 On the Bookie side we change the RegistrationManager interface in order to let the Bookie
 advertise the services:
 
-in RegistrationManager class this method 
+in RegistrationManager class the **registerBookie** method 
 ```
 void registerBookie(String bookieId, boolean readOnly)
 ```
@@ -53,13 +51,13 @@ void registerBookie(String bookieId, boolean readOnly)
 becomes
 
 ```
-void registerBookie(String bookieId, BookieServiceInfo bookieServieInfo, boolean readOnly)
+void registerBookie(String bookieId, boolean readOnly, BookieServiceInfo bookieServieInfo)
 ```
 
 It will be up to the implementation of RegistrationManager and RegistrationClient to serialize
 the BookieServiceInfo structure.
 
-For the ZooKeeper based implementation we are going to store such information as a JSON Object
+For the ZooKeeper based implementation we are going to store such information in JSON format.
 
 ```
 {
@@ -67,28 +65,33 @@ For the ZooKeeper based implementation we are going to store such information as
     "property2": "value2",
 }
 ```
-Such information will be stored inside the '/available' znode (or 'available_readonline' in case of readonly bookie).
-The rationale around this choice is that the client is watching over these znodes, in the future the client will read the endpoint information (BookieSocketAddress) from this node
-that is updated whenever the Bookie becomes available.
-This about the case when you want to change the network address of the bookie: you reboot the Bookie machine with the new configuration and clients will connect to the new address.
-This kind of change is out of the scope of the current proposal.
+Such information will be stored inside the '/REGISTRATIONPATH/available' znode (or /REGISTRATIONPATH/available/readonline' in case of readonly bookie).
 
+The rationale around this choice is that the client is already using these znodes in order to discover available bookies services.
 
-Notable known keys will be:
-- bookie.binary.url: bk://hostname:port - address of the main Bookie RPC interface
-- bookie.binary.tls.supported: true|false - information about the availability of TLS
-- bookie.binary.auth.type: node|sasl - information about available authentication mechanism
-- bookie.admin.url: protocol://hostname:port - information about the HTTP endpoint
-- bookie.metrics.url:  protocol://hostname:port/metrics - information about Metrics endpoint
+It is possible that such endpoint information change during the lifetime of a Bookie, like after rebooting a machine and the machine gets a new network address.
 
-Which kind of properties should be stored in BookieServiceInfo ?
+It is out of the scope of this proposal to change semantics of ledger metadata, in which we  are currently storing directly the network address of the bookies, but with this proposal we are preparing the way to have an indirection and separate the concept of Bookie ID from the Network address.
+
+**Well known** keys will be:
+- **bookie.port**: the TCP port for the Bookie RPC interface
+- **bookie.host**: the TCP network hostname for the Bookie RPC interface
+- **bookie.tls.enabled**: 'true' in case of TLS endpoint support
+- **bookie.http.port**: the TCP port for the HTTP Service, if enabled
+- **bookie.stats.provider**: the name of the Stats Provider
+- **bookie.autorecovery.enabled**: 'true' case of the presence of the auto recovery daemon
+- **bookie.auth.provider**: the name of the Authentication provider in use
+
+In the future we could also leverage this information from the PlacementPolicy, in order to select only bookies that publish a TLS endpoint or a particular authentication provider.
+
+#### Which kind of properties should be stored in BookieServiceInfo ?
 
 We should store here only the minimal set of information useful to reach the bookie.
 For instance internal state of the Bookie should be exposed by the HTTP endpoint
-so having the *bookie.admin.url* is enough.
-Having information about authentication or security will be useful for PlacementPolicies or for readers in order to select bookies to use.
-It is expected that these properties change when a bookie is restarted, like after a reconfiguration (change auth type, enable TLS).
-It is better not to expose the version of the Bookie in order not to open the way to protocol usage based on the Bookie version (it is better to implement 'feature detection' instead of using the version).
+so having the *bookie.http.port* is enough to know that the Bookie has an HTTP endpoint and how to reach it (up to 4.10 we can assume that the hostname is the same as the bookie.host).
+It is expected that these properties change when a bookie is restarted, like after a reconfiguration (change auth type, enable TLS, change network address).
+
+It is better not to expose the version of the Bookie, if the client wants to use particular features of the Bookie this should be implemented on the protocol itself, not just by using the version. The version of the Bookie could be exposed on the HTTP endpoint.
 
 ### Proposed Changes
 
@@ -96,19 +99,12 @@ See the 'Public intefaces' section.
 
 ### Compatibility, Deprecation, and Migration Plan
 
-The proposed change will be compatible with existing clients.
-
-It is possible that future client will need these new properties exposed by the Bookie
-- What impact (if any) will there be on existing users? 
-- If we are changing behavior how will we phase out the older behavior? 
-- If we need special migration tools, describe them here.
-- When will we remove the existing behavior?
+The proposed change will be compatible with existing clients up to 4.10.x.
 
 ### Test Plan
 
 New unit tests will be added to cover the code change. 
 No need for additional integration tests.
-
 
 ### Rejected Alternatives
 
@@ -116,5 +112,6 @@ No need for additional integration tests.
 For the ZooKeeper implementation we are not introducing a new znode to store BookieServiceInfo. Adding such new node will increase complexity and the usage of resources on ZooKeeper.
 
 #### Storing information inside the Cookie
-The *Cookie* stores information about the *identity* of the bookie and it is expected not to change. It is exceptional to rewrite the Cookie, like when adding a new data directory.
-In some environment it is common to have a new network address after a restart or to change the configuration and enable a new service or feature. 
+The *Cookie* stores information about the *identity* of the bookie and it is expected not to change.
+It is exceptional to rewrite the Cookie, like when adding a new data directory.
+In some environments it is common to have a new network address after a restart or to change the configuration and enable a new service or feature, and you cannot rewrite the Cookie at each restart: by design every change to the Cookie should be manual or controlled by an external entity other than the Bookie itself.
