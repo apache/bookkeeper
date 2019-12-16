@@ -19,13 +19,13 @@
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.when;
-
 import java.util.UUID;
 import java.util.function.Function;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -82,10 +82,9 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
         PowerMockito.whenNew(ClientConfiguration.class).withArguments(eq(conf)).thenReturn(clientConfiguration);
         PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
                     .withArguments(eq(clientConfiguration)).thenReturn(bookKeeperAdmin);
-        PowerMockito.mockStatic(Bookie.class);
-        PowerMockito.when(Bookie.getBookieId(any(ServerConfiguration.class))).thenReturn(bookieSocketAddress);
+        PowerMockito.whenNew(BookieId.class).withArguments(anyString()).thenReturn(bookieSocketAddress);
+        conf.setBookieId(bookieSocketAddress.getId());
         PowerMockito.doNothing().when(bookKeeperAdmin).decommissionBookie(eq(bookieSocketAddress));
-
         RegistrationManager registrationManager = mock(RegistrationManager.class);
         PowerMockito.mockStatic(MetadataDrivers.class);
         PowerMockito.doAnswer(invocationOnMock -> {
@@ -96,7 +95,7 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
                 any(Function.class));
 
         PowerMockito.mockStatic(Cookie.class);
-        PowerMockito.when(Cookie.readFromRegistrationManager(eq(registrationManager), eq(bookieSocketAddress)))
+        when(Cookie.readFromRegistrationManager(eq(registrationManager), eq(bookieSocketAddress)))
                     .thenReturn(cookieVersioned);
         when(cookieVersioned.getValue()).thenReturn(cookie);
         when(cookieVersioned.getVersion()).thenReturn(version);

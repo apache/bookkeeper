@@ -102,7 +102,7 @@ public class BookieStateManager implements StateManager {
             ledgerDirsManager.getAllLedgerDirs(),
             () -> {
                 try {
-                    return Bookie.getBookieId(conf);
+                    return BookieImpl.getBookieId(conf);
                 } catch (UnknownHostException e) {
                     throw new UncheckedIOException("Failed to resolve bookie id", e);
                 }

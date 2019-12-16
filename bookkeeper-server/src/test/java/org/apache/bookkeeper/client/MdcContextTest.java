@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -182,7 +183,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
         for (int i = 0; i < 3; ++i) {
             Bookie bookie = bs.get(i).getBookie();
             File[] ledgerDirs = bsConfs.get(i).getLedgerDirs();
-            LedgerDirsManager ledgerDirsManager = bookie.getLedgerDirsManager();
+            LedgerDirsManager ledgerDirsManager = ((BookieImpl) bookie).getLedgerDirsManager();
             ledgerDirsManager.addToFilledDirs(new File(ledgerDirs[0], "current"));
         }
 

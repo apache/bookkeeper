@@ -58,7 +58,7 @@ public class BookieJournalMaxMemoryTest {
     @Test
     public void testAckAfterSyncPageCacheFlush() throws Exception {
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setJournalDirName(journalDir.getPath())

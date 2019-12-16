@@ -148,8 +148,10 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
         Cookie cookie = Cookie.readFromRegistrationManager(rm, conf).getValue();
         Cookie.Builder cookieBuilder = Cookie.newBuilder(cookie);
         conf.setUseHostNameAsBookieID(false); // sets to hostname
-        final String newBookieHost = Bookie.getBookieAddress(conf).toString();
+
+        final String newBookieHost = BookieImpl.getBookieAddress(conf).toString();
         cookieBuilder.setBookieId(newBookieHost);
+
         cookieBuilder.build().writeToRegistrationManager(rm, conf, Version.NEW);
         verifyCookieInZooKeeper(conf, 2);
 
@@ -185,7 +187,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
         bks.shutdown();
 
         String zkCookiePath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf)
-            + "/" + COOKIE_NODE + "/" + Bookie.getBookieAddress(conf);
+            + "/" + COOKIE_NODE + "/" + BookieImpl.getBookieAddress(conf);
         Assert.assertNotNull("Cookie path doesn't still exists!", zkc.exists(zkCookiePath, false));
         zkc.delete(zkCookiePath, -1);
         Assert.assertNull("Cookie path still exists!", zkc.exists(zkCookiePath, false));
@@ -237,11 +239,11 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
         verifyCookieInZooKeeper(newconf, 1);
 
         for (File journalDir : conf.getJournalDirs()) {
-            journalDir = Bookie.getCurrentDirectory(journalDir);
+            journalDir = BookieImpl.getCurrentDirectory(journalDir);
             Cookie jCookie = Cookie.readFromDirectory(journalDir);
             jCookie.verify(cookie);
         }
-        File[] ledgerDir = Bookie.getCurrentDirectories(conf.getLedgerDirs());
+        File[] ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs());
         for (File dir : ledgerDir) {
             Cookie lCookie = Cookie.readFromDirectory(dir);
             lCookie.verify(cookie);

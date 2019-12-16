@@ -60,8 +60,8 @@ public abstract class LedgerStorageTestBase {
         ledgerDir = createTempDir("ledger");
 
         // create current directories
-        Bookie.getCurrentDirectory(journalDir).mkdir();
-        Bookie.getCurrentDirectory(ledgerDir).mkdir();
+        BookieImpl.getCurrentDirectory(journalDir).mkdir();
+        BookieImpl.getCurrentDirectory(ledgerDir).mkdir();
 
         // build the configuration
         conf.setMetadataServiceUri(null);

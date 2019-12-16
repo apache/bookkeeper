@@ -323,20 +323,20 @@ public class CreateNewLogTest {
                 expectedPreAllocatedLogIDDuringInitialization + 1, entryLoggerAllocator.getPreallocatedLogId());
 
         for (int i = 0; i < numDirs - 1; i++) {
-            ledgerDirsManager.addToFilledDirs(Bookie.getCurrentDirectory(new File(ledgerDirs[i])));
+            ledgerDirsManager.addToFilledDirs(BookieImpl.getCurrentDirectory(new File(ledgerDirs[i])));
         }
 
         /*
          * this is the only non-filled ledgerDir so it should be used for creating new entryLog
          */
-        File nonFilledLedgerDir = Bookie.getCurrentDirectory(new File(ledgerDirs[numDirs - 1]));
+        File nonFilledLedgerDir = BookieImpl.getCurrentDirectory(new File(ledgerDirs[numDirs - 1]));
 
         entryLogManager.createNewLog(ledgerId);
         BufferedLogChannel newLogChannel = entryLogManager.getCurrentLogForLedger(ledgerId);
         Assert.assertEquals("Directory of newly created BufferedLogChannel file", nonFilledLedgerDir.getAbsolutePath(),
                 newLogChannel.getLogFile().getParentFile().getAbsolutePath());
 
-        ledgerDirsManager.addToFilledDirs(Bookie.getCurrentDirectory(new File(ledgerDirs[numDirs - 1])));
+        ledgerDirsManager.addToFilledDirs(BookieImpl.getCurrentDirectory(new File(ledgerDirs[numDirs - 1])));
 
         // new entrylog creation should succeed, though there is no writable ledgerDir
         entryLogManager.createNewLog(ledgerId);

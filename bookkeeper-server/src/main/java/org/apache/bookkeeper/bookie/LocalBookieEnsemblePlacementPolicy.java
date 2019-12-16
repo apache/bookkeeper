@@ -62,7 +62,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
         serverConf.addConfiguration(conf);
 
         try {
-            bookieAddress = Bookie.getBookieId(serverConf);
+            bookieAddress = BookieImpl.getBookieId(serverConf);
         } catch (UnknownHostException e) {
             LOG.warn("Unable to get bookie address", e);
             throw new RuntimeException(e);

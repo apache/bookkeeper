@@ -27,11 +27,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,9 +49,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
@@ -96,7 +93,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     }
 
     private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
-        BookieId selfBookie = Bookie.getBookieId(baseConf);
+        BookieId selfBookie = BookieImpl.getBookieId(baseConf);
         createLedgers(numLedgers, createdLedgers, selfBookie);
     }
 

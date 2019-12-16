@@ -216,7 +216,7 @@ public class LedgerStorageCheckpointTest {
                 .setLedgerStorageClass(ledgerStorageClassName);
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
         // we know there is only one ledgerDir
-        File ledgerDir = Bookie.getCurrentDirectories(conf.getLedgerDirs())[0];
+        File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
         BookieServer server = new BookieServer(conf);
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
@@ -237,7 +237,7 @@ public class LedgerStorageCheckpointTest {
             handle.close();
         }
 
-        LastLogMark lastLogMarkAfterFirstSetOfAdds = server.getBookie().journals.get(0).getLastLogMark();
+        LastLogMark lastLogMarkAfterFirstSetOfAdds = ((BookieImpl) server.getBookie()).journals.get(0).getLastLogMark();
         LogMark curMarkAfterFirstSetOfAdds = lastLogMarkAfterFirstSetOfAdds.getCurMark();
 
         File lastMarkFile = new File(ledgerDir, "lastMark");
@@ -258,7 +258,7 @@ public class LedgerStorageCheckpointTest {
         Assert.assertTrue("lastMark file must be existing, because checkpoint should have happened",
                 lastMarkFile.exists());
 
-        LastLogMark lastLogMarkAfterCheckpoint = server.getBookie().journals.get(0).getLastLogMark();
+        LastLogMark lastLogMarkAfterCheckpoint = ((BookieImpl) server.getBookie()).journals.get(0).getLastLogMark();
         LogMark curMarkAfterCheckpoint = lastLogMarkAfterCheckpoint.getCurMark();
 
         LogMark rolledLogMark = readLastMarkFile(lastMarkFile);
@@ -291,7 +291,8 @@ public class LedgerStorageCheckpointTest {
         // wait for flushInterval for SyncThread to do next iteration of checkpoint
         executorController.advance(Duration.ofMillis(conf.getFlushInterval()));
 
-        LastLogMark lastLogMarkAfterSecondSetOfAdds = server.getBookie().journals.get(0).getLastLogMark();
+        LastLogMark lastLogMarkAfterSecondSetOfAdds = ((BookieImpl) server.getBookie()).
+                journals.get(0).getLastLogMark();
         LogMark curMarkAfterSecondSetOfAdds = lastLogMarkAfterSecondSetOfAdds.getCurMark();
 
         rolledLogMark = readLastMarkFile(lastMarkFile);
@@ -344,13 +345,13 @@ public class LedgerStorageCheckpointTest {
 
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
         // we know there is only one ledgerDir
-        File ledgerDir = Bookie.getCurrentDirectories(conf.getLedgerDirs())[0];
+        File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
         BookieServer server = new BookieServer(conf);
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkClient = new BookKeeper(clientConf);
-        InterleavedLedgerStorage ledgerStorage = (InterleavedLedgerStorage) server.getBookie().ledgerStorage;
+        InterleavedLedgerStorage ledgerStorage = (InterleavedLedgerStorage) server.getBookie().getLedgerStorage();
 
         int numOfEntries = 5;
         byte[] dataBytes = "data".getBytes();
@@ -422,7 +423,7 @@ public class LedgerStorageCheckpointTest {
 
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
         // we know there is only one ledgerDir
-        File ledgerDir = Bookie.getCurrentDirectories(conf.getLedgerDirs())[0];
+        File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
         BookieServer server = new BookieServer(conf);
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
@@ -485,13 +486,13 @@ public class LedgerStorageCheckpointTest {
 
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
         // we know there is only one ledgerDir
-        File ledgerDir = Bookie.getCurrentDirectories(conf.getLedgerDirs())[0];
+        File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
         BookieServer server = new BookieServer(conf);
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkClient = new BookKeeper(clientConf);
-        InterleavedLedgerStorage ledgerStorage = (InterleavedLedgerStorage) server.getBookie().ledgerStorage;
+        InterleavedLedgerStorage ledgerStorage = (InterleavedLedgerStorage) server.getBookie().getLedgerStorage();
         EntryLogger entryLogger = ledgerStorage.entryLogger;
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
@@ -589,7 +590,7 @@ public class LedgerStorageCheckpointTest {
 
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
         // we know there is only one ledgerDir
-        File ledgerDir = Bookie.getCurrentDirectories(conf.getLedgerDirs())[0];
+        File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
         BookieServer server = new BookieServer(conf);
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
@@ -653,7 +654,7 @@ public class LedgerStorageCheckpointTest {
         // Journal file
         File[] journalDirs = conf.getJournalDirs();
         for (File journalDir : journalDirs) {
-            File journalDirectory = Bookie.getCurrentDirectory(journalDir);
+            File journalDirectory = BookieImpl.getCurrentDirectory(journalDir);
             List<Long> journalLogsId = Journal.listJournalIds(journalDirectory, null);
             for (long journalId : journalLogsId) {
                 File journalFile = new File(journalDirectory, Long.toHexString(journalId) + ".txn");

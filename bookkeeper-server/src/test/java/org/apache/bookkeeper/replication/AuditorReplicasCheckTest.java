@@ -23,7 +23,6 @@ package org.apache.bookkeeper.replication;
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -35,9 +34,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -149,7 +147,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         TestOpStatsLogger replicasCheckStatsLogger = (TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.REPLICAS_CHECK_TIME);
 
-        final TestAuditor auditor = new TestAuditor(Bookie.getBookieId(servConf).toString(), servConf, bkc, true,
+        final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, true,
                 new TestBookKeeperAdmin(bkc, statsLogger, expectedReturnAvailabilityOfEntriesOfLedger,
                         errorReturnValueForGetAvailabilityOfEntriesOfLedger),
                 true, statsLogger);

@@ -121,7 +121,7 @@ public class BookieJournalTest {
     private static ByteBuf generateFenceEntry(long ledgerId) {
         ByteBuf bb = Unpooled.buffer();
         bb.writeLong(ledgerId);
-        bb.writeLong(Bookie.METAENTRY_ID_FENCE_KEY);
+        bb.writeLong(BookieImpl.METAENTRY_ID_FENCE_KEY);
         return bb;
     }
 
@@ -131,7 +131,7 @@ public class BookieJournalTest {
     private static ByteBuf generateMetaEntry(long ledgerId, byte[] masterKey) {
         ByteBuf bb = Unpooled.buffer();
         bb.writeLong(ledgerId);
-        bb.writeLong(Bookie.METAENTRY_ID_LEDGER_KEY);
+        bb.writeLong(BookieImpl.METAENTRY_ID_LEDGER_KEY);
         bb.writeInt(masterKey.length);
         bb.writeBytes(masterKey);
         return bb;
@@ -355,13 +355,13 @@ public class BookieJournalTest {
     @Test
     public void testPreV2Journal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
-        writePreV2Journal(Bookie.getCurrentDirectory(journalDir), 100);
-        writeIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir), 1, "testPasswd".getBytes());
+        writePreV2Journal(BookieImpl.getCurrentDirectory(journalDir), 100);
+        writeIndexFileForLedger(BookieImpl.getCurrentDirectory(ledgerDir), 1, "testPasswd".getBytes());
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
@@ -384,19 +384,19 @@ public class BookieJournalTest {
     @Test
     public void testV4Journal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
-        writeV4Journal(Bookie.getCurrentDirectory(journalDir), 100, "testPasswd".getBytes());
+        writeV4Journal(BookieImpl.getCurrentDirectory(journalDir), 100, "testPasswd".getBytes());
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = createBookieAndReadJournal(conf);
+        BookieImpl b = createBookieAndReadJournal(conf);
 
         b.readEntry(1, 100);
         try {
@@ -413,12 +413,12 @@ public class BookieJournalTest {
     @Test
     public void testV5Journal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
-        writeV5Journal(Bookie.getCurrentDirectory(journalDir), 2 * JournalChannel.SECTOR_SIZE,
+        writeV5Journal(BookieImpl.getCurrentDirectory(journalDir), 2 * JournalChannel.SECTOR_SIZE,
                 "testV5Journal".getBytes());
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -426,7 +426,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = createBookieAndReadJournal(conf);
+        BookieImpl b = createBookieAndReadJournal(conf);
 
         for (int i = 1; i <= 2 * JournalChannel.SECTOR_SIZE; i++) {
             b.readEntry(1, i);
@@ -450,12 +450,12 @@ public class BookieJournalTest {
     @Test
     public void testAllJunkJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
-        writeJunkJournal(Bookie.getCurrentDirectory(journalDir));
+        writeJunkJournal(BookieImpl.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
@@ -464,7 +464,7 @@ public class BookieJournalTest {
 
         Bookie b = null;
         try {
-            b = new Bookie(conf);
+            b = new BookieImpl(conf);
             fail("Shouldn't have been able to start without admin");
         } catch (Throwable t) {
             // correct behaviour
@@ -485,19 +485,19 @@ public class BookieJournalTest {
     @Test
     public void testEmptyJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
-        writePreV2Journal(Bookie.getCurrentDirectory(journalDir), 0);
+        writePreV2Journal(BookieImpl.getCurrentDirectory(journalDir), 0);
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = new Bookie(conf);
+        Bookie b = new BookieImpl(conf);
     }
 
     /**
@@ -507,19 +507,19 @@ public class BookieJournalTest {
     @Test
     public void testHeaderOnlyJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
-        writeV2Journal(Bookie.getCurrentDirectory(journalDir), 0);
+        writeV2Journal(BookieImpl.getCurrentDirectory(journalDir), 0);
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = new Bookie(conf);
+        Bookie b = new BookieImpl(conf);
     }
 
     /**
@@ -529,12 +529,12 @@ public class BookieJournalTest {
     @Test
     public void testJunkEndedJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
-        JournalChannel jc = writeV2Journal(Bookie.getCurrentDirectory(journalDir), 0);
+        JournalChannel jc = writeV2Journal(BookieImpl.getCurrentDirectory(journalDir), 0);
         jc.getBufferedChannel().write(Unpooled.wrappedBuffer("JunkJunkJunk".getBytes()));
         jc.getBufferedChannel().flushAndForceWrite(false);
 
@@ -547,7 +547,7 @@ public class BookieJournalTest {
 
         Bookie b = null;
         try {
-            b = new Bookie(conf);
+            b = new BookieImpl(conf);
         } catch (Throwable t) {
             // correct behaviour
         }
@@ -564,20 +564,20 @@ public class BookieJournalTest {
     @Test
     public void testTruncatedInLenJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
         JournalChannel jc = writeV2Journal(
-                Bookie.getCurrentDirectory(journalDir), 100);
+                BookieImpl.getCurrentDirectory(journalDir), 100);
         ByteBuffer zeros = ByteBuffer.allocate(2048);
 
         jc.fc.position(jc.getBufferedChannel().position() - 0x429);
         jc.fc.write(zeros);
         jc.fc.force(false);
 
-        writeIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir),
+        writeIndexFileForLedger(BookieImpl.getCurrentDirectory(ledgerDir),
                                 1, "testPasswd".getBytes());
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -607,20 +607,20 @@ public class BookieJournalTest {
     @Test
     public void testTruncatedInEntryJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
         JournalChannel jc = writeV2Journal(
-                Bookie.getCurrentDirectory(journalDir), 100);
+                BookieImpl.getCurrentDirectory(journalDir), 100);
         ByteBuffer zeros = ByteBuffer.allocate(2048);
 
         jc.fc.position(jc.getBufferedChannel().position() - 0x300);
         jc.fc.write(zeros);
         jc.fc.force(false);
 
-        writeIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir),
+        writeIndexFileForLedger(BookieImpl.getCurrentDirectory(ledgerDir),
                                 1, "testPasswd".getBytes());
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -654,8 +654,8 @@ public class BookieJournalTest {
         }
     }
 
-    private Bookie createBookieAndReadJournal(ServerConfiguration conf) throws Exception {
-        Bookie b = new Bookie(conf);
+    private BookieImpl createBookieAndReadJournal(ServerConfiguration conf) throws Exception {
+        BookieImpl b = new BookieImpl(conf);
         for (Journal journal : b.journals) {
             LastLogMark lastLogMark = journal.getLastLogMark().markLog();
             b.readJournal();
@@ -671,17 +671,17 @@ public class BookieJournalTest {
     @Test
     public void testSortedLedgerStorageReplayWithSmallMaxArenaSize() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
         JournalChannel jc = writeV2Journal(
-                Bookie.getCurrentDirectory(journalDir), 100);
+                BookieImpl.getCurrentDirectory(journalDir), 100);
 
         jc.fc.force(false);
 
-        writeIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir),
+        writeIndexFileForLedger(BookieImpl.getCurrentDirectory(ledgerDir),
                 1, "testPasswd".getBytes());
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -690,7 +690,7 @@ public class BookieJournalTest {
         conf.setJournalDirName(journalDir.getPath())
                 .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
-        Bookie b = new Bookie(conf);
+        BookieImpl b = new BookieImpl(conf);
         b.readJournal();
         b.ledgerStorage.flush();
         b.readEntry(1, 80);
@@ -719,13 +719,13 @@ public class BookieJournalTest {
     private void testPartialFileInfoPreV3Journal(boolean truncateMasterKey)
         throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
-        writePreV2Journal(Bookie.getCurrentDirectory(journalDir), 100);
-        writePartialIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir),
+        writePreV2Journal(BookieImpl.getCurrentDirectory(journalDir), 100);
+        writePartialIndexFileForLedger(BookieImpl.getCurrentDirectory(ledgerDir),
                                        1, "testPasswd".getBytes(), truncateMasterKey);
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -735,13 +735,13 @@ public class BookieJournalTest {
 
         if (truncateMasterKey) {
             try {
-                Bookie b = new Bookie(conf);
+                BookieImpl b = new BookieImpl(conf);
                 b.readJournal();
                 fail("Should not reach here!");
             } catch (IOException ie) {
             }
         } else {
-            Bookie b = new Bookie(conf);
+            BookieImpl b = new BookieImpl(conf);
             b.readJournal();
             b.readEntry(1, 100);
             try {
@@ -775,15 +775,15 @@ public class BookieJournalTest {
     private void testPartialFileInfoPostV3Journal(boolean truncateMasterKey)
         throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
         byte[] masterKey = "testPasswd".getBytes();
 
-        writeV3Journal(Bookie.getCurrentDirectory(journalDir), 100, masterKey);
-        writePartialIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir), 1, masterKey,
+        writeV3Journal(BookieImpl.getCurrentDirectory(journalDir), 100, masterKey);
+        writePartialIndexFileForLedger(BookieImpl.getCurrentDirectory(ledgerDir), 1, masterKey,
                                        truncateMasterKey);
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -791,7 +791,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = new Bookie(conf);
+        BookieImpl b = new BookieImpl(conf);
         b.readJournal();
         b.readEntry(1, 100);
         try {
@@ -808,12 +808,12 @@ public class BookieJournalTest {
     @Test
     public void testJournalScanIOException() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
-        writeV4Journal(Bookie.getCurrentDirectory(journalDir), 100, "testPasswd".getBytes());
+        writeV4Journal(BookieImpl.getCurrentDirectory(journalDir), 100, "testPasswd".getBytes());
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
@@ -829,7 +829,7 @@ public class BookieJournalTest {
         PowerMockito.mockStatic(JournalChannel.class);
         PowerMockito.when(JournalChannel.openFileChannel(Mockito.any(RandomAccessFile.class))).thenReturn(fileChannel);
 
-        Bookie b = new Bookie(conf);
+        BookieImpl b = new BookieImpl(conf);
 
         for (Journal journal : b.journals) {
             List<Long> journalIds = journal.listJournalIds(journal.getJournalDirectory(), null);

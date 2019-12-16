@@ -40,6 +40,11 @@ dependencies {
     implementation depLibs.thrift
     implementation depLibs.zookeeper
 
+    testRuntimeOnly depLibs.metricsCore
+    testRuntimeOnly depLibs.snappy
+    testRuntimeOnly depLibs.commonsBeanutils
+
+
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
     testImplementation project(path: ':stream:distributedlog:common', configuration: 'testArtifacts')
     testImplementation depLibs.junit

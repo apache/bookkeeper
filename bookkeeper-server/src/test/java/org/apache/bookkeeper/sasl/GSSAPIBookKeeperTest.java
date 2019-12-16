@@ -24,7 +24,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -33,8 +32,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.Configuration;
-
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -86,7 +84,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
         // this is just to calculate "localhostName" the same way the bookie does
         ServerConfiguration bookieConf = TestBKConfiguration.newServerConfiguration();
         bookieConf.setUseHostNameAsBookieID(true);
-        String localhostName = Bookie.getBookieAddress(bookieConf).getHostName();
+        String localhostName = BookieImpl.getBookieAddress(bookieConf).getHostName();
 
         String principalServerNoRealm = non_default_sasl_service_name + "/" + localhostName;
         String principalServer = non_default_sasl_service_name + "/" + localhostName + "@" + kdc.getRealm();

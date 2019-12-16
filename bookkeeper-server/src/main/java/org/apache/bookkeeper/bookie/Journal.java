@@ -882,7 +882,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     void forceLedger(long ledgerId, WriteCallback cb, Object ctx) {
         queue.add(QueueEntry.create(
                 null, false /* ackBeforeSync */, ledgerId,
-                Bookie.METAENTRY_ID_FORCE_LEDGER, cb, ctx, MathUtils.nowInNano(),
+                BookieImpl.METAENTRY_ID_FORCE_LEDGER, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalForceLedgerStats(),
                 journalStats.getJournalCbQueueSize()));
         // Increment afterwards because the add operation could fail.
@@ -1109,7 +1109,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 if (qe == null) { // no more queue entry
                     continue;
                 }
-                if ((qe.entryId == Bookie.METAENTRY_ID_LEDGER_EXPLICITLAC)
+                if ((qe.entryId == BookieImpl.METAENTRY_ID_LEDGER_EXPLICITLAC)
                         && (journalFormatVersionToWrite < JournalChannel.V6)) {
                     /*
                      * this means we are using new code which supports
@@ -1120,7 +1120,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                      */
                     memoryLimitController.releaseMemory(qe.entry.readableBytes());
                     qe.entry.release();
-                } else if (qe.entryId != Bookie.METAENTRY_ID_FORCE_LEDGER) {
+                } else if (qe.entryId != BookieImpl.METAENTRY_ID_FORCE_LEDGER) {
                     int entrySize = qe.entry.readableBytes();
                     journalStats.getJournalWriteBytes().add(entrySize);
 

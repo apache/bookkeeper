@@ -22,7 +22,7 @@ import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
@@ -79,10 +79,10 @@ public class ConvertToDBStorageCommand extends BookieCommand<ConvertToDBStorageC
         ServerConfiguration bkConf = new ServerConfiguration(conf);
 
         InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
-        Bookie.mountLedgerStorageOffline(bkConf, interleavedStorage);
+        BookieImpl.mountLedgerStorageOffline(bkConf, interleavedStorage);
 
         DbLedgerStorage dbStorage = new DbLedgerStorage();
-        Bookie.mountLedgerStorageOffline(bkConf, dbStorage);
+        BookieImpl.mountLedgerStorageOffline(bkConf, dbStorage);
 
         int convertedLedgers = 0;
         for (long ledgerId : interleavedStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {

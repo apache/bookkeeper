@@ -145,7 +145,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     private GarbageCollectorThread getGCThread() {
         assertEquals(1, bs.size());
         BookieServer server = bs.get(0);
-        return ((InterleavedLedgerStorage) server.getBookie().ledgerStorage).gcThread;
+        return ((InterleavedLedgerStorage) server.getBookie().getLedgerStorage()).gcThread;
     }
 
     LedgerHandle[] prepareData(int numEntryLogs, boolean changeNum)
@@ -284,10 +284,10 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             }
         };
         for (File journalDir : conf.getJournalDirs()) {
-            Bookie.checkDirectoryStructure(journalDir);
+            BookieImpl.checkDirectoryStructure(journalDir);
         }
         for (File dir : dirManager.getAllLedgerDirs()) {
-            Bookie.checkDirectoryStructure(dir);
+            BookieImpl.checkDirectoryStructure(dir);
         }
         runFunctionWithLedgerManagerFactory(conf, lmf -> {
             try (LedgerManager lm = lmf.newLedgerManager()) {
@@ -562,7 +562,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         assertTrue(getGCThread().enableMinorCompaction);
 
         for (BookieServer bookieServer : bs) {
-            Bookie bookie = bookieServer.getBookie();
+            BookieImpl bookie = ((BookieImpl) bookieServer.getBookie());
             LedgerDirsManager ledgerDirsManager = bookie.getLedgerDirsManager();
             List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
             // if all the discs are full then Major and Minor compaction would be disabled since
@@ -631,8 +631,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         assertTrue(getGCThread().enableMinorCompaction);
 
         for (BookieServer bookieServer : bs) {
-            Bookie bookie = bookieServer.getBookie();
-            bookie.ledgerStorage.flush();
+            BookieImpl bookie = ((BookieImpl) bookieServer.getBookie());
+            bookie.getLedgerStorage().flush();
             bookie.dirsMonitor.shutdown();
             LedgerDirsManager ledgerDirsManager = bookie.getLedgerDirsManager();
             List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
@@ -658,7 +658,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // allocating newlog
         // we get getWritableLedgerDirsForNewLog() of ledgerDirsManager instead of getWritableLedgerDirs()
         // entry logs ([0,1,2].log) should be compacted.
-        for (File ledgerDirectory : server.getBookie().getLedgerDirsManager().getAllLedgerDirs()) {
+        for (File ledgerDirectory : ((BookieImpl) server.getBookie()).getLedgerDirsManager().getAllLedgerDirs()) {
             assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
                     + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory.getParentFile(), true, 0, 1, 2));
         }
@@ -669,7 +669,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // for the sake of validity of test lets make sure that there is no writableLedgerDir in the bookies
         for (BookieServer bookieServer : bs) {
-            Bookie bookie = bookieServer.getBookie();
+            BookieImpl bookie = (BookieImpl) bookieServer.getBookie();
             LedgerDirsManager ledgerDirsManager = bookie.getLedgerDirsManager();
             try {
                 List<File> ledgerDirs = ledgerDirsManager.getWritableLedgerDirs();
@@ -837,7 +837,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
          * there is only one bookie in the cluster so we should be able to read
          * entries from this bookie.
          */
-        ServerConfiguration bookieServerConfig = bs.get(0).getBookie().conf;
+        ServerConfiguration bookieServerConfig = ((BookieImpl) bs.get(0).getBookie()).conf;
         ServerConfiguration newBookieConf = new ServerConfiguration(bookieServerConfig);
         /*
          * by reusing bookieServerConfig and setting metadataServiceUri to null
@@ -846,7 +846,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
          * purpose.
          */
         newBookieConf.setMetadataServiceUri(null);
-        Bookie newbookie = new Bookie(newBookieConf);
+        Bookie newbookie = new BookieImpl(newBookieConf);
 
         DigestManager digestManager = DigestManager.instantiate(ledgerId, passwdBytes,
                 BookKeeper.DigestType.toProtoDigestType(digestType), UnpooledByteBufAllocator.DEFAULT,
@@ -917,7 +917,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         restartBookies(baseConf);
 
         assertFalse("There shouldn't be any writable ledgerDir",
-                bs.get(0).getBookie().getLedgerDirsManager().hasWritableLedgerDirs());
+                    ((BookieImpl) bs.get(0).getBookie()).getLedgerDirsManager().hasWritableLedgerDirs());
 
         long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
         long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
@@ -1044,8 +1044,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         LedgerManager manager = getLedgerManager(ledgers);
 
         File tmpDir = createTempDir("bkTest", ".dir");
-        File curDir = Bookie.getCurrentDirectory(tmpDir);
-        Bookie.checkDirectoryStructure(curDir);
+        File curDir = BookieImpl.getCurrentDirectory(tmpDir);
+        BookieImpl.checkDirectoryStructure(curDir);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
 
         conf.setEntryLogSizeLimit(EntryLogger.LOGFILE_HEADER_SIZE + 3 * (4 + ENTRY_SIZE));
@@ -1228,8 +1228,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         tearDown(); // I dont want the test infrastructure
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         File tmpDir = createTempDir("bkTest", ".dir");
-        File curDir = Bookie.getCurrentDirectory(tmpDir);
-        Bookie.checkDirectoryStructure(curDir);
+        File curDir = BookieImpl.getCurrentDirectory(tmpDir);
+        BookieImpl.checkDirectoryStructure(curDir);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
 
         LedgerDirsManager dirs = new LedgerDirsManager(conf, conf.getLedgerDirs(),
@@ -1278,8 +1278,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         restartBookies(baseConf);
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         File tmpDir = createTempDir("bkTest", ".dir");
-        File curDir = Bookie.getCurrentDirectory(tmpDir);
-        Bookie.checkDirectoryStructure(curDir);
+        File curDir = BookieImpl.getCurrentDirectory(tmpDir);
+        BookieImpl.checkDirectoryStructure(curDir);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
 
         LedgerDirsManager dirs = new LedgerDirsManager(conf, conf.getLedgerDirs(),
@@ -1383,10 +1383,10 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             }
         };
         for (File journalDir : conf.getJournalDirs()) {
-            Bookie.checkDirectoryStructure(journalDir);
+            BookieImpl.checkDirectoryStructure(journalDir);
         }
         for (File dir : dirManager.getAllLedgerDirs()) {
-            Bookie.checkDirectoryStructure(dir);
+            BookieImpl.checkDirectoryStructure(dir);
         }
         InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
         TestStatsProvider stats = new TestStatsProvider();
@@ -1478,7 +1478,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // restart bookies
         restartBookies(baseConf);
 
-        Bookie bookie = bs.get(0).getBookie();
+        BookieImpl bookie = ((BookieImpl) bs.get(0).getBookie());
         InterleavedLedgerStorage storage = (InterleavedLedgerStorage) bookie.ledgerStorage;
 
         // remove ledger2 and ledger3
@@ -1488,7 +1488,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         LOG.info("Finished deleting the ledgers contains most entries.");
 
         MockTransactionalEntryLogCompactor partialCompactionWorker = new MockTransactionalEntryLogCompactor(
-            ((InterleavedLedgerStorage) bookie.ledgerStorage).gcThread);
+                ((InterleavedLedgerStorage) bookie.getLedgerStorage()).gcThread);
 
         for (long logId = 0; logId < 3; logId++) {
             EntryLogMetadata meta = storage.entryLogger.getEntryLogMetadata(logId);
@@ -1548,7 +1548,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         LOG.info("Finished deleting the ledgers contains most entries.");
         Thread.sleep(baseConf.getMajorCompactionInterval() * 1000
             + baseConf.getGcWaitTime());
-        Bookie bookie = bs.get(0).getBookie();
+        BookieImpl bookie = (BookieImpl) bs.get(0).getBookie();
         InterleavedLedgerStorage storage = (InterleavedLedgerStorage) bookie.ledgerStorage;
 
         List<File> ledgerDirs = bookie.getLedgerDirsManager().getAllLedgerDirs();
@@ -1610,7 +1610,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     private Set<File> findCompactedEntryLogFiles() {
         Set<File> compactedLogFiles = new HashSet<>();
         for (File ledgerDirectory : tmpDirs) {
-            File[] files = Bookie.getCurrentDirectory(ledgerDirectory).listFiles(
+            File[] files = BookieImpl.getCurrentDirectory(ledgerDirectory).listFiles(
                 file -> file.getName().endsWith(COMPACTED_SUFFIX));
             if (files != null) {
                 Collections.addAll(compactedLogFiles, files);

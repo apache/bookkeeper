@@ -21,7 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.Bookie.METAENTRY_ID_FENCE_KEY;
+import static org.apache.bookkeeper.bookie.BookieImpl.METAENTRY_ID_FENCE_KEY;
 
 import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
