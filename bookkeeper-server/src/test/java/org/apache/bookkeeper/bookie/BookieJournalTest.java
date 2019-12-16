@@ -464,7 +464,7 @@ public class BookieJournalTest {
 
         Bookie b = null;
         try {
-            b = new BookieImpl(conf);
+            b = new TestBookieImpl(conf);
             fail("Shouldn't have been able to start without admin");
         } catch (Throwable t) {
             // correct behaviour
@@ -497,7 +497,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = new BookieImpl(conf);
+        Bookie b = new TestBookieImpl(conf);
     }
 
     /**
@@ -519,7 +519,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        Bookie b = new BookieImpl(conf);
+        Bookie b = new TestBookieImpl(conf);
     }
 
     /**
@@ -547,7 +547,7 @@ public class BookieJournalTest {
 
         Bookie b = null;
         try {
-            b = new BookieImpl(conf);
+            b = new TestBookieImpl(conf);
         } catch (Throwable t) {
             // correct behaviour
         }
@@ -655,7 +655,7 @@ public class BookieJournalTest {
     }
 
     private BookieImpl createBookieAndReadJournal(ServerConfiguration conf) throws Exception {
-        BookieImpl b = new BookieImpl(conf);
+        BookieImpl b = new TestBookieImpl(conf);
         for (Journal journal : b.journals) {
             LastLogMark lastLogMark = journal.getLastLogMark().markLog();
             b.readJournal();
@@ -690,7 +690,7 @@ public class BookieJournalTest {
         conf.setJournalDirName(journalDir.getPath())
                 .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
-        BookieImpl b = new BookieImpl(conf);
+        BookieImpl b = new TestBookieImpl(conf);
         b.readJournal();
         b.ledgerStorage.flush();
         b.readEntry(1, 80);
@@ -735,13 +735,13 @@ public class BookieJournalTest {
 
         if (truncateMasterKey) {
             try {
-                BookieImpl b = new BookieImpl(conf);
+                BookieImpl b = new TestBookieImpl(conf);
                 b.readJournal();
                 fail("Should not reach here!");
             } catch (IOException ie) {
             }
         } else {
-            BookieImpl b = new BookieImpl(conf);
+            BookieImpl b = new TestBookieImpl(conf);
             b.readJournal();
             b.readEntry(1, 100);
             try {
@@ -791,7 +791,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setMetadataServiceUri(null);
 
-        BookieImpl b = new BookieImpl(conf);
+        BookieImpl b = new TestBookieImpl(conf);
         b.readJournal();
         b.readEntry(1, 100);
         try {
@@ -829,7 +829,7 @@ public class BookieJournalTest {
         PowerMockito.mockStatic(JournalChannel.class);
         PowerMockito.when(JournalChannel.openFileChannel(Mockito.any(RandomAccessFile.class))).thenReturn(fileChannel);
 
-        BookieImpl b = new BookieImpl(conf);
+        BookieImpl b = new TestBookieImpl(conf);
 
         for (Journal journal : b.journals) {
             List<Long> journalIds = journal.listJournalIds(journal.getJournalDirectory(), null);

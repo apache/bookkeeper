@@ -69,7 +69,7 @@ public class CheckpointOnNewLedgersTest {
         conf.setLedgerDirNames(new String[] { bkDir.toString() });
         conf.setEntryLogSizeLimit(10 * 1024);
 
-        bookie = spy(new BookieImpl(conf));
+        bookie = spy(new TestBookieImpl(conf));
         bookie.start();
 
         getLedgerDescCalledLatch = new CountDownLatch(1);
@@ -175,7 +175,7 @@ public class CheckpointOnNewLedgersTest {
         t1.join();
 
         // construct a new bookie to simulate "bookie restart from crash"
-        Bookie newBookie = new BookieImpl(conf);
+        Bookie newBookie = new TestBookieImpl(conf);
         newBookie.start();
 
         for (int i = 0; i < numEntries; i++) {

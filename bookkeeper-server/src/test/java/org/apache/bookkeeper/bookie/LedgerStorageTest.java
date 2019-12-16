@@ -142,7 +142,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
          * purpose.
          */
         newBookieConf.setMetadataServiceUri(null);
-        BookieImpl newbookie = new BookieImpl(newBookieConf);
+        BookieImpl newbookie = new TestBookieImpl(newBookieConf);
         /*
          * since 'newbookie' uses the same data as original Bookie, it should be
          * able to read journal of the original bookie and hence explicitLac buf
@@ -307,7 +307,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
          * purpose.
          */
         newBookieConf.setMetadataServiceUri(null);
-        BookieImpl newbookie = new BookieImpl(newBookieConf);
+        BookieImpl newbookie = new TestBookieImpl(newBookieConf);
         /*
          * since 'newbookie' uses the same data as original Bookie, it should be
          * able to read journal of the original bookie.

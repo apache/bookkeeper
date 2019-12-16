@@ -87,7 +87,7 @@ public class LedgerCacheTest {
         conf.setMetadataServiceUri(null);
         conf.setJournalDirName(txnDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
-        bookie = new BookieImpl(conf);
+        bookie = new TestBookieImpl(conf);
 
         activeLedgers = new SnapshotMap<Long, Boolean>();
         ledgerCache = ((InterleavedLedgerStorage) bookie.getLedgerStorage().getUnderlyingLedgerStorage()).ledgerCache;
@@ -275,7 +275,7 @@ public class LedgerCacheTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(), ledgerDir2.getAbsolutePath() });
 
-        BookieImpl bookie = new BookieImpl(conf);
+        BookieImpl bookie = new TestBookieImpl(conf);
         InterleavedLedgerStorage ledgerStorage =
             ((InterleavedLedgerStorage) bookie.getLedgerStorage().getUnderlyingLedgerStorage());
         LedgerCacheImpl ledgerCache = (LedgerCacheImpl) ledgerStorage.ledgerCache;
@@ -328,7 +328,7 @@ public class LedgerCacheTest {
             .setPageLimit(1)
             .setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
 
-        Bookie b = new BookieImpl(conf);
+        Bookie b = new TestBookieImpl(conf);
         b.start();
         for (int i = 1; i <= numLedgers; i++) {
             ByteBuf packet = generateEntry(i, 1);
@@ -340,7 +340,7 @@ public class LedgerCacheTest {
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
-        b = new BookieImpl(conf);
+        b = new TestBookieImpl(conf);
         for (int i = 1; i <= numLedgers; i++) {
             try {
                 b.readEntry(i, 1);
@@ -723,9 +723,9 @@ public class LedgerCacheTest {
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         conf.setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
 
-        Bookie bookie = new BookieImpl(conf);
-        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.
-                getLedgerStorage();
+        Bookie bookie = new TestBookieImpl(conf);
+        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage =
+            (FlushTestSortedLedgerStorage) bookie.getLedgerStorage();
         EntryMemTable memTable = flushTestSortedLedgerStorage.memTable;
 
         // this bookie.addEntry call is required. FileInfo for Ledger 1 would be created with this call.
@@ -770,7 +770,7 @@ public class LedgerCacheTest {
             .setJournalDirName(tmpDir.toString())
             .setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
 
-        Bookie bookie = new BookieImpl(conf);
+        Bookie bookie = new TestBookieImpl(conf);
         bookie.start();
         FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.
                 getLedgerStorage();
@@ -821,9 +821,9 @@ public class LedgerCacheTest {
         // enable entrylog per ledger
         conf.setEntryLogPerLedgerEnabled(true);
 
-        Bookie bookie = new BookieImpl(conf);
-        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.
-                getLedgerStorage();
+        Bookie bookie = new TestBookieImpl(conf);
+        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage =
+            (FlushTestSortedLedgerStorage) bookie.getLedgerStorage();
         EntryMemTable memTable = flushTestSortedLedgerStorage.memTable;
 
         /*
@@ -862,9 +862,9 @@ public class LedgerCacheTest {
         // enable entrylog per ledger
         conf.setEntryLogPerLedgerEnabled(true);
 
-        Bookie bookie = new BookieImpl(conf);
-        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.
-                getLedgerStorage();
+        Bookie bookie = new TestBookieImpl(conf);
+        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage =
+            (FlushTestSortedLedgerStorage) bookie.getLedgerStorage();
         EntryMemTable memTable = flushTestSortedLedgerStorage.memTable;
 
         /*

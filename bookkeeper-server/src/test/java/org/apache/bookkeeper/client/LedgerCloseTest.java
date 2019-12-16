@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.bookie.BookieImpl;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -197,7 +197,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
 
     private void startUnauthorizedBookie(ServerConfiguration conf, final CountDownLatch latch)
             throws Exception {
-        Bookie sBookie = new BookieImpl(conf) {
+        Bookie sBookie = new TestBookieImpl(conf) {
             @Override
             public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
@@ -221,7 +221,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     // simulate slow adds, then become normal when recover,
     // so no ensemble change when recovering ledger on this bookie.
     private void startDeadBookie(ServerConfiguration conf, final CountDownLatch latch) throws Exception {
-        Bookie dBookie = new BookieImpl(conf) {
+        Bookie dBookie = new TestBookieImpl(conf) {
             @Override
             public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {

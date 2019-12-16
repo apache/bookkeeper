@@ -37,8 +37,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
@@ -483,7 +483,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         assertEquals("recovery callback should be triggered only once", 0, numFailureCalls.get());
     }
 
-    static class DelayResponseBookie extends BookieImpl {
+    static class DelayResponseBookie extends TestBookieImpl {
 
         static final class WriteCallbackEntry {
 
