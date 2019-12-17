@@ -18,7 +18,7 @@
 # */
 
 # Check net.ipv6.bindv6only
-if [ -f /sbin/sysctl ]; then
+if [ -f /sbin/sysctl ] && [ -f /proc/sys/net/ipv6/bindv6only ]; then
   # check if net.ipv6.bindv6only is set to 1
   bindv6only=$(/sbin/sysctl -n net.ipv6.bindv6only 2> /dev/null)
   if [ -n "$bindv6only" ] && [ "$bindv6only" -eq "1" ]
