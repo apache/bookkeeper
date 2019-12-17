@@ -46,6 +46,11 @@ RUN set -x \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
+    # install zookeeper shell
+    && wget -q https://bootstrap.pypa.io/get-pip.py \
+    && python get-pip.py \
+    && pip install zk-shell \
+    && rm -rf get-pip.py \
     && yum remove -y wget \
     && yum clean all
 
