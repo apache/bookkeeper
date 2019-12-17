@@ -19,7 +19,6 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 # */
-set -x
 source ${SCRIPTS_DIR}/common.sh
 
 function wait_for_zookeeper() {
