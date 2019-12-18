@@ -33,13 +33,6 @@ function create_zk_root() {
     fi
 }
 
-function create_zk_stream_storage_root() {
-    if [ "x${BK_STREAM_STORAGE_ROOT_PATH}" != "x" ]; then
-        echo "create the zk stream storage dir for bookkeeper at '${BK_STREAM_STORAGE_ROOT_PATH}'"
-        zk-shell --run-once "create ${BK_STREAM_STORAGE_ROOT_PATH} '' false false true" ${BK_zkServers}
-    fi
-}
-
 function init_cluster() {
     zk-shell --run-once "ls ${BK_zkLedgersRootPath}/available/readonly" ${BK_zkServers}
     if [ $? -eq 0 ]; then
