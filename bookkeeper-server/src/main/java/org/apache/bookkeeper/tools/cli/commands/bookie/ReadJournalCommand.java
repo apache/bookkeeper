@@ -156,7 +156,7 @@ public class ReadJournalCommand extends BookieCommand<ReadJournalCommand.ReadJou
                 return false;
             }
             String idString = name.split("\\.")[0];
-            journalId = Long.parseLong(idString);
+            journalId = Long.parseLong(idString, 16);
         }
         scanJournal(journal, journalId, cmd.msg);
         return true;
