@@ -28,6 +28,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
@@ -117,6 +118,8 @@ public class MockExecutorController {
     private final MockClock clock = new MockClock();
     private final List<DeferredTask> deferredTasks = Lists.newArrayList();
 
+    private static List<Integer> taskExTimes;
+
     public MockExecutorController controlSubmit(ScheduledExecutorService service) {
         doAnswer(answerNow()).when(service).submit(any(Runnable.class));
         return this;
@@ -140,16 +143,53 @@ public class MockExecutorController {
         return this;
     }
 
-    private static Answer<ScheduledFuture<?>> answerAtFixedRate(MockExecutorController controller, int numTimes) {
+    public MockExecutorController controlScheduleWithFixedDelay(ScheduledExecutorService service,
+                                                                int maxInvocations, int minRandomExPeriod, int maxRandomExPeriod) {
+        assert minRandomExPeriod > 0: "Minimum execution time should be greater than 0";
+        doAnswer(answerWithFixedDelay(this, maxInvocations, minRandomExPeriod, maxRandomExPeriod))
+                .when(service)
+                .scheduleWithFixedDelay(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
+        return this;
+    }
+
+    private static Answer<ScheduledFuture<?>> answerWithFixedDelay(MockExecutorController controller,
+                                                                   int numTimes, int minRandomExPeriod, int maxRandomExPeriod) {
         return invocationOnMock -> {
             Runnable task = invocationOnMock.getArgument(0);
             long initialDelay = invocationOnMock.getArgument(1);
             long delay = invocationOnMock.getArgument(2);
             TimeUnit unit = invocationOnMock.getArgument(3);
+            Random random = new Random();
+            taskExTimes = Lists.newArrayList();
+
+            DeferredTask deferredTask = null;
+            int totalExTime = 0;
+            for (int i = 0; i < numTimes; i++) {
+                long delayMs = unit.toMillis(initialDelay) + i * unit.toMillis(delay) + totalExTime;
+
+                deferredTask = controller.addDelayedTask(
+                        controller,
+                        delayMs,
+                        task);
+
+                int randomExTime = random.nextInt((maxRandomExPeriod - minRandomExPeriod)) + minRandomExPeriod;
+                totalExTime += randomExTime;
+                taskExTimes.add(randomExTime);
+            }
+            return deferredTask;
+        };
+    }
+
+    private static Answer<ScheduledFuture<?>> answerAtFixedRate(MockExecutorController controller, int numTimes) {
+        return invocationOnMock -> {
+            Runnable task = invocationOnMock.getArgument(0);
+            long initialDelay = invocationOnMock.getArgument(1);
+            long period = invocationOnMock.getArgument(2);
+            TimeUnit unit = invocationOnMock.getArgument(3);
 
             DeferredTask deferredTask = null;
             for (int i = 0; i < numTimes; i++) {
-                long delayMs = unit.toMillis(initialDelay) + i * unit.toMillis(delay);
+                long delayMs = unit.toMillis(initialDelay) + i * unit.toMillis(period);
 
                 deferredTask = controller.addDelayedTask(
                     controller,
@@ -210,6 +250,10 @@ public class MockExecutorController {
         for (DeferredTask task : toExecute) {
             task.run();
         }
+    }
+
+    public List<Integer> getTaskExTime() {
+        return taskExTimes;
     }
 
 }

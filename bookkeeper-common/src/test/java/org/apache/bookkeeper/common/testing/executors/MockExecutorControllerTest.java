@@ -24,8 +24,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,7 +49,8 @@ public class MockExecutorControllerTest {
             .controlExecute(executor)
             .controlSubmit(executor)
             .controlSchedule(executor)
-            .controlScheduleAtFixedRate(executor, MAX_SCHEDULES);
+            .controlScheduleAtFixedRate(executor, MAX_SCHEDULES)
+            .controlScheduleWithFixedDelay(executor, MAX_SCHEDULES, 5, 10);
     }
 
     @Test
@@ -100,5 +104,35 @@ public class MockExecutorControllerTest {
         mockExecutorControl.advance(Duration.ofMillis(500));
         verify(task, times(MAX_SCHEDULES)).run();
     }
+
+    @Test
+    public void testScheduleWithFixedDelay() {
+        Runnable task = mock(Runnable.class);
+        doNothing().when(task).run();
+        executor.scheduleWithFixedDelay(task, 5, 10, TimeUnit.MILLISECONDS);
+
+        List<Integer> taskExTimes = mockExecutorControl.getTaskExTime();
+        Assert.assertEquals(MAX_SCHEDULES, taskExTimes.size());
+
+        // first delay
+        mockExecutorControl.advance(Duration.ofMillis(2));
+        verify(task, times(0)).run();
+        mockExecutorControl.advance(Duration.ofMillis(3));
+        verify(task, times(1)).run();
+
+        // subsequent delays includes task execution time
+        for (int i = 1; i < MAX_SCHEDULES; i++) {
+            int taskExTime = taskExTimes.get(i - 1);
+            mockExecutorControl.advance(Duration.ofMillis(10 + taskExTime - 1));
+            verify(task, times(i)).run();
+            mockExecutorControl.advance(Duration.ofMillis(1));
+            verify(task, times(i + 1)).run();
+        }
+
+        // no more invocations
+        mockExecutorControl.advance(Duration.ofMillis(500));
+        verify(task, times(MAX_SCHEDULES)).run();
+    }
+
 
 }

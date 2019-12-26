@@ -353,6 +353,9 @@ groups:
   - param: majorCompactionInterval
     description: Interval to run major compaction, in seconds. If it is set to less than zero, the major compaction is disabled.
     default: 86400
+  - param: forceCompactionInterval
+    description: The minimum interval needed to trigger force compaction by LedgerDirsListener, since the last main compaction. Main compaction will be Major compaction, if majorcompaction is disabled/suspended then it will be minorcompaction. If both major and minor are disabled/suspended then it will be just gc run. If it is set to zero, then it wont check for time gap before force compacting. Default value is GcWaitTime/2.
+    default: 300000
   - param: isThrottleByBytes
     description: Throttle compaction by bytes or by entries.
     default: 'false'
@@ -372,8 +375,8 @@ groups:
 - name: Garbage collection settings
   params:
   - param: gcWaitTime
-    description: How long the interval to trigger next garbage collection, in milliseconds. Since garbage collection is running in background, too frequent gc will heart performance. It is better to give a higher number of gc interval if there is enough disk capacity.
-    default: 1000
+    description: How long the interval to trigger next garbage collection, in milliseconds. Since garbage collection is running in background, too frequent gc will hurt performance. It is better to give a higher number of gc interval if there is enough disk capacity.
+    default: 600000
   - param: gcOverreplicatedLedgerWaitTime
     description: How long the interval to trigger next garbage collection of overreplicated ledgers, in milliseconds. This should not be run very frequently since we read the metadata for all the ledgers on the bookie from zk.
     default: 86400000
