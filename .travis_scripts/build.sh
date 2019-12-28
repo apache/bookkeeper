@@ -22,6 +22,8 @@ set -ev
 BINDIR=`dirname "$0"`
 BK_HOME=`cd $BINDIR/..;pwd`
 
+mvn -v
+
 if [ "xtrue" == "x${STREAM_DISABLED}" ]; then
     mvn --batch-mode clean install -DskipTests
     # this command should be executed correctly
