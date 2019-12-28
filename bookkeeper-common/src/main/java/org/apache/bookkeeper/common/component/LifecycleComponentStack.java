@@ -42,10 +42,17 @@ public class LifecycleComponentStack implements LifecycleComponent {
     public static class Builder {
 
         private String name;
+        private ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
         private final List<LifecycleComponent> components;
 
         private Builder() {
             components = Lists.newArrayList();
+        }
+
+        public Builder withComponentInfoPublisher(ComponentInfoPublisher componentInfoPublisher) {
+            checkNotNull(componentInfoPublisher, "ComponentInfoPublisher is null");
+            this.componentInfoPublisher = componentInfoPublisher;
+            return this;
         }
 
         public Builder addComponent(LifecycleComponent component) {
@@ -64,6 +71,7 @@ public class LifecycleComponentStack implements LifecycleComponent {
             checkArgument(!components.isEmpty(), "Lifecycle component stack is empty : " + components);
             return new LifecycleComponentStack(
                 name,
+                componentInfoPublisher,
                 ImmutableList.copyOf(components));
         }
 
@@ -71,10 +79,13 @@ public class LifecycleComponentStack implements LifecycleComponent {
 
     private final String name;
     private final ImmutableList<LifecycleComponent> components;
+    private final ComponentInfoPublisher componentInfoPublisher;
 
     private LifecycleComponentStack(String name,
+                                    ComponentInfoPublisher componentInfoPublisher,
                                     ImmutableList<LifecycleComponent> components) {
         this.name = name;
+        this.componentInfoPublisher = componentInfoPublisher;
         this.components = components;
     }
 
@@ -110,6 +121,7 @@ public class LifecycleComponentStack implements LifecycleComponent {
 
     @Override
     public void start() {
+        components.forEach(components -> components.publishInfo(componentInfoPublisher));
         components.forEach(component -> component.start());
     }
 

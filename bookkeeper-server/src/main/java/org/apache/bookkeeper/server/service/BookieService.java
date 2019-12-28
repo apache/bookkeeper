@@ -20,9 +20,12 @@ package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.net.UnknownHostException;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
@@ -74,4 +77,16 @@ public class BookieService extends ServerLifecycleComponent {
     protected void doClose() throws IOException {
         this.server.shutdown();
     }
+
+    @Override
+    public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
+        try {
+            BookieSocketAddress localAddress = getServer().getLocalAddress();
+            componentInfoPublisher.publish("bookie.port", Integer.toString(localAddress.getPort()));
+            componentInfoPublisher.publish("bookie.host", localAddress.getHostName());
+        } catch (UnknownHostException err) {
+            log.error("Cannot compute local address", err);
+        }
+    }
+
 }

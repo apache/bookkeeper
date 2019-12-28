@@ -34,6 +34,7 @@ import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ScrubberStats;
+import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
@@ -295,19 +296,21 @@ public class Main {
      */
     public static LifecycleComponentStack buildBookieServer(BookieConfiguration conf) throws Exception {
 
-        final Map<String, String> allBookieServicesInfo = new ConcurrentHashMap<>();
+        final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
         final Supplier<BookieServiceInfo> bookieServiceInfoProvider = () -> new BookieServiceInfo() {
             @Override
             public Iterator<String> keys() {
-                return allBookieServicesInfo.keySet().iterator();
+                return componentInfoPublisher.getInfo().keySet().iterator();
             }
 
             @Override
             public String get(String key, String defaultValue) {
-                return allBookieServicesInfo.getOrDefault(key, defaultValue);
+                return componentInfoPublisher.getInfo().getOrDefault(key, defaultValue);
             }
         };
-        LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder().withName("bookie-server");
+        LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack
+                .newBuilder()
+                .withName("bookie-server");
 
         // 1. build stats provider
         StatsProviderService statsProviderService =
@@ -319,13 +322,7 @@ public class Main {
         // 2. build bookie server
         BookieService bookieService =
             new BookieService(conf, rootStatsLogger, bookieServiceInfoProvider);
-        try {
-            BookieSocketAddress localAddress = bookieService.getServer().getLocalAddress();
-            allBookieServicesInfo.put("bookie.port", Integer.toString(localAddress.getPort()));
-            allBookieServicesInfo.put("bookie.host", localAddress.getHostName());
-        } catch (UnknownHostException err) {
-            log.error("Cannot compute local address", err);
-        }
+
         serverBuilder.addComponent(bookieService);
         log.info("Load lifecycle component : {}", BookieService.class.getName());
 
@@ -354,8 +351,6 @@ public class Main {
                 .build();
             HttpService httpService =
                 new HttpService(provider, conf, rootStatsLogger);
-            allBookieServicesInfo.put("bookie.http.server.port",
-                    Integer.toString(conf.getServerConf().getHttpServerPort()));
             serverBuilder.addComponent(httpService);
             log.info("Load lifecycle component : {}", HttpService.class.getName());
         }
