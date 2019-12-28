@@ -22,17 +22,18 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Allows a component to publish information about
  * the services it implements, the endpoints it exposes
  * and other useful information for management tools and client.
- *
  */
+@Slf4j
 public class ComponentInfoPublisher {
 
     private final Map<String, String> allInfo = new ConcurrentHashMap<>();
-    private boolean startupFinished;
+    private volatile boolean startupFinished;
     
     /**
      * Publish an information about the system, like an endpoint address.
@@ -41,6 +42,7 @@ public class ComponentInfoPublisher {
      * @param value  the value, null values are not allowed.
      */
     public void publish(String key, String value) {
+        log.info("publish {}={}", key, value);
         if (startupFinished) {
             throw new IllegalStateException("Server already started, cannot publish "+key);
         }
@@ -51,6 +53,7 @@ public class ComponentInfoPublisher {
     }
     
     public Map<String, String> getInfo() {
+        log.info("getInfo {}", allInfo);
         if (!startupFinished) {
             throw new IllegalStateException("Startup not yet finished");
         }
@@ -58,6 +61,7 @@ public class ComponentInfoPublisher {
     }
     
     public void startupFinished() {
+        log.info("startupFinished");
         startupFinished = true;
     }
     

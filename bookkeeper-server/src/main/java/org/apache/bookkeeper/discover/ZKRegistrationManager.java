@@ -235,6 +235,7 @@ public class ZKRegistrationManager implements RegistrationManager {
             bookieServiceInfo.keys().forEachRemaining(key -> {
                 map.put(key, bookieServiceInfo.get(key, ""));
             });
+            log.info("serialize BookieServiceInfo {}", map);
             return MAPPER.writeValueAsBytes(map);
         } catch (JsonProcessingException ex) {
             log.error("Cannot serialize bookieServiceInfo {}", bookieServiceInfo, ex);

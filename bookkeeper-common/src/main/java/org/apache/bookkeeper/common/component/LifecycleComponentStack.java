@@ -26,10 +26,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A stack of {@link LifecycleComponent}s.
  */
+@Slf4j
 public class LifecycleComponentStack implements LifecycleComponent {
 
     public static Builder newBuilder() {
@@ -121,7 +123,12 @@ public class LifecycleComponentStack implements LifecycleComponent {
 
     @Override
     public void start() {
-        components.forEach(components -> components.publishInfo(componentInfoPublisher));
+        components.forEach(component -> {
+            log.info("calling publishInfo on {} ", component);
+            component.publishInfo(componentInfoPublisher);
+        });
+        componentInfoPublisher.startupFinished();
+
         components.forEach(component -> component.start());
     }
 
