@@ -13,7 +13,7 @@ Before installation, you need to check system requirements.
 
 * [Unix environment](http://www.opengroup.org/unix)
   
-* [Java Development Kit 1.6](http://www.oracle.com/technetwork/java/javase/downloads/index.html) or later
+* [OpenJDK 8](https://adoptopenjdk.net) or later
   
 * [Maven 3.0](https://maven.apache.org/install.html) or later
 
