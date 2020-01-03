@@ -242,16 +242,6 @@
   </build>
   <profiles>
     <profile>
-      <id>twitter-http-server</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.bookkeeper.http</groupId>
-          <artifactId>twitter-http-server</artifactId>
-          <version>${project.parent.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
       <id>vertx-http-server</id>
       <dependencies>
         <dependency>
