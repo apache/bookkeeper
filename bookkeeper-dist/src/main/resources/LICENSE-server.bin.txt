@@ -279,6 +279,9 @@ Apache Software License, Version 2.
 - lib/com.google.errorprone-error_prone_annotations-2.1.2.jar [35]
 - lib/org.apache.yetus-audience-annotations-0.5.0.jar [36]
 - lib/org.jctools-jctools-core-2.1.2.jar [37]
+- lib/org.apache.httpcomponents-httpclient-4.4.1.jar [38]
+- lib/org.apache.httpcomponents-httpcore-4.4.1.jar [39]
+- lib/org.apache.thrift-libthrift-0.9.3.jar [40]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
@@ -317,6 +320,9 @@ Apache Software License, Version 2.
 [35] Source available at https://github.com/google/error-prone/tree/v2.1.2
 [36] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
 [37] Source available at https://github.com/JCTools/JCTools/tree/v2.1.2
+[38] Source available at https://github.com/apache/httpcomponents-client/tree/rel/v4.4.1
+[39] Source available at https://github.com/apache/httpcomponents-core/tree/rel/v4.4.1
+[30] Source available at https://github.com/apache/thrift/tree/0.9.3
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.32.Final.jar bundles some 3rd party dependencies
