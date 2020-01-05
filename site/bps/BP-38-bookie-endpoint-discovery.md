@@ -26,8 +26,16 @@ exposed by a Bookie:
 
 ```
 inteface BookieServiceInfo {
-    Iterable<String> keys();
-    String get(String key, String defaultValue);
+    class Endpoint {
+        String name;
+        String hostname;
+        int port;
+        String protocol; // "bookie-rpc", "http", "https"....
+        String[] auth; // "sasl-gsapi", "tls-client-auth", "sasl-md5"....
+        String[] extensions; // "starttls"
+    }
+    List<Endpoint> endpoints;
+    Map<String, String> properties; // additional properties
 }
 
 ```
@@ -61,11 +69,31 @@ For the ZooKeeper based implementation we are going to store such information in
 
 ```
 {
-    "property": "value",
-    "property2": "value2",
+    "endpoints": [
+        {
+         "name": "bookie",
+         "hostname": "localhost",
+         "port": 3181,
+         "protocol": "bookie-rpc",
+         "auth": ["sasl-gsapi"],
+         "extensions": ["starttls"]
+        },
+        {
+         "name": "bookie-http-server",
+         "hostname": "localhost",
+         "port": 8080,
+         "protocol": "http",
+         "auth": [],
+         "extensions": []
+        }
+    ],
+    properties {
+        "property": "value",
+        "property2": "value2"
+    }
 }
 ```
-Such information will be stored inside the '/REGISTRATIONPATH/available' znode (or /REGISTRATIONPATH/available/readonline' in case of readonly bookie).
+Such information will be stored inside the '/REGISTRATIONPATH/available' znode (or /REGISTRATIONPATH/available/readonline' in case of readonly bookie), these paths are the same used in 4.10, but in 4.10 we are writing empty z-nodes.
 
 The rationale around this choice is that the client is already using these znodes in order to discover available bookies services.
 
@@ -73,16 +101,20 @@ It is possible that such endpoint information change during the lifetime of a Bo
 
 It is out of the scope of this proposal to change semantics of ledger metadata, in which we  are currently storing directly the network address of the bookies, but with this proposal we are preparing the way to have an indirection and separate the concept of Bookie ID from the Network address.
 
-**Well known** keys will be:
-- **bookie.port**: the TCP port for the Bookie RPC interface
-- **bookie.host**: the TCP network hostname for the Bookie RPC interface
-- **bookie.tls.enabled**: 'true' in case of TLS endpoint support
-- **bookie.http.port**: the TCP port for the HTTP Service, if enabled
-- **bookie.stats.provider**: the name of the Stats Provider
-- **bookie.autorecovery.enabled**: 'true' case of the presence of the auto recovery daemon
-- **bookie.auth.provider**: the name of the Authentication provider in use
+**Endpoint structure**
+- **name**: this is an id for the service type, like 'bookie'
+- **hostname**: the hostname (or a raw IP address)
+- **port**: the TCP port (int)
+- **protocol**: the type of service (bookie-rpc, http, https)
+- **auth**: supported authentication types (tls-auth, sasl-gssapi...)
+- **extensions**: protocol extensions, like 'starttls'
 
-In the future we could also leverage this information from the PlacementPolicy, in order to select only bookies that publish a TLS endpoint or a particular authentication provider.
+**Well known properties**
+- **metrics.type**: the type of metrics, for instance 'prometheus' for Prometheus.io metrics
+- **autorecovery.enabled**: 'true' case of the presence of the auto recovery daemon
+
+In the future we could also leverage this information from the PlacementPolicy, in order to select only bookies that publish a TLS endpoint or a particular authentication mechanism.
+The GRPC service would use this mechanism as well.
 
 #### Which kind of properties should be stored in BookieServiceInfo ?
 
