@@ -208,9 +208,6 @@ Apache Software License, Version 2.
 - lib/com.fasterxml.jackson.core-jackson-annotations-2.9.7.jar [1]
 - lib/com.fasterxml.jackson.core-jackson-core-2.9.7.jar [2]
 - lib/com.fasterxml.jackson.core-jackson-databind-2.9.7.jar [3]
-- lib/com.fasterxml.jackson.module-jackson-module-paranamer-2.9.7.jar [4]
-- lib/com.fasterxml.jackson.module-jackson-module-scala_2.11-2.9.7.jar [5]
-- lib/com.github.ben-manes.caffeine-caffeine-2.3.4.jar [9]
 - lib/com.google.guava-guava-21.0.jar [6]
 - lib/commons-cli-commons-cli-1.2.jar [7]
 - lib/commons-codec-commons-codec-1.6.jar [8]
@@ -218,112 +215,80 @@ Apache Software License, Version 2.
 - lib/commons-io-commons-io-2.4.jar [11]
 - lib/commons-lang-commons-lang-2.6.jar [12]
 - lib/commons-logging-commons-logging-1.1.1.jar [13]
-- lib/com.twitter-finagle-base-http_2.11-6.44.0.jar [14]
-- lib/com.twitter-finagle-core_2.11-6.44.0.jar [15]
-- lib/com.twitter-finagle-http_2.11-6.44.0.jar [14]
-- lib/com.twitter-finagle-http2_2.11-6.44.0.jar [14]
-- lib/com.twitter-finagle-netty4_2.11-6.44.0.jar [14]
-- lib/com.twitter-finagle-netty4-http_2.11-6.44.0.jar [14]
-- lib/com.twitter-finagle-thrift_2.11-6.44.0.jar [14]
-- lib/com.twitter-finagle-toggle_2.11-6.44.0.jar [14]
-- lib/com.twitter-finagle-tunable_2.11-6.44.0.jar [14]
-- lib/com.twitter-finagle-zipkin-core_2.11-6.44.0.jar [14]
-- lib/com.twitter-libthrift-0.5.0-7.jar [16]
-- lib/com.twitter-scrooge-core_2.11-4.16.0.jar [17]
-- lib/com.twitter-twitter-server_2.11-1.29.0.jar [18]
-- lib/com.twitter-util-app_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-cache_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-codec_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-collection_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-core_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-events_2.11-6.43.0.jar [20]
-- lib/com.twitter-util-function_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-hashing_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-jvm_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-lint_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-logging_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-registry_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-security_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-stats_2.11-6.43.0.jar [19]
-- lib/com.twitter-util-tunable_2.11-6.43.0.jar [20]
-- lib/io.dropwizard.metrics-metrics-core-3.1.0.jar [21]
-- lib/io.dropwizard.metrics-metrics-graphite-3.1.0.jar [21]
-- lib/io.dropwizard.metrics-metrics-jvm-3.1.0.jar [21]
-- lib/io.netty-netty-3.10.1.Final.jar [22]
-- lib/io.netty-netty-buffer-4.1.32.Final.jar [23]
-- lib/io.netty-netty-codec-4.1.32.Final.jar [23]
-- lib/io.netty-netty-codec-dns-4.1.32.Final.jar [23]
-- lib/io.netty-netty-codec-http-4.1.32.Final.jar [23]
-- lib/io.netty-netty-codec-http2-4.1.32.Final.jar [23]
-- lib/io.netty-netty-codec-socks-4.1.32.Final.jar [23]
-- lib/io.netty-netty-common-4.1.32.Final.jar [23]
-- lib/io.netty-netty-handler-4.1.32.Final.jar [23]
-- lib/io.netty-netty-handler-proxy-4.1.32.Final.jar [23]
-- lib/io.netty-netty-resolver-4.1.32.Final.jar [23]
-- lib/io.netty-netty-resolver-dns-4.1.32.Final.jar [23]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.20.Final.jar [23]
-- lib/io.netty-netty-transport-4.1.32.Final.jar [23]
-- lib/io.netty-netty-transport-native-epoll-4.1.32.Final.jar [23]
-- lib/io.netty-netty-transport-native-epoll-4.1.32.Final-linux-x86_64.jar [23]
-- lib/io.netty-netty-transport-native-unix-common-4.1.32.Final.jar [23]
-- lib/io.prometheus-simpleclient-0.0.21.jar [24]
-- lib/io.prometheus-simpleclient_common-0.0.21.jar [24]
-- lib/io.prometheus-simpleclient_hotspot-0.0.21.jar [24]
-- lib/io.prometheus-simpleclient_servlet-0.0.21.jar [24]
-- lib/io.vertx-vertx-auth-common-3.4.1.jar [25]
-- lib/io.vertx-vertx-core-3.4.1.jar [26]
-- lib/io.vertx-vertx-web-3.4.1.jar [27]
-- lib/log4j-log4j-1.2.17.jar [29]
-- lib/net.java.dev.jna-jna-3.2.7.jar [30]
-- lib/org.apache.commons-commons-collections4-4.1.jar [31]
-- lib/org.apache.commons-commons-lang3-3.6.jar [32]
-- lib/org.apache.zookeeper-zookeeper-3.4.13.jar [33]
-- lib/org.eclipse.jetty-jetty-http-9.4.5.v20170502.jar [34]
-- lib/org.eclipse.jetty-jetty-io-9.4.5.v20170502.jar [34]
-- lib/org.eclipse.jetty-jetty-security-9.4.5.v20170502.jar [34]
-- lib/org.eclipse.jetty-jetty-server-9.4.5.v20170502.jar [34]
-- lib/org.eclipse.jetty-jetty-servlet-9.4.5.v20170502.jar [34]
-- lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar [34]
-- lib/org.rocksdb-rocksdbjni-5.13.1.jar [35]
-- lib/com.beust-jcommander-1.48.jar [36]
-- lib/com.yahoo.datasketches-memory-0.8.3.jar [37]
-- lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [37]
-- lib/net.jpountz.lz4-lz4-1.3.0.jar [38]
-- lib/org.codehaus.jackson-jackson-core-asl-1.9.11.jar [39]
-- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [39]
-- lib/com.google.api.grpc-proto-google-common-protos-1.12.0.jar [40]
-- lib/com.google.code.gson-gson-2.7.jar [41]
-- lib/io.opencensus-opencensus-api-0.18.0.jar [42]
-- lib/io.opencensus-opencensus-contrib-grpc-metrics-0.18.0.jar [42]
-- lib/com.squareup.okhttp-okhttp-2.5.0.jar [43]
-- lib/com.squareup.okio-okio-1.13.0.jar [44]
-- lib/io.grpc-grpc-all-1.18.0.jar [45]
-- lib/io.grpc-grpc-auth-1.18.0.jar [45]
-- lib/io.grpc-grpc-context-1.18.0.jar [45]
-- lib/io.grpc-grpc-core-1.18.0.jar [45]
-- lib/io.grpc-grpc-netty-1.18.0.jar [45]
-- lib/io.grpc-grpc-okhttp-1.18.0.jar [45]
-- lib/io.grpc-grpc-protobuf-1.18.0.jar [45]
-- lib/io.grpc-grpc-protobuf-lite-1.18.0.jar [45]
-- lib/io.grpc-grpc-protobuf-nano-1.18.0.jar [45]
-- lib/io.grpc-grpc-stub-1.18.0.jar [45]
-- lib/io.grpc-grpc-testing-1.18.0.jar [45]
-- lib/org.apache.curator-curator-client-4.0.1.jar [46]
-- lib/org.apache.curator-curator-framework-4.0.1.jar [46]
-- lib/org.apache.curator-curator-recipes-4.0.1.jar [46]
-- lib/org.inferred-freebuilder-1.14.9.jar [47]
-- lib/com.google.errorprone-error_prone_annotations-2.1.2.jar [48]
-- lib/org.apache.yetus-audience-annotations-0.5.0.jar [49]
-- lib/org.jctools-jctools-core-2.1.2.jar [50]
-- lib/org.apache.httpcomponents-httpclient-4.4.1.jar [51]
-- lib/org.apache.httpcomponents-httpcore-4.4.1.jar [52]
-- lib/org.apache.thrift-libthrift-0.9.3.jar [53]
+- lib/io.dropwizard.metrics-metrics-core-3.1.0.jar [14]
+- lib/io.dropwizard.metrics-metrics-graphite-3.1.0.jar [14]
+- lib/io.dropwizard.metrics-metrics-jvm-3.1.0.jar [14]
+- lib/io.netty-netty-buffer-4.1.32.Final.jar [16]
+- lib/io.netty-netty-codec-4.1.32.Final.jar [16]
+- lib/io.netty-netty-codec-dns-4.1.32.Final.jar [16]
+- lib/io.netty-netty-codec-http-4.1.32.Final.jar [16]
+- lib/io.netty-netty-codec-http2-4.1.32.Final.jar [16]
+- lib/io.netty-netty-codec-socks-4.1.32.Final.jar [16]
+- lib/io.netty-netty-common-4.1.32.Final.jar [16]
+- lib/io.netty-netty-handler-4.1.32.Final.jar [16]
+- lib/io.netty-netty-handler-proxy-4.1.32.Final.jar [16]
+- lib/io.netty-netty-resolver-4.1.32.Final.jar [16]
+- lib/io.netty-netty-resolver-dns-4.1.32.Final.jar [16]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.20.Final.jar [16]
+- lib/io.netty-netty-transport-4.1.32.Final.jar [16]
+- lib/io.netty-netty-transport-native-epoll-4.1.32.Final-linux-x86_64.jar [16]
+- lib/io.netty-netty-transport-native-unix-common-4.1.32.Final.jar [16]
+- lib/io.prometheus-simpleclient-0.0.21.jar [17]
+- lib/io.prometheus-simpleclient_common-0.0.21.jar [17]
+- lib/io.prometheus-simpleclient_hotspot-0.0.21.jar [17]
+- lib/io.prometheus-simpleclient_servlet-0.0.21.jar [17]
+- lib/io.vertx-vertx-auth-common-3.4.1.jar [18]
+- lib/io.vertx-vertx-core-3.4.1.jar [19]
+- lib/io.vertx-vertx-web-3.4.1.jar [20]
+- lib/log4j-log4j-1.2.17.jar [21]
+- lib/net.java.dev.jna-jna-3.2.7.jar [22]
+- lib/org.apache.commons-commons-collections4-4.1.jar [23]
+- lib/org.apache.commons-commons-lang3-3.6.jar [24]
+- lib/org.apache.zookeeper-zookeeper-3.4.13.jar [25]
+- lib/org.eclipse.jetty-jetty-http-9.4.5.v20170502.jar [26]
+- lib/org.eclipse.jetty-jetty-io-9.4.5.v20170502.jar [26]
+- lib/org.eclipse.jetty-jetty-security-9.4.5.v20170502.jar [26]
+- lib/org.eclipse.jetty-jetty-server-9.4.5.v20170502.jar [26]
+- lib/org.eclipse.jetty-jetty-servlet-9.4.5.v20170502.jar [26]
+- lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar [26]
+- lib/org.rocksdb-rocksdbjni-5.13.1.jar [27]
+- lib/com.beust-jcommander-1.48.jar [28]
+- lib/com.yahoo.datasketches-memory-0.8.3.jar [29]
+- lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [29]
+- lib/net.jpountz.lz4-lz4-1.3.0.jar [30]
+- lib/org.codehaus.jackson-jackson-core-asl-1.9.11.jar [31]
+- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [31]
+- lib/com.google.api.grpc-proto-google-common-protos-1.12.0.jar [32]
+- lib/com.google.code.gson-gson-2.7.jar [33]
+- lib/io.opencensus-opencensus-api-0.18.0.jar [34]
+- lib/io.opencensus-opencensus-contrib-grpc-metrics-0.18.0.jar [35]
+- lib/com.squareup.okhttp-okhttp-2.5.0.jar [36]
+- lib/com.squareup.okio-okio-1.13.0.jar [36]
+- lib/io.grpc-grpc-all-1.18.0.jar [37]
+- lib/io.grpc-grpc-auth-1.18.0.jar [37]
+- lib/io.grpc-grpc-context-1.18.0.jar [37]
+- lib/io.grpc-grpc-core-1.18.0.jar [37]
+- lib/io.grpc-grpc-netty-1.18.0.jar [37]
+- lib/io.grpc-grpc-okhttp-1.18.0.jar [37]
+- lib/io.grpc-grpc-protobuf-1.18.0.jar [37]
+- lib/io.grpc-grpc-protobuf-lite-1.18.0.jar [37]
+- lib/io.grpc-grpc-protobuf-nano-1.18.0.jar [37]
+- lib/io.grpc-grpc-stub-1.18.0.jar [37]
+- lib/io.grpc-grpc-testing-1.18.0.jar [37]
+- lib/org.apache.curator-curator-client-4.0.1.jar [38]
+- lib/org.apache.curator-curator-framework-4.0.1.jar [38]
+- lib/org.apache.curator-curator-recipes-4.0.1.jar [38]
+- lib/org.inferred-freebuilder-1.14.9.jar [39]
+- lib/com.google.errorprone-error_prone_annotations-2.1.2.jar [40]
+- lib/org.apache.yetus-audience-annotations-0.5.0.jar [41]
+- lib/org.jctools-jctools-core-2.1.2.jar [42]
+- lib/org.apache.httpcomponents-httpclient-4.4.1.jar [43]
+- lib/org.apache.httpcomponents-httpcore-4.4.1.jar [44]
+- lib/org.apache.thrift-libthrift-0.9.3.jar [45]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.9.7
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.9.7
 [3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.9.7
-[4] Source available at https://github.com/FasterXML/jackson-modules-base/tree/jackson-modules-base-2.9.7
-[5] Source available at https://github.com/FasterXML/jackson-module-scala/tree/jackson-module-scala-2.9.7
 [6] Source available at https://github.com/google/guava/tree/v21.0
 [7] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-cli.git;a=tag;h=bc8f0e
 [8] Source available at http://svn.apache.org/viewvc/commons/proper/codec/tags/1_6/
@@ -332,79 +297,37 @@ Apache Software License, Version 2.
 [11] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-io.git;a=tag;h=603579
 [12] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
 [13] Source available at http://svn.apache.org/viewvc/commons/proper/logging/tags/commons-logging-1.1.1/
-[14] Source available at https://github.com/twitter/finagle/tree/finagle-6.44.0
-[15] Source available at https://github.com/twitter/finagle/tree/finagle-6.43.0
-[16] Source unavailable
-[17] Source available at https://github.com/twitter/scrooge/tree/scrooge-4.16.0
-[18] Source available at https://github.com/twitter/twitter-server/tree/twitter-server-1.29.0
-[19] Source available at https://github.com/twitter/util/tree/util-6.43.0
-[20] Source available at https://github.com/twitter/util/tree/util-6.43.0
-[21] Source available at https://github.com/dropwizard/metrics/tree/v3.1.0
-[22] Source available at https://bintray.com/netty/downloads/download_file?file_path=netty-3.10.1.Final-dist.tar.bz2
-[23] Source available at https://github.com/netty/netty/tree/netty-4.1.32.Final
-[24] Source available at https://github.com/prometheus/client_java/tree/parent-0.0.21
-[25] Source available at https://github.com/vert-x3/vertx-auth/tree/3.4.1
-[26] Source available at https://github.com/eclipse/vert.x/tree/3.4.1
-[27] Source available at https://github.com/vert-x3/vertx-web/tree/3.4.1
-[29] Source available at http://logging.apache.org/log4j/1.2/download.html
-[30] Source available at https://github.com/java-native-access/jna/tree/3.2.7
-[31] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
-[32] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=3ad2e8
-[33] Source available at https://github.com/apache/zookeeper/tree/release-3.4.13
-[34] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
-[35] Source available at https://github.com/facebook/rocksdb/tree/v5.13.1
-[36] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
-[37] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
-[38] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
-[39] Source available at https://github.com/codehaus/jackson/tree/d1c26ec538a8701cff7548009254fd6183b71873
-[40] Source available at https://github.com/googleapis/googleapis
-[41] Source available at https://github.com/google/gson/tree/gson-parent-2.7
-[42] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.18.0
-[43] Source available at https://github.com/square/okhttp/tree/parent-2.5.0
-[44] Source available at https://github.com/square/okio/tree/okio-parent-1.13.0
-[45] Source available at https://github.com/grpc/grpc-java/tree/v1.18.0
-[46] Source available at https://github.com/apache/curator/tree/apache-curator-4.0.1
-[47] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
-[48] Source available at https://github.com/google/error-prone/tree/v2.1.2
-[49] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
-[50] Source available at https://github.com/JCTools/JCTools/tree/v2.1.2
-[51] Source available at https://github.com/apache/httpcomponents-client/tree/rel/v4.4.1
-[52] Source available at https://github.com/apache/httpcomponents-core/tree/rel/v4.4.1
-[53] Source available at https://github.com/apache/thrift/tree/0.9.3
-
-------------------------------------------------------------------------------------
-lib/io.netty-netty-3.10.1.Final.jar contains the extensions to Java Collections Framework which has
-been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
-
-  * LICENSE:
-    * deps/netty-3.10.1.Final/LICENSE.jsr166y.txt (Public Domain)
-  * HOMEPAGE:
-    * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
-    * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
-
-lib/io.netty-netty-3.10.1.Final.jar contains a modified version of Robert Harder's Public Domain
-Base64 Encoder and Decoder, which can be obtained at:
-
-  * LICENSE:
-    * deps/netty-3.10.1.Final/LICENSE.base64.txt (Public Domain)
-  * HOMEPAGE:
-    * http://iharder.sourceforge.net/current/java/base64/
-
-lib/io.netty-netty-3.10.1.Final.jar contains a modified version of 'JZlib', a re-implementation of
-zlib in pure Java, which can be obtained at:
-
-  * LICENSE:
-    * deps/netty-3.10.1.Final/LICENSE.jzlib.txt (BSD Style License)
-  * HOMEPAGE:
-    * http://www.jcraft.com/jzlib/
-
-lib/io.netty-netty-3.10.1.Final.jar contains a modified version of 'Webbit', a Java event based
-WebSocket and HTTP server:
-
-  * LICENSE:
-    * deps/netty-3.10.1.Final/LICENSE.webbit.txt (BSD License)
-  * HOMEPAGE:
-    * https://github.com/joewalnes/webbit
+[14] Source available at https://github.com/dropwizard/metrics/tree/v3.1.0
+[16] Source available at https://github.com/netty/netty/tree/netty-4.1.32.Final
+[17] Source available at https://github.com/prometheus/client_java/tree/parent-0.0.21
+[18] Source available at https://github.com/vert-x3/vertx-auth/tree/3.4.1
+[19] Source available at https://github.com/eclipse/vert.x/tree/3.4.1
+[20] Source available at https://github.com/vert-x3/vertx-web/tree/3.4.1
+[21] Source available at http://logging.apache.org/log4j/1.2/download.html
+[22] Source available at https://github.com/java-native-access/jna/tree/3.2.7
+[23] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
+[24] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=3ad2e8
+[25] Source available at https://github.com/apache/zookeeper/tree/release-3.4.13
+[26] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
+[27] Source available at https://github.com/facebook/rocksdb/tree/v5.13.1
+[28] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
+[29] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
+[30] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
+[31] Source available at https://github.com/codehaus/jackson/tree/d1c26ec538a8701cff7548009254fd6183b71873
+[32] Source available at https://github.com/googleapis/googleapis
+[33] Source available at https://github.com/google/gson/tree/gson-parent-2.7
+[34] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.18.0
+[35] Source available at https://github.com/square/okhttp/tree/parent-2.5.0
+[36] Source available at https://github.com/square/okio/tree/okio-parent-1.13.0
+[37] Source available at https://github.com/grpc/grpc-java/tree/v1.18.0
+[38] Source available at https://github.com/apache/curator/tree/apache-curator-4.0.1
+[39] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
+[40] Source available at https://github.com/google/error-prone/tree/v2.1.2
+[41] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
+[42] Source available at https://github.com/JCTools/JCTools/tree/v2.1.2
+[43] Source available at https://github.com/apache/httpcomponents-client/tree/rel/v4.4.1
+[44] Source available at https://github.com/apache/httpcomponents-core/tree/rel/v4.4.1
+[45] Source available at https://github.com/apache/thrift/tree/0.9.3
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.32.Final.jar bundles some 3rd party dependencies
@@ -517,35 +440,11 @@ Bundled as lib/com.google.protobuf.nano-protobuf-javanano-3.0.0-alpha-5.jar
 Source available at https://github.com/google/protobuf/tree/3.0.0-pre
 For details, see deps/protobuf-3.0.0/LICENSE.
 ------------------------------------------------------------------------------------
-This product bundles Paranamer, which is available under a "3-clause BSD" license.
-For details, see deps/paranamer-2.8/LICENSE.txt.
-
-Bundled as lib/com.thoughtworks.paranamer-paranamer-2.8.jar
-Source available at https://github.com/paul-hammant/paranamer/tree/paranamer-parent-2.8
-------------------------------------------------------------------------------------
 This product bundles the JCP Standard Java Servlet API, which is available under a
 CDDL 1.1 license. For details, see deps/javax.servlet-api-3.1.0/CDDL+GPL-1.1.
 
 Bundled as lib/javax.servlet-javax.servlet-api-3.1.0.jar
 Source available at https://github.com/javaee/servlet-spec/tree/3.1.0
-------------------------------------------------------------------------------------
-This product bundles the Scala Standard Parser Combinator Library, which is available
-under a "3-clause BSD" license. For details, see deps/scala-parser-combinators_2.11-1.0.4/LICENSE.md.
-
-Bundled as lib/org.scala-lang.modules-scala-parser-combinators_2.11-1.0.4.jar
-Source available at https://github.com/scala/scala-parser-combinators/tree/v1.0.4
-------------------------------------------------------------------------------------
-This product bundles the Scala Standard Library, which is available under a
-"3-clause BSD" license. For details, see deps/scala-library-2.11.7/LICENSE.md.
-
-Bundled as lib/org.scala-lang-scala-library-2.11.8.jar
-Source available at org.scala-lang-scala-library-2.11.8.jar
-------------------------------------------------------------------------------------
-This product bundles the Scala Reflection API, which is available under a
-"3-clause BSD" license. For details, see deps/scala-reflect-2.11.8/LICENSE.md.
-
-Bundled as lib/org.scala-lang-scala-reflect-2.11.8.jar
-Source available at https://github.com/scala/scala/tree/v2.11.8
 ------------------------------------------------------------------------------------
 This product bundles Simple Logging Facade for Java, which is available under a
 MIT license. For details, see deps/slf4j-1.7.25/LICENSE.txt.

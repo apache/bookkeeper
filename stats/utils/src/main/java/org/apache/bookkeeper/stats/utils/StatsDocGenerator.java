@@ -282,12 +282,8 @@ public class StatsDocGenerator {
 
     private static String getStatsProviderClass(String providerClass) {
         switch (providerClass.toLowerCase()) {
-            case "ostrich":
-                return "org.apache.bookkeeper.stats.twitter.ostrich.OstrichProvider";
             case "prometheus":
                 return "org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider";
-            case "finagle":
-                return "org.apache.bookkeeper.stats.twitter.finagle.FinagleStatsProvider";
             case "codahale":
                 return "org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider";
             default:

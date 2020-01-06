@@ -28,7 +28,6 @@
   <name>Apache BookKeeper :: Http</name>
   <modules>
     <module>http-server</module>
-    <module>twitter-http-server</module>
     <module>vertx-http-server</module>
   </modules>
 </project>

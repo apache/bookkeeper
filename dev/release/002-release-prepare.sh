@@ -26,7 +26,6 @@ mvn release:prepare \
     -DreleaseVersion=${VERSION} \
     -Dtag=${RC_TAG} \
     -DupdateWorkingCopyVersions=false \
-    -Darguments="-Dmaven.javadoc.skip=true -DskipTests=true -Dstream -Dtwitter" \
+    -Darguments="-Dmaven.javadoc.skip=true -DskipTests=true -Dstream" \
     -Dstream \
-    -Dtwitter \
     -Dresume=true 

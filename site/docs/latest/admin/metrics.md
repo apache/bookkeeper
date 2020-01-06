@@ -8,15 +8,12 @@ BookKeeper enables metrics collection through a variety of [stats providers](#st
 
 ## Stats providers
 
-BookKeeper has stats provider implementations for four five sinks:
+BookKeeper has stats provider implementations for these sinks:
 
 Provider | Provider class name
 :--------|:-------------------
 [Codahale Metrics](https://mvnrepository.com/artifact/org.apache.bookkeeper.stats/codahale-metrics-provider) | `org.apache.bookkeeper.stats.CodahaleMetricsProvider`
 [Prometheus](https://prometheus.io/) | `org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider`
-[Finagle](https://twitter.github.io/finagle/guide/Metrics.html) | `org.apache.bookkeeper.stats.FinagleStatsProvider`
-[Ostrich](https://github.com/twitter/ostrich) | `org.apache.bookkeeper.stats.OstrichProvider`
-[Twitter Science Provider](https://mvnrepository.com/artifact/org.apache.bookkeeper.stats/twitter-science-provider) | `org.apache.bookkeeper.stats.TwitterStatsProvider`
 
 > The [Codahale Metrics]({{ site.github_master }}/bookkeeper-stats-providers/codahale-metrics-provider) stats provider is the default provider.
 

@@ -20,29 +20,6 @@ LongAdder), which was released with the following comments:
     Written by Doug Lea with assistance from members of JCP JSR-166
     Expert Group and released to the public domain, as explained at
     http://creativecommons.org/publicdomain/zero/1.0/
-------------------------------------------------------------------------------------
-- lib/io.netty-netty-3.10.1.Final.jar
-
-                            The Netty Project
-                            =================
-
-Please visit the Netty web site for more information:
-
-  * http://netty.io/
-
-Copyright 2011 The Netty Project
-
-The Netty Project licenses this file to you under the Apache License,
-version 2.0 (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at:
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-License for the specific language governing permissions and limitations
-under the License.
 
 ------------------------------------------------------------------------------------
 - lib/io.netty-netty-buffer-4.1.32.Final.jar
@@ -58,7 +35,6 @@ under the License.
 - lib/io.netty-netty-resolver-dns-4.1.32.Final.jar
 - lib/io.netty-netty-tcnative-boringssl-static-2.0.20.Final.jar
 - lib/io.netty-netty-transport-4.1.32.Final.jar
-- lib/io.netty-netty-transport-native-epoll-4.1.32.Final.jar
 - lib/io.netty-netty-transport-native-epoll-4.1.32.Final-linux-x86_64.jar
 - lib/io.netty-netty-transport-native-unix-common-4.1.32.Final.jar
 
