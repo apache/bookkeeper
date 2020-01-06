@@ -235,8 +235,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 Thread.sleep(100);
             }
             // restart killed bookie
-            bs.add(startBookie(killedBookieConfig));
-            bsConfs.add(killedBookieConfig);
+            startAndAddBookie(killedBookieConfig);
             while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
                     .getId(), basePath)) {
                 Thread.sleep(100);
@@ -290,8 +289,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 Thread.sleep(100);
             }
             // restart killed bookie
-            bs.add(startBookie(killedBookieConfig));
-            bsConfs.add(killedBookieConfig);
+            startAndAddBookie(killedBookieConfig);
             while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
                     .getId(), basePath)) {
                 Thread.sleep(100);

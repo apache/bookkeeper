@@ -27,7 +27,6 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 
@@ -44,7 +43,7 @@ public class BookieJournalBypassTest extends BookKeeperClusterTestCase {
     }
 
     @Override
-    protected BookieServer startBookie(ServerConfiguration conf) throws Exception {
+    protected ServerTester startBookie(ServerConfiguration conf) throws Exception {
         if (bookieIdx++ == 0) {
             // First bookie will have the journal disabled
             conf.setJournalWriteData(false);
@@ -56,13 +55,13 @@ public class BookieJournalBypassTest extends BookKeeperClusterTestCase {
     public void testJournalBypass() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
 
-        BookieImpl bookieImpl = (BookieImpl) bs.get(0).getBookie();
+        BookieImpl bookieImpl = (BookieImpl) serverByIndex(0).getBookie();
         Journal journal0 = bookieImpl.journals.get(0);
-        LedgerStorage ls0 = bs.get(0).getBookie().getLedgerStorage();
+        LedgerStorage ls0 = serverByIndex(0).getBookie().getLedgerStorage();
 
-        bookieImpl = (BookieImpl) bs.get(1).getBookie();
+        bookieImpl = (BookieImpl) serverByIndex(1).getBookie();
         Journal journal1 = bookieImpl.journals.get(0);
-        LedgerStorage ls1 = bs.get(1).getBookie().getLedgerStorage();
+        LedgerStorage ls1 = serverByIndex(1).getBookie().getLedgerStorage();
 
         ls0.flush();
         ls1.flush();

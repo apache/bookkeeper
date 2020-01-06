@@ -21,8 +21,6 @@
 package org.apache.bookkeeper.client;
 
 import static junit.framework.TestCase.assertEquals;
-
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,16 +65,12 @@ public class LedgerCmdTest extends BookKeeperClusterTestCase {
         LOG.info("Create ledger and add entries to it");
         LedgerHandle lh1 = createLedgerWithEntries(bk, 10);
 
-        bs.forEach(bookieServer -> {
-            try {
-                BookieAccessor.forceFlush((BookieImpl) bookieServer.getBookie());
-            } catch (IOException e) {
-                LOG.error("Error forceFlush:", e);
-            }
-        });
+        for (int i = 0; i < bookieCount(); i++) {
+                BookieAccessor.forceFlush((BookieImpl) serverByIndex(i).getBookie());
+        }
 
         String[] argv = { "ledger", Long.toString(lh1.getId()) };
-        final ServerConfiguration conf = bsConfs.get(0);
+        final ServerConfiguration conf = confByIndex(0);
         conf.setUseHostNameAsBookieID(true);
 
         BookieShell bkShell =

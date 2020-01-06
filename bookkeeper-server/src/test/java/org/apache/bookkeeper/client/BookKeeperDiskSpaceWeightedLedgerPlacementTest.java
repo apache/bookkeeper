@@ -93,9 +93,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
                 }
             }
         };
-        bsConfs.add(conf);
-        BookieServer server = startBookie(conf, bookieWithCustomFreeDiskSpace);
-        bs.add(server);
+        BookieServer server = startAndAddBookie(conf, bookieWithCustomFreeDiskSpace).getServer();
         client.blockUntilBookieWeightIs(server.getBookieId(), Optional.of(initialFreeDiskSpace));
         if (useFinal == null) {
             ready.set(true);
@@ -114,8 +112,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
             BookKeeperCheckInfoReader client,
             BookieServer bookie, final long freeDiskSpace)
             throws Exception {
-        for (int i = 0; i < bs.size(); i++) {
-            if (bs.get(i).getBookieId().equals(bookie.getBookieId())) {
+        for (int i = 0; i < bookieCount(); i++) {
+            if (addressByIndex(i).equals(bookie.getBookieId())) {
                 return replaceBookieWithCustomFreeDiskSpaceBookie(client, i, freeDiskSpace);
             }
         }
@@ -126,7 +124,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
             BookKeeperCheckInfoReader client,
             int bookieIdx, long initialFreeDiskSpace,
              long finalFreeDiskSpace, AtomicBoolean useFinal) throws Exception {
-        BookieId addr = bs.get(bookieIdx).getBookieId();
+        BookieId addr = addressByIndex(bookieIdx);
         LOG.info("Killing bookie {}", addr);
         ServerConfiguration conf = killBookieAndWaitForZK(bookieIdx);
         client.blockUntilBookieWeightIs(addr, Optional.empty());
@@ -156,10 +154,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
                 replaceBookieWithCustomFreeDiskSpaceBookie(client, 0, multiple * freeDiskSpace);
             }
         }
-        Map<BookieId, Integer> m = new HashMap<BookieId, Integer>();
-        for (BookieServer b : bs) {
-            m.put(b.getBookieId(), 0);
-        }
+        Map<BookieId, Integer> m = new HashMap<>();
+        bookieAddresses().forEach(a -> m.put(a, 0));
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
@@ -171,12 +167,12 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         // make sure that bookies with higher weight(the last 2 bookies) are chosen 3X as often as the median;
         // since the number of ledgers created is small (2000), we allow a range of 2X to 4X instead of the exact 3X
         for (int i = 0; i < numBookies - 2; i++) {
-            double ratio1 = (double) m.get(bs.get(numBookies - 2).getBookieId())
-                / (double) m.get(bs.get(i).getBookieId());
+            double ratio1 = (double) m.get(addressByIndex(numBookies - 2))
+                / (double) m.get(addressByIndex(i));
             assertTrue("Weigheted placement is not honored: " + Math.abs(ratio1 - multiple),
                     Math.abs(ratio1 - multiple) < 1);
-            double ratio2 = (double) m.get(bs.get(numBookies - 1).getBookieId())
-                / (double) m.get(bs.get(i).getBookieId());
+            double ratio2 = (double) m.get(addressByIndex(numBookies - 1))
+                / (double) m.get(addressByIndex(i));
             assertTrue("Weigheted placement is not honored: " + Math.abs(ratio2 - multiple),
                     Math.abs(ratio2 - multiple) < 1);
         }
@@ -206,10 +202,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
                 replaceBookieWithCustomFreeDiskSpaceBookie(client, 0, multiple * freeDiskSpace);
             }
         }
-        Map<BookieId, Integer> m = new HashMap<BookieId, Integer>();
-        for (BookieServer b : bs) {
-            m.put(b.getBookieId(), 0);
-        }
+        Map<BookieId, Integer> m = new HashMap<>();
+        bookieAddresses().forEach(a -> m.put(a, 0));
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
@@ -221,31 +215,30 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         // make sure that bookies with higher weight(the last 2 bookies) are chosen 3X as often as the median;
         // since the number of ledgers created is small (2000), we allow a range of 2X to 4X instead of the exact 3X
         for (int i = 0; i < numBookies - 2; i++) {
-            double ratio1 = (double) m.get(bs.get(numBookies - 2).getBookieId())
-                / (double) m.get(bs.get(i).getBookieId());
+            double ratio1 = (double) m.get(addressByIndex(numBookies - 2))
+                / (double) m.get(addressByIndex(i));
             assertTrue("Weigheted placement is not honored: " + Math.abs(ratio1 - multiple),
                     Math.abs(ratio1 - multiple) < 1);
-            double ratio2 = (double) m.get(bs.get(numBookies - 1).getBookieId())
-                / (double) m.get(bs.get(i).getBookieId());
+            double ratio2 = (double) m.get(addressByIndex(numBookies - 1))
+                / (double) m.get(addressByIndex(i));
             assertTrue("Weigheted placement is not honored: " + Math.abs(ratio2 - multiple),
-                    Math.abs(ratio2 - multiple) < 1);
+            Math.abs(ratio2 - multiple) < 1);
         }
 
         // Restart the bookies in such a way that the first 2 bookies go from 1MB to 3MB free space and the last
         // 2 bookies go from 3MB to 1MB
-        BookieServer server1 = bs.get(0);
-        BookieServer server2 = bs.get(1);
-        BookieServer server3 = bs.get(numBookies - 2);
-        BookieServer server4 = bs.get(numBookies - 1);
+        BookieServer server1 = serverByIndex(0);
+        BookieServer server2 = serverByIndex(1);
+        BookieServer server3 = serverByIndex(numBookies - 2);
+        BookieServer server4 = serverByIndex(numBookies - 1);
 
         server1 = replaceBookieWithCustomFreeDiskSpaceBookie(client, server1, multiple * freeDiskSpace);
         server2 = replaceBookieWithCustomFreeDiskSpaceBookie(client, server2, multiple * freeDiskSpace);
         server3 = replaceBookieWithCustomFreeDiskSpaceBookie(client, server3, freeDiskSpace);
         server4 = replaceBookieWithCustomFreeDiskSpaceBookie(client, server4, freeDiskSpace);
 
-        for (BookieServer b : bs) {
-            m.put(b.getBookieId(), 0);
-        }
+        bookieAddresses().forEach(a -> m.put(a, 0));
+
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
             for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
@@ -256,18 +249,18 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         // make sure that bookies with higher weight(the last 2 bookies) are chosen 3X as often as the median;
         // since the number of ledgers created is small (2000), we allow a range of 2X to 4X instead of the exact 3X
         for (int i = 0; i < numBookies; i++) {
-            if (server1.getBookieId().equals(bs.get(i).getBookieId())
-                    || server2.getBookieId().equals(bs.get(i).getBookieId())) {
+            if (server1.getLocalAddress().equals(addressByIndex(i))
+                    || server2.getLocalAddress().equals(addressByIndex(i))) {
                 continue;
             }
-            double ratio1 = (double) m.get(server1.getBookieId())
-                / (double) m.get(bs.get(i).getBookieId());
+            double ratio1 = (double) m.get(server1)
+                / (double) m.get(addressByIndex(i));
             assertTrue("Weigheted placement is not honored: " + Math.abs(ratio1 - multiple),
                     Math.abs(ratio1 - multiple) < 1);
-            double ratio2 = (double) m.get(server2.getBookieId())
-                / (double) m.get(bs.get(i).getBookieId());
+            double ratio2 = (double) m.get(server2)
+                / (double) m.get(addressByIndex(i));
             assertTrue("Weigheted placement is not honored: " + Math.abs(ratio2 - multiple),
-                    Math.abs(ratio2 - multiple) < 1);
+            Math.abs(ratio2 - multiple) < 1);
         }
         client.close();
     }
@@ -296,10 +289,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
                 replaceBookieWithCustomFreeDiskSpaceBookie(client, 0, multiple * freeDiskSpace);
             }
         }
-        Map<BookieId, Integer> m = new HashMap<BookieId, Integer>();
-        for (BookieServer b : bs) {
-            m.put(b.getBookieId(), 0);
-        }
+        Map<BookieId, Integer> m = new HashMap<>();
+        bookieAddresses().forEach(a -> m.put(a, 0));
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
@@ -310,22 +301,21 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
         // make sure that bookies with higher weight are chosen 3X as often as the median;
         // since the number of ledgers is small (2000), there may be variation
-        double ratio1 = (double) m.get(bs.get(numBookies - 2).getBookieId())
-            / (double) m.get(bs.get(0).getBookieId());
+        double ratio1 = (double) m.get(addressByIndex(numBookies - 2))
+            / (double) m.get(addressByIndex(0));
         assertTrue("Weigheted placement is not honored: " + Math.abs(ratio1 - multiple),
                 Math.abs(ratio1 - multiple) < 1);
-        double ratio2 = (double) m.get(bs.get(numBookies - 1).getBookieId())
-            / (double) m.get(bs.get(1).getBookieId());
+        double ratio2 = (double) m.get(addressByIndex(numBookies - 1))
+            / (double) m.get(addressByIndex(1));
         assertTrue("Weigheted placement is not honored: " + Math.abs(ratio2 - multiple),
-                Math.abs(ratio2 - multiple) < 1);
+        Math.abs(ratio2 - multiple) < 1);
 
         // Bring down the 2 bookies that had higher weight; after this the allocation to all
         // the remaining bookies should be uniform
-        for (BookieServer b : bs) {
-            m.put(b.getBookieId(), 0);
-        }
-        BookieServer server1 = bs.get(numBookies - 2);
-        BookieServer server2 = bs.get(numBookies - 1);
+        bookieAddresses().forEach(a -> m.put(a, 0));
+
+        BookieServer server1 = serverByIndex(numBookies - 2);
+        BookieServer server2 = serverByIndex(numBookies - 1);
         killBookieAndWaitForZK(numBookies - 1);
         killBookieAndWaitForZK(numBookies - 2);
 
@@ -338,17 +328,17 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
         // make sure that bookies with higher weight are chosen 3X as often as the median;
         for (int i = 0; i < numBookies - 3; i++) {
-            double delta = Math.abs((double) m.get(bs.get(i).getBookieId())
-                    - (double) m.get(bs.get(i + 1).getBookieId()));
-            delta = (delta * 100) / (double) m.get(bs.get(i + 1).getBookieId());
+            double delta = Math.abs((double) m.get(addressByIndex(i))
+                    - (double) m.get(addressByIndex(i + 1)));
+            delta = (delta * 100) / (double) m.get(addressByIndex(i + 1));
             // the deviation should be less than 30%
             assertTrue("Weigheted placement is not honored: " + delta, delta <= 30);
         }
         // since the following 2 bookies were down, they shouldn't ever be selected
-        assertTrue("Weigheted placement is not honored" + m.get(server1.getBookieId()),
-                m.get(server1.getBookieId()) == 0);
-        assertTrue("Weigheted placement is not honored" + m.get(server2.getBookieId()),
-                m.get(server2.getBookieId()) == 0);
+        assertTrue("Weigheted placement is not honored" + m.get(server1),
+                m.get(server1) == 0);
+        assertTrue("Weigheted placement is not honored" + m.get(server2),
+                m.get(server2) == 0);
 
         client.close();
     }
@@ -376,10 +366,9 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         // let the last two bookies be down initially
         ServerConfiguration conf1 = killBookieAndWaitForZK(numBookies - 1);
         ServerConfiguration conf2 = killBookieAndWaitForZK(numBookies - 2);
-        Map<BookieId, Integer> m = new HashMap<BookieId, Integer>();
-        for (BookieServer b : bs) {
-            m.put(b.getBookieId(), 0);
-        }
+        Map<BookieId, Integer> m = new HashMap<>();
+
+        bookieAddresses().forEach(a -> m.put(a, 0));
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
@@ -391,9 +380,9 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         // make sure that bookies with higher weight are chosen 3X as often as the median;
         // since the number of ledgers is small (2000), there may be variation
         for (int i = 0; i < numBookies - 3; i++) {
-            double delta = Math.abs((double) m.get(bs.get(i).getBookieId())
-                    - (double) m.get(bs.get(i + 1).getBookieId()));
-            delta = (delta * 100) / (double) m.get(bs.get(i + 1).getBookieId());
+            double delta = Math.abs((double) m.get(addressByIndex(i))
+                    - (double) m.get(addressByIndex(i + 1)));
+            delta = (delta * 100) / (double) m.get(addressByIndex(i + 1));
             // the deviation should be less than 30%
             assertTrue("Weigheted placement is not honored: " + delta, delta <= 30);
         }
@@ -402,9 +391,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         restartBookie(client, conf1, multiple * freeDiskSpace, multiple * freeDiskSpace, null);
         restartBookie(client, conf2, multiple * freeDiskSpace, multiple * freeDiskSpace, null);
 
-        for (BookieServer b : bs) {
-            m.put(b.getBookieId(), 0);
-        }
+        bookieAddresses().forEach(a -> m.put(a, 0));
+
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
             for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
@@ -415,12 +403,12 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         // make sure that bookies with higher weight(the last 2 bookies) are chosen 3X as often as the median;
         // since the number of ledgers created is small (2000), we allow a range of 2X to 4X instead of the exact 3X
         for (int i = 0; i < numBookies - 2; i++) {
-            double ratio1 = (double) m.get(bs.get(numBookies - 2).getBookieId())
-                / (double) m.get(bs.get(i).getBookieId());
+            double ratio1 = (double) m.get(addressByIndex(numBookies - 2))
+                / (double) m.get(addressByIndex(i));
             assertTrue("Weigheted placement is not honored: " + Math.abs(ratio1 - multiple),
                     Math.abs(ratio1 - multiple) < 1);
-            double ratio2 = (double) m.get(bs.get(numBookies - 1).getBookieId())
-                / (double) m.get(bs.get(i).getBookieId());
+            double ratio2 = (double) m.get(addressByIndex(numBookies - 1))
+                / (double) m.get(addressByIndex(i));
             assertTrue("Weigheted placement is not honored: " + Math.abs(ratio2 - multiple),
                     Math.abs(ratio2 - multiple) < 1);
         }
@@ -456,10 +444,9 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
                         client, 0, freeDiskSpace, multiple * freeDiskSpace, useHigherValue);
             }
         }
-        Map<BookieId, Integer> m = new HashMap<BookieId, Integer>();
-        for (BookieServer b : bs) {
-            m.put(b.getBookieId(), 0);
-        }
+        Map<BookieId, Integer> m = new HashMap<>();
+
+        bookieAddresses().forEach(a -> m.put(a, 0));
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
@@ -469,9 +456,9 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         }
 
         for (int i = 0; i < numBookies - 1; i++) {
-            double delta = Math.abs((double) m.get(bs.get(i).getBookieId())
-                    - (double) m.get(bs.get(i + 1).getBookieId()));
-            delta = (delta * 100) / (double) m.get(bs.get(i + 1).getBookieId());
+            double delta = Math.abs((double) m.get(addressByIndex(i))
+                    - (double) m.get(addressByIndex(i + 1)));
+            delta = (delta * 100) / (double) m.get(addressByIndex(i + 1));
             assertTrue("Weigheted placement is not honored: " + delta, delta <= 30); // the deviation should be <30%
         }
 
@@ -481,15 +468,13 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         Thread.sleep(updateIntervalSecs * 1000);
         for (int i = 0; i < numBookies; i++) {
             if (i < numBookies - 2) {
-                client.blockUntilBookieWeightIs(bs.get(i).getBookieId(), Optional.of(freeDiskSpace));
+                client.blockUntilBookieWeightIs(addressByIndex(i), Optional.of(freeDiskSpace));
             } else {
-                client.blockUntilBookieWeightIs(bs.get(i).getBookieId(), Optional.of(freeDiskSpace * multiple));
+                client.blockUntilBookieWeightIs(addressByIndex(i), Optional.of(freeDiskSpace * multiple));
             }
         }
 
-        for (BookieServer b : bs) {
-            m.put(b.getBookieId(), 0);
-        }
+        bookieAddresses().forEach(a -> m.put(a, 0));
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
             for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
@@ -500,12 +485,12 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         // make sure that bookies with higher weight(the last 2 bookies) are chosen 3X as often as the median;
         // since the number of ledgers created is small (2000), we allow a range of 2X to 4X instead of the exact 3X
         for (int i = 0; i < numBookies - 2; i++) {
-            double ratio1 = (double) m.get(bs.get(numBookies - 2).getBookieId())
-                / (double) m.get(bs.get(i).getBookieId());
+            double ratio1 = (double) m.get(addressByIndex(numBookies - 2))
+                / (double) m.get(addressByIndex(i));
             assertTrue("Weigheted placement is not honored: " + Math.abs(ratio1 - multiple),
                     Math.abs(ratio1 - multiple) < 1);
-            double ratio2 = (double) m.get(bs.get(numBookies - 1).getBookieId())
-                / (double) m.get(bs.get(i).getBookieId());
+            double ratio2 = (double) m.get(addressByIndex(lastBookieIndex()))
+                / (double) m.get(addressByIndex(i));
             assertTrue("Weigheted placement is not honored: " + Math.abs(ratio2 - multiple),
                     Math.abs(ratio2 - multiple) < 1);
         }

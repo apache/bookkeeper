@@ -181,8 +181,8 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     @Test
     public void testAddFailsWithReadOnlyBookie() throws Exception {
         for (int i = 0; i < 3; ++i) {
-            Bookie bookie = bs.get(i).getBookie();
-            File[] ledgerDirs = bsConfs.get(i).getLedgerDirs();
+            Bookie bookie = serverByIndex(i).getBookie();
+            File[] ledgerDirs = confByIndex(i).getLedgerDirs();
             LedgerDirsManager ledgerDirsManager = ((BookieImpl) bookie).getLedgerDirsManager();
             ledgerDirsManager.addToFilledDirs(new File(ledgerDirs[0], "current"));
         }

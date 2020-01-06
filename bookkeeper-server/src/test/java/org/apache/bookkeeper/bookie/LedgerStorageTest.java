@@ -54,7 +54,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testLedgerDeleteNotification() throws Exception {
-        LedgerStorage ledgerStorage = bs.get(0).getBookie().getLedgerStorage();
+        LedgerStorage ledgerStorage = serverByIndex(0).getBookie().getLedgerStorage();
 
         long deletedLedgerId = 5;
         ledgerStorage.setMasterKey(deletedLedgerId, new byte[0]);
@@ -92,11 +92,12 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
 
     public void testExplicitLacWriteToJournal(int journalFormatVersionToWrite, int fileInfoFormatVersionToWrite)
             throws Exception {
-        ServerConfiguration bookieServerConfig = bsConfs.get(0);
-        bookieServerConfig.setJournalFormatVersionToWrite(journalFormatVersionToWrite);
-        bookieServerConfig.setFileInfoFormatVersionToWrite(fileInfoFormatVersionToWrite);
+        restartBookies(c -> {
+                c.setJournalFormatVersionToWrite(journalFormatVersionToWrite);
+                c.setFileInfoFormatVersionToWrite(fileInfoFormatVersionToWrite);
+                return c;
+            });
 
-        restartBookies(bookieServerConfig);
 
         ClientConfiguration confWithExplicitLAC = new ClientConfiguration();
         confWithExplicitLAC.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -133,7 +134,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
         assertEquals("Read explicit LAC of rlh after wait for explicitlacflush", (numOfEntries - 1),
                 readExplicitLastConfirmed);
 
-        ServerConfiguration newBookieConf = new ServerConfiguration(bsConfs.get(0));
+        ServerConfiguration newBookieConf = new ServerConfiguration(confByIndex(0));
         /*
          * by reusing bookieServerConfig and setting metadataServiceUri to null
          * we can create/start new Bookie instance using the same data
@@ -182,11 +183,11 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
 
     public void testExplicitLacWriteToFileInfo(int journalFormatVersionToWrite, int fileInfoFormatVersionToWrite)
             throws Exception {
-        ServerConfiguration bookieServerConfig = bsConfs.get(0);
-        bookieServerConfig.setJournalFormatVersionToWrite(journalFormatVersionToWrite);
-        bookieServerConfig.setFileInfoFormatVersionToWrite(fileInfoFormatVersionToWrite);
-
-        restartBookies(bookieServerConfig);
+        restartBookies(c -> {
+                c.setJournalFormatVersionToWrite(journalFormatVersionToWrite);
+                c.setFileInfoFormatVersionToWrite(fileInfoFormatVersionToWrite);
+                return c;
+            });
 
         ClientConfiguration confWithExplicitLAC = new ClientConfiguration();
         confWithExplicitLAC.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -226,10 +227,10 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
         /*
          * flush ledgerStorage so that header of fileinfo is flushed.
          */
-        bs.get(0).getBookie().getLedgerStorage().flush();
+        serverByIndex(0).getBookie().getLedgerStorage().flush();
 
         ReadOnlyFileInfo fileInfo = getFileInfo(ledgerId,
-                                                BookieImpl.getCurrentDirectories(bsConfs.get(0).getLedgerDirs()));
+                                                BookieImpl.getCurrentDirectories(confByIndex(0).getLedgerDirs()));
         fileInfo.readHeader();
         ByteBuf explicitLacBufReadFromFileInfo = fileInfo.getExplicitLac();
 
@@ -288,7 +289,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
     public void testGetListOfEntriesOfLedger() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
-        int numOfBookies = bs.size();
+        int numOfBookies = bookieCount();
         int numOfEntries = 5;
         BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
         BookKeeper bkc = new BookKeeper(conf);
@@ -298,7 +299,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
             lh.addEntry("000".getBytes());
         }
 
-        ServerConfiguration newBookieConf = new ServerConfiguration(bsConfs.get(0));
+        ServerConfiguration newBookieConf = new ServerConfiguration(confByIndex(0));
         /*
          * by reusing bookieServerConfig and setting metadataServiceUri to null
          * we can create/start new Bookie instance using the same data

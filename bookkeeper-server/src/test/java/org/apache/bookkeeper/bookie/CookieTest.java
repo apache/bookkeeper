@@ -21,14 +21,13 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.UpgradeTest.newV1JournalDirectory;
-import static org.apache.bookkeeper.bookie.UpgradeTest.newV1LedgerDirectory;
-import static org.apache.bookkeeper.bookie.UpgradeTest.newV2JournalDirectory;
-import static org.apache.bookkeeper.bookie.UpgradeTest.newV2LedgerDirectory;
+import static org.apache.bookkeeper.bookie.UpgradeTest.initV1JournalDirectory;
+import static org.apache.bookkeeper.bookie.UpgradeTest.initV1LedgerDirectory;
+import static org.apache.bookkeeper.bookie.UpgradeTest.initV2JournalDirectory;
+import static org.apache.bookkeeper.bookie.UpgradeTest.initV2LedgerDirectory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
@@ -46,7 +45,6 @@ import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
-import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.PortManager;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
@@ -69,11 +67,10 @@ public class CookieTest extends BookKeeperClusterTestCase {
     }
 
     private String newDirectory(boolean createCurDir) throws IOException {
-        File d = IOUtils.createTempDir("cookie", "tmpdir");
+        File d = createTempDir("cookie", "tmpdir");
         if (createCurDir) {
             new File(d, "current").mkdirs();
         }
-        tmpDirs.add(d);
         return d.getPath();
     }
 
@@ -547,10 +544,8 @@ public class CookieTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testV2data() throws Exception {
-        File journalDir = newV2JournalDirectory();
-        tmpDirs.add(journalDir);
-        File ledgerDir = newV2LedgerDirectory();
-        tmpDirs.add(ledgerDir);
+        File journalDir = initV2JournalDirectory(createTempDir("bookie", "journal"));
+        File ledgerDir = initV2LedgerDirectory(createTempDir("bookie", "ledger"));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
@@ -572,10 +567,8 @@ public class CookieTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testV1data() throws Exception {
-        File journalDir = newV1JournalDirectory();
-        tmpDirs.add(journalDir);
-        File ledgerDir = newV1LedgerDirectory();
-        tmpDirs.add(ledgerDir);
+        File journalDir = initV1JournalDirectory(createTempDir("bookie", "journal"));
+        File ledgerDir = initV1LedgerDirectory(createTempDir("bookie", "ledger"));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
@@ -678,10 +671,8 @@ public class CookieTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testV2dataWithHostNameAsBookieID() throws Exception {
-        File journalDir = newV2JournalDirectory();
-        tmpDirs.add(journalDir);
-        File ledgerDir = newV2LedgerDirectory();
-        tmpDirs.add(ledgerDir);
+        File journalDir = initV2JournalDirectory(createTempDir("bookie", "journal"));
+        File ledgerDir = initV2LedgerDirectory(createTempDir("bookie", "ledger"));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())

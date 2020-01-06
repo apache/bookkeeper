@@ -51,7 +51,7 @@ public class ForceAuditorChecksCmdTest extends BookKeeperClusterTestCase {
         String[] argv = new String[] { "forceauditchecks", "-calc", "-ppc", "-rc" };
         long curTime = System.currentTimeMillis();
 
-        final ServerConfiguration conf = bsConfs.get(0);
+        final ServerConfiguration conf = confByIndex(0);
         BookieShell bkShell = new BookieShell();
         bkShell.setConf(conf);
 

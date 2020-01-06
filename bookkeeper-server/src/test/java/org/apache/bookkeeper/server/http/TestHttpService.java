@@ -87,8 +87,9 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         super.setUp();
         baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         baseClientConf.setStoreSystemtimeAsLedgerCreationTime(true);
+
         this.bkHttpServiceProvider = new BKHttpServiceProvider.Builder()
-            .setBookieServer(bs.get(numberOfBookies - 1))
+            .setBookieServer(serverByIndex(numberOfBookies - 1))
             .setServerConfiguration(baseConf)
             .build();
     }
@@ -593,7 +594,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
     AuditorElector auditorElector;
     private Future<?> startAuditorElector() throws Exception {
-        String addr = bs.get(0).getBookieId().toString();
+        String addr = addressByIndex(0).toString();
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setAuditorPeriodicBookieCheckInterval(1);
         conf.setMetadataServiceUri("zk://" + zkUtil.getZooKeeperConnectString() + "/ledgers");
@@ -861,7 +862,9 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
 
         // Simulate bookies shutting down
-        bs.forEach(bookieServer -> bookieServer.getBookie().getStateManager().forceToShuttingDown());
+        for (int i = 0; i < bookieCount(); i++) {
+            serverByIndex(i).getBookie().getStateManager().forceToShuttingDown();
+        }
         HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response3 = bookieStateServer.handle(request3);
         assertEquals(HttpServer.StatusCode.SERVICE_UNAVAILABLE.getValue(), response3.getStatusCode());

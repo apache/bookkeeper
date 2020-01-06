@@ -118,8 +118,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                     return super.readEntry(ledgerId, entryId);
                 }
             };
-        bsConfs.add(conf);
-        bs.add(startBookie(conf, delayBookie));
+        startAndAddBookie(conf, delayBookie);
     }
 
     /**

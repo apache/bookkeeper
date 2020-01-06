@@ -29,7 +29,6 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
@@ -80,7 +79,9 @@ public class BookieWriteToJournalTest {
     /**
      * test that Bookie calls correctly Journal.logAddEntry about "ackBeforeSync" parameter.
      */
+
     @Test
+//    @Ignore("PLSR-1850 test is failing due to Bookie interface change")
     public void testJournalLogAddEntryCalledCorrectly() throws Exception {
 
         File journalDir = tempDir.newFolder();
