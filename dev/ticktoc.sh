@@ -17,6 +17,7 @@
 # limitations under the License.
 #
 
+<<<<<<< HEAD:dev/ticktoc.sh
 # Script from https://github.com/travis-ci/travis-ci/issues/4190
 
 set -e
@@ -42,3 +43,26 @@ do
 
     sleep 1
 done
+=======
+set -ev
+
+BINDIR=`dirname "$0"`
+BK_HOME=`cd $BINDIR/..;pwd`
+
+mvn -v
+
+mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests 
+$BK_HOME/dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
+$BK_HOME/dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz;
+$BK_HOME/dev/check-binary-license ./bookkeeper-dist/bkctl/target/bkctl-*-bin.tar.gz;
+if [ "$DLOG_MODIFIED" == "true" ]; then
+    cd $BK_HOME/stream/distributedlog
+    mvn --batch-mode clean package -Ddistributedlog
+fi
+if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$WEBSITE_MODIFIED" == "true" ]; then
+    cd $BK_HOME/site
+    make clean
+    # run the docker image to build the website
+    ./docker/ci.sh
+fi
+>>>>>>> Groovy scripts and Travis:.travis_scripts/build.sh

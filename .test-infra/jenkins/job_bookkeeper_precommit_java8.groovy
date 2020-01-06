@@ -18,26 +18,44 @@
 
 import common_job_properties
 
-// This job runs the Java postcommit validation on master branch
-mavenJob('bookkeeper_postcommit_validation_master') {
-  description('Runs postcommit validation nightly for bookkeeper.')
+// This is the Java precommit which runs a maven install, and the current set of precommit tests.
+mavenJob('bookkeeper_precommit_pullrequest_java8') {
+  description('precommit verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a> in Java 8.')
 
   // clean up the workspace before build
   wrappers { preBuildCleanup() }
 
+  // Temporary information gathering to see if full disks are causing the builds to flake
+  preBuildSteps {
+    shell("id")
+    shell("ulimit -a")
+    shell("pwd")
+    shell("df -Th")
+    shell("ps aux")
+  }
+
+  // Execute concurrent builds if necessary.
+  concurrentBuild()
+
   // Set common parameters.
   common_job_properties.setTopLevelMainJobProperties(
-    delegate, 'master', 'JDK 1.8 (latest)')
+    delegate,
+    'master',
+    'JDK 1.8 (latest)',
+    200,
+    'ubuntu',
+    '${sha1}')
 
-  // Sets that this is a PostCommit job.
-  common_job_properties.setPostCommit(
-      delegate,
-      'H 12 * * *',
-      false)
+  // Sets that this is a PreCommit job.
+  common_job_properties.setPreCommit(
+    delegate,
+    'Build (Java 8) (trigger via `rebuild java8`)',
+    '.*(re)?build java8.*',
+    '.*\\[x\\] \\[skip build java8\\].*')
 
-  // Set maven parameters.
+  // Set Maven parameters.
   common_job_properties.setMavenConfig(delegate)
 
-  // Maven build project.
-  goals('clean apache-rat:check checkstyle:check package -Ddistributedlog  -DskipTests')
+  // Maven build project
+  goals('clean package spotbugs:check -DskipBookKeeperServerTests')
 }
