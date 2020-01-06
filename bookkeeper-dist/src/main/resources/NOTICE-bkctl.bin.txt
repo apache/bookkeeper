@@ -16,7 +16,7 @@ The Apache Software Foundation (http://www.apache.org/).
 - lib/io.netty-netty-resolver-4.1.32.Final.jar
 - lib/io.netty-netty-tcnative-boringssl-static-2.0.20.Final.jar
 - lib/io.netty-netty-transport-4.1.32.Final.jar
-- lib/io.netty-netty-transport-native-epoll-4.1.32.Final.jar
+- lib/io.netty-netty-transport-native-epoll-4.1.32.Final-linux-x86_64.jar
 - lib/io.netty-netty-transport-native-unix-common-4.1.32.Final.jar
 
 
