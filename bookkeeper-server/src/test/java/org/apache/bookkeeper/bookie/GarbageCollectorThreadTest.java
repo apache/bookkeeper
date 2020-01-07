@@ -55,7 +55,7 @@ public class GarbageCollectorThreadTest {
     @Mock
     private ScheduledExecutorService gcExecutor;
 
-    private ServerConfiguration conf = spy(new ServerConfiguration());
+    private ServerConfiguration conf = spy(new ServerConfiguration().setAllowLoopback(true));
     private CompactableLedgerStorage ledgerStorage = mock(CompactableLedgerStorage.class);
 
     @Before
