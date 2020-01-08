@@ -273,13 +273,16 @@ public class SyncThreadTest {
             LedgerManager ledgerManager,
             LedgerDirsManager ledgerDirsManager,
             LedgerDirsManager indexDirsManager,
-            StateManager stateManager,
-            CheckpointSource checkpointSource,
-            Checkpointer checkpointer,
             StatsLogger statsLogger,
             ByteBufAllocator allocator)
                 throws IOException {
         }
+        @Override
+        public void setStateManager(StateManager stateManager) {}
+        @Override
+        public void setCheckpointSource(CheckpointSource checkpointSource) {}
+        @Override
+        public void setCheckpointer(Checkpointer checkpointer) {}
 
         @Override
         public void deleteLedger(long ledgerId) throws IOException {

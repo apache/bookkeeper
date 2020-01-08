@@ -91,8 +91,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     EntryLogger entryLogger;
     @Getter
     LedgerCache ledgerCache;
-    protected CheckpointSource checkpointSource;
-    protected Checkpointer checkpointer;
+    protected CheckpointSource checkpointSource = CheckpointSource.DEFAULT;
+    protected Checkpointer checkpointer = Checkpointer.NULL;
     private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners =
             Lists.newCopyOnWriteArrayList();
 
@@ -136,9 +136,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                            LedgerManager ledgerManager,
                            LedgerDirsManager ledgerDirsManager,
                            LedgerDirsManager indexDirsManager,
-                           StateManager stateManager,
-                           CheckpointSource checkpointSource,
-                           Checkpointer checkpointer,
                            StatsLogger statsLogger,
                            ByteBufAllocator allocator)
             throws IOException {
@@ -147,9 +144,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             ledgerManager,
             ledgerDirsManager,
             indexDirsManager,
-            stateManager,
-            checkpointSource,
-            checkpointer,
             this,
             statsLogger,
             allocator);
@@ -159,9 +153,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                                         LedgerManager ledgerManager,
                                         LedgerDirsManager ledgerDirsManager,
                                         LedgerDirsManager indexDirsManager,
-                                        StateManager stateManager,
-                                        CheckpointSource checkpointSource,
-                                        Checkpointer checkpointer,
                                         EntryLogListener entryLogListener,
                                         StatsLogger statsLogger,
                                         ByteBufAllocator allocator) throws IOException {
@@ -170,12 +161,22 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 ledgerManager,
                 ledgerDirsManager,
                 indexDirsManager,
-                stateManager,
-                checkpointSource,
-                checkpointer,
                 new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE),
                         allocator),
                 statsLogger);
+    }
+
+    @Override
+    public void setStateManager(StateManager stateManager) {}
+
+    @Override
+    public void setCheckpointSource(CheckpointSource checkpointSource) {
+        this.checkpointSource = checkpointSource;
+    }
+
+    @Override
+    public void setCheckpointer(Checkpointer checkpointer) {
+        this.checkpointer = checkpointer;
     }
 
     @VisibleForTesting
@@ -183,17 +184,12 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 LedgerManager ledgerManager,
                 LedgerDirsManager ledgerDirsManager,
                 LedgerDirsManager indexDirsManager,
-                StateManager stateManager,
-                CheckpointSource checkpointSource,
-                Checkpointer checkpointer,
                 EntryLogger entryLogger,
                 StatsLogger statsLogger) throws IOException {
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");
         this.entryLogger = entryLogger;
         this.entryLogger.addListener(this);
-        this.checkpointSource = checkpointSource;
-        this.checkpointer = checkpointer;
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger.scope("gc"));

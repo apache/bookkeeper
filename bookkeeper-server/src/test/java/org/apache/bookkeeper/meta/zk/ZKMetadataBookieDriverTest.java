@@ -61,38 +61,30 @@ public class ZKMetadataBookieDriverTest extends ZKMetadataDriverTestBase {
     @Test
     public void testGetRegManager() throws Exception {
         RegistrationListener listener = mock(RegistrationListener.class);
-        driver.initialize(conf, listener, NullStatsLogger.INSTANCE);
+        driver.initialize(conf, NullStatsLogger.INSTANCE);
 
         assertSame(conf, driver.serverConf);
-        assertSame(listener, driver.listener);
-        assertNull(driver.regManager);
 
         ZKRegistrationManager mockRegManager = PowerMockito.mock(ZKRegistrationManager.class);
 
         PowerMockito.whenNew(ZKRegistrationManager.class)
             .withParameterTypes(
                 ServerConfiguration.class,
-                ZooKeeper.class,
-                RegistrationListener.class)
+                ZooKeeper.class)
             .withArguments(
                 any(ServerConfiguration.class),
-                any(ZooKeeper.class),
-                any(RegistrationListener.class))
+                any(ZooKeeper.class))
             .thenReturn(mockRegManager);
 
-        RegistrationManager manager = driver.getRegistrationManager();
+        RegistrationManager manager = driver.createRegistrationManager();
         assertSame(mockRegManager, manager);
-        assertSame(mockRegManager, driver.regManager);
 
         PowerMockito.verifyNew(ZKRegistrationManager.class, times(1))
             .withArguments(
                 same(conf),
-                same(mockZkc),
-                same(listener));
+                same(mockZkc));
 
         driver.close();
-        verify(mockRegManager, times(1)).close();
-        assertNull(driver.regManager);
     }
 
 }

@@ -82,7 +82,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         final boolean stallOrRespondNull;
 
         public FakeBookie(ServerConfiguration conf, long expectedEntryToFail, boolean stallOrRespondNull)
-                throws InterruptedException, BookieException, KeeperException, IOException {
+                throws Exception {
             super(conf);
             this.expectedEntryToFail = expectedEntryToFail;
             this.stallOrRespondNull = stallOrRespondNull;
@@ -180,7 +180,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
 
         public SlowReadLacBookie(ServerConfiguration conf,
                                  long lacToSlowRead, CountDownLatch readLatch)
-                throws IOException, KeeperException, InterruptedException, BookieException {
+                throws Exception {
             super(conf);
             this.lacToSlowRead = lacToSlowRead;
             this.readLatch = readLatch;

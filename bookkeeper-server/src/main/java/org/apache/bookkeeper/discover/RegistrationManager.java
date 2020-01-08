@@ -143,4 +143,11 @@ public interface RegistrationManager extends AutoCloseable {
      * @throws Exception
      */
     boolean nukeExistingCluster() throws Exception;
+
+    /**
+     * Add a listener to be triggered when an registration event occurs.
+     *
+     * @param listener the listener to be added
+     */
+    void addRegistrationListener(RegistrationListener listener);
 }

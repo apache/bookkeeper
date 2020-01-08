@@ -16,11 +16,14 @@ package org.apache.bookkeeper.metadata.etcd.testing;
 
 import static org.junit.Assert.assertTrue;
 
+import io.netty.buffer.ByteBufAllocator;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.common.net.ServiceURI;
@@ -121,8 +124,9 @@ public abstract class EtcdBKClusterTestBase extends EtcdTestBase {
     private static BookieServer startBookie(ServerConfiguration conf) throws Exception {
         conf.setAutoRecoveryDaemonEnabled(true);
         TestStatsProvider provider = new TestStatsProvider();
-        BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
-                                               BookieServiceInfo.NO_INFO);
+        Bookie bookie = new TestBookieImpl(conf);
+        BookieServer server = new BookieServer(conf, bookie, provider.getStatsLogger(""),
+                                               ByteBufAllocator.DEFAULT);
         server.start();
         return server;
     }

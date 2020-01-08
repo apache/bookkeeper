@@ -35,7 +35,6 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,12 +50,12 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
     static final Logger LOG = LoggerFactory.getLogger(ListUnderReplicatedLedgerService.class);
 
     protected ServerConfiguration conf;
-    protected BookieServer bookieServer;
+    private final LedgerManagerFactory ledgerManagerFactory;
 
-    public ListUnderReplicatedLedgerService(ServerConfiguration conf, BookieServer bookieServer) {
+    public ListUnderReplicatedLedgerService(ServerConfiguration conf, LedgerManagerFactory ledgerManagerFactory) {
         checkNotNull(conf);
         this.conf = conf;
-        this.bookieServer = bookieServer;
+        this.ledgerManagerFactory = ledgerManagerFactory;
     }
 
     /*
@@ -100,8 +99,8 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
                 boolean hasURLedgers = false;
                 List<Long> outputLedgers = null;
                 Map<Long, List<String>> outputLedgersWithMissingReplica = null;
-                LedgerManagerFactory mFactory = bookieServer.getBookie().getLedgerManagerFactory();
-                LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
+                LedgerUnderreplicationManager underreplicationManager =
+                    ledgerManagerFactory.newLedgerUnderreplicationManager();
                 Iterator<UnderreplicatedLedger> iter = underreplicationManager.listLedgersToRereplicate(predicate);
 
                 hasURLedgers = iter.hasNext();

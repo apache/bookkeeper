@@ -110,14 +110,11 @@ public class SlowInterleavedLedgerStorage extends InterleavedLedgerStorage {
                            LedgerManager ledgerManager,
                            LedgerDirsManager ledgerDirsManager,
                            LedgerDirsManager indexDirsManager,
-                           StateManager stateManager,
-                           CheckpointSource checkpointSource,
-                           Checkpointer checkpointer,
                            StatsLogger statsLogger,
                            ByteBufAllocator allocator)
             throws IOException {
         super.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
-                stateManager, checkpointSource, checkpointer, statsLogger, allocator);
+                         statsLogger, allocator);
         // do not want to add these to config class, reading throw "raw" interface
         long getDelay = conf.getLong(PROP_SLOW_STORAGE_GET_DELAY, 0);
         long addDelay = conf.getLong(PROP_SLOW_STORAGE_ADD_DELAY, 0);

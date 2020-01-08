@@ -84,7 +84,7 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
         ServerConfiguration serverConf = new ServerConfiguration();
         serverConf.setMetadataServiceUri(serviceUri.toString());
         bookieDriver = MetadataDrivers.getBookieDriver(serviceUri);
-        bookieDriver.initialize(serverConf, () -> {}, NullStatsLogger.INSTANCE);
+        bookieDriver.initialize(serverConf, NullStatsLogger.INSTANCE);
     }
 
     @After
@@ -103,7 +103,7 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
         for (int i = 0; i < numServers; i++) {
             InetSocketAddress address = new InetSocketAddress("127.0.0.1", 3181 + i);
             addressSet.add(address);
-            bookieDriver.getRegistrationManager().registerBookie(
+            bookieDriver.createRegistrationManager().registerBookie(
                 BookieId.parse("127.0.0.1:" + (3181 + i)), false, BookieServiceInfo.EMPTY
             );
         }
@@ -138,7 +138,7 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
         for (int i = numServers; i < 2 * numServers; i++) {
             InetSocketAddress address = new InetSocketAddress("127.0.0.1", 3181 + i);
             addressSet.add(address);
-            bookieDriver.getRegistrationManager().registerBookie(
+            bookieDriver.createRegistrationManager().registerBookie(
                 BookieId.parse("127.0.0.1:" + (3181 + i)), false, BookieServiceInfo.EMPTY
             );
         }

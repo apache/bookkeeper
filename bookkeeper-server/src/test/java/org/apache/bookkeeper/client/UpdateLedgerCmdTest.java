@@ -100,7 +100,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         String[] argv = new String[] { "updateBookieInLedger", "-sb", srcBookie.toString(), "-db",
                 destBookie.toString(), "-v", "true", "-p", "2" };
         final ServerConfiguration conf = confByIndex(0);
-        serverByIndex(0).shutdown();
+        killBookie(0);
         updateLedgerCmd(argv, 0, conf);
         int updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, srcBookie);
         assertEquals("Failed to update the ledger metadata with new bookie-address", 0, updatedLedgersCount);

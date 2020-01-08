@@ -26,7 +26,9 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
+import org.apache.bookkeeper.bookie.LegacyCookieValidation;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
@@ -79,11 +81,15 @@ public class ExpandStorageService implements HttpEndpointService {
             }
 
             try (MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
-                URI.create(conf.getMetadataServiceUri())
-            )) {
-                driver.initialize(conf, () -> { }, NullStatsLogger.INSTANCE);
-                BookieImpl.checkEnvironmentWithStorageExpansion(conf, driver,
-                  Lists.newArrayList(journalDirectories), allLedgerDirs);
+                         URI.create(conf.getMetadataServiceUri()))) {
+                driver.initialize(conf, NullStatsLogger.INSTANCE);
+
+                try (RegistrationManager registrationManager = driver.createRegistrationManager()) {
+                    LegacyCookieValidation validation = new LegacyCookieValidation(conf, registrationManager);
+                    List<File> dirs = Lists.newArrayList(journalDirectories);
+                    dirs.addAll(allLedgerDirs);
+                    validation.checkCookies(dirs);
+                }
             } catch (BookieException e) {
                 LOG.error("Exception occurred while updating cookie for storage expansion", e);
                 response.setCode(HttpServer.StatusCode.INTERNAL_ERROR);

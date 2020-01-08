@@ -128,7 +128,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
         try {
             final String metadataServiceUriStr = conf.getMetadataServiceUri();
             final MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(URI.create(metadataServiceUriStr));
-            driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+            driver.initialize(conf, NullStatsLogger.INSTANCE);
             return driver;
         } catch (MetadataException me) {
             throw new BookieException.MetadataStoreException("Failed to initialize metadata bookie driver", me);

@@ -54,7 +54,7 @@ public class TestZkRegistrationManager {
             ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
             conf.setMetadataServiceUri("zk+hierarchical://localhost:2181/test/ledgers");
             zkc = localZkServer.getZooKeeperClient();
-            ZKRegistrationManager zkRegistrationManager = new ZKRegistrationManager(conf, zkc, () -> {});
+            ZKRegistrationManager zkRegistrationManager = new ZKRegistrationManager(conf, zkc);
             zkRegistrationManager.prepareFormat();
             assertNotNull(zkc.exists("/test/ledgers", false));
         } finally {

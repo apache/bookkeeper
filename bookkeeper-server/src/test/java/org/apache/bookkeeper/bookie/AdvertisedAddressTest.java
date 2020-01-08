@@ -45,8 +45,8 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         super(0);
     }
 
-    private String newDirectory(boolean createCurDir) throws IOException {
-        File d = createTempDir("cookie", "tmpdir");
+    private String newDirectory(boolean createCurDir) throws Exception {
+        File d = tmpDirs.createNew("cookie", "tmpdir");
         if (createCurDir) {
             new File(d, "current").mkdirs();
         }

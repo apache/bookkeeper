@@ -89,8 +89,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         super.setUp();
         StaticDNSResolver.reset();
         driver = MetadataDrivers.getBookieDriver(URI.create(confByIndex(0).getMetadataServiceUri()));
-        driver.initialize(confByIndex(0), () -> {
-        }, NullStatsLogger.INSTANCE);
+        driver.initialize(confByIndex(0), NullStatsLogger.INSTANCE);
     }
 
     @After
@@ -271,7 +270,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
     @Test
     public void testReplicasCheckForBookieHandleNotAvailable() throws Exception {
         int numOfBookies = 5;
-        RegistrationManager regManager = driver.getRegistrationManager();
+        RegistrationManager regManager = driver.createRegistrationManager();
         MultiKeyMap<String, AvailabilityOfEntriesOfLedger> returnAvailabilityOfEntriesOfLedger =
                 new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
         MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
@@ -369,7 +368,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
     @Test
     public void testReplicasCheckForLedgersFoundHavingNoReplica() throws Exception {
         int numOfBookies = 5;
-        RegistrationManager regManager = driver.getRegistrationManager();
+        RegistrationManager regManager = driver.createRegistrationManager();
         MultiKeyMap<String, AvailabilityOfEntriesOfLedger> returnAvailabilityOfEntriesOfLedger =
                 new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
         MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
@@ -505,7 +504,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
     @Test
     public void testReplicasCheckForLedgersFoundHavingLessThanAQReplicasOfAnEntry() throws Exception {
         int numOfBookies = 5;
-        RegistrationManager regManager = driver.getRegistrationManager();
+        RegistrationManager regManager = driver.createRegistrationManager();
         MultiKeyMap<String, AvailabilityOfEntriesOfLedger> returnAvailabilityOfEntriesOfLedger =
                 new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
         MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
@@ -660,7 +659,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
     @Test
     public void testReplicasCheckForLedgersFoundHavingLessThanWQReplicasOfAnEntry() throws Exception {
         int numOfBookies = 5;
-        RegistrationManager regManager = driver.getRegistrationManager();
+        RegistrationManager regManager = driver.createRegistrationManager();
         MultiKeyMap<String, AvailabilityOfEntriesOfLedger> returnAvailabilityOfEntriesOfLedger =
                 new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
         MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
@@ -813,7 +812,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
     @Test
     public void testReplicasCheckForLedgersWithEmptySegments() throws Exception {
         int numOfBookies = 5;
-        RegistrationManager regManager = driver.getRegistrationManager();
+        RegistrationManager regManager = driver.createRegistrationManager();
         MultiKeyMap<String, AvailabilityOfEntriesOfLedger> returnAvailabilityOfEntriesOfLedger =
                 new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
         MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
