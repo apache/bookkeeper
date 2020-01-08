@@ -35,6 +35,7 @@ import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.meta.NullMetadataBookieDriver;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

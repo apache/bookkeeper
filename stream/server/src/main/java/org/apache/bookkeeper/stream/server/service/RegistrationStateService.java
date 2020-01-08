@@ -65,8 +65,8 @@ public class RegistrationStateService
             regManager = new ZKRegistrationManager(
                 bkServerConf,
                 regServiceProvider.getZkClient(),
-                regServiceProvider.getRegistrationPath(),
-                () -> {
+                regServiceProvider.getRegistrationPath());
+            regManager.addRegistrationListener(() -> {
                     if (null == stateManager) {
                         log.warn("Registration state manager is not initialized yet");
                         return;
@@ -79,7 +79,7 @@ public class RegistrationStateService
                 stateManager = new BookieStateManager(
                     bkServerConf,
                     statsLogger.scope("state"),
-                    () -> regManager,
+                    regManager,
                     Collections.emptyList(),
                     () -> BookieId.parse(NetUtils.endpointToString(myEndpoint)),
                     BookieServiceInfo.NO_INFO);

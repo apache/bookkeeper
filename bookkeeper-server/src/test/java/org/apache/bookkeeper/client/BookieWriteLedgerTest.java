@@ -1501,7 +1501,7 @@ public class BookieWriteLedgerTest extends
         ByteBuf localBuf;
 
         public CorruptReadBookie(ServerConfiguration conf)
-                throws IOException, KeeperException, InterruptedException, BookieException {
+                throws Exception {
             super(conf);
         }
 

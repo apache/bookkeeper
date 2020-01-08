@@ -20,9 +20,7 @@
  */
 package org.apache.bookkeeper.util;
 
-import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,21 +52,14 @@ public class PortManager {
     public static synchronized int nextFreePort() {
         int exceptionCount = 0;
         while (true) {
-            int port = nextPort++;
-            try (ServerSocket ignored = new ServerSocket(port)) {
-                // Give it some time to truly close the connection
-                TimeUnit.MILLISECONDS.sleep(100);
-                return port;
-            } catch (IOException ioe) {
+            try (ServerSocket ss = new ServerSocket(0)) {
+                return ss.getLocalPort();
+            } catch (Exception e) {
                 exceptionCount++;
                 if (exceptionCount > 100) {
-                    throw new RuntimeException("Unable to allocate socket port", ioe);
+                    throw new RuntimeException("Unable to allocate socket port", e);
                 }
-            } catch (InterruptedException ie) {
-                LOG.error("Failed to allocate socket port", ie);
-                Thread.currentThread().interrupt();
             }
         }
     }
-
 }

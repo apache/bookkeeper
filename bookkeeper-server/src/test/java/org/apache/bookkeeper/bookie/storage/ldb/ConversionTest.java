@@ -89,7 +89,9 @@ public class ConversionTest {
 
         InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
         interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
-                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+                                      NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        interleavedStorage.setCheckpointSource(checkpointSource);
+        interleavedStorage.setCheckpointer(checkpointer);
 
         // Insert some ledger & entries in the interleaved storage
         for (long ledgerId = 0; ledgerId < 5; ledgerId++) {
@@ -119,12 +121,16 @@ public class ConversionTest {
         // Verify that db index has the same entries
         DbLedgerStorage dbStorage = new DbLedgerStorage();
         dbStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
-                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+                             NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        dbStorage.setCheckpointer(checkpointer);
+        dbStorage.setCheckpointSource(checkpointSource);
 
         interleavedStorage = new InterleavedLedgerStorage();
         interleavedStorage.initialize(conf, null, ledgerDirsManager,
-                ledgerDirsManager, null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE,
+                ledgerDirsManager, NullStatsLogger.INSTANCE,
                 UnpooledByteBufAllocator.DEFAULT);
+        interleavedStorage.setCheckpointSource(checkpointSource);
+        interleavedStorage.setCheckpointer(checkpointer);
 
         Set<Long> ledgers = Sets.newTreeSet(dbStorage.getActiveLedgersInRange(0, Long.MAX_VALUE));
         Assert.assertEquals(Sets.newTreeSet(Lists.newArrayList(0L, 1L, 2L, 3L, 4L)), ledgers);

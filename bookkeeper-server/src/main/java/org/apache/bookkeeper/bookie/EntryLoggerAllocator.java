@@ -185,7 +185,7 @@ class EntryLoggerAllocator {
 
 
     private synchronized void closePreAllocateLog() {
-        if (preallocatedLogId != -1) {
+        if (preallocation != null) {
             // if preallocate new log success, release the file channel
             try {
                 BufferedLogChannel bufferedLogChannel = getPreallocationFuture().get(3, TimeUnit.SECONDS);

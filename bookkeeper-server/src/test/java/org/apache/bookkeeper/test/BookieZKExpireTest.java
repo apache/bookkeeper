@@ -25,12 +25,17 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.io.File;
 import java.util.HashSet;
 
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.util.PortManager;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Test;
 
 /**
@@ -50,7 +55,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
     public void testBookieServerZKExpireBehaviour() throws Exception {
         BookieServer server = null;
         try {
-            File f = createTempDir("bookieserver", "test");
+            File f = tmpDirs.createNew("bookieserver", "test");
 
             HashSet<Thread> threadset = new HashSet<Thread>();
             int threadCount = Thread.activeCount();
@@ -63,7 +68,9 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             }
 
             ServerConfiguration conf = newServerConfiguration(PortManager.nextFreePort(), f, new File[] { f });
-            server = new BookieServer(conf);
+            server = new BookieServer(
+                    conf, new TestBookieImpl(conf),
+                    NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
             server.start();
 
             int secondsToWait = 5;

@@ -35,6 +35,7 @@ import java.util.concurrent.Future;
 
 import lombok.Cleanup;
 
+import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -49,10 +50,12 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.server.http.service.BookieInfoService;
 import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,7 +75,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     public TestHttpService() {
         super(numberOfBookies);
         try {
-            File tmpDir = createTempDir("bookie_http", "test");
+            File tmpDir = tmpDirs.createNew("bookie_http", "test");
             baseConf.setJournalDirName(tmpDir.getPath())
               .setLedgerDirNames(
                 new String[]{tmpDir.getPath()});
@@ -88,9 +91,13 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         baseClientConf.setStoreSystemtimeAsLedgerCreationTime(true);
 
+        MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
+                baseConf, NullStatsLogger.INSTANCE);
+
         this.bkHttpServiceProvider = new BKHttpServiceProvider.Builder()
             .setBookieServer(serverByIndex(numberOfBookies - 1))
             .setServerConfiguration(baseConf)
+            .setLedgerManagerFactory(metadataDriver.getLedgerManagerFactory())
             .build();
     }
 

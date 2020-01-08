@@ -64,6 +64,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerAuditorManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
@@ -1231,7 +1232,8 @@ public class BookKeeperAdmin implements AutoCloseable {
             boolean isInteractive, boolean force) throws Exception {
         return runFunctionWithMetadataBookieDriver(conf, driver -> {
             try {
-                boolean ledgerRootExists = driver.getRegistrationManager().prepareFormat();
+                RegistrationManager regManager = driver.createRegistrationManager();
+                boolean ledgerRootExists = regManager.prepareFormat();
 
                 // If old data was there then confirm with admin.
                 boolean doFormat = true;
@@ -1256,7 +1258,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                     conf,
                     driver.getLayoutManager());
 
-                return driver.getRegistrationManager().format();
+                return regManager.format();
             } catch (Exception e) {
                 throw new UncheckedExecutionException(e.getMessage(), e);
             }

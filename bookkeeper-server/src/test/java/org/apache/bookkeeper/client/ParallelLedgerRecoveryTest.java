@@ -518,7 +518,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                 new LinkedBlockingQueue<WriteCallbackEntry>();
 
         public DelayResponseBookie(ServerConfiguration conf)
-                throws IOException, KeeperException, InterruptedException, BookieException {
+                throws Exception {
             super(conf);
         }
 

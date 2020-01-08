@@ -18,8 +18,9 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
-
+import java.io.IOException;
 import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LogMark;
@@ -50,18 +51,22 @@ public class LastMarkCommand extends BookieCommand<CliFlags> {
 
     @Override
     public boolean apply(ServerConfiguration conf, CliFlags flags) {
-        LedgerDirsManager dirsManager = new LedgerDirsManager(
-            conf, conf.getLedgerDirs(),
-            new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        File[] journalDirs = conf.getJournalDirs();
+        try {
+            LedgerDirsManager dirsManager = new LedgerDirsManager(
+                    conf, conf.getLedgerDirs(),
+                    new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+            File[] journalDirs = conf.getJournalDirs();
 
-        for (int idx = 0; idx < journalDirs.length; idx++) {
-            Journal journal = new Journal(idx, journalDirs[idx], conf, dirsManager);
-            LogMark lastLogMark = journal.getLastLogMark().getCurMark();
-            LOG.info("LastLogMark : Journal Id - " + lastLogMark.getLogFileId() + "("
-                + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
-                + lastLogMark.getLogFileOffset());
+            for (int idx = 0; idx < journalDirs.length; idx++) {
+                Journal journal = new Journal(idx, journalDirs[idx], conf, dirsManager);
+                LogMark lastLogMark = journal.getLastLogMark().getCurMark();
+                LOG.info("LastLogMark : Journal Id - " + lastLogMark.getLogFileId() + "("
+                                   + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
+                                   + lastLogMark.getLogFileOffset());
+            }
+            return true;
+        } catch (IOException e) {
+            throw new UncheckedExecutionException(e.getMessage(), e);
         }
-        return true;
     }
 }

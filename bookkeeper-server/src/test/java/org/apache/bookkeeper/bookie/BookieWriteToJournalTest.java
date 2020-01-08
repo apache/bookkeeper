@@ -41,6 +41,8 @@ import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.meta.NullMetadataBookieDriver;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.Rule;
@@ -66,7 +68,7 @@ public class BookieWriteToJournalTest {
     class NoOpJournalReplayBookie extends TestBookieImpl {
 
         public NoOpJournalReplayBookie(ServerConfiguration conf)
-                throws IOException, InterruptedException, BookieException {
+                throws Exception {
             super(conf);
         }
 
