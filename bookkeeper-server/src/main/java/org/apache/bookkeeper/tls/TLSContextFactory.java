@@ -298,7 +298,9 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                     || tlsKeyStorePasswordFilePath.checkAndRefresh() || tlsTrustStoreFilePath.checkAndRefresh()
                     || tlsTrustStorePasswordFilePath.checkAndRefresh()) {
                 try {
-                    LOG.info("Updating tls certs");
+                    LOG.info("Updating tls certs certFile={}, keyStoreFile={}, trustStoreFile={}",
+                            tlsCertificateFilePath.getFileName(), tlsKeyStoreFilePath.getFileName(),
+                            tlsTrustStoreFilePath.getFileName());
                     if (isServerCtx) {
                         updateServerContext();
                     } else {

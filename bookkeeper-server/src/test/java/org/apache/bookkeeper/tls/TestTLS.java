@@ -43,7 +43,6 @@ import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -411,44 +410,44 @@ public class TestTLS extends BookKeeperClusterTestCase {
         clientConf.setTLSCertificatePath(newTlsCertFile.getAbsolutePath());
 
         // create a bookkeeper-client
-        BookKeeper client = new BookKeeper(clientConf);
-        byte[] testEntry = "testEntry".getBytes();
-        byte[] passwd = "testPassword".getBytes();
-        int totalAddEntries = 1;
-        CountDownLatch latch = new CountDownLatch(totalAddEntries);
-        AtomicInteger result = new AtomicInteger(-1);
-        LedgerHandle lh = client.createLedger(1, 1, DigestType.CRC32, passwd);
+        try (BookKeeper client = new BookKeeper(clientConf)) {
+            byte[] testEntry = "testEntry".getBytes();
+            byte[] passwd = "testPassword".getBytes();
+            int totalAddEntries = 1;
+            CountDownLatch latch = new CountDownLatch(totalAddEntries);
+            AtomicInteger result = new AtomicInteger(-1);
+            LedgerHandle lh = client.createLedger(1, 1, DigestType.CRC32, passwd);
 
-        for (int i = 0; i <= totalAddEntries; i++) {
-            lh.asyncAddEntry(testEntry, (rc, lgh, entryId, ctx) -> {
-                result.set(rc);
-                latch.countDown();
-            }, null);
+            for (int i = 0; i <= totalAddEntries; i++) {
+                lh.asyncAddEntry(testEntry, (rc, lgh, entryId, ctx) -> {
+                    result.set(rc);
+                    latch.countDown();
+                }, null);
+            }
+            latch.await(1, TimeUnit.SECONDS);
+            Assert.assertNotEquals(result.get(), BKException.Code.OK);
+
+            // Sleep so, cert file can be refreshed
+            Thread.sleep(refreshDurationInSec * 1000 + 1000);
+
+            // copy valid key-file at given new location
+            FileUtils.copyFile(originalTlsCertFile, newTlsCertFile);
+            newTlsCertFile.setLastModified(System.currentTimeMillis() + 1000);
+            // client should be successfully able to add entries over tls
+            CountDownLatch latchWithValidCert = new CountDownLatch(totalAddEntries);
+            AtomicInteger validCertResult = new AtomicInteger(-1);
+            lh = client.createLedger(1, 1, DigestType.CRC32, passwd);
+            for (int i = 0; i <= totalAddEntries; i++) {
+                lh.asyncAddEntry(testEntry, (rc, lgh, entryId, ctx) -> {
+                    validCertResult.set(rc);
+                    latchWithValidCert.countDown();
+                }, null);
+            }
+            latchWithValidCert.await(1, TimeUnit.SECONDS);
+            Assert.assertEquals(validCertResult.get(), BKException.Code.OK);
+            newTlsCertFile.delete();
         }
-        latch.await(1, TimeUnit.SECONDS);
-        Assert.assertNotEquals(result.get(), BKException.Code.OK);
-    
-
-        // Sleep so, cert file can be refreshed
-        Thread.sleep(refreshDurationInSec * 1000 + 1000);
-
-        // copy valid key-file at given new location
-        FileUtils.copyFile(originalTlsCertFile, newTlsCertFile);
-        newTlsCertFile.setLastModified(System.currentTimeMillis() + 1000);
-        // client should be successfully able to add entries over tls
-        CountDownLatch latchWithValidCert = new CountDownLatch(totalAddEntries);
-        AtomicInteger validCertResult = new AtomicInteger(-1);
-        lh = client.createLedger(1, 1, DigestType.CRC32, passwd);
-        for (int i = 0; i <= totalAddEntries; i++) {
-            lh.asyncAddEntry(testEntry, (rc, lgh, entryId, ctx) -> {
-                validCertResult.set(rc);
-                latchWithValidCert.countDown();
-            }, null);
-        }
-        latchWithValidCert.await(1, TimeUnit.SECONDS);
-        Assert.assertEquals(validCertResult.get(), BKException.Code.OK);
-        newTlsCertFile.delete();
-        client.close();}
+    }
 
     /**
      * Multiple clients, some with TLS, and some without TLS.
