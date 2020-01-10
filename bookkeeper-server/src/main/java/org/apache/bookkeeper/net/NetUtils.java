@@ -35,7 +35,8 @@ import org.slf4j.LoggerFactory;
  */
 public class NetUtils {
     private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
-    private final static String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";    public final static String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
+    private final static String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])"
+            + "(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
     /**
      * Given a string representation of a host, return its ip address
      * in textual presentation.
