@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  */
 public class NetUtils {
     private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
-
+    private final static String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";    public final static String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
     /**
      * Given a string representation of a host, return its ip address
      * in textual presentation.
@@ -85,25 +85,16 @@ public class NetUtils {
         return rNames.get(0);
     }
 
-   public static String getLocalHost() throws UnknownHostException {
-        try {
-            String ip = InetAddress.getLocalHost().getHostAddress();
-            if (ip.equals("127.0.0.1")) {
-                return getAddress();
-            } else
-                return ip;
-        } catch (Throwable e) {
-            String ip = getAddress();
-            if (ip != null && !ip.isEmpty()) {
-                return ip;
-            }
-            throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException,"
-                    + e.getMessage());
-        }
+    public static String getLocalHost() throws UnknownHostException {
+        String ip = InetAddress.getLocalHost().getHostAddress();
+        if (ip.equals("127.0.0.1")) {
+            return getAddress();
+        } else
+            return ip;
+        
     }
     
     private static boolean isboolIp(String ipAddress) {
-        String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
         Pattern pattern = Pattern.compile(ip);
         Matcher matcher = pattern.matcher(ipAddress);
         return matcher.matches();
@@ -133,4 +124,5 @@ public class NetUtils {
         }
         
     }
+
 }
