@@ -32,37 +32,102 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ComponentInfoPublisher {
 
-    private final Map<String, String> allInfo = new ConcurrentHashMap<>();
+    private final Map<String, String> properties = new ConcurrentHashMap<>();
+    private final Map<String, EndpointInfo> endpoints = new ConcurrentHashMap<>();
+
+    public static final class EndpointInfo {
+
+        private final String id;
+        private final int port;
+        private final String host;
+        private final String protocol;
+        private final String[] auth;
+        private final String[] extensions;
+
+        public EndpointInfo(String id, int port, String host, String protocol, String[] auth, String[] extensions) {
+            this.id = id;
+            this.port = port;
+            this.host = host;
+            this.protocol = protocol;
+            this.auth = auth;
+            this.extensions = extensions;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public String getProtocol() {
+            return protocol;
+        }
+
+        public String[] getAuth() {
+            return auth;
+        }
+
+        public String[] getExtensions() {
+            return extensions;
+        }
+
+        @Override
+        public String toString() {
+            return "EndpointInfo{" + "id=" + id + ", port=" + port + ", host=" + host + ", protocol=" + protocol + ", auth=" + auth + ", extensions=" + extensions + '}';
+        }
+
+    }
+
     private volatile boolean startupFinished;
-    
+
     /**
      * Publish an information about the system, like an endpoint address.
      *
      * @param key the key
      * @param value  the value, null values are not allowed.
      */
-    public void publish(String key, String value) {
+    public void publishProperty(String key, String value) {
         log.info("publish {}={}", key, value);
         if (startupFinished) {
             throw new IllegalStateException("Server already started, cannot publish "+key);
         }
         Objects.requireNonNull(key);
         Objects.requireNonNull(value, "Value for "+key+" cannot be null");
-        
-        allInfo.put(key, value);
+
+        properties.put(key, value);
     }
-    
-    public Map<String, String> getInfo() {
-        log.info("getInfo {}", allInfo);
+
+    public void publishEndpoint(EndpointInfo endpoint) {
+        log.info("publishEndpoint {}", endpoint);
+        EndpointInfo exists = endpoints.put(endpoint.id, endpoint);
+        if (exists != null) {
+            throw new IllegalStateException("An endpoint with id "+endpoint.id+" has already been published: "+exists);
+        }
+    }
+
+    public Map<String, String> getProperties() {
         if (!startupFinished) {
             throw new IllegalStateException("Startup not yet finished");
         }
-        return Collections.unmodifiableMap(allInfo);
+        return Collections.unmodifiableMap(properties);
     }
-    
+
+    public Map<String, EndpointInfo> getEndpoints() {
+        if (!startupFinished) {
+            throw new IllegalStateException("Startup not yet finished");
+        }
+        return Collections.unmodifiableMap(endpoints);
+    }
+
     public void startupFinished() {
         log.info("startupFinished");
         startupFinished = true;
     }
-    
+
 }

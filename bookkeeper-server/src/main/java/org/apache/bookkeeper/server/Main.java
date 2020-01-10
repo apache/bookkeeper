@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ScrubberStats;
@@ -297,17 +298,8 @@ public class Main {
     public static LifecycleComponentStack buildBookieServer(BookieConfiguration conf) throws Exception {
 
         final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
-        final Supplier<BookieServiceInfo> bookieServiceInfoProvider = () -> new BookieServiceInfo() {
-            @Override
-            public Iterator<String> keys() {
-                return componentInfoPublisher.getInfo().keySet().iterator();
-            }
 
-            @Override
-            public String get(String key, String defaultValue) {
-                return componentInfoPublisher.getInfo().getOrDefault(key, defaultValue);
-            }
-        };
+        final Supplier<BookieServiceInfo> bookieServiceInfoProvider = () -> buildBookieServiceInfo(componentInfoPublisher);
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack
                 .newBuilder()
                 .withName("bookie-server");
@@ -378,6 +370,18 @@ public class Main {
         }
 
         return serverBuilder.build();
+    }
+
+    private static BookieServiceInfo buildBookieServiceInfo(ComponentInfoPublisher componentInfoPublisher) {
+        List<BookieServiceInfo.Endpoint> endpoints = componentInfoPublisher
+                .getEndpoints()
+                .values()
+                .stream()
+                .map(e -> {
+                    return  new BookieServiceInfo.Endpoint(e.getId(), e.getPort(), e.getHost(), e.getProtocol(), e.getAuth(), e.getExtensions());
+                })
+                .collect(Collectors.toList());
+        return new BookieServiceInfo(componentInfoPublisher.getProperties(), endpoints);
     }
 
 }

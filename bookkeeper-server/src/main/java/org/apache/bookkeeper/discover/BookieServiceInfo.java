@@ -15,50 +15,114 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.bookkeeper.discover;
 
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
  * Information about services exposed by a Bookie.
  */
-public interface BookieServiceInfo {
+public final class BookieServiceInfo {
 
     /**
      * Default empty implementation.
      */
-    BookieServiceInfo EMPTY = new BookieServiceInfo() {
-        @Override
-        public Iterator<String> keys() {
-            return Collections.emptyIterator();
-        }
-
-        @Override
-        public String get(String key, String defaultValue) {
-            return defaultValue;
-        }
-    };
+    public static final BookieServiceInfo EMPTY = new BookieServiceInfo(Collections.emptyMap(), Collections.emptyList());
 
     /**
      * Default empty implementation.
      */
-    Supplier<BookieServiceInfo> NO_INFO = () -> EMPTY;
+    public static final Supplier<BookieServiceInfo> NO_INFO = () -> EMPTY;
+
+    private Map<String, String> properties;
+    private List<Endpoint> endpoints;
+
+    public BookieServiceInfo(Map<String, String> properties, List<Endpoint> endpoints) {
+        this.properties = Collections.unmodifiableMap(properties);
+        this.endpoints = Collections.unmodifiableList(endpoints);
+    }
+
+    public BookieServiceInfo() {
+    }
 
     /**
-     * List all available entries.
-     * Remove operation is not supported.
-     * @return an iterator over the available keys.
+     * Unmodifiable map with bookie wide information.
+     *
+     * @return the map
      */
-    Iterator<String> keys();
+    public Map<String, String> getProperties() {
+        return properties;
+    }
 
     /**
-     * Return an entry, if the entry is not present the default value will be returned.
-     * @param key the key
-     * @param defaultValue the default value
-     * @return the current mapping, if there is no mapping for key the defaultValue will be returned
+     * Unmodifieable structure with the list of exposed endpoints.
+     *
+     * @return the list.
      */
-    String get(String key, String defaultValue);
+    public List<Endpoint> getEndpoints() {
+        return endpoints;
+    }
+
+    public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
+    }
+
+    public void setEndpoints(List<Endpoint> endpoints) {
+        this.endpoints = endpoints;
+    }
+
+    /**
+     * Information about an endpoint.
+     */
+    public static final class Endpoint {
+
+        private final String id;
+        private final int port;
+        private final String host;
+        private final String protocol;
+        private final String[] auth;
+        private final String[] extensions;
+
+        public Endpoint(String id, int port, String host, String protocol, String[] auth, String[] extensions) {
+            this.id = id;
+            this.port = port;
+            this.host = host;
+            this.protocol = protocol;
+            this.auth = auth;
+            this.extensions = extensions;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public String getProtocol() {
+            return protocol;
+        }
+
+        public String[] getAuth() {
+            return auth;
+        }
+
+        public String[] getExtensions() {
+            return extensions;
+        }
+
+        @Override
+        public String toString() {
+            return "EndpointInfo{" + "id=" + id + ", port=" + port + ", host=" + host + ", protocol=" + protocol + ", auth=" + auth + ", extensions=" + extensions + '}';
+        }
+
+    }
 }

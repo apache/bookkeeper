@@ -68,8 +68,10 @@ public class HttpService extends ServerLifecycleComponent {
     @Override
     public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
         if (conf.getServerConf().isHttpServerEnabled()) {
-            componentInfoPublisher.publish("bookie.http.server.port",
-                    Integer.toString(conf.getServerConf().getHttpServerPort()));
+            ComponentInfoPublisher.EndpointInfo endpoint
+                    = new ComponentInfoPublisher.EndpointInfo("httpserver", conf.getServerConf().getHttpServerPort(),
+                            "0.0.0.0", "http", null, null);
+            componentInfoPublisher.publishEndpoint(endpoint);
         }
     }
 

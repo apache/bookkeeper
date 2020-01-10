@@ -253,27 +253,15 @@ public class ZKRegistrationClient implements RegistrationClient {
 
     @SuppressWarnings("unchecked")
     private static BookieServiceInfo deserializeBookieService(byte[] bookieServiceInfo) {
-        Map<String, String> map = Collections.emptyMap();
         if (bookieServiceInfo != null && bookieServiceInfo.length > 0) {
             try {
-                map = Collections.unmodifiableMap(MAPPER.readValue(bookieServiceInfo, Map.class));
+                return MAPPER.readValue(bookieServiceInfo, BookieServiceInfo.class);
             } catch (IOException err) {
                 log.error("Cannot deserialize bookieServiceInfo from "
-                        + new String(bookieServiceInfo, StandardCharsets.US_ASCII), err);
+                        + new String(bookieServiceInfo, StandardCharsets.UTF_8), err);
             }
         }
-        final Map<String, String> mapFinal = map;
-        return new BookieServiceInfo() {
-            @Override
-            public Iterator<String> keys() {
-                return mapFinal.keySet().iterator();
-            }
-
-            @Override
-            public String get(String key, String defaultValue) {
-                return mapFinal.getOrDefault(key, defaultValue);
-            }
-        };
+        return BookieServiceInfo.EMPTY;
     }
 
 

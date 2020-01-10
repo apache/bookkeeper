@@ -82,8 +82,20 @@ public class BookieService extends ServerLifecycleComponent {
     public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
         try {
             BookieSocketAddress localAddress = getServer().getLocalAddress();
-            componentInfoPublisher.publish("bookie.port", Integer.toString(localAddress.getPort()));
-            componentInfoPublisher.publish("bookie.host", localAddress.getHostName());
+            componentInfoPublisher.publishProperty("bookie.port", Integer.toString(localAddress.getPort()));
+            componentInfoPublisher.publishProperty("bookie.host", localAddress.getHostName());
+
+            String[] extensions;
+            if (conf.getServerConf().getTLSProviderFactoryClass() != null) {
+                extensions = new String[] {"tls"};
+            } else {
+                extensions = null;
+            }
+            ComponentInfoPublisher.EndpointInfo endpoint
+                    = new ComponentInfoPublisher.EndpointInfo("bookie", localAddress.getPort(),
+                            localAddress.getHostName(), "bookie-rpc", null, extensions);
+            componentInfoPublisher.publishEndpoint(endpoint);
+
         } catch (UnknownHostException err) {
             log.error("Cannot compute local address", err);
         }
