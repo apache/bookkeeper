@@ -85,4 +85,52 @@ public class NetUtils {
         return rNames.get(0);
     }
 
+   public static String getLocalHost() throws UnknownHostException {
+        try {
+            String ip = InetAddress.getLocalHost().getHostAddress();
+            if (ip.equals("127.0.0.1")) {
+                return getAddress();
+            } else
+                return ip;
+        } catch (Throwable e) {
+            String ip = getAddress();
+            if (ip != null && !ip.isEmpty()) {
+                return ip;
+            }
+            throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException,"
+                    + e.getMessage());
+        }
+    }
+    
+    private static boolean isboolIp(String ipAddress) {
+        String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
+        Pattern pattern = Pattern.compile(ip);
+        Matcher matcher = pattern.matcher(ipAddress);
+        return matcher.matches();
+    }
+    
+    private static String getAddress() throws UnknownHostException {
+        try {
+            for (Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces(); interfaces.hasMoreElements();) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+                if (networkInterface.isLoopback() || networkInterface.isVirtual() || !networkInterface.isUp()) {
+                    continue;
+                }
+                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                if (addresses.hasMoreElements()) {
+                    while (addresses.hasMoreElements()) {
+                        String ip = addresses.nextElement().getHostAddress();
+                        if (isboolIp(ip)) {
+                            return ip;
+                        }
+                    }
+                }
+            }
+            throw new RuntimeException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException");
+        } catch (Throwable e) {
+            throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException,"
+                    + e.getMessage());
+        }
+        
+    }
 }

@@ -56,6 +56,7 @@ import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NetworkTopologyImpl;
 import org.apache.bookkeeper.net.Node;
@@ -203,7 +204,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         BookieNode bn = null;
         if (!ignoreLocalNodeInPlacementPolicy) {
             try {
-                bn = createBookieNode(new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0));
+                bn = createBookieNode(new BookieSocketAddress(NetUtils.getLocalHost(), 0));
             } catch (UnknownHostException e) {
                 LOG.error("Failed to get local host address : ", e);
             }

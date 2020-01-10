@@ -40,6 +40,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
 
@@ -64,7 +65,7 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
         conf.setProperty(REPP_DNS_RESOLVER_CLASS, StaticDNSResolver.class.getName());
 
         StaticDNSResolver.reset();
-        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(),
+        StaticDNSResolver.addNodeToRack(NetUtils.getLocalHost(),
                 NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack("127.0.0.1", NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_REGION_AND_RACK);

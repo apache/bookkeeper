@@ -48,6 +48,7 @@ import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StaticDNSResolver;
@@ -70,10 +71,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     HashedWheelTimer timer;
 
     static void updateMyRack(String rack) throws Exception {
-        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), rack);
+        StaticDNSResolver.addNodeToRack(NetUtils.getLocalHost(), rack);
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostName(), rack);
         BookieSocketAddress bookieAddress = new BookieSocketAddress(
-            InetAddress.getLocalHost().getHostAddress(), 0);
+            NetUtils.getLocalHost(), 0);
         StaticDNSResolver.addNodeToRack(bookieAddress.getSocketAddress().getHostName(), rack);
         StaticDNSResolver.addNodeToRack(bookieAddress.getSocketAddress().getAddress().getHostAddress(), rack);
         StaticDNSResolver.addNodeToRack("127.0.0.1", rack);

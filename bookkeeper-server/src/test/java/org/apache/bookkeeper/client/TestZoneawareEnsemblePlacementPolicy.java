@@ -46,6 +46,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.junit.Test;
@@ -70,7 +71,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         StaticDNSResolver.reset();
-        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(),
+        StaticDNSResolver.addNodeToRack(NetUtils.getLocalHost(),
                 NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
         StaticDNSResolver.addNodeToRack("127.0.0.1", NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
         StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
@@ -125,7 +126,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
     }
 
     static void updateMyUpgradeDomain(String zoneAndUD) throws Exception {
-        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), zoneAndUD);
+        StaticDNSResolver.addNodeToRack(NetUtils.getLocalHost(), zoneAndUD);
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostName(), zoneAndUD);
         StaticDNSResolver.addNodeToRack("127.0.0.1", zoneAndUD);
         StaticDNSResolver.addNodeToRack("localhost", zoneAndUD);

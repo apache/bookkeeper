@@ -49,6 +49,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.Node;
+import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
@@ -78,7 +79,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         StaticDNSResolver.reset();
-        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(),
+        StaticDNSResolver.addNodeToRack(NetUtils.getLocalHost(),
                 NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack("127.0.0.1", NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_REGION_AND_RACK);
@@ -136,7 +137,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     }
 
     static void updateMyRack(String rack) throws Exception {
-        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), rack);
+        StaticDNSResolver.addNodeToRack(NetUtils.getLocalHost(), rack);
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostName(), rack);
         StaticDNSResolver.addNodeToRack("127.0.0.1", rack);
         StaticDNSResolver.addNodeToRack("localhost", rack);
