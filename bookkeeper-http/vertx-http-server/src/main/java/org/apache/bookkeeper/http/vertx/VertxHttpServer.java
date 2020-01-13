@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
+import io.vertx.ext.web.handler.BodyHandler;
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServiceProvider;
@@ -66,6 +67,7 @@ public class VertxHttpServer implements HttpServer {
         CompletableFuture<AsyncResult<io.vertx.core.http.HttpServer>> future = new CompletableFuture<>();
         VertxHttpHandlerFactory handlerFactory = new VertxHttpHandlerFactory(httpServiceProvider);
         Router router = Router.router(vertx);
+        router.route().handler(BodyHandler.create());
         HttpRouter<VertxAbstractHandler> requestRouter = new HttpRouter<VertxAbstractHandler>(handlerFactory) {
             @Override
             public void bindHandler(String endpoint, VertxAbstractHandler handler) {
