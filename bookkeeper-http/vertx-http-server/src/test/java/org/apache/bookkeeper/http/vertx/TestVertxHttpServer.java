@@ -110,7 +110,7 @@ public class TestVertxHttpServer {
         if (body != "") {
             con.setDoOutput(true);
             con.setFixedLengthStreamingMode(body.length());
-            OutputStream outputStream  = con.getOutputStream();;
+            OutputStream outputStream = con.getOutputStream();
             outputStream.write(body.getBytes(StandardCharsets.UTF_8));
             outputStream.flush();
         }
