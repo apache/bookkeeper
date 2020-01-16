@@ -23,7 +23,8 @@ on:
   pull_request:
     branches:
       - master
-
+    paths-ignore:
+      - 'site/**'
 
 jobs:
   check:
