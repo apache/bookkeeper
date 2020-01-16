@@ -54,8 +54,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Test a synchronization thread.
  */
-public class TestSyncThread {
-    private static final Logger LOG = LoggerFactory.getLogger(TestSyncThread.class);
+public class SyncThreadTest {
+    private static final Logger LOG = LoggerFactory.getLogger(SyncThreadTest.class);
 
     ExecutorService executor = null;
 

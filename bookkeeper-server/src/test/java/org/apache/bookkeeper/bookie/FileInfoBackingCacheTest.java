@@ -55,14 +55,14 @@ import org.junit.Test;
  * Tests for FileInfoBackingCache.
  */
 @Slf4j
-public class TestFileInfoBackingCache {
+public class FileInfoBackingCacheTest {
     final byte[] masterKey = new byte[0];
     final File baseDir;
     final ThreadFactory threadFactory = new ThreadFactoryBuilder()
         .setNameFormat("backing-cache-test-%d").setDaemon(true).build();
     ExecutorService executor;
 
-    public TestFileInfoBackingCache() throws Exception {
+    public FileInfoBackingCacheTest() throws Exception {
         baseDir = File.createTempFile("foo", "bar");
     }
 
