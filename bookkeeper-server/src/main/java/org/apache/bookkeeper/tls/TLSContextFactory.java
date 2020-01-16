@@ -83,8 +83,8 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     private volatile SslContext sslContext;
     private ByteBufAllocator allocator;
     private AbstractConfiguration config;
-    private FileModifiedTimeUpdater tTLSCertificatePath, tLSKeyStoreFilePath, tLSKeyStorePasswordFilePath,
-            tLSTrustStoreFilePath, tLSTrustStorePasswordFilePath;
+    private FileModifiedTimeUpdater tlsCertificateFilePath, tlsKeyStoreFilePath, tlsKeyStorePasswordFilePath,
+            tlsTrustStoreFilePath, tlsTrustStorePasswordFilePath;
     private long certRefreshTime;
     private volatile long certLastRefreshTime;
     private boolean isServerCtx;
@@ -183,6 +183,16 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     private void createClientContext()
             throws SecurityException, KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
             UnrecoverableKeyException, InvalidKeySpecException, NoSuchProviderException {
+        ClientConfiguration clientConf = (ClientConfiguration) config;
+        markAutoCertRefresh(clientConf.getTLSCertificatePath(), clientConf.getTLSKeyStore(),
+                clientConf.getTLSKeyStorePasswordPath(), clientConf.getTLSTrustStore(),
+                clientConf.getTLSTrustStorePasswordPath());
+        updateClientContext();
+    }
+
+    private synchronized void updateClientContext()
+            throws SecurityException, KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
+            UnrecoverableKeyException, InvalidKeySpecException, NoSuchProviderException {
         final SslContextBuilder sslContextBuilder;
         final ClientConfiguration clientConf;
         final SslProvider provider;
@@ -267,29 +277,35 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         }
 
         sslContext = sslContextBuilder.build();
+        certLastRefreshTime = System.currentTimeMillis();
     }
 
     private void createServerContext()
             throws SecurityException, KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
             UnrecoverableKeyException, InvalidKeySpecException, IllegalArgumentException {
         isServerCtx = true;
-        ServerConfiguration serverConf = (ServerConfiguration) config;
-        tTLSCertificatePath = new FileModifiedTimeUpdater(serverConf.getTLSCertificatePath());
-        tLSKeyStoreFilePath = new FileModifiedTimeUpdater(serverConf.getTLSKeyStore());
-        tLSKeyStorePasswordFilePath = new FileModifiedTimeUpdater(serverConf.getTLSKeyStorePasswordPath());
-        tLSTrustStoreFilePath = new FileModifiedTimeUpdater(serverConf.getTLSTrustStore());
-        tLSTrustStorePasswordFilePath = new FileModifiedTimeUpdater(serverConf.getTLSTrustStorePasswordPath());
+        ServerConfiguration clientConf = (ServerConfiguration) config;
+        markAutoCertRefresh(clientConf.getTLSCertificatePath(), clientConf.getTLSKeyStore(),
+                clientConf.getTLSKeyStorePasswordPath(), clientConf.getTLSTrustStore(),
+                clientConf.getTLSTrustStorePasswordPath());
         updateServerContext();
     }
 
     private synchronized SslContext getSSLContext() {
         long now = System.currentTimeMillis();
-        if (isServerCtx && (certRefreshTime > 0 && now > (certLastRefreshTime + certRefreshTime))) {
-            if (tTLSCertificatePath.checkAndRefresh() || tLSKeyStoreFilePath.checkAndRefresh()
-                    || tLSKeyStorePasswordFilePath.checkAndRefresh() || tLSTrustStoreFilePath.checkAndRefresh()
-                    || tLSTrustStorePasswordFilePath.checkAndRefresh()) {
+        if ((certRefreshTime > 0 && now > (certLastRefreshTime + certRefreshTime))) {
+            if (tlsCertificateFilePath.checkAndRefresh() || tlsKeyStoreFilePath.checkAndRefresh()
+                    || tlsKeyStorePasswordFilePath.checkAndRefresh() || tlsTrustStoreFilePath.checkAndRefresh()
+                    || tlsTrustStorePasswordFilePath.checkAndRefresh()) {
                 try {
-                    updateServerContext();
+                    LOG.info("Updating tls certs certFile={}, keyStoreFile={}, trustStoreFile={}",
+                            tlsCertificateFilePath.getFileName(), tlsKeyStoreFilePath.getFileName(),
+                            tlsTrustStoreFilePath.getFileName());
+                    if (isServerCtx) {
+                        updateServerContext();
+                    } else {
+                        updateClientContext();
+                    }
                 } catch (Exception e) {
                     LOG.info("Failed to refresh tls certs", e);
                 }
@@ -457,5 +473,14 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         }
 
         return sslHandler;
+    }
+
+    private void markAutoCertRefresh(String tlsCertificatePath, String tlsKeyStore, String tlsKeyStorePasswordPath,
+            String tlsTrustStore, String tlsTrustStorePasswordPath) {
+        tlsCertificateFilePath = new FileModifiedTimeUpdater(tlsCertificatePath);
+        tlsKeyStoreFilePath = new FileModifiedTimeUpdater(tlsKeyStore);
+        tlsKeyStorePasswordFilePath = new FileModifiedTimeUpdater(tlsKeyStorePasswordPath);
+        tlsTrustStoreFilePath = new FileModifiedTimeUpdater(tlsTrustStore);
+        tlsTrustStorePasswordFilePath = new FileModifiedTimeUpdater(tlsTrustStorePasswordPath);
     }
 }

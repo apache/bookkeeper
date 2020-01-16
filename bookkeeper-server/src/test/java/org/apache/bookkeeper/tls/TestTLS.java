@@ -36,6 +36,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
@@ -384,6 +386,67 @@ public class TestTLS extends BookKeeperClusterTestCase {
         // client should be successfully able to add entries over tls
         testClient(clientConf, numBookies);
         newTlsKeyFile.delete();
+    }
+
+    /**
+     * Verify Bookkeeper-client refreshes certs at configured duration.
+     */
+    @Test
+    public void testRefreshDurationForBookkeeperClientCerts() throws Exception {
+        Assume.assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
+
+        ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
+        String originalTlsCertFilePath = baseClientConf.getTLSCertificatePath();
+        String invalidClientCert = getResourcePath("server-cert.pem");
+        File originalTlsCertFile = new File(originalTlsCertFilePath);
+        File newTlsCertFile = IOUtils.createTempFileAndDeleteOnExit(originalTlsCertFilePath, "refresh");
+        // clean up temp file even if test fails
+        newTlsCertFile.deleteOnExit();
+        File invalidClientCertFile = new File(invalidClientCert);
+        // copy invalid cert to new temp file
+        FileUtils.copyFile(invalidClientCertFile, newTlsCertFile);
+        long refreshDurationInSec = 2;
+        clientConf.setTLSCertFilesRefreshDurationSeconds(1);
+        clientConf.setTLSCertificatePath(newTlsCertFile.getAbsolutePath());
+
+        // create a bookkeeper-client
+        try (BookKeeper client = new BookKeeper(clientConf)) {
+            byte[] testEntry = "testEntry".getBytes();
+            byte[] passwd = "testPassword".getBytes();
+            int totalAddEntries = 1;
+            CountDownLatch latch = new CountDownLatch(totalAddEntries);
+            AtomicInteger result = new AtomicInteger(-1);
+            LedgerHandle lh = client.createLedger(1, 1, DigestType.CRC32, passwd);
+
+            for (int i = 0; i <= totalAddEntries; i++) {
+                lh.asyncAddEntry(testEntry, (rc, lgh, entryId, ctx) -> {
+                    result.set(rc);
+                    latch.countDown();
+                }, null);
+            }
+            latch.await(1, TimeUnit.SECONDS);
+            Assert.assertNotEquals(result.get(), BKException.Code.OK);
+
+            // Sleep so, cert file can be refreshed
+            Thread.sleep(refreshDurationInSec * 1000 + 1000);
+
+            // copy valid key-file at given new location
+            FileUtils.copyFile(originalTlsCertFile, newTlsCertFile);
+            newTlsCertFile.setLastModified(System.currentTimeMillis() + 1000);
+            // client should be successfully able to add entries over tls
+            CountDownLatch latchWithValidCert = new CountDownLatch(totalAddEntries);
+            AtomicInteger validCertResult = new AtomicInteger(-1);
+            lh = client.createLedger(1, 1, DigestType.CRC32, passwd);
+            for (int i = 0; i <= totalAddEntries; i++) {
+                lh.asyncAddEntry(testEntry, (rc, lgh, entryId, ctx) -> {
+                    validCertResult.set(rc);
+                    latchWithValidCert.countDown();
+                }, null);
+            }
+            latchWithValidCert.await(1, TimeUnit.SECONDS);
+            Assert.assertEquals(validCertResult.get(), BKException.Code.OK);
+            newTlsCertFile.delete();
+        }
     }
 
     /**
