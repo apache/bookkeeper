@@ -192,7 +192,8 @@ public class StorageServer {
         final Supplier<BookieServiceInfo> bookieServiceInfoProvider = () -> buildBookieServiceInfo(componentInfoPublisher);
         
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder()
-            .withName("storage-server");
+            .withName("storage-server")
+            .withComponentInfoPublisher(componentInfoPublisher);
 
         BookieConfiguration bkConf = BookieConfiguration.of(conf);
         bkConf.validate();

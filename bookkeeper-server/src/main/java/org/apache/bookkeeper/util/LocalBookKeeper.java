@@ -266,6 +266,7 @@ public class LocalBookKeeper {
             BookieService bookieService = new BookieService(new BookieConfiguration(bsConfs[i]), NullStatsLogger.INSTANCE, bookieServiceInfoProvider);
             bs[i] = bookieService.getServer();
             bookieService.publishInfo(componentInfoPublisher);
+            componentInfoPublisher.startupFinished();
             bookieService.start();
         }
 
