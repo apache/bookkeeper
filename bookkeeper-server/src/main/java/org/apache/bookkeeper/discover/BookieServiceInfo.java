@@ -125,4 +125,11 @@ public final class BookieServiceInfo {
         }
 
     }
+
+    @Override
+    public String toString() {
+        return "BookieServiceInfo{" + "properties=" + properties + ", endpoints=" + endpoints + '}';
+    }
+
+
 }
