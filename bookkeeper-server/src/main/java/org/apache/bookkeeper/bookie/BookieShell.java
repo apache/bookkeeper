@@ -64,6 +64,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgerLocationsI
 import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStorageIndexFileCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.DecommissionCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.EndpointInfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InstanceIdCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
@@ -137,6 +138,7 @@ public class BookieShell implements Tool {
     static final String CMD_DELETELEDGER = "deleteledger";
     static final String CMD_BOOKIEINFO = "bookieinfo";
     static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
+    static final String CMD_ENDPOINTINFO = "endpointinfo";
     static final String CMD_LOSTBOOKIERECOVERYDELAY = "lostbookierecoverydelay";
     static final String CMD_TRIGGERAUDIT = "triggeraudit";
     static final String CMD_CONVERT_TO_DB_STORAGE = "convert-to-db-storage";
@@ -1699,6 +1701,46 @@ public class BookieShell implements Tool {
             DecommissionCommand.DecommissionFlags flags = new DecommissionCommand.DecommissionFlags();
             final String remoteBookieidToDecommission = cmdLine.getOptionValue("bookieid");
             flags.remoteBookieIdToDecommission(remoteBookieidToDecommission);
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
+        }
+    }
+
+    /**
+     * Command to trigger AuditTask by resetting lostBookieRecoveryDelay and
+     * then make sure the ledgers stored in the bookie are properly replicated
+     * and Cookie of the decommissioned bookie should be deleted from metadata
+     * server.
+     */
+    class EndpointInfoCmd extends MyCommand {
+        Options lOpts = new Options();
+
+        EndpointInfoCmd() {
+            super(CMD_ENDPOINTINFO);
+            lOpts.addOption("bookieid", true, "decommission a remote bookie");
+        }
+
+        @Override
+        String getDescription() {
+            return new EndpointInfoCommand().description();
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_ENDPOINTINFO + " [-bookieid <bookieaddress>]";
+        }
+
+        @Override
+        Options getOptions() {
+            return lOpts;
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            EndpointInfoCommand cmd = new EndpointInfoCommand();
+            EndpointInfoCommand.EndpointInfoFlags flags = new EndpointInfoCommand.EndpointInfoFlags();
+            final String bookieId = cmdLine.getOptionValue("bookieid");
+            flags.bookie(bookieId);
             boolean result = cmd.apply(bkConf, flags);
             return (result) ? 0 : -1;
         }

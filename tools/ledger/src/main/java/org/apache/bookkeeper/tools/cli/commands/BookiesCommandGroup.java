@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_IN
 
 import org.apache.bookkeeper.tools.cli.BKCtl;
 import org.apache.bookkeeper.tools.cli.commands.bookies.DecommissionCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.EndpointInfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InstanceIdCommand;
@@ -48,6 +49,7 @@ public class BookiesCommandGroup extends CliCommandGroup<BKFlags> {
         .withCategory(CATEGORY_INFRA_SERVICE)
         .addCommand(new ListBookiesCommand())
         .addCommand(new InfoCommand())
+        .addCommand(new EndpointInfoCommand())
         .addCommand(new NukeExistingClusterCommand())
         .addCommand(new MetaFormatCommand())
         .addCommand(new DecommissionCommand())
