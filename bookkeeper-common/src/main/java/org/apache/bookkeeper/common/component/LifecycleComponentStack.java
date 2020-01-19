@@ -44,7 +44,7 @@ public class LifecycleComponentStack implements LifecycleComponent {
     public static class Builder {
 
         private String name;
-        private ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
+        private ComponentInfoPublisher componentInfoPublisher;
         private final List<LifecycleComponent> components;
 
         private Builder() {
@@ -73,7 +73,7 @@ public class LifecycleComponentStack implements LifecycleComponent {
             checkArgument(!components.isEmpty(), "Lifecycle component stack is empty : " + components);
             return new LifecycleComponentStack(
                 name,
-                componentInfoPublisher,
+                componentInfoPublisher != null ? componentInfoPublisher : new ComponentInfoPublisher(),
                 ImmutableList.copyOf(components));
         }
 

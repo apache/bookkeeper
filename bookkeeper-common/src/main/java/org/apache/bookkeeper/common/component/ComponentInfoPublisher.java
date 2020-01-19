@@ -105,7 +105,7 @@ public class ComponentInfoPublisher {
     }
 
     public void publishEndpoint(EndpointInfo endpoint) {
-        log.info("publishEndpoint {}", endpoint);
+        log.info("publishEndpoint {} on {}", endpoint, this);
         EndpointInfo exists = endpoints.put(endpoint.id, endpoint);
         if (exists != null) {
             throw new IllegalStateException("An endpoint with id "+endpoint.id+" has already been published: "+exists);
@@ -126,8 +126,11 @@ public class ComponentInfoPublisher {
         return Collections.unmodifiableMap(endpoints);
     }
 
+    /**
+     * Called by the framework to signal that preparation of startup
+     * is done, so we have gathered all of the available information.
+     */
     public void startupFinished() {
-        log.info("startupFinished");
         startupFinished = true;
     }
 

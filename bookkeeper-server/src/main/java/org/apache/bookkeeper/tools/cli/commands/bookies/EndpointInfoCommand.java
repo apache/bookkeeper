@@ -62,7 +62,7 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
     @Setter
     public static class EndpointInfoFlags extends CliFlags {
 
-        @Parameter(names = {"-b", "--bookieid"}, description = "Get information about a remote bookie")
+        @Parameter(required = true, names = {"-b", "--bookieid"}, description = "Get information about a remote bookie")
         private String bookie;
 
     }
@@ -82,26 +82,36 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
         BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
         try {
             final String bookieId = flags.bookie;
+            if (bookieId == null || bookieId.isEmpty()) {
+                throw new IllegalArgumentException("BookieId is required");
+            }
             BookieSocketAddress address = new BookieSocketAddress(bookieId);
             Collection<BookieSocketAddress> allBookies = admin.getAllBookies();
             if (!allBookies.contains(address)) {
-                System.out.println("Bookie "+bookieId+" does not exist, only "+allBookies);
+                System.out.println("Bookie " + bookieId + " does not exist, only " + allBookies);
                 return false;
             }
             BookieServiceInfo bookieServiceInfo = admin.getBookieServiceInfo(bookieId);
 
             System.out.println("BookiedId: " + bookieId);
-            System.out.println("Properties");
-            bookieServiceInfo.getProperties().forEach((k, v) -> {
-                System.out.println(k + ":" + v);
-            });
-            bookieServiceInfo.getEndpoints().forEach(e -> {
-                System.out.println("Endpoint: " + e.getId());
-                System.out.println("Protocol: " + e.getProtocol());
-                System.out.println("Address: " + e.getHost() + ":" + e.getPort());
-                System.out.println("Auth: " + e.getAuth());
-                System.out.println("Extensions: " + e.getExtensions());
-            });
+            if (!bookieServiceInfo.getProperties().isEmpty()) {
+                System.out.println("Properties");
+                bookieServiceInfo.getProperties().forEach((k, v) -> {
+                    System.out.println(k + ":" + v);
+                });
+            }
+            if (!bookieServiceInfo.getEndpoints().isEmpty()) {
+                bookieServiceInfo.getEndpoints().forEach(e -> {
+                    System.out.println("Endpoint: " + e.getId());
+                    System.out.println("Protocol: " + e.getProtocol());
+                    System.out.println("Address: " + e.getHost() + ":" + e.getPort());
+                    System.out.println("Auth: " + e.getAuth());
+                    System.out.println("Extensions: " + e.getExtensions());
+                });
+            } else {
+                System.out.println("Bookie did not publish any endpoint info. Maybe it is down");
+                return false;
+            }
 
             return true;
         } catch (Exception e) {

@@ -302,6 +302,7 @@ public class Main {
         final Supplier<BookieServiceInfo> bookieServiceInfoProvider = () -> buildBookieServiceInfo(componentInfoPublisher);
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack
                 .newBuilder()
+                .withComponentInfoPublisher(componentInfoPublisher)
                 .withName("bookie-server");
 
         // 1. build stats provider
