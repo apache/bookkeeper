@@ -53,7 +53,7 @@ public class TestZkRegistrationManager {
     public void testPrepareFormat () throws Exception{
         try {
             ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-            conf.setZkLedgersRootPath("/test/ledgers");
+            conf.setMetadataServiceUri("zk+hierarchical://localhost:2181/test/ledgers");
             zkc = localZkServer.getZooKeeperClient();
             ZKRegistrationManager zkRegistrationManager = new ZKRegistrationManager(conf, zkc,() -> {} );
             zkRegistrationManager.prepareFormat();
