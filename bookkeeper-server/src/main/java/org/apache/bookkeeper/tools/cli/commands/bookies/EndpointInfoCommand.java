@@ -21,7 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands.bookies;
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collection;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.BKException;
@@ -29,6 +29,7 @@ import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -81,24 +82,25 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
         BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
         try {
             final String bookieId = flags.bookie;
-
+            BookieSocketAddress address = new BookieSocketAddress(bookieId);
+            Collection<BookieSocketAddress> allBookies = admin.getAllBookies();
+            if (!allBookies.contains(address)) {
+                System.out.println("Bookie "+bookieId+" does not exist, only "+allBookies);
+                return false;
+            }
             BookieServiceInfo bookieServiceInfo = admin.getBookieServiceInfo(bookieId);
 
-            LOG.info("BookiedId: " + bookieId);
-            LOG.info("Properties");
+            System.out.println("BookiedId: " + bookieId);
+            System.out.println("Properties");
             bookieServiceInfo.getProperties().forEach((k, v) -> {
-                LOG.info(k + ":" + v);
+                System.out.println(k + ":" + v);
             });
             bookieServiceInfo.getEndpoints().forEach(e -> {
-                LOG.info("Endpoint: " + e.getId());
-                LOG.info("Protocol: " + e.getProtocol());
-                LOG.info("Address: " + e.getHost() + ":" + e.getPort());
-                if (e.getAuth() != null) {
-                    LOG.info("Auth: " + Arrays.toString(e.getAuth()));
-                }
-                if (e.getExtensions() != null) {
-                    LOG.info("Extensions: " + Arrays.toString(e.getExtensions()));
-                }
+                System.out.println("Endpoint: " + e.getId());
+                System.out.println("Protocol: " + e.getProtocol());
+                System.out.println("Address: " + e.getHost() + ":" + e.getPort());
+                System.out.println("Auth: " + e.getAuth());
+                System.out.println("Extensions: " + e.getExtensions());
             });
 
             return true;

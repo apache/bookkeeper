@@ -234,6 +234,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             throws BKException {
         return FutureUtils.result(bkc.getMetadataClientDriver()
                 .getRegistrationClient().getBookieServiceInfo(bookiedId)).getValue();
+    }
 
     /**
      * Get a list of readonly bookies synchronously.

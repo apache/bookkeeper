@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.common.component;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,16 +42,16 @@ public class ComponentInfoPublisher {
         private final int port;
         private final String host;
         private final String protocol;
-        private final String[] auth;
-        private final String[] extensions;
+        private final List<String> auth;
+        private final List<String> extensions;
 
-        public EndpointInfo(String id, int port, String host, String protocol, String[] auth, String[] extensions) {
+        public EndpointInfo(String id, int port, String host, String protocol, List<String> auth, List<String> extensions) {
             this.id = id;
             this.port = port;
             this.host = host;
             this.protocol = protocol;
-            this.auth = auth;
-            this.extensions = extensions;
+            this.auth = auth == null ? Collections.emptyList() : Collections.unmodifiableList(auth);
+            this.extensions = extensions == null ? Collections.emptyList() : Collections.unmodifiableList(extensions);
         }
 
         public String getId() {
@@ -69,11 +70,11 @@ public class ComponentInfoPublisher {
             return protocol;
         }
 
-        public String[] getAuth() {
+        public List<String> getAuth() {
             return auth;
         }
 
-        public String[] getExtensions() {
+        public List<String> getExtensions() {
             return extensions;
         }
 

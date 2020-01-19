@@ -1717,7 +1717,7 @@ public class BookieShell implements Tool {
 
         EndpointInfoCmd() {
             super(CMD_ENDPOINTINFO);
-            lOpts.addOption("bookieid", true, "decommission a remote bookie");
+            lOpts.addOption("bookieid", true, "get info about a remote bookie");
         }
 
         @Override
@@ -1946,6 +1946,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_DELETELEDGER, new DeleteLedgerCmd());
         commands.put(CMD_BOOKIEINFO, new BookieInfoCmd());
         commands.put(CMD_DECOMMISSIONBOOKIE, new DecommissionBookieCmd());
+        commands.put(CMD_ENDPOINTINFO, new EndpointInfoCmd());
         commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());
         commands.put(CMD_CONVERT_TO_INTERLEAVED_STORAGE, new ConvertToInterleavedStorageCmd());
         commands.put(CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX, new RebuildDbLedgerLocationsIndexCmd());

@@ -49,7 +49,6 @@ public class BookiesCommandGroup extends CliCommandGroup<BKFlags> {
         .withCategory(CATEGORY_INFRA_SERVICE)
         .addCommand(new ListBookiesCommand())
         .addCommand(new InfoCommand())
-        .addCommand(new EndpointInfoCommand())
         .addCommand(new NukeExistingClusterCommand())
         .addCommand(new MetaFormatCommand())
         .addCommand(new DecommissionCommand())

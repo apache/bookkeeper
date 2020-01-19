@@ -79,14 +79,14 @@ public final class BookieServiceInfo {
      */
     public static final class Endpoint {
 
-        private final String id;
-        private final int port;
-        private final String host;
-        private final String protocol;
-        private final String[] auth;
-        private final String[] extensions;
+        private String id;
+        private int port;
+        private String host;
+        private String protocol;
+        private List<String> auth;
+        private List<String> extensions;
 
-        public Endpoint(String id, int port, String host, String protocol, String[] auth, String[] extensions) {
+        public Endpoint(String id, int port, String host, String protocol, List<String> auth, List<String> extensions) {
             this.id = id;
             this.port = port;
             this.host = host;
@@ -95,30 +95,59 @@ public final class BookieServiceInfo {
             this.extensions = extensions;
         }
 
+        public Endpoint() {
+        }
+
         public String getId() {
             return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
         }
 
         public int getPort() {
             return port;
         }
 
+        public void setPort(int port) {
+            this.port = port;
+        }
+
         public String getHost() {
             return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
         }
 
         public String getProtocol() {
             return protocol;
         }
 
-        public String[] getAuth() {
+        public void setProtocol(String protocol) {
+            this.protocol = protocol;
+        }
+
+        public List<String> getAuth() {
             return auth;
         }
 
-        public String[] getExtensions() {
+        public void setAuth(List<String> auth) {
+            this.auth = auth;
+        }
+
+        public List<String> getExtensions() {
             return extensions;
         }
 
+        public void setExtensions(List<String> extensions) {
+            this.extensions = extensions;
+        }
+        
+        
+        
         @Override
         public String toString() {
             return "EndpointInfo{" + "id=" + id + ", port=" + port + ", host=" + host + ", protocol=" + protocol + ", auth=" + auth + ", extensions=" + extensions + '}';
