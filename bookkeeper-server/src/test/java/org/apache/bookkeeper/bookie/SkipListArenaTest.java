@@ -41,7 +41,7 @@ import org.junit.Test;
 /**
  * Test the SkipListArena class.
  */
-public class TestSkipListArena {
+public class SkipListArenaTest {
 
     class CustomConfiguration extends ServerConfiguration {
         @Override

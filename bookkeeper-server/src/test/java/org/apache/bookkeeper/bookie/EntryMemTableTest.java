@@ -59,7 +59,7 @@ import org.junit.runners.Parameterized.Parameters;
  */
 @Slf4j
 @RunWith(Parameterized.class)
-public class TestEntryMemTable implements CacheCallback, SkipListFlusher, CheckpointSource {
+public class EntryMemTableTest implements CacheCallback, SkipListFlusher, CheckpointSource {
 
     private Class entryMemTableClass;
     private EntryMemTable memTable;
@@ -71,7 +71,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
         return Arrays.asList(new Object[][] { { EntryMemTable.class }, { EntryMemTableWithParallelFlusher.class } });
     }
 
-    public TestEntryMemTable(Class entryMemTableClass) {
+    public EntryMemTableTest(Class entryMemTableClass) {
         this.entryMemTableClass = entryMemTableClass;
     }
 
@@ -422,7 +422,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
                     for (long entryId = newNumOfEntries + 1; entryId <= concurrentAddOfEntries; entryId++) {
                         random.nextBytes(data);
                         boolean thisEntryAddedSuccessfully = (memTable.addEntry(ledgerId, entryId,
-                                ByteBuffer.wrap(data), TestEntryMemTable.this) != 0);
+                                ByteBuffer.wrap(data), EntryMemTableTest.this) != 0);
                         successfullyAdded.set(successfullyAdded.get() && thisEntryAddedSuccessfully);
                         Thread.sleep(10);
                     }
