@@ -18,8 +18,51 @@
  */
 package org.apache.bookkeeper.discover;
 
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.test.ZooKeeperCluster;
+import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.zookeeper.ZooKeeper;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
+
+
 /**
  * Unit test of {@link RegistrationManager}.
  */
 public class TestZkRegistrationManager {
+
+    private ZooKeeperCluster localZkServer;
+    private ZooKeeper zkc;
+
+    @Before
+    public void setup() throws Exception {
+        localZkServer = new ZooKeeperUtil();
+        localZkServer.startCluster();
+    }
+
+    @After
+    public void teardown() throws Exception {
+        localZkServer.stopCluster();
+    }
+
+    @Test
+    public void testPrepareFormat () throws Exception{
+        try {
+            ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+            conf.setMetadataServiceUri("zk+hierarchical://localhost:2181/test/ledgers");
+            zkc = localZkServer.getZooKeeperClient();
+            ZKRegistrationManager zkRegistrationManager = new ZKRegistrationManager(conf, zkc,() -> {} );
+            zkRegistrationManager.prepareFormat();
+            assertTrue(zkc.exists("/test/ledgers",false) != null);
+        } finally {
+            if (zkc != null) {
+                zkc.close();
+            }
+        }
+    }
+
 }
