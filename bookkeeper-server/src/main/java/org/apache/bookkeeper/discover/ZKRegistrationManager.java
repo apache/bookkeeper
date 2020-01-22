@@ -400,7 +400,8 @@ public class ZKRegistrationManager implements RegistrationManager {
         boolean availableNodeExists = null != zk.exists(bookieRegistrationPath, false);
         // Create ledgers root node if not exists
         if (!ledgerRootExists) {
-            zk.create(ledgersRootPath, "".getBytes(Charsets.UTF_8), zkAcls, CreateMode.PERSISTENT);
+            ZkUtils.createFullPathOptimistic(zk, ledgersRootPath, "".getBytes(Charsets.UTF_8), zkAcls,
+                    CreateMode.PERSISTENT);
         }
         // create available bookies node if not exists
         if (!availableNodeExists) {
