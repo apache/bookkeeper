@@ -7,12 +7,12 @@ To use this feature, set `httpServerEnabled` to `true` in file `conf/bk_server.c
 
 ## All the endpoints
 
-Currently all the HTTP endpoints could be divided into these 4 components:
+Currently all the HTTP endpoints could be divided into these 5 components:
 1. Heartbeat: heartbeat for a specific bookie.
-1. Config: doing the server configuration for a specific bookie.
-1. Ledger: HTTP endpoints related to ledgers.
-1. Bookie: HTTP endpoints related to bookies.
-1. AutoRecovery: HTTP endpoints related to auto recovery.
+2. Config: doing the server configuration for a specific bookie.
+3. Ledger: HTTP endpoints related to ledgers.
+4. Bookie: HTTP endpoints related to bookies.
+5. AutoRecovery: HTTP endpoints related to auto recovery.
 
 ## Heartbeat
 

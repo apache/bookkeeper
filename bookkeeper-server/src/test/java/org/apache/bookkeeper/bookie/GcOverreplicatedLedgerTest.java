@@ -56,7 +56,7 @@ import org.junit.runners.Parameterized.Parameters;
  * Test GC-overreplicated ledger.
  */
 @RunWith(Parameterized.class)
-public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
+public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
 
     @Before
     @Override
@@ -66,7 +66,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         activeLedgers = new SnapshotMap<Long, Boolean>();
     }
 
-    public TestGcOverreplicatedLedger(Class<? extends LedgerManagerFactory> lmFactoryCls) {
+    public GcOverreplicatedLedgerTest(Class<? extends LedgerManagerFactory> lmFactoryCls) {
         super(lmFactoryCls, 3);
     }
 
