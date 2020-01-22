@@ -68,15 +68,15 @@ import org.slf4j.LoggerFactory;
  * Test for InterleavedLedgerStorage.
  */
 @RunWith(Parameterized.class)
-public class InterleavedLedgerStorageTest {
-    private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorageTest.class);
+public class TestInterleavedLedgerStorage {
+    private static final Logger LOG = LoggerFactory.getLogger(TestInterleavedLedgerStorage.class);
 
     @Parameterized.Parameters
     public static Iterable<Boolean> elplSetting() {
         return Arrays.asList(true, false);
     }
 
-    public InterleavedLedgerStorageTest(boolean elplSetting) {
+    public TestInterleavedLedgerStorage(boolean elplSetting) {
         conf.setEntryLogSizeLimit(2048);
         conf.setEntryLogPerLedgerEnabled(elplSetting);
     }

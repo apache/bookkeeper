@@ -61,7 +61,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(LedgerDirsMonitor.class)
-public class TestLedgerDirsManager {
+public class LedgerDirsManagerTest {
 
     ServerConfiguration conf;
     File curDir;
