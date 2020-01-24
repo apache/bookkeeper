@@ -29,6 +29,7 @@ import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.callback.LogSegmentListener;
 import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.namespace.NamespaceDriver;
@@ -103,6 +104,10 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * @return result represents the open result
      */
     CompletableFuture<AsyncLogWriter> openAsyncLogWriter();
+
+    default CompletableFuture<AsyncLogWriter> openAsyncLogWriter(LedgerMetadata ledgerMetadata) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Open sync log writer to write records to the log stream.

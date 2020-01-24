@@ -102,7 +102,7 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         // This code path will be executed when the handler is not set or has been closed
         // due to forceRecovery during testing
         BKLogWriteHandler newHandler =
-                Utils.ioResult(bkDistributedLogManager.asyncCreateWriteHandler(false));
+                Utils.ioResult(bkDistributedLogManager.asyncCreateWriteHandler(false, null));
         boolean success = false;
         try {
             synchronized (this) {

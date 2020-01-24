@@ -19,6 +19,7 @@ package org.apache.distributedlog.util;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.io.AsyncDeleteable;
 import org.apache.distributedlog.util.Transaction.OpListener;
@@ -76,6 +77,10 @@ public interface Allocator<R, T> extends AsyncCloseable, AsyncDeleteable {
      *          if fail to request allocating a <i>R</i>.
      */
     void allocate() throws IOException;
+
+    default void allocate(LedgerMetadata ledgerMetadata) throws IOException {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Try obtaining an <i>R</i> in a given transaction <i>T</i>. The object obtained is tentative.

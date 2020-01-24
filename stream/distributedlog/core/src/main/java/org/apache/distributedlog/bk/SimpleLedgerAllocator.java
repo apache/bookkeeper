@@ -103,6 +103,8 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     // Allocated Ledger
     LedgerHandle allocatedLh = null;
 
+    LedgerMetadata ledgerMetadata;
+
     CompletableFuture<Void> closeFuture = null;
     final LinkedList<CompletableFuture<Void>> ledgerDeletions =
             new LinkedList<CompletableFuture<Void>>();
@@ -226,12 +228,17 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
 
     @Override
     public synchronized void allocate() throws IOException {
+        allocate(null);
+    }
+
+    @Override
+    public synchronized void allocate(LedgerMetadata ledgerMetadata) throws IOException {
         if (Phase.ERROR == phase) {
             throw new AllocationException(Phase.ERROR, "Error on ledger allocator for " + allocatePath);
         }
         if (Phase.HANDED_OVER == phase) {
             // issue an allocate request when ledger is already handed over.
-            allocateLedger();
+            allocateLedger(ledgerMetadata);
         }
     }
 
@@ -318,6 +325,10 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     }
 
     private synchronized void allocateLedger() {
+        allocateLedger(null);
+    }
+
+    private synchronized void allocateLedger(LedgerMetadata ledgerMetadata) {
         // make sure previous allocation is already handed over.
         if (Phase.HANDED_OVER != phase) {
             LOG.error("Trying allocate ledger for {} in phase {}, giving up.", allocatePath, phase);
@@ -329,7 +340,8 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         bkc.createLedger(
                 quorumConfig.getEnsembleSize(),
                 quorumConfig.getWriteQuorumSize(),
-                quorumConfig.getAckQuorumSize()
+                quorumConfig.getAckQuorumSize(),
+                ledgerMetadata
         ).whenComplete(this);
     }
 

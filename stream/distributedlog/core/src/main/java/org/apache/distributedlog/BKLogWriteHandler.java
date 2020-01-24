@@ -40,6 +40,7 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.common.util.PermitLimiter;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.DLIllegalStateException;
@@ -171,6 +172,7 @@ class BKLogWriteHandler extends BKLogHandler {
     private final OpStatsLogger openOpStats;
     private final OpStatsLogger recoverOpStats;
     private final OpStatsLogger deleteOpStats;
+    private final LedgerMetadata ledgerMetadata;
 
     /**
      * Construct a Bookkeeper journal manager.
@@ -191,6 +193,45 @@ class BKLogWriteHandler extends BKLogHandler {
                       FeatureProvider featureProvider,
                       DynamicDistributedLogConfiguration dynConf,
                       DistributedLock lock /** owned by handler **/) {
+        this(logMetadata,
+                conf,
+                streamMetadataStore,
+                metadataCache,
+                entryStore,
+                scheduler,
+                segmentAllocator,
+                statsLogger,
+                perLogStatsLogger,
+                alertStatsLogger,
+                clientId,
+                regionId,
+                writeLimiter,
+                featureProvider,
+                dynConf,
+                lock,
+                null);
+    }
+
+    /**
+     * Construct a Bookkeeper journal manager.
+     */
+    BKLogWriteHandler(LogMetadataForWriter logMetadata,
+                      DistributedLogConfiguration conf,
+                      LogStreamMetadataStore streamMetadataStore,
+                      LogSegmentMetadataCache metadataCache,
+                      LogSegmentEntryStore entryStore,
+                      OrderedScheduler scheduler,
+                      Allocator<LogSegmentEntryWriter, Object> segmentAllocator,
+                      StatsLogger statsLogger,
+                      StatsLogger perLogStatsLogger,
+                      AlertStatsLogger alertStatsLogger,
+                      String clientId,
+                      int regionId,
+                      PermitLimiter writeLimiter,
+                      FeatureProvider featureProvider,
+                      DynamicDistributedLogConfiguration dynConf,
+                      DistributedLock lock /** owned by handler **/,
+                      LedgerMetadata ledgerMetadata) {
         super(logMetadata,
                 conf,
                 streamMetadataStore,
@@ -208,6 +249,7 @@ class BKLogWriteHandler extends BKLogHandler {
         this.dynConf = dynConf;
         this.lock = lock;
         this.metadataUpdater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(conf, metadataStore);
+        this.ledgerMetadata = ledgerMetadata;
 
         if (conf.getEncodeRegionIDInLogSegmentMetadata()) {
             this.regionId = regionId;
@@ -568,7 +610,7 @@ class BKLogWriteHandler extends BKLogHandler {
         }
 
         try {
-            logSegmentAllocator.allocate();
+            logSegmentAllocator.allocate(ledgerMetadata);
         } catch (IOException e) {
             // failed to issue an allocation request
             failStartLogSegment(promise, bestEffort, e);
