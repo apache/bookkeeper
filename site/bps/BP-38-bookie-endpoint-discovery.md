@@ -13,9 +13,9 @@ Currently (in BookKeeper 4.10) the client can only discover the main Bookie endp
 the main BookKeeper binary RPC service.
 Discovery of the TCP address is implicit, because the *id* of the bookie is made of the same host:port that point to the TCP address of the Bookie service.
 
-With this proposal we are now introducing a way for the Bookie to advertise the services it exposes, basically with this change the Bookie will be able to store on the Metadata Service a set of name-value pairs that describe the *available services*.
+With this proposal we are now introducing a way for the Bookie to advertise the services it exposes, basically the Bookie will be able to store on the Metadata Service a structure that describes the list of  *available services*.
 
-We will also define a set of well know properties that will be useful for futher implementations.
+We will also allow to publish a set of additional unstructured properties in form of a key-value pair that will be useful for futher implementations.
 
 This information will be also useful for Monitoring and Management services as it will enable full discovery of the capabilities of all of the Bookies in a cluster just by having read access to the Metadata Service.
 
@@ -25,7 +25,7 @@ On the Registration API, we introduce a new data structure that describes the se
 exposed by a Bookie:
 
 ```
-inteface BookieServiceInfo {
+interface BookieServiceInfo {
     class Endpoint {
         String name;
         String hostname;
@@ -65,7 +65,7 @@ void registerBookie(String bookieId, boolean readOnly, BookieServiceInfo bookieS
 It will be up to the implementation of RegistrationManager and RegistrationClient to serialize
 the BookieServiceInfo structure.
 
-For the ZooKeeper based implementation we are going to store such information in JSON format.
+For the ZooKeeper based implementation we are going to store such information in Protobuf binary format, as currently this is the format used for every other kind of metadata (the example here is in JSON-like for readability purposes):
 
 ```
 {
@@ -93,7 +93,7 @@ For the ZooKeeper based implementation we are going to store such information in
     }
 }
 ```
-Such information will be stored inside the '/REGISTRATIONPATH/available' znode (or /REGISTRATIONPATH/available/readonline' in case of readonly bookie), these paths are the same used in 4.10, but in 4.10 we are writing empty z-nodes.
+Such information will be stored inside the '/REGISTRATIONPATH/available' znode (or /REGISTRATIONPATH/available/readonly' in case of readonly bookie), these paths are the same used in 4.10, but in 4.10 we are writing empty znodes.
 
 The rationale around this choice is that the client is already using these znodes in order to discover available bookies services.
 
@@ -109,7 +109,7 @@ It is out of the scope of this proposal to change semantics of ledger metadata, 
 - **auth**: supported authentication types (tls-auth, sasl-gssapi...)
 - **extensions**: protocol extensions, like 'starttls'
 
-**Well known properties**
+**Well known additional properties**
 - **metrics.type**: the type of metrics, for instance 'prometheus' for Prometheus.io metrics
 - **autorecovery.enabled**: 'true' case of the presence of the auto recovery daemon
 
@@ -118,16 +118,16 @@ The GRPC service would use this mechanism as well.
 
 #### Which kind of properties should be stored in BookieServiceInfo ?
 
-We should store here only the minimal set of information useful to reach the bookie.
-For instance internal state of the Bookie should be exposed by the HTTP endpoint
-so having the *bookie.http.port* is enough to know that the Bookie has an HTTP endpoint and how to reach it (up to 4.10 we can assume that the hostname is the same as the bookie.host).
-It is expected that these properties change when a bookie is restarted, like after a reconfiguration (change auth type, enable TLS, change network address).
+We should store here only the minimal set of information useful to reach the bookie in an efficient way.
+So we are not storing on the Metadata Service information about the internal state of the server: if you know the address of an HTTP endpoint you can use the REST API to query the Bookie for its state.
+
+These properties may change during the lifetime of a Bookie, think about a configuration (change auth type, enable TLS, change network address) or a dynamic assigned DNS name.
 
 It is better not to expose the version of the Bookie, if the client wants to use particular features of the Bookie this should be implemented on the protocol itself, not just by using the version. The version of the Bookie could be exposed on the HTTP endpoint.
 
 ### Proposed Changes
 
-See the 'Public intefaces' section.
+See the 'Public interfaces' section.
 
 ### Compatibility, Deprecation, and Migration Plan
 
@@ -140,7 +140,7 @@ No need for additional integration tests.
 
 ### Rejected Alternatives
 
-#### Adding a new set of z-nodes
+#### Adding a new set of znodes
 For the ZooKeeper implementation we are not introducing a new znode to store BookieServiceInfo. Adding such new node will increase complexity and the usage of resources on ZooKeeper.
 
 #### Storing information inside the Cookie
