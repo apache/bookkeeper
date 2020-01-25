@@ -31,13 +31,21 @@
           {% for version in site.versions %}
           <a class="navbar-item" href="{{ site.baseurl }}docs/{{version}}/overview/overview">
             Release {{version}}
-            {% if version == site.stable_release %}<span class="tag is-success">Stable</span>{% endif %}
+            {% if site.stable_release == version %}
+              <span class="tag is-success">Stable</span>
+            {% elsif site.eol_releases contains version %}
+              <span class="tag is-warning">EOL</span>
+            {% endif %}
           </a>
           {% endfor %}
           {% for version in site.archived_versions %}
           <a class="navbar-item" href="{{ site.baseurl }}archives/docs/r{{version}}">
             Release {{version}}
-            {% if version == site.stable_release %}<span class="tag is-success">Stable</span>{% endif %}
+            {% if site.stable_release == version %}
+              <span class="tag is-success">Stable</span>
+            {% elsif site.eol_releases contains version %}
+              <span class="tag is-warning">EOL</span>
+            {% endif %}
           </a>
           {% endfor %}
         </div>
