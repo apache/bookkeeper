@@ -222,7 +222,7 @@ public class BookKeeperClient {
                             promise.completeExceptionally(BKException.create(rc));
                         }
                     }
-                }, null, ledgerMetadata.getMeta());
+                }, null, ledgerMetadata.getMetadata());
         return promise;
     }
 

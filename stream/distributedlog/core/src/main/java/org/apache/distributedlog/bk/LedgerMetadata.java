@@ -15,14 +15,57 @@
  */
 package org.apache.distributedlog.bk;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Ledger metadata.
  */
-public class LedgerMetadata {
+public final class LedgerMetadata {
 
-    public Map<String, byte[]> getMeta() {
-        return null;
+    private String application;
+    private String component;
+    private Map<String, String> customMetadata;
+
+    public void setApplication(String application) {
+        this.application = application;
+    }
+
+    public void setComponent(String component) {
+        this.component = component;
+    }
+
+    public void addCustomMetadata(String key, String value) {
+        if (key == null || "".equals(key.trim())) {
+            throw new IllegalArgumentException("Metadata key cant be empty");
+        }
+
+        if (customMetadata == null) {
+            customMetadata = new HashMap<>();
+        }
+
+        customMetadata.put(key, value);
+    }
+
+    public Map<String, byte[]> getMetadata() {
+        Map<String, byte[]> meta = new HashMap<>();
+        if (application != null) {
+            meta.put("application", application.getBytes(StandardCharsets.UTF_8));
+        }
+        if (component != null) {
+            meta.put("component", component.getBytes(StandardCharsets.UTF_8));
+        }
+
+        if (customMetadata != null) {
+            for (Map.Entry<String, String> e : customMetadata.entrySet()) {
+                String value = e.getValue();
+                meta.put(e.getKey(), value == null
+                        ? null
+                        : value.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+
+        return meta;
     }
 }
