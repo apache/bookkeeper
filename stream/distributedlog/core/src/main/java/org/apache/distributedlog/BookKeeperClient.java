@@ -23,6 +23,7 @@ import com.google.common.base.Optional;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
@@ -222,7 +223,7 @@ public class BookKeeperClient {
                             promise.completeExceptionally(BKException.create(rc));
                         }
                     }
-                }, null, ledgerMetadata.getMetadata());
+                }, null, ledgerMetadata == null ? Collections.emptyMap() : ledgerMetadata.getMetadata());
         return promise;
     }
 

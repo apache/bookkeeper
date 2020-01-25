@@ -488,11 +488,16 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     @Override
     public BKSyncLogWriter openLogWriter() throws IOException {
+        return openLogWriter(null);
+    }
+
+    @Override
+    public BKSyncLogWriter openLogWriter(LedgerMetadata ledgerMetadata) throws IOException {
         checkClosedOrInError("startLogSegmentNonPartitioned");
         BKSyncLogWriter writer = new BKSyncLogWriter(conf, dynConf, this);
         boolean success = false;
         try {
-            writer.createAndCacheWriteHandler();
+            writer.createAndCacheWriteHandler(ledgerMetadata);
             BKLogWriteHandler writeHandler = writer.getWriteHandler();
             Utils.ioResult(writeHandler.lockHandler());
             success = true;

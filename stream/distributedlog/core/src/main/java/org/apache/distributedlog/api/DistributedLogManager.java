@@ -117,6 +117,10 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      */
     LogWriter openLogWriter() throws IOException;
 
+    default LogWriter openLogWriter(LedgerMetadata ledgerMetadata) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Begin writing to the log stream identified by the name.
      *
