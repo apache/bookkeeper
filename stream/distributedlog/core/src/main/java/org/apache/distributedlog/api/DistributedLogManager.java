@@ -105,6 +105,13 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      */
     CompletableFuture<AsyncLogWriter> openAsyncLogWriter();
 
+    /**
+     * Open async log writer to write records to the log stream.
+     * Provided metadata will be attached to the underlying BookKeeper ledgers.
+     *
+     * @param ledgerMetadata
+     * @return result represents the open result
+     */
     default CompletableFuture<AsyncLogWriter> openAsyncLogWriter(LedgerMetadata ledgerMetadata) {
         throw new UnsupportedOperationException();
     }
@@ -117,6 +124,14 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      */
     LogWriter openLogWriter() throws IOException;
 
+    /**
+     * Open sync log writer to write records to the log stream.
+     * Provided metadata will be attached to the underlying BookKeeper ledgers.
+     *
+     * @param ledgerMetadata
+     * @return sync log writer
+     * @throws IOException when fails to open a sync log writer.
+     */
     default LogWriter openLogWriter(LedgerMetadata ledgerMetadata) throws IOException {
         throw new UnsupportedOperationException();
     }

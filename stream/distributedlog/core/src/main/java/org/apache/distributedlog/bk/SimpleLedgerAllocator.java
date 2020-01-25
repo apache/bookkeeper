@@ -190,10 +190,36 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                                  QuorumConfigProvider quorumConfigProvider,
                                  ZooKeeperClient zkc,
                                  BookKeeperClient bkc) {
+        this(allocatePath, allocationData, quorumConfigProvider, zkc, bkc, null);
+    }
+
+    /**
+     * Construct a ledger allocator.
+     *
+     * @param allocatePath
+     *          znode path to store the allocated ledger.
+     * @param allocationData
+     *          allocation data.
+     * @param quorumConfigProvider
+     *          Quorum configuration provider.
+     * @param zkc
+     *          zookeeper client.
+     * @param bkc
+     *          bookkeeper client.
+     * @param ledgerMetadata
+     *          metadata to attach to allocated ledgers
+     */
+    public SimpleLedgerAllocator(String allocatePath,
+                                 Versioned<byte[]> allocationData,
+                                 QuorumConfigProvider quorumConfigProvider,
+                                 ZooKeeperClient zkc,
+                                 BookKeeperClient bkc,
+                                 LedgerMetadata ledgerMetadata) {
         this.zkc = zkc;
         this.bkc = bkc;
         this.allocatePath = allocatePath;
         this.quorumConfigProvider = quorumConfigProvider;
+        this.ledgerMetadata = ledgerMetadata;
         initialize(allocationData);
     }
 
@@ -228,11 +254,6 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
 
     @Override
     public synchronized void allocate() throws IOException {
-        allocate(null);
-    }
-
-    @Override
-    public synchronized void allocate(LedgerMetadata ledgerMetadata) throws IOException {
         if (Phase.ERROR == phase) {
             throw new AllocationException(Phase.ERROR, "Error on ledger allocator for " + allocatePath);
         }

@@ -374,7 +374,7 @@ class BKDistributedLogManager implements DistributedLogManager {
         Allocator<LogSegmentEntryWriter, Object> segmentAllocator;
         try {
             segmentAllocator = driver.getLogSegmentEntryStore(WRITER)
-                    .newLogSegmentAllocator(logMetadata, dynConf);
+                    .newLogSegmentAllocator(logMetadata, dynConf, ledgerMetadata);
         } catch (IOException ioe) {
             FutureUtils.completeExceptionally(createPromise, ioe);
             return;
@@ -397,8 +397,7 @@ class BKDistributedLogManager implements DistributedLogManager {
                 writeLimiter,
                 featureProvider,
                 dynConf,
-                lock,
-                ledgerMetadata);
+                lock);
         if (lockHandler) {
             writeHandler.lockHandler().whenComplete(new FutureEventListener<DistributedLock>() {
                 @Override
