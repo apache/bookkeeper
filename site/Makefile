@@ -21,6 +21,7 @@ build: clean
 		--config _config.yml
 
 apache: clean
+	$(BUNDLE) update
 	JEKYLL_ENV=production $(JEKYLL) build \
 		--config _config.yml,_config.apache.yml
 
