@@ -18,6 +18,8 @@
  */
 package org.apache.bookkeeper.discover;
 
+import static org.junit.Assert.assertTrue;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.test.ZooKeeperCluster;
@@ -27,7 +29,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -55,9 +56,9 @@ public class TestZkRegistrationManager {
             ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
             conf.setMetadataServiceUri("zk+hierarchical://localhost:2181/test/ledgers");
             zkc = localZkServer.getZooKeeperClient();
-            ZKRegistrationManager zkRegistrationManager = new ZKRegistrationManager(conf, zkc,() -> {} );
+            ZKRegistrationManager zkRegistrationManager = new ZKRegistrationManager(conf, zkc, () -> {});
             zkRegistrationManager.prepareFormat();
-            assertTrue(zkc.exists("/test/ledgers",false) != null);
+            assertTrue(zkc.exists("/test/ledgers", false) != null);
         } finally {
             if (zkc != null) {
                 zkc.close();
