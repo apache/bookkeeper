@@ -131,7 +131,7 @@ See the 'Public interfaces' section.
 
 ### Compatibility, Deprecation, and Migration Plan
 
-The proposed change will be compatible with existing clients up to 4.10.x.
+The proposed change will be compatible with all existing clients.
 
 ### Test Plan
 
