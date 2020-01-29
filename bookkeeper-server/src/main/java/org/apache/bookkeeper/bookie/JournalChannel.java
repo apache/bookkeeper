@@ -224,6 +224,7 @@ class JournalChannel implements Closeable {
                 }
             } catch (IOException e) {
                 LOG.error("Bookie journal file can seek to position :", e);
+                throw e;
             }
         }
         if (fRemoveFromPageCache) {
