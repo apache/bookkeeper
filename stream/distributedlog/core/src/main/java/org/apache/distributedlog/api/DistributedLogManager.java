@@ -113,7 +113,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * @return result represents the open result
      */
     default CompletableFuture<AsyncLogWriter> openAsyncLogWriter(LedgerMetadata ledgerMetadata) {
-        throw new UnsupportedOperationException();
+        return CompletableFuture.failedFuture(new UnsupportedOperationException());
     }
 
     /**
