@@ -62,7 +62,9 @@
           
           <a class="navbar-item" href="/docs/4.9.2/overview/overview">
             Release 4.9.2
-            <span class="tag is-success">Stable</span>
+            
+              <span class="tag is-success">Stable</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.9.1/overview/overview">
@@ -93,45 +95,63 @@
           <a class="navbar-item" href="/docs/4.7.3/overview/overview">
             Release 4.7.3
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.2/overview/overview">
             Release 4.7.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.7.1/overview/overview">
             Release 4.7.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.0/overview/overview">
             Release 4.7.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.2/overview/overview">
             Release 4.6.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.6.1/overview/overview">
             Release 4.6.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.0/overview/overview">
             Release 4.6.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.1/overview/overview">
             Release 4.5.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.0/overview/overview">
             Release 4.5.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -139,55 +159,77 @@
           <a class="navbar-item" href="/archives/docs/r4.4.0">
             Release 4.4.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.2">
             Release 4.3.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.1">
             Release 4.3.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.0">
             Release 4.3.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.4">
             Release 4.2.4
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.3">
             Release 4.2.3
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.2">
             Release 4.2.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.1">
             Release 4.2.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.0">
             Release 4.2.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.1.0">
             Release 4.1.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.0.0">
             Release 4.0.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -726,7 +768,7 @@
 
 <ol>
   <li>Read the list of ledgers for the log</li>
-  <li><span class="pop" id="fencing-popover">Fence</span> the last two ledgers in the list. Two ledgers are fenced because because the writer may be writing to the second-to-last ledger while adding the last ledger to the list.</li>
+  <li><span class="pop" id="fencing-popover">Fence</span> the last two ledgers in the list. Two ledgers are fenced because the writer may be writing to the second-to-last ledger while adding the last ledger to the list.</li>
   <li>Create a new ledger</li>
   <li>Add the new ledger to the ledger list</li>
   <li>Write the new ledger back to the datastore using a CAS operation</li>
@@ -764,18 +806,27 @@
 <div class="toc">
   <h2 class="title">The BookKeeper protocol</h2>
   <ul class="section-nav">
-<li class="toc-entry toc-h2"><a href="#ledgers">Ledgers</a></li>
+<li class="toc-entry toc-h2"><a href="#ledgers">Ledgers</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#ledger-metadata">Ledger metadata</a></li>
 <li class="toc-entry toc-h3"><a href="#ensembles">Ensembles</a></li>
 <li class="toc-entry toc-h3"><a href="#write-quorums">Write quorums</a></li>
 <li class="toc-entry toc-h3"><a href="#ack-quorums">Ack quorums</a></li>
 <li class="toc-entry toc-h3"><a href="#guarantees">Guarantees</a></li>
-<li class="toc-entry toc-h2"><a href="#writing-to-ledgers">Writing to ledgers</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#writing-to-ledgers">Writing to ledgers</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#closing-a-ledger-as-a-writer">Closing a ledger as a writer</a></li>
 <li class="toc-entry toc-h3"><a href="#closing-a-ledger-as-a-reader">Closing a ledger as a reader</a></li>
-<li class="toc-entry toc-h2"><a href="#ledgers-to-logs">Ledgers to logs</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#ledgers-to-logs">Ledgers to logs</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#opening-a-log">Opening a log</a></li>
 <li class="toc-entry toc-h3"><a href="#rolling-ledgers">Rolling ledgers</a></li>
+</ul>
+</li>
 </ul>
 </div>
 
@@ -903,7 +954,7 @@ tippy('#record-popover', {
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        Copyright &copy; 2016 - 2019 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+        Copyright &copy; 2016 - 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
       <p>
         Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.

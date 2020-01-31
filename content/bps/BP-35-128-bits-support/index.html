@@ -62,7 +62,9 @@
           
           <a class="navbar-item" href="/docs/4.9.2/overview/overview">
             Release 4.9.2
-            <span class="tag is-success">Stable</span>
+            
+              <span class="tag is-success">Stable</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.9.1/overview/overview">
@@ -93,45 +95,63 @@
           <a class="navbar-item" href="/docs/4.7.3/overview/overview">
             Release 4.7.3
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.2/overview/overview">
             Release 4.7.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.7.1/overview/overview">
             Release 4.7.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.0/overview/overview">
             Release 4.7.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.2/overview/overview">
             Release 4.6.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.6.1/overview/overview">
             Release 4.6.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.0/overview/overview">
             Release 4.6.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.1/overview/overview">
             Release 4.5.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.0/overview/overview">
             Release 4.5.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -139,55 +159,77 @@
           <a class="navbar-item" href="/archives/docs/r4.4.0">
             Release 4.4.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.2">
             Release 4.3.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.1">
             Release 4.3.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.0">
             Release 4.3.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.4">
             Release 4.2.4
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.3">
             Release 4.2.3
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.2">
             Release 4.2.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.1">
             Release 4.2.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.0">
             Release 4.2.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.1.0">
             Release 4.1.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.0.0">
             Release 4.0.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -330,7 +372,7 @@ be useful for CLI tooling, REST api and troubleshooting purpose. The API interna
 
 <p>Introduce a new method <code class="highlighter-rouge">getScopeId</code> for representing the scope id (the most significant  <code class="highlighter-rouge">128 bits</code> ledger id).</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Handle</span> <span class="kd">extends</span> <span class="n">AutoCloseable</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Handle</span> <span class="kd">extends</span> <span class="nc">AutoCloseable</span> <span class="o">{</span>
 
   <span class="o">...</span>
 
@@ -354,7 +396,7 @@ be useful for CLI tooling, REST api and troubleshooting purpose. The API interna
 <p>Introduce a new method <code class="highlighter-rouge">withLedgerScopeId</code> in <code class="highlighter-rouge">CreateAdvBuilder</code> for providing <code class="highlighter-rouge">scopeId</code>
 (the most significant 64 bits for 128 bits ledger id) on creating a ledger.</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">CreateAdvBuilder</span> <span class="kd">extends</span> <span class="n">OpBuilder</span><span class="o">&lt;</span><span class="n">WriteHandle</span><span class="o">&gt;</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">CreateAdvBuilder</span> <span class="kd">extends</span> <span class="nc">OpBuilder</span><span class="o">&lt;</span><span class="nc">WriteHandle</span><span class="o">&gt;</span> <span class="o">{</span>
   <span class="o">...</span>
 
   <span class="cm">/**
@@ -362,7 +404,7 @@ be useful for CLI tooling, REST api and troubleshooting purpose. The API interna
    * If no explicit scopeId is passed, the new ledger
    * will be created under scope `0`.
    */</span>
-  <span class="n">CreateAdvBuilder</span> <span class="nf">withLedgerScopeId</span><span class="o">(</span><span class="kt">long</span> <span class="n">scopeId</span><span class="o">);</span>	
+  <span class="nc">CreateAdvBuilder</span> <span class="nf">withLedgerScopeId</span><span class="o">(</span><span class="kt">long</span> <span class="n">scopeId</span><span class="o">);</span>	
 
   <span class="o">...</span>
 <span class="o">}</span>
@@ -373,12 +415,12 @@ be useful for CLI tooling, REST api and troubleshooting purpose. The API interna
 <p>Introduce a new method <code class="highlighter-rouge">withLedgerScopeId</code> in <code class="highlighter-rouge">OpenBuilder</code> for providing <code class="highlighter-rouge">scopeId</code>
 (the most significant 64 bits for 128 bits ledger id) on opening a ledger.</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">OpenBuilder</span> <span class="kd">extends</span> <span class="n">OpBuilder</span><span class="o">&lt;</span><span class="n">ReadHandle</span><span class="o">&gt;</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">OpenBuilder</span> <span class="kd">extends</span> <span class="nc">OpBuilder</span><span class="o">&lt;</span><span class="nc">ReadHandle</span><span class="o">&gt;</span> <span class="o">{</span>
   <span class="o">...</span>
   <span class="cm">/**
    * Set the scope id of the ledger to open.
    */</span>
-  <span class="n">OpenBuilder</span> <span class="nf">withLedgerScopeId</span><span class="o">(</span><span class="kt">long</span> <span class="n">scopeId</span><span class="o">);</span>
+  <span class="nc">OpenBuilder</span> <span class="nf">withLedgerScopeId</span><span class="o">(</span><span class="kt">long</span> <span class="n">scopeId</span><span class="o">);</span>
   <span class="o">...</span>
 <span class="o">}</span>
 </code></pre></div></div>
@@ -388,12 +430,12 @@ be useful for CLI tooling, REST api and troubleshooting purpose. The API interna
 <p>Introduce a new method <code class="highlighter-rouge">withLedgerScopeId</code> in <code class="highlighter-rouge">DeleteBuilder</code> for providing <code class="highlighter-rouge">scopeId</code>
 (the most significant 64 bits for 128 bits ledger id) on deleting a ledger.</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">DeleteBuilder</span> <span class="kd">extends</span> <span class="n">OpBuilder</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">DeleteBuilder</span> <span class="kd">extends</span> <span class="nc">OpBuilder</span><span class="o">&lt;</span><span class="nc">Void</span><span class="o">&gt;</span> <span class="o">{</span>
   <span class="o">...</span>
   <span class="cm">/**
    * Set the scope id of the ledger to delete.
    */</span>
-  <span class="n">DeleteBuilder</span> <span class="nf">withLedgerScopeId</span><span class="o">(</span><span class="kt">long</span> <span class="n">scopeId</span><span class="o">);</span>
+  <span class="nc">DeleteBuilder</span> <span class="nf">withLedgerScopeId</span><span class="o">(</span><span class="kt">long</span> <span class="n">scopeId</span><span class="o">);</span>
   <span class="o">...</span>
 <span class="o">}</span>
 </code></pre></div></div>
@@ -435,14 +477,14 @@ So any operations in v2 protocol with scope id not equal to 0  will be failed im
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">Entry</span><span class="w"> </span><span class="err">Format</span><span class="w"> </span><span class="err">V</span><span class="mi">1</span><span class="w">
 </span><span class="err">===============</span><span class="w">
 </span><span class="err">---</span><span class="w"> </span><span class="err">header</span><span class="w"> </span><span class="err">---</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">0</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">7</span><span class="err">)</span><span class="w">                   </span><span class="p">:</span><span class="w"> </span><span class="err">Ledger</span><span class="w"> </span><span class="err">ID</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">8</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">15</span><span class="err">)</span><span class="w">                  </span><span class="p">:</span><span class="w"> </span><span class="err">Entry</span><span class="w"> </span><span class="err">ID</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">16</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">23</span><span class="err">)</span><span class="w">                 </span><span class="p">:</span><span class="w"> </span><span class="err">LastAddConfirmed</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">24</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">31</span><span class="err">)</span><span class="w">                 </span><span class="p">:</span><span class="w"> </span><span class="err">Length</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">0</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">7</span><span class="err">)</span><span class="w">                   </span><span class="err">:</span><span class="w"> </span><span class="err">Ledger</span><span class="w"> </span><span class="err">ID</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">8</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">15</span><span class="err">)</span><span class="w">                  </span><span class="err">:</span><span class="w"> </span><span class="err">Entry</span><span class="w"> </span><span class="err">ID</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">16</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">23</span><span class="err">)</span><span class="w">                 </span><span class="err">:</span><span class="w"> </span><span class="err">LastAddConfirmed</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">24</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">31</span><span class="err">)</span><span class="w">                 </span><span class="err">:</span><span class="w"> </span><span class="err">Length</span><span class="w">
 </span><span class="err">---</span><span class="w"> </span><span class="err">digest</span><span class="w"> </span><span class="err">---</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">32</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="err">(</span><span class="mi">32</span><span class="w"> </span><span class="err">+</span><span class="w"> </span><span class="err">x</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">1</span><span class="err">))</span><span class="w">       </span><span class="p">:</span><span class="w"> </span><span class="err">Digest</span><span class="w"> </span><span class="err">Code</span><span class="w"> </span><span class="err">(e.g.</span><span class="w"> </span><span class="err">CRC</span><span class="mi">32</span><span class="err">)</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">32</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="err">(</span><span class="mi">32</span><span class="w"> </span><span class="err">+</span><span class="w"> </span><span class="err">x</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">1</span><span class="err">))</span><span class="w">       </span><span class="err">:</span><span class="w"> </span><span class="err">Digest</span><span class="w"> </span><span class="err">Code</span><span class="w"> </span><span class="err">(e.g.</span><span class="w"> </span><span class="err">CRC</span><span class="mi">32</span><span class="err">)</span><span class="w">
 </span><span class="err">---</span><span class="w"> </span><span class="err">payload</span><span class="w"> </span><span class="err">---</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">((</span><span class="mi">32</span><span class="w"> </span><span class="err">+</span><span class="w"> </span><span class="err">x)</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="err">)</span><span class="w">             </span><span class="p">:</span><span class="w"> </span><span class="err">Payload</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">((</span><span class="mi">32</span><span class="w"> </span><span class="err">+</span><span class="w"> </span><span class="err">x)</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="err">)</span><span class="w">             </span><span class="err">:</span><span class="w"> </span><span class="err">Payload</span><span class="w">
 </span></code></pre></div></div>
 
 <blockquote>
@@ -458,16 +500,16 @@ So any operations in v2 protocol with scope id not equal to 0  will be failed im
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">Entry</span><span class="w"> </span><span class="err">Format</span><span class="w"> </span><span class="err">V</span><span class="mi">2</span><span class="w">
 </span><span class="err">===============</span><span class="w">
 </span><span class="err">---</span><span class="w"> </span><span class="err">header</span><span class="w"> </span><span class="err">---</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">0</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">7</span><span class="err">)</span><span class="w">                   </span><span class="p">:</span><span class="w"> </span><span class="err">Metadata</span><span class="w"> </span><span class="err">Flags</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">8</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">15</span><span class="err">)</span><span class="w">                  </span><span class="p">:</span><span class="w"> </span><span class="err">Ledger</span><span class="w"> </span><span class="err">Scope</span><span class="w"> </span><span class="err">ID</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">16</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">23</span><span class="err">)</span><span class="w">                 </span><span class="p">:</span><span class="w"> </span><span class="err">Ledger</span><span class="w"> </span><span class="err">ID</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">24</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">31</span><span class="err">)</span><span class="w">                 </span><span class="p">:</span><span class="w"> </span><span class="err">Entry</span><span class="w"> </span><span class="err">ID</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">32</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">39</span><span class="err">)</span><span class="w">                 </span><span class="p">:</span><span class="w"> </span><span class="err">LastAddConfirmed</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">40</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">47</span><span class="err">)</span><span class="w">                 </span><span class="p">:</span><span class="w"> </span><span class="err">Length</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">0</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">7</span><span class="err">)</span><span class="w">                   </span><span class="err">:</span><span class="w"> </span><span class="err">Metadata</span><span class="w"> </span><span class="err">Flags</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">8</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">15</span><span class="err">)</span><span class="w">                  </span><span class="err">:</span><span class="w"> </span><span class="err">Ledger</span><span class="w"> </span><span class="err">Scope</span><span class="w"> </span><span class="err">ID</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">16</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">23</span><span class="err">)</span><span class="w">                 </span><span class="err">:</span><span class="w"> </span><span class="err">Ledger</span><span class="w"> </span><span class="err">ID</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">24</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">31</span><span class="err">)</span><span class="w">                 </span><span class="err">:</span><span class="w"> </span><span class="err">Entry</span><span class="w"> </span><span class="err">ID</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">32</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">39</span><span class="err">)</span><span class="w">                 </span><span class="err">:</span><span class="w"> </span><span class="err">LastAddConfirmed</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">40</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">47</span><span class="err">)</span><span class="w">                 </span><span class="err">:</span><span class="w"> </span><span class="err">Length</span><span class="w">
 </span><span class="err">---</span><span class="w"> </span><span class="err">digest</span><span class="w"> </span><span class="err">---</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">37</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="err">(</span><span class="mi">37</span><span class="w"> </span><span class="err">+</span><span class="w"> </span><span class="err">x</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">1</span><span class="err">))</span><span class="w">       </span><span class="p">:</span><span class="w"> </span><span class="err">Digest</span><span class="w"> </span><span class="err">Code</span><span class="w"> </span><span class="err">(e.g.</span><span class="w"> </span><span class="err">CRC</span><span class="mi">32</span><span class="err">)</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">(</span><span class="mi">37</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="err">(</span><span class="mi">37</span><span class="w"> </span><span class="err">+</span><span class="w"> </span><span class="err">x</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">1</span><span class="err">))</span><span class="w">       </span><span class="err">:</span><span class="w"> </span><span class="err">Digest</span><span class="w"> </span><span class="err">Code</span><span class="w"> </span><span class="err">(e.g.</span><span class="w"> </span><span class="err">CRC</span><span class="mi">32</span><span class="err">)</span><span class="w">
 </span><span class="err">---</span><span class="w"> </span><span class="err">payload</span><span class="w"> </span><span class="err">---</span><span class="w">
-</span><span class="err">Bytes</span><span class="w"> </span><span class="err">((</span><span class="mi">37</span><span class="w"> </span><span class="err">+</span><span class="w"> </span><span class="err">x)</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="err">)</span><span class="w">             </span><span class="p">:</span><span class="w"> </span><span class="err">Payload</span><span class="w">
+</span><span class="err">Bytes</span><span class="w"> </span><span class="err">((</span><span class="mi">37</span><span class="w"> </span><span class="err">+</span><span class="w"> </span><span class="err">x)</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="err">)</span><span class="w">             </span><span class="err">:</span><span class="w"> </span><span class="err">Payload</span><span class="w">
 </span></code></pre></div></div>
 
 <blockquote>
@@ -476,7 +518,7 @@ So any operations in v2 protocol with scope id not equal to 0  will be failed im
 
 <h6 id="metadata-flags">Metadata Flags</h6>
 
-<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">Metadata</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">Bytes</span><span class="w"> </span><span class="err">(Long)</span><span class="w">
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">Metadata:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">Bytes</span><span class="w"> </span><span class="err">(Long)</span><span class="w">
 </span><span class="err">------------------------</span><span class="w">
 </span><span class="mi">0</span><span class="err">x</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w">
    </span><span class="err">|__|</span><span class="w"> 
@@ -484,8 +526,8 @@ So any operations in v2 protocol with scope id not equal to 0  will be failed im
  </span><span class="err">version</span><span class="w">
 
 </span><span class="err">----</span><span class="w">
-</span><span class="err">Bit</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">3</span><span class="p">:</span><span class="w"> </span><span class="err">digest</span><span class="w"> </span><span class="err">type</span><span class="w"> </span><span class="err">(e.g.</span><span class="w"> </span><span class="err">CRC</span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="err">CRC</span><span class="mi">32</span><span class="err">C</span><span class="w"> </span><span class="err">and</span><span class="w"> </span><span class="err">such)</span><span class="w">
-</span><span class="err">Bit</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">7</span><span class="p">:</span><span class="w"> </span><span class="err">version</span><span class="p">,</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">most</span><span class="w"> </span><span class="err">significant</span><span class="w"> </span><span class="err">bit</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">byte</span><span class="w"> </span><span class="err">will</span><span class="w"> </span><span class="err">be</span><span class="w"> </span><span class="err">always</span><span class="w"> </span><span class="err">set</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="mi">1</span><span class="err">.</span><span class="w">
+</span><span class="err">Bit</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">3</span><span class="err">:</span><span class="w"> </span><span class="err">digest</span><span class="w"> </span><span class="err">type</span><span class="w"> </span><span class="err">(e.g.</span><span class="w"> </span><span class="err">CRC</span><span class="mi">32</span><span class="err">,</span><span class="w"> </span><span class="err">CRC</span><span class="mi">32</span><span class="err">C</span><span class="w"> </span><span class="err">and</span><span class="w"> </span><span class="err">such)</span><span class="w">
+</span><span class="err">Bit</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="mi">7</span><span class="err">:</span><span class="w"> </span><span class="err">version,</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">most</span><span class="w"> </span><span class="err">significant</span><span class="w"> </span><span class="err">bit</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">byte</span><span class="w"> </span><span class="err">will</span><span class="w"> </span><span class="err">be</span><span class="w"> </span><span class="err">always</span><span class="w"> </span><span class="err">set</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="mi">1</span><span class="err">.</span><span class="w">
 </span><span class="err">it</span><span class="w"> </span><span class="err">will</span><span class="w"> </span><span class="err">be</span><span class="w"> </span><span class="err">used</span><span class="w"> </span><span class="err">for</span><span class="w"> </span><span class="err">differentiating</span><span class="w"> </span><span class="err">entry</span><span class="w"> </span><span class="err">format</span><span class="w"> </span><span class="err">v</span><span class="mi">1</span><span class="w"> </span><span class="err">and</span><span class="w"> </span><span class="err">v</span><span class="mi">2</span><span class="err">.</span><span class="w">
 
 </span></code></pre></div></div>
@@ -500,7 +542,7 @@ the entry format.</p>
 <p>The pseudo code for decoding an entry will be described as followings:</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-<span class="n">ByteBuf</span> <span class="n">entry</span> <span class="o">=</span> <span class="o">...;</span>
+<span class="nc">ByteBuf</span> <span class="n">entry</span> <span class="o">=</span> <span class="o">...;</span>
 
 <span class="kt">int</span> <span class="n">metadataFlags</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="na">getByte</span><span class="o">();</span>
 
@@ -525,14 +567,14 @@ the entry format.</p>
                        <span class="kt">long</span> <span class="n">ledgerScopeId</span><span class="o">,</span>
                        <span class="kt">long</span> <span class="n">ledgerId</span><span class="o">,</span>
                        <span class="kt">long</span> <span class="n">entryId</span><span class="o">,</span>
-                       <span class="n">BookieSocketAddress</span> <span class="n">addr</span><span class="o">,</span>
-                       <span class="n">Object</span> <span class="n">ctx</span><span class="o">);</span>
+                       <span class="nc">BookieSocketAddress</span> <span class="n">addr</span><span class="o">,</span>
+                       <span class="nc">Object</span> <span class="n">ctx</span><span class="o">);</span>
 
     <span class="k">default</span> <span class="kt">void</span> <span class="nf">writeComplete</span><span class="o">(</span><span class="kt">int</span> <span class="n">rc</span><span class="o">,</span>
                                <span class="kt">long</span> <span class="n">ledgerId</span><span class="o">,</span>
                                <span class="kt">long</span> <span class="n">entryId</span><span class="o">,</span>
-                               <span class="n">BookieSocketAddress</span> <span class="n">addr</span><span class="o">,</span>
-                               <span class="n">Object</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
+                               <span class="nc">BookieSocketAddress</span> <span class="n">addr</span><span class="o">,</span>
+                               <span class="nc">Object</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">writeComplete</span><span class="o">(</span><span class="n">rc</span><span class="o">,</span> <span class="mi">0L</span><span class="o">,</span> <span class="n">ledgerId</span><span class="o">,</span> <span class="n">entryId</span><span class="o">,</span> <span class="n">addr</span><span class="o">,</span> <span class="n">ctx</span><span class="o">);</span>
     <span class="o">}</span>
 
@@ -698,7 +740,7 @@ The new application can activate the feature by starting using <code class="high
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        Copyright &copy; 2016 - 2019 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+        Copyright &copy; 2016 - 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
       <p>
         Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.

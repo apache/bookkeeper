@@ -62,7 +62,9 @@
           
           <a class="navbar-item" href="/docs/4.9.2/overview/overview">
             Release 4.9.2
-            <span class="tag is-success">Stable</span>
+            
+              <span class="tag is-success">Stable</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.9.1/overview/overview">
@@ -93,45 +95,63 @@
           <a class="navbar-item" href="/docs/4.7.3/overview/overview">
             Release 4.7.3
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.2/overview/overview">
             Release 4.7.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.7.1/overview/overview">
             Release 4.7.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.0/overview/overview">
             Release 4.7.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.2/overview/overview">
             Release 4.6.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.6.1/overview/overview">
             Release 4.6.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.0/overview/overview">
             Release 4.6.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.1/overview/overview">
             Release 4.5.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.0/overview/overview">
             Release 4.5.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -139,55 +159,77 @@
           <a class="navbar-item" href="/archives/docs/r4.4.0">
             Release 4.4.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.2">
             Release 4.3.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.1">
             Release 4.3.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.0">
             Release 4.3.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.4">
             Release 4.2.4
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.3">
             Release 4.2.3
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.2">
             Release 4.2.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.1">
             Release 4.2.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.0">
             Release 4.2.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.1.0">
             Release 4.1.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.0.0">
             Release 4.0.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -746,8 +788,8 @@
 
 <p>BookKeeper requires a ZooKeeper installation for storing <a href="#ledger">ledger</a> metadata. Whenever you construct a <a href="../../api/javadoc/org/apache/bookkeeper/client/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client object, you need to pass a list of ZooKeeper servers as a parameter to the constructor, like this:</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">String</span> <span class="n">zkConnectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
-<span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">zkConnectionString</span><span class="o">);</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">String</span> <span class="n">zkConnectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
+<span class="nc">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">BookKeeper</span><span class="o">(</span><span class="n">zkConnectionString</span><span class="o">);</span>
 </code></pre></div></div>
 
 <blockquote>
@@ -814,10 +856,14 @@
 <li class="toc-entry toc-h2"><a href="#entries">Entries</a></li>
 <li class="toc-entry toc-h2"><a href="#ledgers">Ledgers</a></li>
 <li class="toc-entry toc-h2"><a href="#clients-and-apis">Clients and APIs</a></li>
-<li class="toc-entry toc-h2"><a href="#bookies">Bookies</a></li>
+<li class="toc-entry toc-h2"><a href="#bookies">Bookies</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#motivation">Motivation</a></li>
+</ul>
+</li>
 <li class="toc-entry toc-h2"><a href="#metadata-storage">Metadata storage</a></li>
-<li class="toc-entry toc-h2"><a href="#data-management-in-bookies">Data management in bookies</a></li>
+<li class="toc-entry toc-h2"><a href="#data-management-in-bookies">Data management in bookies</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#journals">Journals</a></li>
 <li class="toc-entry toc-h3"><a href="#entry-logs">Entry logs</a></li>
 <li class="toc-entry toc-h3"><a href="#index-files">Index files</a></li>
@@ -825,11 +871,16 @@
 <li class="toc-entry toc-h3"><a href="#adding-entries">Adding entries</a></li>
 <li class="toc-entry toc-h3"><a href="#data-flush">Data flush</a></li>
 <li class="toc-entry toc-h3"><a href="#data-compaction">Data compaction</a></li>
+</ul>
+</li>
 <li class="toc-entry toc-h2"><a href="#zookeeper-metadata">ZooKeeper metadata</a></li>
-<li class="toc-entry toc-h2"><a href="#ledger-manager">Ledger manager</a></li>
+<li class="toc-entry toc-h2"><a href="#ledger-manager">Ledger manager</a>
+<ul>
 <li class="toc-entry toc-h4"><a href="#use-the-flat-ledger-manager-in-most-cases">Use the flat ledger manager in most cases</a></li>
 <li class="toc-entry toc-h3"><a href="#flat-ledger-manager">Flat ledger manager</a></li>
 <li class="toc-entry toc-h3"><a href="#hierarchical-ledger-manager">Hierarchical ledger manager</a></li>
+</ul>
+</li>
 </ul>
 </div>
 
@@ -957,7 +1008,7 @@ tippy('#record-popover', {
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        Copyright &copy; 2016 - 2019 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+        Copyright &copy; 2016 - 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
       <p>
         Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.

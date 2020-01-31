@@ -62,7 +62,9 @@
           
           <a class="navbar-item" href="/docs/4.9.2/overview/overview">
             Release 4.9.2
-            <span class="tag is-success">Stable</span>
+            
+              <span class="tag is-success">Stable</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.9.1/overview/overview">
@@ -93,45 +95,63 @@
           <a class="navbar-item" href="/docs/4.7.3/overview/overview">
             Release 4.7.3
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.2/overview/overview">
             Release 4.7.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.7.1/overview/overview">
             Release 4.7.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.0/overview/overview">
             Release 4.7.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.2/overview/overview">
             Release 4.6.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.6.1/overview/overview">
             Release 4.6.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.0/overview/overview">
             Release 4.6.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.1/overview/overview">
             Release 4.5.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.0/overview/overview">
             Release 4.5.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -139,55 +159,77 @@
           <a class="navbar-item" href="/archives/docs/r4.4.0">
             Release 4.4.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.2">
             Release 4.3.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.1">
             Release 4.3.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.0">
             Release 4.3.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.4">
             Release 4.2.4
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.3">
             Release 4.2.3
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.2">
             Release 4.2.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.1">
             Release 4.2.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.0">
             Release 4.2.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.1.0">
             Release 4.1.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.0.0">
             Release 4.0.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -580,9 +622,9 @@
 <p>In order to create a new <a href="../javadoc/org/apache/bookkeeper/client/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client object, you need to pass in a <a href="#connection-string">connection string</a>. Here is an example client object using a ZooKeeper connection string:</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">try</span> <span class="o">{</span>
-    <span class="n">String</span> <span class="n">connectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span> <span class="c1">// For a single-node, local ZooKeeper cluster</span>
-    <span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">connectionString</span><span class="o">);</span>
-<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="o">|</span> <span class="n">IOException</span> <span class="o">|</span> <span class="n">KeeperException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="nc">String</span> <span class="n">connectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span> <span class="c1">// For a single-node, local ZooKeeper cluster</span>
+    <span class="nc">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">BookKeeper</span><span class="o">(</span><span class="n">connectionString</span><span class="o">);</span>
+<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="nc">InterruptedException</span> <span class="o">|</span> <span class="nc">IOException</span> <span class="o">|</span> <span class="nc">KeeperException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
     <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
 <span class="o">}</span>
 </code></pre></div></div>
@@ -597,25 +639,25 @@
   <li>
     <p>By passing in a <a href="../javadoc/org/apache/bookkeeper/conf/ClientConfiguration"><code class="highlighter-rouge">ClientConfiguration</code></a> object. Here’s an example:</p>
 
-    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientConfiguration</span><span class="o">();</span>
+    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ClientConfiguration</span><span class="o">();</span>
 <span class="n">config</span><span class="o">.</span><span class="na">setZkServers</span><span class="o">(</span><span class="n">zkConnectionString</span><span class="o">);</span>
 <span class="n">config</span><span class="o">.</span><span class="na">setAddEntryTimeout</span><span class="o">(</span><span class="mi">2000</span><span class="o">);</span>
-<span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
+<span class="nc">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">BookKeeper</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
 </code></pre></div>    </div>
   </li>
   <li>
     <p>By specifying a <code class="highlighter-rouge">ClientConfiguration</code> and a <a href="http://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/ZooKeeper.html"><code class="highlighter-rouge">ZooKeeper</code></a> client object:</p>
 
-    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientConfiguration</span><span class="o">();</span>
+    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ClientConfiguration</span><span class="o">();</span>
 <span class="n">config</span><span class="o">.</span><span class="na">setAddEntryTimeout</span><span class="o">(</span><span class="mi">5000</span><span class="o">);</span>
-<span class="n">ZooKeeper</span> <span class="n">zkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ZooKeeper</span><span class="o">(</span><span class="cm">/* client args */</span><span class="o">);</span>
-<span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">config</span><span class="o">,</span> <span class="n">zkClient</span><span class="o">);</span>
+<span class="nc">ZooKeeper</span> <span class="n">zkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ZooKeeper</span><span class="o">(</span><span class="cm">/* client args */</span><span class="o">);</span>
+<span class="nc">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">BookKeeper</span><span class="o">(</span><span class="n">config</span><span class="o">,</span> <span class="n">zkClient</span><span class="o">);</span>
 </code></pre></div>    </div>
   </li>
   <li>
     <p>Using the <code class="highlighter-rouge">forConfig</code> method:</p>
 
-    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="n">BookKeeper</span><span class="o">.</span><span class="na">forConfig</span><span class="o">(</span><span class="n">conf</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
+    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="nc">BookKeeper</span><span class="o">.</span><span class="na">forConfig</span><span class="o">(</span><span class="n">conf</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
 </code></pre></div>    </div>
   </li>
 </ul>
@@ -627,23 +669,23 @@
 <p>Here’s an example:</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">byte</span><span class="o">[]</span> <span class="n">password</span> <span class="o">=</span> <span class="s">"some-password"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
-<span class="n">LedgerHandle</span> <span class="n">handle</span> <span class="o">=</span> <span class="n">bkClient</span><span class="o">.</span><span class="na">createLedger</span><span class="o">(</span><span class="n">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span> <span class="n">password</span><span class="o">);</span>
+<span class="nc">LedgerHandle</span> <span class="n">handle</span> <span class="o">=</span> <span class="n">bkClient</span><span class="o">.</span><span class="na">createLedger</span><span class="o">(</span><span class="nc">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span> <span class="n">password</span><span class="o">);</span>
 </code></pre></div></div>
 
 <p>You can also create ledgers asynchronously</p>
 
 <h3 id="create-ledgers-asynchronously">Create ledgers asynchronously</h3>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">LedgerCreationCallback</span> <span class="kd">implements</span> <span class="n">AsyncCallback</span><span class="o">.</span><span class="na">CreateCallback</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">createComplete</span><span class="o">(</span><span class="kt">int</span> <span class="n">returnCode</span><span class="o">,</span> <span class="n">LedgerHandle</span> <span class="n">handle</span><span class="o">,</span> <span class="n">Object</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Ledger successfully created"</span><span class="o">);</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">LedgerCreationCallback</span> <span class="kd">implements</span> <span class="nc">AsyncCallback</span><span class="o">.</span><span class="na">CreateCallback</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">createComplete</span><span class="o">(</span><span class="kt">int</span> <span class="n">returnCode</span><span class="o">,</span> <span class="nc">LedgerHandle</span> <span class="n">handle</span><span class="o">,</span> <span class="nc">Object</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Ledger successfully created"</span><span class="o">);</span>
     <span class="o">}</span>
 <span class="o">}</span>
 
 <span class="n">client</span><span class="o">.</span><span class="na">asyncCreateLedger</span><span class="o">(</span>
         <span class="mi">3</span><span class="o">,</span>
         <span class="mi">2</span><span class="o">,</span>
-        <span class="n">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span>
+        <span class="nc">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span>
         <span class="n">password</span><span class="o">,</span>
         <span class="k">new</span> <span class="nf">LedgerCreationCallback</span><span class="o">(),</span>
         <span class="s">"some context"</span>
@@ -659,61 +701,60 @@
 
 <h2 id="reading-entries-from-ledgers">Reading entries from ledgers</h2>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">handle</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">99</span><span class="o">);</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Enumerator</span><span class="o">&lt;</span><span class="nc">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">handle</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">99</span><span class="o">);</span>
 </code></pre></div></div>
 
 <p>To read all possible entries from the ledger:</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Enumerator</span><span class="o">&lt;</span><span class="nc">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span>
   <span class="n">handle</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">handle</span><span class="o">.</span><span class="na">getLastAddConfirmed</span><span class="o">());</span>
 
 <span class="k">while</span> <span class="o">(</span><span class="n">entries</span><span class="o">.</span><span class="na">hasNextElement</span><span class="o">())</span> <span class="o">{</span>
-    <span class="n">LedgerEntry</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="na">nextElement</span><span class="o">();</span>
-    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Successfully read entry "</span> <span class="o">+</span> <span class="n">entry</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+    <span class="nc">LedgerEntry</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="na">nextElement</span><span class="o">();</span>
+    <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Successfully read entry "</span> <span class="o">+</span> <span class="n">entry</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
 <h3 id="reading-entries-after-the-lastaddconfirmed-range">Reading entries after the LastAddConfirmed range</h3>
 
 <p><code class="highlighter-rouge">readUnconfirmedEntries</code> allowing to read after the LastAddConfirmed range.
-It lets the client read without checking the local value of LastAddConfirmed, so that it is possible to read entries for which the writer has not received the acknowledge yet
-For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully received the acknowledge.
+It lets the client read without checking the local value of LastAddConfirmed, so that it is possible to read entries for which the writer has not received the acknowledge yet.
+For entries which are within the range 0..LastAddConfirmed, BookKeeper guarantees that the writer has successfully received the acknowledge.
 For entries outside that range it is possible that the writer never received the acknowledge and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency issue in some cases.
 With this method you can even read entries before the LastAddConfirmed and entries after it with one call, the expected consistency will be as described above.</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Enumerator</span><span class="o">&lt;</span><span class="nc">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span>
   <span class="n">handle</span><span class="o">.</span><span class="na">readUnconfirmedEntries</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">lastEntryIdExpectedToRead</span><span class="o">);</span>
 
 <span class="k">while</span> <span class="o">(</span><span class="n">entries</span><span class="o">.</span><span class="na">hasNextElement</span><span class="o">())</span> <span class="o">{</span>
-    <span class="n">LedgerEntry</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="na">nextElement</span><span class="o">();</span>
-    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Successfully read entry "</span> <span class="o">+</span> <span class="n">entry</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+    <span class="nc">LedgerEntry</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="na">nextElement</span><span class="o">();</span>
+    <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Successfully read entry "</span> <span class="o">+</span> <span class="n">entry</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
 <h2 id="deleting-ledgers">Deleting ledgers</h2>
 
-<p><span class="pop" id="ledger-popover">Ledgers</span> can also be deleted synchronously or asynchronously.</p>
+<p><span class="pop" id="ledger-popover">Ledgers</span> can be deleted synchronously which may throw exception:</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="mi">1234</span><span class="o">;</span>
 
 <span class="k">try</span> <span class="o">{</span>
     <span class="n">bkClient</span><span class="o">.</span><span class="na">deleteLedger</span><span class="o">(</span><span class="n">ledgerId</span><span class="o">);</span>
-<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="nc">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
   <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
 <h3 id="delete-entries-asynchronously">Delete entries asynchronously</h3>
 
-<p>Exceptions thrown:</p>
+<p><span class="pop" id="ledger-popover">Ledgers</span> can also be deleted asynchronously:</p>
 
-<p>*</p>
-
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">DeleteEntryCallback</span> <span class="kd">implements</span> <span class="n">AsyncCallback</span><span class="o">.</span><span class="na">DeleteCallback</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">DeleteEntryCallback</span> <span class="kd">implements</span> <span class="nc">AsyncCallback</span><span class="o">.</span><span class="na">DeleteCallback</span> <span class="o">{</span>
     <span class="kd">public</span> <span class="kt">void</span> <span class="nf">deleteComplete</span><span class="o">()</span> <span class="o">{</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Delete completed"</span><span class="o">);</span>
+        <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Delete completed"</span><span class="o">);</span>
     <span class="o">}</span>
 <span class="o">}</span>
+<span class="n">bkClient</span><span class="o">.</span><span class="na">asyncDeleteLedger</span><span class="o">(</span><span class="n">ledgerID</span><span class="o">,</span> <span class="k">new</span> <span class="nc">DeleteEntryCallback</span><span class="o">(),</span> <span class="kc">null</span><span class="o">);</span>
 </code></pre></div></div>
 
 <h2 id="simple-example">Simple example</h2>
@@ -735,17 +776,17 @@ With this method you can even read entries before the LastAddConfirmed and entri
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Create a client object for the local ensemble. This</span>
 <span class="c1">// operation throws multiple exceptions, so make sure to</span>
 <span class="c1">// use a try/catch block when instantiating client objects.</span>
-<span class="n">BookKeeper</span> <span class="n">bkc</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="s">"localhost:2181"</span><span class="o">);</span>
+<span class="nc">BookKeeper</span> <span class="n">bkc</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">BookKeeper</span><span class="o">(</span><span class="s">"localhost:2181"</span><span class="o">);</span>
 
 <span class="c1">// A password for the new ledger</span>
 <span class="kt">byte</span><span class="o">[]</span> <span class="n">ledgerPassword</span> <span class="o">=</span> <span class="cm">/* some sequence of bytes, perhaps random */</span><span class="o">;</span>
 
 <span class="c1">// Create a new ledger and fetch its identifier</span>
-<span class="n">LedgerHandle</span> <span class="n">lh</span> <span class="o">=</span> <span class="n">bkc</span><span class="o">.</span><span class="na">createLedger</span><span class="o">(</span><span class="n">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span> <span class="n">ledgerPassword</span><span class="o">);</span>
+<span class="nc">LedgerHandle</span> <span class="n">lh</span> <span class="o">=</span> <span class="n">bkc</span><span class="o">.</span><span class="na">createLedger</span><span class="o">(</span><span class="nc">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span> <span class="n">ledgerPassword</span><span class="o">);</span>
 <span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="n">lh</span><span class="o">.</span><span class="na">getId</span><span class="o">();</span>
 
 <span class="c1">// Create a buffer for four-byte entries</span>
-<span class="n">ByteBuffer</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="o">.</span><span class="na">allocate</span><span class="o">(</span><span class="mi">4</span><span class="o">);</span>
+<span class="nc">ByteBuffer</span> <span class="n">entry</span> <span class="o">=</span> <span class="nc">ByteBuffer</span><span class="o">.</span><span class="na">allocate</span><span class="o">(</span><span class="mi">4</span><span class="o">);</span>
 
 <span class="kt">int</span> <span class="n">numberOfEntries</span> <span class="o">=</span> <span class="mi">100</span><span class="o">;</span>
 
@@ -758,17 +799,17 @@ With this method you can even read entries before the LastAddConfirmed and entri
 <span class="n">lh</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
 
 <span class="c1">// Open the ledger for reading</span>
-<span class="n">lh</span> <span class="o">=</span> <span class="n">bkc</span><span class="o">.</span><span class="na">openLedger</span><span class="o">(</span><span class="n">ledgerId</span><span class="o">,</span> <span class="n">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span> <span class="n">ledgerPassword</span><span class="o">);</span>
+<span class="n">lh</span> <span class="o">=</span> <span class="n">bkc</span><span class="o">.</span><span class="na">openLedger</span><span class="o">(</span><span class="n">ledgerId</span><span class="o">,</span> <span class="nc">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span> <span class="n">ledgerPassword</span><span class="o">);</span>
 
 <span class="c1">// Read all available entries</span>
-<span class="n">Enumeration</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">lh</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">numberOfEntries</span> <span class="o">-</span> <span class="mi">1</span><span class="o">);</span>
+<span class="nc">Enumeration</span><span class="o">&lt;</span><span class="nc">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">lh</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">numberOfEntries</span> <span class="o">-</span> <span class="mi">1</span><span class="o">);</span>
 
 <span class="k">while</span><span class="o">(</span><span class="n">entries</span><span class="o">.</span><span class="na">hasMoreElements</span><span class="o">())</span> <span class="o">{</span>
-	<span class="n">ByteBuffer</span> <span class="n">result</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="o">.</span><span class="na">wrap</span><span class="o">(</span><span class="n">ls</span><span class="o">.</span><span class="na">nextElement</span><span class="o">().</span><span class="na">getEntry</span><span class="o">());</span>
-	<span class="n">Integer</span> <span class="n">retrEntry</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getInt</span><span class="o">();</span>
+	<span class="nc">ByteBuffer</span> <span class="n">result</span> <span class="o">=</span> <span class="nc">ByteBuffer</span><span class="o">.</span><span class="na">wrap</span><span class="o">(</span><span class="n">ls</span><span class="o">.</span><span class="na">nextElement</span><span class="o">().</span><span class="na">getEntry</span><span class="o">());</span>
+	<span class="nc">Integer</span> <span class="n">retrEntry</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getInt</span><span class="o">();</span>
 
     <span class="c1">// Print the integer stored in each entry</span>
-    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"Result: %s"</span><span class="o">,</span> <span class="n">retrEntry</span><span class="o">));</span>
+    <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="nc">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"Result: %s"</span><span class="o">,</span> <span class="n">retrEntry</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="c1">// Close the ledger and the client</span>
@@ -842,12 +883,12 @@ Value = 3
 <p>The application in this tutorial is a dice application. The <code class="highlighter-rouge">Dice</code> class below has a <code class="highlighter-rouge">playDice</code> function that generates a random number between 1 and 6 every second, prints the value of the dice roll, and runs indefinitely.</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
-    <span class="n">Random</span> <span class="n">r</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
+    <span class="nc">Random</span> <span class="n">r</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Random</span><span class="o">();</span>
 
-    <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+    <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="nc">InterruptedException</span> <span class="o">{</span>
         <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
-            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Value = "</span> <span class="o">+</span> <span class="o">(</span><span class="n">r</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">6</span><span class="o">)</span> <span class="o">+</span> <span class="mi">1</span><span class="o">));</span>
+            <span class="nc">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
+            <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Value = "</span> <span class="o">+</span> <span class="o">(</span><span class="n">r</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">6</span><span class="o">)</span> <span class="o">+</span> <span class="mi">1</span><span class="o">));</span>
         <span class="o">}</span>
     <span class="o">}</span>
 <span class="o">}</span>
@@ -858,8 +899,8 @@ Value = 3
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
     <span class="c1">// other methods</span>
 
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
-        <span class="n">Dice</span> <span class="n">d</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Dice</span><span class="o">();</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="nc">InterruptedException</span> <span class="o">{</span>
+        <span class="nc">Dice</span> <span class="n">d</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Dice</span><span class="o">();</span>
         <span class="n">d</span><span class="o">.</span><span class="na">playDice</span><span class="o">();</span>
     <span class="o">}</span>
 <span class="o">}</span>
@@ -913,20 +954,20 @@ Node count: 16
 
 <p>To interact with zookeeper, we’ll use the Curator client rather than the stock zookeeper client. Getting things right with the zookeeper client can be tricky, and curator removes a lot of the pointy corners for you. In fact, curator even provides a leader election recipe, so we need to do very little work to get leader election in our application.</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="kd">extends</span> <span class="n">LeaderSelectorListenerAdapter</span> <span class="kd">implements</span> <span class="n">Closeable</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="kd">extends</span> <span class="nc">LeaderSelectorListenerAdapter</span> <span class="kd">implements</span> <span class="nc">Closeable</span> <span class="o">{</span>
 
-    <span class="kd">final</span> <span class="kd">static</span> <span class="n">String</span> <span class="n">ZOOKEEPER_SERVER</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
-    <span class="kd">final</span> <span class="kd">static</span> <span class="n">String</span> <span class="n">ELECTION_PATH</span> <span class="o">=</span> <span class="s">"/dice-elect"</span><span class="o">;</span>
+    <span class="kd">final</span> <span class="kd">static</span> <span class="nc">String</span> <span class="no">ZOOKEEPER_SERVER</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
+    <span class="kd">final</span> <span class="kd">static</span> <span class="nc">String</span> <span class="no">ELECTION_PATH</span> <span class="o">=</span> <span class="s">"/dice-elect"</span><span class="o">;</span>
 
     <span class="o">...</span>
 
-    <span class="n">Dice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
-        <span class="n">curator</span> <span class="o">=</span> <span class="n">CuratorFrameworkFactory</span><span class="o">.</span><span class="na">newClient</span><span class="o">(</span><span class="n">ZOOKEEPER_SERVER</span><span class="o">,</span>
-                <span class="mi">2000</span><span class="o">,</span> <span class="mi">10000</span><span class="o">,</span> <span class="k">new</span> <span class="n">ExponentialBackoffRetry</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="mi">3</span><span class="o">));</span>
+    <span class="nc">Dice</span><span class="o">()</span> <span class="kd">throws</span> <span class="nc">InterruptedException</span> <span class="o">{</span>
+        <span class="n">curator</span> <span class="o">=</span> <span class="nc">CuratorFrameworkFactory</span><span class="o">.</span><span class="na">newClient</span><span class="o">(</span><span class="no">ZOOKEEPER_SERVER</span><span class="o">,</span>
+                <span class="mi">2000</span><span class="o">,</span> <span class="mi">10000</span><span class="o">,</span> <span class="k">new</span> <span class="nc">ExponentialBackoffRetry</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="mi">3</span><span class="o">));</span>
         <span class="n">curator</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
         <span class="n">curator</span><span class="o">.</span><span class="na">blockUntilConnected</span><span class="o">();</span>
 
-        <span class="n">leaderSelector</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LeaderSelector</span><span class="o">(</span><span class="n">curator</span><span class="o">,</span> <span class="n">ELECTION_PATH</span><span class="o">,</span> <span class="k">this</span><span class="o">);</span>
+        <span class="n">leaderSelector</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">LeaderSelector</span><span class="o">(</span><span class="n">curator</span><span class="o">,</span> <span class="no">ELECTION_PATH</span><span class="o">,</span> <span class="k">this</span><span class="o">);</span>
         <span class="n">leaderSelector</span><span class="o">.</span><span class="na">autoRequeue</span><span class="o">();</span>
         <span class="n">leaderSelector</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
     <span class="o">}</span>
@@ -939,16 +980,16 @@ Node count: 16
 <p>Finally, you’ll have noticed that Dice now extends LeaderSelectorListenerAdapter and implements Closeable. Closeable is there to close the resource we have initialized in the constructor, the curator client and the leaderSelector. LeaderSelectorListenerAdapter is a callback that the leaderSelector uses to notify the instance that it is now the leader. It is passed as the third argument to the LeaderSelector constructor.</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">takeLeadership</span><span class="o">(</span><span class="n">CuratorFramework</span> <span class="n">client</span><span class="o">)</span>
-            <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">takeLeadership</span><span class="o">(</span><span class="nc">CuratorFramework</span> <span class="n">client</span><span class="o">)</span>
+            <span class="kd">throws</span> <span class="nc">Exception</span> <span class="o">{</span>
         <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
             <span class="n">leader</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
             <span class="k">try</span> <span class="o">{</span>
                 <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
                     <span class="k">this</span><span class="o">.</span><span class="na">wait</span><span class="o">();</span>
                 <span class="o">}</span>
-            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">ie</span><span class="o">)</span> <span class="o">{</span>
-                <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">interrupt</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="nc">InterruptedException</span> <span class="n">ie</span><span class="o">)</span> <span class="o">{</span>
+                <span class="nc">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">interrupt</span><span class="o">();</span>
                 <span class="n">leader</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
             <span class="o">}</span>
         <span class="o">}</span>
@@ -957,11 +998,11 @@ Node count: 16
 
 <p>takeLeadership() is the callback called by LeaderSelector when the instance is leader. It should only return when the instance wants to give up leadership. In our case, we never do so we wait on the current object until we’re interrupted. To signal to the rest of the program that we are leader we set a volatile boolean called leader to true. This is unset after we are interrupted.</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="nc">InterruptedException</span> <span class="o">{</span>
         <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
             <span class="k">while</span> <span class="o">(</span><span class="n">leader</span><span class="o">)</span> <span class="o">{</span>
-                <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
-                <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Value = "</span> <span class="o">+</span> <span class="o">(</span><span class="n">r</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">6</span><span class="o">)</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span>
+                <span class="nc">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
+                <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Value = "</span> <span class="o">+</span> <span class="o">(</span><span class="n">r</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">6</span><span class="o">)</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span>
                                    <span class="o">+</span> <span class="s">", isLeader = "</span> <span class="o">+</span> <span class="n">leader</span><span class="o">);</span>
             <span class="o">}</span>
         <span class="o">}</span>
@@ -1001,27 +1042,45 @@ Value <span class="o">=</span> 3, isLeader <span class="o">=</span> <span class=
   <h2 class="title">The Ledger API</h2>
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#the-java-ledger-api-client">The Java ledger API client</a></li>
-<li class="toc-entry toc-h2"><a href="#installation">Installation</a></li>
+<li class="toc-entry toc-h2"><a href="#installation">Installation</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#maven">Maven</a></li>
 <li class="toc-entry toc-h3"><a href="#gradle">Gradle</a></li>
+</ul>
+</li>
 <li class="toc-entry toc-h2"><a href="#connection-string">Connection string</a></li>
 <li class="toc-entry toc-h2"><a href="#creating-a-new-client">Creating a new client</a></li>
-<li class="toc-entry toc-h2"><a href="#creating-ledgers">Creating ledgers</a></li>
+<li class="toc-entry toc-h2"><a href="#creating-ledgers">Creating ledgers</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#create-ledgers-asynchronously">Create ledgers asynchronously</a></li>
-<li class="toc-entry toc-h2"><a href="#adding-entries-to-ledgers">Adding entries to ledgers</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#adding-entries-to-ledgers">Adding entries to ledgers</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#add-entries-asynchronously">Add entries asynchronously</a></li>
-<li class="toc-entry toc-h2"><a href="#reading-entries-from-ledgers">Reading entries from ledgers</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#reading-entries-from-ledgers">Reading entries from ledgers</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#reading-entries-after-the-lastaddconfirmed-range">Reading entries after the LastAddConfirmed range</a></li>
-<li class="toc-entry toc-h2"><a href="#deleting-ledgers">Deleting ledgers</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#deleting-ledgers">Deleting ledgers</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#delete-entries-asynchronously">Delete entries asynchronously</a></li>
+</ul>
+</li>
 <li class="toc-entry toc-h2"><a href="#simple-example">Simple example</a></li>
-<li class="toc-entry toc-h2"><a href="#example-application">Example application</a></li>
+<li class="toc-entry toc-h2"><a href="#example-application">Example application</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#setup">Setup</a></li>
 <li class="toc-entry toc-h3"><a href="#goal">Goal</a></li>
 <li class="toc-entry toc-h3"><a href="#the-base-application">The base application</a></li>
 <li class="toc-entry toc-h3"><a href="#leaders-and-followers-and-a-bit-of-background">Leaders and followers (and a bit of background)</a></li>
 <li class="toc-entry toc-h3"><a href="#why-not-just-use-zookeeper">Why not just use ZooKeeper?</a></li>
 <li class="toc-entry toc-h3"><a href="#electing-a-leader">Electing a leader</a></li>
+</ul>
+</li>
 </ul>
 </div>
 
@@ -1149,7 +1208,7 @@ tippy('#record-popover', {
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        Copyright &copy; 2016 - 2019 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+        Copyright &copy; 2016 - 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
       <p>
         Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.

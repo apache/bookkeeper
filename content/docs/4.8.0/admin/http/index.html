@@ -62,7 +62,9 @@
           
           <a class="navbar-item" href="/docs/4.9.2/overview/overview">
             Release 4.9.2
-            <span class="tag is-success">Stable</span>
+            
+              <span class="tag is-success">Stable</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.9.1/overview/overview">
@@ -93,45 +95,63 @@
           <a class="navbar-item" href="/docs/4.7.3/overview/overview">
             Release 4.7.3
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.2/overview/overview">
             Release 4.7.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.7.1/overview/overview">
             Release 4.7.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.0/overview/overview">
             Release 4.7.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.2/overview/overview">
             Release 4.6.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.6.1/overview/overview">
             Release 4.6.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.0/overview/overview">
             Release 4.6.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.1/overview/overview">
             Release 4.5.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.0/overview/overview">
             Release 4.5.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -139,55 +159,77 @@
           <a class="navbar-item" href="/archives/docs/r4.4.0">
             Release 4.4.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.2">
             Release 4.3.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.1">
             Release 4.3.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.0">
             Release 4.3.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.4">
             Release 4.2.4
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.3">
             Release 4.2.3
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.2">
             Release 4.2.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.1">
             Release 4.2.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.0">
             Release 4.2.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.1.0">
             Release 4.1.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.0.0">
             Release 4.0.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -527,7 +569,7 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
 
 <h2 id="all-the-endpoints">All the endpoints</h2>
 
-<p>Currently all the HTTP endpoints could be divided into these 4 components:</p>
+<p>Currently all the HTTP endpoints could be divided into these 5 components:</p>
 <ol>
   <li>Heartbeat: heartbeat for a specific bookie.</li>
   <li>Config: doing the server configuration for a specific bookie.</li>
@@ -628,8 +670,8 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
       </li>
       <li>Body:
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-     </span><span class="s2">"configName1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"configValue1"</span><span class="p">,</span><span class="w">
-     </span><span class="s2">"configName2"</span><span class="p">:</span><span class="w"> </span><span class="s2">"configValue2"</span><span class="w">
+     </span><span class="nl">"configName1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"configValue1"</span><span class="p">,</span><span class="w">
+     </span><span class="nl">"configName2"</span><span class="p">:</span><span class="w"> </span><span class="s2">"configValue2"</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
       </li>
@@ -816,8 +858,8 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
         <p>Response Body format:</p>
 
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"ledgerId1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ledgerMetadata1"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"ledgerId2"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ledgerMetadata2"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"ledgerId1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ledgerMetadata1"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"ledgerId2"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ledgerMetadata2"</span><span class="p">,</span><span class="w">
     </span><span class="err">...</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
@@ -883,7 +925,7 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
         <p>Response Body format:</p>
 
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"ledgerId1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ledgerMetadata1"</span><span class="w">
+    </span><span class="nl">"ledgerId1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ledgerMetadata1"</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
       </li>
@@ -960,8 +1002,8 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
         <p>Response Body format:</p>
 
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"entryId1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"entry content 1"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"entryId2"</span><span class="p">:</span><span class="w"> </span><span class="s2">"entry content 2"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"entryId1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"entry content 1"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"entryId2"</span><span class="p">:</span><span class="w"> </span><span class="s2">"entry content 2"</span><span class="p">,</span><span class="w">
     </span><span class="err">...</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
@@ -1035,8 +1077,8 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
         <p>Response Body format:</p>
 
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"bookieSocketAddress1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hostname1"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"bookieSocketAddress2"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hostname2"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"bookieSocketAddress1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hostname1"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"bookieSocketAddress2"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hostname2"</span><span class="p">,</span><span class="w">
     </span><span class="err">...</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
@@ -1080,10 +1122,10 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
         <p>Response Body format:</p>
 
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"bookieAddress"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">free</span><span class="p">:</span><span class="w"> </span><span class="err">xxx</span><span class="p">,</span><span class="w"> </span><span class="err">total</span><span class="p">:</span><span class="w"> </span><span class="err">xxx</span><span class="p">},</span><span class="w">
-    </span><span class="s2">"bookieAddress"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">free</span><span class="p">:</span><span class="w"> </span><span class="err">xxx</span><span class="p">,</span><span class="w"> </span><span class="err">total</span><span class="p">:</span><span class="w"> </span><span class="err">xxx</span><span class="p">},</span><span class="w">
+    </span><span class="nl">"bookieAddress"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">free:</span><span class="w"> </span><span class="err">xxx</span><span class="p">,</span><span class="w"> </span><span class="err">total:</span><span class="w"> </span><span class="err">xxx</span><span class="p">},</span><span class="w">
+    </span><span class="nl">"bookieAddress"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">free:</span><span class="w"> </span><span class="err">xxx</span><span class="p">,</span><span class="w"> </span><span class="err">total:</span><span class="w"> </span><span class="err">xxx</span><span class="p">},</span><span class="w">
     </span><span class="err">...</span><span class="w">
-    </span><span class="s2">"clusterInfo"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">total_free</span><span class="p">:</span><span class="w"> </span><span class="err">xxx</span><span class="p">,</span><span class="w"> </span><span class="err">total</span><span class="p">:</span><span class="w"> </span><span class="err">xxx</span><span class="p">}</span><span class="w">
+    </span><span class="nl">"clusterInfo"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">total_free:</span><span class="w"> </span><span class="err">xxx</span><span class="p">,</span><span class="w"> </span><span class="err">total:</span><span class="w"> </span><span class="err">xxx</span><span class="p">}</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
       </li>
@@ -1126,8 +1168,8 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
         <p>Response Body format:</p>
 
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="err">JournalId</span><span class="mi">1</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="err">position</span><span class="mi">1</span><span class="p">,</span><span class="w">
-    </span><span class="err">JournalId</span><span class="mi">2</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="err">position</span><span class="mi">2</span><span class="p">,</span><span class="w">
+    </span><span class="err">JournalId</span><span class="mi">1</span><span class="w"> </span><span class="err">:</span><span class="w"> </span><span class="err">position</span><span class="mi">1</span><span class="p">,</span><span class="w">
+    </span><span class="err">JournalId</span><span class="mi">2</span><span class="w"> </span><span class="err">:</span><span class="w"> </span><span class="err">position</span><span class="mi">2</span><span class="p">,</span><span class="w">
     </span><span class="err">...</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
@@ -1193,9 +1235,9 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
         <p>Response Body format:</p>
 
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"journal files"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"filename1 filename2 ..."</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"entrylog files"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"filename1 filename2..."</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"index files"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"filename1 filename2 ..."</span><span class="w">
+    </span><span class="nl">"journal files"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"filename1 filename2 ..."</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"entrylog files"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"filename1 filename2..."</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"index files"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"filename1 filename2 ..."</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
       </li>
@@ -1247,9 +1289,9 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
       <li>Description:  Ledger data recovery for failed bookie</li>
       <li>Body:
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"bookie_src"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">"bookie_src1"</span><span class="p">,</span><span class="w"> </span><span class="s2">"bookie_src2"</span><span class="err">...</span><span class="w"> </span><span class="p">],</span><span class="w">
-    </span><span class="s2">"bookie_dest"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">"bookie_dest1"</span><span class="p">,</span><span class="w"> </span><span class="s2">"bookie_dest2"</span><span class="err">...</span><span class="w"> </span><span class="p">],</span><span class="w">
-    </span><span class="s2">"delete_cookie"</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;bool_value&gt;</span><span class="w">
+    </span><span class="nl">"bookie_src"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">"bookie_src1"</span><span class="p">,</span><span class="w"> </span><span class="s2">"bookie_src2"</span><span class="err">...</span><span class="w"> </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"bookie_dest"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">"bookie_dest1"</span><span class="p">,</span><span class="w"> </span><span class="s2">"bookie_dest2"</span><span class="err">...</span><span class="w"> </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"delete_cookie"</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;bool_value&gt;</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
       </li>
@@ -1423,7 +1465,7 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
         <p>Response Body format:</p>
 
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"Auditor"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hostname/hostAddress:Port"</span><span class="w">
+    </span><span class="nl">"Auditor"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hostname/hostAddress:Port"</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
       </li>
@@ -1504,7 +1546,7 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
       <li>Description: Set lostBookieRecoveryDelay value in seconds.</li>
       <li>Body:
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"delay_seconds"</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;delay_seconds&gt;</span><span class="w">
+    </span><span class="nl">"delay_seconds"</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;delay_seconds&gt;</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
       </li>
@@ -1567,7 +1609,7 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
       <li>Description: Decommission Bookie, Force trigger Audit task and make sure all the ledgers stored in the decommissioning bookie are replicated.</li>
       <li>Body:
         <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w">  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"bookie_src"</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;bookie_src&gt;</span><span class="w">
+    </span><span class="nl">"bookie_src"</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;bookie_src&gt;</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span></code></pre></div>        </div>
       </li>
@@ -1636,30 +1678,48 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
   <h2 class="title">BookKeeper Admin REST API</h2>
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#all-the-endpoints">All the endpoints</a></li>
-<li class="toc-entry toc-h2"><a href="#heartbeat">Heartbeat</a></li>
+<li class="toc-entry toc-h2"><a href="#heartbeat">Heartbeat</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#endpoint-heartbeat">Endpoint: /heartbeat</a></li>
-<li class="toc-entry toc-h2"><a href="#config">Config</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#config">Config</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1configserver_config">Endpoint: /api/v1/config/server_config</a></li>
-<li class="toc-entry toc-h2"><a href="#config-1">Config</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#config-1">Config</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#endpoint-metrics">Endpoint: /metrics</a></li>
-<li class="toc-entry toc-h2"><a href="#ledger">Ledger</a></li>
-<li class="toc-entry toc-h3"><a href="#endpoint-apiv1ledgerdeleteledger_idledger_id">Endpoint: /api/v1/ledger/delete/?ledger_id=<ledger_id></a></li>
-<li class="toc-entry toc-h3"><a href="#endpoint-apiv1ledgerlistprint_metadatametadata">Endpoint: /api/v1/ledger/list/?print_metadata=<metadata></a></li>
-<li class="toc-entry toc-h3"><a href="#endpoint-apiv1ledgermetadataledger_idledger_id">Endpoint: /api/v1/ledger/metadata/?ledger_id=<ledger_id></a></li>
-<li class="toc-entry toc-h3"><a href="#endpoint-apiv1ledgerreadledger_idledger_idstart_entry_idstart_entry_idend_entry_idend_entry_id">Endpoint: /api/v1/ledger/read/?ledger_id=<ledger_id>&start_entry_id=<start_entry_id>&end_entry_id=<end_entry_id></a></li>
-<li class="toc-entry toc-h2"><a href="#bookie">Bookie</a></li>
-<li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielist_bookiestypetypeprint_hostnameshostnames">Endpoint: /api/v1/bookie/list_bookies/?type=<type>&print_hostnames=<hostnames></a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#ledger">Ledger</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1ledgerdeleteledger_idledger_id">Endpoint: /api/v1/ledger/delete/?ledger_id=&lt;ledger_id&gt;</a></li>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1ledgerlistprint_metadatametadata">Endpoint: /api/v1/ledger/list/?print_metadata=&lt;metadata&gt;</a></li>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1ledgermetadataledger_idledger_id">Endpoint: /api/v1/ledger/metadata/?ledger_id=&lt;ledger_id&gt;</a></li>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1ledgerreadledger_idledger_idstart_entry_idstart_entry_idend_entry_idend_entry_id">Endpoint: /api/v1/ledger/read/?ledger_id=&lt;ledger_id&gt;&amp;start_entry_id=&lt;start_entry_id&gt;&amp;end_entry_id=&lt;end_entry_id&gt;</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#bookie">Bookie</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielist_bookiestypetypeprint_hostnameshostnames">Endpoint: /api/v1/bookie/list_bookies/?type=&lt;type&gt;&amp;print_hostnames=&lt;hostnames&gt;</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielist_bookie_info">Endpoint: /api/v1/bookie/list_bookie_info</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielast_log_mark">Endpoint: /api/v1/bookie/last_log_mark</a></li>
-<li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielist_disk_filefile_typetype">Endpoint: /api/v1/bookie/list_disk_file/?file_type=<type></a></li>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielist_disk_filefile_typetype">Endpoint: /api/v1/bookie/list_disk_file/?file_type=&lt;type&gt;</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookieexpand_storage">Endpoint: /api/v1/bookie/expand_storage</a></li>
-<li class="toc-entry toc-h2"><a href="#auto-recovery">Auto recovery</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#auto-recovery">Auto recovery</a>
+<ul>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverybookie">Endpoint: /api/v1/autorecovery/bookie/</a></li>
-<li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverylist_under_replicated_ledgermissingreplicabookie_addressexcludingmissingreplicabookie_address">Endpoint: /api/v1/autorecovery/list_under_replicated_ledger/?missingreplica=<bookie_address>&excludingmissingreplica=<bookie_address></a></li>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverylist_under_replicated_ledgermissingreplicabookie_addressexcludingmissingreplicabookie_address">Endpoint: /api/v1/autorecovery/list_under_replicated_ledger/?missingreplica=&lt;bookie_address&gt;&amp;excludingmissingreplica=&lt;bookie_address&gt;</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverywho_is_auditor">Endpoint: /api/v1/autorecovery/who_is_auditor</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverytrigger_audit">Endpoint: /api/v1/autorecovery/trigger_audit</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverylost_bookie_recovery_delay">Endpoint: /api/v1/autorecovery/lost_bookie_recovery_delay</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverydecommission">Endpoint: /api/v1/autorecovery/decommission</a></li>
+</ul>
+</li>
 </ul>
 </div>
 
@@ -1787,7 +1847,7 @@ tippy('#record-popover', {
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        Copyright &copy; 2016 - 2019 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+        Copyright &copy; 2016 - 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
       <p>
         Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.

@@ -62,7 +62,9 @@
           
           <a class="navbar-item" href="/docs/4.9.2/overview/overview">
             Release 4.9.2
-            <span class="tag is-success">Stable</span>
+            
+              <span class="tag is-success">Stable</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.9.1/overview/overview">
@@ -93,45 +95,63 @@
           <a class="navbar-item" href="/docs/4.7.3/overview/overview">
             Release 4.7.3
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.2/overview/overview">
             Release 4.7.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.7.1/overview/overview">
             Release 4.7.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.7.0/overview/overview">
             Release 4.7.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.2/overview/overview">
             Release 4.6.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.6.1/overview/overview">
             Release 4.6.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/docs/4.6.0/overview/overview">
             Release 4.6.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.1/overview/overview">
             Release 4.5.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/docs/4.5.0/overview/overview">
             Release 4.5.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -139,55 +159,77 @@
           <a class="navbar-item" href="/archives/docs/r4.4.0">
             Release 4.4.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.2">
             Release 4.3.2
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.1">
             Release 4.3.1
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.3.0">
             Release 4.3.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.4">
             Release 4.2.4
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.3">
             Release 4.2.3
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.2">
             Release 4.2.2
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.1">
             Release 4.2.1
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.2.0">
             Release 4.2.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.1.0">
             Release 4.1.0
             
+              <span class="tag is-warning">EOL</span>
+            
           </a>
           
           <a class="navbar-item" href="/archives/docs/r4.0.0">
             Release 4.0.0
+            
+              <span class="tag is-warning">EOL</span>
             
           </a>
           
@@ -313,12 +355,12 @@
 
 <p>With the proposed interface changes, every ReadHandle will be opened without recovery. For the tailing usecase, usage will look like.</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ReadHandle</span> <span class="n">reader</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newOpenLedgerOp</span><span class="o">().</span><span class="na">withLedgerId</span><span class="o">(</span><span class="n">X</span><span class="o">).</span><span class="na">execute</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">ReadHandle</span> <span class="n">reader</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newOpenLedgerOp</span><span class="o">().</span><span class="na">withLedgerId</span><span class="o">(</span><span class="no">X</span><span class="o">).</span><span class="na">execute</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
 <span class="kt">long</span> <span class="n">lastReadEntry</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">;</span>
 <span class="k">while</span> <span class="o">(!</span><span class="n">leader</span><span class="o">)</span> <span class="o">{</span>
     <span class="kt">long</span> <span class="n">lac</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="na">getLastAddConfirmed</span><span class="o">();</span>
     <span class="k">if</span> <span class="o">(</span><span class="n">lac</span> <span class="o">&gt;</span> <span class="n">lastReadEntry</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">LedgerEntries</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">lastReadEntry</span><span class="o">+</span><span class="mi">1</span><span class="o">,</span> <span class="n">lac</span><span class="o">).</span><span class="na">get</span><span class="o">();</span>
+        <span class="nc">LedgerEntries</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">lastReadEntry</span><span class="o">+</span><span class="mi">1</span><span class="o">,</span> <span class="n">lac</span><span class="o">).</span><span class="na">get</span><span class="o">();</span>
         <span class="n">doSomethingWithEntries</span><span class="o">(</span><span class="n">entries</span><span class="o">);</span>
         <span class="n">lastReadEntry</span> <span class="o">=</span> <span class="n">lac</span><span class="o">;</span>
     <span class="o">}</span>
@@ -327,10 +369,10 @@
 <span class="n">bk</span><span class="o">.</span><span class="na">seal</span><span class="o">(</span><span class="n">reader</span><span class="o">).</span><span class="na">get</span><span class="o">();</span>
 <span class="kt">long</span> <span class="n">lac</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="na">readLastAddConfirmed</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
 <span class="k">if</span> <span class="o">(</span><span class="n">lac</span> <span class="o">&gt;</span> <span class="n">lastReadEntry</span><span class="o">)</span> <span class="o">{</span>
-    <span class="n">LedgerEntries</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">lastReadEntry</span><span class="o">+</span><span class="mi">1</span><span class="o">,</span> <span class="n">lac</span><span class="o">).</span><span class="na">get</span><span class="o">();</span>
+    <span class="nc">LedgerEntries</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">lastReadEntry</span><span class="o">+</span><span class="mi">1</span><span class="o">,</span> <span class="n">lac</span><span class="o">).</span><span class="na">get</span><span class="o">();</span>
     <span class="n">doSomethingWithEntries</span><span class="o">(</span><span class="n">entries</span><span class="o">);</span>
 <span class="o">}</span>
-<span class="n">WriteHandle</span> <span class="n">writer</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newCreateLedgerOp</span><span class="o">().</span><span class="na">execute</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
+<span class="nc">WriteHandle</span> <span class="n">writer</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newCreateLedgerOp</span><span class="o">().</span><span class="na">execute</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
 </code></pre></div></div>
 
 <p>Constrast this with how it is with the current recovery on open mechanism.</p>
@@ -387,7 +429,7 @@ WriteHandle writer = bk.newCreateLedgerOp().execute().get();
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        Copyright &copy; 2016 - 2019 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+        Copyright &copy; 2016 - 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
       <p>
         Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.
