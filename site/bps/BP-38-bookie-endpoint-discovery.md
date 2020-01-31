@@ -30,9 +30,7 @@ interface BookieServiceInfo {
         String name;
         String hostname;
         int port;
-        String protocol; // "bookie-rpc", "http", "https"....
-        String[] auth; // "sasl-gsapi", "tls-client-auth", "sasl-md5"....
-        String[] extensions; // "starttls"
+        String protocol; // "bookie-rpc", "http", "https"....      
     }
     List<Endpoint> endpoints;
     Map<String, String> properties; // additional properties
@@ -74,17 +72,13 @@ For the ZooKeeper based implementation we are going to store such information in
          "name": "bookie",
          "hostname": "localhost",
          "port": 3181,
-         "protocol": "bookie-rpc",
-         "auth": ["sasl-gsapi"],
-         "extensions": ["starttls"]
+         "protocol": "bookie-rpc"
         },
         {
          "name": "bookie-http-server",
          "hostname": "localhost",
          "port": 8080,
-         "protocol": "http",
-         "auth": [],
-         "extensions": []
+         "protocol": "http"
         }
     ],
     properties {
@@ -106,14 +100,10 @@ It is out of the scope of this proposal to change semantics of ledger metadata, 
 - **hostname**: the hostname (or a raw IP address)
 - **port**: the TCP port (int)
 - **protocol**: the type of service (bookie-rpc, http, https)
-- **auth**: supported authentication types (tls-auth, sasl-gssapi...)
-- **extensions**: protocol extensions, like 'starttls'
 
 **Well known additional properties**
-- **metrics.type**: the type of metrics, for instance 'prometheus' for Prometheus.io metrics
 - **autorecovery.enabled**: 'true' case of the presence of the auto recovery daemon
 
-In the future we could also leverage this information from the PlacementPolicy, in order to select only bookies that publish a TLS endpoint or a particular authentication mechanism.
 The GRPC service would use this mechanism as well.
 
 #### Which kind of properties should be stored in BookieServiceInfo ?
@@ -121,7 +111,7 @@ The GRPC service would use this mechanism as well.
 We should store here only the minimal set of information useful to reach the bookie in an efficient way.
 So we are not storing on the Metadata Service information about the internal state of the server: if you know the address of an HTTP endpoint you can use the REST API to query the Bookie for its state.
 
-These properties may change during the lifetime of a Bookie, think about a configuration (change auth type, enable TLS, change network address) or a dynamic assigned DNS name.
+These properties may change during the lifetime of a Bookie, think about a configuration (change network address) or a dynamic assigned DNS name.
 
 It is better not to expose the version of the Bookie, if the client wants to use particular features of the Bookie this should be implemented on the protocol itself, not just by using the version. The version of the Bookie could be exposed on the HTTP endpoint.
 
@@ -133,9 +123,24 @@ See the 'Public interfaces' section.
 
 The proposed change will be compatible with all existing clients.
 
+In case a new client is reading an empty znode it will assume a default configuration with a single 'bookie-rpc' endpoint, like in this example:
+
+{
+    "endpoints": [
+        {
+         "name": "bookie",
+         "hostname": "hostname-from-bookieid",
+         "port": port-from-bookieid,
+         "protocol": "bookie-rpc"
+        }
+    ]
+}
+
+This information is enough in order to use the RPC service.
+
 ### Test Plan
 
-New unit tests will be added to cover the code change. 
+New unit tests will be added to cover all of the code changes.
 No need for additional integration tests.
 
 ### Rejected Alternatives
