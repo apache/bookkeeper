@@ -1250,10 +1250,10 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             fail("Delete log twice should not throw any exception");
         }
     }
-    
+
     @Test(timeout = 60000)
     public void testSyncLogWithLedgerMetadata() throws Exception {
-        
+
         String application = "myapplication";
         String component = "mycomponent";
         String custom = "mycustommetadata";
@@ -1261,28 +1261,28 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         ledgerMetadata.setApplication(application);
         ledgerMetadata.setComponent(component);
         ledgerMetadata.addCustomMetadata("custom", custom);
-        
+
         BKDistributedLogManager dlm = createNewDLM(conf, "distrlog-writemetadata");
-        
+
         BKSyncLogWriter sync = dlm.openLogWriter(ledgerMetadata);
         sync.write(DLMTestUtil.getLogRecordInstance(1));
-        
+
         LedgerHandle lh = getLedgerHandle(sync.getCachedLogWriter());
         Map<String, byte[]> customMeta = lh.getCustomMetadata();
         assertEquals(application, new String(customMeta.get("application"), UTF_8));
         assertEquals(component, new String(customMeta.get("component"), UTF_8));
         assertEquals(custom, new String(customMeta.get("custom"), UTF_8));
-        
+
         sync.closeAndComplete();
     }
-    
+
     @Test(timeout = 60000)
     public void testAsyncLogWithLedgerMetadata() throws Exception {
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
         confLocal.addConfiguration(conf);
         confLocal.setOutputBufferSize(0);
         confLocal.setWriteLockEnabled(false);
-        
+
         BKDistributedLogManager dlm = createNewDLM(confLocal, "distrlog-writemetadata");
 
         String application = "myapplication";
