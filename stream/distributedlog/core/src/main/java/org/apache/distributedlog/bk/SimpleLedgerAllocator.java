@@ -161,14 +161,23 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                                                    final QuorumConfigProvider quorumConfigProvider,
                                                    final ZooKeeperClient zkc,
                                                    final BookKeeperClient bkc) {
+        return SimpleLedgerAllocator.of(allocatePath, allocationData, quorumConfigProvider, zkc, bkc, null);
+    }
+
+    public static CompletableFuture<SimpleLedgerAllocator> of(final String allocatePath,
+                                                   final Versioned<byte[]> allocationData,
+                                                   final QuorumConfigProvider quorumConfigProvider,
+                                                   final ZooKeeperClient zkc,
+                                                   final BookKeeperClient bkc,
+                                                   final LedgerMetadata ledgerMetadata) {
         if (null != allocationData && null != allocationData.getValue()
                 && null != allocationData.getVersion()) {
             return FutureUtils.value(new SimpleLedgerAllocator(allocatePath, allocationData,
-                    quorumConfigProvider, zkc, bkc));
+                    quorumConfigProvider, zkc, bkc, ledgerMetadata));
         }
         return getAndCreateAllocationData(allocatePath, zkc)
             .thenApply(allocationData1 -> new SimpleLedgerAllocator(allocatePath, allocationData1,
-                        quorumConfigProvider, zkc, bkc));
+                        quorumConfigProvider, zkc, bkc, ledgerMetadata));
     }
 
     /**
