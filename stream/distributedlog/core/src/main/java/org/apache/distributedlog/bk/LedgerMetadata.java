@@ -40,6 +40,9 @@ public final class LedgerMetadata {
         if (key == null || "".equals(key.trim())) {
             throw new IllegalArgumentException("Metadata key cant be empty");
         }
+        if (value == null || "".equals(value.trim())) {
+            throw new IllegalArgumentException("Metadata value cant be empty");
+        }
 
         if (customMetadata == null) {
             customMetadata = new HashMap<>();
@@ -60,9 +63,7 @@ public final class LedgerMetadata {
         if (customMetadata != null) {
             for (Map.Entry<String, String> e : customMetadata.entrySet()) {
                 String value = e.getValue();
-                meta.put(e.getKey(), value == null
-                        ? null
-                        : value.getBytes(StandardCharsets.UTF_8));
+                meta.put(e.getKey(), value.getBytes(StandardCharsets.UTF_8));
             }
         }
 

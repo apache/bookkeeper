@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.AppendOnlyStreamReader;
 import org.apache.distributedlog.AppendOnlyStreamWriter;
 import org.apache.distributedlog.DLSN;
@@ -113,9 +114,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * @return result represents the open result
      */
     default CompletableFuture<AsyncLogWriter> openAsyncLogWriter(LedgerMetadata ledgerMetadata) {
-        CompletableFuture<AsyncLogWriter> future = new CompletableFuture<>();
-        future.completeExceptionally(new UnsupportedOperationException());
-        return future;
+        return FutureUtils.exception(new UnsupportedOperationException());
     }
 
     /**
