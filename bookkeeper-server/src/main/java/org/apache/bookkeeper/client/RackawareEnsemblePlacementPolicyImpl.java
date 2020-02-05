@@ -32,7 +32,6 @@ import com.google.common.cache.CacheLoader;
 
 import io.netty.util.HashedWheelTimer;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;

@@ -45,8 +45,8 @@ import org.apache.bookkeeper.client.ZoneawareEnsemblePlacementPolicyImpl.ZoneAwa
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
-import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NetUtils;
+import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.junit.Test;
