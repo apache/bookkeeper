@@ -22,11 +22,15 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +42,7 @@ public class NetUtils {
     private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
     private final static String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])"
             + "(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
-    final static Pattern pattern = Pattern.compile(ip);
+    private final static Pattern pattern = Pattern.compile(ip);
     /**
      * Given a string representation of a host, return its ip address
      * in textual presentation.
