@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,9 +40,9 @@ import org.slf4j.LoggerFactory;
  */
 public class NetUtils {
     private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
-    private final static String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])"
+    private static final String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])"
             + "(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
-    private final static Pattern pattern = Pattern.compile(ip);
+    private static final Pattern pattern = Pattern.compile(ip);
     /**
      * Given a string representation of a host, return its ip address
      * in textual presentation.
@@ -94,21 +94,23 @@ public class NetUtils {
 
     public static String getLocalHost() throws UnknownHostException {
         String ip = InetAddress.getLocalHost().getHostAddress();
-        if (InetAddress.getLocalHost().isLoopbackAddress() == true) {
+        if (InetAddress.getLocalHost().isLoopbackAddress()) {
             return getAddress();
-        } else
+        } else {
             return ip;
-        
+        }
+
     }
-    
+
     private static boolean isboolIp(String ipAddress) {
         Matcher matcher = pattern.matcher(ipAddress);
         return matcher.matches();
     }
-    
+
     private static String getAddress() throws UnknownHostException {
         try {
-            for (Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces(); interfaces.hasMoreElements();) {
+            for (Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+                    interfaces.hasMoreElements();) {
                 NetworkInterface networkInterface = interfaces.nextElement();
                 if (networkInterface.isLoopback() || networkInterface.isVirtual() || !networkInterface.isUp()) {
                     continue;
@@ -123,12 +125,13 @@ public class NetUtils {
                     }
                 }
             }
-            throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException");
+            throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws "
+                    + "UnknownHostException");
         } catch (SocketException e) {
-            throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException,"
-                    + e.getMessage());
+            throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws "
+                    + "UnknownHostException," + e.getMessage());
         }
-        
+
     }
 
 }
