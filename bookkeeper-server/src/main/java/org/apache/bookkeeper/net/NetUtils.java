@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,6 +38,7 @@ public class NetUtils {
     private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
     private final static String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])"
             + "(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
+    final static Pattern pattern = Pattern.compile(ip);
     /**
      * Given a string representation of a host, return its ip address
      * in textual presentation.
@@ -88,7 +90,7 @@ public class NetUtils {
 
     public static String getLocalHost() throws UnknownHostException {
         String ip = InetAddress.getLocalHost().getHostAddress();
-        if (ip.equals("127.0.0.1")) {
+        if (InetAddress.getLocalHost().isLoopbackAddress() == true) {
             return getAddress();
         } else
             return ip;
@@ -96,7 +98,6 @@ public class NetUtils {
     }
     
     private static boolean isboolIp(String ipAddress) {
-        Pattern pattern = Pattern.compile(ip);
         Matcher matcher = pattern.matcher(ipAddress);
         return matcher.matches();
     }
@@ -118,8 +119,8 @@ public class NetUtils {
                     }
                 }
             }
-            throw new RuntimeException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException");
-        } catch (Throwable e) {
+            throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException");
+        } catch (SocketException e) {
             throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException,"
                     + e.getMessage());
         }
