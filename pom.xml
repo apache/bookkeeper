@@ -839,7 +839,7 @@
           <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid</argLine>
           <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           <reuseForks>false</reuseForks>
-          <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+          <forkedProcessTimeoutInSeconds>3600</forkedProcessTimeoutInSeconds>
           <rerunFailingTestsCount>${testRetryCount}</rerunFailingTestsCount>
         </configuration>
       </plugin>
