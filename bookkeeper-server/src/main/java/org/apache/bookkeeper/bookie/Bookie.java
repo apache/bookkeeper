@@ -852,11 +852,11 @@ public class Bookie extends BookieCriticalThread {
                         }
                     } else if (entryId < 0) {
                         /*
-                         * this is possible if bookie code binary is rolledback
+                         * this is possible if bookie code binary is rolled back
                          * to older version but when it is trying to read
                          * Journal which was created previously using newer
-                         * code/journalversion, which introduced new special
-                         * entry. So in anycase, if we see unrecognizable
+                         * code/journal version, which introduced new special
+                         * entry. So in any case, if we see unrecognizable
                          * special entry while replaying journal we should skip
                          * (ignore) it.
                          */

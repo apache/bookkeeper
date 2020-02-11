@@ -103,7 +103,7 @@ class LedgerOpenOp {
     }
 
     /**
-     * Inititates the ledger open operation.
+     * Initiates the ledger open operation.
      */
     public void initiate() {
         startTime = MathUtils.nowInNano();

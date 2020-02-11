@@ -733,7 +733,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     @Override
     public void checkpointComplete(Checkpoint checkpoint, boolean compact) throws IOException {
         if (!(checkpoint instanceof LogMarkCheckpoint)) {
-            return; // we didn't create this checkpoint, so dont do anything with it
+            return; // we didn't create this checkpoint, so don't do anything with it
         }
         LogMarkCheckpoint lmcheckpoint = (LogMarkCheckpoint) checkpoint;
         LastLogMark mark = lmcheckpoint.mark;

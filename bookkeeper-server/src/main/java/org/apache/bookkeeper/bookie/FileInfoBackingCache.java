@@ -65,7 +65,7 @@ class FileInfoBackingCache {
                 // and if it is called (and succeeds) the fi will have been
                 // removed from fileInfos at the same time, so we should not
                 // have been able to get a reference to it here.
-                // The caller of loadFileInfo owns the refence, and is
+                // The caller of loadFileInfo owns the reference, and is
                 // responsible for calling the corresponding #release().
                 return tryRetainFileInfo(fi);
             }
@@ -136,7 +136,7 @@ class FileInfoBackingCache {
 
         /**
          * Mark this fileinfo as dead. We can only mark a fileinfo as
-         * dead if noone currently holds a reference to it.
+         * dead if no one currently holds a reference to it.
          *
          * @return true if we marked as dead, false otherwise
          */
@@ -149,14 +149,14 @@ class FileInfoBackingCache {
          * When a client obtains a fileinfo from a container object,
          * but that container object may release the fileinfo before
          * the client has a chance to call retain. In this case, the
-         * file info could be released and the destroyed before we ever
+         * file info could be released and destroyed before we ever
          * get a chance to use it.
          *
          * <p>tryRetain avoids this problem, by doing a compare-and-swap on
          * the reference count. If the refCount is negative, it means that
          * the fileinfo is being cleaned up, and this fileinfo object should
          * not be used. This works in tandem with #markDead, which will only
-         * set the refCount to negative if noone currently has it retained
+         * set the refCount to negative if no one currently has it retained
          * (i.e. the refCount is 0).
          *
          * @return true if we managed to increment the refcount, false otherwise

@@ -454,7 +454,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
     @Override
     public void checkpoint(Checkpoint checkpoint) throws IOException {
-        // we don't need to check somethingwritten since checkpoint
+        // we don't need to check somethingWritten since checkpoint
         // is scheduled when rotate an entry logger file. and we could
         // not set somethingWritten to false after checkpoint, since
         // current entry logger file isn't flushed yet.

@@ -2967,7 +2967,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while
+     * Gets the minimum safe usable size to be available in index directory for Bookie to create Index File while
      * replaying journal at the time of Bookie Start in Readonly Mode (in bytes).
      *
      * @return minimum safe usable size to be available in index directory for bookie to create index files.
@@ -2978,7 +2978,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Sets the minimum safe Usable size to be available in index directory for Bookie to create Index File while
+     * Sets the minimum safe usable size to be available in index directory for Bookie to create Index File while
      * replaying journal at the time of Bookie Start in Readonly Mode (in bytes).
      *
      * <p>This parameter allows creating index files when there are enough disk spaces, even when the bookie
