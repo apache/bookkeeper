@@ -160,7 +160,7 @@ class JournalChannel implements Closeable {
                         + " suddenly appeared, is another bookie process running?");
             }
             randomAccessFile = new RandomAccessFile(fn, "rw");
-            fc = randomAccessFile.getChannel();
+            fc = openFileChannel(randomAccessFile);
             formatVersion = formatVersionToWrite;
 
             int headerSize = (V4 == formatVersion) ? VERSION_HEADER_SIZE : HEADER_SIZE;
@@ -178,7 +178,7 @@ class JournalChannel implements Closeable {
             fc.write(zeros, nextPrealloc - journalAlignSize);
         } else {  // open an existing file
             randomAccessFile = new RandomAccessFile(fn, "r");
-            fc = randomAccessFile.getChannel();
+            fc = openFileChannel(randomAccessFile);
             bc = null; // readonly
 
             ByteBuffer bb = ByteBuffer.allocate(VERSION_HEADER_SIZE);
@@ -290,5 +290,13 @@ class JournalChannel implements Closeable {
             }
             this.lastDropPosition = newDropPos;
         }
+    }
+
+    public static FileChannel openFileChannel(RandomAccessFile randomAccessFile) {
+        if (randomAccessFile == null) {
+            throw new IllegalArgumentException("Input cannot be null");
+        }
+
+        return randomAccessFile.getChannel();
     }
 }

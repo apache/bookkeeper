@@ -47,12 +47,19 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test the bookie journal.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(JournalChannel.class)
 public class BookieJournalTest {
     private static final Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
 
@@ -794,4 +801,50 @@ public class BookieJournalTest {
             // correct behaviour
         }
     }
+
+    @Test(expected = IOException.class)
+    public void testJournalScanIOException() throws Exception {
+        File journalDir = createTempDir("bookie", "journal");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+
+        File ledgerDir = createTempDir("bookie", "ledger");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+
+        writeV4Journal(Bookie.getCurrentDirectory(journalDir), 100, "testPasswd".getBytes());
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+                .setMetadataServiceUri(null);
+
+        Journal.JournalScanner journalScanner = new DummyJournalScan();
+        FileChannel fileChannel = PowerMockito.mock(FileChannel.class);
+
+        PowerMockito.when(fileChannel.position(Mockito.anyLong()))
+                .thenThrow(new IOException());
+
+        PowerMockito.mockStatic(JournalChannel.class);
+        PowerMockito.when(JournalChannel.openFileChannel(Mockito.any(RandomAccessFile.class))).thenReturn(fileChannel);
+
+        Bookie b = new Bookie(conf);
+        for (Journal journal : b.journals) {
+            List<Long> journalIds = journal.listJournalIds(journal.getJournalDirectory(), null);
+
+            assert journalIds.size() == 1;
+
+            journal.scanJournal(journalIds.get(0), Long.MAX_VALUE, journalScanner);
+        }
+    }
+
+    private class DummyJournalScan implements Journal.JournalScanner {
+        boolean printJournalVersion = false;
+
+        @Override
+        public void process(int journalVersion, long offset, ByteBuffer entry) throws IOException {
+            if (!printJournalVersion) {
+                System.out.println("Journal Version : " + journalVersion);
+                printJournalVersion = true;
+            }
+        }
+    };
 }
