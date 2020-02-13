@@ -1,7 +1,7 @@
 ---
 title: "BP-38: Publish Bookie Service Info on Metadata Service"
 issue: https://github.com/apache/bookkeeper/2215
-state: 'Under Discussion'
+state: 'Accepted'
 release: "4.11.0"
 ---
 
