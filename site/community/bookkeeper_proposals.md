@@ -109,6 +109,7 @@ Proposal | State
 [BP-35: 128 bits support](../../bps/BP-35-128-bits-support) | Accepted
 [BP-36: Stats documentation annotation](../../bps/BP-36-stats-documentation-annotation) | Accepted
 [BP-37: Improve configuration management for better documentation](../../bps/BP-37-conf-documentation) | Accepted
+[BP-38: Publish Bookie Service Info on Metadata Service](../../bps/BP-38-bookie-endpoint-discovery) | Accepted
 
 ### Adopted
 
