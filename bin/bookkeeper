@@ -108,30 +108,16 @@ shift
 LOCALBOOKIES_CONFIG_DIR="${LOCALBOOKIES_CONFIG_DIR:-/tmp/localbookies-config}"
 if [ ${COMMAND} == "shell" ]; then
   DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j.shell.properties
-  LOCALBOOKIE=0
-   while [ $# -gt 0 ]
-    do
-       opt="$1"
-       case $opt in
-         (-conf)
-            BOOKIE_CONF="$2"
-            shift 2
-         ;;
-         (-localbookie)
-            LOCALBOOKIE=1
-            if [[ $2 == *:* ]];
-            then
-               LOCALBOOKIE_CONF=${LOCALBOOKIES_CONFIG_DIR}/$2.conf
-               shift 2
-            else
-               LOCALBOOKIE_CONF=${LOCALBOOKIES_CONFIG_DIR}/baseconf.conf
-               shift
-            fi
-         ;;
-         (*)
-         ;;
-       esac
-    done
+  if [[ $1 == "-localbookie"  ]]; then
+    if [[ $2 == *:* ]];
+    then
+      BOOKIE_CONF=${LOCALBOOKIES_CONFIG_DIR}/$2.conf
+      shift 2
+    else
+      BOOKIE_CONF=${LOCALBOOKIES_CONFIG_DIR}/baseconf.conf
+      shift
+    fi
+  fi
 fi
 
 if [ -z "$BOOKIE_ZK_CONF" ]; then
@@ -186,11 +172,7 @@ elif [ $COMMAND == "zookeeper" ]; then
     exec $JAVA $OPTS -Dbookkeeper.log.file=$BOOKIE_LOG_FILE org.apache.zookeeper.server.quorum.QuorumPeerMain $BOOKIE_ZK_CONF $@
 elif [ ${COMMAND} == "shell" ]; then
   ENTRY_FORMATTER_ARG="-DentryFormatterClass=${ENTRY_FORMATTER_CLASS:-org.apache.bookkeeper.util.StringEntryFormatter}"
-  if [ ${LOCALBOOKIE} == 1 ]; then
-             exec ${JAVA} ${OPTS} ${ENTRY_FORMATTER_ARG} org.apache.bookkeeper.bookie.BookieShell -conf ${LOCALBOOKIE_CONF} $@
-     else
-             exec ${JAVA} ${OPTS} ${ENTRY_FORMATTER_ARG} org.apache.bookkeeper.bookie.BookieShell -conf ${BOOKIE_CONF} $@
-     fi
+  exec ${JAVA} ${OPTS} ${ENTRY_FORMATTER_ARG} org.apache.bookkeeper.bookie.BookieShell -conf ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "help" ]; then
   bookkeeper_help;
 else
