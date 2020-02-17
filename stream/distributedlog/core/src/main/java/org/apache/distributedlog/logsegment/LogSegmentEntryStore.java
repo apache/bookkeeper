@@ -21,6 +21,7 @@ import com.google.common.annotations.Beta;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.LogSegmentMetadata;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.Allocator;
@@ -49,6 +50,20 @@ public interface LogSegmentEntryStore {
     Allocator<LogSegmentEntryWriter, Object> newLogSegmentAllocator(
             LogMetadataForWriter metadata,
             DynamicDistributedLogConfiguration dynConf) throws IOException;
+
+    /**
+     * Create a new log segment allocator for allocating log segment entry writers.
+     *
+     * @param metadata the metadata for the log stream
+     * @param ledgerMetadata metadata to be attached to underlying ledgers
+     * @return future represent the log segment allocator
+     */
+    default Allocator<LogSegmentEntryWriter, Object> newLogSegmentAllocator(
+            LogMetadataForWriter metadata,
+            DynamicDistributedLogConfiguration dynConf,
+            LedgerMetadata ledgerMetadata) throws IOException {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Open the reader for reading data to the log <i>segment</i>.

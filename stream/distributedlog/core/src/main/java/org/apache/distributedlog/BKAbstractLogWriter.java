@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
@@ -94,6 +95,11 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
 
     protected BKLogWriteHandler createAndCacheWriteHandler()
             throws IOException {
+        return createAndCacheWriteHandler(null);
+    }
+
+    protected BKLogWriteHandler createAndCacheWriteHandler(LedgerMetadata ledgerMetadata)
+            throws IOException {
         synchronized (this) {
             if (writeHandler != null) {
                 return writeHandler;
@@ -102,7 +108,7 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         // This code path will be executed when the handler is not set or has been closed
         // due to forceRecovery during testing
         BKLogWriteHandler newHandler =
-                Utils.ioResult(bkDistributedLogManager.asyncCreateWriteHandler(false));
+                Utils.ioResult(bkDistributedLogManager.asyncCreateWriteHandler(false, ledgerMetadata));
         boolean success = false;
         try {
             synchronized (this) {

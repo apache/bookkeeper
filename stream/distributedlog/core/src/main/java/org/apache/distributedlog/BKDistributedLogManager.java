@@ -43,6 +43,7 @@ import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.callback.LogSegmentListener;
 import org.apache.distributedlog.common.stats.BroadCastStatsLogger;
 import org.apache.distributedlog.common.util.PermitLimiter;
@@ -335,10 +336,16 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     public BKLogWriteHandler createWriteHandler(boolean lockHandler)
             throws IOException {
-        return Utils.ioResult(asyncCreateWriteHandler(lockHandler));
+        return createWriteHandler(lockHandler, null);
     }
 
-    CompletableFuture<BKLogWriteHandler> asyncCreateWriteHandler(final boolean lockHandler) {
+    public BKLogWriteHandler createWriteHandler(boolean lockHandler, LedgerMetadata ledgerMetadata)
+            throws IOException {
+        return Utils.ioResult(asyncCreateWriteHandler(lockHandler, ledgerMetadata));
+    }
+
+    CompletableFuture<BKLogWriteHandler> asyncCreateWriteHandler(final boolean lockHandler,
+                                                                 LedgerMetadata ledgerMetadata) {
         // Fetching Log Metadata (create if not exists)
         return driver.getLogStreamMetadataStore(WRITER).getLog(
                 uri,
@@ -347,12 +354,13 @@ class BKDistributedLogManager implements DistributedLogManager {
                 conf.getCreateStreamIfNotExists()
         ).thenCompose(logMetadata -> {
             CompletableFuture<BKLogWriteHandler> createPromise = new CompletableFuture<BKLogWriteHandler>();
-            createWriteHandler(logMetadata, lockHandler, createPromise);
+            createWriteHandler(logMetadata, ledgerMetadata, lockHandler, createPromise);
             return createPromise;
         });
     }
 
     private void createWriteHandler(LogMetadataForWriter logMetadata,
+                                    LedgerMetadata ledgerMetadata,
                                     boolean lockHandler,
                                     final CompletableFuture<BKLogWriteHandler> createPromise) {
         // Build the locks
@@ -366,7 +374,7 @@ class BKDistributedLogManager implements DistributedLogManager {
         Allocator<LogSegmentEntryWriter, Object> segmentAllocator;
         try {
             segmentAllocator = driver.getLogSegmentEntryStore(WRITER)
-                    .newLogSegmentAllocator(logMetadata, dynConf);
+                    .newLogSegmentAllocator(logMetadata, dynConf, ledgerMetadata);
         } catch (IOException ioe) {
             FutureUtils.completeExceptionally(createPromise, ioe);
             return;
@@ -479,11 +487,16 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     @Override
     public BKSyncLogWriter openLogWriter() throws IOException {
+        return openLogWriter(null);
+    }
+
+    @Override
+    public BKSyncLogWriter openLogWriter(LedgerMetadata ledgerMetadata) throws IOException {
         checkClosedOrInError("startLogSegmentNonPartitioned");
         BKSyncLogWriter writer = new BKSyncLogWriter(conf, dynConf, this);
         boolean success = false;
         try {
-            writer.createAndCacheWriteHandler();
+            writer.createAndCacheWriteHandler(ledgerMetadata);
             BKLogWriteHandler writeHandler = writer.getWriteHandler();
             Utils.ioResult(writeHandler.lockHandler());
             success = true;
@@ -507,6 +520,11 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     @Override
     public CompletableFuture<AsyncLogWriter> openAsyncLogWriter() {
+        return openAsyncLogWriter(null);
+    }
+
+    @Override
+    public CompletableFuture<AsyncLogWriter> openAsyncLogWriter(LedgerMetadata ledgerMetadata) {
         try {
             checkClosedOrInError("startLogSegmentNonPartitioned");
         } catch (AlreadyClosedException e) {
@@ -516,7 +534,7 @@ class BKDistributedLogManager implements DistributedLogManager {
         CompletableFuture<BKLogWriteHandler> createWriteHandleFuture;
         synchronized (this) {
             // 1. create the locked write handler
-            createWriteHandleFuture = asyncCreateWriteHandler(true);
+            createWriteHandleFuture = asyncCreateWriteHandler(true, ledgerMetadata);
         }
         return createWriteHandleFuture.thenCompose(writeHandler -> {
             final BKAsyncLogWriter writer;

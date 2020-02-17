@@ -23,12 +23,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.AppendOnlyStreamReader;
 import org.apache.distributedlog.AppendOnlyStreamWriter;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.callback.LogSegmentListener;
 import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.namespace.NamespaceDriver;
@@ -105,12 +107,35 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
     CompletableFuture<AsyncLogWriter> openAsyncLogWriter();
 
     /**
+     * Open async log writer to write records to the log stream.
+     * Provided metadata will be attached to the underlying BookKeeper ledgers.
+     *
+     * @param ledgerMetadata
+     * @return result represents the open result
+     */
+    default CompletableFuture<AsyncLogWriter> openAsyncLogWriter(LedgerMetadata ledgerMetadata) {
+        return FutureUtils.exception(new UnsupportedOperationException());
+    }
+
+    /**
      * Open sync log writer to write records to the log stream.
      *
      * @return sync log writer
      * @throws IOException when fails to open a sync log writer.
      */
     LogWriter openLogWriter() throws IOException;
+
+    /**
+     * Open sync log writer to write records to the log stream.
+     * Provided metadata will be attached to the underlying BookKeeper ledgers.
+     *
+     * @param ledgerMetadata
+     * @return sync log writer
+     * @throws IOException when fails to open a sync log writer.
+     */
+    default LogWriter openLogWriter(LedgerMetadata ledgerMetadata) throws IOException {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Begin writing to the log stream identified by the name.
