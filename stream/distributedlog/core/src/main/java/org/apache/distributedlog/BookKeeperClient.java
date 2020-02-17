@@ -41,6 +41,7 @@ import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.distributedlog.ZooKeeperClient.Credentials;
 import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.net.NetUtils;
@@ -203,7 +204,8 @@ public class BookKeeperClient {
     // Util functions
     public CompletableFuture<LedgerHandle> createLedger(int ensembleSize,
                                                         int writeQuorumSize,
-                                                        int ackQuorumSize) {
+                                                        int ackQuorumSize,
+                                                        LedgerMetadata ledgerMetadata) {
         BookKeeper bk;
         try {
             bk = get();
@@ -221,7 +223,7 @@ public class BookKeeperClient {
                             promise.completeExceptionally(BKException.create(rc));
                         }
                     }
-                }, null, Collections.emptyMap());
+                }, null, ledgerMetadata == null ? Collections.emptyMap() : ledgerMetadata.getMetadata());
         return promise;
     }
 
