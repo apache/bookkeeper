@@ -23,6 +23,8 @@ package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +32,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+
 import org.apache.bookkeeper.util.NativeIO;
 import org.apache.bookkeeper.util.ZeroBuffer;
 import org.slf4j.Logger;
@@ -292,6 +295,7 @@ class JournalChannel implements Closeable {
         }
     }
 
+    @VisibleForTesting
     public static FileChannel openFileChannel(RandomAccessFile randomAccessFile) {
         if (randomAccessFile == null) {
             throw new IllegalArgumentException("Input cannot be null");

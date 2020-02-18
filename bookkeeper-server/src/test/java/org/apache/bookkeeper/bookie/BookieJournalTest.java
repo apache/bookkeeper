@@ -826,25 +826,28 @@ public class BookieJournalTest {
         PowerMockito.mockStatic(JournalChannel.class);
         PowerMockito.when(JournalChannel.openFileChannel(Mockito.any(RandomAccessFile.class))).thenReturn(fileChannel);
 
-        Bookie b = new Bookie(conf);
+        Bookie b = null;
+
+        try {
+            b = new Bookie(conf);
+        } finally {
+            b.shutdown();
+        }
+
         for (Journal journal : b.journals) {
             List<Long> journalIds = journal.listJournalIds(journal.getJournalDirectory(), null);
 
-            assert journalIds.size() == 1;
+            assertEquals(journalIds.size(), 1);
 
             journal.scanJournal(journalIds.get(0), Long.MAX_VALUE, journalScanner);
         }
     }
 
     private class DummyJournalScan implements Journal.JournalScanner {
-        boolean printJournalVersion = false;
 
         @Override
         public void process(int journalVersion, long offset, ByteBuffer entry) throws IOException {
-            if (!printJournalVersion) {
-                System.out.println("Journal Version : " + journalVersion);
-                printJournalVersion = true;
-            }
+            LOG.warn("Journal Version : " + journalVersion);
         }
     };
 }
