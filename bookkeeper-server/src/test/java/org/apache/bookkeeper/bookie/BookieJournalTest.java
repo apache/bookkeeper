@@ -802,7 +802,10 @@ public class BookieJournalTest {
         }
     }
 
-    @Test(expected = IOException.class)
+    /**
+      * Test for fake IOException during read of Journal.
+      */
+    @Test
     public void testJournalScanIOException() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -826,21 +829,22 @@ public class BookieJournalTest {
         PowerMockito.mockStatic(JournalChannel.class);
         PowerMockito.when(JournalChannel.openFileChannel(Mockito.any(RandomAccessFile.class))).thenReturn(fileChannel);
 
-        Bookie b = null;
-
-        try {
-            b = new Bookie(conf);
-        } finally {
-            b.shutdown();
-        }
+        Bookie b = new Bookie(conf);
 
         for (Journal journal : b.journals) {
             List<Long> journalIds = journal.listJournalIds(journal.getJournalDirectory(), null);
 
             assertEquals(journalIds.size(), 1);
 
-            journal.scanJournal(journalIds.get(0), Long.MAX_VALUE, journalScanner);
+            try {
+                journal.scanJournal(journalIds.get(0), Long.MAX_VALUE, journalScanner);
+                fail("Should not have been able to scan the journal");
+            } catch (Exception e) {
+                // Expected
+            }
         }
+
+        b.shutdown();
     }
 
     private class DummyJournalScan implements Journal.JournalScanner {
