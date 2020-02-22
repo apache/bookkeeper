@@ -25,7 +25,7 @@ Ensemble size | **E** | The number of nodes the ledger is stored on
 Write quorum size | **Q<sub>w</sub>** | The number of nodes each entry is written to. In effect, the max replication for the entry.
 Ack quorum size | **Q<sub>a</sub>** | The number of nodes an entry must be acknowledged on. In effect, the minimum replication for the entry.
 Current state | | The current status of the ledger. One of `OPEN`, `CLOSED`, or `IN_RECOVERY`.
-Last entry | | The last entry in the ledger or `NULL` is the current state is not `CLOSED`.
+Last entry | | The last entry in the ledger or `NULL` if the current state is not `CLOSED`.
 
 In addition, each ledger's metadata consists of one or more *fragments*. Each fragment is either
 
