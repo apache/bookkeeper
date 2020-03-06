@@ -67,13 +67,16 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Tests for EntryLog.
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestEntryLog {
     private static final Logger LOG = LoggerFactory.getLogger(TestEntryLog.class);
 
@@ -439,6 +442,7 @@ public class TestEntryLog {
         entryLogManagerBase.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
         entryLogManagerBase.flushRotatedLogs();
 
+        Thread.sleep(2000);
         assertEquals(Sets.newHashSet(0L, 1L), entryLogger.getEntryLogsSet());
 
         entryLogManagerBase.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);

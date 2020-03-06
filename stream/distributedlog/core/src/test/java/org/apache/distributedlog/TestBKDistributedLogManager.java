@@ -21,6 +21,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -38,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.AsyncLogWriter;
@@ -47,6 +49,7 @@ import org.apache.distributedlog.api.LogWriter;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.callback.LogSegmentListener;
 import org.apache.distributedlog.exceptions.AlreadyTruncatedTransactionException;
 import org.apache.distributedlog.exceptions.BKTransmitException;
@@ -1246,5 +1249,55 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         } catch (IOException ioe) {
             fail("Delete log twice should not throw any exception");
         }
+    }
+
+    @Test(timeout = 60000)
+    public void testSyncLogWithLedgerMetadata() throws Exception {
+
+        String application = "myapplication";
+        String component = "mycomponent";
+        String custom = "mycustommetadata";
+        LedgerMetadata ledgerMetadata = new LedgerMetadata();
+        ledgerMetadata.setApplication(application);
+        ledgerMetadata.setComponent(component);
+        ledgerMetadata.addCustomMetadata("custom", custom);
+
+        BKDistributedLogManager dlm = createNewDLM(conf, "distrlog-writemetadata");
+
+        BKSyncLogWriter sync = dlm.openLogWriter(ledgerMetadata);
+        sync.write(DLMTestUtil.getLogRecordInstance(1));
+
+        LedgerHandle lh = getLedgerHandle(sync.getCachedLogWriter());
+        Map<String, byte[]> customMeta = lh.getCustomMetadata();
+        assertEquals(application, new String(customMeta.get("application"), UTF_8));
+        assertEquals(component, new String(customMeta.get("component"), UTF_8));
+        assertEquals(custom, new String(customMeta.get("custom"), UTF_8));
+
+        sync.closeAndComplete();
+    }
+
+    @Test(timeout = 60000)
+    public void testAsyncLogWithLedgerMetadata() throws Exception {
+        DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
+        confLocal.addConfiguration(conf);
+        confLocal.setOutputBufferSize(0);
+        confLocal.setWriteLockEnabled(false);
+
+        BKDistributedLogManager dlm = createNewDLM(confLocal, "distrlog-writemetadata");
+
+        String application = "myapplication";
+        String custom = "mycustommetadata";
+        LedgerMetadata ledgerMetadata = new LedgerMetadata();
+        ledgerMetadata.setApplication(application);
+        ledgerMetadata.addCustomMetadata("custom", custom);
+
+        AsyncLogWriter async = Utils.ioResult(dlm.openAsyncLogWriter(ledgerMetadata));
+        Utils.ioResult(async.write(DLMTestUtil.getLogRecordInstance(2)));
+
+        LedgerHandle lh = getLedgerHandle(((BKAsyncLogWriter) async).getCachedLogWriter());
+        Map<String, byte[]> customMeta = lh.getCustomMetadata();
+        assertEquals(application, new String(customMeta.get("application"), UTF_8));
+        assertNull(customMeta.get("component"));
+        assertEquals(custom, new String(customMeta.get("custom"), UTF_8));
     }
 }
