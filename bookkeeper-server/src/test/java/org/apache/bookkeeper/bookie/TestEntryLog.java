@@ -442,6 +442,7 @@ public class TestEntryLog {
         entryLogManagerBase.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
         entryLogManagerBase.flushRotatedLogs();
 
+        Thread.sleep(2000);
         assertEquals(Sets.newHashSet(0L, 1L), entryLogger.getEntryLogsSet());
 
         entryLogManagerBase.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);

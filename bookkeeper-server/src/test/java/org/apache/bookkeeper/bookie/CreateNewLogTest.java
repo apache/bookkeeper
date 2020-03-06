@@ -562,6 +562,7 @@ public class CreateNewLogTest {
                         startLatch.await();
                         entrylogManager.createNewLog(ledgerId);
                         createdEntryLogs.incrementAndGet();
+                        Thread.sleep(2000);
                     } catch (InterruptedException | IOException e) {
                         LOG.error("Got exception while trying to createNewLog for Ledger: " + ledgerId, e);
                     } finally {
@@ -572,7 +573,7 @@ public class CreateNewLogTest {
         }
 
         startLatch.countDown();
-        createdLatch.await(5, TimeUnit.SECONDS);
+        createdLatch.await(20, TimeUnit.SECONDS);
         Assert.assertEquals("Created EntryLogs", numOfLedgers * numOfThreadsForSameLedger, createdEntryLogs.get());
         Assert.assertEquals("Active currentlogs size", numOfLedgers, entrylogManager.getCopyOfCurrentLogs().size());
         Assert.assertEquals("Rotated entrylogs size", (numOfThreadsForSameLedger - 1) * numOfLedgers,
