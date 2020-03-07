@@ -63,7 +63,7 @@
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
-    <module>stream/distributedlog</module>
+    <module>stream</module>
     <module>tools</module>
     <module>cpu-affinity</module>
     <module>metadata-drivers</module>
@@ -1060,20 +1060,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-
-    <!-- enable building table service module only when -Dstream is provided -->
-    <profile>
-      <id>stream</id>
-      <activation>
-        <property>
-          <name>stream</name>
-        </property>
-      </activation>
-      <modules>
-        <!-- enable building table service -->
-        <module>stream</module>
-      </modules>
     </profile>
 
     <profile>
