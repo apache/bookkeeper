@@ -199,13 +199,13 @@ find_module_jar() {
     BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
     if [ -z "${BUILT_JAR}" ]; then
       echo "Couldn't find module '${MODULE_NAME}' jar." >&2
-      read -p "Do you want me to run \`mvn package -DskipTests -Dstream\` for you ? (y|n) " answer
+      read -p "Do you want me to run \`mvn package -DskipTests\` for you ? (y|n) " answer
       case "${answer:0:1}" in
         y|Y )
           mkdir -p ${BK_HOME}/logs
           output="${BK_HOME}/logs/build.out"
           echo "see output at ${output} for the progress ..." >&2
-          mvn package -DskipTests -Dstream &> ${output}
+          mvn package -DskipTests &> ${output}
           ;;
         * )
           exit 1
@@ -242,7 +242,7 @@ add_maven_deps_to_classpath() {
   if [ ! -f ${f} ]; then
     echo "the classpath of module '${MODULE_PATH}' is not found, generating it ..." >&2
     echo "see output at ${output} for the progress ..." >&2
-    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" -Dstream dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> ${output}
+    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> ${output}
     echo "the classpath of module '${MODULE_PATH}' is generated at '${f}'." >&2
   fi
 }

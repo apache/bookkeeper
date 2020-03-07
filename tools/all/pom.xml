@@ -32,6 +32,11 @@
       <artifactId>bookkeeper-tools-ledger</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>stream-storage-cli</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -57,50 +62,28 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-antrun-plugin</artifactId>
+         <version>${maven-antrun-plugin.version}</version>
+         <executions>
+           <execution>
+             <id>append-stream-commands</id>
+             <phase>generate-resources</phase>
+             <goals>
+               <goal>run</goal>
+             </goals>
+             <configuration>
+                <target>
+                  <concat destfile="${project.basedir}/src/main/resources/META-INF/services/org.apache.bookkeeper.tools.framework.CommandGroup" append="true">
+                    <filelist dir="${project.basedir}/../stream/src/main/resources" files="commands">
+                    </filelist>
+                  </concat>
+                </target>
+             </configuration>
+           </execution>
+         </executions>
+      </plugin>
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>stream</id>
-      <activation>
-        <property>
-          <name>stream</name>
-        </property>
-      </activation>
-      <dependencies>
-        <!-- stream.storage -->
-        <dependency>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>stream-storage-cli</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <version>${maven-antrun-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>append-stream-commands</id>
-                <phase>generate-resources</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-                    <concat destfile="${project.basedir}/src/main/resources/META-INF/services/org.apache.bookkeeper.tools.framework.CommandGroup" append="true">
-                      <filelist dir="${project.basedir}/../stream/src/main/resources" files="commands">
-                      </filelist>
-                    </concat>
-                  </target>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

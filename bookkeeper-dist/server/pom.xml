@@ -62,6 +62,13 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- stream.storage -->
+    <dependency>
+       <groupId>org.apache.bookkeeper</groupId>
+       <artifactId>stream-storage-server</artifactId>
+       <version>${project.version}</version>
+    </dependency>
+
     <!-- bookkeeper.tools (new CLI) -->
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
@@ -123,22 +130,4 @@
 
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>stream</id>
-      <activation>
-        <property>
-          <name>stream</name>
-        </property>
-      </activation>
-      <dependencies>
-        <!-- stream.storage -->
-        <dependency>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>stream-storage-server</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
 </project>

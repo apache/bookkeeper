@@ -33,6 +33,6 @@ if [ "x${PUBLISH_GITSHA}" = "xtrue" ]; then
     NEW_VERSION=$(get_snapshot_version_with_gitsha)
     echo "Update version from ${OLD_VERSION} to ${NEW_VERSION}"
 
-    mvn versions:set -Dstream -DnewVersion=${NEW_VERSION} 
-    mvn versions:commit -Dstream
+    mvn versions:set -DnewVersion=${NEW_VERSION}
+    mvn versions:commit
 fi

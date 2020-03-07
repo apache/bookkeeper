@@ -39,5 +39,5 @@ mavenJob('bookkeeper_postcommit_master_java8') {
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project.
-  goals('clean package spotbugs:check -Ddistributedlog -Dstream -DstreamTests')
+  goals('clean package spotbugs:check -Ddistributedlog  -DstreamTests')
 }
