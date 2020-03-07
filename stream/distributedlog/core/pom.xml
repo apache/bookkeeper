@@ -110,79 +110,10 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven-shade-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>shade-thrift</id>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <createDependencyReducedPom>true</createDependencyReducedPom>
-              <artifactSet>
-                <includes>
-                  <include>org.apache.thrift:libthrift</include>
-                </includes>
-              </artifactSet>
-              <minimizeJar>true</minimizeJar>
-              <relocations>
-                <relocation>
-                  <pattern>org.apache.thrift</pattern>
-                  <shadedPattern>dlshade.org.apache.thrift</shadedPattern>
-                </relocation>
-              </relocations>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <configuration>
           <suppressionsLocation>buildtools/src/main/resources/distributedlog/suppressions.xml</suppressionsLocation>
           <excludes>**/thrift/**/*</excludes>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <version>${license-maven-plugin.version}</version>
-        <configuration>
-          <canUpdateCopyright>false</canUpdateCopyright>
-          <roots>
-            <root>${project.basedir}</root>
-          </roots>
-        </configuration>
-        <executions>
-          <execution>
-            <id>update-pom-license</id>
-            <goals>
-              <goal>update-file-header</goal>
-            </goals>
-            <phase>package</phase>
-            <configuration>
-              <licenseName>apache_v2</licenseName>
-              <includes>
-                <include>dependency-reduced-pom.xml</include>
-              </includes>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <version>${maven-clean-plugin.version}</version>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>${project.basedir}</directory>
-              <includes>
-                <include>dependency-reduced-pom.xml</include>
-              </includes>
-            </fileset>
-          </filesets>
         </configuration>
       </plugin>
     </plugins>

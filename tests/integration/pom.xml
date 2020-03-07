@@ -30,6 +30,7 @@
   <modules>
     <module>smoke</module>
     <module>standalone</module>
+    <module>cluster</module>
   </modules>
 
   <build>
@@ -68,20 +69,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-
-    <!-- enable building table service related tests only when -Dstream is provided -->
-    <profile>
-      <id>stream</id>
-      <activation>
-        <property>
-          <name>stream</name>
-        </property>
-      </activation>
-      <modules>
-        <!-- enable cluster testing -->
-        <module>cluster</module>
-      </modules>
     </profile>
   </profiles>
 </project>
