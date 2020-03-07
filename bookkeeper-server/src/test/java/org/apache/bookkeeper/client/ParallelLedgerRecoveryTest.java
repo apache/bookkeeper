@@ -25,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
@@ -66,6 +67,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
@@ -690,6 +692,57 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         newBk0.close();
         newBk1.close();
+        readBk.close();
+    }
+
+    /**
+     * Validate ledger can recover with response:  (Qw - Qa)+1.
+     * @throws Exception
+     */
+    @Test
+    public void testRecoveryWithUnavailableBookie() throws Exception {
+
+        byte[] passwd = "recovery-when-closing-ledger-handle".getBytes(UTF_8);
+
+        int ensembleSize = 2;
+        int writeQuorumSize = 2;
+        int ackQuormSize = 2;
+        ClientConfiguration newConf = new ClientConfiguration();
+        newConf.addConfiguration(baseClientConf);
+        final BookKeeper newBk0 = new BookKeeper(newConf);
+        final LedgerHandle lh0 = newBk0.createLedger(ensembleSize, writeQuorumSize, ackQuormSize, digestType, passwd);
+        final BookKeeper readBk = new BookKeeper(newConf);
+        final LedgerHandle readLh = readBk.openLedgerNoRecovery(lh0.getId(), digestType, passwd);
+
+        MutableInt responseCode = new MutableInt(100);
+        CountDownLatch responseLatch = new CountDownLatch(1);
+        ReadLastConfirmedOp readLCOp = new ReadLastConfirmedOp(readLh, bkc.getBookieClient(),
+                readLh.getLedgerMetadata().getAllEnsembles().lastEntry().getValue(),
+                new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+                    @Override
+                    public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
+                        responseCode.setValue(rc);
+                        responseLatch.countDown();
+                    }
+                });
+
+        // complete first successful write.
+        byte[] lac = new byte[DigestManager.METADATA_LENGTH * 2];
+        try {
+            readLCOp.readEntryComplete(BKException.Code.OK, 0, 0, Unpooled.wrappedBuffer(lac, 0, lac.length), 0);
+        } catch (Exception e) {
+            // Ok
+        }
+        readLCOp.numSuccessfulResponse = 1;
+
+        // now complete read from another bookie with failure
+        // BookieHandleNotAvailableException response
+        readLCOp.readEntryComplete(BKException.Code.BookieHandleNotAvailableException, 0, 0,
+                Unpooled.wrappedBuffer(lac, 0, lac.length), 0);
+
+        responseLatch.await();
+        assertEquals(responseCode.getValue().intValue(), BKException.Code.OK);
+        newBk0.close();
         readBk.close();
     }
 
