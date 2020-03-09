@@ -25,7 +25,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
@@ -696,54 +695,92 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Validate ledger can recover with response:  (Qw - Qa)+1.
+     * Validate ledger can recover with response: (Qw - Qa)+1.
      * @throws Exception
      */
     @Test
     public void testRecoveryWithUnavailableBookie() throws Exception {
 
-        byte[] passwd = "recovery-when-closing-ledger-handle".getBytes(UTF_8);
-
-        int ensembleSize = 2;
-        int writeQuorumSize = 2;
-        int ackQuormSize = 2;
+        byte[] passwd = "".getBytes(UTF_8);
         ClientConfiguration newConf = new ClientConfiguration();
         newConf.addConfiguration(baseClientConf);
-        final BookKeeper newBk0 = new BookKeeper(newConf);
-        final LedgerHandle lh0 = newBk0.createLedger(ensembleSize, writeQuorumSize, ackQuormSize, digestType, passwd);
         final BookKeeper readBk = new BookKeeper(newConf);
-        final LedgerHandle readLh = readBk.openLedgerNoRecovery(lh0.getId(), digestType, passwd);
+        final BookKeeper newBk0 = new BookKeeper(newConf);
 
-        MutableInt responseCode = new MutableInt(100);
-        CountDownLatch responseLatch = new CountDownLatch(1);
-        ReadLastConfirmedOp readLCOp = new ReadLastConfirmedOp(readLh, bkc.getBookieClient(),
-                readLh.getLedgerMetadata().getAllEnsembles().lastEntry().getValue(),
-                new ReadLastConfirmedOp.LastConfirmedDataCallback() {
-                    @Override
-                    public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
-                        responseCode.setValue(rc);
-                        responseLatch.countDown();
-                    }
-                });
+        /**
+         * Test Group-1 : Expected Response for recovery: Qr = (Qw - Qa)+1 = (3
+         * -2) + 1 = 2
+         */
+        int ensembleSize = 3;
+        int writeQuorumSize = 3;
+        int ackQuormSize = 2;
+        LedgerHandle lh0 = newBk0.createLedger(ensembleSize, writeQuorumSize, ackQuormSize, DigestType.DUMMY, passwd);
+        LedgerHandle readLh = readBk.openLedgerNoRecovery(lh0.getId(), DigestType.DUMMY, passwd);
+        // Test 1: bookie response: OK, NO_SUCH_LEDGER_EXISTS, NOT_AVAILABLE
+        // Expected: Recovery successful Q(response) = 2
+        int responseCode = readLACFromQuorum(readLh, BKException.Code.BookieHandleNotAvailableException,
+                BKException.Code.OK, BKException.Code.NoSuchLedgerExistsException);
+        assertEquals(responseCode, BKException.Code.OK);
+        // Test 2: bookie response: OK, NOT_AVAILABLE, NOT_AVAILABLE
+        // Expected: Recovery fail Q(response) = 1
+        responseCode = readLACFromQuorum(readLh, BKException.Code.BookieHandleNotAvailableException,
+                BKException.Code.OK, BKException.Code.BookieHandleNotAvailableException);
+        assertEquals(responseCode, BKException.Code.BookieHandleNotAvailableException);
 
-        // complete first successful write.
-        byte[] lac = new byte[DigestManager.METADATA_LENGTH * 2];
-        try {
-            readLCOp.readEntryComplete(BKException.Code.OK, 0, 0, Unpooled.wrappedBuffer(lac, 0, lac.length), 0);
-        } catch (Exception e) {
-            // Ok
-        }
-        readLCOp.numSuccessfulResponse = 1;
+        /**
+         * Test Group-2 : Expected Response for recovery: Qr = (Qw - Qa)+1 = (2
+         * -2) + 1 = 1
+         */
+        ensembleSize = 2;
+        writeQuorumSize = 2;
+        ackQuormSize = 2;
+        lh0 = newBk0.createLedger(ensembleSize, writeQuorumSize, ackQuormSize, DigestType.DUMMY, passwd);
+        readLh = readBk.openLedgerNoRecovery(lh0.getId(), DigestType.DUMMY, passwd);
+        // Test 1: bookie response: OK, NOT_AVAILABLE
+        // Expected: Recovery successful Q(response) = 1
+        responseCode = readLACFromQuorum(readLh, BKException.Code.BookieHandleNotAvailableException,
+                BKException.Code.OK);
+        assertEquals(responseCode, BKException.Code.OK);
 
-        // now complete read from another bookie with failure
-        // BookieHandleNotAvailableException response
-        readLCOp.readEntryComplete(BKException.Code.BookieHandleNotAvailableException, 0, 0,
-                Unpooled.wrappedBuffer(lac, 0, lac.length), 0);
+        // Test 1: bookie response: OK, NO_SUCH_LEDGER_EXISTS
+        // Expected: Recovery successful Q(response) = 2
+        responseCode = readLACFromQuorum(readLh, BKException.Code.NoSuchLedgerExistsException, BKException.Code.OK);
+        assertEquals(responseCode, BKException.Code.OK);
 
-        responseLatch.await();
-        assertEquals(responseCode.getValue().intValue(), BKException.Code.OK);
+        // Test 3: bookie response: NOT_AVAILABLE, NOT_AVAILABLE
+        // Expected: Recovery fail Q(response) = 0
+        responseCode = readLACFromQuorum(readLh, BKException.Code.BookieHandleNotAvailableException,
+                BKException.Code.BookieHandleNotAvailableException);
+        assertEquals(responseCode, BKException.Code.BookieHandleNotAvailableException);
+
         newBk0.close();
         readBk.close();
     }
 
+    private int readLACFromQuorum(LedgerHandle ledger, int... bookieLACResponse) throws Exception {
+        MutableInt responseCode = new MutableInt(100);
+        CountDownLatch responseLatch = new CountDownLatch(1);
+        ReadLastConfirmedOp readLCOp = new ReadLastConfirmedOp(ledger, bkc.getBookieClient(),
+                ledger.getLedgerMetadata().getAllEnsembles().lastEntry().getValue(),
+                new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+                    @Override
+                    public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
+                        System.out.println("response = " + rc);
+                        responseCode.setValue(rc);
+                        responseLatch.countDown();
+                    }
+                });
+        byte[] lac = new byte[Long.SIZE * 3];
+        ByteBuf data = Unpooled.wrappedBuffer(lac, 0, lac.length);
+        int writerIndex = data.writerIndex();
+        data.resetWriterIndex();
+        data.writeLong(ledger.getId());
+        data.writeLong(0L);
+        data.writerIndex(writerIndex);
+        for (int i = 0; i < bookieLACResponse.length; i++) {
+            readLCOp.readEntryComplete(bookieLACResponse[i], 0, 0, data, i);
+        }
+        responseLatch.await();
+        return responseCode.intValue();
+    }
 }
