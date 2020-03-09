@@ -169,7 +169,6 @@ elif [ "${COMMAND}" == "localbookie" ]; then
   NUMBER=$1
   shift
   $EXECCMD ${JAVA} ${OPTS} ${JMX_ARGS} '-Dzookeeper.4lw.commands.whitelist=*' org.apache.bookkeeper.util.LocalBookKeeper ${NUMBER} ${BOOKIE_CONF} $@
-  ${JAVA} ${OPTS}  org.apache.bookkeeper.util.LocalBookKeeper ${NUMBER} ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "standalone" ]; then
   $EXECCMD ${JAVA} ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.stream.cluster.StandaloneStarter --conf ${BK_HOME}/conf/standalone.conf $@
 elif [ ${COMMAND} == "upgrade" ]; then
