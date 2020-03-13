@@ -1062,11 +1062,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             // 3. if journalSyncData disabled and shouldRolloverJournal is false, we can use
                             //   journalPageCacheFlushIntervalMSec to control sync frequency, preventing disk
                             //   synchronize frequently, which will increase disk io util.
-                            //   when flush interval reaches journalPageCacheFlushIntervalMSec (default: 1s), it will trigger
-                            //   data sync to disk
+                            //   when flush interval reaches journalPageCacheFlushIntervalMSec (default: 1s),
+                            //   it will trigger data sync to disk
                             if (syncData
                                     || shouldRolloverJournal
-                                    || (System.currentTimeMillis() - lastFlushTimeMs >= journalPageCacheFlushIntervalMSec)) {
+                                    || (System.currentTimeMillis() - lastFlushTimeMs
+                                    >= journalPageCacheFlushIntervalMSec)) {
                                 forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
                                         toFlush, shouldRolloverJournal, false));
                                 lastFlushTimeMs = System.currentTimeMillis();
