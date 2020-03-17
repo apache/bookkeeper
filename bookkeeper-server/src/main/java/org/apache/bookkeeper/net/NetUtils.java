@@ -29,9 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import org.apache.bookkeeper.util.IPAddressUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,9 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 public class NetUtils {
     private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
-    private static final String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])"
-            + "(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
-    private static final Pattern pattern = Pattern.compile(ip);
+
     /**
      * Given a string representation of a host, return its ip address
      * in textual presentation.
@@ -95,19 +91,18 @@ public class NetUtils {
     public static String getLocalHost() throws UnknownHostException {
         String ip = InetAddress.getLocalHost().getHostAddress();
         if (InetAddress.getLocalHost().isLoopbackAddress()) {
-            return getAddress();
+            return getValidAddress();
         } else {
             return ip;
         }
 
     }
 
-    private static boolean isboolIp(String ipAddress) {
-        Matcher matcher = pattern.matcher(ipAddress);
-        return matcher.matches();
+    public static boolean isIpAddressValid(String ipAddress) {
+        return IPAddressUtil.isIPv4LiteralAddress(ipAddress) || IPAddressUtil.isIPv6LiteralAddress(ipAddress);
     }
 
-    private static String getAddress() throws UnknownHostException {
+    private static String getValidAddress () throws UnknownHostException {
         try {
             for (Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
                     interfaces.hasMoreElements();) {
@@ -119,7 +114,7 @@ public class NetUtils {
                 if (addresses.hasMoreElements()) {
                     while (addresses.hasMoreElements()) {
                         String ip = addresses.nextElement().getHostAddress();
-                        if (isboolIp(ip)) {
+                        if (isIpAddressValid(ip)) {
                             return ip;
                         }
                     }

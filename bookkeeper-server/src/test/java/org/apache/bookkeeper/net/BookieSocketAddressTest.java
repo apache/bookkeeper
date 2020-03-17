@@ -47,4 +47,18 @@ public class BookieSocketAddressTest {
         InetSocketAddress inetSocketAddress2 = ipAddress.getSocketAddress();
         assertTrue("InetSocketAddress should be cached", inetSocketAddress1 == inetSocketAddress2);
     }
+
+    @Test
+    public void testIpAddressValid() throws Exception {
+        assertTrue("InetSocketAddress is inValid", NetUtils.isIpAddressValid("127.0.0.1"));
+        assertTrue("InetSocketAddress is inValid", !NetUtils.isIpAddressValid("999.168.1.1"));
+        assertTrue("InetSocketAddress is inValid", NetUtils.isIpAddressValid("100.100.100.9"));
+        assertTrue("InetSocketAddress is inValid", NetUtils.isIpAddressValid("fe80:1295:8030:49ec:1fc6:57fa:2222::"));
+        assertTrue("InetSocketAddress is inValid", NetUtils.isIpAddressValid("1:2:3:4:5:6::8"));
+        assertTrue("InetSocketAddress is inValid", NetUtils.isIpAddressValid("::8"));
+        assertTrue("InetSocketAddress is inValid", NetUtils.isIpAddressValid("::2:3:4:5:6:7:8"));
+        assertTrue("InetSocketAddress is inValid", NetUtils.isIpAddressValid("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF::"));
+        assertTrue("InetSocketAddress is inValid", !NetUtils
+                .isIpAddressValid("fe80:1295:8030:49ec:1fc6:57fa:::0000:0000:0000:0000:0000:0000:0000:0000"));
+    }
 }
