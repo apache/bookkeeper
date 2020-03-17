@@ -87,12 +87,12 @@ class DbLedgerStorageStats {
     )
     private final OpStatsLogger readAheadBatchCountStats;
     @StatsDoc(
-        name = READAHEAD_BATCH_COUNT,
+        name = READAHEAD_BATCH_SIZE,
         help = "the distribution of num of bytes to read in one readahead batch"
     )
     private final OpStatsLogger readAheadBatchSizeStats;
     @StatsDoc(
-        name = FLUSH_SIZE,
+        name = FLUSH,
         help = "operation stats of flushing write cache to entry log files"
     )
     private final OpStatsLogger flushStats;
