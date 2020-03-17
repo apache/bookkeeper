@@ -936,7 +936,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             boolean groupWhenTimeout = false;
 
             long dequeueStartTime = 0L;
-            long lastFlushTimeMs = 0L;
+            long lastFlushTimeMs = System.currentTimeMillis();
 
             QueueEntry qe = null;
             while (true) {
