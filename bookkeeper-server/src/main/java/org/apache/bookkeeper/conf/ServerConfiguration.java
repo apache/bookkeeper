@@ -135,6 +135,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
     protected static final String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
     protected static final String JOURNAL_QUEUE_SIZE = "journalQueueSize";
+    protected static final String JOURNAL_PAGECACHE_FLUSH_INTERVAL_MSEC = "journalPageCacheFlushIntervalMSec";
     // backpressure control
     protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
     protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
@@ -806,6 +807,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public int getJournalQueueSize() {
         return this.getInt(JOURNAL_QUEUE_SIZE, 10_000);
+    }
+
+    /**
+     * Set PageCache flush interval in second.
+     *
+     * @Param journalPageCacheFlushInterval
+     *          journal pageCache flush interval when journalSyncData closed
+     * @return server configuration.
+     */
+    public ServerConfiguration setJournalPageCacheFlushIntervalMSec(long journalPageCacheFlushIntervalMSec) {
+        this.setProperty(JOURNAL_PAGECACHE_FLUSH_INTERVAL_MSEC, journalPageCacheFlushIntervalMSec);
+        return this;
+    }
+
+    /**
+     * Get journal pageCache flush interval.
+     *
+     * @return journal pageCache flush interval.
+     */
+    public long getJournalPageCacheFlushIntervalMSec() {
+        return this.getLong(JOURNAL_PAGECACHE_FLUSH_INTERVAL_MSEC, 1000);
     }
 
     /**
