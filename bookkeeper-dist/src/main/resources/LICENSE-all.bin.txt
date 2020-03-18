@@ -467,6 +467,14 @@ license. For details, see deps/jline-2.11/LICENSE
 Bundled as
   - lib/jline-jline-2.11.jar
 ------------------------------------------------------------------------------------
+This product bundles the bouncycastle Library. 
+For license details, see deps/bouncycastle-1.60/LICENSE.html
+
+Bundled as
+  - lib/org.bouncycastle-bcpkix-jdk15on-1.60.jar
+  - lib/org.bouncycastle-bcprov-ext-jdk15on-1.60.jar
+  - lib/org.bouncycastle-bcprov-jdk15on-1.60.jar
+------------------------------------------------------------------------------------
 This product uses the annotations from The Checker Framework, which are licensed under
 MIT License. For details, see deps/checker-compat-qual-2.5.2/LICENSE
 
