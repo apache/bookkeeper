@@ -606,6 +606,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private final boolean removePagesFromCache;
     private final int journalFormatVersionToWrite;
     private final int journalAlignmentSize;
+    // control PageCache flush interval when syncData disabled to reduce disk io util
+    private final long journalPageCacheFlushIntervalMSec;
 
     // Should data be fsynced on disk before triggering the callback
     private final boolean syncData;
@@ -666,6 +668,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.bufferedEntriesThreshold = conf.getJournalBufferedEntriesThreshold();
         this.journalFormatVersionToWrite = conf.getJournalFormatVersionToWrite();
         this.journalAlignmentSize = conf.getJournalAlignmentSize();
+        this.journalPageCacheFlushIntervalMSec = conf.getJournalPageCacheFlushIntervalMSec();
         if (conf.getNumJournalCallbackThreads() > 0) {
             this.cbThreadPool = Executors.newFixedThreadPool(conf.getNumJournalCallbackThreads(),
                                                          new DefaultThreadFactory("bookie-journal-callback"));
@@ -933,6 +936,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             boolean groupWhenTimeout = false;
 
             long dequeueStartTime = 0L;
+            long lastFlushTimeMs = System.currentTimeMillis();
 
             QueueEntry qe = null;
             while (true) {
@@ -1052,8 +1056,22 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
                             boolean shouldRolloverJournal = (lastFlushPosition > maxJournalSize);
                             // Trigger data sync to disk in the "Force-Write" thread.
-                            forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
-                                                                           toFlush, shouldRolloverJournal, false));
+                            // Trigger data sync to disk has three situations:
+                            // 1. journalSyncData enabled, usually for SSD used as journal storage
+                            // 2. shouldRolloverJournal is true, that is the journal file reaches maxJournalSize
+                            // 3. if journalSyncData disabled and shouldRolloverJournal is false, we can use
+                            //   journalPageCacheFlushIntervalMSec to control sync frequency, preventing disk
+                            //   synchronize frequently, which will increase disk io util.
+                            //   when flush interval reaches journalPageCacheFlushIntervalMSec (default: 1s),
+                            //   it will trigger data sync to disk
+                            if (syncData
+                                    || shouldRolloverJournal
+                                    || (System.currentTimeMillis() - lastFlushTimeMs
+                                    >= journalPageCacheFlushIntervalMSec)) {
+                                forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
+                                        toFlush, shouldRolloverJournal, false));
+                                lastFlushTimeMs = System.currentTimeMillis();
+                            }
                             toFlush = entryListRecycler.newInstance();
                             numEntriesToFlush = 0;
 
