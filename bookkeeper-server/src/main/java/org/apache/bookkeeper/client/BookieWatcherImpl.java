@@ -238,7 +238,7 @@ class BookieWatcherImpl implements BookieWatcher {
         long startTime = MathUtils.nowInNano();
         EnsemblePlacementPolicy.PlacementResult<List<BookieSocketAddress>> newEnsembleResponse;
         List<BookieSocketAddress> socketAddresses;
-        PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = PlacementPolicyAdherence.FAIL;
+        PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy;
         try {
             Set<BookieSocketAddress> quarantinedBookiesSet = quarantinedBookies.asMap().keySet();
             newEnsembleResponse = placementPolicy.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize,
@@ -247,8 +247,10 @@ class BookieWatcherImpl implements BookieWatcher {
             isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.isAdheringToPolicy();
             if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
                 ensembleNotAdheringToPlacementPolicy.inc();
-                log.warn("New ensemble: {} is not adhering to Placement Policy. quarantinedBookies: {}",
-                        socketAddresses, quarantinedBookiesSet);
+                if (ensembleSize > 1) {
+                    log.warn("New ensemble: {} is not adhering to Placement Policy. quarantinedBookies: {}",
+                            socketAddresses, quarantinedBookiesSet);
+                }
             }
             // we try to only get from the healthy bookies first
             newEnsembleTimer.registerSuccessfulEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
