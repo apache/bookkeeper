@@ -56,6 +56,12 @@ import org.slf4j.LoggerFactory;
  * A factory to manage TLS contexts.
  */
 public class TLSContextFactory implements SecurityHandlerFactory {
+
+    static {
+        // Fixes loading PKCS8Key file: https://stackoverflow.com/a/18912362
+        java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+    }
+
     /**
      * Supported Key File Types.
      */
