@@ -1090,7 +1090,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 } else if (qe.entryId != Bookie.METAENTRY_ID_FORCE_LEDGER) {
                     int entrySize = qe.entry.readableBytes();
                     journalStats.getJournalWriteBytes().add(entrySize);
-                    journalStats.getJournalQueueSize().dec();
 
                     batchSize += (4 + entrySize);
 
