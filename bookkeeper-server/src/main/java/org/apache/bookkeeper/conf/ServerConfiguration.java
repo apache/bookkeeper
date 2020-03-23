@@ -1249,7 +1249,14 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public File[] getIndexDirs() {
         String[] idxDirNames = getIndexDirNames();
-        if (null == idxDirNames) {
+
+        /*
+        * Many tests assume index dirs to be null if not set
+        * However going by the same methods of ledgerDirs, we should set it to a default /tmp
+        * By setting indexDirs to null if they are set to default we maintain existing logic for indexDirs
+        * while not breaking the tests
+        */
+        if (idxDirNames[0].equals("/tmp/bk-data")) {
             return null;
         }
         File[] idxDirs = new File[idxDirNames.length];

@@ -139,7 +139,8 @@ public class Cookie {
         }
     }
 
-    private void verifyInternal(Cookie c, boolean checkIfSuperSet, ServerConfiguration conf) throws BookieException.InvalidCookieException {
+    private void verifyInternal(Cookie c, boolean checkIfSuperSet, ServerConfiguration conf)
+            throws BookieException.InvalidCookieException {
         String errMsg;
 
         if (c.layoutVersion < 3 && c.layoutVersion != layoutVersion) {
@@ -176,7 +177,9 @@ public class Cookie {
         builder.setBookieHost(bookieHost);
         builder.setJournalDir(journalDirs);
         builder.setLedgerDirs(ledgerDirs);
-        builder.setIndexDirs(indexDirs);
+        if (null != indexDirs) {
+            builder.setIndexDirs(indexDirs);
+        }
         if (null != instanceId) {
             builder.setInstanceId(instanceId);
         }

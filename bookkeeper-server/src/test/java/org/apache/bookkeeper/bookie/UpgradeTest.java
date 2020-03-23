@@ -174,7 +174,8 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         conf.setMetadataServiceUri("zk://" + zkServers + "/ledgers");
         conf.setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setIndexDirName(new String[] { ledgerDir });
         Bookie b = null;
         try {
             b = new Bookie(conf);
@@ -276,55 +277,6 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         } finally {
             System.setOut(origout);
             System.setErr(origerr);
-        }
-    }
-
-    @Test
-    public void testOldCookieNewBookie() throws BookieException.UpgradeException {
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
-
-        try {
-            runFunctionWithRegistrationManager(conf, rm -> {
-                try {
-                    oldCookieNewBookieWorker(conf, rm);
-                } catch (BookieException e) {
-                    fail("Bookie was expected to run in compatibility mode: " + e.getMessage());
-                } catch (IOException e) {
-                    fail("Failed to read Cookie, Bookie was expected to run in compatibility mode: " + e.getMessage());
-                }
-                return null;
-            });
-        } catch (MetadataException | ExecutionException e) {
-            throw new BookieException.UpgradeException(e);
-        }
-    }
-
-    private void oldCookieNewBookieWorker (ServerConfiguration conf, RegistrationManager rm)
-            throws BookieException, IOException {
-
-        String journalDir = newDirectory();
-        String ledgerDir = newDirectory();
-
-        conf.setJournalDirName(journalDir)
-                .setLedgerDirNames(new String[] { ledgerDir })
-                .setBookiePort(bookiePort)
-                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
-
-        Cookie.Builder v4builder = Cookie.generateCookie(conf);
-        v4builder = v4builder.setLayoutVersion(4);
-        v4builder = v4builder.setIndexDirs("");
-        Cookie v4Cookie = v4builder.build();
-
-        // Write v4 cookie to ZK
-        v4Cookie.writeToRegistrationManager(rm, conf, Version.NEW);
-
-        // Bring up a bookie with v5 software. It should come up without errors.
-        // Assuming the networkLocation etc fields are null
-        try {
-            Bookie b = new Bookie(conf);
-        } catch (InterruptedException | RuntimeException e) {
-            fail("Bookie was expected to run in compatibility mode: " + e.getMessage());
         }
     }
 

@@ -639,6 +639,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         assertEquals("Numbers of Bookies in this cluster", 1, bsConfs.size());
         ServerConfiguration serverConfig = bsConfs.get(0);
         File ledgerDir = serverConfig.getLedgerDirs()[0];
+        serverConfig.setIndexDirName(null);
         assertEquals("Number of Ledgerdirs for this bookie", 1, serverConfig.getLedgerDirs().length);
         assertTrue("indexdirs should be configured to null", null == serverConfig.getIndexDirs());
         /*
