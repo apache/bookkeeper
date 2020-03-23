@@ -38,6 +38,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
     LedgerHandle lh;
     BookieClient bookieClient;
     int numResponsesPending;
+    int numSuccessfulResponse;
     RecoveryData maxRecoveredData;
     volatile boolean completed = false;
     int lastSeenError = BKException.Code.ReadException;
@@ -59,6 +60,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         this.bookieClient = bookieClient;
         this.maxRecoveredData = new RecoveryData(LedgerHandle.INVALID_ENTRY_ID, 0);
         this.lh = lh;
+        this.numSuccessfulResponse = 0;
         this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
         this.coverageSet = lh.distributionSchedule.getCoverageSet();
         this.currentEnsemble = ensemble;
@@ -99,6 +101,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
                     maxRecoveredData = recoveryData;
                 }
                 heardValidResponse = true;
+                numSuccessfulResponse++;
             } catch (BKDigestMatchException e) {
                 // Too bad, this bookie didn't give us a valid answer, we
                 // still might be able to recover though so continue
@@ -137,8 +140,15 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         }
 
         if (numResponsesPending == 0 && !completed) {
+            int totalExepctedResponse = lh.getLedgerMetadata().getWriteQuorumSize()
+                    - lh.getLedgerMetadata().getAckQuorumSize() + 1;
+            if (numSuccessfulResponse >= totalExepctedResponse) {
+                cb.readLastConfirmedDataComplete(BKException.Code.OK, maxRecoveredData);
+                return;
+            }
             // Have got all responses back but was still not enough, just fail the operation
-            LOG.error("While readLastConfirmed ledger: {} did not hear success responses from all quorums", ledgerId);
+            LOG.error("While readLastConfirmed ledger: {} did not hear success responses from all quorums {}", ledgerId,
+                    lastSeenError);
             cb.readLastConfirmedDataComplete(lastSeenError, maxRecoveredData);
         }
 

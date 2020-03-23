@@ -313,12 +313,9 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
         killBookie(0);
 
         // try to open ledger no recovery
-        try {
-            bkc.openLedgerNoRecovery(beforelh2.getId(), digestType, "".getBytes());
-            fail("Should have thrown exception");
-        } catch (BKException.BKReadException e) {
-            // correct behaviour
-        }
+        // should be able to open ledger with one bookie down:
+        // Total bookies available 3 >= 1 (Qw(4) - Qa(4) + 1)
+        bkc.openLedgerNoRecovery(beforelh2.getId(), digestType, "".getBytes());
     }
 
     @Test
@@ -351,12 +348,9 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
         killBookie(0);
 
         // try to open ledger no recovery
-        try {
-            bkc.openLedger(beforelh2.getId(), digestType, "".getBytes());
-            fail("Should have thrown exception");
-        } catch (BKException.BKLedgerRecoveryException e) {
-            // correct behaviour
-        }
+        // should be able to open ledger with one bookie down:
+        // Total bookies available 3 >= 1 (Qw(4) - Qa(4) + 1)
+        bkc.openLedger(beforelh2.getId(), digestType, "".getBytes());
     }
 
     /**
