@@ -14,21 +14,8 @@ Master Issue: #<master-issue-number>
 
 > ---
 > In order to uphold a high standard for quality for code contributions, Apache BookKeeper runs various precommit
-> checks for pull requests. A pull request can only be merged when it passes precommit checks. However running all
-> the precommit checks can take a long time, some trivial changes don't need to run all the precommit checks. You
-> can check following list to skip the tests that don't need to run for your pull request. Leave them unchecked if
-> you are not sure, committers will help you:
+> checks for pull requests. A pull request can only be merged when it passes precommit checks.
 >
-> - [ ] [skip bookkeeper-server bookie tests]: skip testing `org.apache.bookkeeper.bookie` in bookkeeper-server module.
-> - [ ] [skip bookkeeper-server client tests]: skip testing `org.apache.bookkeeper.client` in bookkeeper-server module.
-> - [ ] [skip bookkeeper-server replication tests]: skip testing `org.apache.bookkeeper.replication` in bookkeeper-server module.
-> - [ ] [skip bookkeeper-server tls tests]: skip testing `org.apache.bookkeeper.tls` in bookkeeper-server module.
-> - [ ] [skip bookkeeper-server remaining tests]: skip testing all other tests in bookkeeper-server module.
-> - [ ] [skip integration tests]: skip docker based integration tests. if you make java code changes, you shouldn't skip integration tests.
-> - [ ] [skip build java8]: skip build on java8. *ONLY* skip this when *ONLY* changing files under documentation under `site`.
-> - [ ] [skip build java11]: skip build on java11. *ONLY* skip this when *ONLY* changing files under documentation under `site`.
-> ---
-
 > ---
 > Be sure to do all of the following to help us incorporate your contribution
 > quickly and easily:
