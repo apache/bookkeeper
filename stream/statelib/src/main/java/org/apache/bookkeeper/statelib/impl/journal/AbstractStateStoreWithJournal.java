@@ -42,6 +42,7 @@ import org.apache.bookkeeper.statelib.api.StateStoreSpec;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreClosedException;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreRuntimeException;
+import org.apache.bookkeeper.statelib.impl.Constants;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.LogRecordWithDLSN;
@@ -49,6 +50,7 @@ import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.exceptions.LogEmptyException;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.util.Utils;
@@ -218,7 +220,10 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
         } catch (IOException e) {
             return FutureUtils.exception(e);
         }
-        return logManager.openAsyncLogWriter().thenComposeAsync(w -> {
+        LedgerMetadata metadata = new LedgerMetadata();
+        metadata.setApplication(Constants.LEDGER_METADATA_APPLICATION_STREAM_STORAGE);
+        metadata.setComponent("state-store");
+        return logManager.openAsyncLogWriter(metadata).thenComposeAsync(w -> {
             synchronized (this) {
                 writer = w;
                 nextRevision = writer.getLastTxId();
@@ -233,7 +238,10 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
     }
 
     private CompletableFuture<DLSN> writeCatchUpMarker() {
-        return logManager.openAsyncLogWriter().thenComposeAsync(w -> {
+        LedgerMetadata metadata = new LedgerMetadata();
+        metadata.setApplication(Constants.LEDGER_METADATA_APPLICATION_STREAM_STORAGE);
+        metadata.setComponent("state-store");
+        return logManager.openAsyncLogWriter(metadata).thenComposeAsync(w -> {
             synchronized (this) {
                 writer = w;
                 nextRevision = writer.getLastTxId();
