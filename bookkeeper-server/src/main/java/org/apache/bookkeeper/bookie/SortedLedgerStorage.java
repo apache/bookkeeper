@@ -28,6 +28,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.PrimitiveIterator;
@@ -164,6 +165,12 @@ public class SortedLedgerStorage
     }
 
     @Override
+    public boolean entryExists(long ledgerId, long entryId) throws IOException {
+        // can probably be implemented as above, but I'm not going to test it
+        throw new UnsupportedOperationException("Not supported for SortedLedgerStorage");
+    }
+
+    @Override
     public boolean setFenced(long ledgerId) throws IOException {
         return interleavedLedgerStorage.setFenced(ledgerId);
     }
@@ -209,7 +216,7 @@ public class SortedLedgerStorage
     }
 
     @Override
-    public ByteBuf getEntry(long ledgerId, long entryId) throws IOException {
+    public ByteBuf getEntry(long ledgerId, long entryId) throws IOException, BookieException {
         if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
             return getLastEntryId(ledgerId);
         }
@@ -383,5 +390,40 @@ public class SortedLedgerStorage
         PrimitiveIterator.OfLong entriesInMemtableItr = memTable.getListOfEntriesOfLedger(ledgerId);
         PrimitiveIterator.OfLong entriesFromILSItr = interleavedLedgerStorage.getListOfEntriesOfLedger(ledgerId);
         return IteratorUtility.mergePrimitiveLongIterator(entriesInMemtableItr, entriesFromILSItr);
+    }
+
+    @Override
+    public void setLimboState(long ledgerId) throws IOException {
+        throw new UnsupportedOperationException(
+                "Limbo state only supported for DbLedgerStorage");
+    }
+
+    @Override
+    public boolean hasLimboState(long ledgerId) throws IOException {
+        throw new UnsupportedOperationException(
+                "Limbo state only supported for DbLedgerStorage");
+    }
+
+    @Override
+    public void clearLimboState(long ledgerId) throws IOException {
+        throw new UnsupportedOperationException(
+                "Limbo state only supported for DbLedgerStorage");
+    }
+
+    @Override
+    public EnumSet<StorageState> getStorageStateFlags() throws IOException {
+        return EnumSet.noneOf(StorageState.class);
+    }
+
+    @Override
+    public void setStorageStateFlag(StorageState flags) throws IOException {
+        throw new UnsupportedOperationException(
+                "Storage state only flags supported for DbLedgerStorage");
+    }
+
+    @Override
+    public void clearStorageStateFlag(StorageState flags) throws IOException {
+        throw new UnsupportedOperationException(
+                "Storage state flags only supported for DbLedgerStorage");
     }
 }

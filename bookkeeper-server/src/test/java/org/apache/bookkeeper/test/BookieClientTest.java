@@ -37,7 +37,7 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
+import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
@@ -93,7 +93,8 @@ public class BookieClientTest {
 
         bs = new BookieServer(
                 conf, new TestBookieImpl(conf),
-                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
         bs.start();
         eventLoopGroup = new NioEventLoopGroup();
         executor = OrderedExecutor.newBuilder()

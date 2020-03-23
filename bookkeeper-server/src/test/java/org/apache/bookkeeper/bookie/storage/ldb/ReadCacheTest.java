@@ -20,8 +20,11 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -116,4 +119,24 @@ public class ReadCacheTest {
 
         cache.close();
     }
+
+    @Test
+    public void testHasEntry() {
+        ReadCache cache = new ReadCache(UnpooledByteBufAllocator.DEFAULT, 10 * 1024, 2 * 1024);
+
+        long ledgerId = 0xfefe;
+        for (int i = 0; i < 10; i++) {
+            ByteBuf entry = Unpooled.wrappedBuffer(new byte[1024]);
+            entry.setInt(0, i);
+            cache.put(ledgerId, i, entry);
+        }
+
+        assertFalse(cache.hasEntry(0xdead, 0));
+        assertFalse(cache.hasEntry(ledgerId, -1));
+        for (int i = 0; i < 10; i++) {
+            assertTrue(cache.hasEntry(ledgerId, i));
+        }
+        assertFalse(cache.hasEntry(ledgerId, 10));
+    }
+
 }
