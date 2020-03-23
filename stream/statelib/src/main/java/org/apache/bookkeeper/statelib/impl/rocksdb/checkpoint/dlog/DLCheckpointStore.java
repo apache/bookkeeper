@@ -103,7 +103,7 @@ public class DLCheckpointStore implements CheckpointStore {
             LedgerMetadata metadata = new LedgerMetadata();
             metadata.setApplication(Constants.LEDGER_METADATA_APPLICATION_STREAM_STORAGE);
             metadata.setComponent("checkpoint-store");
-            AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
+            AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter(metadata));
             return new BufferedOutputStream(
                 new DLOutputStream(dlm, writer), 128 * 1024);
         } catch (LogNotFoundException le) {
