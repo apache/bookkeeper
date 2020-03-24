@@ -112,8 +112,8 @@
     <testRetryCount>2</testRetryCount>
 
     <!-- dependencies -->
-    <arquillian-cube.version>1.15.1</arquillian-cube.version>
-    <arquillian-junit.version>1.1.14.Final</arquillian-junit.version>
+    <arquillian-cube.version>1.18.2</arquillian-cube.version>
+    <arquillian-junit.version>1.6.0.Final</arquillian-junit.version>
     <codahale.metrics.version>3.0.1</codahale.metrics.version>
     <commons-cli.version>1.2</commons-cli.version>
     <commons-collections4.version>4.1</commons-collections4.version>
