@@ -93,24 +93,29 @@ public class TestTLS extends BookKeeperClusterTestCase {
     private KeyStoreType clientTrustStoreFormat;
     private KeyStoreType serverKeyStoreFormat;
     private KeyStoreType serverTrustStoreFormat;
+    private final boolean useV2Protocol;
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                 { "JKS", "JKS" },
-                 { "PEM", "PEM" },
-                 { "PKCS12", "PKCS12" },
-                 { "JKS", "PEM" },
-                 { "PEM", "PKCS12" },
-                 { "PKCS12", "JKS" }
+                 { "JKS", "JKS", false },
+                 { "PEM", "PEM", false },
+                 { "PEM", "PEM", true },
+                 { "PKCS12", "PKCS12", false },
+                 { "JKS", "PEM", false },
+                 { "PEM", "PKCS12", false },
+                 { "PKCS12", "JKS", false }
             });
     }
-    public TestTLS(String keyStoreFormat, String trustStoreFormat) {
+    public TestTLS(String keyStoreFormat,
+                   String trustStoreFormat,
+                   boolean useV2Protocol) {
         super(3);
         this.clientKeyStoreFormat = KeyStoreType.valueOf(keyStoreFormat);
         this.clientTrustStoreFormat = KeyStoreType.valueOf(trustStoreFormat);
         this.serverKeyStoreFormat = KeyStoreType.valueOf(keyStoreFormat);
         this.serverTrustStoreFormat = KeyStoreType.valueOf(trustStoreFormat);
+        this.useV2Protocol = useV2Protocol;
     }
 
     private String getResourcePath(String resource) throws Exception {
@@ -123,6 +128,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
         /* client configuration */
         baseClientConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
         baseClientConf.setTLSClientAuthentication(true);
+        baseClientConf.setUseV2WireProtocol(useV2Protocol);
 
         switch (clientKeyStoreFormat) {
         case PEM:
