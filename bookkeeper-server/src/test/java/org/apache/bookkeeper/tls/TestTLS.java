@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,7 +67,6 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -93,24 +93,29 @@ public class TestTLS extends BookKeeperClusterTestCase {
     private KeyStoreType clientTrustStoreFormat;
     private KeyStoreType serverKeyStoreFormat;
     private KeyStoreType serverTrustStoreFormat;
+    private final boolean useV2Protocol;
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                 { "JKS", "JKS" },
-                 { "PEM", "PEM" },
-                 { "PKCS12", "PKCS12" },
-                 { "JKS", "PEM" },
-                 { "PEM", "PKCS12" },
-                 { "PKCS12", "JKS" }
+                 { "JKS", "JKS", false },
+                 { "PEM", "PEM", false },
+                 { "PEM", "PEM", true },
+                 { "PKCS12", "PKCS12", false },
+                 { "JKS", "PEM", false },
+                 { "PEM", "PKCS12", false },
+                 { "PKCS12", "JKS", false }
             });
     }
-    public TestTLS(String keyStoreFormat, String trustStoreFormat) {
+    public TestTLS(String keyStoreFormat,
+                   String trustStoreFormat,
+                   boolean useV2Protocol) {
         super(3);
         this.clientKeyStoreFormat = KeyStoreType.valueOf(keyStoreFormat);
         this.clientTrustStoreFormat = KeyStoreType.valueOf(trustStoreFormat);
         this.serverKeyStoreFormat = KeyStoreType.valueOf(keyStoreFormat);
         this.serverTrustStoreFormat = KeyStoreType.valueOf(trustStoreFormat);
+        this.useV2Protocol = useV2Protocol;
     }
 
     private String getResourcePath(String resource) throws Exception {
@@ -123,6 +128,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
         /* client configuration */
         baseClientConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
         baseClientConf.setTLSClientAuthentication(true);
+        baseClientConf.setUseV2WireProtocol(useV2Protocol);
 
         switch (clientKeyStoreFormat) {
         case PEM:
@@ -249,7 +255,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     @Test
     public void testKeyMismatchFailure() throws Exception {
         // Valid test case only for PEM format keys
-        Assume.assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
+        assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
 
@@ -335,6 +341,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testConnectToLocalTLSClusterTLSClient() throws Exception {
+        // skip test
+        if (useV2Protocol) {
+            return;
+        }
         ServerConfiguration serverConf = new ServerConfiguration();
         for (ServerConfiguration conf : bsConfs) {
             conf.setDisableServerSocketBind(true);
@@ -351,7 +361,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testRefreshDurationForBookieCerts() throws Exception {
-        Assume.assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
+        assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
         ServerConfiguration serverConf = new ServerConfiguration();
         String originalTlsKeyFilePath = bsConfs.get(0).getTLSKeyStore();
         String invalidServerKey = getResourcePath("client-key.pem");
@@ -393,7 +403,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testRefreshDurationForBookkeeperClientCerts() throws Exception {
-        Assume.assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
+        assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         String originalTlsCertFilePath = baseClientConf.getTLSCertificatePath();
@@ -601,6 +611,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testBookieAuthPluginRequireClientTLSAuthenticationLocal() throws Exception {
+        if (useV2Protocol) {
+            return;
+        }
+
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
         serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
         serverConf.setDisableServerSocketBind(true);

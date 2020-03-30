@@ -41,6 +41,8 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.checksum.MacDigestManager;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
@@ -479,11 +481,20 @@ public class BookieProtoEncoding {
      */
     @Sharable
     public static class ResponseDecoder extends ChannelInboundHandlerAdapter {
-        final EnDecoder rep;
+        final EnDecoder repPreV3;
+        final EnDecoder repV3;
+        final boolean useV2Protocol;
+        final boolean tlsEnabled;
+        boolean usingV3Protocol;
 
-        ResponseDecoder(ExtensionRegistry extensionRegistry, boolean useV2Protocol) {
-            rep = useV2Protocol
-                    ? new ResponseEnDeCoderPreV3(extensionRegistry) : new ResponseEnDecoderV3(extensionRegistry);
+        ResponseDecoder(ExtensionRegistry extensionRegistry,
+                        boolean useV2Protocol,
+                        boolean tlsEnabled) {
+            this.repPreV3 = new ResponseEnDeCoderPreV3(extensionRegistry);
+            this.repV3 = new ResponseEnDecoderV3(extensionRegistry);
+            this.useV2Protocol = useV2Protocol;
+            this.tlsEnabled = tlsEnabled;
+            usingV3Protocol = true;
         }
 
         @Override
@@ -499,7 +510,32 @@ public class BookieProtoEncoding {
                 }
                 ByteBuf buffer = (ByteBuf) msg;
                 buffer.markReaderIndex();
-                ctx.fireChannelRead(rep.decode(buffer));
+
+                Object result;
+                if (!useV2Protocol) { // always use v3 protocol
+                    result = repV3.decode(buffer);
+                } else { // use v2 protocol but
+                    // if TLS enabled, the first message `startTLS` is a protobuf message
+                    if (tlsEnabled && usingV3Protocol) {
+                        try {
+                            result = repV3.decode(buffer);
+                            if (result instanceof Response
+                                && OperationType.START_TLS == ((Response) result).getHeader().getOperation()) {
+                                usingV3Protocol = false;
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Degrade bookkeeper to v2 after starting TLS.");
+                                }
+                            }
+                        } catch (InvalidProtocolBufferException e) {
+                            usingV3Protocol = false;
+                            buffer.resetReaderIndex();
+                            result = repPreV3.decode(buffer);
+                        }
+                    } else {
+                        result = repPreV3.decode(buffer);
+                    }
+                }
+                ctx.fireChannelRead(result);
             } finally {
                 ReferenceCountUtil.release(msg);
             }
