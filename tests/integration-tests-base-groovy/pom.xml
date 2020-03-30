@@ -31,8 +31,8 @@
   <name>Apache BookKeeper :: Tests :: Base module for Arquillian based integration tests using groovy</name>
 
   <properties>
-    <groovy-eclipse-compiler.version>3.4.0-01</groovy-eclipse-compiler.version>
-    <groovy-eclipse-batch.version>2.5.8-01</groovy-eclipse-batch.version>
+    <groovy-eclipse-compiler.version>3.6.0-03</groovy-eclipse-compiler.version>
+    <groovy-eclipse-batch.version>3.0.2-02</groovy-eclipse-batch.version>
   </properties>
 
   <build>
