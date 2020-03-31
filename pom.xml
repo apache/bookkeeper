@@ -195,7 +195,7 @@
     <protobuf-maven-plugin.version>0.5.0</protobuf-maven-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
     <spotbugs-maven-plugin.version>3.1.8</spotbugs-maven-plugin.version>
-    <forkCount.variable>5</forkCount.variable>
+    <forkCount.variable>1</forkCount.variable>
   </properties>
 
   <!-- dependency definitions -->
