@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import io.netty.buffer.ByteBuf;
 import java.util.List;
 
@@ -25,6 +27,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,17 +38,18 @@ import org.slf4j.LoggerFactory;
  */
 class ReadLastConfirmedOp implements ReadEntryCallback {
     static final Logger LOG = LoggerFactory.getLogger(ReadLastConfirmedOp.class);
-    LedgerHandle lh;
-    BookieClient bookieClient;
-    int numResponsesPending;
-    int numSuccessfulResponse;
-    RecoveryData maxRecoveredData;
-    volatile boolean completed = false;
-    int lastSeenError = BKException.Code.ReadException;
+    private final long ledgerId;
+    private final byte[] ledgerKey;
+    private final BookieClient bookieClient;
+    private final DigestManager digestManager;
+    private int numResponsesPending;
+    private RecoveryData maxRecoveredData;
+    private volatile boolean completed = false;
+    private int lastSeenError = BKException.Code.ReadException;
 
-    LastConfirmedDataCallback cb;
-    final DistributionSchedule.QuorumCoverageSet coverageSet;
-    final List<BookieSocketAddress> currentEnsemble;
+    private final LastConfirmedDataCallback cb;
+    private final DistributionSchedule.QuorumCoverageSet coverageSet;
+    private final List<BookieSocketAddress> currentEnsemble;
 
     /**
      * Wrapper to get all recovered data from the request.
@@ -54,22 +58,28 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         void readLastConfirmedDataComplete(int rc, RecoveryData data);
     }
 
-    public ReadLastConfirmedOp(LedgerHandle lh, BookieClient bookieClient,
-                               List<BookieSocketAddress> ensemble, LastConfirmedDataCallback cb) {
+    public ReadLastConfirmedOp(BookieClient bookieClient,
+                               DistributionSchedule schedule,
+                               DigestManager digestManager,
+                               long ledgerId,
+                               List<BookieSocketAddress> ensemble,
+                               byte[] ledgerKey,
+                               LastConfirmedDataCallback cb) {
         this.cb = cb;
         this.bookieClient = bookieClient;
         this.maxRecoveredData = new RecoveryData(LedgerHandle.INVALID_ENTRY_ID, 0);
-        this.lh = lh;
-        this.numSuccessfulResponse = 0;
-        this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
-        this.coverageSet = lh.distributionSchedule.getCoverageSet();
+        this.numResponsesPending = ensemble.size();
+        this.coverageSet = schedule.getCoverageSet();
         this.currentEnsemble = ensemble;
+        this.ledgerId = ledgerId;
+        this.ledgerKey = ledgerKey;
+        this.digestManager = digestManager;
     }
 
     public void initiate() {
         for (int i = 0; i < currentEnsemble.size(); i++) {
             bookieClient.readEntry(currentEnsemble.get(i),
-                                   lh.ledgerId,
+                                   ledgerId,
                                    BookieProtocol.LAST_ADD_CONFIRMED,
                                    this, i, BookieProtocol.FLAG_NONE);
         }
@@ -78,10 +88,10 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
     public void initiateWithFencing() {
         for (int i = 0; i < currentEnsemble.size(); i++) {
             bookieClient.readEntry(currentEnsemble.get(i),
-                                   lh.ledgerId,
+                                   ledgerId,
                                    BookieProtocol.LAST_ADD_CONFIRMED,
                                    this, i, BookieProtocol.FLAG_DO_FENCING,
-                                   lh.ledgerKey);
+                                   ledgerKey);
         }
     }
 
@@ -96,12 +106,11 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         boolean heardValidResponse = false;
         if (rc == BKException.Code.OK) {
             try {
-                RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
+                RecoveryData recoveryData = digestManager.verifyDigestAndReturnLastConfirmed(buffer);
                 if (recoveryData.getLastAddConfirmed() > maxRecoveredData.getLastAddConfirmed()) {
                     maxRecoveredData = recoveryData;
                 }
                 heardValidResponse = true;
-                numSuccessfulResponse++;
             } catch (BKDigestMatchException e) {
                 // Too bad, this bookie didn't give us a valid answer, we
                 // still might be able to recover though so continue
@@ -140,17 +149,15 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         }
 
         if (numResponsesPending == 0 && !completed) {
-            int totalExepctedResponse = lh.getLedgerMetadata().getWriteQuorumSize()
-                    - lh.getLedgerMetadata().getAckQuorumSize() + 1;
-            if (numSuccessfulResponse >= totalExepctedResponse) {
-                cb.readLastConfirmedDataComplete(BKException.Code.OK, maxRecoveredData);
-                return;
-            }
-            // Have got all responses back but was still not enough, just fail the operation
-            LOG.error("While readLastConfirmed ledger: {} did not hear success responses from all quorums {}", ledgerId,
-                    lastSeenError);
+            LOG.error("While readLastConfirmed ledger: {} did not hear success responses from all quorums, {}",
+                      ledgerId, coverageSet);
             cb.readLastConfirmedDataComplete(lastSeenError, maxRecoveredData);
         }
 
+    }
+
+    @VisibleForTesting
+    synchronized int getNumResponsesPending() {
+        return numResponsesPending;
     }
 }

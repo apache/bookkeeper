@@ -74,16 +74,6 @@ public class RoundRobinDistributionScheduleTest {
             }
         }
         assertEquals("Should be no errors", 0, errors);
-
-        RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(
-            5, 3, 5);
-        DistributionSchedule.QuorumCoverageSet covSet = schedule.getCoverageSet();
-        covSet.addBookie(0, BKException.Code.NoSuchLedgerExistsException);
-        covSet.addBookie(1, BKException.Code.NoSuchEntryException);
-        covSet.addBookie(2, BKException.Code.NoSuchLedgerExistsException);
-        covSet.addBookie(3, BKException.Code.UNINITIALIZED);
-        covSet.addBookie(4, BKException.Code.UNINITIALIZED);
-        assertFalse(covSet.checkCovered());
     }
 
     /**
