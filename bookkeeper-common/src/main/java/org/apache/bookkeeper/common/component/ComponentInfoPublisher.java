@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.bookkeeper.common.component;
 
 import java.util.Collections;
@@ -36,6 +35,9 @@ public class ComponentInfoPublisher {
     private final Map<String, String> properties = new ConcurrentHashMap<>();
     private final Map<String, EndpointInfo> endpoints = new ConcurrentHashMap<>();
 
+    /**
+     * Endpoint information.
+     */
     public static final class EndpointInfo {
 
         private final String id;
@@ -45,7 +47,8 @@ public class ComponentInfoPublisher {
         private final List<String> auth;
         private final List<String> extensions;
 
-        public EndpointInfo(String id, int port, String host, String protocol, List<String> auth, List<String> extensions) {
+        public EndpointInfo(String id, int port, String host, String protocol,
+                            List<String> auth, List<String> extensions) {
             this.id = id;
             this.port = port;
             this.host = host;
@@ -80,7 +83,8 @@ public class ComponentInfoPublisher {
 
         @Override
         public String toString() {
-            return "EndpointInfo{" + "id=" + id + ", port=" + port + ", host=" + host + ", protocol=" + protocol + ", auth=" + auth + ", extensions=" + extensions + '}';
+            return "EndpointInfo{" + "id=" + id + ", port=" + port + ", host=" + host + ", protocol=" + protocol + ", "
+                    + "auth=" + auth + ", extensions=" + extensions + '}';
         }
 
     }
@@ -91,15 +95,15 @@ public class ComponentInfoPublisher {
      * Publish an information about the system, like an endpoint address.
      *
      * @param key the key
-     * @param value  the value, null values are not allowed.
+     * @param value the value, null values are not allowed.
      */
     public void publishProperty(String key, String value) {
         log.info("publish {}={}", key, value);
         if (startupFinished) {
-            throw new IllegalStateException("Server already started, cannot publish "+key);
+            throw new IllegalStateException("Server already started, cannot publish " + key);
         }
         Objects.requireNonNull(key);
-        Objects.requireNonNull(value, "Value for "+key+" cannot be null");
+        Objects.requireNonNull(value, "Value for " + key + " cannot be null");
 
         properties.put(key, value);
     }
@@ -108,7 +112,8 @@ public class ComponentInfoPublisher {
         log.info("publishEndpoint {} on {}", endpoint, this);
         EndpointInfo exists = endpoints.put(endpoint.id, endpoint);
         if (exists != null) {
-            throw new IllegalStateException("An endpoint with id "+endpoint.id+" has already been published: "+exists);
+            throw new IllegalStateException("An endpoint with id " + endpoint.id
+                    + " has already been published: " + exists);
         }
     }
 
@@ -127,8 +132,8 @@ public class ComponentInfoPublisher {
     }
 
     /**
-     * Called by the framework to signal that preparation of startup
-     * is done, so we have gathered all of the available information.
+     * Called by the framework to signal that preparation of startup is done,
+     * so we have gathered all of the available information.
      */
     public void startupFinished() {
         startupFinished = true;

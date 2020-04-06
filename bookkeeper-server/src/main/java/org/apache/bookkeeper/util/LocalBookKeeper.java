@@ -37,23 +37,18 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.discover.BookieServiceInfo.Endpoint;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
-import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.server.service.BookieService;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShimFactory;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -262,8 +257,12 @@ public class LocalBookKeeper {
 
             // Mimic BookKeeper Main
             final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
-            final Supplier<BookieServiceInfo> bookieServiceInfoProvider = () -> buildBookieServiceInfo(componentInfoPublisher);
-            BookieService bookieService = new BookieService(new BookieConfiguration(bsConfs[i]), NullStatsLogger.INSTANCE, bookieServiceInfoProvider);
+            final Supplier<BookieServiceInfo> bookieServiceInfoProvider =
+                    () -> buildBookieServiceInfo(componentInfoPublisher);
+            BookieService bookieService = new BookieService(new BookieConfiguration(bsConfs[i]),
+                    NullStatsLogger.INSTANCE,
+                    bookieServiceInfoProvider
+            );
             bs[i] = bookieService.getServer();
             bookieService.publishInfo(componentInfoPublisher);
             componentInfoPublisher.startupFinished();
@@ -542,14 +541,17 @@ public class LocalBookKeeper {
     }
 
     private static BookieServiceInfo buildBookieServiceInfo(ComponentInfoPublisher componentInfoPublisher) {
-        List<BookieServiceInfo.Endpoint> endpoints = componentInfoPublisher
-                .getEndpoints()
-                .values()
-                .stream()
-                .map(e -> {
-                    return  new BookieServiceInfo.Endpoint(e.getId(), e.getPort(), e.getHost(), e.getProtocol(), e.getAuth(), e.getExtensions());
-                })
-                .collect(Collectors.toList());
+        List<Endpoint> endpoints = componentInfoPublisher.getEndpoints().values()
+                .stream().map(e -> {
+                    return new Endpoint (
+                            e.getId(),
+                            e.getPort(),
+                            e.getHost(),
+                            e.getProtocol(),
+                            e.getAuth(),
+                            e.getExtensions()
+                    );
+                }).collect(Collectors.toList());
         return new BookieServiceInfo(componentInfoPublisher.getProperties(), endpoints);
     }
 }

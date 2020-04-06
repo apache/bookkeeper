@@ -18,26 +18,24 @@
 
 package org.apache.bookkeeper.discover;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
@@ -56,6 +54,7 @@ import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -80,8 +79,6 @@ import org.apache.zookeeper.data.Stat;
  */
 @Slf4j
 public class ZKRegistrationManager implements RegistrationManager {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final Function<Throwable, BKException> EXCEPTION_FUNC = cause -> {
         if (cause instanceof BKException) {
@@ -230,12 +227,30 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     private static byte[] serializeBookieServiceInfo(BookieServiceInfo bookieServiceInfo) {
-        try {
-            log.info("serialize BookieServiceInfo {}", bookieServiceInfo);
-            return MAPPER.writeValueAsBytes(bookieServiceInfo);
-        } catch (JsonProcessingException ex) {
-            log.error("Cannot serialize bookieServiceInfo {}", bookieServiceInfo, ex);
-            return new byte[0];
+        log.info("serialize BookieServiceInfo {}", bookieServiceInfo);
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            BookieServiceInfoFormat.Builder builder = BookieServiceInfoFormat.newBuilder();
+            List<BookieServiceInfoFormat.Endpoint> bsiEndpoints = bookieServiceInfo.getEndpoints().stream()
+                    .map(e -> {
+                        return BookieServiceInfoFormat.Endpoint.newBuilder()
+                               .setId(e.getId())
+                               .setPort(e.getPort())
+                               .setHost(e.getHost())
+                               .setProtocol(e.getProtocol())
+                               .addAllAuth(e.getAuth())
+                               .addAllExtensions(e.getExtensions())
+                               .build();
+                    })
+                    .collect(Collectors.toList());
+
+            builder.addAllEndpoints(bsiEndpoints);
+            builder.putAllProperties(bookieServiceInfo.getProperties());
+
+            builder.build().writeTo(os);
+            return os.toByteArray();
+        } catch (IOException err) {
+            log.error("Cannot serialize bookieServiceInfo from " + bookieServiceInfo);
+            throw new RuntimeException(err);
         }
     }
 

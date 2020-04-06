@@ -44,8 +44,7 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
     static final Logger LOG = LoggerFactory.getLogger(EndpointInfoCommand.class);
 
     private static final String NAME = "endpointinfo";
-    private static final String DESC
-            = "Get all end point information about a given bookie.";
+    private static final String DESC = "Get all end point information about a given bookie.";
 
     public EndpointInfoCommand() {
         this(new EndpointInfoFlags());

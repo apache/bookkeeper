@@ -189,8 +189,9 @@ public class StorageServer {
         throws ConfigurationException, UnknownHostException {
         final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
 
-        final Supplier<BookieServiceInfo> bookieServiceInfoProvider = () -> buildBookieServiceInfo(componentInfoPublisher);
-        
+        final Supplier<BookieServiceInfo> bookieServiceInfoProvider =
+                () -> buildBookieServiceInfo(componentInfoPublisher);
+
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder()
             .withName("storage-server")
             .withComponentInfoPublisher(componentInfoPublisher);
@@ -366,16 +367,19 @@ public class StorageServer {
             .addComponent(clusterControllerService) // service that run cluster controller service
             .build();
     }
-    
+
     private static BookieServiceInfo buildBookieServiceInfo(ComponentInfoPublisher componentInfoPublisher) {
-        List<BookieServiceInfo.Endpoint> endpoints = componentInfoPublisher
-                .getEndpoints()
-                .values()
-                .stream()
-                .map(e -> {
-                    return  new BookieServiceInfo.Endpoint(e.getId(), e.getPort(), e.getHost(), e.getProtocol(), e.getAuth(), e.getExtensions());
-                })
-                .collect(Collectors.toList());
+        List<BookieServiceInfo.Endpoint> endpoints = componentInfoPublisher.getEndpoints().values()
+                .stream().map(e -> {
+                    return new BookieServiceInfo.Endpoint (
+                            e.getId(),
+                            e.getPort(),
+                            e.getHost(),
+                            e.getProtocol(),
+                            e.getAuth(),
+                            e.getExtensions()
+                    );
+                }).collect(Collectors.toList());
         return new BookieServiceInfo(componentInfoPublisher.getProperties(), endpoints);
     }
 }

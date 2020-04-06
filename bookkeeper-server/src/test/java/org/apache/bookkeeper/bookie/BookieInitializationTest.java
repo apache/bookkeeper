@@ -60,6 +60,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +87,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.discover.BookieServiceInfo.Endpoint;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServerLoader;
@@ -95,6 +97,7 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -497,6 +500,49 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 throw ee;
             }
         }
+    }
+
+    @Test(timeout = 20000)
+    public void testBookieRegistrationBookieServiceInfo() throws Exception {
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+            .setMetadataServiceUri(metadataServiceUri)
+            .setUseHostNameAsBookieID(true)
+            .setUseShortHostName(true)
+            .setListeningInterface(null);
+
+        final String bookieId = InetAddress.getLocalHost().getCanonicalHostName().split("\\.", 2)[0]
+                + ":" + conf.getBookiePort();
+        String bkRegPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf) + "/" + AVAILABLE_NODE + "/" + bookieId;
+
+        driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+
+        Endpoint endpoint = new Endpoint("test", 1281, "localhost", "bookie-rpc",
+                Collections.emptyList(), Collections.emptyList());
+        BookieServiceInfo bsi = new BookieServiceInfo(Collections.emptyMap(), Arrays.asList(endpoint));
+        Supplier<BookieServiceInfo> supplier = () -> bsi;
+
+        DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(
+                conf, conf.getLedgerDirs(), diskChecker);
+        try (StateManager manager = new BookieStateManager(conf,
+                NullStatsLogger.INSTANCE, driver, ledgerDirsManager, supplier)) {
+            manager.registerBookie(true).get();
+            assertTrue("Bookie registration node doesn't exists!",
+                    driver.getRegistrationManager().isBookieRegistered(bookieId));
+        }
+        Stat bkRegNode = zkc.exists(bkRegPath, false);
+        assertNotNull("Bookie registration has been failed", bkRegNode);
+
+        byte[] bkRegNodeData = zkc.getData(bkRegPath, null, null);
+        assertFalse("Bookie service info not written", bkRegNodeData == null || bkRegNodeData.length == 0);
+
+        BookieServiceInfoFormat serializedBookieServiceInfo = BookieServiceInfoFormat.parseFrom(bkRegNodeData);
+        BookieServiceInfoFormat.Endpoint serializedEndpoint = serializedBookieServiceInfo.getEndpoints(0);
+        assertNotNull("Serialized Bookie endpoint not found", serializedEndpoint);
+
+        assertEquals(endpoint.getId(), serializedEndpoint.getId());
+        assertEquals(endpoint.getHost(), serializedEndpoint.getHost());
+        assertEquals(endpoint.getPort(), serializedEndpoint.getPort());
     }
 
     /**

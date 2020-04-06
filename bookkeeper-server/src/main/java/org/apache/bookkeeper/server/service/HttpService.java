@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.io.IOException;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 
+import org.apache.bookkeeper.common.component.ComponentInfoPublisher.EndpointInfo;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
@@ -68,9 +69,10 @@ public class HttpService extends ServerLifecycleComponent {
     @Override
     public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
         if (conf.getServerConf().isHttpServerEnabled()) {
-            ComponentInfoPublisher.EndpointInfo endpoint
-                    = new ComponentInfoPublisher.EndpointInfo("httpserver", conf.getServerConf().getHttpServerPort(),
-                            "0.0.0.0", "http", null, null);
+            EndpointInfo endpoint = new EndpointInfo("httpserver",
+                    conf.getServerConf().getHttpServerPort(),
+                    "0.0.0.0",
+                    "http", null, null);
             componentInfoPublisher.publishEndpoint(endpoint);
         }
     }

@@ -118,3 +118,26 @@ message PlacementPolicyCheckFormat {
 message ReplicasCheckFormat {
     optional int64 replicasCheckCTime = 1;
 }
+
+/**
+ * information about services exposed by a Bookie.
+ */
+message BookieServiceInfoFormat {
+
+    /**
+     * Information about an endpoint.
+     */
+    message Endpoint {
+        required string id = 1;
+        required int32 port = 2;
+        required string host = 3;
+        required string protocol = 4;
+
+        repeated string auth = 5;
+        repeated string extensions = 6;
+    }
+
+    repeated Endpoint endpoints = 6;
+    map<string, string> properties = 7;
+}
+

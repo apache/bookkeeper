@@ -1710,22 +1710,19 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Command to trigger AuditTask by resetting lostBookieRecoveryDelay and
-     * then make sure the ledgers stored in the bookie are properly replicated
-     * and Cookie of the decommissioned bookie should be deleted from metadata
-     * server.
+     * Command to retrieve remote bookie endpoint information.
      */
     class EndpointInfoCmd extends MyCommand {
         Options lOpts = new Options();
 
         EndpointInfoCmd() {
             super(CMD_ENDPOINTINFO);
-            lOpts.addOption("bookieid", true, "get info about a remote bookie");
+            lOpts.addOption("b", "bookieid", true, "Bookie Id");
         }
 
         @Override
         String getDescription() {
-            return new EndpointInfoCommand().description();
+            return "Get info about a remote bookie with a specific bookie address (bookieid)";
         }
 
         @Override
@@ -1744,6 +1741,12 @@ public class BookieShell implements Tool {
             EndpointInfoCommand.EndpointInfoFlags flags = new EndpointInfoCommand.EndpointInfoFlags();
             final String bookieId = cmdLine.getOptionValue("bookieid");
             flags.bookie(bookieId);
+            if (StringUtils.isBlank(bookieId)) {
+                LOG.error("Invalid argument list!");
+                this.printUsage();
+                return -1;
+            }
+
             boolean result = cmd.apply(bkConf, flags);
             return (result) ? 0 : -1;
         }

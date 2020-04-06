@@ -30,7 +30,10 @@ public final class BookieServiceInfo {
     /**
      * Default empty implementation.
      */
-    public static final BookieServiceInfo EMPTY = new BookieServiceInfo(Collections.emptyMap(), Collections.emptyList());
+    public static final BookieServiceInfo EMPTY = new BookieServiceInfo(
+            Collections.emptyMap(),
+            Collections.emptyList()
+    );
 
     /**
      * Default empty implementation.
@@ -145,12 +148,11 @@ public final class BookieServiceInfo {
         public void setExtensions(List<String> extensions) {
             this.extensions = extensions;
         }
-        
-        
-        
+
         @Override
         public String toString() {
-            return "EndpointInfo{" + "id=" + id + ", port=" + port + ", host=" + host + ", protocol=" + protocol + ", auth=" + auth + ", extensions=" + extensions + '}';
+            return "EndpointInfo{" + "id=" + id + ", port=" + port + ", host=" + host + ", protocol=" + protocol + ", "
+                    + "auth=" + auth + ", extensions=" + extensions + '}';
         }
 
     }
@@ -159,6 +161,5 @@ public final class BookieServiceInfo {
     public String toString() {
         return "BookieServiceInfo{" + "properties=" + properties + ", endpoints=" + endpoints + '}';
     }
-
 
 }

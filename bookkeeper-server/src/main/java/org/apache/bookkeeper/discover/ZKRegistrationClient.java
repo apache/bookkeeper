@@ -22,15 +22,13 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -38,6 +36,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +45,7 @@ import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Version.Occurred;
@@ -63,8 +63,6 @@ import org.apache.zookeeper.data.Stat;
  */
 @Slf4j
 public class ZKRegistrationClient implements RegistrationClient {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     static final int ZK_CONNECT_BACKOFF_MS = 200;
 
@@ -224,46 +222,86 @@ public class ZKRegistrationClient implements RegistrationClient {
     @Override
     public CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(String bookieId) {
         String pathAsWritable = bookieRegistrationPath + "/" + bookieId;
-        CompletableFuture<Versioned<BookieServiceInfo>> res = new CompletableFuture<>();
+        String pathAsReadonly = bookieReadonlyRegistrationPath + "/" + bookieId;
+
+        CompletableFuture<Versioned<BookieServiceInfo>> promise = new CompletableFuture<>();
         zk.getData(pathAsWritable, false, (int rc, String path, Object o, byte[] bytes, Stat stat) -> {
             if (KeeperException.Code.OK.intValue() == rc) {
-                BookieServiceInfo bookieServiceInfo = deserializeBookieService(bytes);
-                res.complete(new Versioned<>(bookieServiceInfo, new LongVersion(stat.getCversion())));
+                try {
+                    BookieServiceInfo bookieServiceInfo = deserializeBookieService(bytes);
+                    promise.complete(new Versioned<>(bookieServiceInfo, new LongVersion(stat.getCversion())));
+                } catch (IOException ex) {
+                    promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
+                    return;
+                }
             } else if (KeeperException.Code.NONODE.intValue() == rc) {
                 // not found, looking for a readonly bookie
-                String pathAsReadonly = bookieReadonlyRegistrationPath + "/" + bookieId;
                 zk.getData(pathAsReadonly, false, (int rc2, String path2, Object o2, byte[] bytes2, Stat stat2) -> {
                     if (KeeperException.Code.OK.intValue() == rc2) {
-                        BookieServiceInfo bookieServiceInfo = deserializeBookieService(bytes2);
-                        res.complete(new Versioned<>(bookieServiceInfo, new LongVersion(stat2.getCversion())));
+                        try {
+                            BookieServiceInfo bookieServiceInfo = deserializeBookieService(bytes2);
+                            promise.complete(new Versioned<>(bookieServiceInfo, new LongVersion(stat2.getCversion())));
+                        } catch (IOException ex) {
+                            promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
+                            return;
+                        }
                     } else if (KeeperException.Code.NONODE.intValue() == rc2) {
                         // not found as readonly, the bookie is offline
                         // return an empty BookieServiceInfoStructure
-                        res.complete(new Versioned<>(deserializeBookieService(null), new LongVersion(0)));
+                        BookieSocketAddress address = null;
+                        try {
+                            address = new BookieSocketAddress(bookieId);
+                        } catch (UnknownHostException err) {
+                            promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
+                            return;
+                        }
+                        BookieServiceInfo.Endpoint endpoint = new BookieServiceInfo.Endpoint();
+                        endpoint.setId(bookieId);
+                        endpoint.setHost(address.getHostName());
+                        endpoint.setPort(address.getPort());
+                        endpoint.setProtocol("bookie-rpc");
+                        BookieServiceInfo emptyBookieServiceInfo = new BookieServiceInfo(
+                                Collections.emptyMap(),
+                                Arrays.asList(endpoint)
+                        );
+                        promise.complete(new Versioned<>(emptyBookieServiceInfo, new LongVersion(0)));
                     } else {
-                        res.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
+                        promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
                     }
                 }, null);
             } else {
-                res.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
+                promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
             }
         }, null);
-        return res;
+        return promise;
     }
 
     @SuppressWarnings("unchecked")
-    private static BookieServiceInfo deserializeBookieService(byte[] bookieServiceInfo) {
-        if (bookieServiceInfo != null && bookieServiceInfo.length > 0) {
-            try {
-                return MAPPER.readValue(bookieServiceInfo, BookieServiceInfo.class);
-            } catch (IOException err) {
-                log.error("Cannot deserialize bookieServiceInfo from "
-                        + new String(bookieServiceInfo, StandardCharsets.UTF_8), err);
-            }
+    private static BookieServiceInfo deserializeBookieService(byte[] bookieServiceInfo) throws IOException {
+        if (bookieServiceInfo == null || bookieServiceInfo.length == 0) {
+            throw new IOException("Not found");
         }
-        return BookieServiceInfo.EMPTY;
-    }
 
+        BookieServiceInfoFormat builder = BookieServiceInfoFormat.parseFrom(bookieServiceInfo);
+        BookieServiceInfo bsi = new BookieServiceInfo();
+        List<BookieServiceInfo.Endpoint> endpoints = builder.getEndpointsList().stream()
+                .map(e -> {
+                    BookieServiceInfo.Endpoint endpoint = new BookieServiceInfo.Endpoint();
+                    endpoint.setId(e.getId());
+                    endpoint.setPort(e.getPort());
+                    endpoint.setHost(e.getHost());
+                    endpoint.setProtocol(e.getProtocol());
+                    endpoint.setAuth(e.getAuthList());
+                    endpoint.setExtensions(e.getExtensionsList());
+                    return endpoint;
+                })
+                .collect(Collectors.toList());
+
+        bsi.setEndpoints(endpoints);
+        bsi.setProperties(builder.getPropertiesMap());
+
+        return bsi;
+    }
 
     private CompletableFuture<Versioned<Set<BookieSocketAddress>>> getChildren(String regPath, Watcher watcher) {
         CompletableFuture<Versioned<Set<BookieSocketAddress>>> future = FutureUtils.createFuture();

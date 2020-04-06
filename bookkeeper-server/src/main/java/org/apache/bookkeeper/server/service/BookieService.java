@@ -22,11 +22,11 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
+import org.apache.bookkeeper.common.component.ComponentInfoPublisher.EndpointInfo;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -89,9 +89,10 @@ public class BookieService extends ServerLifecycleComponent {
             if (conf.getServerConf().getTLSProviderFactoryClass() != null) {
                 extensions.add("tls");
             }
-            ComponentInfoPublisher.EndpointInfo endpoint
-                    = new ComponentInfoPublisher.EndpointInfo("bookie", localAddress.getPort(),
-                            localAddress.getHostName(), "bookie-rpc", null, extensions);
+            EndpointInfo endpoint = new EndpointInfo("bookie",
+                    localAddress.getPort(),
+                    localAddress.getHostName(),
+                    "bookie-rpc", null, extensions);
             componentInfoPublisher.publishEndpoint(endpoint);
 
         } catch (UnknownHostException err) {

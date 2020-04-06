@@ -43,7 +43,8 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
     private final Supplier<BookieServiceInfo> bookieServiceInfoProvider;
 
 
-    public BookieService(BookieConfiguration conf, StatsLogger statsLogger, Supplier<BookieServiceInfo> bookieServiceInfoProvider) {
+    public BookieService(BookieConfiguration conf, StatsLogger statsLogger,
+                         Supplier<BookieServiceInfo> bookieServiceInfoProvider) {
         super("bookie-server", conf, statsLogger);
         this.serverConf = new ServerConfiguration();
         this.serverConf.loadConf(conf.getUnderlyingConf());

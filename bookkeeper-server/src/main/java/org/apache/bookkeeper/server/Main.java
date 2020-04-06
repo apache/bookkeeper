@@ -23,12 +23,8 @@ import static org.apache.bookkeeper.server.component.ServerLifecycleComponent.lo
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -42,7 +38,7 @@ import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.UncheckedConfigurationException;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.discover.BookieServiceInfo.Endpoint;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
@@ -299,7 +295,8 @@ public class Main {
 
         final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
 
-        final Supplier<BookieServiceInfo> bookieServiceInfoProvider = () -> buildBookieServiceInfo(componentInfoPublisher);
+        final Supplier<BookieServiceInfo> bookieServiceInfoProvider =
+                () -> buildBookieServiceInfo(componentInfoPublisher);
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack
                 .newBuilder()
                 .withComponentInfoPublisher(componentInfoPublisher)
@@ -374,14 +371,17 @@ public class Main {
     }
 
     private static BookieServiceInfo buildBookieServiceInfo(ComponentInfoPublisher componentInfoPublisher) {
-        List<BookieServiceInfo.Endpoint> endpoints = componentInfoPublisher
-                .getEndpoints()
-                .values()
-                .stream()
-                .map(e -> {
-                    return  new BookieServiceInfo.Endpoint(e.getId(), e.getPort(), e.getHost(), e.getProtocol(), e.getAuth(), e.getExtensions());
-                })
-                .collect(Collectors.toList());
+        List<Endpoint> endpoints = componentInfoPublisher.getEndpoints().values()
+                .stream().map(e -> {
+                    return new Endpoint (
+                            e.getId(),
+                            e.getPort(),
+                            e.getHost(),
+                            e.getProtocol(),
+                            e.getAuth(),
+                            e.getExtensions()
+                    );
+                }).collect(Collectors.toList());
         return new BookieServiceInfo(componentInfoPublisher.getProperties(), endpoints);
     }
 
