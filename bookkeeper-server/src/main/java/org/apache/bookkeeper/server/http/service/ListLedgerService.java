@@ -22,9 +22,13 @@ import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
+
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -66,10 +70,42 @@ public class ListLedgerService implements HttpEndpointService {
     static final int LIST_LEDGER_BATCH_SIZE = 100;
 
     private void keepLedgerMetadata(long ledgerId, CompletableFuture<Versioned<LedgerMetadata>> future,
-                                    LinkedHashMap<String, String> output)
+                                    LinkedHashMap<String, Object> output, boolean decodeMeta)
             throws Exception {
         LedgerMetadata md = future.get().getValue();
-        output.put(Long.valueOf(ledgerId).toString(), new String(serDe.serialize(md), UTF_8));
+        if (decodeMeta) {
+            output.put(Long.valueOf(ledgerId).toString(), decodeMetadataFields(md));
+        } else {
+            output.put(Long.valueOf(ledgerId).toString(), new String(serDe.serialize(md), UTF_8));
+        }
+    }
+
+    private Map<String, Object> decodeMetadataFields(LedgerMetadata md) {
+        Map<String, Object> decoded = Maps.newLinkedHashMap();
+
+        decoded.put("formatVersion", md.getMetadataFormatVersion());
+        decoded.put("state", md.getState());
+        decoded.put("ctime", md.getCtime());
+        decoded.put("cToken", md.getCToken());
+        decoded.put("ensembleSize", md.getEnsembleSize());
+        decoded.put("writeQuorumSize", md.getWriteQuorumSize());
+        decoded.put("ackQuorumSize", md.getAckQuorumSize());
+        decoded.put("ensembles", md.getAllEnsembles());
+        decoded.put("customMetadata", md.getCustomMetadata().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> "base64:" + Base64.getEncoder().encodeToString(entry.getValue()))));
+
+        if (md.isClosed()) {
+            decoded.put("length", md.getLength());
+            decoded.put("lastEntryId", md.getLastEntryId());
+        }
+
+        if (md.hasPassword()) {
+            decoded.put("digestType", md.getDigestType());
+            decoded.put("password", "OMITTED");
+        }
+
+        return decoded;
     }
 
     @Override
@@ -84,6 +120,10 @@ public class ListLedgerService implements HttpEndpointService {
               && params.containsKey("print_metadata")
               && params.get("print_metadata").equals("true");
 
+            // do not decode meta by default for backward compatibility
+            boolean decodeMeta = (params != null)
+                    && params.getOrDefault("decode_meta", "false").equals("true");
+
             // Page index should start from 1;
             int pageIndex = (printMeta && params.containsKey("page"))
                 ? Integer.parseInt(params.get("page")) : -1;
@@ -93,7 +133,7 @@ public class ListLedgerService implements HttpEndpointService {
             LedgerManager.LedgerRangeIterator iter = manager.getLedgerRanges(0);
 
             // output <ledgerId: ledgerMetadata>
-            LinkedHashMap<String, String> output = Maps.newLinkedHashMap();
+            LinkedHashMap<String, Object> output = Maps.newLinkedHashMap();
             // futures for readLedgerMetadata for each page.
             Map<Long, CompletableFuture<Versioned<LedgerMetadata>>> futures =
                 new LinkedHashMap<>(LIST_LEDGER_BATCH_SIZE);
@@ -121,13 +161,13 @@ public class ListLedgerService implements HttpEndpointService {
                     }
                     if (futures.size() >= LIST_LEDGER_BATCH_SIZE) {
                         for (Map.Entry<Long, CompletableFuture<Versioned<LedgerMetadata>> > e : futures.entrySet()) {
-                            keepLedgerMetadata(e.getKey(), e.getValue(), output);
+                            keepLedgerMetadata(e.getKey(), e.getValue(), output, decodeMeta);
                         }
                         futures.clear();
                     }
                 }
                 for (Map.Entry<Long, CompletableFuture<Versioned<LedgerMetadata>> > e : futures.entrySet()) {
-                    keepLedgerMetadata(e.getKey(), e.getValue(), output);
+                    keepLedgerMetadata(e.getKey(), e.getValue(), output, decodeMeta);
                 }
                 futures.clear();
             } else {
