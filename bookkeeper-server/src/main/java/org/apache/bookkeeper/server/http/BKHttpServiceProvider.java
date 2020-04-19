@@ -200,7 +200,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new DeleteLedgerService(configuration);
             case LIST_LEDGER:
                 return new ListLedgerService(configuration, bookieServer);
-            case  GET_LEDGER_META:
+            case GET_LEDGER_META:
                 return new GetLedgerMetaService(configuration, bookieServer);
             case READ_LEDGER_ENTRY:
                 return new ReadLedgerEntryService(configuration, bka);
