@@ -18,9 +18,12 @@
 
 package org.apache.bookkeeper.server.http.service;
 
+import static org.junit.Assert.assertEquals;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
@@ -28,10 +31,9 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-
+/**
+ * Unit tests for {@link AutoRecoveryStatusService}.
+ */
 public class AutoRecoveryStatusServiceTest extends BookKeeperClusterTestCase {
     private final ObjectMapper mapper = new ObjectMapper();
     private AutoRecoveryStatusService autoRecoveryStatusService;

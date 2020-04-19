@@ -20,6 +20,8 @@ package org.apache.bookkeeper.server.http.service;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import java.util.Collections;
+import java.util.Map;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -29,9 +31,6 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.commons.lang3.ObjectUtils;
-
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * HttpEndpointService that handles Autorecovery status related http requests.
