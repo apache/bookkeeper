@@ -23,11 +23,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
 
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.util.JsonUtil;
@@ -74,38 +72,10 @@ public class ListLedgerService implements HttpEndpointService {
             throws Exception {
         LedgerMetadata md = future.get().getValue();
         if (decodeMeta) {
-            output.put(Long.valueOf(ledgerId).toString(), decodeMetadataFields(md));
+            output.put(Long.valueOf(ledgerId).toString(), md);
         } else {
             output.put(Long.valueOf(ledgerId).toString(), new String(serDe.serialize(md), UTF_8));
         }
-    }
-
-    private Map<String, Object> decodeMetadataFields(LedgerMetadata md) {
-        Map<String, Object> decoded = Maps.newLinkedHashMap();
-
-        decoded.put("formatVersion", md.getMetadataFormatVersion());
-        decoded.put("state", md.getState());
-        decoded.put("ctime", md.getCtime());
-        decoded.put("cToken", md.getCToken());
-        decoded.put("ensembleSize", md.getEnsembleSize());
-        decoded.put("writeQuorumSize", md.getWriteQuorumSize());
-        decoded.put("ackQuorumSize", md.getAckQuorumSize());
-        decoded.put("ensembles", md.getAllEnsembles());
-        decoded.put("customMetadata", md.getCustomMetadata().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> "base64:" + Base64.getEncoder().encodeToString(entry.getValue()))));
-
-        if (md.isClosed()) {
-            decoded.put("length", md.getLength());
-            decoded.put("lastEntryId", md.getLastEntryId());
-        }
-
-        if (md.hasPassword()) {
-            decoded.put("digestType", md.getDigestType());
-            decoded.put("password", "OMITTED");
-        }
-
-        return decoded;
     }
 
     @Override
