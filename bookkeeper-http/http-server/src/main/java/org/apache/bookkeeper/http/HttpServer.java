@@ -84,6 +84,7 @@ public interface HttpServer {
         BOOKIE_IS_READY,
 
         // autorecovery
+        AUTORECOVERY_STATUS,
         RECOVERY_BOOKIE,
         LIST_UNDER_REPLICATED_LEDGER,
         WHO_IS_AUDITOR,
