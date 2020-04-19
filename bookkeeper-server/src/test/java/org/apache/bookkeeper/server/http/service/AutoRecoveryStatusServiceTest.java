@@ -30,7 +30,7 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class AutoRecoveryStatusServiceTest extends BookKeeperClusterTestCase {
     private final ObjectMapper mapper = new ObjectMapper();
