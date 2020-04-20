@@ -39,7 +39,6 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.commons.lang3.RandomUtils;
@@ -51,7 +50,6 @@ import org.junit.Test;
  */
 public class ListLedgerServiceTest extends BookKeeperClusterTestCase {
     private final ObjectMapper mapper = new ObjectMapper();
-    private final LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
     private ListLedgerService listLedgerService;
 
     public ListLedgerServiceTest() {
@@ -114,13 +112,6 @@ public class ListLedgerServiceTest extends BookKeeperClusterTestCase {
             LedgerMetadata meta = ledgers.get(Long.parseLong(field));
             assertNotNull(meta);
             assertFalse(json.get(field).isNull());
-//            try {
-//                LedgerMetadata parsed = serDe.parseConfig(json.get(field).textValue().getBytes(Charsets.UTF_8),
-//                        Optional.empty());
-//                assertEquals(meta.getMetadataFormatVersion(), parsed.getMetadataFormatVersion());
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
         });
     }
 
