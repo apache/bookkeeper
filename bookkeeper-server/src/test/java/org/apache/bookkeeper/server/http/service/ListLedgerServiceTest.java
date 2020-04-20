@@ -132,7 +132,6 @@ public class ListLedgerServiceTest extends BookKeeperClusterTestCase {
             LedgerHandle ledger = bkc.createLedger(1, 1, 1, BookKeeper.DigestType.CRC32, new byte[0],
                     ImmutableMap.of("test_key", "test_value".getBytes()));
             ledger.close();
-            System.out.println(ledger.getCtime());
             ledgers.put(ledger.getId(), ledger.getLedgerMetadata());
         }
 
