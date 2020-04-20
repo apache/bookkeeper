@@ -94,7 +94,7 @@ public class AutoRecoveryStatusServiceTest extends BookKeeperClusterTestCase {
         Map<String, String> params = ImmutableMap.of("enable", "false");
         HttpServiceRequest request = new HttpServiceRequest(null, HttpServer.Method.PUT, params);
         HttpServiceResponse response = autoRecoveryStatusService.handle(request);
-        assertEquals(HttpServer.StatusCode.INTERNAL_ERROR.getValue(), response.getStatusCode());
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), response.getStatusCode());
     }
 
     @Test

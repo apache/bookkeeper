@@ -87,7 +87,7 @@ public class AutoRecoveryStatusService implements HttpEndpointService {
         String enabled = params.get("enabled");
         if (enabled == null) {
             return new HttpServiceResponse("Param 'enabled' not found in " + params,
-                    HttpServer.StatusCode.INTERNAL_ERROR);
+                    HttpServer.StatusCode.BAD_REQUEST);
         }
         if (Boolean.parseBoolean(enabled)) {
             if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {

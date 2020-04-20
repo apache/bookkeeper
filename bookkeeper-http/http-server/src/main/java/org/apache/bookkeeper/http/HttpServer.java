@@ -33,6 +33,7 @@ public interface HttpServer {
     enum StatusCode {
         OK(200),
         REDIRECT(302),
+        BAD_REQUEST(400),
         FORBIDDEN(403),
         NOT_FOUND(404),
         INTERNAL_ERROR(500),
