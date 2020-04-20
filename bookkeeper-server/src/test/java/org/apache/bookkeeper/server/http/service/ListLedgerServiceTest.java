@@ -100,8 +100,8 @@ public class ListLedgerServiceTest extends BookKeeperClusterTestCase {
         Map<Long, LedgerMetadata> ledgers = new HashMap<>();
         for (int i = 0; i < ledgerNum; i++) {
             LedgerHandle ledger = bkc.createLedger(1, 1, 1, BookKeeper.DigestType.CRC32, new byte[0]);
-            ledgers.put(ledger.getId(), ledger.getLedgerMetadata());
             ledger.close();
+            ledgers.put(ledger.getId(), ledger.getLedgerMetadata());
         }
 
         HttpServiceResponse response = listLedgerService.handle(new HttpServiceRequest(null, HttpServer.Method.GET,
