@@ -32,9 +32,11 @@ import com.google.common.net.InetAddresses;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -611,5 +613,41 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                 BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId, bookie3, meta));
         assertTrue("expected areEntriesOfLedgerStoredInTheBookie to return true for bookie2",
                 BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId, bookie2, meta));
+    }
+
+    @Test
+    public void testBookkeeperAdminFormatResetsLedgerIds() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        /*
+         * in this testsuite there are going to be 2 (numOfBookies) ledgers
+         * written and when formatting the BookieAdmin i expect that the
+         * ledger ids restart from 0
+         */
+        int numOfLedgers = 2;
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            Set<Long> ledgerIds = new HashSet<>();
+            for (int n = 0; n < numOfLedgers; n++) {
+                try (LedgerHandle lh = bkc.createLedger(numOfBookies, numOfBookies, digestType, "L".getBytes())) {
+                    ledgerIds.add(lh.getId());
+                    lh.addEntry("000".getBytes());
+                }
+            }
+
+            try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+                bkAdmin.format(baseConf, false, true);
+            }
+
+            /**
+             * ledgers created after format produce the same ids
+             */
+            for (int n = 0; n < numOfLedgers; n++) {
+                try (LedgerHandle lh = bkc.createLedger(numOfBookies, numOfBookies, digestType, "L".getBytes())) {
+                    lh.addEntry("000".getBytes());
+                    assertTrue(ledgerIds.contains(lh.getId()));
+                }
+            }
+        }
     }
 }
