@@ -78,7 +78,7 @@ public class NetUtils {
         } else {
             InetAddress inetAddress = inetSocketAddress.getAddress();
             if (null == inetAddress) {
-                addr.getHostName();
+                names.add(addr.getHostName());
             } else {
                 names.add(inetAddress.getHostAddress());
             }
