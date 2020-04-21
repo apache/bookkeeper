@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.meta;
 
+import static org.apache.bookkeeper.meta.AbstractZkLedgerManager.isLeadgerIdGeneratorZnode;
+import static org.apache.bookkeeper.meta.AbstractZkLedgerManager.isSpecialZnode;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -48,7 +50,10 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             String ledgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
             List<String> children = zk.getChildren(ledgersRootPath, false);
             for (String child : children) {
-                if (!AbstractZkLedgerManager.isSpecialZnode(child) && ledgerManager.isLedgerParentNode(child)) {
+                boolean lParentNode = !isSpecialZnode(child) && ledgerManager.isLedgerParentNode(child);
+                boolean lIdGenerator = isLeadgerIdGeneratorZnode(child);
+
+                if (lParentNode || lIdGenerator) {
                     ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
                 }
             }

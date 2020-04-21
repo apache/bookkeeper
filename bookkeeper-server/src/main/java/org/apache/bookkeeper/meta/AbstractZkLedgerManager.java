@@ -580,7 +580,11 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
             || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
             || BookKeeperConstants.INSTANCEID.equals(znode)
             || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)
-            || LegacyHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
+            || isLeadgerIdGeneratorZnode(znode);
+    }
+
+    public static boolean isLeadgerIdGeneratorZnode(String znode) {
+        return LegacyHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
             || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
             || znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX);
     }
