@@ -2447,12 +2447,16 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     Throwable cause = future.cause();
                     if (cause instanceof UnknownHostException || cause instanceof NativeIoException) {
                         // Don't log stack trace for common errors
-                        LOG.warn("Could not connect to bookie: {}/{}, current state {} : {}",
-                                future.channel(), addr, state, future.cause().getMessage());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Could not connect to bookie: {}/{}, current state {} : {}",
+                                    future.channel(), addr, state, future.cause().getMessage());
+                        }
                     } else {
                         // Regular exceptions, include stack trace
-                        LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Could not connect to bookie: {}/{}, current state {} : ",
                                 future.channel(), addr, state, future.cause());
+                        }
                     }
 
                     rc = BKException.Code.BookieHandleNotAvailableException;
