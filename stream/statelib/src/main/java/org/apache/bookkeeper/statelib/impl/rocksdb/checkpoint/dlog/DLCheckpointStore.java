@@ -32,11 +32,13 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
+import org.apache.bookkeeper.statelib.impl.Constants;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.api.namespace.Namespace;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.LogEmptyException;
 import org.apache.distributedlog.exceptions.LogExistsException;
@@ -98,7 +100,10 @@ public class DLCheckpointStore implements CheckpointStore {
         try {
             DistributedLogManager dlm = namespace.openLog(
                 filePath);
-            AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
+            LedgerMetadata metadata = new LedgerMetadata();
+            metadata.setApplication(Constants.LEDGER_METADATA_APPLICATION_STREAM_STORAGE);
+            metadata.setComponent("checkpoint-store");
+            AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter(metadata));
             return new BufferedOutputStream(
                 new DLOutputStream(dlm, writer), 128 * 1024);
         } catch (LogNotFoundException le) {

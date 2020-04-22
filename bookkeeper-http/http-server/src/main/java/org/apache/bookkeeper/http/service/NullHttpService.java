@@ -30,6 +30,9 @@ public class NullHttpService implements HttpEndpointService {
 
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) {
+        if (request.getBody() != null) {
+            return new HttpServiceResponse(request.getBody(), HttpServer.StatusCode.OK);
+        }
         return new HttpServiceResponse(CONTENT, HttpServer.StatusCode.OK);
     }
 }

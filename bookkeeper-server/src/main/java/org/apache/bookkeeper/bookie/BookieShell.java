@@ -1013,7 +1013,7 @@ public class BookieShell implements Tool {
 
         ReadJournalCmd() {
             super(CMD_READJOURNAL);
-            rjOpts.addOption("dir", false, "Journal directory (needed if more than one journal configured)");
+            rjOpts.addOption("dir", true, "Journal directory (needed if more than one journal configured)");
             rjOpts.addOption("m", "msg", false, "Print message body");
         }
 

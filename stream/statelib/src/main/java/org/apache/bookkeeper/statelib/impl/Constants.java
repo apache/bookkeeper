@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Constants {
 
+    public static final String LEDGER_METADATA_APPLICATION_STREAM_STORAGE = "bk-stream-storage-service";
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     public static final byte[] NULL_START_KEY = EMPTY_BYTE_ARRAY;
     public static final byte[] NULL_END_KEY = new byte[] { 0 };
