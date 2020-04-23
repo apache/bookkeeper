@@ -331,40 +331,6 @@ Apache Software License, Version 2.
 [45] Source available at https://github.com/apache/thrift/tree/0.9.3
 
 ------------------------------------------------------------------------------------
-lib/io.netty-netty-3.10.1.Final.jar contains the extensions to Java Collections Framework which has
-been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
-
-  * LICENSE:
-    * deps/netty-3.10.1.Final/LICENSE.jsr166y.txt (Public Domain)
-  * HOMEPAGE:
-    * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
-    * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
-
-lib/io.netty-netty-3.10.1.Final.jar contains a modified version of Robert Harder's Public Domain
-Base64 Encoder and Decoder, which can be obtained at:
-
-  * LICENSE:
-    * deps/netty-3.10.1.Final/LICENSE.base64.txt (Public Domain)
-  * HOMEPAGE:
-    * http://iharder.sourceforge.net/current/java/base64/
-
-lib/io.netty-netty-3.10.1.Final.jar contains a modified version of 'JZlib', a re-implementation of
-zlib in pure Java, which can be obtained at:
-
-  * LICENSE:
-    * deps/netty-3.10.1.Final/LICENSE.jzlib.txt (BSD Style License)
-  * HOMEPAGE:
-    * http://www.jcraft.com/jzlib/
-
-lib/io.netty-netty-3.10.1.Final.jar contains a modified version of 'Webbit', a Java event based
-WebSocket and HTTP server:
-
-  * LICENSE:
-    * deps/netty-3.10.1.Final/LICENSE.webbit.txt (BSD License)
-  * HOMEPAGE:
-    * https://github.com/joewalnes/webbit
-
-------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.32.Final.jar bundles some 3rd party dependencies
 
 lib/io.netty-netty-codec-4.1.32.Final.jar contains the extensions to Java Collections Framework which has
