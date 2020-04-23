@@ -13,7 +13,7 @@ jobs:
       - name: Bot actions
         uses: zymap/bot@v1.0.0
         env:
-          GITHUB_TOKEN: ${{ secrets.BOT }}
+          GITHUB_TOKEN: ${{ secrets.BKBOT_TOKEN }}
         with:
           repo_owner: apache
           repo_name: bookkeeper
