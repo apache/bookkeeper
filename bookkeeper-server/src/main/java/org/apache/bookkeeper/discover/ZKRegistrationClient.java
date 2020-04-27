@@ -24,9 +24,6 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import com.google.common.collect.Sets;
 import java.io.IOException;
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -228,7 +225,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         zk.getData(pathAsWritable, false, (int rc, String path, Object o, byte[] bytes, Stat stat) -> {
             if (KeeperException.Code.OK.intValue() == rc) {
                 try {
-                    BookieServiceInfo bookieServiceInfo = deserializeBookieService(bytes);
+                    BookieServiceInfo bookieServiceInfo = deserializeBookieService(bookieId, bytes);
                     promise.complete(new Versioned<>(bookieServiceInfo, new LongVersion(stat.getCversion())));
                 } catch (IOException ex) {
                     promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
@@ -239,33 +236,14 @@ public class ZKRegistrationClient implements RegistrationClient {
                 zk.getData(pathAsReadonly, false, (int rc2, String path2, Object o2, byte[] bytes2, Stat stat2) -> {
                     if (KeeperException.Code.OK.intValue() == rc2) {
                         try {
-                            BookieServiceInfo bookieServiceInfo = deserializeBookieService(bytes2);
+                            BookieServiceInfo bookieServiceInfo = deserializeBookieService(bookieId, bytes2);
                             promise.complete(new Versioned<>(bookieServiceInfo, new LongVersion(stat2.getCversion())));
                         } catch (IOException ex) {
                             promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
                             return;
                         }
-                    } else if (KeeperException.Code.NONODE.intValue() == rc2) {
-                        // not found as readonly, the bookie is offline
-                        // return an empty BookieServiceInfoStructure
-                        BookieSocketAddress address = null;
-                        try {
-                            address = new BookieSocketAddress(bookieId);
-                        } catch (UnknownHostException err) {
-                            promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
-                            return;
-                        }
-                        BookieServiceInfo.Endpoint endpoint = new BookieServiceInfo.Endpoint();
-                        endpoint.setId(bookieId);
-                        endpoint.setHost(address.getHostName());
-                        endpoint.setPort(address.getPort());
-                        endpoint.setProtocol("bookie-rpc");
-                        BookieServiceInfo emptyBookieServiceInfo = new BookieServiceInfo(
-                                Collections.emptyMap(),
-                                Arrays.asList(endpoint)
-                        );
-                        promise.complete(new Versioned<>(emptyBookieServiceInfo, new LongVersion(0)));
                     } else {
+                        // not found as writable and readonly, the bookie is offline
                         promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
                     }
                 }, null);
@@ -277,9 +255,10 @@ public class ZKRegistrationClient implements RegistrationClient {
     }
 
     @SuppressWarnings("unchecked")
-    private static BookieServiceInfo deserializeBookieService(byte[] bookieServiceInfo) throws IOException {
+    private static BookieServiceInfo deserializeBookieService(String bookieId, byte[] bookieServiceInfo)
+            throws IOException {
         if (bookieServiceInfo == null || bookieServiceInfo.length == 0) {
-            throw new IOException("Not found");
+            return BookieServiceInfo.buildLegacyBookieServiceInfo(bookieId);
         }
 
         BookieServiceInfoFormat builder = BookieServiceInfoFormat.parseFrom(bookieServiceInfo);

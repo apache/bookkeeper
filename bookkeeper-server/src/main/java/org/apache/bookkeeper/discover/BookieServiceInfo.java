@@ -17,10 +17,13 @@
  */
 package org.apache.bookkeeper.discover;
 
+import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 
 /**
  * Information about services exposed by a Bookie.
@@ -155,6 +158,16 @@ public final class BookieServiceInfo {
                     + "auth=" + auth + ", extensions=" + extensions + '}';
         }
 
+    }
+
+    public static BookieServiceInfo buildLegacyBookieServiceInfo(String bookieId) throws UnknownHostException {
+        BookieSocketAddress address = new BookieSocketAddress(bookieId);
+        BookieServiceInfo.Endpoint endpoint = new BookieServiceInfo.Endpoint();
+        endpoint.setId(bookieId);
+        endpoint.setHost(address.getHostName());
+        endpoint.setPort(address.getPort());
+        endpoint.setProtocol("bookie-rpc");
+        return new BookieServiceInfo(Collections.emptyMap(), Arrays.asList(endpoint));
     }
 
     @Override

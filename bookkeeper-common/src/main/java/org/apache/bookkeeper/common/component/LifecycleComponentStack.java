@@ -124,7 +124,9 @@ public class LifecycleComponentStack implements LifecycleComponent {
     @Override
     public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
         components.forEach(component -> {
-            log.info("calling publishInfo on {} ", component);
+            if (log.isDebugEnabled()) {
+                log.debug("calling publishInfo on {} ", component);
+            }
             component.publishInfo(componentInfoPublisher);
         });
     }
@@ -132,7 +134,9 @@ public class LifecycleComponentStack implements LifecycleComponent {
     @Override
     public void start() {
         components.forEach(component -> {
-            log.info("calling publishInfo on {} ", component);
+            if (log.isDebugEnabled()) {
+                log.debug("calling publishInfo on {} ", component);
+            }
             component.publishInfo(componentInfoPublisher);
         });
         componentInfoPublisher.startupFinished();

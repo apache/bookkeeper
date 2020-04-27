@@ -98,7 +98,9 @@ public class ComponentInfoPublisher {
      * @param value the value, null values are not allowed.
      */
     public void publishProperty(String key, String value) {
-        log.info("publish {}={}", key, value);
+        if (log.isDebugEnabled()) {
+            log.debug("publish {}={}", key, value);
+        }
         if (startupFinished) {
             throw new IllegalStateException("Server already started, cannot publish " + key);
         }
@@ -109,7 +111,9 @@ public class ComponentInfoPublisher {
     }
 
     public void publishEndpoint(EndpointInfo endpoint) {
-        log.info("publishEndpoint {} on {}", endpoint, this);
+        if (log.isDebugEnabled()) {
+            log.debug("publishEndpoint {} on {}", endpoint, this);
+        }
         EndpointInfo exists = endpoints.put(endpoint.id, endpoint);
         if (exists != null) {
             throw new IllegalStateException("An endpoint with id " + endpoint.id

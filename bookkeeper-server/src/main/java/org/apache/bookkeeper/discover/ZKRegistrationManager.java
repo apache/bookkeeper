@@ -227,7 +227,9 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     private static byte[] serializeBookieServiceInfo(BookieServiceInfo bookieServiceInfo) {
-        log.info("serialize BookieServiceInfo {}", bookieServiceInfo);
+        if (log.isDebugEnabled()) {
+            log.debug("serialize BookieServiceInfo {}", bookieServiceInfo);
+        }
         try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
             BookieServiceInfoFormat.Builder builder = BookieServiceInfoFormat.newBuilder();
             List<BookieServiceInfoFormat.Endpoint> bsiEndpoints = bookieServiceInfo.getEndpoints().stream()
