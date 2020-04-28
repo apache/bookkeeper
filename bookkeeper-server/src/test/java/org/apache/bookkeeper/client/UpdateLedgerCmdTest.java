@@ -83,6 +83,32 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         assertEquals("Failed to update the ledger metadata to use bookie host name", 40, updatedLedgersCount);
     }
 
+    /**
+     * replace bookie address in ledger.
+     */
+    @Test
+    public void testUpdateBookieInLedger() throws Exception {
+        BookKeeper bk = new BookKeeper(baseClientConf, zkc);
+        LOG.info("Create ledger and add entries to it");
+        List<LedgerHandle> ledgers = new ArrayList<LedgerHandle>();
+        LedgerHandle lh1 = createLedgerWithEntries(bk, 0);
+        ledgers.add(lh1);
+        for (int i = 1; i < 40; i++) {
+            ledgers.add(createLedgerWithEntries(bk, 0));
+        }
+        BookieSocketAddress srcBookie = bs.get(0).getLocalAddress();
+        BookieSocketAddress destBookie = new BookieSocketAddress("1.1.1.1", 2181);
+        String[] argv = new String[] { "updateBookieInLedger", "-sb", srcBookie.toString(), "-db",
+                destBookie.toString(), "-v", "true", "-p", "2" };
+        final ServerConfiguration conf = bsConfs.get(0);
+        bs.get(0).shutdown();
+        updateLedgerCmd(argv, 0, conf);
+        int updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, srcBookie);
+        assertEquals("Failed to update the ledger metadata with new bookie-address", 0, updatedLedgersCount);
+        updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, destBookie);
+        assertEquals("Failed to update the ledger metadata with new bookie-address", 40, updatedLedgersCount);
+    }
+
     private void updateLedgerCmd(String[] argv, int exitCode, ServerConfiguration conf) throws KeeperException,
             InterruptedException, IOException, UnknownHostException, Exception {
         LOG.info("Perform updateledgers command");
