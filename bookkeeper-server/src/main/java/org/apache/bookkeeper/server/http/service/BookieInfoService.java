@@ -30,14 +30,23 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 
 /**
- * HttpEndpointService that returns 200 if the bookie is ready.
+ * HttpEndpointService that exposes the current info of the bookie.
+ *
+ * <pre>
+ * <code>
+ * {
+ *  "freeSpace" : 0,
+ *  "totalSpace" : 0
+ * }
+ * </code>
+ * </pre>
  */
 @AllArgsConstructor
 public class BookieInfoService implements HttpEndpointService {
     @NonNull private final Bookie bookie;
 
     /**
-     * POJO definition for the bookie state response.
+     * POJO definition for the bookie info response.
      */
     @Data
     @NoArgsConstructor
