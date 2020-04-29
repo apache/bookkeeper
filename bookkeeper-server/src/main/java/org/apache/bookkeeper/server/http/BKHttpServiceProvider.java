@@ -40,6 +40,7 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
+import org.apache.bookkeeper.server.http.service.BookieInfoService;
 import org.apache.bookkeeper.server.http.service.BookieIsReadyService;
 import org.apache.bookkeeper.server.http.service.BookieStateService;
 import org.apache.bookkeeper.server.http.service.ConfigurationService;
@@ -223,6 +224,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new BookieStateService(bookieServer.getBookie());
             case BOOKIE_IS_READY:
                 return new BookieIsReadyService(bookieServer.getBookie());
+            case BOOKIE_INFO:
+                return new BookieInfoService(bookieServer.getBookie());
 
             // autorecovery
             case RECOVERY_BOOKIE:
