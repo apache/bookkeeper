@@ -33,7 +33,7 @@ ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-1.8.0-openjdk-headless wget bash python sudo \
+    && yum install -y java-1.8.0-openjdk-headless wget bash python which sudo\
     && mkdir -pv /opt \
     && cd /opt \
     && wget -q "${DISTRO_URL}" \
@@ -52,6 +52,7 @@ RUN set -x \
     && pip install zk-shell \
     && rm -rf get-pip.py \
     && yum remove -y wget \
+    && which zk-shell \
     && yum clean all
 
 WORKDIR /opt/bookkeeper
