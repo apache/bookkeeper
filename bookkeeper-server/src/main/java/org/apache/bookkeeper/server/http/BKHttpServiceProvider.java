@@ -40,6 +40,7 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
+import org.apache.bookkeeper.server.http.service.AutoRecoveryStatusService;
 import org.apache.bookkeeper.server.http.service.BookieIsReadyService;
 import org.apache.bookkeeper.server.http.service.BookieStateService;
 import org.apache.bookkeeper.server.http.service.ConfigurationService;
@@ -225,6 +226,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new BookieIsReadyService(bookieServer.getBookie());
 
             // autorecovery
+            case AUTORECOVERY_STATUS:
+                return new AutoRecoveryStatusService(configuration);
             case RECOVERY_BOOKIE:
                 return new RecoveryBookieService(configuration, bka, executor);
             case LIST_UNDER_REPLICATED_LEDGER:
