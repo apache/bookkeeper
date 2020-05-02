@@ -155,7 +155,7 @@ groups:
     default: OpenSSL
   - param: tlsProviderFactoryClass
     description: The path to the class that provides security.
-    default: org.apache.bookkeeper.security.SSLContextFactory
+    default: org.apache.bookkeeper.tls.TLSContextFactory
   - param: tlsClientAuthentication
     description: Type of security used by server.
     default: 'true'
