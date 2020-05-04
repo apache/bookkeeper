@@ -33,7 +33,7 @@ ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-1.8.0-openjdk-headless wget bash python sudo \
+    && yum install -y java-1.8.0-openjdk-headless wget bash python sudo\
     && mkdir -pv /opt \
     && cd /opt \
     && wget -q "${DISTRO_URL}" \
@@ -46,6 +46,11 @@ RUN set -x \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
+    # install zookeeper shell
+    && wget -q https://bootstrap.pypa.io/get-pip.py \
+    && python get-pip.py \
+    && pip install zk-shell \
+    && rm -rf get-pip.py \
     && yum remove -y wget \
     && yum clean all
 
