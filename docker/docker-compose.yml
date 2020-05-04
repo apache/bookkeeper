@@ -30,7 +30,7 @@ services:
     environment:
       - JAVA_HOME=/usr/lib/jvm/jre-1.8.0
       - BK_zkServers=zookeeper:2181
-      - BK_zkLedgersRootPath = /ledgers
+      - BK_zkLedgersRootPath=/ledgers
 
   bookie2:
     image: apache/bookkeeper
@@ -40,7 +40,7 @@ services:
     environment:
       - JAVA_HOME=/usr/lib/jvm/jre-1.8.0
       - BK_zkServers=zookeeper:2181
-      - BK_zkLedgersRootPath = /ledgers
+      - BK_zkLedgersRootPath=/ledgers
 
   bookie3:
     image: apache/bookkeeper
@@ -50,7 +50,7 @@ services:
     environment:
       - JAVA_HOME=/usr/lib/jvm/jre-1.8.0
       - BK_zkServers=zookeeper:2181
-      - BK_zkLedgersRootPath = /ledgers
+      - BK_zkLedgersRootPath=/ledgers
 
   dice:
     image: caiok/bookkeeper-tutorial
