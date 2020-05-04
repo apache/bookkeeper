@@ -39,6 +39,11 @@ RUN set -x \
     && yum install -y java-1.8.0-openjdk-headless wget bash python-pip python-devel sudo netcat gcc gcc-c++ \
     && mkdir -pv /opt \
     && cd /opt \
+    # install zookeeper shell
+    && wget -q https://bootstrap.pypa.io/get-pip.py \
+    && python get-pip.py \
+    && pip install zk-shell \
+    && rm -rf get-pip.py \
     && yum clean all
 
 # untar tarballs
