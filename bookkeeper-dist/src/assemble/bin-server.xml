@@ -55,6 +55,7 @@
         <include>netty-4.1.32.Final/*</include>
         <include>protobuf-3.0.0/LICENSE</include>
         <include>jline-2.11/LICENSE</include>
+        <include>bouncycastle-1.60/LICENSE.html</include>
         <include>protobuf-3.5.1/LICENSE</include>
         <include>slf4j-1.7.25/LICENSE.txt</include>
       </includes>

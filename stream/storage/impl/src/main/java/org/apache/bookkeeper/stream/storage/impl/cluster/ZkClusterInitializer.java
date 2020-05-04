@@ -20,6 +20,7 @@ package org.apache.bookkeeper.stream.storage.impl.cluster;
 
 import static org.apache.bookkeeper.stream.storage.StorageConstants.ZK_METADATA_ROOT_PATH;
 import static org.apache.bookkeeper.stream.storage.StorageConstants.getSegmentsRootPath;
+
 import com.google.common.base.Strings;
 import java.net.URI;
 import java.util.Optional;

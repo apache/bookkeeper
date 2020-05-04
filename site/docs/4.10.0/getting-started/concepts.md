@@ -122,7 +122,7 @@ When a client instructs a {% pop bookie %} to write an entry to a ledger, the en
 Ledger index pages are flushed to index files in the following two cases:
 
 * The ledger cache memory limit is reached. There is no more space available to hold newer index pages. Dirty index pages will be evicted from the ledger cache and persisted to index files.
-* A background thread synchronous thread is responsible for flushing index pages from the ledger cache to index files periodically.
+* A background synchronous thread is responsible for flushing index pages from the ledger cache to index files periodically.
 
 Besides flushing index pages, the sync thread is responsible for rolling journal files in case that journal files use too much disk space. The data flush flow in the sync thread is as follows:
 

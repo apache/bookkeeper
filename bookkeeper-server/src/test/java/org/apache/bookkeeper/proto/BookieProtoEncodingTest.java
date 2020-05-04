@@ -91,7 +91,7 @@ public class BookieProtoEncodingTest {
         ResponseEnDeCoderPreV3 v2Encoder = new ResponseEnDeCoderPreV3(registry);
         ResponseEnDecoderV3 v3Encoder = new ResponseEnDecoderV3(registry);
 
-        ResponseDecoder v3Decoder = new ResponseDecoder(registry, false);
+        ResponseDecoder v3Decoder = new ResponseDecoder(registry, false, false);
         try {
             v3Decoder.channelRead(ctx,
                 v2Encoder.encode(v2Resp, UnpooledByteBufAllocator.DEFAULT)

@@ -44,10 +44,10 @@ License for the specific language governing permissions and limitations
 under the License.
 
 ------------------------------------------------------------------------------------
-- lib/io.prometheus-simpleclient-0.0.21.jar
-- lib/io.prometheus-simpleclient_common-0.0.21.jar
-- lib/io.prometheus-simpleclient_hotspot-0.0.21.jar
-- lib/io.prometheus-simpleclient_servlet-0.0.21.jar
+- lib/io.prometheus-simpleclient-0.8.1.jar
+- lib/io.prometheus-simpleclient_common-0.8.1.jar
+- lib/io.prometheus-simpleclient_hotspot-0.8.1.jar
+- lib/io.prometheus-simpleclient_servlet-0.8.1.jar
 
 Prometheus instrumentation library for JVM applications
 Copyright 2012-2015 The Prometheus Authors
