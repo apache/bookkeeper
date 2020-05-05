@@ -42,4 +42,4 @@ jobs:
         with:
           java-version: 1.8
       - name: Build with Maven
-        run: mvn clean package spotbugs:check -Dstream -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=ERROR
+        run: mvn clean package -B -nsu spotbugs:check -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=ERROR
