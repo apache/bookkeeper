@@ -457,8 +457,8 @@ class AuthHandler {
                 return true;
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Verifying HostName for {}, Cipher {}, Protocols {}, on {}", hostname, sslSession.getCipherSuite(),
-                        sslSession.getProtocol(), channel);
+                LOG.debug("Verifying HostName for {}, Cipher {}, Protocols {}, on {}", hostname,
+                        sslSession.getCipherSuite(), sslSession.getProtocol(), channel);
             }
             boolean verification = HOSTNAME_VERIFIER.verify(hostname, sslSession);
             if (!verification) {

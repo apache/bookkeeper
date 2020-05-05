@@ -1486,8 +1486,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             AuthHandler.ClientSideHandler authHandler = future.get().pipeline()
                                     .get(AuthHandler.ClientSideHandler.class);
                         if (conf.getHostnameVerificationEnabled() && !authHandler.verifyTlsHostName(channel)) {
-                                rc = BKException.Code.UnauthorizedAccessException; //add HostnameVerification or private classes  not for validation
-                            } else {
+                            // add HostnameVerification or private classes not
+                            // for validation
+                            rc = BKException.Code.UnauthorizedAccessException;
+                        } else {
                                 authHandler.authProvider.onProtocolUpgrade();
                                 activeTlsChannelCounter.inc();
                             }
