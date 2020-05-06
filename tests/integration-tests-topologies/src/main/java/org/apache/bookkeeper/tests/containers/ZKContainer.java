@@ -22,7 +22,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
+import org.apache.bookkeeper.tests.containers.wait.ZKWaitStrategy;
 
 /**
  * Test container that runs zookeeper.
@@ -62,10 +62,7 @@ public class ZKContainer<SelfT extends ZKContainer<SelfT>> extends MetadataStore
 
     @Override
     public void start() {
-        this.waitStrategy = new HttpWaitStrategy()
-            .forPath("/commands/ruok")
-            .forStatusCode(200)
-            .forPort(ZK_HTTP_PORT)
+        this.waitStrategy = new ZKWaitStrategy(ZK_PORT)
             .withStartupTimeout(Duration.of(60, SECONDS));
 
         this.withCreateContainerCmdModifier(createContainerCmd -> createContainerCmd.withHostName(HOST_NAME));

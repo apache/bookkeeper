@@ -20,10 +20,12 @@ package org.apache.bookkeeper.tests.containers;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+import com.google.common.base.Strings;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
 import org.apache.bookkeeper.tests.integration.utils.DockerUtils;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
@@ -89,10 +91,16 @@ public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends Chaos
 
     @Override
     public void start() {
-
-        this.waitStrategy = new HostPortWaitStrategy()
+        if (Strings.isNullOrEmpty(extraServerComponents)) {
+            this.waitStrategy = new HttpWaitStrategy()
+                .forPath("/heartbeat")
+                .forStatusCode(200)
+                .forPort(BOOKIE_HTTP_PORT)
+                .withStartupTimeout(Duration.of(60, SECONDS));
+        } else {
+            this.waitStrategy = new HostPortWaitStrategy()
                 .withStartupTimeout(Duration.of(300, SECONDS));
-
+        }
         this.withCreateContainerCmdModifier(createContainerCmd -> {
             createContainerCmd.withHostName(hostname);
             createContainerCmd.withName(getContainerName());
