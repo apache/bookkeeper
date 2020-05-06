@@ -63,7 +63,7 @@ public class ZKContainer<SelfT extends ZKContainer<SelfT>> extends MetadataStore
     @Override
     public void start() {
         this.waitStrategy = new ZKWaitStrategy(ZK_PORT)
-            .withStartupTimeout(Duration.of(60, SECONDS));
+                .withStartupTimeout(Duration.of(60, SECONDS));
 
         this.withCreateContainerCmdModifier(createContainerCmd -> createContainerCmd.withHostName(HOST_NAME));
 
