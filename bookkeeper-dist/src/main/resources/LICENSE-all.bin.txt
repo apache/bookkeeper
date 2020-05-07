@@ -244,7 +244,8 @@ Apache Software License, Version 2.
 - lib/net.java.dev.jna-jna-3.2.7.jar [22]
 - lib/org.apache.commons-commons-collections4-4.1.jar [23]
 - lib/org.apache.commons-commons-lang3-3.6.jar [24]
-- lib/org.apache.zookeeper-zookeeper-3.4.13.jar [25]
+- lib/org.apache.zookeeper-zookeeper-3.5.7.jar [25]
+- lib/org.apache.zookeeper-zookeeper-jute-3.5.7.jar [25]
 - lib/org.eclipse.jetty-jetty-http-9.4.5.v20170502.jar [26]
 - lib/org.eclipse.jetty-jetty-io-9.4.5.v20170502.jar [26]
 - lib/org.eclipse.jetty-jetty-security-9.4.5.v20170502.jar [26]
@@ -307,7 +308,7 @@ Apache Software License, Version 2.
 [22] Source available at https://github.com/java-native-access/jna/tree/3.2.7
 [23] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
 [24] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=3ad2e8
-[25] Source available at https://github.com/apache/zookeeper/tree/release-3.4.13
+[25] Source available at https://github.com/apache/zookeeper/tree/release-3.5.7
 [26] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
 [27] Source available at https://github.com/facebook/rocksdb/tree/v5.13.1
 [28] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
