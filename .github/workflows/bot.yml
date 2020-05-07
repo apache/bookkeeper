@@ -9,6 +9,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: echo
+        run: echo "${{ toJson(github) }}"
 
       - name: Bot actions
         uses: zymap/bot@v1.0.1
