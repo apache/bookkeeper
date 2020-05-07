@@ -82,8 +82,6 @@
                   <include>com.fasterxml.jackson.core:jackson-annotations</include>
                   <include>com.google.guava:guava</include>
                   <include>com.google.protobuf:protobuf-java</include>
-                  <!-- netty 3 (included from zookeeper) -->
-                  <include>io.netty:netty</include>
                   <include>net.java.dev.jna:jna</include>
                   <include>net.jpountz.lz4:lz4</include>
                   <include>org.apache.bookkeeper:bookkeeper-common</include>
@@ -104,6 +102,7 @@
                   <include>org.apache.httpcomponents:httpcore</include>
                   <include>org.apache.thrift:libthrift</include>
                   <include>org.apache.zookeeper:zookeeper</include>
+                  <include>org.apache.zookeeper:zookeeper-jute</include>
                   <include>org.rocksdb:rocksdbjni</include>
                 </includes>
               </artifactSet>
