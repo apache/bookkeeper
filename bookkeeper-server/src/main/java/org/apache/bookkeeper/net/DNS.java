@@ -284,7 +284,7 @@ public class DNS {
     private static String resolveLocalHostIPAddress() {
         String address;
         try {
-            address = InetAddress.getLocalHost().getHostAddress();
+            address = NetUtils.getLocalHost();
         } catch (UnknownHostException e) {
             LOG.warn("Unable to determine address of the host"
                     + "-falling back to \"" + LOCALHOST + "\" address", e);

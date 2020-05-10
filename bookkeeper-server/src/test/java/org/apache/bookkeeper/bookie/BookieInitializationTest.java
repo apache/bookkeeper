@@ -88,6 +88,7 @@ import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -441,7 +442,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setMetadataServiceUri(metadataServiceUri)
             .setListeningInterface(null);
 
-        String bookieId = InetAddress.getLocalHost().getHostAddress() + ":"
+        String bookieId = NetUtils.getLocalHost() + ":"
                 + conf.getBookiePort();
         String bkRegPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf) + "/" + AVAILABLE_NODE + "/" + bookieId;
 

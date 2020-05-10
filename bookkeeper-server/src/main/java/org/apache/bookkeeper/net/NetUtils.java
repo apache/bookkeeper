@@ -22,11 +22,14 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.List;
-
+import org.apache.bookkeeper.util.IPAddressUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +86,47 @@ public class NetUtils {
         checkState(rNames.size() == 1, "Expected exactly one element");
 
         return rNames.get(0);
+    }
+
+    public static String getLocalHost() throws UnknownHostException {
+        String ip = InetAddress.getLocalHost().getHostAddress();
+        if (InetAddress.getLocalHost().isLoopbackAddress()) {
+            return getValidAddress();
+        } else {
+            return ip;
+        }
+
+    }
+
+    public static boolean isIpAddressValid(String ipAddress) {
+        return IPAddressUtil.isIPv4LiteralAddress(ipAddress) || IPAddressUtil.isIPv6LiteralAddress(ipAddress);
+    }
+
+    private static String getValidAddress () throws UnknownHostException {
+        try {
+            for (Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+                    interfaces.hasMoreElements();) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+                if (networkInterface.isLoopback() || networkInterface.isVirtual() || !networkInterface.isUp()) {
+                    continue;
+                }
+                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                if (addresses.hasMoreElements()) {
+                    while (addresses.hasMoreElements()) {
+                        String ip = addresses.nextElement().getHostAddress();
+                        if (isIpAddressValid(ip)) {
+                            return ip;
+                        }
+                    }
+                }
+            }
+            throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws "
+                    + "UnknownHostException");
+        } catch (SocketException e) {
+            throw new UnknownHostException("InetAddress java.net.InetAddress.getLocalHost() throws "
+                    + "UnknownHostException," + e.getMessage());
+        }
+
     }
 
 }
