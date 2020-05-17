@@ -280,8 +280,8 @@ Apache Software License, Version 2.
 - lib/com.google.errorprone-error_prone_annotations-2.1.2.jar [35]
 - lib/org.apache.yetus-audience-annotations-0.5.0.jar [36]
 - lib/org.jctools-jctools-core-2.1.2.jar [37]
-- lib/org.apache.httpcomponents-httpclient-4.4.1.jar [38]
-- lib/org.apache.httpcomponents-httpcore-4.4.1.jar [39]
+- lib/org.apache.httpcomponents-httpclient-4.5.5.jar [38]
+- lib/org.apache.httpcomponents-httpcore-4.4.9.jar [39]
 - lib/org.apache.thrift-libthrift-0.9.3.jar [40]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9

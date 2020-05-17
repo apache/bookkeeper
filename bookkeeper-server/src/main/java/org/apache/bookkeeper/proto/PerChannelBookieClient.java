@@ -1485,8 +1485,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             state = ConnectionState.CONNECTED;
                             AuthHandler.ClientSideHandler authHandler = future.get().pipeline()
                                     .get(AuthHandler.ClientSideHandler.class);
-                            authHandler.authProvider.onProtocolUpgrade();
-                            activeTlsChannelCounter.inc();
+                        if (conf.getHostnameVerificationEnabled() && !authHandler.verifyTlsHostName(channel)) {
+                            // add HostnameVerification or private classes not
+                            // for validation
+                            rc = BKException.Code.UnauthorizedAccessException;
+                        } else {
+                                authHandler.authProvider.onProtocolUpgrade();
+                                activeTlsChannelCounter.inc();
+                            }
                         } else if (future.isSuccess()
                                 && (state == ConnectionState.CLOSED || state == ConnectionState.DISCONNECTED)) {
                             LOG.warn("Closed before TLS handshake completed, clean up: {}, current state {}",
@@ -2427,8 +2433,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     state = ConnectionState.CONNECTED;
                     AuthHandler.ClientSideHandler authHandler = future.channel().pipeline()
                             .get(AuthHandler.ClientSideHandler.class);
-                    authHandler.authProvider.onProtocolUpgrade();
-                    activeTlsChannelCounter.inc();
+                    if (conf.getHostnameVerificationEnabled() && !authHandler.verifyTlsHostName(channel)) {
+                        rc = BKException.Code.UnauthorizedAccessException;
+                    } else {
+                        authHandler.authProvider.onProtocolUpgrade();
+                        activeTlsChannelCounter.inc();
+                    }
                 } else if (future.isSuccess() && (state == ConnectionState.CLOSED
                     || state == ConnectionState.DISCONNECTED)) {
                     LOG.warn("Closed before connection completed, clean up: {}, current state {}",

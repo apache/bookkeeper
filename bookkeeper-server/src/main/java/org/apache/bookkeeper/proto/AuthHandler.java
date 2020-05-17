@@ -29,12 +29,16 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.ssl.SslHandler;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.net.ssl.SSLSession;
 
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
@@ -42,11 +46,13 @@ import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class AuthHandler {
     static final Logger LOG = LoggerFactory.getLogger(AuthHandler.class);
+    private static final DefaultHostnameVerifier HOSTNAME_VERIFIER = new DefaultHostnameVerifier();
 
     static class ServerSideHandler extends ChannelInboundHandlerAdapter {
         volatile boolean authenticated = false;
@@ -430,6 +436,35 @@ class AuthHandler {
                     authenticationError(ctx, rc);
                 }
             }
+        }
+
+        public boolean verifyTlsHostName(Channel channel) {
+            SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
+            if (sslHandler == null) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("can't perform hostname-verification on non-ssl channel {}", channel);
+                }
+                return true;
+            }
+            SSLSession sslSession = sslHandler.engine().getSession();
+            String hostname = null;
+            if (channel.remoteAddress() instanceof InetSocketAddress) {
+                hostname = ((InetSocketAddress) channel.remoteAddress()).getHostName();
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("can't get remote hostName on ssl session {}", channel);
+                }
+                return true;
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Verifying HostName for {}, Cipher {}, Protocols {}, on {}", hostname,
+                        sslSession.getCipherSuite(), sslSession.getProtocol(), channel);
+            }
+            boolean verification = HOSTNAME_VERIFIER.verify(hostname, sslSession);
+            if (!verification) {
+                LOG.warn("Failed to validate hostname verification {} on {}", hostname, channel);
+            }
+            return verification;
         }
     }
 
