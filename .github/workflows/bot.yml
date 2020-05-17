@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Bot actions
-        uses: zymap/bot@v1.0.0
+        uses: zymap/bot@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.BKBOT_TOKEN }}
         with:
