@@ -34,6 +34,7 @@ public interface StorageContainerServiceFactory extends AutoCloseable {
     /**
      * {@inheritDoc}
      */
+    @Override
     void close();
 
 }

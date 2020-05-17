@@ -108,6 +108,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             }
         }
 
+        @Override
         public void close() {
             entryImpl.close();
         }

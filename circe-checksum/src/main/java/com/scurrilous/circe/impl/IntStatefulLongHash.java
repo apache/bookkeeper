@@ -39,70 +39,87 @@ public final class IntStatefulLongHash implements StatefulLongHash {
         this.intHash = intHash;
     }
 
+    @Override
     public StatelessLongHash asStateless() {
         return new IntStatelessLongHash(intHash.asStateless());
     }
 
+    @Override
     public String algorithm() {
         return intHash.algorithm();
     }
 
+    @Override
     public int length() {
         return intHash.length();
     }
 
+    @Override
     public StatefulHash createNew() {
         return intHash.createNew();
     }
 
+    @Override
     public boolean supportsUnsafe() {
         return intHash.supportsUnsafe();
     }
 
+    @Override
     public boolean supportsIncremental() {
         return intHash.supportsIncremental();
     }
 
+    @Override
     public void reset() {
         intHash.reset();
     }
 
+    @Override
     public void update(byte[] input) {
         intHash.update(input);
     }
 
+    @Override
     public void update(byte[] input, int index, int length) {
         intHash.update(input, index, length);
     }
 
+    @Override
     public void update(ByteBuffer input) {
         intHash.update(input);
     }
 
+    @Override
     public void update(long address, long length) {
         intHash.update(address, length);
     }
 
+    @Override
     public byte[] getBytes() {
         return intHash.getBytes();
     }
 
+    @Override
     public int getBytes(byte[] output, int index, int maxLength) {
         return intHash.getBytes(output, index, maxLength);
     }
 
+    @Override
     public byte getByte() {
         return intHash.getByte();
     }
 
+    @Override
     public short getShort() {
         return intHash.getShort();
     }
 
+    @Override
     public int getInt() {
         return intHash.getInt();
     }
 
+    @Override
     public long getLong() {
         return intHash.getLong();
     }

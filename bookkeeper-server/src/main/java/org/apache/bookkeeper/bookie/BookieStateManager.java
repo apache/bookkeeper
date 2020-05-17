@@ -341,6 +341,7 @@ public class BookieStateManager implements StateManager {
             return;
         }
     }
+    @Override
     public void setShutdownHandler(ShutdownHandler handler){
         shutdownHandler = handler;
     }
