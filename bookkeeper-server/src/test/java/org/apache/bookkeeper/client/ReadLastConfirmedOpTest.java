@@ -20,14 +20,14 @@
  */
 package org.apache.bookkeeper.client;
 
-import io.netty.buffer.UnpooledByteBufAllocator;
 import com.google.common.collect.Lists;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.MockBookieClient;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
+import org.apache.bookkeeper.proto.MockBookieClient;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 
 import org.junit.After;
@@ -37,6 +37,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Tests about ReadLastConfirmedOp.
+ */
 public class ReadLastConfirmedOpTest {
     private static final Logger log = LoggerFactory.getLogger(ReadLastConfirmedOpTest.class);
     private final BookieSocketAddress bookie1 = new BookieSocketAddress("bookie1", 3181);
@@ -60,7 +63,7 @@ public class ReadLastConfirmedOpTest {
     }
 
     /**
-     * Test for specific bug that was introduced with dcdd1e88
+     * Test for specific bug that was introduced with dcdd1e88.
      */
     @Test
     public void testBookieFailsAfterLedgerMissingOnFirst() throws Exception {
@@ -76,7 +79,7 @@ public class ReadLastConfirmedOpTest {
                                                                 true /* useV2 */);
 
         CompletableFuture<Void> blocker = new CompletableFuture<>();
-        bookieClient.setPreReadHook((bookie, _ledgerId, entryId) -> {
+        bookieClient.setPreReadHook((bookie, lId, entryId) -> {
                 if (bookie.equals(bookie1)) {
                     return CompletableFuture.completedFuture(null);
                 } else {
