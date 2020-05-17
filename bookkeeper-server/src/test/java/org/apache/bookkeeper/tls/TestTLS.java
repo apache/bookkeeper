@@ -45,6 +45,7 @@ import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -966,5 +967,25 @@ public class TestTLS extends BookKeeperClusterTestCase {
         assertEquals("TLS handshake failure expected", 1,
                 client.getTestStatsProvider().getCounter(nameBuilder.toString()
                 + BookKeeperClientStats.FAILED_TLS_HANDSHAKE_COUNTER).get().longValue());
+    }
+
+    /**
+     * Verify that a client fails to connect to bookie if hostname verification
+     * fails.
+     */
+    @Test
+    public void testClientAuthPluginWithHostnameVerificationEnabled() throws Exception {
+        secureClientSideChannel = false;
+        secureClientSideChannelPrincipals = null;
+        ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
+
+        clientConf.setClientAuthProviderFactoryClass(AllowOnlyBookiesWithX509Certificates.class.getName());
+        clientConf.setHostnameVerificationEnabled(true);
+        try {
+            testClient(clientConf, numBookies);
+            fail("should have failed with unauthorized exception");
+        } catch (BKUnauthorizedAccessException e) {
+            // Ok.
+        }
     }
 }

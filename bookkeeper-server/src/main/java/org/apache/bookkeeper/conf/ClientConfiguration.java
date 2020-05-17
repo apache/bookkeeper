@@ -146,6 +146,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
         "bookieMaxMultipleForWeightBasedPlacement";
     protected static final String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
     protected static final String START_TLS_TIMEOUT_SECS = "startTLSTimeoutSecs";
+    protected static final String TLS_HOSTNAME_VERIFICATION_ENABLED = "tlsHostnameVerificationEnabled";
 
     // Number of Threads
     protected static final String NUM_WORKER_THREADS = "numWorkerThreads";
@@ -1523,6 +1524,27 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setStartTLSTimeout(int timeoutSecs) {
         setProperty(START_TLS_TIMEOUT_SECS, timeoutSecs);
+        return this;
+    }
+
+    /**
+     * Whether hostname verification enabled?
+     *
+     * @return true if hostname verification enabled, otherwise false.
+     */
+    public boolean getHostnameVerificationEnabled() {
+        return getBoolean(TLS_HOSTNAME_VERIFICATION_ENABLED, false);
+    }
+
+    /**
+     * Enable/Disable hostname verification for tls connection.
+     *
+     * @param enabled
+     *            flag to enable/disable tls hostname verification.
+     * @return client configuration.
+     */
+    public ClientConfiguration setHostnameVerificationEnabled(boolean enabled) {
+        setProperty(TLS_HOSTNAME_VERIFICATION_ENABLED, enabled);
         return this;
     }
 
