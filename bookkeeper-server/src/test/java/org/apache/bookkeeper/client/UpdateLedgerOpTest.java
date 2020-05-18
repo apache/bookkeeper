@@ -108,7 +108,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             BookieSocketAddress toBookieAddr = new BookieSocketAddress(curBookieId.getHostName() + ":"
                     + curBookieAddr.getPort());
             UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);
-            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 5, Integer.MIN_VALUE, progressable);
+            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 5, 25, Integer.MIN_VALUE, progressable);
 
             for (LedgerHandle lh : ledgers) {
                 lh.close();
@@ -146,22 +146,22 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
                     + curBookieAddr.getPort());
             UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);
-            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 7, 4, progressable);
+            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 7, 35, 4, progressable);
             int updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, toBookieAddr);
             assertEquals("Failed to update the ledger metadata to use bookie host name", 4, updatedLedgersCount);
 
             // next execution
-            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 2, 10, progressable);
+            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 2, 10, 10, progressable);
             updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, toBookieAddr);
             assertEquals("Failed to update the ledger metadata to use bookie host name", 10, updatedLedgersCount);
 
             // no ledgers
-            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 3, 20, progressable);
+            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 3, 15, 20, progressable);
             updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, toBookieAddr);
             assertEquals("Failed to update the ledger metadata to use bookie host name", 10, updatedLedgersCount);
 
             // no ledgers
-            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 3, Integer.MIN_VALUE, progressable);
+            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 3, 15, Integer.MIN_VALUE, progressable);
             updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, toBookieAddr);
             assertEquals("Failed to update the ledger metadata to use bookie host name", 10, updatedLedgersCount);
         }
@@ -208,7 +208,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
                     + curBookieAddr.getPort());
             UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);
-            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 5, 100, progressable);
+            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 5, 25, 100, progressable);
 
             bookieServer.shutdown();
 
@@ -278,7 +278,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             BookieSocketAddress curBookieAddr = ensemble.get(0);
             BookieSocketAddress toBookieAddr = new BookieSocketAddress("localhost:" + curBookieAddr.getPort());
             UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);
-            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 5, 100, progressable);
+            updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 5, 25, 100, progressable);
 
             if (!latch.await(120, TimeUnit.SECONDS)) {
                 throw new Exception("Entries took too long to add");
