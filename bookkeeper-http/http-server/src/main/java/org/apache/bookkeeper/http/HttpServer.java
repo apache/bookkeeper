@@ -83,6 +83,7 @@ public interface HttpServer {
         GC_DETAILS,
         BOOKIE_STATE,
         BOOKIE_IS_READY,
+        BOOKIE_INFO,
 
         // autorecovery
         AUTORECOVERY_STATUS,
