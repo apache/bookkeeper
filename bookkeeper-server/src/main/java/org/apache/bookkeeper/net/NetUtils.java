@@ -68,13 +68,20 @@ public class NetUtils {
         return hostNames;
     }
 
-    public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver, InetSocketAddress addr) {
+    public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver,
+                                                BookieSocketAddress addr) {
         List<String> names = new ArrayList<String>(1);
 
+        InetSocketAddress inetSocketAddress = addr.getSocketAddress();
         if (dnsResolver.useHostName()) {
             names.add(addr.getHostName());
         } else {
-            names.add(addr.getAddress().getHostAddress());
+            InetAddress inetAddress = inetSocketAddress.getAddress();
+            if (null == inetAddress) {
+                names.add(addr.getHostName());
+            } else {
+                names.add(inetAddress.getHostAddress());
+            }
         }
 
         // resolve network addresses
