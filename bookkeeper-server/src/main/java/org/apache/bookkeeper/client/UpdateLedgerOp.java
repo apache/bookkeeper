@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -75,7 +76,8 @@ public class UpdateLedgerOp {
      *             metadata
      */
     public void updateBookieIdInLedgers(final BookieSocketAddress oldBookieId, final BookieSocketAddress newBookieId,
-                                        final int rate, final int limit, final UpdateLedgerNotifier progressable)
+                                        final int rate, int maxOutstandingReads, final int limit,
+                                        final UpdateLedgerNotifier progressable)
             throws IOException, InterruptedException {
 
         final AtomicInteger issuedLedgerCnt = new AtomicInteger();
@@ -84,13 +86,14 @@ public class UpdateLedgerOp {
         final Set<CompletableFuture<?>> outstanding =
             Collections.newSetFromMap(new ConcurrentHashMap<CompletableFuture<?>, Boolean>());
         final RateLimiter throttler = RateLimiter.create(rate);
+        final Semaphore outstandingReads = new Semaphore(maxOutstandingReads);
         final Iterator<Long> ledgerItr = admin.listLedgers().iterator();
 
         // iterate through all the ledgers
         while (ledgerItr.hasNext() && !finalPromise.isDone()
                && (limit == Integer.MIN_VALUE || issuedLedgerCnt.get() < limit)) {
-            // throttler to control updates per second
-            throttler.acquire();
+            // semaphore to control reads according to update throttling
+            outstandingReads.acquire();
 
             final long ledgerId = ledgerItr.next();
             issuedLedgerCnt.incrementAndGet();
@@ -109,7 +112,7 @@ public class UpdateLedgerOp {
                             (metadata) -> {
                                 return replaceBookieInEnsembles(metadata, oldBookieId, newBookieId);
                             },
-                            ref::compareAndSet).run();
+                            ref::compareAndSet, throttler).run();
                 });
 
             outstanding.add(writePromise);
@@ -127,6 +130,7 @@ public class UpdateLedgerOp {
                             updatedLedgerCnt.incrementAndGet();
                             progressable.progress(updatedLedgerCnt.get(), issuedLedgerCnt.get());
                         }
+                        outstandingReads.release();
                         outstanding.remove(writePromise);
                     });
         }

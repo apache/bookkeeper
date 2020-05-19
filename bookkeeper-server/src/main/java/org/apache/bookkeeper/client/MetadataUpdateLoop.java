@@ -19,6 +19,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.util.concurrent.RateLimiter;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Supplier;
@@ -56,6 +58,7 @@ class MetadataUpdateLoop {
     private final NeedsUpdatePredicate needsTransformation;
     private final MetadataTransform transform;
     private final LocalValueUpdater updateLocalValue;
+    private final RateLimiter throttler;
 
     private final String logContext;
     private volatile int writeLoopCount = 0;
@@ -74,6 +77,14 @@ class MetadataUpdateLoop {
         boolean updateValue(Versioned<LedgerMetadata> oldValue, Versioned<LedgerMetadata> newValue);
     }
 
+    MetadataUpdateLoop(LedgerManager lm,
+            long ledgerId,
+            Supplier<Versioned<LedgerMetadata>> currentLocalValue,
+            NeedsUpdatePredicate needsTransformation,
+            MetadataTransform transform,
+            LocalValueUpdater updateLocalValue) {
+        this(lm, ledgerId, currentLocalValue, needsTransformation, transform, updateLocalValue, null);
+    }
     /**
      * Construct the loop. This takes a set of functions which may be called multiple times
      * during the loop.
@@ -89,20 +100,21 @@ class MetadataUpdateLoop {
      *                         second parameter and return true, return false otherwise
      */
     MetadataUpdateLoop(LedgerManager lm,
-                       long ledgerId,
-                       Supplier<Versioned<LedgerMetadata>> currentLocalValue,
-                       NeedsUpdatePredicate needsTransformation,
-                       MetadataTransform transform,
-                       LocalValueUpdater updateLocalValue) {
+            long ledgerId,
+            Supplier<Versioned<LedgerMetadata>> currentLocalValue,
+            NeedsUpdatePredicate needsTransformation,
+            MetadataTransform transform,
+            LocalValueUpdater updateLocalValue,
+            RateLimiter throttler) {
         this.lm = lm;
         this.ledgerId = ledgerId;
         this.currentLocalValue = currentLocalValue;
         this.needsTransformation = needsTransformation;
         this.transform = transform;
         this.updateLocalValue = updateLocalValue;
+        this.throttler = throttler;
 
-        this.logContext = String.format("UpdateLoop(ledgerId=%d,loopId=%08x)",
-                                        ledgerId, System.identityHashCode(this));
+        this.logContext = String.format("UpdateLoop(ledgerId=%d,loopId=%08x)", ledgerId, System.identityHashCode(this));
     }
 
     CompletableFuture<Versioned<LedgerMetadata>> run() {
@@ -120,7 +132,10 @@ class MetadataUpdateLoop {
         try {
             if (needsTransformation.needsUpdate(currentLocal.getValue())) {
                 LedgerMetadata transformed = transform.transform(currentLocal.getValue());
-
+                if (throttler != null) {
+                    // throttler to control updates per second
+                    throttler.acquire();
+                }
                 lm.writeLedgerMetadata(ledgerId, transformed, currentLocal.getVersion())
                     .whenComplete((writtenMetadata, ex) -> {
                             if (ex == null) {
