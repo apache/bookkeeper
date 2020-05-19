@@ -675,8 +675,12 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicInteger rcHolder = new AtomicInteger(-1234);
         final CountDownLatch doneLatch = new CountDownLatch(1);
 
-        new ReadLastConfirmedOp(readLh, bkc.getBookieClient(),
+        new ReadLastConfirmedOp(bkc.getBookieClient(),
+                                readLh.distributionSchedule,
+                                readLh.macManager,
+                                readLh.ledgerId,
                                 readLh.getLedgerMetadata().getAllEnsembles().lastEntry().getValue(),
+                                readLh.ledgerKey,
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     @Override
                     public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
@@ -760,8 +764,13 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
     private int readLACFromQuorum(LedgerHandle ledger, int... bookieLACResponse) throws Exception {
         MutableInt responseCode = new MutableInt(100);
         CountDownLatch responseLatch = new CountDownLatch(1);
-        ReadLastConfirmedOp readLCOp = new ReadLastConfirmedOp(ledger, bkc.getBookieClient(),
+        ReadLastConfirmedOp readLCOp = new ReadLastConfirmedOp(
+                bkc.getBookieClient(),
+                ledger.getDistributionSchedule(),
+                ledger.getDigestManager(),
+                ledger.getId(),
                 ledger.getLedgerMetadata().getAllEnsembles().lastEntry().getValue(),
+                ledger.getLedgerKey(),
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     @Override
                     public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
