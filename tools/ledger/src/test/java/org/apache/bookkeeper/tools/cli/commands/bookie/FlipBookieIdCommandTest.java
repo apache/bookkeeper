@@ -101,8 +101,8 @@ public class FlipBookieIdCommandTest extends BookieCommandTestBase {
         verifyNew(UpdateLedgerOp.class, times(1)).withArguments(eq(bookKeeper), eq(bookKeeperAdmin));
         verifyNew(ServerConfiguration.class, times(1)).withArguments(eq(conf));
         verify(serverConfiguration, times(1)).setUseHostNameAsBookieID(anyBoolean());
-        verify(updateLedgerOp, times(1))
-            .updateBookieIdInLedgers(eq(bookieSocketAddress), eq(bookieSocketAddress), anyInt(), anyInt(), any());
+        verify(updateLedgerOp, times(1)).updateBookieIdInLedgers(eq(bookieSocketAddress), eq(bookieSocketAddress),
+                anyInt(), anyInt(), anyInt(), any());
     }
 
 }

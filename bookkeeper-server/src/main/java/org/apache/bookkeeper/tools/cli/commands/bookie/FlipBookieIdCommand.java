@@ -77,6 +77,10 @@ public class FlipBookieIdCommand extends BookieCommand<FlipBookieIdCommand.FlipB
             description = "Number of ledgers updating per second (default: 5 per sec)")
         private int updatePerSec = 5;
 
+        @Parameter(names = { "-r",
+                "--maxOutstandingReads" }, description = "Max outstanding reads (default: 5 * updatespersec)")
+        private int maxOutstandingReads = updatePerSec * 5;
+
         @Parameter(names = {"-l", "--limit"},
             description = "Maximum number of ledgers of ledgers to update (default: no limit)")
         private int limit = Integer.MIN_VALUE;
@@ -112,6 +116,12 @@ public class FlipBookieIdCommand extends BookieCommand<FlipBookieIdCommand.FlipB
         final int rate = flags.updatePerSec;
         if (rate <= 0) {
             LOG.error("Invalid updatespersec {}, should be > 0", rate);
+            return false;
+        }
+
+        final int maxOutstandingReads = flags.maxOutstandingReads;
+        if (maxOutstandingReads <= 0) {
+            LOG.error("Invalid maxOutstandingReads {}, should be > 0", maxOutstandingReads);
             return false;
         }
 
@@ -154,7 +164,8 @@ public class FlipBookieIdCommand extends BookieCommand<FlipBookieIdCommand.FlipB
         };
 
         try {
-            updateLedgerOp.updateBookieIdInLedgers(oldBookieId, newBookieId, rate, limit, progressable);
+            updateLedgerOp.updateBookieIdInLedgers(oldBookieId, newBookieId, rate, maxOutstandingReads, limit,
+                    progressable);
         } catch (IOException e) {
             LOG.error("Failed to update ledger metadata", e);
             return false;
