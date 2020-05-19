@@ -1407,7 +1407,13 @@ public class LedgerHandle implements WriteHandle {
                 }
             };
 
-        new ReadLastConfirmedOp(this, clientCtx.getBookieClient(), getCurrentEnsemble(), innercb).initiate();
+        new ReadLastConfirmedOp(clientCtx.getBookieClient(),
+                                distributionSchedule,
+                                macManager,
+                                ledgerId,
+                                getCurrentEnsemble(),
+                                ledgerKey,
+                                innercb).initiate();
     }
 
     /**

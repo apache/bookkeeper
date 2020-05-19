@@ -373,28 +373,42 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
         public synchronized boolean checkCovered() {
             // now check if there are any write quorums, with |ackQuorum| nodes available
             for (int i = 0; i < ensembleSize; i++) {
-                int nodesNotCovered = 0;
-                int nodesOkay = 0;
-                int nodesUninitialized = 0;
+                /* Nodes which have either responded with an error other than NoSuch{Entry,Ledger},
+                   or have not responded at all. We cannot know if these nodes ever accepted a entry. */
+                int nodesUnknown = 0;
+
                 for (int j = 0; j < writeQuorumSize; j++) {
                     int nodeIndex = (i + j) % ensembleSize;
-                    if (covered[nodeIndex] == BKException.Code.OK) {
-                        nodesOkay++;
-                    } else if (covered[nodeIndex] != BKException.Code.NoSuchEntryException
-                            && covered[nodeIndex] != BKException.Code.NoSuchLedgerExistsException) {
-                        nodesNotCovered++;
-                        if (covered[nodeIndex] == BKException.Code.UNINITIALIZED) {
-                            nodesUninitialized++;
-                        }
+                    if (covered[nodeIndex] != BKException.Code.OK
+                        && covered[nodeIndex] != BKException.Code.NoSuchEntryException
+                        && covered[nodeIndex] != BKException.Code.NoSuchLedgerExistsException) {
+                        nodesUnknown++;
                     }
                 }
-                // if we haven't seen any OK responses and there are still nodes not heard from,
-                // let's wait until
-                if (nodesNotCovered >= ackQuorumSize || (nodesOkay == 0 && nodesUninitialized > 0)) {
+
+                /* If nodesUnknown is greater than the ack quorum size, then
+                   it is possible those two unknown nodes accepted an entry which
+                   we do not know about */
+                if (nodesUnknown >= ackQuorumSize) {
                     return false;
                 }
             }
             return true;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder buffer = new StringBuilder();
+            buffer.append("QuorumCoverage(e:").append(ensembleSize)
+                .append(",w:").append(writeQuorumSize)
+                .append(",a:").append(ackQuorumSize)
+                .append(") = [");
+            int i = 0;
+            for (; i < covered.length - 1; i++) {
+                buffer.append(covered[i]).append(", ");
+            }
+            buffer.append(covered[i]).append("]");
+            return buffer.toString();
         }
     }
 

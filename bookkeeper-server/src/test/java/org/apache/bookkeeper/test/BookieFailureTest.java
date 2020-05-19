@@ -301,21 +301,6 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
         LedgerHandle afterlh = bkc.openLedgerNoRecovery(beforelh.getId(), digestType, "".getBytes());
 
         assertEquals(numEntries - 2, afterlh.getLastAddConfirmed());
-
-        startNewBookie();
-        LedgerHandle beforelh2 = bkc.createLedger(numBookies, 1, digestType, "".getBytes());
-
-        for (int i = 0; i < numEntries; i++) {
-            beforelh2.addEntry(tmp.getBytes());
-        }
-
-        // shutdown first bookie server
-        killBookie(0);
-
-        // try to open ledger no recovery
-        // should be able to open ledger with one bookie down:
-        // Total bookies available 3 >= 1 (Qw(4) - Qa(4) + 1)
-        bkc.openLedgerNoRecovery(beforelh2.getId(), digestType, "".getBytes());
     }
 
     @Test
@@ -333,24 +318,10 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
         killBookie(0);
         startNewBookie();
 
-        // try to open ledger no recovery
+        // try to open ledger with recovery
         LedgerHandle afterlh = bkc.openLedger(beforelh.getId(), digestType, "".getBytes());
 
         assertEquals(beforelh.getLastAddPushed(), afterlh.getLastAddConfirmed());
-
-        LedgerHandle beforelh2 = bkc.createLedger(numBookies, 1, digestType, "".getBytes());
-
-        for (int i = 0; i < numEntries; i++) {
-            beforelh2.addEntry(tmp.getBytes());
-        }
-
-        // shutdown first bookie server
-        killBookie(0);
-
-        // try to open ledger no recovery
-        // should be able to open ledger with one bookie down:
-        // Total bookies available 3 >= 1 (Qw(4) - Qa(4) + 1)
-        bkc.openLedger(beforelh2.getId(), digestType, "".getBytes());
     }
 
     /**
