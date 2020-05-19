@@ -51,6 +51,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
+import org.apache.bookkeeper.server.http.service.BookieInfoService;
 import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
@@ -865,5 +866,25 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response3 = bookieStateServer.handle(request3);
         assertEquals(HttpServer.StatusCode.SERVICE_UNAVAILABLE.getValue(), response3.getStatusCode());
+    }
+
+    @Test
+    public void testGetBookieInfo() throws Exception {
+        HttpEndpointService bookieStateServer = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_INFO);
+
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = bookieStateServer.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        LOG.info("Get response: {}", response1.getBody());
+
+        BookieInfoService.BookieInfo bs = JsonUtil.fromJson(response1.getBody(), BookieInfoService.BookieInfo.class);
+        assertTrue(bs.getFreeSpace() > 0);
+        assertTrue(bs.getTotalSpace() > 0);
+
+        // Try using POST instead of GET
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response2 = bookieStateServer.handle(request2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
     }
 }

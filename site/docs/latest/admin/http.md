@@ -168,6 +168,24 @@ Currently all the HTTP endpoints could be divided into these 5 components:
 
 ## Bookie
 
+### Endpoint: /api/v1/bookie/info
+1. Method: GET
+   * Description:  Get bookie info
+   * Response:
+
+        | Code   | Description |
+        |:-------|:------------|
+        |200 | Successful operation |
+        |403 | Permission denied |
+        |501 | Not implemented |
+   * Body:
+      ```json
+      {
+         "freeSpace" : 0,
+         "totalSpace" : 0
+       }
+      ```
+
 ### Endpoint: /api/v1/bookie/list_bookies/?type=&lt;type&gt;&print_hostnames=&lt;hostnames&gt;
 1. Method: GET
     * Description:  Get all the available bookies.
