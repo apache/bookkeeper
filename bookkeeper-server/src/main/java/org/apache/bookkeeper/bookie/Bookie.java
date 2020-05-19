@@ -467,6 +467,12 @@ public class Bookie extends BookieCriticalThread {
                               + "Empty directories are {}", missedCookieDirs);
                     throw new InvalidCookieException();
                 }
+            } else {
+                if (rmCookie == null) {
+                    // No corresponding cookie found in registration manager. The bookie should fail to come up.
+                    LOG.error("Cookie for this bookie is not stored in metadata store. Bookie failing to come up");
+                    throw new InvalidCookieException();
+                }
             }
         } catch (IOException ioe) {
             LOG.error("Error accessing cookie on disks", ioe);

@@ -22,6 +22,7 @@ package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.bookie.BookieJournalTest.writeV5Journal;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
 import static org.apache.bookkeeper.util.TestUtils.countNumOfFiles;
@@ -86,8 +87,10 @@ import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -105,6 +108,8 @@ import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.LoggerOutput;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
@@ -697,6 +702,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 .setLedgerStorageClass(MockInterleavedLedgerStorage.class.getName());
 
         BookieConfiguration bkConf = new BookieConfiguration(conf);
+        driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
 
         /*
          * create cookie and write it to JournalDir/LedgerDir.
@@ -705,6 +711,10 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         Cookie cookie = cookieBuilder.build();
         cookie.writeToDirectory(new File(journalDir, "current"));
         cookie.writeToDirectory(new File(ledgerDir, "current"));
+        Versioned<byte[]> newCookie = new Versioned<>(
+                cookie.toString().getBytes(UTF_8), Version.NEW
+        );
+        driver.getRegistrationManager().writeCookie(Bookie.getBookieAddress(conf).toString(), newCookie);
 
         /*
          * Create LifecycleComponent for BookieServer and start it.
@@ -1455,5 +1465,64 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             Assert.fail("Failed to map configurations to valid JSON entries.");
         }
         stackComponentFuture.cancel(true);
+    }
+
+    /**
+     * Test that verifies if a bookie can't come up without its cookie in metadata store.
+     * @throws Exception
+     */
+    @Test
+    public void testBookieConnectAfterCookieDelete() throws BookieException.UpgradeException {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        try {
+            runFunctionWithRegistrationManager(conf, rm -> {
+                try {
+                    bookieConnectAfterCookieDeleteWorker(conf, rm);
+                } catch (BookieException | IOException | InterruptedException e) {
+                    fail("Test failed to run: " + e.getMessage());
+                }
+                return null;
+            });
+        } catch (MetadataException | ExecutionException e) {
+            throw new BookieException.UpgradeException(e);
+        }
+    }
+
+    private void bookieConnectAfterCookieDeleteWorker(ServerConfiguration conf, RegistrationManager rm)
+            throws BookieException, InterruptedException, IOException {
+
+        File tmpLedgerDir = createTempDir("BootupTest", "test");
+        File tmpJournalDir = createTempDir("BootupTest", "test");
+        Integer numOfJournalDirs = 2;
+
+        String[] journalDirs = new String[numOfJournalDirs];
+        for (int i = 0; i < numOfJournalDirs; i++) {
+            journalDirs[i] = tmpJournalDir.getAbsolutePath() + "/journal-" + i;
+        }
+
+        conf.setJournalDirsName(journalDirs);
+        conf.setLedgerDirNames(new String[] { tmpLedgerDir.getPath() });
+
+        Bookie b = new Bookie(conf);
+
+        final BookieSocketAddress bookieAddress = Bookie.getBookieAddress(conf);
+
+        // Read cookie from registation manager
+        Versioned<Cookie> rmCookie = Cookie.readFromRegistrationManager(rm, bookieAddress);
+
+        // Shutdown bookie
+        b.shutdown();
+
+        // Remove cookie from registration manager
+        rmCookie.getValue().deleteFromRegistrationManager(rm, conf, rmCookie.getVersion());
+
+        try {
+            b = new Bookie(conf);
+            Assert.fail("Bookie should not have come up. Cookie no present in metadata store.");
+        } catch (Exception e) {
+            LOG.info("As expected Bookie fails to come up without a cookie in metadata store.");
+        }
     }
 }
