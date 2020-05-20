@@ -320,8 +320,20 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
 
         // try to open ledger with recovery
         LedgerHandle afterlh = bkc.openLedger(beforelh.getId(), digestType, "".getBytes());
-
         assertEquals(beforelh.getLastAddPushed(), afterlh.getLastAddConfirmed());
+
+        // try to open ledger no recovery
+        // bookies: 4, ensSize: 3, ackQuorumSize: 2
+        LedgerHandle beforelhWithNoRecovery = bkc.createLedger(numBookies - 1 , 2, digestType, "".getBytes());
+        for (int i = 0; i < numEntries; i++) {
+            beforelhWithNoRecovery.addEntry(tmp.getBytes());
+        }
+
+        // shutdown first bookie server
+        killBookie(0);
+
+        // try to open ledger no recovery, should be able to open ledger
+        bkc.openLedger(beforelhWithNoRecovery.getId(), digestType, "".getBytes());
     }
 
     /**
