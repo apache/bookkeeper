@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.HashSet;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -225,7 +227,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         zk.getData(pathAsWritable, false, (int rc, String path, Object o, byte[] bytes, Stat stat) -> {
             if (KeeperException.Code.OK.intValue() == rc) {
                 try {
-                    BookieServiceInfo bookieServiceInfo = deserializeBookieService(bookieId, bytes);
+                    BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes);
                     promise.complete(new Versioned<>(bookieServiceInfo, new LongVersion(stat.getCversion())));
                 } catch (IOException ex) {
                     promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
@@ -236,7 +238,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                 zk.getData(pathAsReadonly, false, (int rc2, String path2, Object o2, byte[] bytes2, Stat stat2) -> {
                     if (KeeperException.Code.OK.intValue() == rc2) {
                         try {
-                            BookieServiceInfo bookieServiceInfo = deserializeBookieService(bookieId, bytes2);
+                            BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes2);
                             promise.complete(new Versioned<>(bookieServiceInfo, new LongVersion(stat2.getCversion())));
                         } catch (IOException ex) {
                             promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
@@ -244,7 +246,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                         }
                     } else {
                         // not found as writable and readonly, the bookie is offline
-                        promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
+                        promise.completeExceptionally(BKException.create(BKException.Code.NoBookieAvailableException));
                     }
                 }, null);
             } else {
@@ -255,10 +257,11 @@ public class ZKRegistrationClient implements RegistrationClient {
     }
 
     @SuppressWarnings("unchecked")
-    private static BookieServiceInfo deserializeBookieService(String bookieId, byte[] bookieServiceInfo)
+    @VisibleForTesting
+    static BookieServiceInfo deserializeBookieServiceInfo(String bookieId, byte[] bookieServiceInfo)
             throws IOException {
         if (bookieServiceInfo == null || bookieServiceInfo.length == 0) {
-            return BookieServiceInfo.buildLegacyBookieServiceInfo(bookieId);
+            return BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId);
         }
 
         BookieServiceInfoFormat builder = BookieServiceInfoFormat.parseFrom(bookieServiceInfo);

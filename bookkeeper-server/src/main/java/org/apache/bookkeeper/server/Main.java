@@ -370,10 +370,17 @@ public class Main {
         return serverBuilder.build();
     }
 
+    /**
+     * Create the {@link BookieServiceInfo} starting from the published endpoints.
+     *
+     * @see ComponentInfoPublisher
+     * @param componentInfoPublisher the endpoint publisher
+     * @return the created bookie service info
+     */
     private static BookieServiceInfo buildBookieServiceInfo(ComponentInfoPublisher componentInfoPublisher) {
         List<Endpoint> endpoints = componentInfoPublisher.getEndpoints().values()
                 .stream().map(e -> {
-                    return new Endpoint (
+                    return new Endpoint(
                             e.getId(),
                             e.getPort(),
                             e.getHost(),

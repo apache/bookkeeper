@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayOutputStream;
@@ -226,7 +227,8 @@ public class ZKRegistrationManager implements RegistrationManager {
         }
     }
 
-    private static byte[] serializeBookieServiceInfo(BookieServiceInfo bookieServiceInfo) {
+    @VisibleForTesting
+    static byte[] serializeBookieServiceInfo(BookieServiceInfo bookieServiceInfo) {
         if (log.isDebugEnabled()) {
             log.debug("serialize BookieServiceInfo {}", bookieServiceInfo);
         }
