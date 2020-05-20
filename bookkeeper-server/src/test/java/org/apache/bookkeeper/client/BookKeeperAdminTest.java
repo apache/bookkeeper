@@ -662,10 +662,12 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             }
         }
     }
-    private void testBookieServiceInfo(boolean readonly) throws Exception {
+
+    private void testBookieServiceInfo(boolean readonly, boolean legacy) throws Exception {
         File tmpDir = createTempDir("bookie", "test");
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setJournalDirName(tmpDir.getPath()).setLedgerDirNames(new String[]{tmpDir.getPath()})
+                .setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[]{tmpDir.getPath()})
                 .setBookiePort(PortManager.nextFreePort())
                 .setMetadataServiceUri(metadataServiceUri);
 
@@ -682,6 +684,16 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         String bookieId = bkServer.getLocalAddress().toString();
         String host = bkServer.getLocalAddress().getHostName();
         int port = bkServer.getLocalAddress().getPort();
+
+        if (legacy) {
+            String regPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(bkConf) + "/" + AVAILABLE_NODE;
+            regPath = readonly
+                    ? regPath + READONLY + "/" + bookieId
+                    : regPath + "/" + bookieId;
+            // deleting the metadata, so that the bookie registration should
+            // continue successfully with legacy BookieServiceInfo
+            zkc.setData(regPath, new byte[]{}, -1);
+        }
 
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
             BookieServiceInfo bookieServiceInfo = bkAdmin.getBookieServiceInfo(bookieId);
@@ -704,12 +716,17 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testBookieServiceInfoWritable() throws Exception {
-        testBookieServiceInfo(false);
+        testBookieServiceInfo(false, false);
     }
 
     @Test
     public void testBookieServiceInfoReadonly() throws Exception {
-        testBookieServiceInfo(true);
+        testBookieServiceInfo(true, false);
+    }
+
+    @Test
+    public void testLegacyBookieServiceInfo() throws Exception {
+        testBookieServiceInfo(false, true);
     }
 
 }
