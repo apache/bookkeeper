@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.discover;
 
+import java.net.UnknownHostException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
@@ -77,7 +78,12 @@ public interface RegistrationClient extends AutoCloseable {
      * @since 4.11
      */
     default CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(String bookieId) {
-        return FutureUtils.value(new Versioned<>(BookieServiceInfo.EMPTY, new LongVersion(-1)));
+        try {
+            BookieServiceInfo bookieServiceInfo = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId);
+            return FutureUtils.value(new Versioned<>(bookieServiceInfo, new LongVersion(-1)));
+        } catch (UnknownHostException e) {
+            return FutureUtils.exception(e);
+        }
     }
 
     /**
