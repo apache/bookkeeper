@@ -24,10 +24,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Ticker;
 import com.google.common.collect.Lists;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -116,7 +116,7 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
                                                    DistributedLogConfiguration conf)
             throws Exception {
         BKLogReadHandler readHandler = dlm.createReadHandler(
-                Optional.<String>absent(),
+                Optional.<String>empty(),
                 true);
         LogSegmentEntryStore entryStore = new BKLogSegmentEntryStore(
                 conf,

@@ -17,13 +17,13 @@
  */
 package org.apache.distributedlog;
 
-import com.google.common.base.Optional;
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -78,7 +78,7 @@ public class LocalDLMEmulator {
         private int zkPort = DEFAULT_ZK_PORT;
         private int initialBookiePort = DEFAULT_BOOKIE_INITIAL_PORT;
         private boolean shouldStartZK = true;
-        private Optional<ServerConfiguration> serverConf = Optional.absent();
+        private Optional<ServerConfiguration> serverConf = Optional.empty();
 
         public Builder numBookies(int numBookies) {
             this.numBookies = numBookies;
