@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
 import static org.apache.distributedlog.LogRecordSet.HEADER_LEN;
 import static org.junit.Assert.assertEquals;

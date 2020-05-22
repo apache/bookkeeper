@@ -17,11 +17,11 @@
  */
 package org.apache.bookkeeper.util;
 
-import com.google.common.base.Charsets;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -130,8 +130,9 @@ public abstract class Shell {
             timeOutTimer.schedule(timeoutTimerTask, timeOutInterval);
         }
         final BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream(),
-                Charsets.UTF_8));
-        BufferedReader inReader = new BufferedReader(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
+                StandardCharsets.UTF_8));
+        BufferedReader inReader = new BufferedReader(new InputStreamReader(process.getInputStream(),
+                StandardCharsets.UTF_8));
         final StringBuffer errMsg = new StringBuffer();
 
         // read error and input streams as this would free up the buffers

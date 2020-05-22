@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.impl.logsegment;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;

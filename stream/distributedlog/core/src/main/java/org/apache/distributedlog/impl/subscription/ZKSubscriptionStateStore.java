@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.impl.subscription;
 
-import com.google.common.base.Charsets;
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -82,7 +82,7 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
                         result.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
                     } else {
                         try {
-                            DLSN dlsn = DLSN.deserialize(new String(data, Charsets.UTF_8));
+                            DLSN dlsn = DLSN.deserialize(new String(data, StandardCharsets.UTF_8));
                             result.complete(dlsn);
                         } catch (Exception t) {
                             logger.warn("Invalid last commit position found from path {}", zkPath, t);
@@ -113,7 +113,7 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
                 || (newPosition.compareTo(dlsn) > 0)) {
             lastCommittedPositionUpdater.set(this, newPosition);
             return Utils.zkAsyncCreateFullPathOptimisticAndSetData(zooKeeperClient,
-                zkPath, newPosition.serialize().getBytes(Charsets.UTF_8),
+                zkPath, newPosition.serialize().getBytes(StandardCharsets.UTF_8),
                 zooKeeperClient.getDefaultACL(),
                 CreateMode.PERSISTENT);
         } else {
