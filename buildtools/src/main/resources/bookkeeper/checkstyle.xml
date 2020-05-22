@@ -102,7 +102,7 @@ page at http://checkstyle.sourceforge.net/config.html -->
         </module>
 
         <module name="IllegalImport">
-            <property name="illegalPkgs" value="autovalue.shaded, avro.shaded, bk-shade, com.google.api.client.repackaged, com.google.appengine.repackaged, io.netty.util.internal"/>
+            <property name="illegalPkgs" value="com.google.common.base.Charsets, autovalue.shaded, avro.shaded, bk-shade, com.google.api.client.repackaged, com.google.appengine.repackaged, io.netty.util.internal"/>
         </module>
 
         <module name="RedundantModifier">
