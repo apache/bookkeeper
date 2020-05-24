@@ -113,7 +113,7 @@ public class Main {
     }
 
     private static void loadConfEnv(ServerConfiguration conf) throws IllegalArgumentException {
-        try{
+        try {
             conf.loadEnv();
             conf.validate();
         } catch (ConfigurationException e) {

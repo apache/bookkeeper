@@ -236,7 +236,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
                 String name = entry.getKey().substring(ENV_PREFIX.length());
                 String value = entry.getValue();
                 log.info("load environment {}={}", name, value);
-                setProperty(name,value);
+                setProperty(name, value);
             });
     }
 
