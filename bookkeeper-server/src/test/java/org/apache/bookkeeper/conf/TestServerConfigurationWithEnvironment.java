@@ -64,8 +64,8 @@ public class TestServerConfigurationWithEnvironment {
         assertEquals(1000, serverConf.getDeathWatchInterval());
         assertEquals(0.95, serverConf.getDiskUsageWarnThreshold(), 0.2);
         assertEquals(0.2, serverConf.getMinorCompactionThreshold(), 0.1);
-        assertEquals(1000l, serverConf.getGcWaitTime());
-        assertEquals(10000l, serverConf.getFlushInterval());
+        assertEquals(1000L, serverConf.getGcWaitTime());
+        assertEquals(10000L, serverConf.getFlushInterval());
         assertArrayEquals(new String[]{"test1", "test2", "test3"},
             serverConf.getExtraServerComponents());
     }
