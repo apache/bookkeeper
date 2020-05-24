@@ -171,6 +171,7 @@
     <vertx.version>3.4.1</vertx.version>
     <zookeeper.version>3.5.7</zookeeper.version>
     <jctools.version>2.1.2</jctools.version>
+    <system-rules.version>1.19.0</system-rules.version>
     <!-- plugin dependencies -->
     <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
     <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
@@ -712,6 +713,11 @@
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers</artifactId>
         <version>${testcontainers.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.stefanbirkner</groupId>
+        <artifactId>system-rules</artifactId>
+        <version>${system-rules.version}</version>
       </dependency>
 
       <!-- benchmark dependencies -->
