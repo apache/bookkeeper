@@ -72,6 +72,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         DEFAULT_LOADER = loader;
     }
 
+    // Environment Parameters Prefix
+    protected static final String ENV_PREFIX = "BK_";
+
     // Zookeeper Parameters
     protected static final String ZK_TIMEOUT = "zkTimeout";
     protected static final String ZK_SERVERS = "zkServers";
@@ -222,6 +225,19 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
             String key = iter.next();
             setProperty(key, loadedConf.getProperty(key));
         }
+    }
+
+    /**
+     * Load configurations from environment variables prefixed with BK_.
+     */
+    public void loadEnv() {
+        System.getenv().entrySet().stream().filter(entry -> entry.getKey().startsWith(ENV_PREFIX))
+            .forEach(entry -> {
+                String name = entry.getKey().substring(ENV_PREFIX.length());
+                String value = entry.getValue();
+                log.info("load environment {}={}", name, value);
+                setProperty(name,value);
+            });
     }
 
     /**

@@ -112,6 +112,16 @@ public class Main {
         log.info("Using configuration file {}", confFile);
     }
 
+    private static void loadConfEnv(ServerConfiguration conf) throws IllegalArgumentException {
+        try{
+            conf.loadEnv();
+            conf.validate();
+        } catch (ConfigurationException e) {
+            log.error("Malformed configuration file: {}", e);
+            throw new IllegalArgumentException();
+        }
+    }
+
     @SuppressWarnings("deprecation")
     private static ServerConfiguration parseArgs(String[] args)
         throws IllegalArgumentException {
@@ -124,6 +134,8 @@ public class Main {
             }
 
             ServerConfiguration conf = new ServerConfiguration();
+
+            loadConfEnv(conf);
 
             if (cmdLine.hasOption('c')) {
                 String confFile = cmdLine.getOptionValue("c");
