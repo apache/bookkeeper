@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.stats.Gauge;
@@ -61,6 +62,7 @@ import org.slf4j.LoggerFactory;
 public class BookieStateManager implements StateManager {
     private static final Logger LOG = LoggerFactory.getLogger(BookieStateManager.class);
     private final ServerConfiguration conf;
+    private final Supplier<BookieServiceInfo> bookieServiceInfoProvider;
     private final List<File> statusDirs;
 
     // use an executor to execute the state changes task
@@ -90,7 +92,8 @@ public class BookieStateManager implements StateManager {
     public BookieStateManager(ServerConfiguration conf,
                               StatsLogger statsLogger,
                               MetadataBookieDriver metadataDriver,
-                              LedgerDirsManager ledgerDirsManager) throws IOException {
+                              LedgerDirsManager ledgerDirsManager,
+                              Supplier<BookieServiceInfo> bookieServiceInfoProvider) throws IOException {
         this(
             conf,
             statsLogger,
@@ -102,18 +105,21 @@ public class BookieStateManager implements StateManager {
                 } catch (UnknownHostException e) {
                     throw new UncheckedIOException("Failed to resolve bookie id", e);
                 }
-            });
+            },
+            bookieServiceInfoProvider);
     }
     public BookieStateManager(ServerConfiguration conf,
                               StatsLogger statsLogger,
                               Supplier<RegistrationManager> rm,
                               List<File> statusDirs,
-                              Supplier<String> bookieIdSupplier) throws IOException {
+                              Supplier<String> bookieIdSupplier,
+                              Supplier<BookieServiceInfo> bookieServiceInfoProvider) throws IOException {
         this.conf = conf;
         this.rm = rm;
         this.statusDirs = statusDirs;
         // ZK ephemeral node for this Bookie.
         this.bookieId = bookieIdSupplier.get();
+        this.bookieServiceInfoProvider = bookieServiceInfoProvider;
         // 1 : up, 0 : readonly, -1 : unregistered
         this.serverStatusGauge = new Gauge<Number>() {
             @Override
@@ -143,7 +149,7 @@ public class BookieStateManager implements StateManager {
     BookieStateManager(ServerConfiguration conf, MetadataBookieDriver metadataDriver) throws IOException {
         this(conf, NullStatsLogger.INSTANCE, metadataDriver, new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
-                NullStatsLogger.INSTANCE));
+                NullStatsLogger.INSTANCE), BookieServiceInfo.NO_INFO);
     }
 
     @Override
@@ -263,7 +269,7 @@ public class BookieStateManager implements StateManager {
 
         rmRegistered.set(false);
         try {
-            rm.get().registerBookie(bookieId, isReadOnly);
+            rm.get().registerBookie(bookieId, isReadOnly, bookieServiceInfoProvider.get());
             rmRegistered.set(true);
         } catch (BookieException e) {
             throw new IOException(e);
@@ -333,7 +339,7 @@ public class BookieStateManager implements StateManager {
             return;
         }
         try {
-            rm.get().registerBookie(bookieId, true);
+            rm.get().registerBookie(bookieId, true, bookieServiceInfoProvider.get());
         } catch (BookieException e) {
             LOG.error("Error in transition to ReadOnly Mode."
                     + " Shutting down", e);
