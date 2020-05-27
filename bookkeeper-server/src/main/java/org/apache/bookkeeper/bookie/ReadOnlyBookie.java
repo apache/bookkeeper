@@ -24,7 +24,9 @@ package org.apache.bookkeeper.bookie;
 import io.netty.buffer.ByteBufAllocator;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -40,9 +42,10 @@ public class ReadOnlyBookie extends Bookie {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyBookie.class);
 
-    public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger, ByteBufAllocator allocator)
+    public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger,
+            ByteBufAllocator allocator, Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws IOException, KeeperException, InterruptedException, BookieException {
-        super(conf, statsLogger, allocator);
+        super(conf, statsLogger, allocator, bookieServiceInfoProvider);
         if (conf.isReadOnlyModeEnabled()) {
             stateManager.forceToReadOnly();
         } else {
@@ -55,7 +58,8 @@ public class ReadOnlyBookie extends Bookie {
 
     @Override
     StateManager initializeStateManager() throws IOException {
-        return new BookieStateManager(conf, statsLogger, metadataDriver, getLedgerDirsManager()) {
+        return new BookieStateManager(conf, statsLogger, metadataDriver, getLedgerDirsManager(),
+                                      bookieServiceInfoProvider) {
 
             @Override
             public void doTransitionToWritableMode() {

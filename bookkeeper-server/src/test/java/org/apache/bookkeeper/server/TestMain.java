@@ -26,12 +26,15 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.io.IOException;
 
+import java.util.function.Supplier;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
@@ -80,8 +83,11 @@ public class TestMain {
 
         BookieServer mockServer = PowerMockito.mock(BookieServer.class);
         whenNew(BookieServer.class)
-            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class))
+            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class), any(Supplier.class))
             .thenReturn(mockServer);
+
+        BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
+        when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
 
         LifecycleComponentStack stack = buildBookieServer(conf);
         assertEquals(3, stack.getNumComponents());
@@ -107,8 +113,11 @@ public class TestMain {
 
         BookieServer mockServer = PowerMockito.mock(BookieServer.class);
         whenNew(BookieServer.class)
-            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class))
+            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class), any(Supplier.class))
             .thenReturn(mockServer);
+
+        BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
+        when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
 
         LifecycleComponentStack stack = buildBookieServer(conf);
         assertEquals(2, stack.getNumComponents());
@@ -133,8 +142,11 @@ public class TestMain {
 
         BookieServer mockServer = PowerMockito.mock(BookieServer.class);
         whenNew(BookieServer.class)
-            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class))
+            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class), any(Supplier.class))
             .thenReturn(mockServer);
+
+        BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
+        when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
 
         try {
             buildBookieServer(conf);

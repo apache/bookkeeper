@@ -26,10 +26,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A stack of {@link LifecycleComponent}s.
  */
+@Slf4j
 public class LifecycleComponentStack implements LifecycleComponent {
 
     public static Builder newBuilder() {
@@ -42,10 +44,17 @@ public class LifecycleComponentStack implements LifecycleComponent {
     public static class Builder {
 
         private String name;
+        private ComponentInfoPublisher componentInfoPublisher;
         private final List<LifecycleComponent> components;
 
         private Builder() {
             components = Lists.newArrayList();
+        }
+
+        public Builder withComponentInfoPublisher(ComponentInfoPublisher componentInfoPublisher) {
+            checkNotNull(componentInfoPublisher, "ComponentInfoPublisher is null");
+            this.componentInfoPublisher = componentInfoPublisher;
+            return this;
         }
 
         public Builder addComponent(LifecycleComponent component) {
@@ -64,6 +73,7 @@ public class LifecycleComponentStack implements LifecycleComponent {
             checkArgument(!components.isEmpty(), "Lifecycle component stack is empty : " + components);
             return new LifecycleComponentStack(
                 name,
+                componentInfoPublisher != null ? componentInfoPublisher : new ComponentInfoPublisher(),
                 ImmutableList.copyOf(components));
         }
 
@@ -71,10 +81,13 @@ public class LifecycleComponentStack implements LifecycleComponent {
 
     private final String name;
     private final ImmutableList<LifecycleComponent> components;
+    private final ComponentInfoPublisher componentInfoPublisher;
 
     private LifecycleComponentStack(String name,
+                                    ComponentInfoPublisher componentInfoPublisher,
                                     ImmutableList<LifecycleComponent> components) {
         this.name = name;
+        this.componentInfoPublisher = componentInfoPublisher;
         this.components = components;
     }
 
@@ -109,7 +122,25 @@ public class LifecycleComponentStack implements LifecycleComponent {
     }
 
     @Override
+    public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
+        components.forEach(component -> {
+            if (log.isDebugEnabled()) {
+                log.debug("calling publishInfo on {} ", component);
+            }
+            component.publishInfo(componentInfoPublisher);
+        });
+    }
+
+    @Override
     public void start() {
+        components.forEach(component -> {
+            if (log.isDebugEnabled()) {
+                log.debug("calling publishInfo on {} ", component);
+            }
+            component.publishInfo(componentInfoPublisher);
+        });
+        componentInfoPublisher.startupFinished();
+
         components.forEach(component -> component.start());
     }
 

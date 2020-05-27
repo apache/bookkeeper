@@ -18,11 +18,14 @@
 
 package org.apache.bookkeeper.discover;
 
+import java.net.UnknownHostException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 
 /**
@@ -64,6 +67,24 @@ public interface RegistrationClient extends AutoCloseable {
      * @return a future represents the list of readonly bookies.
      */
     CompletableFuture<Versioned<Set<BookieSocketAddress>>> getReadOnlyBookies();
+
+    /**
+     * Get detailed information about the services exposed by a Bookie.
+     * For old bookies it is expected to return an empty BookieServiceInfo structure.
+     *
+     * @param bookieId this is the id of the bookie, it can be computed from a {@link BookieSocketAddress}
+     * @return a future represents the available information.
+     *
+     * @since 4.11
+     */
+    default CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(String bookieId) {
+        try {
+            BookieServiceInfo bookieServiceInfo = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId);
+            return FutureUtils.value(new Versioned<>(bookieServiceInfo, new LongVersion(-1)));
+        } catch (UnknownHostException e) {
+            return FutureUtils.exception(e);
+        }
+    }
 
     /**
      * Watch the changes of bookies.

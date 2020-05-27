@@ -45,6 +45,7 @@ import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -185,7 +186,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         for (int i = 0; i < numOfBookies; i++) {
             bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
             bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress.toString(), false);
+            regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
         }
         return bookieAddresses;
     }

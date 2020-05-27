@@ -28,6 +28,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -156,7 +157,7 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
                 .setMetadataServiceUri(zkUtil.getMetadataServiceUri())
                 .setForceReadOnlyBookie(true);
         ReadOnlyBookie readOnlyBookie = new ReadOnlyBookie(readOnlyConf, NullStatsLogger.INSTANCE,
-                UnpooledByteBufAllocator.DEFAULT);
+                UnpooledByteBufAllocator.DEFAULT, BookieServiceInfo.NO_INFO);
         readOnlyBookie.start();
         assertTrue(readOnlyBookie.isRunning());
         assertTrue(readOnlyBookie.isReadOnly());

@@ -42,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
@@ -218,7 +219,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
             Client client = newEtcdClient();
             EtcdRegistrationManager regMgr = new EtcdRegistrationManager(client, scope, ttlSeconds);
             bookies.add(regMgr);
-            regMgr.registerBookie(newBookie(i), readonly);
+            regMgr.registerBookie(newBookie(i), readonly, BookieServiceInfo.EMPTY);
         }
         return bookies;
     }
@@ -237,7 +238,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
         try (EtcdRegistrationManager regManager = new EtcdRegistrationManager(
             newEtcdClient(), scope, ttlSeconds)
         ) {
-            regManager.registerBookie(bookieId, false);
+            regManager.registerBookie(bookieId, false, BookieServiceInfo.EMPTY);
             leaseId = regManager.getBkRegister().getLeaseId();
             log.info("Registered bookie under scope '{}' with lease = {}", scope, leaseId);
         }
@@ -246,7 +247,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
         try (EtcdRegistrationManager regManager = new EtcdRegistrationManager(
             newEtcdClient(), scope, 100000 * ttlSeconds)
         ) {
-            regManager.registerBookie(bookieId, false);
+            regManager.registerBookie(bookieId, false, BookieServiceInfo.EMPTY);
             leaseId = regManager.getBkRegister().getLeaseId();
             log.info("Registered bookie under scope '{}' with new lease = {}", scope, leaseId);
         }
@@ -261,7 +262,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
         try (EtcdRegistrationManager regManager = new EtcdRegistrationManager(
             newEtcdClient(), scope, 10000000 * ttlSeconds)
         ) {
-            regManager.registerBookie(bookieId, false);
+            regManager.registerBookie(bookieId, false, BookieServiceInfo.EMPTY);
             leaseId = regManager.getBkRegister().getLeaseId();
             log.info("Registered bookie under scope '{}' with lease = {}", scope, leaseId);
         }
@@ -269,7 +270,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
         try (EtcdRegistrationManager regManager = new EtcdRegistrationManager(
             newEtcdClient(), scope,  ttlSeconds)
         ) {
-            regManager.registerBookie(bookieId, false);
+            regManager.registerBookie(bookieId, false, BookieServiceInfo.EMPTY);
             fail("Should fail to register bookie under scope '{}'"
                 + " since previous registration has not been expired yet");
         } catch (MetadataStoreException mse) {
@@ -295,14 +296,14 @@ public class EtcdRegistrationTest extends EtcdTestBase {
         try (EtcdRegistrationManager regManager = new EtcdRegistrationManager(
             newEtcdClient(), scope, 10000000 * ttlSeconds)
         ) {
-            regManager.registerBookie(bookieId, readonly);
+            regManager.registerBookie(bookieId, readonly, BookieServiceInfo.EMPTY);
             leaseId = regManager.getBkRegister().getLeaseId();
             log.info("Registered bookie under scope '{}' with lease = {}", scope, leaseId);
             log.info("Trying to register using same lease '{}'", leaseId);
             try (EtcdRegistrationManager regManager2 = new EtcdRegistrationManager(
                 regManager.getClient(), scope, regManager.getBkRegister()
             )) {
-                regManager.registerBookie(bookieId, readonly);
+                regManager.registerBookie(bookieId, readonly, BookieServiceInfo.EMPTY);
             }
         }
     }
@@ -341,7 +342,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
             log.info("before registration : bookies = {}", bookies);
             assertEquals(0, bookies.size());
             // registered
-            regMgr.registerBookie(bookieId, readonly);
+            regMgr.registerBookie(bookieId, readonly, BookieServiceInfo.EMPTY);
             bookies = getBookies(readonly);
             log.info("after registered: bookies = {}", bookies);
             assertEquals(1, bookies.size());
@@ -388,7 +389,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
                 )) {
                     try {
                         startBarrier.await();
-                        regMgr.registerBookie(bookieId, readonly);
+                        regMgr.registerBookie(bookieId, readonly, BookieServiceInfo.EMPTY);
                         numSuccesses.incrementAndGet();
                     } catch (InterruptedException e) {
                         log.warn("Interrupted at waiting for the other threads to start", e);

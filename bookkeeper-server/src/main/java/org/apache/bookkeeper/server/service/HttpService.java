@@ -21,7 +21,9 @@ package org.apache.bookkeeper.server.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
+import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 
+import org.apache.bookkeeper.common.component.ComponentInfoPublisher.EndpointInfo;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
@@ -63,4 +65,16 @@ public class HttpService extends ServerLifecycleComponent {
     protected void doClose() throws IOException {
         server.stopServer();
     }
+
+    @Override
+    public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
+        if (conf.getServerConf().isHttpServerEnabled()) {
+            EndpointInfo endpoint = new EndpointInfo("httpserver",
+                    conf.getServerConf().getHttpServerPort(),
+                    "0.0.0.0",
+                    "http", null, null);
+            componentInfoPublisher.publishEndpoint(endpoint);
+        }
+    }
+
 }

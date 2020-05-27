@@ -79,6 +79,8 @@ public class ComponentStarter {
             shutdownHookThread.start();
         });
 
+        component.publishInfo(new ComponentInfoPublisher());
+
         log.info("Starting component {}.", component.getName());
         component.start();
         log.info("Started component {}.", component.getName());

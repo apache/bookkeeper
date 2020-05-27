@@ -41,6 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -50,6 +51,7 @@ import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.metastore.InMemoryMetaStore;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -648,7 +650,8 @@ public abstract class BookKeeperClusterTestCase {
     protected BookieServer startBookie(ServerConfiguration conf)
             throws Exception {
         TestStatsProvider provider = new TestStatsProvider();
-        BookieServer server = new BookieServer(conf, provider.getStatsLogger(""));
+        BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
+                                               BookieServiceInfo.NO_INFO);
         BookieSocketAddress address = Bookie.getBookieAddress(conf);
         bsLoggers.put(address, provider);
 
@@ -682,9 +685,11 @@ public abstract class BookKeeperClusterTestCase {
     protected BookieServer startBookie(ServerConfiguration conf, final Bookie b)
             throws Exception {
         TestStatsProvider provider = new TestStatsProvider();
-        BookieServer server = new BookieServer(conf, provider.getStatsLogger("")) {
+        BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
+                                        BookieServiceInfo.NO_INFO) {
             @Override
-            protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator) {
+            protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator,
+                                       Supplier<BookieServiceInfo> s) {
                 return b;
             }
         };

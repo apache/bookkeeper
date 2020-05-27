@@ -23,8 +23,11 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -35,6 +38,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -46,15 +50,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.common.component.ComponentStarter;
+import org.apache.bookkeeper.common.component.Lifecycle;
+import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.server.Main;
+import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.io.FileUtils;
@@ -650,4 +662,71 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             }
         }
     }
+
+    private void testBookieServiceInfo(boolean readonly, boolean legacy) throws Exception {
+        File tmpDir = createTempDir("bookie", "test");
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[]{tmpDir.getPath()})
+                .setBookiePort(PortManager.nextFreePort())
+                .setMetadataServiceUri(metadataServiceUri);
+
+        LifecycleComponent server = Main.buildBookieServer(new BookieConfiguration(conf));
+        // 2. start the server
+        CompletableFuture<Void> stackComponentFuture = ComponentStarter.startComponent(server);
+        while (server.lifecycleState() != Lifecycle.State.STARTED) {
+            Thread.sleep(100);
+        }
+
+        ServerConfiguration bkConf = newServerConfiguration().setForceReadOnlyBookie(readonly);
+        BookieServer bkServer = startBookie(bkConf);
+
+        String bookieId = bkServer.getLocalAddress().toString();
+        String host = bkServer.getLocalAddress().getHostName();
+        int port = bkServer.getLocalAddress().getPort();
+
+        if (legacy) {
+            String regPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(bkConf) + "/" + AVAILABLE_NODE;
+            regPath = readonly
+                    ? regPath + READONLY + "/" + bookieId
+                    : regPath + "/" + bookieId;
+            // deleting the metadata, so that the bookie registration should
+            // continue successfully with legacy BookieServiceInfo
+            zkc.setData(regPath, new byte[]{}, -1);
+        }
+
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            BookieServiceInfo bookieServiceInfo = bkAdmin.getBookieServiceInfo(bookieId);
+
+            assertThat(bookieServiceInfo.getEndpoints().size(), is(1));
+            BookieServiceInfo.Endpoint endpoint = bookieServiceInfo.getEndpoints().stream()
+                    .filter(e -> Objects.equals(e.getId(), bookieId))
+                    .findFirst()
+                    .get();
+            assertNotNull("Endpoint " + bookieId + " not found.", endpoint);
+
+            assertThat(endpoint.getHost(), is(host));
+            assertThat(endpoint.getPort(), is(port));
+            assertThat(endpoint.getProtocol(), is("bookie-rpc"));
+        }
+
+        bkServer.shutdown();
+        stackComponentFuture.cancel(true);
+    }
+
+    @Test
+    public void testBookieServiceInfoWritable() throws Exception {
+        testBookieServiceInfo(false, false);
+    }
+
+    @Test
+    public void testBookieServiceInfoReadonly() throws Exception {
+        testBookieServiceInfo(true, false);
+    }
+
+    @Test
+    public void testLegacyBookieServiceInfo() throws Exception {
+        testBookieServiceInfo(false, true);
+    }
+
 }

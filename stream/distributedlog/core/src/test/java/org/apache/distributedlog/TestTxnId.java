@@ -21,6 +21,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.junit.Assert;
@@ -107,7 +108,8 @@ public class TestTxnId extends TestDistributedLogBase {
         conf.setJournalDirName(journalDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
-        BookieServer server = new BookieServer(conf, new NullStatsProvider().getStatsLogger(""));
+        BookieServer server = new BookieServer(conf, new NullStatsProvider().getStatsLogger(""),
+                                               BookieServiceInfo.NO_INFO);
         server.start();
 
         while (!server.isRunning()) {

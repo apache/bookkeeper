@@ -40,6 +40,8 @@ commands:
     description: Ledger ID
   - flag: -force
     description: Whether to force delete the Ledger without prompt..?
+- name: endpointinfo
+  description: Get endpoints of a Bookie.
 - name: expandstorage
   description: Add new empty ledger/index directories. Update the directories info in the conf file before running the command.
 - name: help
