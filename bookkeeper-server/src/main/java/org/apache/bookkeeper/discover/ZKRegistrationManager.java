@@ -18,15 +18,17 @@
 
 package org.apache.bookkeeper.discover;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -34,6 +36,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
@@ -52,6 +55,7 @@ import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -213,21 +217,53 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public void registerBookie(String bookieId, boolean readOnly) throws BookieException {
+    public void registerBookie(String bookieId, boolean readOnly,
+                               BookieServiceInfo bookieServiceInfo) throws BookieException {
         if (!readOnly) {
             String regPath = bookieRegistrationPath + "/" + bookieId;
-            doRegisterBookie(regPath);
+            doRegisterBookie(regPath, bookieServiceInfo);
         } else {
-            doRegisterReadOnlyBookie(bookieId);
+            doRegisterReadOnlyBookie(bookieId, bookieServiceInfo);
         }
     }
 
-    private void doRegisterBookie(String regPath) throws BookieException {
+    @VisibleForTesting
+    static byte[] serializeBookieServiceInfo(BookieServiceInfo bookieServiceInfo) {
+        if (log.isDebugEnabled()) {
+            log.debug("serialize BookieServiceInfo {}", bookieServiceInfo);
+        }
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            BookieServiceInfoFormat.Builder builder = BookieServiceInfoFormat.newBuilder();
+            List<BookieServiceInfoFormat.Endpoint> bsiEndpoints = bookieServiceInfo.getEndpoints().stream()
+                    .map(e -> {
+                        return BookieServiceInfoFormat.Endpoint.newBuilder()
+                               .setId(e.getId())
+                               .setPort(e.getPort())
+                               .setHost(e.getHost())
+                               .setProtocol(e.getProtocol())
+                               .addAllAuth(e.getAuth())
+                               .addAllExtensions(e.getExtensions())
+                               .build();
+                    })
+                    .collect(Collectors.toList());
+
+            builder.addAllEndpoints(bsiEndpoints);
+            builder.putAllProperties(bookieServiceInfo.getProperties());
+
+            builder.build().writeTo(os);
+            return os.toByteArray();
+        } catch (IOException err) {
+            log.error("Cannot serialize bookieServiceInfo from " + bookieServiceInfo);
+            throw new RuntimeException(err);
+        }
+    }
+
+    private void doRegisterBookie(String regPath, BookieServiceInfo bookieServiceInfo) throws BookieException {
         // ZK ephemeral node for this Bookie.
         try {
             if (!checkRegNodeAndWaitExpired(regPath)) {
                 // Create the ZK ephemeral node for this Bookie.
-                zk.create(regPath, new byte[0], zkAcls, CreateMode.EPHEMERAL);
+                zk.create(regPath, serializeBookieServiceInfo(bookieServiceInfo), zkAcls, CreateMode.EPHEMERAL);
                 zkRegManagerInitialized = true;
             }
         } catch (KeeperException ke) {
@@ -248,11 +284,11 @@ public class ZKRegistrationManager implements RegistrationManager {
         }
     }
 
-    private void doRegisterReadOnlyBookie(String bookieId) throws BookieException {
+    private void doRegisterReadOnlyBookie(String bookieId, BookieServiceInfo bookieServiceInfo) throws BookieException {
         try {
             if (null == zk.exists(this.bookieReadonlyRegistrationPath, false)) {
                 try {
-                    zk.create(this.bookieReadonlyRegistrationPath, new byte[0],
+                    zk.create(this.bookieReadonlyRegistrationPath, serializeBookieServiceInfo(bookieServiceInfo),
                               zkAcls, CreateMode.PERSISTENT);
                 } catch (NodeExistsException e) {
                     // this node is just now created by someone.
@@ -260,7 +296,7 @@ public class ZKRegistrationManager implements RegistrationManager {
             }
 
             String regPath = bookieReadonlyRegistrationPath + "/" + bookieId;
-            doRegisterBookie(regPath);
+            doRegisterBookie(regPath, bookieServiceInfo);
             // clear the write state
             regPath = bookieRegistrationPath + "/" + bookieId;
             try {

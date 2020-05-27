@@ -25,6 +25,7 @@ import org.apache.bookkeeper.bookie.BookieStateManager;
 import org.apache.bookkeeper.clients.utils.NetUtils;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -79,7 +80,8 @@ public class RegistrationStateService
                     statsLogger.scope("state"),
                     () -> regManager,
                     Collections.emptyList(),
-                    () -> NetUtils.endpointToString(myEndpoint));
+                    () -> NetUtils.endpointToString(myEndpoint),
+                    BookieServiceInfo.NO_INFO);
                 stateManager.initState();
                 stateManager.registerBookie(true).get();
                 log.info("Successfully register myself under registration path {}/{}",

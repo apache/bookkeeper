@@ -18,11 +18,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.server.conf.BookieConfiguration;
@@ -38,11 +40,15 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
     @Getter
     private final ServerConfiguration serverConf;
     private BookieServer bs;
+    private final Supplier<BookieServiceInfo> bookieServiceInfoProvider;
 
-    public BookieService(BookieConfiguration conf, StatsLogger statsLogger) {
+
+    public BookieService(BookieConfiguration conf, StatsLogger statsLogger,
+                         Supplier<BookieServiceInfo> bookieServiceInfoProvider) {
         super("bookie-server", conf, statsLogger);
         this.serverConf = new ServerConfiguration();
         this.serverConf.loadConf(conf.getUnderlyingConf());
+        this.bookieServiceInfoProvider = bookieServiceInfoProvider;
     }
 
     @Override
@@ -61,7 +67,7 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
             Arrays.asList(serverConf.getLedgerDirs()),
             indexDirs);
         try {
-            this.bs = new BookieServer(serverConf, statsLogger);
+            this.bs = new BookieServer(serverConf, statsLogger, bookieServiceInfoProvider);
             bs.start();
             log.info("Started bookie server successfully.");
         } catch (Exception e) {

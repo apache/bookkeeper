@@ -42,6 +42,7 @@ public class TestComponentStarter {
     LifecycleComponent component = mock(LifecycleComponent.class);
     when(component.getName()).thenReturn("test-start-component");
     ComponentStarter.startComponent(component);
+    verify(component).publishInfo(any(ComponentInfoPublisher.class));
     verify(component).start();
   }
 
