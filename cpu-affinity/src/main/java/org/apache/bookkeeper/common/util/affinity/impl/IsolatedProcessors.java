@@ -21,11 +21,11 @@
 
 package org.apache.bookkeeper.common.util.affinity.impl;
 
-import com.google.common.base.Charsets;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,7 +42,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 class IsolatedProcessors {
 
-    private static final Charset ENCODING = Charsets.US_ASCII;
+    private static final Charset ENCODING = StandardCharsets.US_ASCII;
 
     private static final String ISOLATED_CPU_PATH = "/sys/devices/system/cpu/isolated";
 

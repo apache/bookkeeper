@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.impl.logsegment;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;

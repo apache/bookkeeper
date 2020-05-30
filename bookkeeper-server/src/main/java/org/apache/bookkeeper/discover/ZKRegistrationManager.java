@@ -18,7 +18,7 @@
 
 package org.apache.bookkeeper.discover;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
@@ -26,10 +26,10 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -436,12 +436,12 @@ public class ZKRegistrationManager implements RegistrationManager {
         boolean availableNodeExists = null != zk.exists(bookieRegistrationPath, false);
         // Create ledgers root node if not exists
         if (!ledgerRootExists) {
-            ZkUtils.createFullPathOptimistic(zk, ledgersRootPath, "".getBytes(Charsets.UTF_8), zkAcls,
+            ZkUtils.createFullPathOptimistic(zk, ledgersRootPath, "".getBytes(StandardCharsets.UTF_8), zkAcls,
                     CreateMode.PERSISTENT);
         }
         // create available bookies node if not exists
         if (!availableNodeExists) {
-            zk.create(bookieRegistrationPath, "".getBytes(Charsets.UTF_8), zkAcls, CreateMode.PERSISTENT);
+            zk.create(bookieRegistrationPath, "".getBytes(StandardCharsets.UTF_8), zkAcls, CreateMode.PERSISTENT);
         }
 
         // create readonly bookies node if not exists
@@ -586,7 +586,7 @@ public class ZKRegistrationManager implements RegistrationManager {
         // create INSTANCEID
         String instanceId = UUID.randomUUID().toString();
         zk.create(ledgersRootPath + "/" + BookKeeperConstants.INSTANCEID,
-                instanceId.getBytes(Charsets.UTF_8), zkAcls, CreateMode.PERSISTENT);
+                instanceId.getBytes(StandardCharsets.UTF_8), zkAcls, CreateMode.PERSISTENT);
 
         log.info("Successfully formatted BookKeeper metadata");
         return true;
