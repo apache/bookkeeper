@@ -21,8 +21,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.google.common.base.Optional;
 import java.util.List;
+import java.util.Optional;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.commons.configuration.StrictConfigurationComparator;
 import org.apache.distributedlog.net.DNSResolverForRacks;
@@ -88,7 +88,7 @@ public class TestDistributedLogConfiguration {
     public void loadStreamConfNullOverrides() throws Exception {
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
         DistributedLogConfiguration confClone = new DistributedLogConfiguration();
-        Optional<DistributedLogConfiguration> streamConfiguration = Optional.absent();
+        Optional<DistributedLogConfiguration> streamConfiguration = Optional.empty();
         conf.loadStreamConf(streamConfiguration);
 
         StrictConfigurationComparator comp = new StrictConfigurationComparator();

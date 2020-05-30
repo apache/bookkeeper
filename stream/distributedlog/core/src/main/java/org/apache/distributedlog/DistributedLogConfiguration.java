@@ -19,11 +19,11 @@ package org.apache.distributedlog;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -539,22 +539,8 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      * Load whitelisted stream configuration from another configuration object.
      *
      * @param streamConfiguration stream configuration overrides
-     * @Deprecated since 0.5.0, in favor of using {@link #loadStreamConf(java.util.Optional)}
      */
     public void loadStreamConf(Optional<DistributedLogConfiguration> streamConfiguration) {
-        if (streamConfiguration.isPresent()) {
-            loadStreamConf(java.util.Optional.of(streamConfiguration.get()));
-        } else {
-            loadStreamConf(java.util.Optional.empty());
-        }
-    }
-
-    /**
-     * Load whitelisted stream configuration from another configuration object.
-     *
-     * @param streamConfiguration stream configuration overrides
-     */
-    public void loadStreamConf(java.util.Optional<DistributedLogConfiguration> streamConfiguration) {
         if (!streamConfiguration.isPresent()) {
             return;
         }

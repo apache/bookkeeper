@@ -19,7 +19,6 @@ package org.apache.distributedlog.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.net.MalformedURLException;
@@ -27,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.configuration.ConfigurationException;

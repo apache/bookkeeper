@@ -20,8 +20,8 @@ package org.apache.distributedlog.config;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.base.Objects;
-import com.google.common.base.Optional;
 import java.io.File;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
