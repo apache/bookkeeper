@@ -245,6 +245,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     /**
      * Initiate the add operation.
      */
+    @Override
     public void safeRun() {
         hasRun = true;
         if (callbackTriggered) {
@@ -457,6 +458,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
     private final Handle<PendingAddOp> recyclerHandle;
     private static final Recycler<PendingAddOp> RECYCLER = new Recycler<PendingAddOp>() {
+        @Override
         protected PendingAddOp newObject(Recycler.Handle<PendingAddOp> handle) {
             return new PendingAddOp(handle);
         }

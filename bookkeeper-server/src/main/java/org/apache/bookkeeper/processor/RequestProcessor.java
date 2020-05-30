@@ -30,6 +30,7 @@ public interface RequestProcessor extends AutoCloseable {
     /**
      * Close the request processor.
      */
+    @Override
     void close();
 
     /**

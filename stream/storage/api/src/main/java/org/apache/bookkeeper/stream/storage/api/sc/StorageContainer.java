@@ -59,6 +59,7 @@ public interface StorageContainer extends AutoCloseable {
     /**
      * Close a storage container.
      */
+    @Override
     void close();
 
 }

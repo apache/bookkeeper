@@ -79,6 +79,7 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
 
         private final Handle<WriteSetImpl> recyclerHandle;
         private static final Recycler<WriteSetImpl> RECYCLER = new Recycler<WriteSetImpl>() {
+                    @Override
                     protected WriteSetImpl newObject(
                             Recycler.Handle<WriteSetImpl> handle) {
                         return new WriteSetImpl(handle);
@@ -269,6 +270,7 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
 
         private final Handle<AckSetImpl> recyclerHandle;
         private static final Recycler<AckSetImpl> RECYCLER = new Recycler<AckSetImpl>() {
+            @Override
             protected AckSetImpl newObject(Recycler.Handle<AckSetImpl> handle) {
                 return new AckSetImpl(handle);
             }

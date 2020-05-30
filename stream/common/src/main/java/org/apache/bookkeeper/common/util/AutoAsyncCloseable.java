@@ -33,6 +33,7 @@ public interface AutoAsyncCloseable extends AsyncCloseable, AutoCloseable {
      */
     boolean isClosed();
 
+    @Override
     default void close() {
         try {
             FutureUtils.result(closeAsync());

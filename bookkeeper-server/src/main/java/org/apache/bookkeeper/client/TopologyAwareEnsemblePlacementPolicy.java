@@ -542,6 +542,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             this.failedToResolveNetworkLocationCounter = failedToResolveNetworkLocationCounter;
         }
 
+        @Override
         public List<String> resolve(List<String> names) {
             if (names == null) {
                 return Collections.emptyList();

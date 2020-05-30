@@ -66,8 +66,8 @@ public interface LedgerCache extends Closeable {
     /**
      * Specific exception to encode the case where the index is not present.
      */
-    class NoIndexForLedger extends IOException {
-        NoIndexForLedger(String reason, Exception cause) {
+    class NoIndexForLedgerException extends IOException {
+        NoIndexForLedgerException(String reason, Exception cause) {
             super(reason, cause);
         }
     }

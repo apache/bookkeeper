@@ -83,6 +83,7 @@ public class BenchBookie {
     static class ThroughputCallback implements WriteCallback {
         int count;
         int waitingCount = Integer.MAX_VALUE;
+        @Override
         public synchronized void writeComplete(int rc, long ledgerId, long entryId,
                 BookieSocketAddress addr, Object ctx) {
             if (rc != 0) {

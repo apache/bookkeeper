@@ -166,6 +166,7 @@ class AuthHandler {
                 this.channel = channel;
             }
 
+            @Override
             public void operationComplete(int rc, AuthToken newam) {
                 if (rc != BKException.Code.OK) {
                     LOG.error("Error processing auth message, closing connection");
@@ -189,6 +190,7 @@ class AuthHandler {
                 this.pluginName = pluginName;
             }
 
+            @Override
             public void operationComplete(int rc, AuthToken newam) {
                 BookkeeperProtocol.Response.Builder builder = BookkeeperProtocol.Response.newBuilder()
                         .setHeader(req.getHeader());
@@ -387,6 +389,7 @@ class AuthHandler {
                 this.pluginName = pluginName;
             }
 
+            @Override
             public void operationComplete(int rc, AuthToken newam) {
                 if (rc != BKException.Code.OK) {
                     authenticationError(ctx, rc);

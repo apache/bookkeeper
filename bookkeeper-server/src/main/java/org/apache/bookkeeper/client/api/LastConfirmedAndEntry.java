@@ -50,6 +50,7 @@ public interface LastConfirmedAndEntry extends AutoCloseable {
     /**
      * {@inheritDoc}
      */
+    @Override
     void close();
 
 }

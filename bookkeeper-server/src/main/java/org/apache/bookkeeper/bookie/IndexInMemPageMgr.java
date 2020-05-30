@@ -608,14 +608,17 @@ class IndexInMemPageMgr {
             this.initEntry = initEntry;
         }
 
+        @Override
         public LedgerEntryPage getLEP() throws IOException {
             return getLedgerEntryPage(ledgerId, initEntry);
         }
 
+        @Override
         public long getFirstEntry() {
             return initEntry;
         }
 
+        @Override
         public long getLastEntry() {
             return initEntry + entriesPerPage;
         }

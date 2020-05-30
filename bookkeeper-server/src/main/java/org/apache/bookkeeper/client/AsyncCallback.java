@@ -87,6 +87,7 @@ public interface AsyncCallback {
          * @param ctx
          *          context object
          */
+        @Override
         default void addCompleteWithLatency(int rc, LedgerHandle lh, long entryId, long qwcLatency, Object ctx) {
             addComplete(rc, lh, entryId, ctx);
         }

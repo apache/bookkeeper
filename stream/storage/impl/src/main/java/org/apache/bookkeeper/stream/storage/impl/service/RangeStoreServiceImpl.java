@@ -167,6 +167,7 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         });
     }
 
+    @Override
     public CompletableFuture<Void> start() {
         List<CompletableFuture<Void>> futures = Lists.newArrayList(
             startRootRangeStore(),
@@ -175,6 +176,7 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         return FutureUtils.collect(futures).thenApply(ignored -> null);
     }
 
+    @Override
     public CompletableFuture<Void> stop() {
         return storeFactory.closeStores(scId);
     }

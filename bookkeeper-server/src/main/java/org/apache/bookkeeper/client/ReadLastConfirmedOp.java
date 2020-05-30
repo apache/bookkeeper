@@ -95,6 +95,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         }
     }
 
+    @Override
     public synchronized void readEntryComplete(final int rc, final long ledgerId, final long entryId,
             final ByteBuf buffer, final Object ctx) {
         int bookieIndex = (Integer) ctx;

@@ -115,6 +115,7 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
     /**
      * Release all resources held by the ledger underreplication manager.
      */
+    @Override
     void close()
             throws ReplicationException.UnavailableException;
 

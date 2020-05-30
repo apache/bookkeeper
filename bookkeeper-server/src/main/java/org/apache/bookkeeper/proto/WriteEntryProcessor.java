@@ -43,6 +43,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
 
     long startTimeNanos;
 
+    @Override
     protected void reset() {
         super.reset();
         startTimeNanos = -1L;

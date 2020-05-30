@@ -1345,6 +1345,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     throws IOException {
         final LedgerRangeIterator iterator = bkc.getLedgerManager().getLedgerRanges(0);
         return new Iterable<Long>() {
+            @Override
             public Iterator<Long> iterator() {
                 return new Iterator<Long>() {
                     Iterator<Long> currentRange = null;

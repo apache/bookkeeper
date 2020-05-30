@@ -74,5 +74,6 @@ public interface StorageContainerRegistry extends AutoCloseable {
     /**
      * Close the registry.
      */
+    @Override
     void close();
 }

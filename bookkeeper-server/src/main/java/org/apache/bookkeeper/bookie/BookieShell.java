@@ -212,6 +212,7 @@ public class BookieShell implements Tool {
             this.cmdName = cmdName;
         }
 
+        @Override
         public String description() {
             // we used the string returned by `getUsage` as description in showing the list of commands
             return getUsage();

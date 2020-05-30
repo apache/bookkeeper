@@ -93,6 +93,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             }
         }
 
+        @Override
         public void close() {
             entryImpl.close();
         }

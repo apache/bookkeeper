@@ -342,6 +342,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
 
         private static final Recycler<QueueEntry> RECYCLER = new Recycler<QueueEntry>() {
+            @Override
             protected QueueEntry newObject(Recycler.Handle<QueueEntry> handle) {
                 return new QueueEntry(handle);
             }
@@ -448,6 +449,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     private final Recycler<ForceWriteRequest> forceWriteRequestsRecycler = new Recycler<ForceWriteRequest>() {
+                @Override
                 protected ForceWriteRequest newObject(
                         Recycler.Handle<ForceWriteRequest> handle) {
                     return new ForceWriteRequest(handle);
