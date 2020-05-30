@@ -222,7 +222,7 @@ logConf.setRetentionPeriodHours(12);
 DistributedLogManager logManager = namespace.openLog(
         "test-log",
         Optional.of(logConf),
-        Optional.absent()
+        Optional.empty()
 );
 ```
 

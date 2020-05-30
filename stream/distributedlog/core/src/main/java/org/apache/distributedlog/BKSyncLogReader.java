@@ -18,11 +18,11 @@
 package org.apache.distributedlog;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.base.Ticker;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -70,7 +70,7 @@ class BKSyncLogReader implements LogReader, AsyncNotification {
                     StatsLogger statsLogger) throws IOException {
         this.bkdlm = bkdlm;
         this.readHandler = bkdlm.createReadHandler(
-                Optional.<String>absent(),
+                Optional.<String>empty(),
                 this,
                 true);
         this.maxReadAheadWaitTime = conf.getReadAheadWaitTime();

@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.common.base.Optional;
+import java.util.Optional;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
@@ -30,7 +30,7 @@ public class ReadLastConfirmedAndEntryContext implements ReadEntryCallbackCtx {
     final int bookieIndex;
     final BookieSocketAddress bookie;
     long lac = LedgerHandle.INVALID_ENTRY_ID;
-    Optional<Long> lacUpdateTimestamp = Optional.absent();
+    Optional<Long> lacUpdateTimestamp = Optional.empty();
 
     public ReadLastConfirmedAndEntryContext(int bookieIndex, BookieSocketAddress bookie) {
         this.bookieIndex = bookieIndex;

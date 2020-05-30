@@ -21,7 +21,6 @@ import static org.apache.distributedlog.util.DLUtils.isReservedStreamName;
 import static org.apache.distributedlog.util.DLUtils.validateAndNormalizeName;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -32,6 +31,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -293,7 +293,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
                     bkdlConfig.getBkLedgersPath(),
                     eventLoopGroup,
                     requestTimer,
-                    Optional.<FeatureProvider>absent(),
+                    Optional.<FeatureProvider>empty(),
                     statsLogger);
         }
         this.readerBKC = this.sharedReaderBKCBuilder.build();

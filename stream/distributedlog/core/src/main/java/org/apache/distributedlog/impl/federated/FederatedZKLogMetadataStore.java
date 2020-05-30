@@ -21,7 +21,6 @@ import static com.google.common.base.Charsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
-import com.google.common.base.Optional;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -31,6 +30,7 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -641,7 +641,7 @@ public class FederatedZKLogMetadataStore
             return postStateCheck(FutureUtils.value(Optional.of(location)));
         }
         if (!forceCheckLogExistence) {
-            Optional<URI> result = Optional.absent();
+            Optional<URI> result = Optional.empty();
             return FutureUtils.value(result);
         }
         return postStateCheck(fetchLogLocation(logName).thenApply((uriOptional) -> {
@@ -663,7 +663,7 @@ public class FederatedZKLogMetadataStore
         FutureUtils.collect(fetchFutures).whenComplete(new FutureEventListener<List<Optional<URI>>>() {
             @Override
             public void onSuccess(List<Optional<URI>> fetchResults) {
-                Optional<URI> result = Optional.absent();
+                Optional<URI> result = Optional.empty();
                 for (Optional<URI> fetchResult : fetchResults) {
                     if (result.isPresent()) {
                         if (fetchResult.isPresent()) {
@@ -701,7 +701,7 @@ public class FederatedZKLogMetadataStore
                     if (Code.OK.intValue() == rc) {
                         fetchPromise.complete(Optional.of(uri));
                     } else if (Code.NONODE.intValue() == rc) {
-                        fetchPromise.complete(Optional.<URI>absent());
+                        fetchPromise.complete(Optional.<URI>empty());
                     } else {
                         fetchPromise.completeExceptionally(KeeperException.create(Code.get(rc)));
                     }

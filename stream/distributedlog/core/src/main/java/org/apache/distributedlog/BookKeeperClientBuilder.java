@@ -20,9 +20,9 @@ package org.apache.distributedlog;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Optional;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
+import java.util.Optional;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -59,7 +59,7 @@ public class BookKeeperClientBuilder {
     // request timer
     private HashedWheelTimer requestTimer = null;
     // feature provider
-    private Optional<FeatureProvider> featureProvider = Optional.absent();
+    private Optional<FeatureProvider> featureProvider = Optional.empty();
 
     // Cached BookKeeper Client
     private BookKeeperClient cachedClient = null;

@@ -19,11 +19,11 @@ package org.apache.distributedlog.impl;
 
 import static org.apache.distributedlog.util.DLUtils.isReservedStreamName;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;

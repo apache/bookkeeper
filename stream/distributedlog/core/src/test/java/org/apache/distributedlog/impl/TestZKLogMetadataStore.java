@@ -20,9 +20,9 @@ package org.apache.distributedlog.impl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 import java.net.URI;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.DistributedLogConfiguration;

@@ -18,12 +18,12 @@
 package org.apache.distributedlog.util;
 
 import com.google.common.base.Objects;
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -216,7 +216,7 @@ public class Utils {
         final byte[] data,
         final List<ACL> acl,
         final CreateMode createMode) {
-        Optional<String> parentPathShouldNotCreate = Optional.absent();
+        Optional<String> parentPathShouldNotCreate = Optional.empty();
         return zkAsyncCreateFullPathOptimistic(
                 zkc,
                 pathToCreate,
@@ -282,7 +282,7 @@ public class Utils {
                         return;
                     }
 
-                    Optional<String> parentPathShouldNotCreate = Optional.absent();
+                    Optional<String> parentPathShouldNotCreate = Optional.empty();
                     zkAsyncCreateFullPathOptimisticRecursive(zkc, pathToCreate, parentPathShouldNotCreate,
                             data, acl, createMode, new AsyncCallback.StringCallback() {
                         @Override

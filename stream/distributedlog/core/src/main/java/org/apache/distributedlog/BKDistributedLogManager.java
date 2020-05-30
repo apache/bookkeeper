@@ -22,11 +22,11 @@ import static org.apache.distributedlog.namespace.NamespaceDriver.Role.READER;
 import static org.apache.distributedlog.namespace.NamespaceDriver.Role.WRITER;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -291,7 +291,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     // Create Read Handler
 
     synchronized BKLogReadHandler createReadHandler() {
-        Optional<String> subscriberId = Optional.absent();
+        Optional<String> subscriberId = Optional.empty();
         return createReadHandler(subscriberId, false);
     }
 
@@ -634,7 +634,7 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     @Override
     public LogReader openLogReader(DLSN fromDLSN) throws IOException {
-        return getInputStreamInternal(fromDLSN, Optional.<Long>absent());
+        return getInputStreamInternal(fromDLSN, Optional.<Long>empty());
     }
 
     @Override
@@ -704,7 +704,7 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     @Override
     public CompletableFuture<AsyncLogReader> openAsyncLogReader(DLSN fromDLSN) {
-        Optional<String> subscriberId = Optional.absent();
+        Optional<String> subscriberId = Optional.empty();
         AsyncLogReader reader = new BKAsyncLogReader(
                 this,
                 scheduler,
@@ -722,7 +722,7 @@ class BKDistributedLogManager implements DistributedLogManager {
      */
     @Override
     public CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(final DLSN fromDLSN) {
-        Optional<String> subscriberId = Optional.absent();
+        Optional<String> subscriberId = Optional.empty();
         return getAsyncLogReaderWithLock(Optional.of(fromDLSN), subscriberId);
     }
 
@@ -733,7 +733,7 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     @Override
     public CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(String subscriberId) {
-        Optional<DLSN> fromDLSN = Optional.absent();
+        Optional<DLSN> fromDLSN = Optional.empty();
         return getAsyncLogReaderWithLock(fromDLSN, Optional.of(subscriberId));
     }
 
@@ -1068,7 +1068,7 @@ class BKDistributedLogManager implements DistributedLogManager {
         CompletableFuture<Void> closeResult = Utils.closeSequence(null, true,
                 readHandlerToClose,
                 pendingReaders,
-                resourcesCloseable.or(AsyncCloseable.NULL));
+                resourcesCloseable.orElse(AsyncCloseable.NULL));
         FutureUtils.proxyTo(closeResult, closeFuture);
         return closeFuture;
     }

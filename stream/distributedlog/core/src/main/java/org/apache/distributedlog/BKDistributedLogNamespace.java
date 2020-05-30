@@ -154,7 +154,7 @@ public class BKDistributedLogNamespace implements Namespace {
             throws InvalidStreamNameException, LogNotFoundException, IOException {
         checkState();
         logName = validateAndNormalizeName(logName);
-        com.google.common.base.Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
+        Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
         if (!uri.isPresent()) {
             throw new LogNotFoundException("Log " + logName + " isn't found.");
         }
@@ -183,7 +183,7 @@ public class BKDistributedLogNamespace implements Namespace {
             throws InvalidStreamNameException, IOException {
         checkState();
         logName = validateAndNormalizeName(logName);
-        com.google.common.base.Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
+        Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
         if (!uri.isPresent()) {
             throw new LogNotFoundException("Log " + logName + " isn't found.");
         }
@@ -220,7 +220,7 @@ public class BKDistributedLogNamespace implements Namespace {
     public boolean logExists(String logName)
         throws IOException, IllegalArgumentException {
         checkState();
-        com.google.common.base.Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
+        Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
         if (uri.isPresent()) {
             try {
                 Utils.ioResult(driver.getLogStreamMetadataStore(WRITER)
@@ -309,8 +309,7 @@ public class BKDistributedLogNamespace implements Namespace {
                 failureInjector,                    /* Failure Injector */
                 statsLogger,                        /* Stats Logger */
                 perLogStatsLogger,                  /* Per Log Stats Logger */
-                com.google.common.base.Optional.absent()
-                                                    /* shared resources, we don't need to close any resources in dlm */
+                Optional.empty()                    /* shared resources, we don't need to close any resources in dlm */
         );
     }
 

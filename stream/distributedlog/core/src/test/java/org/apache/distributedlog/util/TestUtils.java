@@ -23,7 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import com.google.common.base.Optional;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -64,7 +64,7 @@ public class TestUtils extends ZooKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testZkAsyncCreateFulPathOptimisticRecursive() throws Exception {
         String path1 = "/a/b/c/d";
-        Optional<String> parentPathShouldNotCreate = Optional.absent();
+        Optional<String> parentPathShouldNotCreate = Optional.empty();
         final CountDownLatch doneLatch1 = new CountDownLatch(1);
         Utils.zkAsyncCreateFullPathOptimisticRecursive(zkc, path1, parentPathShouldNotCreate,
                 new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT,

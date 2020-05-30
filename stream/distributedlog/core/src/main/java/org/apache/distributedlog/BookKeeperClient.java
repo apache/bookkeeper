@@ -19,11 +19,11 @@ package org.apache.distributedlog;
 
 import static com.google.common.base.Charsets.UTF_8;
 
-import com.google.common.base.Optional;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
@@ -117,7 +117,7 @@ public class BookKeeperClient {
                 .setStatsLogger(statsLogger)
                 .dnsResolver(dnsResolver)
                 .requestTimer(requestTimer)
-                .featureProvider(featureProvider.orNull())
+                .featureProvider(featureProvider.orElse(null))
                 .build();
         } catch (BKException bke) {
             throw new IOException(bke);
