@@ -87,7 +87,8 @@ public class LocalBookKeeper {
         this.initialPort = initialPort;
         this.localBookiesConfigDir = new File(localBookiesConfigDirName);
         this.baseConf = baseConf;
-        LOG.info("Running {} bookie(s) on zkServer {}.", this.numberOfBookies);
+        LOG.info("Running {} bookie(s) on zk ensemble = '{}:{}'.", this.numberOfBookies,
+                zooKeeperDefaultHost, zooKeeperDefaultPort);
     }
 
     private static String zooKeeperDefaultHost = "127.0.0.1";
@@ -238,10 +239,11 @@ public class LocalBookKeeper {
 
             // If the caller specified ephemeral ports then use ephemeral ports for all
             // the bookies else use numBookie ports starting at initialPort
+            PortManager.initPort(initialPort);
             if (0 == initialPort) {
                 bsConfs[i].setBookiePort(0);
             } else {
-                bsConfs[i].setBookiePort(initialPort + i);
+                bsConfs[i].setBookiePort(PortManager.nextFreePort());
             }
 
             if (null == baseConf.getMetadataServiceUriUnchecked()) {
@@ -451,10 +453,10 @@ public class LocalBookKeeper {
                 String confFile = args[1];
                 try {
                     conf.loadConf(new File(confFile).toURI().toURL());
-                    LOG.info("Using configuration file " + confFile);
+                    LOG.info("Using configuration file {}", confFile);
                 } catch (Exception e) {
                     // load conf failed
-                    LOG.warn("Error loading configuration file " + confFile, e);
+                    LOG.warn("Error loading configuration file {}", confFile, e);
                 }
             }
 
@@ -472,7 +474,6 @@ public class LocalBookKeeper {
                     bookieDefaultInitialPort, false, "test", zkDataDir, localBookiesConfigDirName);
         } catch (Exception e) {
             LOG.error("Exiting LocalBookKeeper because of exception in main method", e);
-            e.printStackTrace();
             /*
              * This is needed because, some non-daemon thread (probably in ZK or
              * some other dependent service) is preventing the JVM from exiting, though
