@@ -17,12 +17,12 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
 import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -44,7 +44,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
     private static final Logger logger = LoggerFactory.getLogger(LongPollReadEntryProcessorV3.class);
 
     private final Long previousLAC;
-    private Optional<Long> lastAddConfirmedUpdateTime = Optional.absent();
+    private Optional<Long> lastAddConfirmedUpdateTime = Optional.empty();
 
     // long poll execution state
     private final ExecutorService longPollThreadPool;

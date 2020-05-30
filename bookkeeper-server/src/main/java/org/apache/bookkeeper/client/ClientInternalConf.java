@@ -20,8 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import com.google.common.base.Optional;
-
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -92,7 +91,7 @@ class ClientInternalConf {
                                         conf.getMaxSpeculativeReadTimeout(),
                                         conf.getSpeculativeReadTimeoutBackoffMultiplier()));
         } else {
-            this.readSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+            this.readSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>empty();
         }
         if (conf.getFirstSpeculativeReadLACTimeout() > 0) {
             this.readLACSpeculativeRequestPolicy =
@@ -101,7 +100,7 @@ class ClientInternalConf {
                         conf.getMaxSpeculativeReadLACTimeout(),
                         conf.getSpeculativeReadLACTimeoutBackoffMultiplier()));
         } else {
-            this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+            this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>empty();
         }
     }
 }

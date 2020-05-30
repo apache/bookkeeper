@@ -17,10 +17,10 @@
  */
 package org.apache.distributedlog;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -497,7 +497,7 @@ public class ReadUtils {
             if (segment.getLastTxId() < transactionId) {
                 // all log records whose transaction id is less than provided transactionId
                 // then return none
-                Optional<LogRecordWithDLSN> noneRecord = Optional.absent();
+                Optional<LogRecordWithDLSN> noneRecord = Optional.empty();
                 return FutureUtils.value(noneRecord);
             }
         }
@@ -513,7 +513,7 @@ public class ReadUtils {
                     if (lastEntryId < 0) {
                         // it means that the log segment is created but not written yet or an empty log segment.
                         //it is equivalent to 'all log records whose transaction id is less than provided transactionId'
-                        Optional<LogRecordWithDLSN> nonRecord = Optional.absent();
+                        Optional<LogRecordWithDLSN> nonRecord = Optional.empty();
                         promise.complete(nonRecord);
                         return;
                     }
@@ -550,7 +550,7 @@ public class ReadUtils {
                             reader,
                             Lists.newArrayList(0L, lastEntryId),
                             nWays,
-                            Optional.<LogRecordWithDLSN>absent(),
+                            Optional.<LogRecordWithDLSN>empty(),
                             promise);
                 }
 

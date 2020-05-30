@@ -18,9 +18,9 @@
 package org.apache.distributedlog.metadata;
 
 import com.google.common.annotations.Beta;
-import com.google.common.base.Optional;
 import java.io.Closeable;
 import java.net.URI;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.distributedlog.lock.DistributedLock;
