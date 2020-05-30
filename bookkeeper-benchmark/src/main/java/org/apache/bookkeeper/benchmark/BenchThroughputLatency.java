@@ -134,6 +134,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         return duration;
     }
 
+    @Override
     public void run() {
         LOG.info("Running...");
         long start = previous = System.currentTimeMillis();
@@ -141,6 +142,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         int sent = 0;
 
         Thread reporter = new Thread() {
+                @Override
                 public void run() {
                     try {
                         while (true) {
@@ -290,6 +292,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
             final long timeout = Long.parseLong(cmd.getOptionValue("timeout", "360")) * 1000;
 
             timeouter.schedule(new TimerTask() {
+                    @Override
                     public void run() {
                         System.err.println("Timing out benchmark after " + timeout + "ms");
                         System.exit(-1);

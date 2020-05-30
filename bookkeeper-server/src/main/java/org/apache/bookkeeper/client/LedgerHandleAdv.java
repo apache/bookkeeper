@@ -52,6 +52,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     static final Logger LOG = LoggerFactory.getLogger(LedgerHandleAdv.class);
 
     static class PendingOpsComparator implements Comparator<PendingAddOp>, Serializable {
+        @Override
         public int compare(PendingAddOp o1, PendingAddOp o2) {
             return Long.compare(o1.entryId, o2.entryId);
         }

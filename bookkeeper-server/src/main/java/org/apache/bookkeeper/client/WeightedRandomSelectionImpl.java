@@ -56,6 +56,7 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
         Long totalWeight = 0L, min = Long.MAX_VALUE;
         List<WeightedObject> values = new ArrayList<WeightedObject>(map.values());
         Collections.sort(values, new Comparator<WeightedObject>() {
+            @Override
             public int compare(WeightedObject o1, WeightedObject o2) {
                 long diff = o1.getWeight() - o2.getWeight();
                 if (diff < 0L) {

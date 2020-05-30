@@ -79,6 +79,7 @@ public class BookieInfoReader {
         public long getWeight() {
             return freeDiskSpace;
         }
+        @Override
         public String toString() {
             return "FreeDiskSpace: " + this.freeDiskSpace + " TotalDiskCapacity: " + this.totalDiskSpace;
         }

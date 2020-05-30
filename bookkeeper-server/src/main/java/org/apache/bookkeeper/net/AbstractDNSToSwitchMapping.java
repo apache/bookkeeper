@@ -59,10 +59,12 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
         this.conf = conf;
     }
 
+    @Override
     public Configuration getConf() {
         return conf;
     }
 
+    @Override
     public void setConf(Configuration conf) {
         this.conf = conf;
         validateConf();

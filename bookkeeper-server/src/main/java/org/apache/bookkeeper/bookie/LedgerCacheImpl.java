@@ -159,10 +159,12 @@ public class LedgerCacheImpl implements LedgerCache {
         return indexPersistenceManager.isFenced(ledgerId);
     }
 
+    @Override
     public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         indexPersistenceManager.setExplicitLac(ledgerId, lac);
     }
 
+    @Override
     public ByteBuf getExplicitLac(long ledgerId) {
         return indexPersistenceManager.getExplicitLac(ledgerId);
     }

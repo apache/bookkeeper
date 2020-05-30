@@ -69,6 +69,7 @@ public interface StateStore extends AutoCloseable {
     /**
      * Close the state store.
      */
+    @Override
     void close();
 
 }
