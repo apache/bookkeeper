@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 import static org.apache.bookkeeper.util.TestUtils.assertEventuallyTrue;
 import static org.junit.Assert.assertArrayEquals;

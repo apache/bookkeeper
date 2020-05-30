@@ -18,7 +18,7 @@
 
 package org.apache.distributedlog.fs;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
