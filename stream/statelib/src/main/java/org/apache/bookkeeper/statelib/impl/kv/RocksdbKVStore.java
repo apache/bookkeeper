@@ -18,8 +18,8 @@
 
 package org.apache.bookkeeper.statelib.impl.kv;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.statelib.impl.rocksdb.RocksConstants.BLOCK_CACHE_SIZE;
 import static org.apache.bookkeeper.statelib.impl.rocksdb.RocksConstants.BLOCK_SIZE;
 import static org.apache.bookkeeper.statelib.impl.rocksdb.RocksConstants.DEFAULT_CHECKSUM_TYPE;

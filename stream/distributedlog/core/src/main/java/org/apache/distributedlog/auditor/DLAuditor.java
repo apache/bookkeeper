@@ -17,8 +17,8 @@
  */
 package org.apache.distributedlog.auditor;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;

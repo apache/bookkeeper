@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.metastore;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 
 import com.google.common.hash.HashFunction;

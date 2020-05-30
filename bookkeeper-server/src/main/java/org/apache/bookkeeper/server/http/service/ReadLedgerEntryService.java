@@ -18,8 +18,8 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.google.common.collect.Maps;
 

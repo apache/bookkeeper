@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.impl.metadata;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.distributedlog.DistributedLogConstants.EMPTY_BYTES;

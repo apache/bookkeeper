@@ -17,9 +17,9 @@
  */
 package org.apache.distributedlog.util;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Objects;
 import java.net.InetAddress;

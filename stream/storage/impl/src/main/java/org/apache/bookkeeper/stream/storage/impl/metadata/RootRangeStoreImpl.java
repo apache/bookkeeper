@@ -18,7 +18,7 @@
 
 package org.apache.bookkeeper.stream.storage.impl.metadata;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.MIN_DATA_STREAM_ID;
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.validateNamespaceName;
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.validateStreamName;

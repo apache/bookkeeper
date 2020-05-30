@@ -14,7 +14,7 @@
 
 package org.apache.bookkeeper.clients.impl.kv;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newDeleteRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newIncrementRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newPutRequest;
