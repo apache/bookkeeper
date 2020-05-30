@@ -30,6 +30,7 @@ import java.util.HashSet;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.util.PortManager;
 import org.junit.Test;
 
 /**
