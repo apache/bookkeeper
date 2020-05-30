@@ -432,6 +432,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
         private static final Recycler<ChannelReadyForAddEntryCallback> RECYCLER =
             new Recycler<ChannelReadyForAddEntryCallback>() {
+                    @Override
                     protected ChannelReadyForAddEntryCallback newObject(
                             Recycler.Handle<ChannelReadyForAddEntryCallback> recyclerHandle) {
                         return new ChannelReadyForAddEntryCallback(recyclerHandle);
@@ -479,16 +480,19 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }, ledgerId, useV3Enforced);
     }
 
+    @Override
     public void readEntry(BookieSocketAddress addr, long ledgerId, long entryId,
                           ReadEntryCallback cb, Object ctx, int flags) {
         readEntry(addr, ledgerId, entryId, cb, ctx, flags, null);
     }
 
+    @Override
     public void readEntry(final BookieSocketAddress addr, final long ledgerId, final long entryId,
                           final ReadEntryCallback cb, final Object ctx, int flags, byte[] masterKey) {
         readEntry(addr, ledgerId, entryId, cb, ctx, flags, masterKey, false);
     }
 
+    @Override
     public void readEntry(final BookieSocketAddress addr, final long ledgerId, final long entryId,
                           final ReadEntryCallback cb, final Object ctx, int flags, byte[] masterKey,
                           final boolean allowFastFail) {
@@ -509,6 +513,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
 
+    @Override
     public void readEntryWaitForLACUpdate(final BookieSocketAddress addr,
                                           final long ledgerId,
                                           final long entryId,
@@ -534,6 +539,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }, ledgerId);
     }
 
+    @Override
     public void getBookieInfo(final BookieSocketAddress addr, final long requested, final GetBookieInfoCallback cb,
             final Object ctx) {
         final PerChannelBookieClientPool client = lookupClient(addr);
@@ -564,10 +570,12 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }
     }
 
+    @Override
     public boolean isClosed() {
         return closed;
     }
 
+    @Override
     public void close() {
         closeLock.writeLock().lock();
         try {
@@ -624,6 +632,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }
         WriteCallback cb = new WriteCallback() {
 
+            @Override
             public void writeComplete(int rc, long ledger, long entry, BookieSocketAddress addr, Object ctx) {
                 Counter counter = (Counter) ctx;
                 counter.dec();

@@ -72,6 +72,7 @@ public class LedgerChecker {
             this.cb = cb;
         }
 
+        @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                 ByteBuf buffer, Object ctx) {
             if (rc == BKException.Code.OK) {
@@ -262,6 +263,7 @@ public class LedgerChecker {
             this.cb = cb;
         }
 
+        @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                                       ByteBuf buffer, Object ctx) {
             if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc
@@ -293,6 +295,7 @@ public class LedgerChecker {
             this.cb = cb;
         }
 
+        @Override
         public void operationComplete(int rc, LedgerFragment result) {
             if (rc == BKException.Code.ClientClosedException) {
                 cb.operationComplete(BKException.Code.ClientClosedException, badFragments);
@@ -371,6 +374,7 @@ public class LedgerChecker {
 
                 final EntryExistsCallback eecb = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
                                               new GenericCallback<Boolean>() {
+                                                  @Override
                                                   public void operationComplete(int rc, Boolean result) {
                                                       if (result) {
                                                           fragments.add(lastLedgerFragment);

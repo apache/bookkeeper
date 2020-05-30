@@ -213,7 +213,7 @@ public class IndexPersistenceMgr {
             if (ee.getCause() instanceof IOException) {
                 throw (IOException) ee.getCause();
             } else {
-                throw new LedgerCache.NoIndexForLedger("Failed to load file info for ledger " + ledger, ee);
+                throw new LedgerCache.NoIndexForLedgerException("Failed to load file info for ledger " + ledger, ee);
             }
         } finally {
             persistenceMgrStats.getPendingGetFileInfoCounter().dec();

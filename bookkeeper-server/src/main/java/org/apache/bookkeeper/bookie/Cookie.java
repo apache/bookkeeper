@@ -151,6 +151,7 @@ public class Cookie {
         verifyInternal(c, true);
     }
 
+    @Override
     public String toString() {
         if (layoutVersion <= 3) {
             return toStringVersion3();

@@ -87,6 +87,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
         return ledgerStorage.getExplicitLac(ledgerId);
     }
 
+    @Override
     synchronized SettableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException {
         boolean success = this.setFenced();
         if (success) {

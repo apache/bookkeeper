@@ -586,6 +586,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         while (true) {
             final CountDownLatch changedLatch = new CountDownLatch(1);
             Watcher w = new Watcher() {
+                @Override
                 public void process(WatchedEvent e) {
                     if (e.getType() == Watcher.Event.EventType.NodeChildrenChanged
                             || e.getType() == Watcher.Event.EventType.NodeDeleted
@@ -741,6 +742,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             LOG.debug("notifyLedgerReplicationEnabled()");
         }
         Watcher w = new Watcher() {
+            @Override
             public void process(WatchedEvent e) {
                 if (e.getType() == Watcher.Event.EventType.NodeDeleted) {
                     LOG.info("LedgerReplication is enabled externally through Zookeeper, "
@@ -857,6 +859,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     public void notifyLostBookieRecoveryDelayChanged(GenericCallback<Void> cb) throws UnavailableException {
         LOG.debug("notifyLostBookieRecoveryDelayChanged()");
         Watcher w = new Watcher() {
+            @Override
             public void process(WatchedEvent e) {
                 if (e.getType() == Watcher.Event.EventType.NodeDataChanged) {
                     cb.operationComplete(0, null);

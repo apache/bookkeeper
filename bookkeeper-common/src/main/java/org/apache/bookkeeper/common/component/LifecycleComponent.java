@@ -40,6 +40,7 @@ public interface LifecycleComponent extends AutoCloseable {
 
     void stop();
 
+    @Override
     void close();
 
     /**

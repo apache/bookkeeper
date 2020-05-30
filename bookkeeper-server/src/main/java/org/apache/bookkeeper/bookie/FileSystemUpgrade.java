@@ -86,6 +86,7 @@ public class FileSystemUpgrade {
                 return false;
             }
 
+            @Override
             public boolean accept(File dir, String name) {
                 if (name.endsWith(".txn") || name.endsWith(".log")
                     || name.equals("lastId") || name.startsWith("lastMark")) {
@@ -195,6 +196,7 @@ public class FileSystemUpgrade {
                     c.writeToDirectory(tmpDir);
 
                     String[] files = d.list(new FilenameFilter() {
+                            @Override
                             public boolean accept(File dir, String name) {
                                 return bookieFilesFilter.accept(dir, name)
                                     && !(new File(dir, name).isDirectory());

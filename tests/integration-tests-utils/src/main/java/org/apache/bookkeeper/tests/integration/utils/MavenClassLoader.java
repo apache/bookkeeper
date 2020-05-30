@@ -183,6 +183,7 @@ public class MavenClassLoader implements AutoCloseable {
         throw new ClassNotFoundException("No such digest type " + type);
     }
 
+    @Override
     public void close() throws Exception {
         classloader.close();
     }

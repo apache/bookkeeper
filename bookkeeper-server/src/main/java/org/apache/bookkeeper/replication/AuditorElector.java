@@ -252,6 +252,7 @@ public class AuditorElector {
      */
     private void submitShutdownTask() {
         executor.submit(new Runnable() {
+                @Override
                 public void run() {
                     if (!running.compareAndSet(true, false)) {
                         return;
@@ -281,6 +282,7 @@ public class AuditorElector {
     Future<?> submitElectionTask() {
 
         Runnable r = new Runnable() {
+                @Override
                 public void run() {
                     if (!running.get()) {
                         return;
@@ -425,6 +427,7 @@ public class AuditorElector {
          * Return -1 if the first vote is less than second. Return 1 if the
          * first vote is greater than second. Return 0 if the votes are equal.
          */
+        @Override
         public int compare(String vote1, String vote2) {
             long voteSeqId1 = getVoteSequenceId(vote1);
             long voteSeqId2 = getVoteSequenceId(vote2);
