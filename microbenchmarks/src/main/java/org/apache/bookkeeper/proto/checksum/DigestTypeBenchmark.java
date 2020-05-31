@@ -26,6 +26,8 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
@@ -105,7 +107,7 @@ public class DigestTypeBenchmark {
 
         @Setup(Level.Trial)
         public void doSetup() throws Exception {
-            final byte[] password = "password".getBytes("UTF-8");
+            final byte[] password = "password".getBytes(StandardCharsets.UTF_8);
             crc32 = DigestManager.instantiate(ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE),
                     password, DigestType.CRC32, PooledByteBufAllocator.DEFAULT, true);
 

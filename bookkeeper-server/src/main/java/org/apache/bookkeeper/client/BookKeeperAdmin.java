@@ -432,7 +432,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                         close();
                         return false;
                     }
-                    LOG.error("Error reading entry {} from ledger {}", new Object[] { nextEntryId, ledgerId }, e);
+                    LOG.error("Error reading entry {} from ledger {}", nextEntryId, ledgerId, e);
                     close();
                     throw new RuntimeException(e);
                 }
