@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * to write entries to a ledger and read entries from a ledger.
  */
 public class LedgerDescriptorImpl extends LedgerDescriptor {
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerDescriptorImpl.class);
     final LedgerStorage ledgerStorage;
     private long ledgerId;
     final byte[] masterKey;

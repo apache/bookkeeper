@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * flusher reports in that the flush succeeded. At that point we let the snapshot go.
  */
 public class EntryMemTable implements AutoCloseable{
-    private static Logger logger = LoggerFactory.getLogger(Journal.class);
+    private static Logger logger = LoggerFactory.getLogger(EntryMemTable.class);
     /**
      * Entry skip list.
      */

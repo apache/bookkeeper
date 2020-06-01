@@ -78,7 +78,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class BookieClientImpl implements BookieClient, PerChannelBookieClientFactory {
-    static final Logger LOG = LoggerFactory.getLogger(BookieClient.class);
+    static final Logger LOG = LoggerFactory.getLogger(BookieClientImpl.class);
 
     private final OrderedExecutor executor;
     private final ScheduledExecutorService scheduler;
