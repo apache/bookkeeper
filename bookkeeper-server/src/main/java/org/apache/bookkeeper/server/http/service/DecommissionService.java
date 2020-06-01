@@ -84,7 +84,7 @@ public class DecommissionService implements HttpEndpointService {
                             bka.decommissionBookie(bookieSrc);
                             LOG.info("Complete decommissioning bookie.");
                         } catch (Exception e) {
-                            LOG.error("Error handling decommissionBookie: {} with exception {}", bookieSrc, e);
+                            LOG.error("Error handling decommissionBookie: {}.", bookieSrc, e);
                         }
                     });
 

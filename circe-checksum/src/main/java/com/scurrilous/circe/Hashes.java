@@ -17,15 +17,6 @@ package com.scurrilous.circe;
 
 import java.util.EnumSet;
 
-import com.scurrilous.circe.HashParameters;
-import com.scurrilous.circe.HashProviders;
-import com.scurrilous.circe.HashSupport;
-import com.scurrilous.circe.IncrementalIntHash;
-import com.scurrilous.circe.IncrementalLongHash;
-import com.scurrilous.circe.StatefulHash;
-import com.scurrilous.circe.StatelessIntHash;
-import com.scurrilous.circe.StatelessLongHash;
-
 /**
  * Static methods to obtain various forms of abstract hash functions. Each
  * method uses {@link HashProviders#best} to find the best provider for the

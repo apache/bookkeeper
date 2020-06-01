@@ -67,7 +67,7 @@ public class ConcurrentOpenHashSet<V> {
         int numSections = concurrencyLevel;
         int perSectionExpectedItems = expectedItems / numSections;
         int perSectionCapacity = (int) (perSectionExpectedItems / MapFillFactor);
-        this.sections = (Section<V>[]) new Section[numSections];
+        this.sections = new Section[numSections];
 
         for (int i = 0; i < numSections; i++) {
             sections[i] = new Section<>(perSectionCapacity);

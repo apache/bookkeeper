@@ -32,6 +32,7 @@ import io.netty.handler.ssl.SslProvider;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -102,7 +103,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             return "";
         }
         pwd = FileUtils.readFileToByteArray(passwdFile);
-        return new String(pwd, "UTF-8");
+        return new String(pwd, StandardCharsets.UTF_8);
     }
 
     @SuppressFBWarnings(

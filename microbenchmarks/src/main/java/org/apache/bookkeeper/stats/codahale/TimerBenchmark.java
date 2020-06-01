@@ -21,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider;
-import org.apache.bookkeeper.stats.codahale.FastCodahaleMetricsProvider;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;

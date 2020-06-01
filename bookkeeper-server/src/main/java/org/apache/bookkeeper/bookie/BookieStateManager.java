@@ -229,7 +229,7 @@ public class BookieStateManager implements StateManager {
                         shutdownHandler.shutdown(ExitCode.ZK_REG_FAIL);
                     }
                 }
-                return (Void) null;
+                return null;
             }
         });
     }

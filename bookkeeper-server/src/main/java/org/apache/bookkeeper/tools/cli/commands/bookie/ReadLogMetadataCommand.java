@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> {
 
-    static final Logger LOG = LoggerFactory.getLogger(ReadLogMetadataFlags.class);
+    static final Logger LOG = LoggerFactory.getLogger(ReadLogMetadataCommand.class);
 
     private static final String NAME = "readlogmetadata";
     private static final String DESC = "Prints entrylog's metadata";

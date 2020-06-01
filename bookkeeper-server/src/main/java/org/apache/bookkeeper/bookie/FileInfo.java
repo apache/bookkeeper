@@ -309,7 +309,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
             try {
                 readHeader();
             } catch (BufferUnderflowException buf) {
-                LOG.warn("Exception when reading header of {} : {}", lf, buf);
+                LOG.warn("Exception when reading header of {}.", lf, buf);
                 if (null != masterKey) {
                     LOG.warn("Attempting to write header of {} again.", lf);
                     writeHeader();

@@ -124,8 +124,7 @@ interface ExplicitLacFlushPolicy {
                 scheduledFuture = clientCtx.getScheduler().scheduleAtFixedRateOrdered(lh.getId(), updateLacTask,
                         explicitLacIntervalInMs, explicitLacIntervalInMs, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException re) {
-                LOG.error("Scheduling of ExplictLastAddConfirmedFlush for ledger: {} has failed because of {}",
-                        lh.getId(), re);
+                LOG.error("Scheduling of ExplictLastAddConfirmedFlush for ledger: {} has failed.", lh.getId(), re);
             }
         }
 

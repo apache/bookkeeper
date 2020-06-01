@@ -130,7 +130,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
     private static final class RawScriptBasedMapping extends AbstractDNSToSwitchMapping {
         private String scriptName;
         private int maxArgs; //max hostnames per call of the script
-        private static final Logger LOG = LoggerFactory.getLogger(ScriptBasedMapping.class);
+        private static final Logger LOG = LoggerFactory.getLogger(RawScriptBasedMapping.class);
 
         /*
          * extract 'scriptName' and 'maxArgs' parameters from the conf and throw

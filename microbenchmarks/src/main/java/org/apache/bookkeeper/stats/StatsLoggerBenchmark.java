@@ -23,10 +23,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider;
 import org.apache.bookkeeper.stats.codahale.FastCodahaleMetricsProvider;
 import org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider;
