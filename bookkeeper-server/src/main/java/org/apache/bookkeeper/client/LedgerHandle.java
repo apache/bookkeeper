@@ -926,7 +926,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry synchronously to an open ledger. This can be used only with
      * {@link LedgerHandleAdv} returned through ledgers created with {@link
-     * BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * BookKeeper#createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])}.
      *
      *
      * @param entryId
@@ -968,7 +968,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry synchronously to an open ledger. This can be used only with
      * {@link LedgerHandleAdv} returned through ledgers created with {@link
-     * BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * BookKeeper#createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])}.
      *
      * @param entryId
      *            entryId to be added.
@@ -1006,7 +1006,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry asynchronously to an open ledger. This can be used only with
      * {@link LedgerHandleAdv} returned through ledgers created with {@link
-     * BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * BookKeeper#createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])}.
      *
      * @param entryId
      *            entryId to be added
@@ -1034,7 +1034,7 @@ public class LedgerHandle implements WriteHandle {
      * @param length
      *          number of bytes to take from data
      * @param cb
-     *          object implementing callbackinterface
+     *          object implementing callback interface
      * @param ctx
      *          some control object
      * @throws ArrayIndexOutOfBoundsException if offset or length is negative or
@@ -1098,7 +1098,7 @@ public class LedgerHandle implements WriteHandle {
      * @param length
      *            number of bytes to take from data
      * @param cb
-     *            object implementing callbackinterface
+     *            object implementing callback interface
      * @param ctx
      *            some control object
      * @throws ArrayIndexOutOfBoundsException
@@ -1114,7 +1114,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry asynchronously to an open ledger, using an offset and range.
      * This can be used only with {@link LedgerHandleAdv} returned through
-     * ledgers created with {@link createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * ledgers created with {@link BookKeeper#createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])}.
      *
      * @param entryId
      *            entryId of the entry to add.

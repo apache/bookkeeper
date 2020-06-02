@@ -30,7 +30,7 @@ public interface PerChannelBookieClientPool {
     /**
      * intialize the pool. the implementation should not be blocked.
      */
-    void intialize();
+    void initialize();
 
     /**
      * Obtain a channel from channel pool to execute operations.
