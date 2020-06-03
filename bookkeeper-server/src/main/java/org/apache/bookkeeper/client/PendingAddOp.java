@@ -188,7 +188,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
     }
 
-    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble, int bookieIndex) {
+    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble, int bookieIndex, boolean ensembleChanged) {
         // update the ensemble
         this.ensemble = ensemble;
 
@@ -231,14 +231,23 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
                       + bookieIndex);
         }
 
-        // if we had already heard a success from this array index, need to
-        // increment our number of responses that are pending, since we are
-        // going to unset this success
-        if (!ackSet.removeBookieAndCheck(bookieIndex)) {
-            // unset completed if this results in loss of ack quorum
-            completed = false;
+        if (!ensembleChanged) {
+            // Ensemble hasn't changed
+            if (!ackSet.removeBookieIfAckNotReceived(bookieIndex)) {
+                // We have heard success from this array index.
+                // Since we haven't changed the ensemble, no need to reissue the write
+                return;
+            }
+        } else {
+            // Ensemble changed.
+            // if we had already heard a success from this array index, need to
+            // increment our number of responses that are pending, since we are
+            // going to unset this success
+            if (!ackSet.removeBookieAndCheck(bookieIndex)) {
+                // unset completed if this results in loss of ack quorum
+                completed = false;
+            }
         }
-
         sendWriteRequest(ensemble, bookieIndex);
     }
 

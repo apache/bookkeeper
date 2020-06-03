@@ -188,6 +188,14 @@ public interface DistributionSchedule {
         boolean removeBookieAndCheck(int bookie);
 
         /**
+         * If this bookie is not in the ackset
+         * clear it from failure map and prepare for reissue.
+         * @param bookie
+         * @return
+         */
+        boolean removeBookieIfAckNotReceived(int bookie);
+
+        /**
          * Recycle this ack set when not used anymore.
          */
         void recycle();

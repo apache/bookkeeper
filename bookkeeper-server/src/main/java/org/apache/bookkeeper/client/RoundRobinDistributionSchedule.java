@@ -334,6 +334,15 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
         }
 
         @Override
+        public boolean removeBookieIfAckNotReceived(int bookie) {
+            if (!ackSet.get(bookie)) {
+                failureMap[bookie] = null;
+                return true;
+            }
+            return false;
+        }
+
+        @Override
         public void recycle() {
             recyclerHandle.recycle(this);
         }

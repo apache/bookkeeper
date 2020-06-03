@@ -228,7 +228,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 Set<Integer> replaced = EnsembleUtils.diffEnsemble(currentEnsemble, newEnsemble);
                 if (!replaced.isEmpty()) {
                     newEnsemblesFromRecovery.put(lac + 1, newEnsemble);
-                    unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
+                    unsetSuccessAndSendWriteRequest(newEnsemble, replaced, true);
                 }
             } catch (BKException.BKNotEnoughBookiesException e) {
                 LOG.error("Could not get additional bookie to remake ensemble, closing ledger: {}", ledgerId);

@@ -1858,7 +1858,7 @@ public class LedgerHandle implements WriteHandle {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
                     failedBookies, ledgerId);
             }
-            unsetSuccessAndSendWriteRequest(getCurrentEnsemble(), failedBookies.keySet());
+            unsetSuccessAndSendWriteRequest(getCurrentEnsemble(), failedBookies.keySet(), false);
             return;
         }
 
@@ -1981,16 +1981,17 @@ public class LedgerHandle implements WriteHandle {
                             }
                         }
                         if (newEnsemble != null) { // unsetSuccess outside of lock
-                            unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
+                            unsetSuccessAndSendWriteRequest(newEnsemble, replaced, true);
                         }
                     }
             }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
     }
 
-    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble, final Set<Integer> bookies) {
+    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble,
+            final Set<Integer> bookies, boolean ensembleChanged) {
         for (PendingAddOp pendingAddOp : pendingAddOps) {
             for (Integer bookieIndex: bookies) {
-                pendingAddOp.unsetSuccessAndSendWriteRequest(ensemble, bookieIndex);
+                pendingAddOp.unsetSuccessAndSendWriteRequest(ensemble, bookieIndex, ensembleChanged);
             }
         }
     }
