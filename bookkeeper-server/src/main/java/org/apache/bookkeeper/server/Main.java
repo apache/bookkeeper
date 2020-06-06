@@ -243,7 +243,7 @@ public class Main {
         return ExitCode.OK;
     }
 
-    private static ServerConfiguration parseCommandLine(String[] args)
+    protected static ServerConfiguration parseCommandLine(String[] args)
             throws IllegalArgumentException, UncheckedConfigurationException {
         ServerConfiguration conf;
         try {
