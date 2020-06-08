@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -86,8 +87,19 @@ public class InfoCommand extends BookieCommand<CliFlags> {
                 System.out.println(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId)
                     + ":\tFree: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace())
                     + "\tTotal: " + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
-                totalFree += bInfo.getFreeDiskSpace();
-                total += bInfo.getTotalDiskSpace();
+            }
+
+            // group by hostname
+            Map<String, BookieInfo> dedupedMap = map.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                    entry -> entry.getKey().getHostName(),
+                    entry -> entry.getValue(),
+                    (key1, key2) -> key2
+                ));
+            for (BookieInfo bookieInfo : dedupedMap.values()) {
+                totalFree += bookieInfo.getFreeDiskSpace();
+                total += bookieInfo.getTotalDiskSpace();
             }
 
             System.out.println("Total free disk space in the cluster:\t" + totalFree + getReadable(totalFree));
