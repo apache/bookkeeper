@@ -1017,62 +1017,67 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
          */
         ReplicationWorker rw = new ReplicationWorker(baseConf, bkWithMockZK, false, NullStatsLogger.INSTANCE);
         rw.start();
-        for (int i = 0; i < 40; i++) {
-            if (rw.isRunning()) {
-                break;
+        try {
+            for (int i = 0; i < 40; i++) {
+                if (rw.isRunning()) {
+                    break;
+                }
+                LOG.info("Waiting for the RW to start...");
+                Thread.sleep(500);
             }
-            LOG.info("Waiting for the RW to start...");
-            Thread.sleep(500);
-        }
-        assertTrue("RW should be running", rw.isRunning());
+            assertTrue("RW should be running", rw.isRunning());
 
-        /*
-         * Since Auditor is not running, ledger needs to be marked
-         * underreplicated explicitly. But before marking ledger
-         * underreplicated, set paths for which MockZooKeeper's setData and
-         * Delete operation to fail.
-         *
-         * ZK.setData will be called by 'updateEnsembleInfo' operation after
-         * completion of copying to a new bookie. ZK.delete will be called by
-         * RW.logBKExceptionAndReleaseLedger and finally block in
-         * 'rereplicate(long ledgerIdToReplicate)'
-         */
-        AbstractZkLedgerManager absZKLedgerManager = (AbstractZkLedgerManager) ledgerManager;
-        String ledgerPath = absZKLedgerManager.getLedgerPath(ledgerId);
-        String urLockPath = ZkLedgerUnderreplicationManager
-                .getUrLedgerLockZnode(ZkLedgerUnderreplicationManager.getUrLockPath(zkLedgersRootPath), ledgerId);
-        zkFaultInjectionWrapper.setPathOfSetDataToFail(ledgerPath);
-        zkFaultInjectionWrapper.setPathOfDeleteToFail(urLockPath);
-        underReplicationManager.markLedgerUnderreplicated(lh.getId(), replicaToKill.toString());
+            /*
+             * Since Auditor is not running, ledger needs to be marked
+             * underreplicated explicitly. But before marking ledger
+             * underreplicated, set paths for which MockZooKeeper's setData and
+             * Delete operation to fail.
+             *
+             * ZK.setData will be called by 'updateEnsembleInfo' operation after
+             * completion of copying to a new bookie. ZK.delete will be called by
+             * RW.logBKExceptionAndReleaseLedger and finally block in
+             * 'rereplicate(long ledgerIdToReplicate)'
+             */
+            AbstractZkLedgerManager absZKLedgerManager = (AbstractZkLedgerManager) ledgerManager;
+            String ledgerPath = absZKLedgerManager.getLedgerPath(ledgerId);
+            String urLockPath = ZkLedgerUnderreplicationManager
+                    .getUrLedgerLockZnode(ZkLedgerUnderreplicationManager.getUrLockPath(zkLedgersRootPath), ledgerId);
+            zkFaultInjectionWrapper.setPathOfSetDataToFail(ledgerPath);
+            zkFaultInjectionWrapper.setPathOfDeleteToFail(urLockPath);
+            underReplicationManager.markLedgerUnderreplicated(lh.getId(), replicaToKill.toString());
 
-        /*
-         * Since there is only one RW, it will try to replicate underreplicated
-         * ledger. After completion of copying it to a new bookie, it will try
-         * to update ensembleinfo. Which would fail with our MockZK. After that
-         * it would try to delete lock znode as part of
-         * RW.logBKExceptionAndReleaseLedger, which will also fail because of
-         * our MockZK. In the finally block in 'rereplicate(long
-         * ledgerIdToReplicate)' it would try one more time to delete the ledger
-         * and once again it will fail because of our MockZK. So RW gives up and
-         * shutdowns itself.
-         */
-        for (int i = 0; i < 40; i++) {
-            if (!rw.isRunning()) {
-                break;
+            /*
+             * Since there is only one RW, it will try to replicate underreplicated
+             * ledger. After completion of copying it to a new bookie, it will try
+             * to update ensembleinfo. Which would fail with our MockZK. After that
+             * it would try to delete lock znode as part of
+             * RW.logBKExceptionAndReleaseLedger, which will also fail because of
+             * our MockZK. In the finally block in 'rereplicate(long
+             * ledgerIdToReplicate)' it would try one more time to delete the ledger
+             * and once again it will fail because of our MockZK. So RW gives up and
+             * shutdowns itself.
+             */
+            for (int i = 0; i < 40; i++) {
+                if (!rw.isRunning()) {
+                    break;
+                }
+                LOG.info("Waiting for the RW to shutdown...");
+                Thread.sleep(500);
             }
-            LOG.info("Waiting for the RW to shutdown...");
-            Thread.sleep(500);
+
+            /*
+             * as described earlier, numOfTimes setDataFailed should be 1 and
+             * numOfTimes deleteFailed should be 2
+             */
+            assertEquals("NumOfTimesSetDataFailed", 1,
+                    zkFaultInjectionWrapper.getNumOfTimesSetDataFailed());
+            assertEquals("NumOfTimesDeleteFailed", 2,
+                    zkFaultInjectionWrapper.getNumOfTimesDeleteFailed());
+            assertFalse("RW should be shutdown", rw.isRunning());
+        } finally {
+            rw.shutdown();
+            zkFaultInjectionWrapper.close();
+            bkWithMockZK.close();
         }
-
-        /*
-         * as described earlier, numOfTimes setDataFailed should be 1 and
-         * numOfTimes deleteFailed should be 2
-         */
-        assertEquals("NumOfTimesSetDataFailed", 1, zkFaultInjectionWrapper.getNumOfTimesSetDataFailed());
-        assertEquals("NumOfTimesDeleteFailed", 2, zkFaultInjectionWrapper.getNumOfTimesDeleteFailed());
-        assertFalse("RW should be shutdown", rw.isRunning());
-
-        zkFaultInjectionWrapper.close();
-        bkWithMockZK.close();
     }
 }
