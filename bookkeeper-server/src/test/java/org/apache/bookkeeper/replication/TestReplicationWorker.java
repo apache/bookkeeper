@@ -892,7 +892,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             super(connectString, sessionTimeoutMs, watcher,
                     new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, Integer.MAX_VALUE),
                     new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, 0),
-                    NullStatsLogger.INSTANCE, 1, 0);
+                    NullStatsLogger.INSTANCE, 1, 0, false);
             this.connectString = connectString;
             this.sessionTimeoutMs = sessionTimeoutMs;
             this.watcherManager = watcher;
@@ -1008,7 +1008,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
          * 3 bookies are available and the ensemblesize of the current ledger is
          * 2, we should be able to replicate to the other bookie.
          */
-        BookieSocketAddress replicaToKill = LedgerHandleAdapter.getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
