@@ -1574,6 +1574,7 @@ public class BookieShell implements Tool {
             opts.addOption("sb", "srcBookie", true, "Source bookie which needs to be replaced by destination bookie.");
             opts.addOption("db", "destBookie", true, "Destination bookie which replaces source bookie.");
             opts.addOption("s", "updatespersec", true, "Number of ledgers updating per second (default: 5 per sec)");
+            opts.addOption("r", "maxOutstandingReads", true, "Max outstanding reads (default: 5 * updatespersec)");
             opts.addOption("l", "limit", true, "Maximum number of ledgers to update (default: no limit)");
             opts.addOption("v", "verbose", true, "Print status of the ledger updation (default: false)");
             opts.addOption("p", "printprogress", true,
@@ -1594,7 +1595,7 @@ public class BookieShell implements Tool {
         @Override
         String getUsage() {
             return "updateBookieInLedger -srcBookie <source bookie> -destBookie <destination bookie> "
-                    + "[-updatespersec N] [-limit N] [-verbose true/false] [-printprogress N]";
+                    + "[-updatespersec N] [-maxOutstandingReads N] [-limit N] [-verbose true/false] [-printprogress N]";
         }
 
         @Override
@@ -1615,6 +1616,7 @@ public class BookieShell implements Tool {
                 return -1;
             }
             final int rate = getOptionIntValue(cmdLine, "updatespersec", 5);
+            final int maxOutstandingReads = getOptionIntValue(cmdLine, "maxOutstandingReads", (rate * 5));
             final int limit = getOptionIntValue(cmdLine, "limit", Integer.MIN_VALUE);
             final boolean verbose = getOptionBooleanValue(cmdLine, "verbose", false);
             final long printprogress;
@@ -1632,6 +1634,7 @@ public class BookieShell implements Tool {
             flags.printProgress(printprogress);
             flags.limit(limit);
             flags.updatePerSec(rate);
+            flags.maxOutstandingReads(maxOutstandingReads);
             flags.verbose(verbose);
 
             boolean result = cmd.apply(bkConf, flags);
