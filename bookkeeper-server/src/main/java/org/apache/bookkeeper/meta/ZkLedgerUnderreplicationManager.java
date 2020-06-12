@@ -629,7 +629,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             LOG.debug("releaseLedger(ledgerId={})", ledgerId);
         }
         try {
-            Lock l = heldLocks.remove(ledgerId);
+            Lock l = heldLocks.get(ledgerId);
             if (l != null) {
                 zkc.delete(l.getLockZNode(), -1);
             }
@@ -642,6 +642,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             Thread.currentThread().interrupt();
             throw new ReplicationException.UnavailableException("Interrupted while connecting zookeeper", ie);
         }
+        heldLocks.remove(ledgerId);
     }
 
     @Override
