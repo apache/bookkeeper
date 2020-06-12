@@ -592,7 +592,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testAreEntriesOfLedgerStoredInTheBookieForMultipleSegments() throws Exception {
+    public void testAreEntriesOfLedgerStoredInTheBookieForLastEmptySegment() throws Exception {
         int lastEntryId = 10;
         long ledgerId = 100L;
         BookieSocketAddress bookie0 = new BookieSocketAddress("bookie0:3181");
@@ -728,5 +728,4 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     public void testLegacyBookieServiceInfo() throws Exception {
         testBookieServiceInfo(false, true);
     }
-
 }

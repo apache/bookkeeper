@@ -808,4 +808,126 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         runTestScenario(returnAvailabilityOfEntriesOfLedger, errorReturnValueForGetAvailabilityOfEntriesOfLedger, 0, 0,
                 numLedgersFoundHavingLessThanWQReplicasOfAnEntry);
     }
+
+    /*
+     * In this testscenario all the ledgers have empty segments.
+     */
+    @Test
+    public void testReplicasCheckForLedgersWithEmptySegments() throws Exception {
+        int numOfBookies = 5;
+        RegistrationManager regManager = driver.getRegistrationManager();
+        MultiKeyMap<String, AvailabilityOfEntriesOfLedger> returnAvailabilityOfEntriesOfLedger =
+                new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
+        MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
+                new MultiKeyMap<String, Integer>();
+        List<BookieSocketAddress> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerManager lm = mFactory.newLedgerManager();
+        DigestType digestType = DigestType.DUMMY;
+        byte[] password = new byte[0];
+        Collections.shuffle(bookieAddresses);
+
+        int numLedgersFoundHavingNoReplicaOfAnEntry = 0;
+        int numLedgersFoundHavingLessThanAQReplicasOfAnEntry = 0;
+        int numLedgersFoundHavingLessThanWQReplicasOfAnEntry = 0;
+
+        /*
+         * closed ledger.
+         *
+         * This closed Ledger has no entry. So it should not be counted towards
+         * numLedgersFoundHavingNoReplicaOfAnEntry/LessThanAQReplicasOfAnEntry
+         * /WQReplicasOfAnEntry.
+         */
+        Map<Long, List<BookieSocketAddress>> segmentEnsembles = new HashMap<Long, List<BookieSocketAddress>>();
+        int ensembleSize = 4;
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 2;
+        long lastEntryId = -1L;
+        int length = 0;
+        segmentEnsembles.put(0L, bookieAddresses.subList(0, 4));
+        long ledgerId = 1L;
+        createClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
+                lastEntryId, length, digestType, password);
+
+        /*
+         * closed ledger with multiple segments.
+         *
+         * This ledger has empty last segment, but all the entries have
+         * writeQuorumSize number of copies, So it should not be counted towards
+         * numLedgersFoundHavingNoReplicaOfAnEntry/LessThanAQReplicasOfAnEntry/
+         * WQReplicasOfAnEntry.
+         */
+        lastEntryId = 2;
+        segmentEnsembles.clear();
+        segmentEnsembles.put(0L, bookieAddresses.subList(0, 4));
+        segmentEnsembles.put((lastEntryId + 1), bookieAddresses.subList(1, 5));
+        ledgerId = 2L;
+        createClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
+                lastEntryId, length, digestType, password);
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(0).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 0, 2 }));
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(1).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 0, 1 }));
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(2).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 0, 1, 2 }));
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(3).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 1, 2 }));
+
+        /*
+         * Closed ledger with multiple segments.
+         *
+         * Segment0, Segment1, Segment3, Segment5 and Segment6 are empty.
+         * Entries from entryid 3 are missing. So it should be counted towards
+         * numLedgersFoundHavingNoReplicaOfAnEntry.
+         */
+        lastEntryId = 5;
+        segmentEnsembles.clear();
+        segmentEnsembles.put(0L, bookieAddresses.subList(1, 5));
+        segmentEnsembles.put(0L, bookieAddresses.subList(0, 4));
+        segmentEnsembles.put(0L, bookieAddresses.subList(0, 4));
+        segmentEnsembles.put(4L, bookieAddresses.subList(1, 5));
+        segmentEnsembles.put(4L, bookieAddresses.subList(0, 4));
+        segmentEnsembles.put((lastEntryId + 1), bookieAddresses.subList(1, 5));
+        segmentEnsembles.put((lastEntryId + 1), bookieAddresses.subList(0, 4));
+        ledgerId = 3L;
+        createClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
+                lastEntryId, length, digestType, password);
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(0).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 0, 2 }));
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(1).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 0, 1 }));
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(2).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 0, 1, 2 }));
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(3).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 1, 2 }));
+        numLedgersFoundHavingNoReplicaOfAnEntry++;
+
+        /*
+         * non-closed ledger with multiple segments
+         *
+         * since this is non-closed ledger, it should not be counted towards
+         * ledgersFoundHavingLessThanWQReplicasOfAnEntry
+         */
+        lastEntryId = 2;
+        segmentEnsembles.clear();
+        segmentEnsembles.put(0L, bookieAddresses.subList(0, 4));
+        segmentEnsembles.put(0L, bookieAddresses.subList(1, 5));
+        segmentEnsembles.put((lastEntryId + 1), bookieAddresses.subList(1, 5));
+        ledgerId = 4L;
+        createNonClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
+                digestType, password);
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(0).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 0, 2 }));
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(1).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 0, 1 }));
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(2).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 0, 1, 2 }));
+        returnAvailabilityOfEntriesOfLedger.put(bookieAddresses.get(3).toString(), Long.toString(ledgerId),
+                new AvailabilityOfEntriesOfLedger(new long[] { 1, 2 }));
+
+        runTestScenario(returnAvailabilityOfEntriesOfLedger, errorReturnValueForGetAvailabilityOfEntriesOfLedger,
+                numLedgersFoundHavingNoReplicaOfAnEntry, numLedgersFoundHavingLessThanAQReplicasOfAnEntry,
+                numLedgersFoundHavingLessThanWQReplicasOfAnEntry);
+    }
 }
