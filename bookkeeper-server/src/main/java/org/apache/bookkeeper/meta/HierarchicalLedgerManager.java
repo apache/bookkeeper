@@ -73,7 +73,7 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     }
 
     @Override
-    protected String getLedgerPath(long ledgerId) {
+    public String getLedgerPath(long ledgerId) {
         return ledgerRootPath + StringUtils.getHybridHierarchicalLedgerPath(ledgerId);
     }
 

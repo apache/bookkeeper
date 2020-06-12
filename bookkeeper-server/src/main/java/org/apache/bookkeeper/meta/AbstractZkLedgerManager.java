@@ -181,7 +181,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
      *          Ledger ID
      * @return ledger node path
      */
-    protected abstract String getLedgerPath(long ledgerId);
+    public abstract String getLedgerPath(long ledgerId);
 
     /**
      * Get ledger id from its znode ledger path.
