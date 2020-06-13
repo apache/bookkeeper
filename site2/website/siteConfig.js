@@ -20,6 +20,8 @@ const users = [
   },
 ];
 
+const githubUrl = 'https://github.com/apache/bookkeeper';
+
 const siteConfig = {
   title: 'Apache BookKeeper', // Title for your website.
   tagline: 'A scalable, fault-tolerant, and low-latency storage service optimized for real-time workloads ',
@@ -71,6 +73,8 @@ const siteConfig = {
     ]
   },
   */
+
+  githubUrl: githubUrl,
 
   // This copyright info is used in /core/Footer.js and blog RSS/Atom feeds.
   copyright: `
