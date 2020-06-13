@@ -21,26 +21,26 @@ const users = [
 ];
 
 const siteConfig = {
-  title: 'Test Site', // Title for your website.
-  tagline: 'A website for testing',
-  url: 'https://your-docusaurus-test-site.com', // Your website URL
+  title: 'Apache BookKeeper', // Title for your website.
+  tagline: 'A scalable, fault-tolerant, and low-latency storage service optimized for real-time workloads ',
+  url: 'https://http://bookkeeper.apache.org/',
   baseUrl: '/', // Base URL for your project */
   // For github.io type URLs, you would set the url and baseUrl like:
   //   url: 'https://facebook.github.io',
   //   baseUrl: '/test-site/',
 
   // Used for publishing and more
-  projectName: 'test-site',
-  organizationName: 'facebook',
+  projectName: 'bookkeeper',
+  organizationName: 'apache',
   // For top-level user or org sites, the organization is still the same.
   // e.g., for the https://JoelMarcey.github.io site, it would be set like...
   //   organizationName: 'JoelMarcey'
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    {doc: 'doc1', label: 'Docs'},
-    {doc: 'doc4', label: 'API'},
-    {page: 'help', label: 'Help'},
+    {doc: 'doc1', label: 'Documentation'},
+    {doc: 'doc4', label: 'Project'},
+    {page: 'help', label: 'Community'},
     {blog: true, label: 'Blog'},
   ],
 
@@ -73,7 +73,9 @@ const siteConfig = {
   */
 
   // This copyright info is used in /core/Footer.js and blog RSS/Atom feeds.
-  copyright: `Copyright © ${new Date().getFullYear()} Your Name or Your Company Name`,
+  copyright: `
+  Copyright © 2020 The Apache Software Foundation. All Rights Reserved. Apache, Apache BookKeeper and the Apache feather logo are trademarks of The Apache Software Foundation.
+  `,
 
   highlight: {
     // Highlight.js theme to use for syntax highlighting in code blocks.

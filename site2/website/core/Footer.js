@@ -7,6 +7,7 @@
 
 const React = require('react');
 
+/*
 class Footer extends React.Component {
   docUrl(doc, language) {
     const baseUrl = this.props.config.baseUrl;
@@ -122,5 +123,81 @@ class Footer extends React.Component {
     );
   }
 }
+*/
+
+class Footer extends React.Component {
+    docUrl(doc, language) {
+        const baseUrl = this.props.config.baseUrl;
+        return baseUrl + 'docs/' + (language ? language + '/' : '') + doc;
+    }
+
+    pageUrl(doc, language) {
+        const baseUrl = this.props.config.baseUrl;
+        return baseUrl + (language ? language + '/' : '') + doc;
+    }
+
+    render() {
+        const currentYear = new Date().getFullYear();
+
+        const contactUrl = this.pageUrl('contact', this.props.language)
+        const eventsUrl = this.pageUrl('events', this.props.language)
+        const twitterUrl = 'https://twitter.com/asfbookkeeper'
+        const wikiUrl = 'https://github.com/apache/bookkeeper/wiki'
+        const issuesUrl = 'https://github.com/apache/bookkeeper/issues'
+        const resourcesUrl = this.pageUrl('resources', this.props.language)
+        const teamUrl = this.pageUrl('team', this.props.language)
+        const poweredByUrl = this.pageUrl('powered-by', this.props.language)
+        const contributingUrl = this.pageUrl('contributing', this.props.language)
+        const codingUrl = this.pageUrl('coding-guide', this.props.language)
+
+        const communityMenuJs = `
+      const community = document.querySelector("a[href='#community']").parentNode;
+      const communityMenu =
+        '<li>' +
+        '<a id="community-menu" href="#">Community <span style="font-size: 0.75em">&nbsp;▼</span></a>' +
+        '<div id="community-dropdown" class="hide">' +
+          '<ul id="community-dropdown-items">' +
+            '<li><a href="${contactUrl}">Contact</a></li>' +
+            '<li><a href="${contributingUrl}">Contributing</a></li>' +
+            '<li><a href="${codingUrl}">Coding guide</a></li>' +
+            '<li><a href="${eventsUrl}">Events</a></li>' +
+            '<li><a href="${twitterUrl}" target="_blank">Twitter &#x2750</a></li>' +
+            '<li><a href="${wikiUrl}" target="_blank">Wiki &#x2750</a></li>' +
+            '<li><a href="${issuesUrl}" target="_blank">Issue tracking &#x2750</a></li>' +
+            '<li>&nbsp;</li>' +
+            '<li><a href="${resourcesUrl}">Resources</a></li>' +
+            '<li><a href="${teamUrl}">Team</a></li>' +
+            '<li><a href="${poweredByUrl}">Powered By</a></li>' +
+          '</ul>' +
+        '</div>' +
+        '</li>';
+
+      community.innerHTML = communityMenu;
+
+      const communityMenuItem = document.getElementById("community-menu");
+      const communityDropDown = document.getElementById("community-dropdown");
+      communityMenuItem.addEventListener("click", function(event) {
+        event.preventDefault();
+
+        if (communityDropDown.className == 'hide') {
+          communityDropDown.className = 'visible';
+        } else {
+          communityDropDown.className = 'hide';
+        }
+      });
+    `
+
+        return (
+            <footer className="nav-footer" id="footer">
+                <section className="copyright">{this.props.config.copyright}</section>
+                <span>
+        <script dangerouslySetInnerHTML={{__html: communityMenuJs }} />
+        </span>
+            </footer>
+        );
+    }
+}
+
+
 
 module.exports = Footer;
