@@ -23,7 +23,7 @@ const users = [
 const githubUrl = 'https://github.com/apache/bookkeeper';
 
 const siteConfig = {
-  title: 'Apache BookKeeper', // Title for your website.
+  title: '', // Title for your website.
   tagline: 'A scalable, fault-tolerant, and low-latency storage service optimized for real-time workloads ',
   url: 'https://http://bookkeeper.apache.org/',
   baseUrl: '/', // Base URL for your project */
@@ -50,13 +50,13 @@ const siteConfig = {
   users,
 
   /* path to images for header/footer */
-  headerIcon: 'img/favicon.ico',
+  headerIcon: 'img/bk-header.png',
   footerIcon: 'img/favicon.ico',
   favicon: 'img/favicon.ico',
 
   /* Colors for website */
   colors: {
-    primaryColor: '#4d0d41',
+    primaryColor: '#c86803',
     secondaryColor: '#35092d',
   },
 
