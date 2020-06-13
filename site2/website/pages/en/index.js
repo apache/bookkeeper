@@ -13,6 +13,25 @@ const MarkdownBlock = CompLibrary.MarkdownBlock; /* Used to read markdown */
 const Container = CompLibrary.Container;
 const GridBlock = CompLibrary.GridBlock;
 
+const CWD = process.cwd();
+const siteConfig = require(`${CWD}/siteConfig.js`);
+
+function imgUrl(img) {
+    return siteConfig.baseUrl + 'img/' + img;
+}
+
+function docUrl(doc, language) {
+    return siteConfig.baseUrl + 'docs/' + (language ? language + '/' : '') + doc;
+}
+
+function pageUrl(page, language) {
+    return siteConfig.baseUrl + (language ? language + '/' : '') + page;
+}
+
+function githubUrl() {
+    return siteConfig.githubUrl;
+}
+
 class HomeSplash extends React.Component {
   render() {
     const {siteConfig, language = ''} = this.props;
@@ -22,24 +41,23 @@ class HomeSplash extends React.Component {
     const docUrl = doc => `${baseUrl}${docsPart}${langPart}${doc}`;
 
     const SplashContainer = props => (
-      <div className="homeContainer">
-        <div className="homeSplashFade">
-          <div className="wrapper homeWrapper">{props.children}</div>
+        <div className="homeContainer">
+            <div className="homeSplashFade" style={{marginTop: '5rem'}}>
+                <div className="wrapper homeWrapper">{props.children}</div>
+            </div>
         </div>
-      </div>
     );
 
     const Logo = props => (
-      <div className="projectLogo">
-        <img src={props.img_src} alt="Project Logo" />
-      </div>
+        <div className="" style={{width: '500px', alignItems: 'center', margin: 'auto'}}>
+            <img src={props.img_src} />
+        </div>
     );
 
     const ProjectTitle = props => (
-      <h2 className="projectTitle">
-        {props.title}
-        <small>{props.tagline}</small>
-      </h2>
+        <h2 className="projectTitle" style={{maxWidth:'1024px', margin: 'auto'}}>
+            <small style={{color: 'black', fontSize: '2.0rem'}}>{siteConfig.projectDescription}</small>
+        </h2>
     );
 
     const PromoSection = props => (
@@ -59,17 +77,16 @@ class HomeSplash extends React.Component {
     );
 
     return (
-      <SplashContainer>
-        <Logo img_src={`${baseUrl}img/undraw_monitor.svg`} />
-        <div className="inner">
-          <ProjectTitle tagline={siteConfig.tagline} title={siteConfig.title} />
-          <PromoSection>
-            <Button href="#try">Try It Out</Button>
-            <Button href={docUrl('doc1.html')}>Example Link</Button>
-            <Button href={docUrl('doc2.html')}>Example Link 2</Button>
-          </PromoSection>
-        </div>
-      </SplashContainer>
+        <SplashContainer>
+            <Logo img_src={imgUrl('bk-header.png')} />
+            <div className="inner">
+                <ProjectTitle />
+                <PromoSection>
+                    <Button href={docUrl('standalone', language)}>Read the docs</Button>
+                    <Button href={githubUrl()}>GitHub</Button>
+                </PromoSection>
+            </div>
+        </SplashContainer>
     );
   }
 }
