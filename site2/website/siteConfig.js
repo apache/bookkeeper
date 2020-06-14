@@ -20,12 +20,20 @@ const users = [
   },
 ];
 
+const url = 'http://ghatage.github.io/';
+const javadocUrl = url + '/api';
+const restApiUrl = url + '/en' + "/admin-rest-api";
+const functionsApiUrl = url + '/en' + "/functions-rest-api";
+const sourceApiUrl = url + '/en' + "/source-rest-api";
+const sinkApiUrl = url + '/en' + "/sink-rest-api";
+const baseUrl = '/bookkeeper-test/';
 const githubUrl = 'https://github.com/apache/bookkeeper';
 
 const siteConfig = {
-  title: '', // Title for your website.
-  tagline: 'A scalable, fault-tolerant, and low-latency storage service optimized for real-time workloads ',
-  url: 'https://http://bookkeeper.apache.org/',
+  title: 'Apache BookKeeper', // Title for your website.
+  disableTitleTagline: true,
+  tagline: '',
+  url: url,
   baseUrl: '/', // Base URL for your project */
   // For github.io type URLs, you would set the url and baseUrl like:
   //   url: 'https://facebook.github.io',
