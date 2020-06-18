@@ -180,6 +180,25 @@ commands:
     description: Print status of the ledger updation (default false)
   - flag: -printprogress N
     description: Print messages on every configured seconds if verbose turned on (default 10 secs)
+- name: updateBookieInLedger
+  description:  |
+    Replace srcBookie with destBookie in ledger metadata. (this may take a long time).
+    Useful when Host-reip or data-migration. In that case, shutdown bookie process in src-bookie,
+    use this command to update ledger metadata by replacing src-bookie to dest-bookie where data has been copied/moved.
+    Start the bookie process on dest-bookie and dest-bookie will serve copied ledger data from src-bookie.
+  options:
+  - flag: -srcBookie <bookie-id>
+    description: Source Bookie Id
+  - flag: -destBookie <bookie-id>
+    description: Destination Bookie Id
+  - flag: -updatespersec N
+    description: Number of ledgers updating per second (default 5 per sec)
+  - flag: -limit N
+    description: Maximum number of ledgers to update (default no limit)
+  - flag: -verbose
+    description: Print status of the ledger updation (default false)
+  - flag: -printprogress N
+    description: Print messages on every configured seconds if verbose turned on (default 10 secs)
 - name: whoisauditor
   description: Print the node which holds the auditor lock
 - name: whatisinstanceid
