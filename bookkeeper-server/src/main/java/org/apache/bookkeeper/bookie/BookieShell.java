@@ -63,6 +63,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgerLocationsIndexCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStorageIndexFileCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.UpdateBookieInLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.DecommissionCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.EndpointInfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
@@ -135,6 +136,7 @@ public class BookieShell implements Tool {
     static final String CMD_LISTFILESONDISC = "listfilesondisc";
     static final String CMD_UPDATECOOKIE = "updatecookie";
     static final String CMD_UPDATELEDGER = "updateledgers";
+    static final String CMD_UPDATE_BOOKIE_IN_LEDGER = "updateBookieInLedger";
     static final String CMD_DELETELEDGER = "deleteledger";
     static final String CMD_BOOKIEINFO = "bookieinfo";
     static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
@@ -1562,6 +1564,85 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Update bookie into ledger command.
+     */
+    class UpdateBookieInLedgerCmd extends MyCommand {
+        private final Options opts = new Options();
+
+        UpdateBookieInLedgerCmd() {
+            super(CMD_UPDATE_BOOKIE_IN_LEDGER);
+            opts.addOption("sb", "srcBookie", true, "Source bookie which needs to be replaced by destination bookie.");
+            opts.addOption("db", "destBookie", true, "Destination bookie which replaces source bookie.");
+            opts.addOption("s", "updatespersec", true, "Number of ledgers updating per second (default: 5 per sec)");
+            opts.addOption("r", "maxOutstandingReads", true, "Max outstanding reads (default: 5 * updatespersec)");
+            opts.addOption("l", "limit", true, "Maximum number of ledgers to update (default: no limit)");
+            opts.addOption("v", "verbose", true, "Print status of the ledger updation (default: false)");
+            opts.addOption("p", "printprogress", true,
+                    "Print messages on every configured seconds if verbose turned on (default: 10 secs)");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Replace bookie in ledger metadata. (useful when re-ip of host) "
+                    + "replace srcBookie with destBookie. (this may take a long time).";
+        }
+
+        @Override
+        String getUsage() {
+            return "updateBookieInLedger -srcBookie <source bookie> -destBookie <destination bookie> "
+                    + "[-updatespersec N] [-maxOutstandingReads N] [-limit N] [-verbose true/false] [-printprogress N]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            UpdateBookieInLedgerCommand cmd = new UpdateBookieInLedgerCommand();
+            UpdateBookieInLedgerCommand.UpdateBookieInLedgerFlags flags =
+                    new UpdateBookieInLedgerCommand.UpdateBookieInLedgerFlags();
+
+            final String srcBookie = cmdLine.getOptionValue("srcBookie");
+            final String destBookie = cmdLine.getOptionValue("destBookie");
+            if (StringUtils.isBlank(srcBookie) || StringUtils.isBlank(destBookie)) {
+                LOG.error("Invalid argument list (srcBookie and destBookie must be provided)!");
+                this.printUsage();
+                return -1;
+            }
+            if (StringUtils.equals(srcBookie, destBookie)) {
+                LOG.error("srcBookie and destBookie can't be the same.");
+                return -1;
+            }
+            final int rate = getOptionIntValue(cmdLine, "updatespersec", 5);
+            final int maxOutstandingReads = getOptionIntValue(cmdLine, "maxOutstandingReads", (rate * 5));
+            final int limit = getOptionIntValue(cmdLine, "limit", Integer.MIN_VALUE);
+            final boolean verbose = getOptionBooleanValue(cmdLine, "verbose", false);
+            final long printprogress;
+            if (!verbose) {
+                if (cmdLine.hasOption("printprogress")) {
+                    LOG.warn("Ignoring option 'printprogress', this is applicable when 'verbose' is true");
+                }
+                printprogress = Integer.MIN_VALUE;
+            } else {
+                // defaulting to 10 seconds
+                printprogress = getOptionLongValue(cmdLine, "printprogress", 10);
+            }
+            flags.srcBookie(srcBookie);
+            flags.destBookie(destBookie);
+            flags.printProgress(printprogress);
+            flags.limit(limit);
+            flags.updatePerSec(rate);
+            flags.maxOutstandingReads(maxOutstandingReads);
+            flags.verbose(verbose);
+
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
+        }
+    }
+
+    /**
      * Command to delete a given ledger.
      */
     class DeleteLedgerCmd extends MyCommand {
@@ -1950,6 +2031,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_LISTFILESONDISC, new ListDiskFilesCmd());
         commands.put(CMD_UPDATECOOKIE, new UpdateCookieCmd());
         commands.put(CMD_UPDATELEDGER, new UpdateLedgerCmd());
+        commands.put(CMD_UPDATE_BOOKIE_IN_LEDGER, new UpdateBookieInLedgerCmd());
         commands.put(CMD_DELETELEDGER, new DeleteLedgerCmd());
         commands.put(CMD_BOOKIEINFO, new BookieInfoCmd());
         commands.put(CMD_DECOMMISSIONBOOKIE, new DecommissionBookieCmd());
