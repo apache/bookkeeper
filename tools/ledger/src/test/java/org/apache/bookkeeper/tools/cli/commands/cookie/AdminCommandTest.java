@@ -156,7 +156,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
 
     private void mockVerifyCookie() throws IOException, BookieException.InvalidCookieException {
         PowerMockito.when(Cookie.readFromDirectory(any(File.class))).thenReturn(cookie);
-        doNothing().when(cookie).verify(any(Cookie.class), new ServerConfiguration());
+        doNothing().when(cookie).verify(any(Cookie.class), any(ServerConfiguration.class));
     }
 
     private void mockExpandStorage() throws Exception {
@@ -190,7 +190,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
         verifyNew(ServerConfiguration.class, times(1)).withArguments(eq(conf));
         verify(serverConfiguration, times(3)).setUseHostNameAsBookieID(anyBoolean());
 
-        verify(cookie, times(2)).verify(any(Cookie.class), new ServerConfiguration());
+        verify(cookie, times(2)).verify(any(Cookie.class), any(ServerConfiguration.class));
     }
 
     @Test

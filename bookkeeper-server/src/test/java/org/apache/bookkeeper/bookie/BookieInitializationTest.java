@@ -1060,6 +1060,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         final ServerConfiguration conf = newServerConfiguration()
             .setJournalDirName(tmpDir.getPath())
             .setLedgerDirNames(new String[] { tmpDir.getPath() })
+            .setIndexDirName(new String[] { tmpDir.getPath() })
             .setDiskCheckInterval(1000)
             .setLedgerStorageClass(SortedLedgerStorage.class.getName())
             .setAutoRecoveryDaemonEnabled(false)

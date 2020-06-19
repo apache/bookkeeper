@@ -62,7 +62,7 @@ public class GenerateCookieCommand extends CookieCommand<Flags> {
         private String ledgerDirs;
 
         @Parameter(
-                names = { "-i", "--index-dirs" },
+                names = { "-x", "--index-dirs" },
                 description = "The index directories used by this bookie",
                 required = true)
         private String indexDirs;

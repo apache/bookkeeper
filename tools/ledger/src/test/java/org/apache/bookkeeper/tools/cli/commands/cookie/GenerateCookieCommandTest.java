@@ -88,6 +88,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
         assertFalse(runCommand(new String[] {
             "-j", "/path/to/journal",
             "-l", "/path/to/ledgers",
+            "-x", "/path/to/index-files",
             "-o", "/path/to/cookie-file",
             INVALID_BOOKIE_ID
         }));
@@ -100,7 +101,12 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
      */
     @Test
     public void testMissingJournalDir() {
-        assertFalse(runCommand(new String[] { "-l", "/path/to/ledgers", "-o", "/path/to/cookie-file", BOOKIE_ID }));
+        assertFalse(runCommand(new String[] {
+            "-l", "/path/to/ledgers",
+            "-x", "/path/to/index-files",
+            "-o", "/path/to/cookie-file",
+            BOOKIE_ID
+        }));
         String consoleOutput = getConsoleOutput();
         assertOptionMissing(consoleOutput, "-j, --journal-dirs");
     }
@@ -110,7 +116,12 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
      */
     @Test
     public void testMissingLedgerDirs() {
-        assertFalse(runCommand(new String[] { "-j", "/path/to/journal", "-o", "/path/to/cookie-file", BOOKIE_ID }));
+        assertFalse(runCommand(new String[] {
+            "-j", "/path/to/journal",
+            "-x", "/path/to/index-files",
+            "-o", "/path/to/cookie-file",
+            BOOKIE_ID
+        }));
         String consoleOutput = getConsoleOutput();
         assertOptionMissing(consoleOutput, "-l, --ledger-dirs");
     }
@@ -120,7 +131,12 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
      */
     @Test
     public void testMissingOutputFile() {
-        assertFalse(runCommand(new String[] { "-j", "/path/to/journal", "-l", "/path/to/ledgers", BOOKIE_ID }));
+        assertFalse(runCommand(new String[] {
+            "-l", "/path/to/ledgers",
+            "-j", "/path/to/journal",
+            "-x", "/path/to/index-files",
+            BOOKIE_ID
+        }));
         String consoleOutput = getConsoleOutput();
         assertOptionMissing(consoleOutput, "-o, --output-file");
     }
@@ -133,6 +149,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
         File cookieFile = testFolder.newFile("cookie-without-instance-id");
         String journalDir = "/path/to/journal";
         String ledgersDir = "/path/to/ledgers";
+        String indexDir = "/path/to/index-files";
         String instanceId = "test-instance-id";
 
         Cookie cookie = Cookie.newBuilder()
@@ -140,6 +157,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
             .setInstanceId(instanceId)
             .setJournalDirs(journalDir)
             .setLedgerDirs(Cookie.encodeDirPaths(ledgersDir.split(",")))
+            .setIndexDirs(Cookie.encodeDirPaths(indexDir.split(",")))
             .build();
 
         when(rm.getClusterInstanceId()).thenReturn(instanceId);
@@ -148,6 +166,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
             runCommand(new String[] {
                 "-l", ledgersDir,
                 "-j", journalDir,
+                "-x", indexDir,
                 "-o", cookieFile.getPath(),
                 BOOKIE_ID
             }));
@@ -169,6 +188,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
         File cookieFile = testFolder.newFile("cookie-with-instance-id");
         String journalDir = "/path/to/journal";
         String ledgersDir = "/path/to/ledgers";
+        String indexDir = "/path/to/index-files";
         String instanceId = "test-instance-id";
 
         Cookie cookie = Cookie.newBuilder()
@@ -176,6 +196,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
             .setInstanceId(instanceId)
             .setJournalDirs(journalDir)
             .setLedgerDirs(Cookie.encodeDirPaths(ledgersDir.split(",")))
+            .setIndexDirs(Cookie.encodeDirPaths(indexDir.split(",")))
             .build();
 
         when(rm.getClusterInstanceId()).thenReturn(instanceId);
@@ -184,6 +205,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
             runCommand(new String[] {
                 "-l", ledgersDir,
                 "-j", journalDir,
+                "-x", indexDir,
                 "-o", cookieFile.getPath(),
                 "-i", instanceId,
                 BOOKIE_ID
@@ -206,6 +228,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
         File cookieFile = testFolder.newFile("cookie-with-instance-id");
         String journalDir = "/path/to/journal";
         String ledgersDir = "/path/to/ledgers,/path/to/more/ledgers";
+        String indexDir = "/path/to/index-files,/path/to/more/index-files";
         String instanceId = "test-instance-id";
 
         when(rm.getClusterInstanceId()).thenReturn(instanceId);
@@ -214,6 +237,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
                 runCommand(new String[] {
                         "-l", ledgersDir,
                         "-j", journalDir,
+                        "-x", indexDir,
                         "-o", cookieFile.getPath(),
                         "-i", instanceId,
                         BOOKIE_ID

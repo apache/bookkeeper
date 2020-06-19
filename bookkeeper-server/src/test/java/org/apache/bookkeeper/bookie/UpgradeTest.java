@@ -282,8 +282,6 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-<<<<<<< HEAD
-=======
     public void testOldCookieNewBookie() throws BookieException.UpgradeException {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -333,7 +331,6 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
     }
 
     @Test
->>>>>>> Add indexDirs field to cookie
     public void testEnforceCookieIndexDirCheck() throws BookieException.UpgradeException {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());

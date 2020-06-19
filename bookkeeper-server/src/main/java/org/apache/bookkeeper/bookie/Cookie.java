@@ -151,7 +151,7 @@ public class Cookie {
             throw new BookieException.InvalidCookieException(errMsg);
         } else if (!(c.layoutVersion >= 3 && c.bookieHost.equals(bookieHost)
             && c.journalDirs.equals(journalDirs) && verifyLedgerDirs(c, checkIfSuperSet)
-                && verifyIndexDirs(c, checkIfSuperSet, conf.getEnforceCookieIndexDirCheck()) )) {
+                && verifyIndexDirs(c, checkIfSuperSet, conf.getEnforceCookieIndexDirCheck()))) {
             errMsg = "Cookie [" + this + "] is not matching with [" + c + "]";
             throw new BookieException.InvalidCookieException(errMsg);
         } else if ((instanceId == null && c.instanceId != null)
