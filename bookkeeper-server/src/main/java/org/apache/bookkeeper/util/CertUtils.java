@@ -31,13 +31,10 @@ import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Certificate parsing utilities.
  */
-public class CertUtils {
+public abstract class CertUtils {
 
     // OU values
     public static final String OU_ROLE_NAME_CODE = "0";
@@ -51,14 +48,8 @@ public class CertUtils {
     static final Pattern OU_GENERAL_NAME_REGEX = Pattern.compile("^([0-9]+)" + OU_CODE_SEPARATOR + "(.*)$");
     static final Pattern OU_NAME_SPLITTER = Pattern.compile(OU_NAME_SEPARATOR);
 
-    static final Pattern HOST_REGEX = Pattern.compile("^.+?-(.+[^\\d])\\d+-\\d+-([a-zA-Z0-9]+).*");
-
-    private static final Logger logger = LoggerFactory.getLogger(CertUtils.class);
-
-    // SAN Values
-    private static final Integer DNS_NAME = 2;
-    private static final Integer IP_ADDRESS = 7;
-    private static final Integer URI = 6;
+    private CertUtils() {
+    }
 
     public static String getOUString(X509Certificate cert) throws IOException {
         return getOUStringFromSubject(cert.getSubjectX500Principal().getName());
