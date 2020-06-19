@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.tls;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 
 import org.apache.bookkeeper.auth.BookieAuthProvider;
@@ -26,7 +28,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.fail;
 
 /**
  * Light weight Unit Tests for BookieAuthZFactory.
@@ -90,7 +91,7 @@ public class TestBookieAuthZFactory {
 
         try {
             factory.init(conf);
-            BookieAuthProvider authProvider = factory.newProvider(null,null);
+            BookieAuthProvider authProvider = factory.newProvider(null, null);
             authProvider.onProtocolUpgrade();
             fail("BookieAuthZFactory should fail with a null connection");
         } catch (IOException | RuntimeException e) {
