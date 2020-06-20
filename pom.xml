@@ -40,7 +40,7 @@
     <connection>scm:git:https://github.com/apache/bookkeeper.git</connection>
     <developerConnection>scm:git:https://github.com/apache/bookkeeper.git</developerConnection>
     <url>https://github.com/apache/bookkeeper</url>
-    <tag>HEAD</tag>
+    <tag>branch-4.11</tag>
   </scm>
   <issueManagement>
     <system>JIRA</system>
