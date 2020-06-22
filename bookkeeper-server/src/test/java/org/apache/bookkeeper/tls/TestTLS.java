@@ -636,28 +636,6 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that given role in client certificate is checked when BookieAuthZFactory is set.
-     * Positive test case where all given roles are present.
-     * If authorization fails unexpectedly, we catch the UnauthorizedAccessException and fail.
-     * Otherwise we exit the test and mark it as success
-     */
-    @Test
-    public void testRoleBasedAuthZInCertificate() throws Exception {
-        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setBookieAuthProviderFactoryClass(BookieAuthZFactory.class.getCanonicalName());
-        serverConf.setAuthorizedRoles("testRole,testRole1");
-        restartBookies(serverConf);
-
-        ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
-
-        try {
-            testClient(clientConf, numBookies);
-        } catch (BKException.BKUnauthorizedAccessException bke) {
-            fail("Could not verify given role.");
-        }
-    }
-
-    /**
      * Verify that a bookie-side Auth plugin can access server certificates.
      */
     @Test
@@ -1008,6 +986,28 @@ public class TestTLS extends BookKeeperClusterTestCase {
             fail("should have failed with unauthorized exception");
         } catch (BKUnauthorizedAccessException e) {
             // Ok.
+        }
+    }
+
+    /**
+     * Verify that given role in client certificate is checked when BookieAuthZFactory is set.
+     * Positive test case where all given roles are present.
+     * If authorization fails unexpectedly, we catch the UnauthorizedAccessException and fail.
+     * Otherwise we exit the test and mark it as success
+     */
+    @Test
+    public void testRoleBasedAuthZInCertificate() throws Exception {
+        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
+        serverConf.setBookieAuthProviderFactoryClass(BookieAuthZFactory.class.getCanonicalName());
+        serverConf.setAuthorizedRoles("testRole,testRole1");
+        restartBookies(serverConf);
+
+        ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
+
+        try {
+            testClient(clientConf, numBookies);
+        } catch (BKException.BKUnauthorizedAccessException bke) {
+            fail("Could not verify given role.");
         }
     }
 }
