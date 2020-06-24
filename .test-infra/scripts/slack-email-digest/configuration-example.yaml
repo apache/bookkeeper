@@ -1,0 +1,16 @@
+
+slack:
+    token: xoxp-xxxxxxxxxxxxxx
+
+mail:
+    fromAddress: '"My Slack" <my.slack@gmail.com>'
+    smtp: smtp.gmail.com:587
+    useTLS: true
+    username: my.slack@gmail.com
+    password: xxxxxxxxx
+
+channels:
+    # Maps channels to a particular email address
+    general: users@my.project.org
+    dev: dev@my.project.org
+    random: users@my.project.org
