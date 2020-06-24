@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.distributedlog</groupId>
     <artifactId>distributedlog</artifactId>
-    <version>4.11.0-SNAPSHOT</version>
+    <version>4.12.0-SNAPSHOT</version>
   </parent>
   <artifactId>distributedlog-core</artifactId>
   <name>Apache BookKeeper :: DistributedLog :: Core Library</name>
@@ -112,7 +112,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <configuration>
-          <suppressionsLocation>buildtools/src/main/resources/distributedlog/suppressions.xml</suppressionsLocation>
+          <suppressionsLocation>../../buildtools/src/main/resources/distributedlog/suppressions.xml</suppressionsLocation>
+          <configLocation>../../buildtools/src/main/resources/bookkeeper/checkstyle.xml</configLocation>
           <excludes>**/thrift/**/*</excludes>
         </configuration>
       </plugin>
