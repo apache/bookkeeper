@@ -29,6 +29,7 @@
   <name>Apache BookKeeper :: Stream Storage :: Parent</name>
 
   <modules>
+    <module>distributedlog</module>
     <module>common</module>
     <module>tests-common</module>
     <module>statelib</module>
