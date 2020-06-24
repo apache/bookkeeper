@@ -17,9 +17,9 @@
  */
 package org.apache.distributedlog.impl.metadata;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.distributedlog.DistributedLogConstants.EMPTY_BYTES;
 import static org.apache.distributedlog.DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO;
 import static org.apache.distributedlog.metadata.LogMetadata.ALLOCATION_PATH;
