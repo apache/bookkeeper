@@ -44,7 +44,7 @@
         <a class="navbar-link">Documentation</a>
         <div class="navbar-dropdown is-boxed">
           <a class="navbar-item" href="/docs/latest/overview/overview">
-            Version 4.11.0-SNAPSHOT
+            Version 4.12.0-SNAPSHOT
             <span class="tag is-warning">Development</span>
           </a>
           <a class="navbar-item" href="/docs/latest/api/javadoc">
@@ -54,6 +54,16 @@
             Javadoc
           </a>
           <hr class="dropdown-divider">
+          
+          <a class="navbar-item" href="/docs/4.11.1/overview/overview">
+            Release 4.11.1
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.11.0/overview/overview">
+            Release 4.11.0
+            
+          </a>
           
           <a class="navbar-item" href="/docs/4.10.0/overview/overview">
             Release 4.10.0
@@ -1014,6 +1024,48 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
 
 <h2 id="bookie">Bookie</h2>
 
+<h3 id="endpoint-apiv1bookieinfo">Endpoint: /api/v1/bookie/info</h3>
+<ol>
+  <li>Method: GET
+    <ul>
+      <li>Description:  Get bookie info</li>
+      <li>
+        <p>Response:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: left">Code</th>
+              <th style="text-align: left">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align: left">200</td>
+              <td style="text-align: left">Successful operation</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">403</td>
+              <td style="text-align: left">Permission denied</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">501</td>
+              <td style="text-align: left">Not implemented</td>
+            </tr>
+          </tbody>
+        </table>
+      </li>
+      <li>Body:
+        <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"freeSpace"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"totalSpace"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span></code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+</ol>
+
 <h3 id="endpoint-apiv1bookielist_bookiestypetypeprint_hostnameshostnames">Endpoint: /api/v1/bookie/list_bookies/?type=&lt;type&gt;&amp;print_hostnames=&lt;hostnames&gt;</h3>
 <ol>
   <li>Method: GET
@@ -1906,6 +1958,7 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
 </li>
 <li class="toc-entry toc-h2"><a href="#bookie">Bookie</a>
 <ul>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookieinfo">Endpoint: /api/v1/bookie/info</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielist_bookiestypetypeprint_hostnameshostnames">Endpoint: /api/v1/bookie/list_bookies/?type=&lt;type&gt;&amp;print_hostnames=&lt;hostnames&gt;</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielist_bookie_info">Endpoint: /api/v1/bookie/list_bookie_info</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielast_log_mark">Endpoint: /api/v1/bookie/last_log_mark</a></li>
