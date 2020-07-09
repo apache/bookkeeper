@@ -18,9 +18,9 @@
 
 import common_job_properties
 
-// This job runs the Java postcommit tests on Java 9 for branch-4.8
-mavenJob('bookkeeper_release_branch_48_java9') {
-  description('Runs nightly build for bookkeeper branch-4.8 in Java 9.')
+// This job runs the Java postcommit tests on Java 9 for branch-4.11
+mavenJob('bookkeeper_release_branch_411_java9') {
+  description('Runs nightly build for bookkeeper branch-4.11 in Java 9.')
 
   // Set common parameters.
   common_job_properties.setTopLevelMainJobProperties(

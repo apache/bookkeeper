@@ -19,8 +19,8 @@
 import common_job_properties
 
 // This is the Java postcommit which runs a maven install, and the current set of precommit tests.
-freeStyleJob('bookkeeper_release_branch_48_integrationtests') {
-    description('Run integration tests on bookkeeper branch-4.8.')
+freeStyleJob('bookkeeper_release_branch_411_integrationtests') {
+    description('Run integration tests on bookkeeper branch-4.11.')
 
     // Set common parameters.
     common_job_properties.setTopLevelMainJobProperties(
