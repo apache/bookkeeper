@@ -17,9 +17,9 @@
  */
 package org.apache.distributedlog.impl.metadata;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.distributedlog.DistributedLogConstants.EMPTY_BYTES;
 import static org.apache.distributedlog.DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO;
 import static org.apache.distributedlog.metadata.LogMetadata.ALLOCATION_PATH;
@@ -35,6 +35,7 @@ import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;

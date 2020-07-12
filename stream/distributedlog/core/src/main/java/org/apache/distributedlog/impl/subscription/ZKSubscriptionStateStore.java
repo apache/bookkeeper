@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 package org.apache.distributedlog.impl.subscription;
-
-import java.nio.charset.StandardCharsets;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;

@@ -46,6 +46,7 @@ import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryD
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.TriggerAuditCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.WhoIsAuditorCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ListActiveLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FlipBookieIdCommand;
@@ -137,6 +138,7 @@ public class BookieShell implements Tool {
     static final String CMD_UPDATELEDGER = "updateledgers";
     static final String CMD_DELETELEDGER = "deleteledger";
     static final String CMD_BOOKIEINFO = "bookieinfo";
+    static final String CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE = "activeledgers";
     static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
     static final String CMD_ENDPOINTINFO = "endpointinfo";
     static final String CMD_LOSTBOOKIERECOVERYDELAY = "lostbookierecoverydelay";
@@ -704,6 +706,51 @@ public class BookieShell implements Tool {
         @Override
         String getUsage() {
             return "listledgers  [-meta] [-bookieid <bookieaddress>]";
+        }
+
+        @Override
+        Options getOptions() {
+            return lOpts;
+        }
+    }
+
+    /**
+     * List active ledgers on entry log file
+     **/
+    class ListActiveLedgersCmd extends MyCommand {
+        Options lOpts = new Options();
+
+        ListActiveLedgersCmd() {
+            super(CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE);
+            lOpts.addOption("l", "logId", true, "Entry log file id");
+            lOpts.addOption("t", "timeout",true, "Read timeout(ms)");
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            final boolean hasTimeout = cmdLine.hasOption("t");
+            final boolean hasLogId=cmdLine.hasOption("l");
+            if(!hasLogId){
+                printUsage();
+                return -1;
+            }
+            final long logId = Long.valueOf(cmdLine.getOptionValue("l"));
+            ListActiveLedgersCommand.ActiveLedgerFlags flags = new ListActiveLedgersCommand.ActiveLedgerFlags();
+            flags.logId(logId);
+            if(hasTimeout) flags.timeout(Long.valueOf(cmdLine.getOptionValue("t")));
+            ListActiveLedgersCommand cmd = new ListActiveLedgersCommand(ledgerIdFormatter);
+            cmd.apply(bkConf, flags);
+            return 0;
+        }
+
+        @Override
+        String getDescription() {
+            return "List all active ledgers on the entry log file.";
+        }
+
+        @Override
+        String getUsage() {
+            return "activeledgers  [-logId <entry log id>] [-timeout <timeout>] [-formatter <ledger id formatter>]";
         }
 
         @Override
@@ -1934,6 +1981,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_LEDGER, new LedgerCmd());
         commands.put(CMD_READ_LEDGER_ENTRIES, new ReadLedgerEntriesCmd());
         commands.put(CMD_LISTLEDGERS, new ListLedgersCmd());
+        commands.put(CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE, new ListActiveLedgersCmd());
         commands.put(CMD_LISTUNDERREPLICATED, new ListUnderreplicatedCmd());
         commands.put(CMD_WHOISAUDITOR, new WhoIsAuditorCmd());
         commands.put(CMD_WHATISINSTANCEID, new WhatIsInstanceId());
