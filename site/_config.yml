@@ -8,7 +8,6 @@ destination: local-generated
 twitter_url: https://twitter.com/asfbookkeeper
 
 versions:
-- "4.11.1"
 - "4.11.0"
 - "4.10.0"
 - "4.9.2"
@@ -40,7 +39,7 @@ archived_versions:
 - "4.1.0"
 - "4.0.0"
 latest_version: "4.12.0-SNAPSHOT"
-latest_release: "4.11.1"
+latest_release: "4.11.0"
 stable_release: "4.9.2"
 eol_releases:
 - "4.7.3"
