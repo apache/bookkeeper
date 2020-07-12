@@ -46,7 +46,6 @@ import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryD
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.TriggerAuditCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.WhoIsAuditorCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookie.ListActiveLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FlipBookieIdCommand;
@@ -54,6 +53,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ListActiveLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListFilesOnDiscCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LocalConsistencyCheckCommand;
@@ -717,7 +717,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * List active ledgers on entry log file
+     * List active ledgers on entry log file.
      **/
     class ListActiveLedgersCmd extends MyCommand {
         Options lOpts = new Options();
@@ -725,21 +725,23 @@ public class BookieShell implements Tool {
         ListActiveLedgersCmd() {
             super(CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE);
             lOpts.addOption("l", "logId", true, "Entry log file id");
-            lOpts.addOption("t", "timeout",true, "Read timeout(ms)");
+            lOpts.addOption("t", "timeout", true, "Read timeout(ms)");
         }
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
             final boolean hasTimeout = cmdLine.hasOption("t");
-            final boolean hasLogId=cmdLine.hasOption("l");
-            if(!hasLogId){
+            final boolean hasLogId = cmdLine.hasOption("l");
+            if (!hasLogId){
                 printUsage();
                 return -1;
             }
-            final long logId = Long.valueOf(cmdLine.getOptionValue("l"));
+            final long logId = Long.parseLong(cmdLine.getOptionValue("l"));
             ListActiveLedgersCommand.ActiveLedgerFlags flags = new ListActiveLedgersCommand.ActiveLedgerFlags();
             flags.logId(logId);
-            if(hasTimeout) flags.timeout(Long.valueOf(cmdLine.getOptionValue("t")));
+            if (hasTimeout){
+                flags.timeout(Long.parseLong(cmdLine.getOptionValue("t")));
+            }
             ListActiveLedgersCommand cmd = new ListActiveLedgersCommand(ledgerIdFormatter);
             cmd.apply(bkConf, flags);
             return 0;
