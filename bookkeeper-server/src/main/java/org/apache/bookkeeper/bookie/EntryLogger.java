@@ -1011,6 +1011,11 @@ public class EntryLogger {
                 // read the entry
 
                 data.clear();
+                if (entrySize < 0) {
+                    LOG.warn("bad read for ledger entry from entryLog {}@{} (entry size {})",
+                            entryLogId, pos, entrySize);
+                    return;
+                }
                 data.capacity(entrySize);
                 int rc = readFromLogChannel(entryLogId, bc, data, pos);
                 if (rc != entrySize) {
