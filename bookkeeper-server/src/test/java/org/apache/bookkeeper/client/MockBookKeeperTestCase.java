@@ -63,6 +63,8 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -151,6 +153,8 @@ public abstract class MockBookKeeperTestCase {
         bookieClient = mock(BookieClient.class);
         ledgerManager = mock(LedgerManager.class);
         ledgerIdGenerator = mock(LedgerIdGenerator.class);
+        BookieAddressResolver bookieAddressResolver = ResolvedBookieSocketAddress.DUMMY;
+        when(bookieWatcher.getBookieAddressResolver()).thenReturn(bookieAddressResolver);
 
         bk = mock(BookKeeper.class);
 
@@ -160,6 +164,7 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getCloseLock()).thenReturn(new ReentrantReadWriteLock());
         when(bk.isClosed()).thenReturn(false);
         when(bk.getBookieWatcher()).thenReturn(bookieWatcher);
+        when(bk.getBookieAddressResolver()).thenReturn(bookieAddressResolver);
         when(bk.getMainWorkerPool()).thenReturn(executor);
         when(bk.getBookieClient()).thenReturn(bookieClient);
         when(bk.getScheduler()).thenReturn(scheduler);
@@ -305,7 +310,7 @@ public abstract class MockBookKeeperTestCase {
     }
 
     protected BookieSocketAddress generateBookieSocketAddress(int index) {
-        return new BookieSocketAddress("localhost", 1111 + index);
+        return new ResolvedBookieSocketAddress("localhost", 1111 + index);
     }
 
     protected ArrayList<BookieSocketAddress> generateNewEnsemble(int ensembleSize) {

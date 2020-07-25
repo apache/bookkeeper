@@ -93,8 +93,7 @@ public class DecommissionCommand extends BookieCommand<DecommissionCommand.Decom
             final String remoteBookieidToDecommission = flags.remoteBookieIdToDecommission;
             final BookieSocketAddress bookieAddressToDecommission = (StringUtils.isBlank(remoteBookieidToDecommission)
                                                                          ? Bookie.getBookieAddress(conf)
-                                                                         : new BookieSocketAddress(
-                                                                             remoteBookieidToDecommission));
+                                                                         : BookieSocketAddress.parse(remoteBookieidToDecommission));
             admin.decommissionBookie(bookieAddressToDecommission);
             LOG.info("The ledgers stored in the given decommissioning bookie: {} are properly replicated",
                      bookieAddressToDecommission);

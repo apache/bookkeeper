@@ -78,7 +78,7 @@ public class GetCookieCommand extends CookieCommand<Flags> {
 
         try {
             Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(
-                rm, new BookieSocketAddress(bookieId)
+                rm, BookieSocketAddress.parse(bookieId)
             );
             spec.console().println("Cookie for bookie '" + bookieId + "' is:");
             spec.console().println("---");

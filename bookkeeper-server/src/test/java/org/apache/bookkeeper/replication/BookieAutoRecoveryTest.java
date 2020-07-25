@@ -45,6 +45,7 @@ import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -441,7 +442,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         final List<BookieSocketAddress> bkAddresses = ensembles.get(0L);
         BookieSocketAddress replicaToKillAddr = bkAddresses.get(0);
         for (BookieSocketAddress bookieSocketAddress : bkAddresses) {
-            if (!isCreatedFromIp(bookieSocketAddress)){
+            if (!isCreatedFromIp((ResolvedBookieSocketAddress) bookieSocketAddress)){
                 replicaToKillAddr = bookieSocketAddress;
                 LOG.info("Kill bookie which has registered using hostname");
                 break;
@@ -519,7 +520,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         final List<BookieSocketAddress> bkAddresses = ensembles.get(0L);
         BookieSocketAddress replicaToKillAddr = bkAddresses.get(0);
         for (BookieSocketAddress bookieSocketAddress : bkAddresses) {
-            if (isCreatedFromIp(bookieSocketAddress)) {
+            if (isCreatedFromIp((ResolvedBookieSocketAddress) bookieSocketAddress)) {
                 replicaToKillAddr = bookieSocketAddress;
                 LOG.info("Kill bookie which has registered using ipaddress");
                 break;

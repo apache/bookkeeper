@@ -23,11 +23,13 @@ import java.util.Set;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 
-interface BookieWatcher {
+public interface BookieWatcher {
     Set<BookieSocketAddress> getBookies() throws BKException;
     Set<BookieSocketAddress> getAllBookies() throws BKException;
     Set<BookieSocketAddress> getReadOnlyBookies() throws BKException;
+    BookieAddressResolver getBookieAddressResolver();
 
     /**
      * Create an ensemble with given <i>ensembleSize</i> and <i>writeQuorumSize</i>.

@@ -111,10 +111,10 @@ public class UpdateBookieInLedgerCommand extends BookieCommand<UpdateBookieInLed
         BookieSocketAddress srcBookieAddress;
         BookieSocketAddress destBookieAddress;
         try {
-            String[] bookieAddress = flags.srcBookie.split(":");
-            srcBookieAddress = new BookieSocketAddress(bookieAddress[0], Integer.parseInt(bookieAddress[1]));
-            bookieAddress = flags.destBookie.split(":");
-            destBookieAddress = new BookieSocketAddress(bookieAddress[0], Integer.parseInt(bookieAddress[1]));
+            String bookieAddress = flags.srcBookie;
+            srcBookieAddress = BookieSocketAddress.parse(bookieAddress);
+            bookieAddress = flags.destBookie;
+            destBookieAddress = BookieSocketAddress.parse(bookieAddress);
         } catch (Exception e) {
             LOG.error("Bookie address must in <address>:<port> format");
             return false;

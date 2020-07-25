@@ -92,7 +92,7 @@ abstract class CookieCommand<CookieFlagsT extends CliFlags>
 
         String bookieId = cmdFlags.arguments.get(0);
         try {
-            new BookieSocketAddress(bookieId);
+            BookieSocketAddress.parse(bookieId);
         } catch (UnknownHostException nhe) {
             spec.console()
                 .println("Invalid bookie id '"

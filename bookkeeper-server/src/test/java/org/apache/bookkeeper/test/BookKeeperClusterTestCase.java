@@ -55,6 +55,7 @@ import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.metastore.InMemoryMetaStore;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -629,7 +630,7 @@ public abstract class BookKeeperClusterTestCase {
         return startNewBookieAndReturnAddress().getPort();
     }
 
-    public BookieSocketAddress startNewBookieAndReturnAddress()
+    public ResolvedBookieSocketAddress startNewBookieAndReturnAddress()
             throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         bsConfs.add(conf);
@@ -821,7 +822,7 @@ public abstract class BookKeeperClusterTestCase {
      * @return true if the address was created using an IP address, false if the
      *         address was created using a hostname
      */
-    public static boolean isCreatedFromIp(BookieSocketAddress addr) {
+    public static boolean isCreatedFromIp(ResolvedBookieSocketAddress addr) {
         return addr.getSocketAddress().toString().startsWith("/");
     }
 

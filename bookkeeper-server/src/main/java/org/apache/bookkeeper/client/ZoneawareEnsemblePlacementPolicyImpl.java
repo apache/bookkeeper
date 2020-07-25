@@ -54,6 +54,7 @@ import org.apache.bookkeeper.conf.Configurable;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NetworkTopologyImpl;
@@ -246,7 +247,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             this.topology = new NetworkTopologyImpl();
         }
         try {
-            myNode = createBookieNode(new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0));
+            myNode = createBookieNode(new ResolvedBookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0));
             myZone = getZoneAwareNodeLocation(myNode).getZone();
         } catch (UnknownHostException e) {
             LOG.error("Failed to get local host address : ", e);

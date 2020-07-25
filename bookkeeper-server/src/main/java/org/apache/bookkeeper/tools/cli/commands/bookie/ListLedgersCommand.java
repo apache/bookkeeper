@@ -122,7 +122,7 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
         throws UnknownHostException, MetadataException, ExecutionException {
 
         final BookieSocketAddress bookieAddress = StringUtils.isBlank(flags.bookieId) ? null :
-                                                      new BookieSocketAddress(flags.bookieId);
+                                                      BookieSocketAddress.parse(flags.bookieId);
 
         runFunctionWithLedgerManagerFactory(conf, mFactory -> {
             try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {

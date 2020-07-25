@@ -75,6 +75,7 @@ import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -107,12 +108,6 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     // LedgerFragmentReplicator instance
     private LedgerFragmentReplicator lfr;
-
-    /*
-     * Random number generator used to choose an available bookie server to
-     * replicate data from a dead bookie.
-     */
-    private Random rand = new Random();
 
     private LedgerManagerFactory mFactory;
 
@@ -229,6 +224,10 @@ public class BookKeeperAdmin implements AutoCloseable {
         return bkc.bookieWatcher.getAllBookies();
     }
 
+    public BookieAddressResolver getBookieAddressResolver() {
+        return bkc.bookieWatcher.getBookieAddressResolver();
+    }
+    
     @SneakyThrows
     public BookieServiceInfo getBookieServiceInfo(String bookiedId)
             throws BKException {

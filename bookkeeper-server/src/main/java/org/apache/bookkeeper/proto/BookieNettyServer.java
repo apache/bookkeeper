@@ -78,6 +78,7 @@ import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.EventLoopUtil;
@@ -102,7 +103,7 @@ class BookieNettyServer {
     final Object suspensionLock = new Object();
     volatile boolean suspended = false;
     ChannelGroup allChannels;
-    final BookieSocketAddress bookieAddress;
+    final ResolvedBookieSocketAddress bookieAddress;
     final InetSocketAddress bindAddress;
 
     final BookieAuthProvider.Factory authProviderFactory;
@@ -297,7 +298,7 @@ class BookieNettyServer {
         }
     }
 
-    private void listenOn(InetSocketAddress address, BookieSocketAddress bookieAddress) throws InterruptedException {
+    private void listenOn(InetSocketAddress address, ResolvedBookieSocketAddress bookieAddress) throws InterruptedException {
         if (!conf.isDisableServerSocketBind()) {
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.option(ChannelOption.ALLOCATOR, allocator);

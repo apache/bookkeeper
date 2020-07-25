@@ -18,33 +18,16 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.net;
-
-import java.net.UnknownHostException;
+package org.apache.bookkeeper.client.api;
 
 /**
- * This is an identifier for a BookieID
+ * Opaque identifier of a  Bookie for a client.
+ * This is used in:
+ * <ul>
+ * <li>ledger metadata</li>
+ * <li>bookie discovery service</li>
+ * </ul>
  */
-public abstract class BookieSocketAddress {
-
-    /**
-     * Returns the serialized version of this object
-     * @return 
-     */
-    @Override
-    public abstract String toString();
+public interface BookieID {
     
-    
-    /**
-     * Parses the given serialized representation of a BookieSocketAddress
-     * @param serialized
-     * @return
-     * @throws UnknownHostException 
-     */
-    public static BookieSocketAddress parse(String serialized) throws UnknownHostException {
-        return new ResolvedBookieSocketAddress(serialized);
-    }
-    
-    public abstract String getNameForMetrics();
-
 }

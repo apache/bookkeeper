@@ -1,0 +1,135 @@
+From 1f58f7cc0c1638e74975fbf960335f1402ab5ff9 Mon Sep 17 00:00:00 2001
+From: JV Jujjuri <vjujjuri@salesforce.com>
+Date: Mon, 1 Jun 2020 15:14:40 -0700
+Subject: [PATCH] disableEnsembleChanges test patch
+
+I don't have setup to complile/do unit testing.
+So please take this with a grain of salt.
+
+JV
+---
+ .../client/DistributionSchedule.java          |  8 ++++++
+ .../bookkeeper/client/LedgerHandle.java       |  9 ++++---
+ .../bookkeeper/client/PendingAddOp.java       | 25 +++++++++++++------
+ .../RoundRobinDistributionSchedule.java       |  9 +++++++
+ 4 files changed, 39 insertions(+), 12 deletions(-)
+
+diff --git a/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/DistributionSchedule.java b/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/DistributionSchedule.java
+index dc6534611..210a3aec9 100644
+--- a/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/DistributionSchedule.java
++++ b/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/DistributionSchedule.java
+@@ -187,6 +187,14 @@ public interface DistributionSchedule {
+          */
+         boolean removeBookieAndCheck(int bookie);
+ 
++        /**
++         * If this bookie is not in the ackset
++         * clear it from failure map and prepare for reissue.
++         * @param bookie
++         * @return
++         */
++        boolean removeBookieIfAckNotReceived(int bookie);
++
+         /**
+          * Recycle this ack set when not used anymore.
+          */
+diff --git a/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/LedgerHandle.java b/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/LedgerHandle.java
+index f80d0bd40..a24f6ac30 100644
+--- a/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/LedgerHandle.java
++++ b/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/LedgerHandle.java
+@@ -1858,7 +1858,7 @@ public class LedgerHandle implements WriteHandle {
+                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
+                     failedBookies, ledgerId);
+             }
+-            unsetSuccessAndSendWriteRequest(getCurrentEnsemble(), failedBookies.keySet());
++            unsetSuccessAndSendWriteRequest(getCurrentEnsemble(), failedBookies.keySet(), false);
+             return;
+         }
+ 
+@@ -1981,16 +1981,17 @@ public class LedgerHandle implements WriteHandle {
+                             }
+                         }
+                         if (newEnsemble != null) { // unsetSuccess outside of lock
+-                            unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
++                            unsetSuccessAndSendWriteRequest(newEnsemble, replaced, true);
+                         }
+                     }
+             }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
+     }
+ 
+-    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble, final Set<Integer> bookies) {
++    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble,
++            final Set<Integer> bookies, boolean ensembleChanged) {
+         for (PendingAddOp pendingAddOp : pendingAddOps) {
+             for (Integer bookieIndex: bookies) {
+-                pendingAddOp.unsetSuccessAndSendWriteRequest(ensemble, bookieIndex);
++                pendingAddOp.unsetSuccessAndSendWriteRequest(ensemble, bookieIndex, ensembleChanged);
+             }
+         }
+     }
+diff --git a/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/PendingAddOp.java b/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/PendingAddOp.java
+index cd1a03fd5..12028c75d 100644
+--- a/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/PendingAddOp.java
++++ b/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/PendingAddOp.java
+@@ -188,7 +188,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
+         }
+     }
+ 
+-    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble, int bookieIndex) {
++    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble, int bookieIndex, boolean ensembleChanged) {
+         // update the ensemble
+         this.ensemble = ensemble;
+ 
+@@ -231,13 +231,22 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
+                       + bookieIndex);
+         }
+ 
+-        // if we had already heard a success from this array index, need to
+-        // increment our number of responses that are pending, since we are
+-        // going to unset this success
+-        if (!ackSet.removeBookieAndCheck(bookieIndex)) {
+-            // unset completed if this results in loss of ack quorum
+-            completed = false;
+-        }
++        if (!ensembleChanged) {
++            // Ensemble hasn't changed
++            if (!ackSet.removeBookieIfAckNotReceived(bookieIndex)) {
++                // We have heard success from this array index.
++                // Since we haven't changed the ensemble, no need to reissue the write
++                return;
++            }
++        } else {
++            // Ensemble changed.
++            // if we had already heard a success from this array index, need to
++            // increment our number of responses that are pending, since we are
++            // going to unset this success
++            if (!ackSet.removeBookieAndCheck(bookieIndex)) {
++                // unset completed if this results in loss of ack quorum
++                completed = false;
++            }
+ 
+         sendWriteRequest(ensemble, bookieIndex);
+     }
+diff --git a/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/RoundRobinDistributionSchedule.java b/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/RoundRobinDistributionSchedule.java
+index 85615b84a..df3acdc7c 100644
+--- a/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/RoundRobinDistributionSchedule.java
++++ b/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/RoundRobinDistributionSchedule.java
+@@ -333,6 +333,15 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
+             return ackSet.cardinality() >= ackQuorumSize;
+         }
+ 
++        @Override
++        public boolean removeBookieIfAckNotReceived(int bookie) {
++            if (!ackSet.get(bookie)) {
++                failureMap[bookie] = null;
++                return true;
++            }
++            return false;
++        }
++
+         @Override
+         public void recycle() {
+             recyclerHandle.recycle(this);
+-- 
+2.24.0
+

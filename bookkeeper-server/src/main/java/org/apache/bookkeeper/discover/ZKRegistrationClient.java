@@ -382,7 +382,7 @@ public class ZKRegistrationClient implements RegistrationClient {
 
             BookieSocketAddress bookieAddr;
             try {
-                bookieAddr = new BookieSocketAddress(bookieAddrString);
+                bookieAddr = BookieSocketAddress.parse(bookieAddrString);
             } catch (IOException e) {
                 log.error("Could not parse bookie address: " + bookieAddrString + ", ignoring this bookie");
                 continue;

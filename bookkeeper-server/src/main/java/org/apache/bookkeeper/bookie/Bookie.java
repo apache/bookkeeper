@@ -82,6 +82,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -535,13 +536,13 @@ public class Bookie extends BookieCriticalThread {
     /**
      * Return the configured address of the bookie.
      */
-    public static BookieSocketAddress getBookieAddress(ServerConfiguration conf)
+    public static ResolvedBookieSocketAddress getBookieAddress(ServerConfiguration conf)
             throws UnknownHostException {
         // Advertised address takes precedence over the listening interface and the
         // useHostNameAsBookieID settings
         if (conf.getAdvertisedAddress() != null && conf.getAdvertisedAddress().trim().length() > 0) {
             String hostAddress = conf.getAdvertisedAddress().trim();
-            return new BookieSocketAddress(hostAddress, conf.getBookiePort());
+            return new ResolvedBookieSocketAddress(hostAddress, conf.getBookiePort());
         }
 
         String iface = conf.getListeningInterface();
@@ -570,8 +571,8 @@ public class Bookie extends BookieCriticalThread {
             hostAddress = iAddress.getHostAddress();
         }
 
-        BookieSocketAddress addr =
-                new BookieSocketAddress(hostAddress, conf.getBookiePort());
+        ResolvedBookieSocketAddress addr =
+                new ResolvedBookieSocketAddress(hostAddress, conf.getBookiePort());
         if (addr.getSocketAddress().getAddress().isLoopbackAddress()
             && !conf.getAllowLoopback()) {
             throw new UnknownHostException("Trying to listen on loopback address, "

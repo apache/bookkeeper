@@ -42,6 +42,7 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol.AuthRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.AuthResponse;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
@@ -204,7 +205,8 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
                 NullStatsLogger.INSTANCE,
                 authProviderFactory,
                 extRegistry,
-                null);
+                null,
+                ResolvedBookieSocketAddress.DUMMY);
 
             state = ConnectionState.CONNECTING;
             ChannelFuture future = connect();

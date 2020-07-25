@@ -84,7 +84,7 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
             if (bookieId == null || bookieId.isEmpty()) {
                 throw new IllegalArgumentException("BookieId is required");
             }
-            BookieSocketAddress address = new BookieSocketAddress(bookieId);
+            BookieSocketAddress address = BookieSocketAddress.parse(bookieId);
             Collection<BookieSocketAddress> allBookies = admin.getAllBookies();
             if (!allBookies.contains(address)) {
                 System.out.println("Bookie " + bookieId + " does not exist, only " + allBookies);

@@ -76,6 +76,7 @@ import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.DataFormats;
@@ -474,9 +475,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     .build();
         }
 
-        // initialize bookie client
-        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
-                scheduler, rootStatsLogger);
 
         if (null == requestTimer) {
             this.requestTimer = new HashedWheelTimer(
@@ -497,6 +495,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.bookieWatcher = new BookieWatcherImpl(
                 conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
                 this.statsLogger.scope(WATCHER_SCOPE));
+        
+        // initialize bookie client
+        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
+                scheduler, rootStatsLogger, this.bookieWatcher.getBookieAddressResolver());
+
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
             ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
@@ -633,6 +636,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     @VisibleForTesting
     BookieWatcher getBookieWatcher() {
         return bookieWatcher;
+    }
+    
+    public BookieAddressResolver getBookieAddressResolver() {
+        return bookieWatcher.getBookieAddressResolver();
     }
 
     public OrderedExecutor getMainWorkerPool() {

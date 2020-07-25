@@ -368,9 +368,7 @@ public class AuditorElector {
         AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder();
         TextFormat.merge(new String(data, UTF_8), builder);
         AuditorVoteFormat v = builder.build();
-        String[] parts = v.getBookieId().split(":");
-        return new BookieSocketAddress(parts[0],
-                                       Integer.parseInt(parts[1]));
+        return BookieSocketAddress.parse(v.getBookieId());
     }
 
     /**

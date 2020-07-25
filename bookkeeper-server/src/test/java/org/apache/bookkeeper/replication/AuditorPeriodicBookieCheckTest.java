@@ -33,7 +33,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.After;
 import org.junit.Before;
@@ -96,7 +96,7 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
                                        LedgerMetadataBuilder.create().withEnsembleSize(3)
                                        .withWriteQuorumSize(3).withAckQuorumSize(3)
                                        .newEnsembleEntry(0L, Lists.newArrayList(
-                                                                 new BookieSocketAddress("192.0.2.1", 1000),
+                                                                 new ResolvedBookieSocketAddress("192.0.2.1", 1000),
                                                                  getBookie(0), getBookie(1))));
                 long underReplicatedLedger = -1;
                 for (int i = 0; i < 10; i++) {

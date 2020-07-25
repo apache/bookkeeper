@@ -62,6 +62,7 @@ import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -547,9 +548,9 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         Random rand = new Random();
         for (int i = 0; i < numofledgers; i++) {
             ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
-            ensemble.add(new BookieSocketAddress("99.99.99.99:9999"));
-            ensemble.add(new BookieSocketAddress("11.11.11.11:1111"));
-            ensemble.add(new BookieSocketAddress("88.88.88.88:8888"));
+            ensemble.add(new ResolvedBookieSocketAddress("99.99.99.99:9999"));
+            ensemble.add(new ResolvedBookieSocketAddress("11.11.11.11:1111"));
+            ensemble.add(new ResolvedBookieSocketAddress("88.88.88.88:8888"));
 
             LedgerMetadata metadata = LedgerMetadataBuilder.create()
                 .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)

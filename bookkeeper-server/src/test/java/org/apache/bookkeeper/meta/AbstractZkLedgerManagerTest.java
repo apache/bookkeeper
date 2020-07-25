@@ -57,6 +57,7 @@ import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -116,11 +117,11 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
                 .useConstructor(conf, mockZk)
                 .defaultAnswer(CALLS_REAL_METHODS));
         List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new BookieSocketAddress("192.0.2.1", 3181),
-                new BookieSocketAddress("192.0.2.2", 3181),
-                new BookieSocketAddress("192.0.2.3", 3181),
-                new BookieSocketAddress("192.0.2.4", 3181),
-                new BookieSocketAddress("192.0.2.5", 3181));
+                new ResolvedBookieSocketAddress("192.0.2.1", 3181),
+                new ResolvedBookieSocketAddress("192.0.2.2", 3181),
+                new ResolvedBookieSocketAddress("192.0.2.3", 3181),
+                new ResolvedBookieSocketAddress("192.0.2.4", 3181),
+                new ResolvedBookieSocketAddress("192.0.2.5", 3181));
         this.metadata = LedgerMetadataBuilder.create()
             .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
             .withEnsembleSize(5)

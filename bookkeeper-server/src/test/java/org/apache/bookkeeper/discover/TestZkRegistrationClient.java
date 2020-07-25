@@ -57,6 +57,7 @@ import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.discover.ZKRegistrationClient.WatchTask;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -127,7 +128,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
     private static Set<BookieSocketAddress> prepareNBookies(int num) {
         Set<BookieSocketAddress> bookies = new HashSet<>();
         for (int i = 0; i < num; i++) {
-            bookies.add(new BookieSocketAddress("127.0.0.1", 3181 + i));
+            bookies.add(new ResolvedBookieSocketAddress("127.0.0.1", 3181 + i));
         }
         return bookies;
     }

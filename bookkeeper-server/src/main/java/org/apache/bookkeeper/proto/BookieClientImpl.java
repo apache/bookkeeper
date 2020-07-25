@@ -56,6 +56,7 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.FutureGetListOfEntriesOfLedger;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -99,13 +100,14 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     private final ReentrantReadWriteLock closeLock;
     private final StatsLogger statsLogger;
     private final int numConnectionsPerBookie;
+    private final BookieAddressResolver bookieAddressResolver;
 
     private final long bookieErrorThresholdPerInterval;
 
     public BookieClientImpl(ClientConfiguration conf, EventLoopGroup eventLoopGroup,
                             ByteBufAllocator allocator,
                             OrderedExecutor executor, ScheduledExecutorService scheduler,
-                            StatsLogger statsLogger) throws IOException {
+                            StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) throws IOException {
         this.conf = conf;
         this.v3Conf = new ClientConfiguration(conf);
         this.v3Conf.setUseV2WireProtocol(false);
@@ -115,7 +117,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         this.executor = executor;
         this.closed = false;
         this.closeLock = new ReentrantReadWriteLock();
-
+        this.bookieAddressResolver = bookieAddressResolver;
         this.registry = ExtensionRegistry.newInstance();
         this.authProviderFactory = AuthProviderFactoryFactory.newClientAuthProviderFactory(conf);
 
@@ -194,7 +196,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             clientConfiguration = v3Conf;
         }
         return new PerChannelBookieClient(clientConfiguration, executor, eventLoopGroup, allocator, address,
-                                   statsLoggerForPCBC, authProviderFactory, registry, pcbcPool, shFactory);
+                                   statsLoggerForPCBC, authProviderFactory, registry, pcbcPool, shFactory, bookieAddressResolver);
     }
 
     public PerChannelBookieClientPool lookupClient(BookieSocketAddress addr) {
@@ -652,8 +654,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
                 new DefaultThreadFactory("BookKeeperClientScheduler"));
         BookieClientImpl bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
-                null, executor, scheduler, NullStatsLogger.INSTANCE);
-        BookieSocketAddress addr = new BookieSocketAddress(args[0], Integer.parseInt(args[1]));
+                null, executor, scheduler, NullStatsLogger.INSTANCE, b -> ResolvedBookieSocketAddress.class.cast(b));
+        BookieSocketAddress addr = new ResolvedBookieSocketAddress(args[0], Integer.parseInt(args[1]));
 
         for (int i = 0; i < 100000; i++) {
             counter.inc();

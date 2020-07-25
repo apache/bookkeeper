@@ -74,10 +74,7 @@ public class WhoIsAuditorService implements HttpEndpointService {
             }
 
             response.setCode(HttpServer.StatusCode.OK);
-            response.setBody("Auditor: "
-                + bookieId.getSocketAddress().getAddress().getCanonicalHostName() + "/"
-                + bookieId.getSocketAddress().getAddress().getHostAddress() + ":"
-                + bookieId.getSocketAddress().getPort());
+            response.setBody("Auditor: "+ bookieId);
             LOG.debug("response body:" + response.getBody());
             return response;
         } else {

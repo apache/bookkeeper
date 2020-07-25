@@ -54,6 +54,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorPeriodicCheckTest.TestAuditor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -184,7 +185,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         BookieSocketAddress bookieAddress;
         List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
         for (int i = 0; i < numOfBookies; i++) {
-            bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            bookieAddress = new ResolvedBookieSocketAddress("98.98.98." + i, 2181);
             bookieAddresses.add(bookieAddress);
             regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
         }

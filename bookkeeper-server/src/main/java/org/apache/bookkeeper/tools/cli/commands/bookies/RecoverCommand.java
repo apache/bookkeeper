@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -125,14 +126,13 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
         final String[] bookieStrs = flags.bookieAddress.split(",");
         final Set<BookieSocketAddress> bookieAddrs = new HashSet<>();
         for (String bookieStr : bookieStrs) {
-            final String[] bookieStrParts = bookieStr.split(":");
-            if (bookieStrParts.length != 2) {
+            try {
+                bookieAddrs.add(BookieSocketAddress.parse(bookieStr));
+            } catch (UnknownHostException err) {
                 System.err.println("BookieSrcs has invalid bookie address format (host:port expected) : "
                                    + bookieStr);
-                return false;
+                return false;   
             }
-            bookieAddrs.add(new BookieSocketAddress(bookieStrParts[0],
-                                                    Integer.parseInt(bookieStrParts[1])));
         }
 
         if (!force) {

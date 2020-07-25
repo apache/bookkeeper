@@ -93,7 +93,7 @@ public class InfoCommand extends BookieCommand<CliFlags> {
             Map<String, BookieInfo> dedupedMap = map.entrySet()
                 .stream()
                 .collect(Collectors.toMap(
-                    entry -> entry.getKey().getHostName(),
+                    entry -> entry.getKey().toString(),
                     entry -> entry.getValue(),
                     (key1, key2) -> key2
                 ));

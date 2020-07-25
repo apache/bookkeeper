@@ -46,6 +46,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.junit.Test;
@@ -63,7 +64,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
     final List<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
     DistributionSchedule.WriteSet writeSet = DistributionSchedule.NULL_WRITE_SET;
     ClientConfiguration conf = new ClientConfiguration();
-    BookieSocketAddress addr1, addr2, addr3, addr4;
+    ResolvedBookieSocketAddress addr1, addr2, addr3, addr4;
     io.netty.util.HashedWheelTimer timer;
 
     @Override
@@ -76,10 +77,10 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
         LOG.info("Set up static DNS Resolver.");
         conf.setProperty(REPP_DNS_RESOLVER_CLASS, StaticDNSResolver.class.getName());
-        addr1 = new BookieSocketAddress("127.0.0.2", 3181);
-        addr2 = new BookieSocketAddress("127.0.0.3", 3181);
-        addr3 = new BookieSocketAddress("127.0.0.4", 3181);
-        addr4 = new BookieSocketAddress("127.0.0.5", 3181);
+        addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_ZONE + "/ud1");
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
@@ -137,8 +138,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -202,8 +203,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -264,9 +265,9 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/zone4/ud1");
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
         Set<BookieSocketAddress> bookiesInDefaultFaultDomain = new HashSet<BookieSocketAddress>();
         bookiesInDefaultFaultDomain.add(addr5);
         bookiesInDefaultFaultDomain.add(addr6);
@@ -316,12 +317,12 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
-        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        ResolvedBookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        ResolvedBookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -408,12 +409,12 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
-        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        ResolvedBookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        ResolvedBookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");

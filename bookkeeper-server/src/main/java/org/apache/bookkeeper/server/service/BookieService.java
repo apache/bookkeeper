@@ -29,6 +29,7 @@ import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher.EndpointInfo;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
@@ -84,7 +85,7 @@ public class BookieService extends ServerLifecycleComponent {
     @Override
     public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
         try {
-            BookieSocketAddress localAddress = getServer().getLocalAddress();
+            ResolvedBookieSocketAddress localAddress = getServer().getLocalAddress();
             List<String> extensions = new ArrayList<>();
             if (conf.getServerConf().getTLSProviderFactoryClass() != null) {
                 extensions.add("tls");

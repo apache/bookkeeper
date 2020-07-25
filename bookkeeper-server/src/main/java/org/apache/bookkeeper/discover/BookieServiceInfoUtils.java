@@ -20,7 +20,7 @@ package org.apache.bookkeeper.discover;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 
 /**
  * Utility class for {@link BookieServiceInfo}.
@@ -37,7 +37,7 @@ public final class BookieServiceInfoUtils {
      * @throws UnknownHostException if the given bookieId is invalid
      */
     public static BookieServiceInfo buildLegacyBookieServiceInfo(String bookieId) throws UnknownHostException {
-        BookieSocketAddress address = new BookieSocketAddress(bookieId);
+        ResolvedBookieSocketAddress address = new ResolvedBookieSocketAddress(bookieId);
         BookieServiceInfo.Endpoint endpoint = new BookieServiceInfo.Endpoint();
         endpoint.setId(bookieId);
         endpoint.setHost(address.getHostName());

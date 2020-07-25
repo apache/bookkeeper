@@ -48,6 +48,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -163,7 +164,7 @@ public class BookieClientTest {
         ResultStruct arc = new ResultStruct();
 
         BookieClient bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
-                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE);
+                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         ByteBufList bb = createByteBuffer(1, 1, 1);
         bc.addEntry(addr, 1, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
         synchronized (arc) {
@@ -264,7 +265,7 @@ public class BookieClientTest {
         ResultStruct arc = new ResultStruct();
         BookieSocketAddress addr = bs.getLocalAddress();
         BookieClient bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
-                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE);
+                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         synchronized (arc) {
             bc.readEntry(addr, 2, 13, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
@@ -289,7 +290,7 @@ public class BookieClientTest {
         TestStatsProvider statsProvider = new TestStatsProvider();
         TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
         BookieClient bc = new BookieClientImpl(clientConf, new NioEventLoopGroup(), UnpooledByteBufAllocator.DEFAULT,
-                executor, scheduler, statsLogger);
+                executor, scheduler, statsLogger, ResolvedBookieSocketAddress.DUMMY);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
                 | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 
@@ -334,7 +335,7 @@ public class BookieClientTest {
 
         TestOpStatsLogger perChannelBookieClientScopeOfThisAddr = (TestOpStatsLogger) statsLogger
                 .scope(BookKeeperClientStats.CHANNEL_SCOPE)
-                .scope(PerChannelBookieClient.buildStatsLoggerScopeName(addr))
+                .scope(addr.getNameForMetrics())
                 .getOpStatsLogger(BookKeeperClientStats.GET_BOOKIE_INFO_OP);
         int expectedBookieInfoSuccessCount = (limitStatsLogging) ? 0 : 1;
         assertEquals("BookieInfoSuccessCount", expectedBookieInfoSuccessCount,

@@ -21,6 +21,7 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
+import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +35,7 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,8 +82,17 @@ public class ListBookiesService implements HttpEndpointService {
             // output <bookieSocketAddress: hostname>
             Map<String, String> output = Maps.newHashMap();
             for (BookieSocketAddress b : bookies) {
-                output.putIfAbsent(b.toString(), printHostname ? b.getHostName() : null);
-                LOG.debug("bookie: " + b.toString() + " hostname:" + b.getHostName());
+                String hostname = null;
+                if (printHostname) {
+                    try {
+                        ResolvedBookieSocketAddress resolved = bka.getBookieAddressResolver().resolve(b);
+                        hostname = resolved.getHostName();
+                    } catch (IOException err) {
+                        LOG.warn("Cannot resolve bookie address "+b, err);
+                    }
+                }
+                output.putIfAbsent(b.toString(), hostname);
+                LOG.debug("bookie: " + b.toString() + " hostname:" + hostname);
             }
             String jsonResponse = JsonUtil.toJson(output);
 

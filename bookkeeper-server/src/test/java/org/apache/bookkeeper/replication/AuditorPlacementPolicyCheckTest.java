@@ -51,6 +51,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorPeriodicCheckTest.TestAuditor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -100,13 +101,13 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     @Test
     public void testPlacementPolicyCheckWithBookiesFromDifferentRacks() throws Exception {
         int numOfBookies = 5;
-        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
-        BookieSocketAddress bookieAddress;
+        List<BookieSocketAddress> bookieAddresses = new ArrayList<>();
+        ResolvedBookieSocketAddress bookieAddress;
         RegistrationManager regManager = driver.getRegistrationManager();
 
         // all the numOfBookies (5) are going to be in different racks
         for (int i = 0; i < numOfBookies; i++) {
-            bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            bookieAddress = new ResolvedBookieSocketAddress("98.98.98." + i, 2181);
             StaticDNSResolver.addNodeToRack(bookieAddress.getHostName(), "/rack" + (i));
             bookieAddresses.add(bookieAddress);
             regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
@@ -212,11 +213,11 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     public void testPlacementPolicyCheckWithLedgersNotAdheringToPlacementPolicy() throws Exception {
         int numOfBookies = 5;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
-        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
+        List<ResolvedBookieSocketAddress> bookieAddresses = new ArrayList<>();
         RegistrationManager regManager = driver.getRegistrationManager();
 
         for (int i = 0; i < numOfBookies; i++) {
-            BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            ResolvedBookieSocketAddress bookieAddress = new ResolvedBookieSocketAddress("98.98.98." + i, 2181);
             bookieAddresses.add(bookieAddress);
             regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
         }
@@ -243,7 +244,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
-                .newEnsembleEntry(0L, bookieAddresses)
+                .newEnsembleEntry(0L, (List) bookieAddresses)
                 .withClosedState()
                 .withLastEntryId(100)
                 .withLength(10000)
@@ -261,7 +262,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
-                .newEnsembleEntry(0L, bookieAddresses)
+                .newEnsembleEntry(0L, (List) bookieAddresses)
                 .withDigestType(DigestType.DUMMY)
                 .withPassword(new byte[0])
                 .build();
@@ -311,7 +312,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         RegistrationManager regManager = driver.getRegistrationManager();
 
         for (int i = 0; i < numOfBookies; i++) {
-            BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            BookieSocketAddress bookieAddress = new ResolvedBookieSocketAddress("98.98.98." + i, 2181);
             bookieAddresses.add(bookieAddress);
             regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
         }
@@ -423,11 +424,11 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     public void testPlacementPolicyCheckWithLedgersNotAdheringToPolicyWithMultipleSegments() throws Exception {
         int numOfBookies = 7;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
-        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
+        List<ResolvedBookieSocketAddress> bookieAddresses = new ArrayList<>();
         RegistrationManager regManager = driver.getRegistrationManager();
 
         for (int i = 0; i < numOfBookies; i++) {
-            BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            ResolvedBookieSocketAddress bookieAddress = new ResolvedBookieSocketAddress("98.98.98." + i, 2181);
             bookieAddresses.add(bookieAddress);
             regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
         }
@@ -457,8 +458,8 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
-                .newEnsembleEntry(0L, bookieAddresses.subList(0, 5))
-                .newEnsembleEntry(20L, bookieAddresses.subList(1, 6))
+                .newEnsembleEntry(0L, (List) bookieAddresses.subList(0, 5))
+                .newEnsembleEntry(20L, (List) bookieAddresses.subList(1, 6))
                 .withClosedState()
                 .withLastEntryId(100)
                 .withLength(10000)
@@ -483,7 +484,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
-                .newEnsembleEntry(0L, bookieAddresses.subList(0, 5))
+                .newEnsembleEntry(0L, (List) bookieAddresses.subList(0, 5))
                 .newEnsembleEntry(20L,
                         Arrays.asList(bookieAddresses.get(0), bookieAddresses.get(1), bookieAddresses.get(2),
                                 bookieAddresses.get(4), bookieAddresses.get(5)))
@@ -533,7 +534,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * 6 bookies - 3 zones and 2 uds
          */
         for (int i = 0; i < numOfBookies; i++) {
-            BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            ResolvedBookieSocketAddress bookieAddress = new ResolvedBookieSocketAddress("98.98.98." + i, 2181);
             bookieAddresses.add(bookieAddress);
             regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
             String zone = "/zone" + (i % 3);

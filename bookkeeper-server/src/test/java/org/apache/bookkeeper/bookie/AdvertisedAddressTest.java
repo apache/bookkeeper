@@ -31,6 +31,7 @@ import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.PortManager;
@@ -69,7 +70,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         conf.setAdvertisedAddress("10.0.0.1");
         assertEquals("10.0.0.1", conf.getAdvertisedAddress());
 
-        BookieSocketAddress bkAddress = new BookieSocketAddress("10.0.0.1", bookiePort);
+        BookieSocketAddress bkAddress = new ResolvedBookieSocketAddress("10.0.0.1", bookiePort);
         assertEquals(bkAddress, Bookie.getBookieAddress(conf));
 
         Bookie b = new Bookie(conf);
@@ -98,7 +99,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
 
         assertEquals("10.0.0.1", conf.getAdvertisedAddress());
 
-        BookieSocketAddress bkAddress = new BookieSocketAddress("10.0.0.1", bookiePort);
+        BookieSocketAddress bkAddress = new ResolvedBookieSocketAddress("10.0.0.1", bookiePort);
         assertEquals(bkAddress, Bookie.getBookieAddress(conf));
     }
 

@@ -27,6 +27,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +36,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
@@ -45,8 +48,11 @@ import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdher
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -108,6 +114,25 @@ class BookieWatcherImpl implements BookieWatcher {
 
     private CompletableFuture<?> initialWritableBookiesFuture = null;
     private CompletableFuture<?> initialReadonlyBookiesFuture = null;
+    
+    private final BookieAddressResolver bookieAddressResolver = new BookieAddressResolver() {
+        @Override
+        public ResolvedBookieSocketAddress resolve(BookieSocketAddress address) throws IOException {
+            try {
+                BookieServiceInfo info = FutureUtils.result(registrationClient.getBookieServiceInfo(address.toString())).getValue();
+                BookieServiceInfo.Endpoint endpoint = info.getEndpoints().stream().filter(e->e.getProtocol().equals("bookie-rpc")).findAny().orElse(null);
+                if (endpoint == null) {
+                    throw new Exception("bookie "+address+" does not publish a bookie-rpc endpond");
+                }
+                return new ResolvedBookieSocketAddress(endpoint.getHost(), endpoint.getPort());
+            } catch (Exception ex) {
+                if (ex instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                throw new IOException("Cannot resolve address of bookie "+address, ex);
+            }
+        }
+    };
 
     public BookieWatcherImpl(ClientConfiguration conf,
                              EnsemblePlacementPolicy placementPolicy,
@@ -150,6 +175,11 @@ class BookieWatcherImpl implements BookieWatcher {
             Thread.currentThread().interrupt();
             throw ie;
         }
+    }
+
+    @Override
+    public BookieAddressResolver getBookieAddressResolver() {
+        return this.bookieAddressResolver;
     }
 
     @Override

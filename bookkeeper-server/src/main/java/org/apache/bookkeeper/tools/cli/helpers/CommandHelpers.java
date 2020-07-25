@@ -22,6 +22,7 @@ import com.google.common.net.InetAddresses;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 
 /**
  * Helper classes used by the cli commands.
@@ -36,18 +37,23 @@ public final class CommandHelpers {
      * where hostname and otherformofhostname are ipaddress and
      * canonicalhostname or viceversa
      */
-    public static String getBookieSocketAddrStringRepresentation(BookieSocketAddress bookieId) {
-        String hostname = bookieId.getHostName();
-        boolean isHostNameIpAddress = InetAddresses.isInetAddress(hostname);
-        String otherFormOfHostname = null;
-        if (isHostNameIpAddress) {
-            otherFormOfHostname = bookieId.getSocketAddress().getAddress().getCanonicalHostName();
+    public static String getBookieSocketAddrStringRepresentation(BookieSocketAddress rawBookieId) {
+        if (rawBookieId instanceof ResolvedBookieSocketAddress) {
+            ResolvedBookieSocketAddress bookieId = (ResolvedBookieSocketAddress) rawBookieId;
+            String hostname = bookieId.getHostName();
+            boolean isHostNameIpAddress = InetAddresses.isInetAddress(hostname);
+            String otherFormOfHostname = null;
+            if (isHostNameIpAddress) {
+                otherFormOfHostname = bookieId.getSocketAddress().getAddress().getCanonicalHostName();
+            } else {
+                otherFormOfHostname = bookieId.getSocketAddress().getAddress().getHostAddress();
+            }
+            String bookieSocketAddrStringRepresentation = hostname + "(" + otherFormOfHostname + ")" + ":"
+                    + bookieId.getSocketAddress().getPort();
+            return bookieSocketAddrStringRepresentation;
         } else {
-            otherFormOfHostname = bookieId.getSocketAddress().getAddress().getHostAddress();
+            return rawBookieId.toString();
         }
-        String bookieSocketAddrStringRepresentation = hostname + "(" + otherFormOfHostname + ")" + ":"
-                + bookieId.getSocketAddress().getPort();
-        return bookieSocketAddrStringRepresentation;
     }
 
 }

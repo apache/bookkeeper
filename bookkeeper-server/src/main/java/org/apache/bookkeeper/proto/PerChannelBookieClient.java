@@ -57,6 +57,7 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
+import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
@@ -93,6 +94,7 @@ import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
@@ -167,6 +169,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
+    private final BookieAddressResolver bookieAddressResolver;
     final BookieSocketAddress addr;
     final EventLoopGroup eventLoopGroup;
     final ByteBufAllocator allocator;
@@ -333,26 +336,26 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private volatile boolean isWritable = true;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
-                                  BookieSocketAddress addr) throws SecurityException {
+                                  BookieSocketAddress addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
         this(new ClientConfiguration(), executor, eventLoopGroup, addr, NullStatsLogger.INSTANCE, null, null,
-                null);
+                null, bookieAddressResolver);
     }
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieSocketAddress addr,
                                   ClientAuthProvider.Factory authProviderFactory,
-                                  ExtensionRegistry extRegistry) throws SecurityException {
+                                  ExtensionRegistry extRegistry, BookieAddressResolver bookieAddressResolver) throws SecurityException {
         this(new ClientConfiguration(), executor, eventLoopGroup, addr, NullStatsLogger.INSTANCE,
-                authProviderFactory, extRegistry, null);
+                authProviderFactory, extRegistry, null, bookieAddressResolver);
     }
 
     public PerChannelBookieClient(ClientConfiguration conf, OrderedExecutor executor,
                                   EventLoopGroup eventLoopGroup, BookieSocketAddress addr,
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
-                                  PerChannelBookieClientPool pcbcPool) throws SecurityException {
+                                  PerChannelBookieClientPool pcbcPool, BookieAddressResolver bookieAddressResolver) throws SecurityException {
         this(conf, executor, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, addr, NullStatsLogger.INSTANCE,
-                authProviderFactory, extRegistry, pcbcPool, null);
+                authProviderFactory, extRegistry, pcbcPool, null, bookieAddressResolver);
     }
 
     public PerChannelBookieClient(ClientConfiguration conf, OrderedExecutor executor,
@@ -362,7 +365,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool,
-                                  SecurityHandlerFactory shFactory) throws SecurityException {
+                                  SecurityHandlerFactory shFactory,
+                                  BookieAddressResolver bookieAddressResolver) throws SecurityException {
         this.maxFrameSize = conf.getNettyMaxFrameSizeBytes();
         this.conf = conf;
         this.addr = addr;
@@ -387,9 +391,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (shFactory != null) {
             shFactory.init(NodeType.Client, conf, allocator);
         }
+        this.bookieAddressResolver = bookieAddressResolver;
 
         this.statsLogger = parentStatsLogger.scope(BookKeeperClientStats.CHANNEL_SCOPE)
-            .scope(buildStatsLoggerScopeName(addr));
+            .scope(addr.getNameForMetrics());
 
         readEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_READ_OP);
         addEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_ADD_OP);
@@ -489,12 +494,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         };
     }
 
-    public static String buildStatsLoggerScopeName(BookieSocketAddress addr) {
-        StringBuilder nameBuilder = new StringBuilder();
-        nameBuilder.append(addr.getHostName().replace('.', '_').replace('-', '_')).append("_").append(addr.getPort());
-        return nameBuilder.toString();
-    }
-
     private void completeOperation(GenericCallback<PerChannelBookieClient> op, int rc) {
         //Thread.dumpStack();
         closeLock.readLock().lock();
@@ -572,9 +571,17 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
         });
 
-        SocketAddress bookieAddr = addr.getSocketAddress();
+        ResolvedBookieSocketAddress resolved;
+        try {
+            resolved = bookieAddressResolver.resolve(addr);
+        } catch (IOException err) {
+            LOG.error("cannot resolve "+addr, err);
+            //TODO: return a failed future
+            resolved = new ResolvedBookieSocketAddress(addr.toString(), 0);
+        }
+        SocketAddress bookieAddr = resolved.getSocketAddress();
         if (eventLoopGroup instanceof DefaultEventLoopGroup) {
-            bookieAddr = addr.getLocalAddress();
+            bookieAddr = resolved.getLocalAddress();
         }
 
         ChannelFuture future = bootstrap.connect(bookieAddr);

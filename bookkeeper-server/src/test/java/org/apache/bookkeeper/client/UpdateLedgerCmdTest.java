@@ -36,6 +36,7 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.KeeperException;
 import org.junit.Test;
@@ -73,8 +74,8 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         String[] argv = new String[] { "updateledgers", "-b", "hostname", "-v", "true", "-p", "2" };
         final ServerConfiguration conf = bsConfs.get(0);
         conf.setUseHostNameAsBookieID(true);
-        BookieSocketAddress toBookieId = Bookie.getBookieAddress(conf);
-        BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
+        ResolvedBookieSocketAddress toBookieId = Bookie.getBookieAddress(conf);
+        BookieSocketAddress toBookieAddr = new ResolvedBookieSocketAddress(toBookieId.getHostName() + ":"
                 + conf.getBookiePort());
 
         updateLedgerCmd(argv, 0, conf);
@@ -97,7 +98,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
             ledgers.add(createLedgerWithEntries(bk, 0));
         }
         BookieSocketAddress srcBookie = bs.get(0).getLocalAddress();
-        BookieSocketAddress destBookie = new BookieSocketAddress("1.1.1.1", 2181);
+        BookieSocketAddress destBookie = new ResolvedBookieSocketAddress("1.1.1.1", 2181);
         String[] argv = new String[] { "updateBookieInLedger", "-sb", srcBookie.toString(), "-db",
                 destBookie.toString(), "-v", "true", "-p", "2" };
         final ServerConfiguration conf = bsConfs.get(0);

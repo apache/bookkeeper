@@ -557,10 +557,12 @@ public class TestTLS extends BookKeeperClusterTestCase {
         LedgerMetadata metadata = testClient(clientConf, 2);
         assertTrue(metadata.getAllEnsembles().size() > 0);
         Collection<? extends List<BookieSocketAddress>> ensembles = metadata.getAllEnsembles().values();
-        for (List<BookieSocketAddress> bookies : ensembles) {
-            for (BookieSocketAddress bookieAddress : bookies) {
-                int port = bookieAddress.getPort();
-                assertTrue(tlsBookiePorts.contains(port));
+        try (BookKeeper client = new BookKeeper(clientConf)) {
+            for (List<BookieSocketAddress> bookies : ensembles) {
+                for (BookieSocketAddress bookieAddress : bookies) {
+                    int port = client.getBookieAddressResolver().resolve(bookieAddress).getPort();
+                    assertTrue(tlsBookiePorts.contains(port));
+                }
             }
         }
     }

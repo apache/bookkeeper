@@ -433,7 +433,7 @@ public class LedgerMetadataSerDe {
         for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
             List<BookieSocketAddress> addrs = new ArrayList<>();
             for (String addr : s.getEnsembleMemberList()) {
-                addrs.add(new BookieSocketAddress(addr));
+                addrs.add(BookieSocketAddress.parse(addr));
             }
             builder.newEnsembleEntry(s.getFirstEntryId(), addrs);
         }
@@ -474,7 +474,7 @@ public class LedgerMetadataSerDe {
 
                 ArrayList<BookieSocketAddress> addrs = new ArrayList<BookieSocketAddress>();
                 for (int j = 1; j < parts.length; j++) {
-                    addrs.add(new BookieSocketAddress(parts[j]));
+                    addrs.add(BookieSocketAddress.parse(parts[j]));
                 }
                 builder.newEnsembleEntry(Long.parseLong(parts[0]), addrs);
 
