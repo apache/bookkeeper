@@ -306,7 +306,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 } else {
                     LOG.error("Could not create node for ledger {}", ledgerId,
                             KeeperException.create(Code.get(rc), path));
-                    promise.completeExceptionally(new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
+                    promise.completeExceptionally(
+                            new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                 }
             }
         };
