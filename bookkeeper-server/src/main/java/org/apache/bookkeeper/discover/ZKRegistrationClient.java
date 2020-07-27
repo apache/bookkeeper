@@ -289,7 +289,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         CompletableFuture<Versioned<Set<BookieSocketAddress>>> future = FutureUtils.createFuture();
         zk.getChildren(regPath, watcher, (rc, path, ctx, children, stat) -> {
             if (Code.OK != rc) {
-                ZKException zke = new ZKException();
+                ZKException zke = new ZKException(KeeperException.create(KeeperException.Code.get(rc), path));
                 future.completeExceptionally(zke.fillInStackTrace());
                 return;
             }
