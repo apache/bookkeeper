@@ -4,7 +4,7 @@ title: Metric collection
 
 BookKeeper enables metrics collection through a variety of [stats providers](#stats-providers).
 
-> For a full listing of available metrics, see the [Metrics](../../reference/metrics) reference doc.
+> For a full listing of available metrics, see the [Metrics](https://bookkeeper.apache.org/docs/4.9.0/admin/metrics/) reference doc.
 
 ## Stats providers
 
@@ -19,7 +19,7 @@ Provider | Provider class name
 
 ## Enabling stats providers in bookies
 
-There are two stats-related [configuration parameters](../../reference/config#statistics) available for bookies:
+There are two stats-related [configuration parameters](https://bookkeeper.apache.org/docs/4.9.0/reference/config/) available for bookies:
 
 Parameter | Description | Default
 :---------|:------------|:-------
