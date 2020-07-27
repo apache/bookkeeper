@@ -61,6 +61,7 @@ import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.Main;
@@ -595,10 +596,10 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     public void testAreEntriesOfLedgerStoredInTheBookieForLastEmptySegment() throws Exception {
         int lastEntryId = 10;
         long ledgerId = 100L;
-        BookieSocketAddress bookie0 = new BookieSocketAddress("bookie0:3181");
-        BookieSocketAddress bookie1 = new BookieSocketAddress("bookie1:3181");
-        BookieSocketAddress bookie2 = new BookieSocketAddress("bookie2:3181");
-        BookieSocketAddress bookie3 = new BookieSocketAddress("bookie3:3181");
+        BookieSocketAddress bookie0 = new ResolvedBookieSocketAddress("bookie0:3181");
+        BookieSocketAddress bookie1 = new ResolvedBookieSocketAddress("bookie1:3181");
+        BookieSocketAddress bookie2 = new ResolvedBookieSocketAddress("bookie2:3181");
+        BookieSocketAddress bookie3 = new ResolvedBookieSocketAddress("bookie3:3181");
 
         List<BookieSocketAddress> ensembleOfSegment1 = new ArrayList<BookieSocketAddress>();
         ensembleOfSegment1.add(bookie0);

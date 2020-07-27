@@ -29,6 +29,7 @@ import com.google.common.cache.CacheLoader;
 
 import io.netty.util.HashedWheelTimer;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -62,6 +63,7 @@ import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
 import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.net.StabilizeNetworkTopology;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -152,7 +154,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         rand = new Random(System.currentTimeMillis());
     }
 
-    protected ZoneAwareNodeLocation getZoneAwareNodeLocation(BookieSocketAddress addr) {
+    protected ZoneAwareNodeLocation getZoneAwareNodeLocation(BookieSocketAddress addr) throws IOException {
         ZoneAwareNodeLocation nodeLocation = address2NodePlacement.get(addr);
         if (null == nodeLocation) {
             String networkLocation = resolveNetworkLocation(addr);
@@ -182,7 +184,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     @Override
     public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
             Optional<DNSToSwitchMapping> optionalDnsResolver, HashedWheelTimer timer, FeatureProvider featureProvider,
-            StatsLogger statsLogger) {
+            StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) {
         this.statsLogger = statsLogger;
         this.timer = timer;
         this.bookiesJoinedCounter = statsLogger.getOpStatsLogger(BOOKIES_JOINED);
@@ -249,7 +251,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         try {
             myNode = createBookieNode(new ResolvedBookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0));
             myZone = getZoneAwareNodeLocation(myNode).getZone();
-        } catch (UnknownHostException e) {
+        } catch (IOException e) {
             LOG.error("Failed to get local host address : ", e);
             throw new RuntimeException(e);
         }

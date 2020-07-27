@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,6 +49,7 @@ import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
@@ -62,12 +64,13 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     protected final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     protected Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
     // Initialize to empty set
-    protected ImmutableSet<BookieSocketAddress> readOnlyBookies = ImmutableSet.of();
+    protected ImmutableSet<BookieSocketAddress> readOnlyBookies = ImmutableSet.of();    
     boolean isWeighted;
     protected WeightedRandomSelection<BookieNode> weightedSelection;
     // for now, we just maintain the writable bookies' topology
     protected NetworkTopology topology;
     protected DNSToSwitchMapping dnsResolver;
+    protected BookieAddressResolver bookieAddressResolver;
     @StatsDoc(
             name = BOOKIES_JOINED,
             help = "The distribution of number of bookies joined the cluster on each network topology change"
@@ -772,15 +775,15 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
     }
 
-    protected BookieNode createBookieNode(BookieSocketAddress addr) {
+    protected BookieNode createBookieNode(BookieSocketAddress addr) throws IOException {
         return new BookieNode(addr, resolveNetworkLocation(addr));
     }
 
-    protected String resolveNetworkLocation(BookieSocketAddress addr) {
-        return NetUtils.resolveNetworkLocation(dnsResolver, addr);
+    protected String resolveNetworkLocation(BookieSocketAddress addr) throws IOException {
+        return NetUtils.resolveNetworkLocation(dnsResolver, bookieAddressResolver.resolve(addr));
     }
 
-    protected Set<Node> convertBookiesToNodes(Collection<BookieSocketAddress> excludeBookies) {
+    protected Set<Node> convertBookiesToNodes(Collection<BookieSocketAddress> excludeBookies) throws IOException {
         Set<Node> nodes = new HashSet<Node>();
         for (BookieSocketAddress addr : excludeBookies) {
             BookieNode bn = knownBookies.get(addr);

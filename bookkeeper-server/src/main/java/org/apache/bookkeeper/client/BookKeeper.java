@@ -563,7 +563,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
             return ReflectionUtils.newInstance(policyCls).initialize(conf, java.util.Optional.ofNullable(dnsResolver),
-                    timer, featureProvider, statsLogger);
+                    timer, featureProvider, statsLogger, bookieWatcher.getBookieAddressResolver());
         } catch (ConfigurationException e) {
             throw new IOException("Failed to initialize ensemble placement policy : ", e);
         }

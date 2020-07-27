@@ -29,6 +29,7 @@ import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Assert;
@@ -44,11 +45,11 @@ public class LedgerRecovery2Test {
     private static final Logger log = LoggerFactory.getLogger(LedgerRecovery2Test.class);
 
     private static final byte[] PASSWD = "foobar".getBytes();
-    private static final BookieSocketAddress b1 = new BookieSocketAddress("b1", 3181);
-    private static final BookieSocketAddress b2 = new BookieSocketAddress("b2", 3181);
-    private static final BookieSocketAddress b3 = new BookieSocketAddress("b3", 3181);
-    private static final BookieSocketAddress b4 = new BookieSocketAddress("b4", 3181);
-    private static final BookieSocketAddress b5 = new BookieSocketAddress("b5", 3181);
+    private static final BookieSocketAddress b1 = new ResolvedBookieSocketAddress("b1", 3181);
+    private static final BookieSocketAddress b2 = new ResolvedBookieSocketAddress("b2", 3181);
+    private static final BookieSocketAddress b3 = new ResolvedBookieSocketAddress("b3", 3181);
+    private static final BookieSocketAddress b4 = new ResolvedBookieSocketAddress("b4", 3181);
+    private static final BookieSocketAddress b5 = new ResolvedBookieSocketAddress("b5", 3181);
 
     private static Versioned<LedgerMetadata> setupLedger(ClientContext clientCtx, long ledgerId,
                                               List<BookieSocketAddress> bookies) throws Exception {

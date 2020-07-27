@@ -38,6 +38,7 @@ import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.lang3.tuple.Pair;
@@ -165,8 +166,9 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                                          Optional<DNSToSwitchMapping> optionalDnsResolver,
                                                          HashedWheelTimer timer,
                                                          FeatureProvider featureProvider,
-                                                         StatsLogger statsLogger) {
-        super.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger)
+                                                         StatsLogger statsLogger,
+                                                         BookieAddressResolver bookieAddressResolver) {
+        super.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger, bookieAddressResolver)
                 .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
         myRegion = getLocalRegion(localNode);
         enableValidation = conf.getBoolean(REPP_ENABLE_VALIDATION, true);

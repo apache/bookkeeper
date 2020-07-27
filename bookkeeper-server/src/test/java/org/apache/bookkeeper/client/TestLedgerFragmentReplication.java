@@ -41,6 +41,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -242,9 +243,9 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
     public void testSplitIntoSubFragmentsWithDifferentFragmentBoundaries()
             throws Exception {
         List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234));
+                new ResolvedBookieSocketAddress("192.0.2.1", 1234),
+                new ResolvedBookieSocketAddress("192.0.2.2", 1234),
+                new ResolvedBookieSocketAddress("192.0.2.3", 1234));
         LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
             .withPassword(TEST_PSSWD).withDigestType(TEST_DIGEST_TYPE.toApiDigestType())
@@ -354,13 +355,13 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         int rereplicationEntryBatchSize = 10;
 
         List<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
-        ensemble.add(new BookieSocketAddress("bookie0:3181"));
-        ensemble.add(new BookieSocketAddress("bookie1:3181"));
-        ensemble.add(new BookieSocketAddress("bookie2:3181"));
-        ensemble.add(new BookieSocketAddress("bookie3:3181"));
-        ensemble.add(new BookieSocketAddress("bookie4:3181"));
-        ensemble.add(new BookieSocketAddress("bookie5:3181"));
-        ensemble.add(new BookieSocketAddress("bookie6:3181"));
+        ensemble.add(BookieSocketAddress.parse("bookie0:3181"));
+        ensemble.add(BookieSocketAddress.parse("bookie1:3181"));
+        ensemble.add(BookieSocketAddress.parse("bookie2:3181"));
+        ensemble.add(BookieSocketAddress.parse("bookie3:3181"));
+        ensemble.add(BookieSocketAddress.parse("bookie4:3181"));
+        ensemble.add(BookieSocketAddress.parse("bookie5:3181"));
+        ensemble.add(BookieSocketAddress.parse("bookie6:3181"));
 
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create();
         builder.withEnsembleSize(7).withWriteQuorumSize(3).withAckQuorumSize(2)

@@ -35,6 +35,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
@@ -216,7 +217,8 @@ public interface EnsemblePlacementPolicy {
                                        Optional<DNSToSwitchMapping> optionalDnsResolver,
                                        HashedWheelTimer hashedWheelTimer,
                                        FeatureProvider featureProvider,
-                                       StatsLogger statsLogger);
+                                       StatsLogger statsLogger,
+                                       BookieAddressResolver bookieAddressResolver);
 
     /**
      * Uninitialize the policy.

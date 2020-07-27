@@ -37,6 +37,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
@@ -188,10 +189,11 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
 
     @Override
     public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
-                                              Optional<DNSToSwitchMapping> optionalDnsResolver,
-                                              HashedWheelTimer timer,
-                                              FeatureProvider featureProvider,
-                                              StatsLogger statsLogger) {
+                                       Optional<DNSToSwitchMapping> optionalDnsResolver,
+                                       HashedWheelTimer hashedWheelTimer,
+                                       FeatureProvider featureProvider,
+                                       StatsLogger statsLogger,
+                                       BookieAddressResolver bookieAddressResolver) {
         this.isWeighted = conf.getDiskWeightBasedPlacementEnabled();
         if (this.isWeighted) {
             this.maxWeightMultiple = conf.getBookieMaxWeightMultipleForWeightBasedPlacement();

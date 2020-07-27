@@ -47,6 +47,7 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.MockLedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.tuple.Triple;
@@ -72,17 +73,17 @@ public class MetadataUpdateLoopTest {
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(5)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .newEnsembleEntry(0L, Lists.newArrayList(
-                                          new BookieSocketAddress("0.0.0.0:3181"),
-                                          new BookieSocketAddress("0.0.0.1:3181"),
-                                          new BookieSocketAddress("0.0.0.2:3181"),
-                                          new BookieSocketAddress("0.0.0.3:3181"),
-                                          new BookieSocketAddress("0.0.0.4:3181"))).build();
+                                          BookieSocketAddress.parse("0.0.0.0:3181"),
+                                          BookieSocketAddress.parse("0.0.0.1:3181"),
+                                          BookieSocketAddress.parse("0.0.0.2:3181"),
+                                          BookieSocketAddress.parse("0.0.0.3:3181"),
+                                          BookieSocketAddress.parse("0.0.0.4:3181"))).build();
             long ledgerId = 1234L;
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
 
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
 
-            BookieSocketAddress newAddress = new BookieSocketAddress("0.0.0.5:3181");
+            BookieSocketAddress newAddress = BookieSocketAddress.parse("0.0.0.5:3181");
             MetadataUpdateLoop loop = new MetadataUpdateLoop(
                     lm,
                     ledgerId,
@@ -111,10 +112,10 @@ public class MetadataUpdateLoopTest {
             lm.blockWrites();
 
             long ledgerId = 1234L;
-            BookieSocketAddress b0 = new BookieSocketAddress("0.0.0.0:3181");
-            BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
-            BookieSocketAddress b2 = new BookieSocketAddress("0.0.0.2:3181");
-            BookieSocketAddress b3 = new BookieSocketAddress("0.0.0.3:3181");
+            BookieSocketAddress b0 = BookieSocketAddress.parse("0.0.0.0:3181");
+            BookieSocketAddress b1 = BookieSocketAddress.parse("0.0.0.1:3181");
+            BookieSocketAddress b2 = BookieSocketAddress.parse("0.0.0.2:3181");
+            BookieSocketAddress b3 = BookieSocketAddress.parse("0.0.0.3:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
@@ -179,9 +180,9 @@ public class MetadataUpdateLoopTest {
             lm.blockWrites();
 
             long ledgerId = 1234L;
-            BookieSocketAddress b0 = new BookieSocketAddress("0.0.0.0:3181");
-            BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
-            BookieSocketAddress b2 = new BookieSocketAddress("0.0.0.2:3181");
+            BookieSocketAddress b0 = BookieSocketAddress.parse("0.0.0.0:3181");
+            BookieSocketAddress b1 = BookieSocketAddress.parse("0.0.0.1:3181");
+            BookieSocketAddress b2 = BookieSocketAddress.parse("0.0.0.2:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
@@ -232,10 +233,10 @@ public class MetadataUpdateLoopTest {
     public void testConflictOnLocalUpdate() throws Exception {
         try (DeferCallbacksMockLedgerManager lm = spy(new DeferCallbacksMockLedgerManager(1))) {
             long ledgerId = 1234L;
-            BookieSocketAddress b0 = new BookieSocketAddress("0.0.0.0:3181");
-            BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
-            BookieSocketAddress b2 = new BookieSocketAddress("0.0.0.2:3181");
-            BookieSocketAddress b3 = new BookieSocketAddress("0.0.0.3:3181");
+            BookieSocketAddress b0 = BookieSocketAddress.parse("0.0.0.0:3181");
+            BookieSocketAddress b1 = BookieSocketAddress.parse("0.0.0.1:3181");
+            BookieSocketAddress b2 = BookieSocketAddress.parse("0.0.0.2:3181");
+            BookieSocketAddress b3 = BookieSocketAddress.parse("0.0.0.3:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
@@ -282,7 +283,7 @@ public class MetadataUpdateLoopTest {
 
     private static BookieSocketAddress address(String s) {
         try {
-            return new BookieSocketAddress(s);
+            return BookieSocketAddress.parse(s);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -344,8 +345,8 @@ public class MetadataUpdateLoopTest {
             lm.blockWrites();
 
             long ledgerId = 1234L;
-            BookieSocketAddress b0 = new BookieSocketAddress("0.0.0.0:3181");
-            BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
+            BookieSocketAddress b0 = new ResolvedBookieSocketAddress("0.0.0.0:3181");
+            BookieSocketAddress b1 = new ResolvedBookieSocketAddress("0.0.0.1:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(1)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])

@@ -29,6 +29,7 @@ import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
@@ -47,15 +48,15 @@ public class ZoneawareEnsemblePlacementPolicy extends ZoneawareEnsemblePlacement
     @Override
     public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
             Optional<DNSToSwitchMapping> optionalDnsResolver, HashedWheelTimer timer, FeatureProvider featureProvider,
-            StatsLogger statsLogger) {
+            StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) {
         if (conf.getNetworkTopologyStabilizePeriodSeconds() > 0) {
             ClientConfiguration confClone = new ClientConfiguration(conf);
             confClone.setNetworkTopologyStabilizePeriodSeconds(0);
-            super.initialize(confClone, optionalDnsResolver, timer, featureProvider, statsLogger);
+            super.initialize(confClone, optionalDnsResolver, timer, featureProvider, statsLogger, bookieAddressResolver);
             slave = new ZoneawareEnsemblePlacementPolicyImpl();
-            slave.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger);
+            slave.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger, bookieAddressResolver);
         } else {
-            super.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger);
+            super.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger, bookieAddressResolver);
             slave = null;
         }
         return this;

@@ -41,6 +41,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -133,10 +134,10 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         final CountDownLatch removeLatch = new CountDownLatch(1);
 
         List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234),
-                new BookieSocketAddress("192.0.2.4", 1234));
+                new ResolvedBookieSocketAddress("192.0.2.1", 1234),
+                new ResolvedBookieSocketAddress("192.0.2.2", 1234),
+                new ResolvedBookieSocketAddress("192.0.2.3", 1234),
+                new ResolvedBookieSocketAddress("192.0.2.4", 1234));
         idGenerator.generateLedgerId(new GenericCallback<Long>() {
                 @Override
                 public void operationComplete(int rc, final Long lid) {

@@ -40,6 +40,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
 
@@ -74,7 +75,7 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
                 conf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS, conf.getTimeoutTimerNumTicks());
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
     }
 
@@ -86,10 +87,10 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
 
     @Test
     public void testNotifyRackChange() throws Exception {
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.1.1", 3181);
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.1.2", 3181);
-        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.1.3", 3181);
-        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.1.4", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.1.1", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.1.2", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.1.3", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.1.4", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/rack-1");

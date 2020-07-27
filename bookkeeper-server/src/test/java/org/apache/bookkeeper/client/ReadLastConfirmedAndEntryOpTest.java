@@ -56,6 +56,7 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -104,7 +105,7 @@ public class ReadLastConfirmedAndEntryOpTest {
         // metadata
         ArrayList<BookieSocketAddress> ensemble = new ArrayList<>(3);
         for (int i = 0; i < 3; i++) {
-            ensemble.add(new BookieSocketAddress("127.0.0.1", 3181 + i));
+            ensemble.add(new ResolvedBookieSocketAddress("127.0.0.1", 3181 + i));
         }
         this.ledgerMetadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)

@@ -32,8 +32,8 @@ import com.google.common.cache.CacheLoader;
 
 import io.netty.util.HashedWheelTimer;
 
+import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,6 +63,7 @@ import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
 import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.net.StabilizeNetworkTopology;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -205,7 +206,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         if (!ignoreLocalNodeInPlacementPolicy) {
             try {
                 bn = createBookieNode(new ResolvedBookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0));
-            } catch (UnknownHostException e) {
+            } catch (IOException e) {
                 LOG.error("Failed to get local host address : ", e);
             }
         } else {
@@ -248,7 +249,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                                            Optional<DNSToSwitchMapping> optionalDnsResolver,
                                                            HashedWheelTimer timer,
                                                            FeatureProvider featureProvider,
-                                                           StatsLogger statsLogger) {
+                                                           StatsLogger statsLogger,
+                                                           BookieAddressResolver bookieAddressResolver) {
+        this.bookieAddressResolver = bookieAddressResolver;
         DNSToSwitchMapping dnsResolver;
         if (optionalDnsResolver.isPresent()) {
             dnsResolver = optionalDnsResolver.get();
@@ -448,7 +451,11 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             excludeBookies.addAll(currentEnsemble);
             BookieNode bn = knownBookies.get(bookieToReplace);
             if (null == bn) {
-                bn = createBookieNode(bookieToReplace);
+                try {
+                    bn = createBookieNode(bookieToReplace);
+                } catch (IOException err) {
+                    throw new BKNotEnoughBookiesException(err);
+                }
             }
 
             Set<Node> ensembleNodes = convertBookiesToNodes(currentEnsemble);

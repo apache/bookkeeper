@@ -43,6 +43,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.CommonConfigurationKeys;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.Shell;
@@ -100,10 +101,10 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
-        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
+        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.1.2", 3181); // /2 rack
+        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.4", 3181); // /4 rack
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -121,10 +122,10 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testReplaceBookieWithEnoughBookiesInDifferentRack() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181); // /3 rack
-        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
+        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.3", 3181); // /3 rack
+        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.4", 3181); // /4 rack
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -146,10 +147,10 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testReplaceBookieWithNotEnoughBookies() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181); // /3 rack
-        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
+        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.3", 3181); // /3 rack
+        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.4", 3181); // /4 rack
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -182,9 +183,9 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testReplaceBookieWithScriptMappingError() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieSocketAddress addr0 = new BookieSocketAddress("127.0.0.0", 3181); // error mapping to rack here
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr0 = new ResolvedBookieSocketAddress("127.0.0.0", 3181); // error mapping to rack here
+        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.2", 3181); // /2 rack
 
         // Update cluster, add node that maps to non-default rack
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -221,9 +222,9 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testReplaceBookieWithScriptMappingError2() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieSocketAddress addr0 = new BookieSocketAddress("127.0.0.0", 3181); // error mapping to rack here
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr0 = new ResolvedBookieSocketAddress("127.0.0.0", 3181); // error mapping to rack here
+        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.2", 3181); // /2 rack
 
         // Update cluster, add node that maps to default rack first
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -251,10 +252,10 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testNewEnsembleWithSingleRack() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.1.1", 3181); // /1 rack
-        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.2.1", 3181); // /1 rack
-        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.3.1", 3181); // /1 rack
+        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.1.1", 3181); // /1 rack
+        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.2.1", 3181); // /1 rack
+        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.3.1", 3181); // /1 rack
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -277,10 +278,10 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testNewEnsembleWithMultipleRacks() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
-        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.2.2", 3181); // /2 rack
+        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.1.2", 3181); // /2 rack
+        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.2.2", 3181); // /2 rack
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -305,14 +306,14 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testNewEnsembleWithEnoughRacks() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181); // /3 rack
-        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.1.1", 3181); // /1 rack
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.1.3", 3181); // /3 rack
-        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.1.4", 3181); // /4 rack
+        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.3", 3181); // /3 rack
+        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.4", 3181); // /4 rack
+        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.1.1", 3181); // /1 rack
+        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.1.2", 3181); // /2 rack
+        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.1.3", 3181); // /3 rack
+        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.1.4", 3181); // /4 rack
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -343,10 +344,10 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testRemoveBookieFromCluster() {
         ignoreTestIfItIsWindowsOS();
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
-        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
+        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.1.2", 3181); // /2 rack
+        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.4", 3181); // /4 rack
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);

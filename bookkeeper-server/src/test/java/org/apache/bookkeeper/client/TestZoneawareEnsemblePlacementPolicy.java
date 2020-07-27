@@ -96,7 +96,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
                 conf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS, conf.getTimeoutTimerNumTicks());
 
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
     }
 
@@ -153,7 +153,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(1);
         newConf.setMinNumZonesPerWriteQuorum(1);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -218,7 +218,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(2);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -276,7 +276,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         ClientConfiguration newConf = (ClientConfiguration) this.conf.clone();
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -340,7 +340,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(3);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -388,7 +388,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setMinNumZonesPerWriteQuorum(3);
         newConf.setEnforceStrictZoneawarePlacement(false);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
         zepp.onClusterChanged(rwAddrs, roAddrs);
 
@@ -432,7 +432,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(2);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -500,14 +500,14 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
-        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
-        BookieSocketAddress addr11 = new BookieSocketAddress("127.0.0.12", 3181);
-        BookieSocketAddress addr12 = new BookieSocketAddress("127.0.0.13", 3181);
+        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        BookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
+        BookieSocketAddress addr11 = new ResolvedBookieSocketAddress("127.0.0.12", 3181);
+        BookieSocketAddress addr12 = new ResolvedBookieSocketAddress("127.0.0.13", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -527,7 +527,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(2);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -588,16 +588,16 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
-        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
-        BookieSocketAddress addr11 = new BookieSocketAddress("127.0.0.12", 3181);
-        BookieSocketAddress addr12 = new BookieSocketAddress("127.0.0.13", 3181);
-        BookieSocketAddress addr13 = new BookieSocketAddress("127.0.0.14", 3181);
-        BookieSocketAddress addr14 = new BookieSocketAddress("127.0.0.15", 3181);
+        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        BookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
+        BookieSocketAddress addr11 = new ResolvedBookieSocketAddress("127.0.0.12", 3181);
+        BookieSocketAddress addr12 = new ResolvedBookieSocketAddress("127.0.0.13", 3181);
+        BookieSocketAddress addr13 = new ResolvedBookieSocketAddress("127.0.0.14", 3181);
+        BookieSocketAddress addr14 = new ResolvedBookieSocketAddress("127.0.0.15", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -637,7 +637,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(5);
         newConf.setMinNumZonesPerWriteQuorum(minNumZonesPerWriteQuorum);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         zepp.onClusterChanged(rwAddrs, roAddrs);
@@ -682,16 +682,16 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
-        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
-        BookieSocketAddress addr11 = new BookieSocketAddress("127.0.0.12", 3181);
-        BookieSocketAddress addr12 = new BookieSocketAddress("127.0.0.13", 3181);
-        BookieSocketAddress addr13 = new BookieSocketAddress("127.0.0.14", 3181);
-        BookieSocketAddress addr14 = new BookieSocketAddress("127.0.0.15", 3181);
+        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        BookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
+        BookieSocketAddress addr11 = new ResolvedBookieSocketAddress("127.0.0.12", 3181);
+        BookieSocketAddress addr12 = new ResolvedBookieSocketAddress("127.0.0.13", 3181);
+        BookieSocketAddress addr13 = new ResolvedBookieSocketAddress("127.0.0.14", 3181);
+        BookieSocketAddress addr14 = new ResolvedBookieSocketAddress("127.0.0.15", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -713,7 +713,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(3);
         newConf.setMinNumZonesPerWriteQuorum(3);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -781,13 +781,13 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
-        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
-        BookieSocketAddress addr11 = new BookieSocketAddress("127.0.0.12", 3181);
+        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        BookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
+        BookieSocketAddress addr11 = new ResolvedBookieSocketAddress("127.0.0.12", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -806,7 +806,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(3);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -851,11 +851,11 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
+        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -872,7 +872,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(2);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -906,7 +906,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(4);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         zepp.onClusterChanged(rwAddrs, roAddrs);
@@ -932,7 +932,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -959,7 +959,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
          */
         newConf.setBookieMaxWeightMultipleForWeightBasedPlacement(-1);
         newConf.setMinNumZonesPerWriteQuorum(0);
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         zepp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
@@ -1033,7 +1033,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         ClientConfiguration confLocal = new ClientConfiguration();
         confLocal.addConfiguration(conf);
         confLocal.setNetworkTopologyStabilizePeriodSeconds(99999);
-        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -1073,7 +1073,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -1088,7 +1088,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         confLocal.setEnforceStrictZoneawarePlacement(false);
         confLocal.setMinNumZonesPerWriteQuorum(3);
         confLocal.setDesiredNumZonesPerWriteQuorum(4);
-        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -1135,9 +1135,9 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -1154,7 +1154,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         confLocal.setEnforceStrictZoneawarePlacement(false);
         confLocal.setMinNumZonesPerWriteQuorum(3);
         confLocal.setDesiredNumZonesPerWriteQuorum(4);
-        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieSocketAddress> rwAddrs = new HashSet<BookieSocketAddress>();
@@ -1208,12 +1208,12 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         // Update cluster
-        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
-        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
+        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        BookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
@@ -1233,7 +1233,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         confLocal.setEnforceStrictZoneawarePlacement(true);
         confLocal.setMinNumZonesPerWriteQuorum(2);
         confLocal.setDesiredNumZonesPerWriteQuorum(3);
-        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         List<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.proto.MockBookieClient;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -42,8 +43,8 @@ import org.slf4j.LoggerFactory;
  */
 public class ReadLastConfirmedOpTest {
     private static final Logger log = LoggerFactory.getLogger(ReadLastConfirmedOpTest.class);
-    private final BookieSocketAddress bookie1 = new BookieSocketAddress("bookie1", 3181);
-    private final BookieSocketAddress bookie2 = new BookieSocketAddress("bookie2", 3181);
+    private final BookieSocketAddress bookie1 = new ResolvedBookieSocketAddress("bookie1", 3181);
+    private final BookieSocketAddress bookie2 = new ResolvedBookieSocketAddress("bookie2", 3181);
 
     OrderedExecutor executor = null;
 

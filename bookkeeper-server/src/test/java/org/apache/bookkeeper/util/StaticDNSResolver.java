@@ -30,6 +30,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NodeBase;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,9 +96,9 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping implements Rac
         rackawarePolicy = rackawareEnsemblePolicy;
     }
 
-    public static void changeRack(List<BookieSocketAddress> bookieAddressList, List<String> rack) {
+    public static void changeRack(List<ResolvedBookieSocketAddress> bookieAddressList, List<String> rack) {
         for (int i = 0; i < bookieAddressList.size(); i++) {
-            BookieSocketAddress bkAddress = bookieAddressList.get(i);
+            ResolvedBookieSocketAddress bkAddress = bookieAddressList.get(i);
             name2Racks.put(bkAddress.getHostName(), rack.get(i));
         }
         rackawarePolicy.onBookieRackChange(bookieAddressList);

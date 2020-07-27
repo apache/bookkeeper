@@ -35,6 +35,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +55,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
     public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
                                               Optional<DNSToSwitchMapping> optionalDnsResolver,
                                               HashedWheelTimer hashedWheelTimer,
-                                              FeatureProvider featureProvider, StatsLogger statsLogger) {
+                                              FeatureProvider featureProvider, StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) {
         // Configuration will have already the bookie configuration inserted
         ServerConfiguration serverConf = new ServerConfiguration();
         serverConf.addConfiguration(conf);
