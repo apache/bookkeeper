@@ -295,7 +295,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                             } else {
                                 LOG.error("Could not validate node for ledger {} after LedgerExistsException", ledgerId,
                                         exception);
-                                promise.completeExceptionally(new BKException.ZKException());
+                                promise.completeExceptionally(new BKException.ZKException(exception));
                             }
                             return null;
                         });
@@ -306,7 +306,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 } else {
                     LOG.error("Could not create node for ledger {}", ledgerId,
                             KeeperException.create(Code.get(rc), path));
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(
+                            new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                 }
             }
         };
@@ -365,7 +366,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     }
                     FutureUtils.complete(promise, null);
                 } else {
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(
+                            new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                 }
             }
         };
@@ -444,12 +446,15 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 if (rc != KeeperException.Code.OK.intValue()) {
                     LOG.error("Could not read metadata for ledger: " + ledgerId,
                               KeeperException.create(KeeperException.Code.get(rc), path));
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(
+                            new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                     return;
                 }
                 if (stat == null) {
                     LOG.error("Could not parse ledger metadata for ledger: {}. Stat object is null", ledgerId);
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(new BKException.ZKException(
+                            new Exception("Could not parse ledger metadata for ledger: "
+                                    + ledgerId + " . Stat object is null").fillInStackTrace()));
                     return;
                 }
 
@@ -459,7 +464,9 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     promise.complete(new Versioned<>(metadata, version));
                 } catch (Throwable t) {
                     LOG.error("Could not parse ledger metadata for ledger: {}", ledgerId, t);
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(new BKException.ZKException(
+                            new Exception("Could not parse ledger metadata for ledger: "
+                                    + ledgerId, t).fillInStackTrace()));
                 }
             }
         }, null);
@@ -498,7 +505,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                 } else {
                     LOG.warn("Conditional update ledger metadata failed: {}", KeeperException.Code.get(rc));
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(
+                            new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                 }
             }
         }, null);

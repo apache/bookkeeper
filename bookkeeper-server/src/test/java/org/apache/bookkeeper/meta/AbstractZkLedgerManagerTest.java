@@ -216,6 +216,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             assertTrue(e instanceof BKException);
             BKException bke = (BKException) e;
             assertEquals(Code.ZKException, bke.getCode());
+            assertTrue(bke.getCause() instanceof KeeperException);
         }
     }
 

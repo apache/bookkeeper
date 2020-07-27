@@ -306,6 +306,10 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
         public ZKException() {
             super(BKException.Code.ZKException);
         }
+
+        public ZKException(Throwable cause) {
+            super(BKException.Code.ZKException, cause);
+        }
     }
 
     /**
