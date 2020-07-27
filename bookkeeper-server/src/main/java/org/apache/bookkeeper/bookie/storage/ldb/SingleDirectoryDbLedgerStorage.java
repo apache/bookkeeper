@@ -475,7 +475,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
                     if (currentEntryLedgerId != orginalLedgerId) {
                         // Found an entry belonging to a different ledger, stopping read-ahead
-                        return;
+                        break;
                     }
 
                     // Insert entry in read cache
