@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import io.netty.util.HashedWheelTimer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import java.util.logging.Level;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -125,7 +127,13 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
         // node joined
         for (BookieSocketAddress addr : joinedBookies) {
-            BookieNode node = createBookieNode(addr);
+            BookieNode node;
+            try {
+                node = createBookieNode(addr);
+            } catch (IOException ex) {
+                LOG.warn("Cannot map bookie address "+addr, ex);
+                continue;
+            }
             topology.add(node);
             knownBookies.put(addr, node);
             String region = getLocalRegion(node);

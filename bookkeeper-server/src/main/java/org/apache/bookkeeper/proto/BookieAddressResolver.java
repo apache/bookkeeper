@@ -15,7 +15,6 @@
  */
 package org.apache.bookkeeper.proto;
 
-import java.io.IOException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 
@@ -30,5 +29,5 @@ public interface BookieAddressResolver {
      * @param address
      * @return a mapped address.
      */
-    public ResolvedBookieSocketAddress resolve(BookieSocketAddress address) throws IOException;
+    public ResolvedBookieSocketAddress resolve(BookieSocketAddress address);
 }

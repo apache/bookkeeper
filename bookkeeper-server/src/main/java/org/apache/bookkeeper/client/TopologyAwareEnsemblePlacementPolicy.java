@@ -739,10 +739,14 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 BookieNode node = knownBookies.get(bookieAddress);
                 if (node != null) {
                     // refresh the rack info if its a known bookie
-                    topology.remove(node);
-                    BookieNode newNode = createBookieNode(bookieAddress);
-                    topology.add(newNode);
-                    knownBookies.put(bookieAddress, newNode);
+                    try {
+                        BookieNode newNode = createBookieNode(bookieAddress);
+                        topology.remove(node);                    
+                        topology.add(newNode);
+                        knownBookies.put(bookieAddress, newNode);
+                    } catch (IOException err) {
+                        LOG.error("Cannot map " + bookieAddress + " to a network address", err);
+                    }
                 }
             }
         } finally {
@@ -775,15 +779,15 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
     }
 
-    protected BookieNode createBookieNode(BookieSocketAddress addr) throws IOException {
+    protected BookieNode createBookieNode(BookieSocketAddress addr) {
         return new BookieNode(addr, resolveNetworkLocation(addr));
     }
 
-    protected String resolveNetworkLocation(BookieSocketAddress addr) throws IOException {
+    protected String resolveNetworkLocation(BookieSocketAddress addr) {
         return NetUtils.resolveNetworkLocation(dnsResolver, bookieAddressResolver.resolve(addr));
     }
 
-    protected Set<Node> convertBookiesToNodes(Collection<BookieSocketAddress> excludeBookies) throws IOException {
+    protected Set<Node> convertBookiesToNodes(Collection<BookieSocketAddress> excludeBookies) {
         Set<Node> nodes = new HashSet<Node>();
         for (BookieSocketAddress addr : excludeBookies) {
             BookieNode bn = knownBookies.get(addr);

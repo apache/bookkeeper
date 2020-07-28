@@ -571,14 +571,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
         });
 
-        ResolvedBookieSocketAddress resolved;
-        try {
-            resolved = bookieAddressResolver.resolve(addr);
-        } catch (IOException err) {
-            LOG.error("cannot resolve "+addr, err);
-            //TODO: return a failed future
-            resolved = new ResolvedBookieSocketAddress(addr.toString(), 0);
-        }
+        ResolvedBookieSocketAddress resolved = bookieAddressResolver.resolve(addr);
         SocketAddress bookieAddr = resolved.getSocketAddress();
         if (eventLoopGroup instanceof DefaultEventLoopGroup) {
             bookieAddr = resolved.getLocalAddress();

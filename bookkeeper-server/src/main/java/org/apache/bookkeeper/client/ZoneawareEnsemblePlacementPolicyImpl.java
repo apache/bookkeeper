@@ -154,7 +154,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         rand = new Random(System.currentTimeMillis());
     }
 
-    protected ZoneAwareNodeLocation getZoneAwareNodeLocation(BookieSocketAddress addr) throws IOException {
+    protected ZoneAwareNodeLocation getZoneAwareNodeLocation(BookieSocketAddress addr) {
         ZoneAwareNodeLocation nodeLocation = address2NodePlacement.get(addr);
         if (null == nodeLocation) {
             String networkLocation = resolveNetworkLocation(addr);
