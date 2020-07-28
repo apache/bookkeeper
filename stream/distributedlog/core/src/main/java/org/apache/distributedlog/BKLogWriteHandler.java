@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import jdk.internal.org.jline.utils.Log;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -1085,8 +1086,10 @@ class BKLogWriteHandler extends BKLogHandler {
 
     private CompletableFuture<List<LogSegmentMetadata>> setLogSegmentsOlderThanDLSNTruncated(
             List<LogSegmentMetadata> logSegments, final DLSN dlsn) {
-        LOG.debug("Setting truncation status on logs older than {} from {} for {}",
-            dlsn, logSegments, getFullyQualifiedName());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Setting truncation status on logs older than {} from {} for {}",
+                    dlsn, logSegments, getFullyQualifiedName());
+        }
         List<LogSegmentMetadata> truncateList = new ArrayList<LogSegmentMetadata>(logSegments.size());
         LogSegmentMetadata partialTruncate = null;
         LOG.info("{}: Truncating log segments older than {}", getFullyQualifiedName(), dlsn);
