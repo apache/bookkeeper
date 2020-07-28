@@ -33,6 +33,8 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.distributedlog.ZooKeeperClient.Credentials;
 import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
+import org.apache.distributedlog.util.Utils;
+import org.apache.distributedlog.zk.ZKTransaction;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -458,5 +460,10 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
             TimeUnit.MILLISECONDS.sleep(sessionTimeoutMs / 2);
         }
         assertEquals(ZooKeeper.States.CONNECTED, newZk.getState());
+    }
+    
+    @Test(timeout = 60000)
+    public void testZKTransactionEmptyOps() throws Exception {
+        Utils.ioResult(new ZKTransaction(zkc).execute());
     }
 }
