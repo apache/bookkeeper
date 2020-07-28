@@ -461,7 +461,7 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
         }
         assertEquals(ZooKeeper.States.CONNECTED, newZk.getState());
     }
-    
+
     @Test(timeout = 60000)
     public void testZKTransactionEmptyOps() throws Exception {
         Utils.ioResult(new ZKTransaction(zkc).execute());
