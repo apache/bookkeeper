@@ -39,7 +39,7 @@ Ledgers are sequences of entries, while each entry is a sequence of bytes. Entri
 * sequentially, and
 * at most once.
 
-This means that ledgers have *append-only* semantics. Entries cannot be modified once they've been written to a ledger. Determining the proper write order is the responsbility of [client applications](#clients).
+This means that ledgers have *append-only* semantics. Entries cannot be modified once they've been written to a ledger. Determining the proper write order is the responsibility of [client applications](#clients).
 
 ## Clients and APIs
 
