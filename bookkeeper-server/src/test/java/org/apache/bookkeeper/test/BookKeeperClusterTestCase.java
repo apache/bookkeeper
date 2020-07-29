@@ -346,7 +346,7 @@ public abstract class BookKeeperClusterTestCase {
     /**
      * Get bookie address for bookie at index.
      */
-    public BookieSocketAddress getBookie(int index) throws Exception {
+    public ResolvedBookieSocketAddress getBookie(int index) throws Exception {
         if (bs.size() <= index || index < 0) {
             throw new IllegalArgumentException("Invalid index, there are only " + bs.size()
                                                + " bookies. Asked for " + index);
