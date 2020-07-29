@@ -213,7 +213,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     public void testPlacementPolicyCheckWithLedgersNotAdheringToPlacementPolicy() throws Exception {
         int numOfBookies = 5;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
-        List<ResolvedBookieSocketAddress> bookieAddresses = new ArrayList<>();
+        List<BookieSocketAddress> bookieAddresses = new ArrayList<>();
         RegistrationManager regManager = driver.getRegistrationManager();
 
         for (int i = 0; i < numOfBookies; i++) {
@@ -223,11 +223,11 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         }
 
         // only three racks
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(0).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(1).getHostName(), "/rack2");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(2).getHostName(), "/rack3");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(3).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(4).getHostName(), "/rack2");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(0)).getHostName(), "/rack1");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(1)).getHostName(), "/rack2");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(2)).getHostName(), "/rack3");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(3)).getHostName(), "/rack1");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(4)).getHostName(), "/rack2");
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
@@ -244,7 +244,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
-                .newEnsembleEntry(0L, (List) bookieAddresses)
+                .newEnsembleEntry(0L, bookieAddresses)
                 .withClosedState()
                 .withLastEntryId(100)
                 .withLength(10000)
@@ -262,7 +262,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
-                .newEnsembleEntry(0L, (List) bookieAddresses)
+                .newEnsembleEntry(0L, bookieAddresses)
                 .withDigestType(DigestType.DUMMY)
                 .withPassword(new byte[0])
                 .build();
@@ -424,7 +424,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     public void testPlacementPolicyCheckWithLedgersNotAdheringToPolicyWithMultipleSegments() throws Exception {
         int numOfBookies = 7;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
-        List<ResolvedBookieSocketAddress> bookieAddresses = new ArrayList<>();
+        List<BookieSocketAddress> bookieAddresses = new ArrayList<>();
         RegistrationManager regManager = driver.getRegistrationManager();
 
         for (int i = 0; i < numOfBookies; i++) {
@@ -434,13 +434,13 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         }
 
         // only three racks
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(0).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(1).getHostName(), "/rack2");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(2).getHostName(), "/rack3");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(3).getHostName(), "/rack4");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(4).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(5).getHostName(), "/rack2");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(6).getHostName(), "/rack3");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(0)).getHostName(), "/rack1");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(1)).getHostName(), "/rack2");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(2)).getHostName(), "/rack3");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(3)).getHostName(), "/rack4");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(4)).getHostName(), "/rack1");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(5)).getHostName(), "/rack2");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(6)).getHostName(), "/rack3");
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
@@ -458,8 +458,8 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
-                .newEnsembleEntry(0L, (List) bookieAddresses.subList(0, 5))
-                .newEnsembleEntry(20L, (List) bookieAddresses.subList(1, 6))
+                .newEnsembleEntry(0L,bookieAddresses.subList(0, 5))
+                .newEnsembleEntry(20L, bookieAddresses.subList(1, 6))
                 .withClosedState()
                 .withLastEntryId(100)
                 .withLength(10000)
@@ -484,7 +484,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
-                .newEnsembleEntry(0L, (List) bookieAddresses.subList(0, 5))
+                .newEnsembleEntry(0L, bookieAddresses.subList(0, 5))
                 .newEnsembleEntry(20L,
                         Arrays.asList(bookieAddresses.get(0), bookieAddresses.get(1), bookieAddresses.get(2),
                                 bookieAddresses.get(4), bookieAddresses.get(5)))

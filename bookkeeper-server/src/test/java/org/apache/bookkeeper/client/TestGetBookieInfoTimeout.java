@@ -39,6 +39,7 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
@@ -107,11 +108,11 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
         latch.await();
 
+        BookieAddressResolver bookieAddressResolver = ResolvedBookieSocketAddress.DUMMY;
         // try to get bookie info from the sleeping bookie. It should fail with timeout error
-        BookieSocketAddress addr = new ResolvedBookieSocketAddress(bookieToSleep.getSocketAddress().getHostString(),
-                bookieToSleep.getPort());
+        ResolvedBookieSocketAddress addr = bookieAddressResolver.resolve(bookieToSleep);
         BookieClient bc = new BookieClientImpl(cConf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, executor,
-                scheduler, NullStatsLogger.INSTANCE);
+                scheduler, NullStatsLogger.INSTANCE, bookieAddressResolver);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
                 | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 

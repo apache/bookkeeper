@@ -383,12 +383,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             Predicate<BookieNode> parentPredicate) throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
         try {
-            Set<Node> excludeNodes;
-            try {
-                excludeNodes = convertBookiesToNodes(excludeBookies);
-            } catch (IOException err) {
-                throw new BKNotEnoughBookiesException(err);
-            }
+            Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
             int minNumRacksPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
             RRTopologyAwareCoverageEnsemble ensemble =
                     new RRTopologyAwareCoverageEnsemble(
@@ -456,21 +451,11 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             excludeBookies.addAll(currentEnsemble);
             BookieNode bn = knownBookies.get(bookieToReplace);
             if (null == bn) {
-                try {
-                    bn = createBookieNode(bookieToReplace);
-                } catch (IOException err) {
-                    throw new BKNotEnoughBookiesException(err);
-                }
+                bn = createBookieNode(bookieToReplace);
             }
             
-            Set<Node> ensembleNodes;
-            Set<Node> excludeNodes;
-            try {
-                ensembleNodes = convertBookiesToNodes(currentEnsemble);
-                excludeNodes = convertBookiesToNodes(excludeBookies);
-            } catch (IOException err) {
-                    throw new BKNotEnoughBookiesException(err);
-            }
+            Set<Node> ensembleNodes = convertBookiesToNodes(currentEnsemble);
+            Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
 
             excludeNodes.addAll(ensembleNodes);
             excludeNodes.add(bn);

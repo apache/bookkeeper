@@ -86,7 +86,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
                 conf.getTimeoutTimerNumTicks());
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
     }
 
     @After
@@ -374,7 +374,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         repp = new RackawareEnsemblePlacementPolicy();
         try {
             repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
-                    NullStatsLogger.INSTANCE);
+                    NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         } catch (RuntimeException re) {
             fail("EnforceMinNumRacksPerWriteQuorum is not set, so repp.initialize should succeed even if"
                     + " networkTopologyScriptFileName is empty");
@@ -385,7 +385,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         repp = new RackawareEnsemblePlacementPolicy();
         try {
             repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
-                    NullStatsLogger.INSTANCE);
+                    NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
             fail("EnforceMinNumRacksPerWriteQuorum is set, so repp.initialize should fail if"
                     + " networkTopologyScriptFileName is empty");
         } catch (RuntimeException re) {
@@ -396,7 +396,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
                 "src/test/resources/networkmappingscript.sh");
         try {
             repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
-                    NullStatsLogger.INSTANCE);
+                    NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         } catch (RuntimeException re) {
             fail("EnforceMinNumRacksPerWriteQuorum is set and networkTopologyScriptFileName is not empty,"
                     + " so it should succeed");
@@ -421,13 +421,13 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
                 newConf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS, newConf.getTimeoutTimerNumTicks());
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
 
         repp.uninitalize();
         repp = new RackawareEnsemblePlacementPolicy();
         try {
             repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
-                    NullStatsLogger.INSTANCE);
+                    NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         } catch (RuntimeException re) {
             fail("EnforceMinNumRacksPerWriteQuorum is not set, so repp.initialize should succeed"
                     + " even if mapping.validateConf fails");
@@ -438,7 +438,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         repp = new RackawareEnsemblePlacementPolicy();
         try {
             repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
-                    NullStatsLogger.INSTANCE);
+                    NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
             fail("EnforceMinNumRacksPerWriteQuorum is set, so repp.initialize should fail"
                     + " if mapping.validateConf fails");
         } catch (RuntimeException re) {
@@ -455,7 +455,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         repp = new RackawareEnsemblePlacementPolicy();
         try {
             repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
-                    NullStatsLogger.INSTANCE);
+                    NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
         } catch (RuntimeException re) {
             fail("EnforceMinNumRacksPerWriteQuorum is set, and mapping.validateConf succeeds."
                     + " So repp.initialize should succeed");
@@ -471,7 +471,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
             for (int j = 0; j < writeQuorumSize; j++) {
                 int bookieIdx = (i + j) % ensembleSize;
                 BookieSocketAddress addr = ensemble.get(bookieIdx);
-                String hostAddress = addr.getSocketAddress().getAddress().getHostAddress();
+                String hostAddress = repp.bookieAddressResolver.resolve(addr).getSocketAddress().getAddress().getHostAddress();
                 String rack = "/" + hostAddress.charAt(hostAddress.length() - 1);
                 racks.add(rack);
             }

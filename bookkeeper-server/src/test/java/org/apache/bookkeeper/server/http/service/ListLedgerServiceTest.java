@@ -156,19 +156,15 @@ public class ListLedgerServiceTest extends BookKeeperClusterTestCase {
                 assertArrayEquals(entry.getValue(), Base64.getDecoder().decode(data.asText()));
             }
 
-            try {
-                for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry : meta.getAllEnsembles().entrySet()) {
-                    JsonNode members = node.get("allEnsembles")
-                            .get(String.valueOf(entry.getKey()));
-                    assertEquals(1, entry.getValue().size());
-                    assertEquals(entry.getValue().size(), members.size());
-                    JsonNode member = members.get(0);
-                    ResolvedBookieSocketAddress address = bkc.getBookieAddressResolver().resolve(entry.getValue().get(0));
-                    assertEquals(address.getHostName(), member.get("hostName").asText());
-                    assertEquals(address.getPort(), member.get("port").asInt());
-                }
-            } catch (IOException err) {
-                throw new RuntimeException(err);
+            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry : meta.getAllEnsembles().entrySet()) {
+                JsonNode members = node.get("allEnsembles")
+                        .get(String.valueOf(entry.getKey()));
+                assertEquals(1, entry.getValue().size());
+                assertEquals(entry.getValue().size(), members.size());
+                JsonNode member = members.get(0);
+                ResolvedBookieSocketAddress address = bkc.getBookieAddressResolver().resolve(entry.getValue().get(0));
+                assertEquals(address.getHostName(), member.get("hostName").asText());
+                assertEquals(address.getPort(), member.get("port").asInt());
             }
         });
     }

@@ -739,14 +739,10 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 BookieNode node = knownBookies.get(bookieAddress);
                 if (node != null) {
                     // refresh the rack info if its a known bookie
-                    try {
-                        BookieNode newNode = createBookieNode(bookieAddress);
-                        topology.remove(node);                    
-                        topology.add(newNode);
-                        knownBookies.put(bookieAddress, newNode);
-                    } catch (IOException err) {
-                        LOG.error("Cannot map " + bookieAddress + " to a network address", err);
-                    }
+                    BookieNode newNode = createBookieNode(bookieAddress);
+                    topology.remove(node);                    
+                    topology.add(newNode);
+                    knownBookies.put(bookieAddress, newNode);
                 }
             }
         } finally {

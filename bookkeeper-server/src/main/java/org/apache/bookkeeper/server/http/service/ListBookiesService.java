@@ -84,12 +84,8 @@ public class ListBookiesService implements HttpEndpointService {
             for (BookieSocketAddress b : bookies) {
                 String hostname = null;
                 if (printHostname) {
-                    try {
-                        ResolvedBookieSocketAddress resolved = bka.getBookieAddressResolver().resolve(b);
-                        hostname = resolved.getHostName();
-                    } catch (IOException err) {
-                        LOG.warn("Cannot resolve bookie address "+b, err);
-                    }
+                    ResolvedBookieSocketAddress resolved = bka.getBookieAddressResolver().resolve(b);
+                    hostname = resolved.getHostName();
                 }
                 output.putIfAbsent(b.toString(), hostname);
                 LOG.debug("bookie: " + b.toString() + " hostname:" + hostname);

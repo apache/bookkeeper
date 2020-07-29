@@ -101,6 +101,6 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping implements Rac
             ResolvedBookieSocketAddress bkAddress = bookieAddressList.get(i);
             name2Racks.put(bkAddress.getHostName(), rack.get(i));
         }
-        rackawarePolicy.onBookieRackChange(bookieAddressList);
+        rackawarePolicy.onBookieRackChange(new ArrayList<>(bookieAddressList));
     }
 }

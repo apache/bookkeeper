@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -114,25 +115,9 @@ class BookieWatcherImpl implements BookieWatcher {
 
     private CompletableFuture<?> initialWritableBookiesFuture = null;
     private CompletableFuture<?> initialReadonlyBookiesFuture = null;
-    
-    private final BookieAddressResolver bookieAddressResolver = new BookieAddressResolver() {
-        @Override
-        public ResolvedBookieSocketAddress resolve(BookieSocketAddress address) throws IOException {
-            try {
-                BookieServiceInfo info = FutureUtils.result(registrationClient.getBookieServiceInfo(address.toString())).getValue();
-                BookieServiceInfo.Endpoint endpoint = info.getEndpoints().stream().filter(e->e.getProtocol().equals("bookie-rpc")).findAny().orElse(null);
-                if (endpoint == null) {
-                    throw new Exception("bookie "+address+" does not publish a bookie-rpc endpond");
-                }
-                return new ResolvedBookieSocketAddress(endpoint.getHost(), endpoint.getPort());
-            } catch (Exception ex) {
-                if (ex instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
-                throw new IOException("Cannot resolve address of bookie "+address, ex);
-            }
-        }
-    };
+    private final ConcurrentHashMap<BookieSocketAddress, ResolvedBookieSocketAddress> resolvedBookieAddressCache = new ConcurrentHashMap<>();
+
+    private final BookieAddressResolver bookieAddressResolver = new BookieAddressResolverImpl();
 
     public BookieWatcherImpl(ClientConfiguration conf,
                              EnsemblePlacementPolicy placementPolicy,
@@ -148,6 +133,7 @@ class BookieWatcherImpl implements BookieWatcher {
                     @Override
                     public void onRemoval(RemovalNotification<BookieSocketAddress, Boolean> bookie) {
                         log.info("Bookie {} is no longer quarantined", bookie.getKey());
+                        resolvedBookieAddressCache.remove(bookie.getKey());
                     }
 
                 }).build();
@@ -360,6 +346,37 @@ class BookieWatcherImpl implements BookieWatcher {
         if (quarantinedBookies.getIfPresent(bookie) == null) {
             quarantinedBookies.put(bookie, Boolean.TRUE);
             log.warn("Bookie {} has been quarantined because of read/write errors.", bookie);
+        }
+        resolvedBookieAddressCache.remove(bookie);
+    }
+
+    private class BookieAddressResolverImpl implements BookieAddressResolver {
+
+        @Override
+        public ResolvedBookieSocketAddress resolve(BookieSocketAddress address){
+            ResolvedBookieSocketAddress cached = resolvedBookieAddressCache.get(address);
+            if (cached != null) {
+                return cached;
+            }
+            if (address instanceof ResolvedBookieSocketAddress) {
+                return (ResolvedBookieSocketAddress) address;
+            }
+            try {
+                BookieServiceInfo info = FutureUtils.result(registrationClient.getBookieServiceInfo(address.toString())).getValue();
+                BookieServiceInfo.Endpoint endpoint = info.getEndpoints().stream().filter(e->e.getProtocol().equals("bookie-rpc")).findAny().orElse(null);
+                if (endpoint == null) {
+                    throw new Exception("bookie "+address+" does not publish a bookie-rpc endpond");
+                }
+                ResolvedBookieSocketAddress res =  new ResolvedBookieSocketAddress(endpoint.getHost(), endpoint.getPort());
+                log.info("Resolved {} as {}", address, res);
+                resolvedBookieAddressCache.put(address, res);
+                return res;
+            } catch (Exception ex) {
+                if (ex instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                throw new RuntimeException("Cannot resolve address of bookie "+address, ex);
+            }
         }
     }
 

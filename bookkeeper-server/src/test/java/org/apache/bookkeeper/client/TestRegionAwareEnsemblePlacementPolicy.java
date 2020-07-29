@@ -68,13 +68,13 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     final ClientConfiguration conf = new ClientConfiguration();
     final ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
     DistributionSchedule.WriteSet writeSet = DistributionSchedule.NULL_WRITE_SET;
-    BookieSocketAddress addr1, addr2, addr3, addr4;
+    ResolvedBookieSocketAddress addr1, addr2, addr3, addr4;
     HashedWheelTimer timer;
 
     static void updateMyRack(String rack) throws Exception {
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), rack);
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostName(), rack);
-        BookieSocketAddress bookieAddress = new ResolvedBookieSocketAddress(
+        ResolvedBookieSocketAddress bookieAddress = new ResolvedBookieSocketAddress(
             InetAddress.getLocalHost().getHostAddress(), 0);
         StaticDNSResolver.addNodeToRack(bookieAddress.getSocketAddress().getHostName(), rack);
         StaticDNSResolver.addNodeToRack(bookieAddress.getSocketAddress().getAddress().getHostAddress(), rack);
@@ -432,10 +432,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
     @Test
     public void testReplaceBookieWithEnoughBookiesInDifferentRegion() throws Exception {
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -460,10 +460,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
     @Test
     public void testNewEnsembleBookieWithNotEnoughBookies() throws Exception {
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region2/r2");
@@ -488,10 +488,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
     @Test
     public void testReplaceBookieWithNotEnoughBookies() throws Exception {
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region2/r2");
@@ -522,10 +522,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp.uninitalize();
         repp = new RegionAwareEnsemblePlacementPolicy();
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r2");
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -555,10 +555,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp.uninitalize();
         repp = new RegionAwareEnsemblePlacementPolicy();
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -592,14 +592,14 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
     @Test
     public void testNewEnsembleWithEnoughRegions() throws Exception {
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
-        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/default-rack1");
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -637,16 +637,16 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp.uninitalize();
         repp = new RegionAwareEnsemblePlacementPolicy();
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
-        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
-        BookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        ResolvedBookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        ResolvedBookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region2/r1");
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -705,16 +705,16 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp = new RegionAwareEnsemblePlacementPolicy();
         conf.setProperty(REPP_DISALLOW_BOOKIE_PLACEMENT_IN_REGION_FEATURE_NAME, "disallowBookies");
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, featureProvider, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
-        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
-        BookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        ResolvedBookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        ResolvedBookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region2/r1");
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -786,21 +786,21 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         conf.setProperty(REPP_REGIONS_TO_WRITE, "region1;region2;region3;region4;region5");
         conf.setProperty(REPP_MINIMUM_REGIONS_FOR_DURABILITY, 5);
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.1.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.1.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.1.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.1.0.5", 3181);
-        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.1.0.6", 3181);
-        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.1.0.7", 3181);
-        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.1.0.8", 3181);
-        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.1.0.9", 3181);
-        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.1.0.10", 3181);
-        BookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.1.0.11", 3181);
-        BookieSocketAddress addr11 = new ResolvedBookieSocketAddress("127.1.0.12", 3181);
-        BookieSocketAddress addr12 = new ResolvedBookieSocketAddress("127.1.0.13", 3181);
-        BookieSocketAddress addr13 = new ResolvedBookieSocketAddress("127.1.0.14", 3181);
-        BookieSocketAddress addr14 = new ResolvedBookieSocketAddress("127.1.0.15", 3181);
-        BookieSocketAddress addr15 = new ResolvedBookieSocketAddress("127.1.0.16", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.1.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.1.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.1.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.1.0.5", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.1.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.1.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.1.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.1.0.9", 3181);
+        ResolvedBookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.1.0.10", 3181);
+        ResolvedBookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.1.0.11", 3181);
+        ResolvedBookieSocketAddress addr11 = new ResolvedBookieSocketAddress("127.1.0.12", 3181);
+        ResolvedBookieSocketAddress addr12 = new ResolvedBookieSocketAddress("127.1.0.13", 3181);
+        ResolvedBookieSocketAddress addr13 = new ResolvedBookieSocketAddress("127.1.0.14", 3181);
+        ResolvedBookieSocketAddress addr14 = new ResolvedBookieSocketAddress("127.1.0.15", 3181);
+        ResolvedBookieSocketAddress addr15 = new ResolvedBookieSocketAddress("127.1.0.16", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -894,15 +894,15 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         conf.setProperty(REPP_DISALLOW_BOOKIE_PLACEMENT_IN_REGION_FEATURE_NAME, "disallowBookies");
 
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, featureProvider, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.1.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.1.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.1.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.1.0.5", 3181);
-        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.1.0.6", 3181);
-        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.1.0.7", 3181);
-        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.1.0.8", 3181);
-        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.1.0.9", 3181);
-        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.1.0.10", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.1.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.1.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.1.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.1.0.5", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.1.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.1.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.1.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.1.0.9", 3181);
+        ResolvedBookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.1.0.10", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -1033,15 +1033,15 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
 
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, featureProvider, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.1.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.1.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.1.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.1.0.5", 3181);
-        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.1.0.6", 3181);
-        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.1.0.7", 3181);
-        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.1.0.8", 3181);
-        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.1.0.9", 3181);
-        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.1.0.10", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.1.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.1.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.1.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.1.0.5", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.1.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.1.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.1.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.1.0.9", 3181);
+        ResolvedBookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.1.0.10", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -1099,16 +1099,16 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         conf.setProperty(REPP_MINIMUM_REGIONS_FOR_DURABILITY, 5);
         conf.setProperty(REPP_ENABLE_VALIDATION, false);
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
-        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
-        BookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        ResolvedBookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        ResolvedBookieSocketAddress addr10 = new ResolvedBookieSocketAddress("127.0.0.11", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -1152,15 +1152,15 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp = new RegionAwareEnsemblePlacementPolicy();
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
 
-        BookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
-        BookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
-        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
-        BookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
+        ResolvedBookieSocketAddress addr1 = new ResolvedBookieSocketAddress("127.0.0.2", 3181);
+        ResolvedBookieSocketAddress addr2 = new ResolvedBookieSocketAddress("127.0.0.3", 3181);
+        ResolvedBookieSocketAddress addr3 = new ResolvedBookieSocketAddress("127.0.0.4", 3181);
+        ResolvedBookieSocketAddress addr4 = new ResolvedBookieSocketAddress("127.0.0.5", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        ResolvedBookieSocketAddress addr9 = new ResolvedBookieSocketAddress("127.0.0.10", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
@@ -1226,17 +1226,17 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             int k = 0;
             for (; k < RegionAwareEnsemblePlacementPolicy.REMOTE_NODE_IN_REORDER_SEQUENCE; k++) {
                 BookieSocketAddress address = ensemble.get(readSet.get(k));
-                assertEquals(myRegion, StaticDNSResolver.getRegion(address.getHostName()));
+                assertEquals(myRegion, StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(address).getHostName()));
             }
             BookieSocketAddress remoteAddress = ensemble.get(readSet.get(k));
-            assertFalse(myRegion.equals(StaticDNSResolver.getRegion(remoteAddress.getHostName())));
+            assertFalse(myRegion.equals(StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(remoteAddress).getHostName())));
             k++;
             BookieSocketAddress localAddress = ensemble.get(readSet.get(k));
-            assertEquals(myRegion, StaticDNSResolver.getRegion(localAddress.getHostName()));
+            assertEquals(myRegion, StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(localAddress).getHostName()));
             k++;
             for (; k < ensembleSize; k++) {
                 BookieSocketAddress address = ensemble.get(readSet.get(k));
-                assertFalse(myRegion.equals(StaticDNSResolver.getRegion(address.getHostName())));
+                assertFalse(myRegion.equals(StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(address).getHostName())));
             }
         }
     }
@@ -1293,10 +1293,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         reorderReadSequenceWithUnavailableOrReadOnlyBookiesTest(true);
     }
 
-    static Set<BookieSocketAddress> getBookiesForRegion(List<BookieSocketAddress> ensemble, String region) {
+    private Set<BookieSocketAddress> getBookiesForRegion(List<BookieSocketAddress> ensemble, String region) {
         Set<BookieSocketAddress> regionBookies = new HashSet<BookieSocketAddress>();
         for (BookieSocketAddress address : ensemble) {
-            String r = StaticDNSResolver.getRegion(address.getHostName());
+            String r = StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(address).getHostName());
             if (r.equals(region)) {
                 regionBookies.add(address);
             }
@@ -1304,13 +1304,13 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         return regionBookies;
     }
 
-    static void appendBookieIndexByRegion(List<BookieSocketAddress> ensemble,
+    void appendBookieIndexByRegion(List<BookieSocketAddress> ensemble,
                                           DistributionSchedule.WriteSet writeSet,
                                           String region,
                                           List<Integer> finalSet) {
         for (int i = 0; i < writeSet.size(); i++) {
             int bi = writeSet.get(i);
-            String r = StaticDNSResolver.getRegion(ensemble.get(bi).getHostName());
+            String r = StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(ensemble.get(bi)).getHostName());
             if (r.equals(region)) {
                 finalSet.add(bi);
             }
@@ -1373,7 +1373,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     private int getNumRegionsInEnsemble(List<BookieSocketAddress> ensemble) {
         Set<String> regions = new HashSet<String>();
         for (BookieSocketAddress addr: ensemble) {
-            regions.add(StaticDNSResolver.getRegion(addr.getHostName()));
+            regions.add(StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(addr).getHostName()));
         }
         return regions.size();
     }
@@ -1387,7 +1387,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             for (int j = 0; j < writeQuorumSize; j++) {
                 int bookieIdx = (i + j) % ensembleSize;
                 BookieSocketAddress addr = ensemble.get(bookieIdx);
-                regions.add(StaticDNSResolver.getRegion(addr.getHostName()));
+                regions.add(StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(addr).getHostName()));
             }
             numCoveredWriteQuorums += (regions.size() > 1 ? 1 : 0);
         }
@@ -1402,10 +1402,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp = new RegionAwareEnsemblePlacementPolicy();
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, ResolvedBookieSocketAddress.DUMMY);
 
-        BookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
-        BookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
-        BookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
-        BookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
+        ResolvedBookieSocketAddress addr5 = new ResolvedBookieSocketAddress("127.0.0.6", 3181);
+        ResolvedBookieSocketAddress addr6 = new ResolvedBookieSocketAddress("127.0.0.7", 3181);
+        ResolvedBookieSocketAddress addr7 = new ResolvedBookieSocketAddress("127.0.0.8", 3181);
+        ResolvedBookieSocketAddress addr8 = new ResolvedBookieSocketAddress("127.0.0.9", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/r2/rack1");
         StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/r2/rack2");

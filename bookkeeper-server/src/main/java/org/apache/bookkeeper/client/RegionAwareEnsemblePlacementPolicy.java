@@ -127,13 +127,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
         // node joined
         for (BookieSocketAddress addr : joinedBookies) {
-            BookieNode node;
-            try {
-                node = createBookieNode(addr);
-            } catch (IOException ex) {
-                LOG.warn("Cannot map bookie address "+addr, ex);
-                continue;
-            }
+            BookieNode node = createBookieNode(addr);
             topology.add(node);
             knownBookies.put(addr, node);
             String region = getLocalRegion(node);
