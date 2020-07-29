@@ -61,7 +61,6 @@ public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCa
 
     @Override
     public CompletableFuture<Void> execute() {
-        System.out.println("eccoqui");
         if (!done.compareAndSet(false, true)) {
             return result;
         }
