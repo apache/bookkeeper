@@ -18,6 +18,7 @@
 package org.apache.distributedlog.zk;
 
 import com.google.common.collect.Lists;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -60,10 +61,13 @@ public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCa
 
     @Override
     public CompletableFuture<Void> execute() {
+        System.out.println("eccoqui");
         if (!done.compareAndSet(false, true)) {
             return result;
         }
-        if (!zkOps.isEmpty()) {
+        if (zkOps.isEmpty()) {
+            this.processResult(KeeperException.Code.OK.intValue(), null, null, Collections.emptyList());
+        } else {
             try {
                 zkc.get().multi(zkOps, this, result);
             } catch (ZooKeeperClient.ZooKeeperConnectionException e) {

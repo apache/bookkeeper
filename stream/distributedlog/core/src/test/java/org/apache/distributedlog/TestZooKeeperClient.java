@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +34,6 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.distributedlog.ZooKeeperClient.Credentials;
 import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
-import org.apache.distributedlog.util.Utils;
 import org.apache.distributedlog.zk.ZKTransaction;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -464,6 +464,7 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000)
     public void testZKTransactionEmptyOps() throws Exception {
-        Utils.ioResult(new ZKTransaction(zkc).execute());
+        CompletableFuture<Void> future = new ZKTransaction(zkc).execute();
+        assertTrue(future.isDone());
     }
 }
