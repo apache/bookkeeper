@@ -22,13 +22,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 
 public interface BookieWatcher {
-    Set<BookieSocketAddress> getBookies() throws BKException;
-    Set<BookieSocketAddress> getAllBookies() throws BKException;
-    Set<BookieSocketAddress> getReadOnlyBookies() throws BKException;
+    Set<BookieId> getBookies() throws BKException;
+    Set<BookieId> getAllBookies() throws BKException;
+    Set<BookieId> getReadOnlyBookies() throws BKException;
     BookieAddressResolver getBookieAddressResolver();
 
     /**
@@ -41,7 +41,7 @@ public interface BookieWatcher {
      * @return list of bookies for new ensemble.
      * @throws BKNotEnoughBookiesException
      */
-    List<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
+    List<BookieId> newEnsemble(int ensembleSize, int writeQuorumSize,
                                           int ackQuorumSize, Map<String, byte[]> customMetadata)
             throws BKNotEnoughBookiesException;
 
@@ -54,10 +54,10 @@ public interface BookieWatcher {
      * @return the bookie to replace.
      * @throws BKNotEnoughBookiesException
      */
-    BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+    BookieId replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
                                       Map<String, byte[]> customMetadata,
-                                      List<BookieSocketAddress> existingBookies, int bookieIdx,
-                                      Set<BookieSocketAddress> excludeBookies)
+                                      List<BookieId> existingBookies, int bookieIdx,
+                                      Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException;
 
 
@@ -65,5 +65,5 @@ public interface BookieWatcher {
      * Quarantine <i>bookie</i> so it will not be preferred to be chosen for new ensembles.
      * @param bookie
      */
-    void quarantineBookie(BookieSocketAddress bookie);
+    void quarantineBookie(BookieId bookie);
 }

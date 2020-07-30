@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
@@ -69,7 +69,7 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
 
         BookkeeperInternalCallbacks.WriteCallback writeCallback = new BookkeeperInternalCallbacks.WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                 if (BookieProtocol.EOK == rc) {
                     requestProcessor.getRequestStats().getWriteLacStats()
                         .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);

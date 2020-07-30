@@ -30,7 +30,7 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +74,7 @@ public class DecommissionService implements HttpEndpointService {
             HashMap<String, String> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
             if (configMap != null && configMap.containsKey("bookie_src")) {
                 try {
-                    BookieSocketAddress bookieSrc = BookieSocketAddress.parse(configMap.get("bookie_src"));
+                    BookieId bookieSrc = BookieId.parse(configMap.get("bookie_src"));
 
                     executor.execute(() -> {
                         try {

@@ -56,8 +56,8 @@ import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.discover.ZKRegistrationClient.WatchTask;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -125,19 +125,19 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         }
     }
 
-    private static Set<BookieSocketAddress> prepareNBookies(int num) {
-        Set<BookieSocketAddress> bookies = new HashSet<>();
+    private static Set<BookieId> prepareNBookies(int num) {
+        Set<BookieId> bookies = new HashSet<>();
         for (int i = 0; i < num; i++) {
-            bookies.add(new ResolvedBookieSocketAddress("127.0.0.1", 3181 + i));
+            bookies.add(new BookieSocketAddress("127.0.0.1", 3181 + i));
         }
         return bookies;
     }
 
     @Test
     public void testGetWritableBookies() throws Exception {
-        Set<BookieSocketAddress> addresses = prepareNBookies(10);
+        Set<BookieId> addresses = prepareNBookies(10);
         List<String> children = Lists.newArrayList();
-        for (BookieSocketAddress address : addresses) {
+        for (BookieId address : addresses) {
             children.add(address.toString());
         }
         Stat stat = mock(Stat.class);
@@ -146,7 +146,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
             regPath, false,
             Code.OK.intValue(), children, stat);
 
-        Versioned<Set<BookieSocketAddress>> result =
+        Versioned<Set<BookieId>> result =
             result(zkRegistrationClient.getWritableBookies());
 
         assertEquals(new LongVersion(1234), result.getVersion());
@@ -156,9 +156,9 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
 
     @Test
     public void testGetAllBookies() throws Exception {
-        Set<BookieSocketAddress> addresses = prepareNBookies(10);
+        Set<BookieId> addresses = prepareNBookies(10);
         List<String> children = Lists.newArrayList();
-        for (BookieSocketAddress address : addresses) {
+        for (BookieId address : addresses) {
             children.add(address.toString());
         }
         Stat stat = mock(Stat.class);
@@ -167,7 +167,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
             regAllPath, false,
             Code.OK.intValue(), children, stat);
 
-        Versioned<Set<BookieSocketAddress>> result =
+        Versioned<Set<BookieId>> result =
             result(zkRegistrationClient.getAllBookies());
 
         assertEquals(new LongVersion(1234), result.getVersion());
@@ -177,9 +177,9 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
 
     @Test
     public void testGetReadOnlyBookies() throws Exception {
-        Set<BookieSocketAddress> addresses = prepareNBookies(10);
+        Set<BookieId> addresses = prepareNBookies(10);
         List<String> children = Lists.newArrayList();
-        for (BookieSocketAddress address : addresses) {
+        for (BookieId address : addresses) {
             children.add(address.toString());
         }
         Stat stat = mock(Stat.class);
@@ -188,7 +188,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
             regReadonlyPath, false,
             Code.OK.intValue(), children, stat);
 
-        Versioned<Set<BookieSocketAddress>> result =
+        Versioned<Set<BookieId>> result =
             result(zkRegistrationClient.getReadOnlyBookies());
 
         assertEquals(new LongVersion(1234), result.getVersion());
@@ -255,7 +255,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         // 1. test watch bookies with a listener
         //
 
-        LinkedBlockingQueue<Versioned<Set<BookieSocketAddress>>> updates =
+        LinkedBlockingQueue<Versioned<Set<BookieId>>> updates =
             spy(new LinkedBlockingQueue<>());
         RegistrationListener listener = bookies -> {
             try {
@@ -265,9 +265,9 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
             }
         };
 
-        Set<BookieSocketAddress> addresses = prepareNBookies(10);
+        Set<BookieId> addresses = prepareNBookies(10);
         List<String> children = Lists.newArrayList();
-        for (BookieSocketAddress address : addresses) {
+        for (BookieId address : addresses) {
             children.add(address.toString());
         }
         Stat stat = mock(Stat.class);
@@ -284,7 +284,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
             result(zkRegistrationClient.watchReadOnlyBookies(listener));
         }
 
-        Versioned<Set<BookieSocketAddress>> update = updates.take();
+        Versioned<Set<BookieId>> update = updates.take();
         verify(updates, times(1)).put(any(Versioned.class));
         assertEquals(new LongVersion(1234), update.getVersion());
         assertSetEquals(
@@ -299,7 +299,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         //
 
         // register another listener
-        LinkedBlockingQueue<Versioned<Set<BookieSocketAddress>>> secondUpdates =
+        LinkedBlockingQueue<Versioned<Set<BookieId>>> secondUpdates =
             spy(new LinkedBlockingQueue<>());
         RegistrationListener secondListener = bookies -> {
             try {
@@ -313,7 +313,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         } else {
             result(zkRegistrationClient.watchReadOnlyBookies(secondListener));
         }
-        Versioned<Set<BookieSocketAddress>> secondListenerUpdate = secondUpdates.take();
+        Versioned<Set<BookieId>> secondListenerUpdate = secondUpdates.take();
         // first listener will not be notified with any update
         verify(updates, times(1)).put(any(Versioned.class));
         // second listener will receive same update as the first listener received before
@@ -351,9 +351,9 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         // 4. notify with new bookies. both listeners will be notified with new bookies.
         //
 
-        Set<BookieSocketAddress> newAddresses = prepareNBookies(20);
+        Set<BookieId> newAddresses = prepareNBookies(20);
         List<String> newChildren = Lists.newArrayList();
-        for (BookieSocketAddress address : newAddresses) {
+        for (BookieId address : newAddresses) {
             newChildren.add(address.toString());
         }
         Stat newStat = mock(Stat.class);
@@ -391,7 +391,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         newAddresses = prepareNBookies(25);
         newChildren.clear();
         newChildren = Lists.newArrayList();
-        for (BookieSocketAddress address : newAddresses) {
+        for (BookieId address : newAddresses) {
             newChildren.add(address.toString());
         }
         newStat = mock(Stat.class);
@@ -465,9 +465,9 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
             throws Exception {
         int zkCallbackDelayMs = 100;
 
-        Set<BookieSocketAddress> addresses = prepareNBookies(10);
+        Set<BookieId> addresses = prepareNBookies(10);
         List<String> children = Lists.newArrayList();
-        for (BookieSocketAddress address : addresses) {
+        for (BookieId address : addresses) {
             children.add(address.toString());
         }
         Stat stat = mock(Stat.class);
@@ -478,10 +478,10 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
             true,
             Code.OK.intValue(), children, stat, zkCallbackDelayMs);
 
-        CompletableFuture<Versioned<Set<BookieSocketAddress>>> firstResult = new CompletableFuture<>();
+        CompletableFuture<Versioned<Set<BookieId>>> firstResult = new CompletableFuture<>();
         RegistrationListener firstListener = bookies -> firstResult.complete(bookies);
 
-        CompletableFuture<Versioned<Set<BookieSocketAddress>>> secondResult = new CompletableFuture<>();
+        CompletableFuture<Versioned<Set<BookieId>>> secondResult = new CompletableFuture<>();
         RegistrationListener secondListener = bookies -> secondResult.complete(bookies);
 
         List<CompletableFuture<Void>> watchFutures = Lists.newArrayListWithExpectedSize(2);
@@ -520,7 +520,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
             true,
             Code.NONODE.intValue(), null, null, zkCallbackDelayMs);
 
-        CompletableFuture<Versioned<Set<BookieSocketAddress>>> listenerResult = new CompletableFuture<>();
+        CompletableFuture<Versioned<Set<BookieId>>> listenerResult = new CompletableFuture<>();
         RegistrationListener listener = bookies -> listenerResult.complete(bookies);
 
         CompletableFuture<Void> watchFuture;

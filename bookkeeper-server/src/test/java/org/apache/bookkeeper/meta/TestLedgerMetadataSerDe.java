@@ -27,8 +27,8 @@ import java.util.Random;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -128,9 +128,9 @@ public class TestLedgerMetadataSerDe {
         LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withPassword("foobar".getBytes(UTF_8)).withDigestType(DigestType.CRC32C)
-            .newEnsembleEntry(0L, Lists.newArrayList(new ResolvedBookieSocketAddress("192.0.2.1", 3181),
-                                                     new ResolvedBookieSocketAddress("192.0.2.2", 3181),
-                                                     new ResolvedBookieSocketAddress("192.0.2.3", 3181)))
+            .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 3181),
+                                                     new BookieSocketAddress("192.0.2.2", 3181),
+                                                     new BookieSocketAddress("192.0.2.3", 3181)))
             .build();
         byte[] encoded = serDe.serialize(metadata);
 
@@ -144,10 +144,9 @@ public class TestLedgerMetadataSerDe {
         LedgerMetadata lm = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withPassword("foobar".getBytes(UTF_8)).withDigestType(DigestType.CRC32C)
-            .newEnsembleEntry(0L, Lists.newArrayList(
-                                      new ResolvedBookieSocketAddress("192.0.2.1", 1234),
-                                      new ResolvedBookieSocketAddress("192.0.2.2", 1234),
-                                      new ResolvedBookieSocketAddress("192.0.2.3", 1234)))
+            .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234),
+                                      new BookieSocketAddress("192.0.2.2", 1234),
+                                      new BookieSocketAddress("192.0.2.3", 1234)))
             .withCreationTime(123456L)
             .storingCreationTime(true)
             .build();
@@ -167,10 +166,9 @@ public class TestLedgerMetadataSerDe {
         LedgerMetadata lm = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withPassword("foobar".getBytes(UTF_8)).withDigestType(DigestType.CRC32C)
-            .newEnsembleEntry(0L, Lists.newArrayList(
-                                      new ResolvedBookieSocketAddress("192.0.2.1", 1234),
-                                      new ResolvedBookieSocketAddress("192.0.2.2", 1234),
-                                      new ResolvedBookieSocketAddress("192.0.2.3", 1234)))
+            .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234),
+                                      new BookieSocketAddress("192.0.2.2", 1234),
+                                      new BookieSocketAddress("192.0.2.3", 1234)))
             .build();
         LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
         byte[] serialized = serDe.serialize(lm);

@@ -41,8 +41,8 @@ import org.apache.bookkeeper.auth.TestAuth;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol.AuthRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.AuthResponse;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
@@ -179,7 +179,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         return s;
     }
 
-    CompatClient42 newCompatClient(BookieSocketAddress addr) throws Exception {
+    CompatClient42 newCompatClient(BookieId addr) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setUseV2WireProtocol(true);
         return new CompatClient42(conf, executor, eventLoopGroup, addr, authProvider, extRegistry);
@@ -194,11 +194,10 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         CompatClient42(ClientConfiguration conf,
                        OrderedExecutor executor,
                        EventLoopGroup eventLoopGroup,
-                       BookieSocketAddress addr,
+                       BookieId addr,
                        ClientAuthProvider.Factory authProviderFactory,
                        ExtensionRegistry extRegistry) throws Exception {
-            super(
-                conf,
+            super(conf,
                 executor,
                 eventLoopGroup,
                 addr,
@@ -206,7 +205,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
                 authProviderFactory,
                 extRegistry,
                 null,
-                ResolvedBookieSocketAddress.DUMMY);
+                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
             state = ConnectionState.CONNECTING;
             ChannelFuture future = connect();

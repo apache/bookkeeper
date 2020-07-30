@@ -40,8 +40,8 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;
@@ -156,13 +156,13 @@ public class ListLedgerServiceTest extends BookKeeperClusterTestCase {
                 assertArrayEquals(entry.getValue(), Base64.getDecoder().decode(data.asText()));
             }
 
-            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry : meta.getAllEnsembles().entrySet()) {
+            for (Map.Entry<Long, ? extends List<BookieId>> entry : meta.getAllEnsembles().entrySet()) {
                 JsonNode members = node.get("allEnsembles")
                         .get(String.valueOf(entry.getKey()));
                 assertEquals(1, entry.getValue().size());
                 assertEquals(entry.getValue().size(), members.size());
                 JsonNode member = members.get(0);
-                ResolvedBookieSocketAddress address = bkc.getBookieAddressResolver().resolve(entry.getValue().get(0));
+                BookieSocketAddress address = bkc.getBookieAddressResolver().resolve(entry.getValue().get(0));
                 assertEquals(address.getHostName(), member.get("hostName").asText());
                 assertEquals(address.getPort(), member.get("port").asInt());
             }

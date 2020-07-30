@@ -15,12 +15,12 @@
  */
 package org.apache.bookkeeper.proto;
 
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 
 /**
- * Maps a logical BookieSocketAddress to a ResolvedBookieSocketAddress
- * that it to a network address.
+ * Maps a logical BookieId to a ResolvedBookieSocketAddress
+ that it to a network address.
  */
 public interface BookieAddressResolver {
     
@@ -29,5 +29,5 @@ public interface BookieAddressResolver {
      * @param address
      * @return a mapped address.
      */
-    public ResolvedBookieSocketAddress resolve(BookieSocketAddress address);
+    public BookieSocketAddress resolve(BookieId address);
 }

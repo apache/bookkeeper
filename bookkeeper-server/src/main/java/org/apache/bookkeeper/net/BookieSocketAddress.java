@@ -20,31 +20,135 @@
  */
 package org.apache.bookkeeper.net;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.COLON;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.net.InetAddresses;
+import io.netty.channel.local.LocalAddress;
+
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Optional;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 
 /**
- * This is an identifier for a BookieID
+ * This is a data wrapper class that is an InetSocketAddress, it would use the hostname
+ * provided in constructors directly.
+ *
+ * <p>The string representation of a BookieSocketAddress is : &lt;hostname&gt;:&lt;port&gt;
  */
-public abstract class BookieSocketAddress {
+public class BookieSocketAddress {
+
+    // Member fields that make up this class.
+    private final String hostname;
+    private final int port;
+    private final Optional<InetSocketAddress> socketAddress;
+
+    // Constructor that takes in both a port.
+    public BookieSocketAddress(String hostname, int port) {
+        this.hostname = hostname;
+        this.port = port;
+        /*
+         * if ipaddress is used for bookieid then lets cache InetSocketAddress
+         * otherwise not cache it. If Hostname is used for bookieid, then it is
+         * ok for node to change its ipaddress. But if ipaddress is used for
+         * bookieid then it is invalid scenario if node's ipaddress changes and
+         * nodes HostName is considered static.
+         */
+        if (InetAddresses.isInetAddress(hostname)) {
+            socketAddress = Optional.of(new InetSocketAddress(hostname, port));
+        } else {
+            socketAddress = Optional.empty();
+        }
+    }
+
+    // Constructor from a String "serialized" version of this class.
+    public BookieSocketAddress(String addr) throws UnknownHostException {
+        String[] parts = addr.split(COLON);
+        if (parts.length < 2) {
+            throw new UnknownHostException(addr);
+        }
+        this.hostname = parts[0];
+        try {
+            this.port = Integer.parseInt(parts[1]);
+        } catch (NumberFormatException nfe) {
+            throw new UnknownHostException(addr);
+        }
+        if (InetAddresses.isInetAddress(hostname)) {
+            socketAddress = Optional.of(new InetSocketAddress(hostname, port));
+        } else {
+            socketAddress = Optional.empty();
+        }
+    }
+
+
+
+    // Public getters
+    public String getHostName() {
+        return hostname;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    // Method to return an InetSocketAddress for the regular port.
+    @JsonIgnore
+    public InetSocketAddress getSocketAddress() {
+        /*
+         * Return each time a new instance of the InetSocketAddress if hostname
+         * is used as bookieid. If we keep using the same InetSocketAddress
+         * instance, if bookies are advertising hostnames and the IP change, the
+         * BK client will keep forever to try to connect to the old IP.
+         */
+        return socketAddress.orElseGet(() -> {
+            return new InetSocketAddress(hostname, port);
+        });
+    }
 
     /**
-     * Returns the serialized version of this object
-     * @return 
+     * Maps the socketAddress to a "local" address.
      */
+    @JsonIgnore
+    public LocalAddress getLocalAddress() {
+        // for local address, we just need "port" to differentiate different addresses.
+        return new LocalAddress("" + port);
+    }
+
+    // Return the String "serialized" version of this object.
     @Override
-    public abstract String toString();
-    
-    
-    /**
-     * Parses the given serialized representation of a BookieSocketAddress
-     * @param serialized
-     * @return
-     * @throws UnknownHostException 
-     */
-    public static BookieSocketAddress parse(String serialized) throws UnknownHostException {
-        return new ResolvedBookieSocketAddress(serialized);
+    public String toString() {
+        return hostname + COLON + port;
+    }
+
+    // Implement an equals method comparing two BookiSocketAddress objects.
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof BookieSocketAddress)) {
+            return false;
+        }
+        BookieSocketAddress that = (BookieSocketAddress) obj;
+        return this.hostname.equals(that.hostname) && (this.port == that.port);
+    }
+
+    @Override
+    public int hashCode() {
+        return this.hostname.hashCode() + 13 * this.port;
     }
     
-    public abstract String getNameForMetrics();
+    /**
+     * Create a BookieID in legacy format hostname:port
+     * @return the BookieID
+     */
+    public BookieId toBookieId() {
+        return BookieId.parse(this.toString());
+    }
 
+    public static BookieAddressResolver LEGACY_BOOKIEID_RESOLVER = (BookieId b) -> {
+        try {
+            return new BookieSocketAddress(b.toString());
+        } catch (UnknownHostException err) {
+            throw new RuntimeException(err);
+        }
+    };
 }

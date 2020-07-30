@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
@@ -45,7 +45,7 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     static final Logger LOG = LoggerFactory.getLogger(DefaultPerChannelBookieClientPool.class);
 
     final PerChannelBookieClientFactory factory;
-    final BookieSocketAddress address;
+    final BookieId address;
 
     final PerChannelBookieClient[] clients;
     final PerChannelBookieClient[] clientsV3Enforced;
@@ -57,7 +57,7 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     final AtomicLong errorCounter = new AtomicLong(0);
 
     DefaultPerChannelBookieClientPool(ClientConfiguration conf, PerChannelBookieClientFactory factory,
-                                      BookieSocketAddress address,
+                                      BookieId address,
                                       int coreSize) throws SecurityException {
         checkArgument(coreSize > 0);
         this.factory = factory;

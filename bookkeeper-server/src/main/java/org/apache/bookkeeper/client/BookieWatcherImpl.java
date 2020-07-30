@@ -27,6 +27,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -51,8 +52,8 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationClient;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -108,32 +109,32 @@ class BookieWatcherImpl implements BookieWatcher {
     private final Counter ensembleNotAdheringToPlacementPolicy;
 
     // Bookies that will not be preferred to be chosen in a new ensemble
-    final Cache<BookieSocketAddress, Boolean> quarantinedBookies;
+    final Cache<BookieId, Boolean> quarantinedBookies;
 
-    private volatile Set<BookieSocketAddress> writableBookies = Collections.emptySet();
-    private volatile Set<BookieSocketAddress> readOnlyBookies = Collections.emptySet();
+    private volatile Set<BookieId> writableBookies = Collections.emptySet();
+    private volatile Set<BookieId> readOnlyBookies = Collections.emptySet();
 
     private CompletableFuture<?> initialWritableBookiesFuture = null;
-    private CompletableFuture<?> initialReadonlyBookiesFuture = null;
-    private final ConcurrentHashMap<BookieSocketAddress, ResolvedBookieSocketAddress> resolvedBookieAddressCache = new ConcurrentHashMap<>();
+    private CompletableFuture<?> initialReadonlyBookiesFuture = null;    
 
-    private final BookieAddressResolver bookieAddressResolver = new BookieAddressResolverImpl();
+    private final CachingBookieAddressResolver bookieAddressResolver;
 
     public BookieWatcherImpl(ClientConfiguration conf,
                              EnsemblePlacementPolicy placementPolicy,
                              RegistrationClient registrationClient,
                              StatsLogger statsLogger)  {
         this.conf = conf;
+        this.bookieAddressResolver = new CachingBookieAddressResolver(registrationClient);
         this.placementPolicy = placementPolicy;
         this.registrationClient = registrationClient;
         this.quarantinedBookies = CacheBuilder.newBuilder()
                 .expireAfterWrite(conf.getBookieQuarantineTimeSeconds(), TimeUnit.SECONDS)
-                .removalListener(new RemovalListener<BookieSocketAddress, Boolean>() {
+                .removalListener(new RemovalListener<BookieId, Boolean>() {
 
                     @Override
-                    public void onRemoval(RemovalNotification<BookieSocketAddress, Boolean> bookie) {
+                    public void onRemoval(RemovalNotification<BookieId, Boolean> bookie) {
                         log.info("Bookie {} is no longer quarantined", bookie.getKey());
-                        resolvedBookieAddressCache.remove(bookie.getKey());
+                        bookieAddressResolver.invalidateBookieAddress(bookie.getKey());
                     }
 
                 }).build();
@@ -144,7 +145,7 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     @Override
-    public Set<BookieSocketAddress> getBookies() throws BKException {
+    public Set<BookieId> getBookies() throws BKException {
         try {
             return FutureUtils.result(registrationClient.getWritableBookies(), EXCEPTION_FUNC).getValue();
         } catch (BKInterruptedException ie) {
@@ -154,7 +155,7 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     @Override
-    public Set<BookieSocketAddress> getAllBookies() throws BKException {
+    public Set<BookieId> getAllBookies() throws BKException {
         try {
             return FutureUtils.result(registrationClient.getAllBookies(), EXCEPTION_FUNC).getValue();
         } catch (BKInterruptedException ie) {
@@ -169,7 +170,7 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     @Override
-    public Set<BookieSocketAddress> getReadOnlyBookies()
+    public Set<BookieId> getReadOnlyBookies()
             throws BKException {
         try {
             return FutureUtils.result(registrationClient.getReadOnlyBookies(), EXCEPTION_FUNC).getValue();
@@ -179,11 +180,17 @@ class BookieWatcherImpl implements BookieWatcher {
         }
     }
 
+    private void invalidateResolvedBookieAddressCache(Set<BookieId> changedBookies) {
+        for (BookieId address : changedBookies) {
+            this.bookieAddressResolver.invalidateBookieAddress(address);
+        }        
+    }
     // this callback is already not executed in zookeeper thread
-    private synchronized void processWritableBookiesChanged(Set<BookieSocketAddress> newBookieAddrs) {
+    private synchronized void processWritableBookiesChanged(Set<BookieId> newBookieAddrs) {
         // Update watcher outside ZK callback thread, to avoid deadlock in case some other
         // component is trying to do a blocking ZK operation
-        this.writableBookies = newBookieAddrs;
+        invalidateResolvedBookieAddressCache(Sets.difference(this.writableBookies, newBookieAddrs));
+        this.writableBookies = newBookieAddrs;        
         placementPolicy.onClusterChanged(newBookieAddrs, readOnlyBookies);
         // we don't need to close clients here, because:
         // a. the dead bookies will be removed from topology, which will not be used in new ensemble.
@@ -201,8 +208,9 @@ class BookieWatcherImpl implements BookieWatcher {
         // }
     }
 
-    private synchronized void processReadOnlyBookiesChanged(Set<BookieSocketAddress> readOnlyBookies) {
-        this.readOnlyBookies = readOnlyBookies;
+    private synchronized void processReadOnlyBookiesChanged(Set<BookieId> readOnlyBookies) {
+        invalidateResolvedBookieAddressCache(Sets.difference(this.readOnlyBookies, readOnlyBookies));
+        this.readOnlyBookies = readOnlyBookies;        
         placementPolicy.onClusterChanged(writableBookies, readOnlyBookies);
     }
 
@@ -248,17 +256,17 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     @Override
-    public List<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
+    public List<BookieId> newEnsemble(int ensembleSize, int writeQuorumSize,
         int ackQuorumSize, Map<String, byte[]> customMetadata)
             throws BKNotEnoughBookiesException {
         long startTime = MathUtils.nowInNano();
-        EnsemblePlacementPolicy.PlacementResult<List<BookieSocketAddress>> newEnsembleResponse;
-        List<BookieSocketAddress> socketAddresses;
+        EnsemblePlacementPolicy.PlacementResult<List<BookieId>> newEnsembleResponse;
+        List<BookieId> socketAddresses;
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy;
         try {
-            Set<BookieSocketAddress> quarantinedBookiesSet = quarantinedBookies.asMap().keySet();
+            Set<BookieId> quarantinedBookiesSet = quarantinedBookies.asMap().keySet();
             newEnsembleResponse = placementPolicy.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize,
-                    customMetadata, new HashSet<BookieSocketAddress>(quarantinedBookiesSet));
+                    customMetadata, new HashSet<BookieId>(quarantinedBookiesSet));
             socketAddresses = newEnsembleResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.isAdheringToPolicy();
             if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
@@ -288,21 +296,21 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     @Override
-    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+    public BookieId replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
                                              Map<String, byte[]> customMetadata,
-                                             List<BookieSocketAddress> existingBookies, int bookieIdx,
-                                             Set<BookieSocketAddress> excludeBookies)
+                                             List<BookieId> existingBookies, int bookieIdx,
+                                             Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
         long startTime = MathUtils.nowInNano();
-        BookieSocketAddress addr = existingBookies.get(bookieIdx);
-        EnsemblePlacementPolicy.PlacementResult<BookieSocketAddress> replaceBookieResponse;
-        BookieSocketAddress socketAddress;
+        BookieId addr = existingBookies.get(bookieIdx);
+        EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse;
+        BookieId socketAddress;
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = PlacementPolicyAdherence.FAIL;
         try {
             // we exclude the quarantined bookies also first
-            Set<BookieSocketAddress> excludedBookiesAndQuarantinedBookies = new HashSet<BookieSocketAddress>(
+            Set<BookieId> excludedBookiesAndQuarantinedBookies = new HashSet<BookieId>(
                     excludeBookies);
-            Set<BookieSocketAddress> quarantinedBookiesSet = quarantinedBookies.asMap().keySet();
+            Set<BookieId> quarantinedBookiesSet = quarantinedBookies.asMap().keySet();
             excludedBookiesAndQuarantinedBookies.addAll(quarantinedBookiesSet);
             replaceBookieResponse = placementPolicy.replaceBookie(
                     ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
@@ -342,42 +350,13 @@ class BookieWatcherImpl implements BookieWatcher {
      * @param bookie
      */
     @Override
-    public void quarantineBookie(BookieSocketAddress bookie) {
+    public void quarantineBookie(BookieId bookie) {
         if (quarantinedBookies.getIfPresent(bookie) == null) {
             quarantinedBookies.put(bookie, Boolean.TRUE);
             log.warn("Bookie {} has been quarantined because of read/write errors.", bookie);
         }
-        resolvedBookieAddressCache.remove(bookie);
+        bookieAddressResolver.invalidateBookieAddress(bookie);
     }
 
-    private class BookieAddressResolverImpl implements BookieAddressResolver {
-
-        @Override
-        public ResolvedBookieSocketAddress resolve(BookieSocketAddress address){
-            ResolvedBookieSocketAddress cached = resolvedBookieAddressCache.get(address);
-            if (cached != null) {
-                return cached;
-            }
-            if (address instanceof ResolvedBookieSocketAddress) {
-                return (ResolvedBookieSocketAddress) address;
-            }
-            try {
-                BookieServiceInfo info = FutureUtils.result(registrationClient.getBookieServiceInfo(address.toString())).getValue();
-                BookieServiceInfo.Endpoint endpoint = info.getEndpoints().stream().filter(e->e.getProtocol().equals("bookie-rpc")).findAny().orElse(null);
-                if (endpoint == null) {
-                    throw new Exception("bookie "+address+" does not publish a bookie-rpc endpond");
-                }
-                ResolvedBookieSocketAddress res =  new ResolvedBookieSocketAddress(endpoint.getHost(), endpoint.getPort());
-                log.info("Resolved {} as {}", address, res);
-                resolvedBookieAddressCache.put(address, res);
-                return res;
-            } catch (Exception ex) {
-                if (ex instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
-                throw new RuntimeException("Cannot resolve address of bookie "+address, ex);
-            }
-        }
-    }
 
 }

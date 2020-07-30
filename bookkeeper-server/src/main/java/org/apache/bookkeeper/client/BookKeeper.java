@@ -74,7 +74,7 @@ import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -599,8 +599,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     void checkForFaultyBookies() {
-        List<BookieSocketAddress> faultyBookies = bookieClient.getFaultyBookies();
-        for (BookieSocketAddress faultyBookie : faultyBookies) {
+        List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
+        for (BookieId faultyBookie : faultyBookies) {
             bookieWatcher.quarantineBookie(faultyBookie);
         }
     }
@@ -752,7 +752,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      * @throws InterruptedException
      */
-    public Map<BookieSocketAddress, BookieInfo> getBookieInfo() throws BKException, InterruptedException {
+    public Map<BookieId, BookieInfo> getBookieInfo() throws BKException, InterruptedException {
         return bookieInfoReader.getBookieInfo();
     }
 

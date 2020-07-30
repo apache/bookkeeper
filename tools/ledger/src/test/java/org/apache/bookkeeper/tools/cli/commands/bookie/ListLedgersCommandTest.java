@@ -31,7 +31,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.zookeeper.AsyncCallback;
@@ -61,8 +61,8 @@ public class ListLedgersCommandTest extends BookieCommandTestBase {
 
         PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
 
-        BookieSocketAddress bookieAddress = mock(BookieSocketAddress.class);
-        PowerMockito.whenNew(BookieSocketAddress.class).withParameterTypes(String.class).withArguments(anyString())
+        BookieId bookieAddress = mock(BookieId.class);
+        PowerMockito.whenNew(BookieId.class).withParameterTypes(String.class).withArguments(anyString())
             .thenReturn(bookieAddress);
 
         PowerMockito.mockStatic(MetadataDrivers.class);

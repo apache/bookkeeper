@@ -24,7 +24,7 @@ import java.util.Set;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.net.BookieNode;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -84,9 +84,9 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
-            Set<BookieSocketAddress> readOnlyBookies) {
-        Set<BookieSocketAddress> deadBookies = super.onClusterChanged(writableBookies, readOnlyBookies);
+    public Set<BookieId> onClusterChanged(Set<BookieId> writableBookies,
+            Set<BookieId> readOnlyBookies) {
+        Set<BookieId> deadBookies = super.onClusterChanged(writableBookies, readOnlyBookies);
         if (null != slave) {
             deadBookies = slave.onClusterChanged(writableBookies, readOnlyBookies);
         }
@@ -94,8 +94,8 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize, int writeQuorumSize,
-            int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
+    public PlacementResult<List<BookieId>> newEnsemble(int ensembleSize, int writeQuorumSize,
+            int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieId> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
         try {
             return super.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, excludeBookies);
@@ -109,9 +109,9 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public PlacementResult<BookieSocketAddress> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, List<BookieSocketAddress> currentEnsemble,
-            BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
+    public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
+            BookieId bookieToReplace, Set<BookieId> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
        try {
             return super.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
@@ -128,7 +128,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
 
     @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
-            List<BookieSocketAddress> ensemble,
+            List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         return super.reorderReadSequence(ensemble, bookiesHealthInfo,
@@ -137,7 +137,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
 
     @Override
     public DistributionSchedule.WriteSet reorderReadLACSequence(
-            List<BookieSocketAddress> ensemble,
+            List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         return super.reorderReadLACSequence(ensemble, bookiesHealthInfo,
@@ -145,10 +145,10 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize,
+    public PlacementResult<List<BookieId>> newEnsemble(int ensembleSize,
                                                  int writeQuorumSize,
                                                  int ackQuorumSize,
-                                                 Set<BookieSocketAddress> excludeBookies,
+                                                 Set<BookieId> excludeBookies,
                                                  Ensemble<BookieNode> parentEnsemble,
                                                  Predicate<BookieNode> parentPredicate)
             throws BKException.BKNotEnoughBookiesException {
@@ -234,7 +234,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public void handleBookiesThatLeft(Set<BookieSocketAddress> leftBookies) {
+    public void handleBookiesThatLeft(Set<BookieId> leftBookies) {
         super.handleBookiesThatLeft(leftBookies);
         if (null != slave) {
             slave.handleBookiesThatLeft(leftBookies);
@@ -242,7 +242,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public void handleBookiesThatJoined(Set<BookieSocketAddress> joinedBookies) {
+    public void handleBookiesThatJoined(Set<BookieId> joinedBookies) {
         super.handleBookiesThatJoined(joinedBookies);
         if (null != slave) {
             slave.handleBookiesThatJoined(joinedBookies);

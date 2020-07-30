@@ -34,8 +34,8 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +61,7 @@ public class ListBookiesService implements HttpEndpointService {
         HttpServiceResponse response = new HttpServiceResponse();
         // GET
         if (HttpServer.Method.GET == request.getMethod()) {
-            Collection<BookieSocketAddress> bookies = new ArrayList<BookieSocketAddress>();
+            Collection<BookieId> bookies = new ArrayList<BookieId>();
 
             Map<String, String> params = request.getParams();
             // default print rw
@@ -81,10 +81,10 @@ public class ListBookiesService implements HttpEndpointService {
 
             // output <bookieSocketAddress: hostname>
             Map<String, String> output = Maps.newHashMap();
-            for (BookieSocketAddress b : bookies) {
+            for (BookieId b : bookies) {
                 String hostname = null;
                 if (printHostname) {
-                    ResolvedBookieSocketAddress resolved = bka.getBookieAddressResolver().resolve(b);
+                    BookieSocketAddress resolved = bka.getBookieAddressResolver().resolve(b);
                     hostname = resolved.getHostName();
                 }
                 output.putIfAbsent(b.toString(), hostname);

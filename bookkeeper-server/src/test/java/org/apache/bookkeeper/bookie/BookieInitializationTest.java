@@ -95,7 +95,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -1558,7 +1558,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         Bookie b = new Bookie(conf);
 
-        final BookieSocketAddress bookieAddress = Bookie.getBookieAddress(conf);
+        final BookieId bookieAddress = Bookie.getBookieAddress(conf);
 
         // Read cookie from registation manager
         Versioned<Cookie> rmCookie = Cookie.readFromRegistrationManager(rm, bookieAddress);

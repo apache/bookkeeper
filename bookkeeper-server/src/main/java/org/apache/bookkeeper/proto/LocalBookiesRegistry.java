@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.proto;
 
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 
 /**

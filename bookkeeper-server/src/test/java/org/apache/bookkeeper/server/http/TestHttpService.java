@@ -49,7 +49,7 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.server.http.service.BookieInfoService;
 import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
@@ -675,8 +675,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         // 192.0.2.0/24 is reserved TEST-NET range
         LedgerMetadataBuilder metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
-            .newEnsembleEntry(0L, Lists.newArrayList(
-                                      new ResolvedBookieSocketAddress("192.0.2.1", 1000),
+            .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1000),
                                       getBookie(0),
                                       getBookie(1)));
         ClientUtil.setupLedger(ledgerManager, 1L, metadata);

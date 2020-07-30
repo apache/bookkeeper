@@ -34,7 +34,7 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,7 +108,7 @@ public class RecoveryBookieService implements HttpEndpointService {
                 final String bookieSrcSerialized = requestJsonBody.bookieSrc.get(0);
                 executor.execute(() -> {
                     try {
-                        BookieSocketAddress bookieSrc = BookieSocketAddress.parse(bookieSrcSerialized);
+                        BookieId bookieSrc = BookieId.parse(bookieSrcSerialized);
                         boolean deleteCookie = requestJsonBody.deleteCookie;
                         LOG.info("Start recovering bookie.");
                         bka.recoverBookieData(bookieSrc);

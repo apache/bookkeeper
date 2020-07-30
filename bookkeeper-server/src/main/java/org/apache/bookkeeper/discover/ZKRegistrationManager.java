@@ -54,7 +54,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -517,7 +517,7 @@ public class ZKRegistrationManager implements RegistrationManager {
             null
         )) {
             if (availableNodeExists) {
-                Collection<BookieSocketAddress> rwBookies = FutureUtils
+                Collection<BookieId> rwBookies = FutureUtils
                         .result(regClient.getWritableBookies(), EXCEPTION_FUNC).getValue();
                 if (rwBookies != null && !rwBookies.isEmpty()) {
                     log.error("Bookies are still up and connected to this cluster, "
@@ -527,7 +527,7 @@ public class ZKRegistrationManager implements RegistrationManager {
 
                 boolean readonlyNodeExists = null != zk.exists(bookieReadonlyRegistrationPath, false);
                 if (readonlyNodeExists) {
-                    Collection<BookieSocketAddress> roBookies = FutureUtils
+                    Collection<BookieId> roBookies = FutureUtils
                             .result(regClient.getReadOnlyBookies(), EXCEPTION_FUNC).getValue();
                     if (roBookies != null && !roBookies.isEmpty()) {
                         log.error("Readonly Bookies are still up and connected to this cluster, "

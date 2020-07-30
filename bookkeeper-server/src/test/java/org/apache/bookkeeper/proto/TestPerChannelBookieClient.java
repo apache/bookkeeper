@@ -42,8 +42,8 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.PerChannelBookieClient.ConnectionState;
@@ -82,10 +82,10 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         OrderedExecutor executor = getOrderedSafeExecutor();
 
-        BookieSocketAddress addr = getBookie(0);
+        BookieId addr = getBookie(0);
         for (int i = 0; i < 1000; i++) {
             PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup, addr,
-                    authProvider, extRegistry, ResolvedBookieSocketAddress.DUMMY);
+                    authProvider, extRegistry, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
             client.connectIfNeededAndDoOp(new GenericCallback<PerChannelBookieClient>() {
                     @Override
                     public void operationComplete(int rc, PerChannelBookieClient client) {
@@ -125,11 +125,11 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         OrderedExecutor executor = getOrderedSafeExecutor();
 
-        BookieSocketAddress addr = getBookie(0);
+        BookieId addr = getBookie(0);
         for (int i = 0; i < 100; i++) {
             PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup, addr,
                                                                        authProvider, extRegistry,
-                                                                       ResolvedBookieSocketAddress.DUMMY);
+                                                                       BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
             for (int j = i; j < 10; j++) {
                 client.connectIfNeededAndDoOp(nullop);
             }
@@ -157,11 +157,11 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         final int iterations = 100000;
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         OrderedExecutor executor = getOrderedSafeExecutor();
-        BookieSocketAddress addr = getBookie(0);
+        BookieId addr = getBookie(0);
 
         final PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup,
                 addr, authProvider, extRegistry,
-                ResolvedBookieSocketAddress.DUMMY);
+                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         final AtomicBoolean shouldFail = new AtomicBoolean(false);
         final AtomicBoolean running = new AtomicBoolean(true);
         final CountDownLatch disconnectRunning = new CountDownLatch(1);
@@ -254,11 +254,11 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
 
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         final OrderedExecutor executor = getOrderedSafeExecutor();
-        BookieSocketAddress addr = getBookie(0);
+        BookieId addr = getBookie(0);
 
         final PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup,
                 addr, authProvider, extRegistry,
-                ResolvedBookieSocketAddress.DUMMY);
+                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         final CountDownLatch completion = new CountDownLatch(1);
         final ReadEntryCallback cb = new ReadEntryCallback() {
                 @Override

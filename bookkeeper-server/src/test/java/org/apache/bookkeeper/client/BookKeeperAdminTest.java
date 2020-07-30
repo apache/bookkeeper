@@ -60,8 +60,8 @@ import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.Main;
@@ -530,7 +530,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                 (zkc.exists(bookieCookiePath, false) != null));
 
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
-            Collection<BookieSocketAddress> availableBookies = bkAdmin.getAvailableBookies();
+            Collection<BookieId> availableBookies = bkAdmin.getAvailableBookies();
             Assert.assertEquals(availableBookies.size(), bs.size());
 
             for (int i = 0; i < bs.size(); i++) {
@@ -540,10 +540,10 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             BookieServer killedBookie = bs.get(1);
             killBookieAndWaitForZK(1);
 
-            Collection<BookieSocketAddress> remainingBookies = bkAdmin.getAvailableBookies();
+            Collection<BookieId> remainingBookies = bkAdmin.getAvailableBookies();
             Assert.assertFalse(remainingBookies.contains(killedBookie.getLocalAddress()));
 
-            Collection<BookieSocketAddress> allBookies = bkAdmin.getAllBookies();
+            Collection<BookieId> allBookies = bkAdmin.getAllBookies();
             for (int i = 0; i < bs.size(); i++) {
                 remainingBookies.contains(bs.get(i).getLocalAddress());
                 allBookies.contains(bs.get(i).getLocalAddress());
@@ -596,17 +596,17 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     public void testAreEntriesOfLedgerStoredInTheBookieForLastEmptySegment() throws Exception {
         int lastEntryId = 10;
         long ledgerId = 100L;
-        BookieSocketAddress bookie0 = new ResolvedBookieSocketAddress("bookie0:3181");
-        BookieSocketAddress bookie1 = new ResolvedBookieSocketAddress("bookie1:3181");
-        BookieSocketAddress bookie2 = new ResolvedBookieSocketAddress("bookie2:3181");
-        BookieSocketAddress bookie3 = new ResolvedBookieSocketAddress("bookie3:3181");
+        BookieId bookie0 = new BookieSocketAddress("bookie0:3181");
+        BookieId bookie1 = new BookieSocketAddress("bookie1:3181");
+        BookieId bookie2 = new BookieSocketAddress("bookie2:3181");
+        BookieId bookie3 = new BookieSocketAddress("bookie3:3181");
 
-        List<BookieSocketAddress> ensembleOfSegment1 = new ArrayList<BookieSocketAddress>();
+        List<BookieId> ensembleOfSegment1 = new ArrayList<BookieId>();
         ensembleOfSegment1.add(bookie0);
         ensembleOfSegment1.add(bookie1);
         ensembleOfSegment1.add(bookie2);
 
-        List<BookieSocketAddress> ensembleOfSegment2 = new ArrayList<BookieSocketAddress>();
+        List<BookieId> ensembleOfSegment2 = new ArrayList<BookieId>();
         ensembleOfSegment2.add(bookie3);
         ensembleOfSegment2.add(bookie1);
         ensembleOfSegment2.add(bookie2);

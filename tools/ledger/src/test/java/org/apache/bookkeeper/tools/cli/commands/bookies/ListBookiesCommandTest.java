@@ -34,7 +34,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.tools.cli.helpers.DiscoveryCommandTestBase;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -53,23 +53,17 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest({ ListBookiesCommand.class, CommandHelpers.class })
 public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
 
-    private static class BookieAddressComparator implements Comparator<BookieSocketAddress> {
+    private static class BookieAddressComparator implements Comparator<BookieId> {
 
         @Override
-        public int compare(BookieSocketAddress o1, BookieSocketAddress o2) {
-            int ret = UnsignedBytes.lexicographicalComparator()
-                .compare(o1.getHostName().getBytes(UTF_8), o2.getHostName().getBytes(UTF_8));
-            if (ret == 0) {
-                return Integer.compare(o1.getPort(), o2.getPort());
-            } else {
-                return ret;
-            }
+        public int compare(BookieId o1, BookieId o2) {
+            return o1.toString().compareToIgnoreCase(o2.toString());
         }
     }
 
-    private Set<BookieSocketAddress> writableBookies;
-    private Set<BookieSocketAddress> readonlyBookies;
-    private Set<BookieSocketAddress> allBookies;
+    private Set<BookieId> writableBookies;
+    private Set<BookieId> readonlyBookies;
+    private Set<BookieId> allBookies;
 
     @Before
     public void setup() throws Exception {
@@ -92,10 +86,10 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         PowerMockito.mockStatic(CommandHelpers.class, CALLS_REAL_METHODS);
     }
 
-    private static Set<BookieSocketAddress> createBookies(int startPort, int numBookies) {
-        Set<BookieSocketAddress> bookies = new TreeSet<>(new BookieAddressComparator());
+    private static Set<BookieId> createBookies(int startPort, int numBookies) {
+        Set<BookieId> bookies = new TreeSet<>(new BookieAddressComparator());
         for (int i = 0; i < numBookies; i++) {
-            bookies.add(new BookieSocketAddress("127.0.0.1", startPort + i));
+            bookies.add(BookieId.parse("127.0.0.1" + (startPort + i)));
         }
         return bookies;
     }
@@ -105,8 +99,7 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
             PowerMockito.verifyStatic(
                 CommandHelpers.class,
                 times(numCalls));
-            CommandHelpers.getBookieSocketAddrStringRepresentation(
-                eq(new BookieSocketAddress("127.0.0.1", startPort + 1)));
+            CommandHelpers.getBookieSocketAddrStringRepresentation(eq(new BookieId("127.0.0.1", startPort + 1)));
         }
     }
 

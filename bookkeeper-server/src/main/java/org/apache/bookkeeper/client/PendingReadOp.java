@@ -39,7 +39,7 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.util.SafeRunnable;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
@@ -61,9 +61,9 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     private ScheduledFuture<?> speculativeTask = null;
     protected final List<LedgerEntryRequest> seq;
     private final CompletableFuture<LedgerEntries> future;
-    private final Set<BookieSocketAddress> heardFromHosts;
+    private final Set<BookieId> heardFromHosts;
     private final BitSet heardFromHostsBitSet;
-    private final Set<BookieSocketAddress> sentToHosts = new HashSet<BookieSocketAddress>();
+    private final Set<BookieId> sentToHosts = new HashSet<BookieId>();
     LedgerHandle lh;
     final ClientContext clientCtx;
 
@@ -87,12 +87,12 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         int firstError = BKException.Code.OK;
         int numBookiesMissingEntry = 0;
 
-        final List<BookieSocketAddress> ensemble;
+        final List<BookieId> ensemble;
         final DistributionSchedule.WriteSet writeSet;
         final LedgerEntryImpl entryImpl;
         final long eId;
 
-        LedgerEntryRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
+        LedgerEntryRequest(List<BookieId> ensemble, long lId, long eId) {
             this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
             this.eId = eId;
@@ -130,7 +130,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
          * @return return true if we managed to complete the entry;
          *         otherwise return false if the read entry is not complete or it is already completed before
          */
-        boolean complete(int bookieIndex, BookieSocketAddress host, final ByteBuf buffer) {
+        boolean complete(int bookieIndex, BookieId host, final ByteBuf buffer) {
             ByteBuf content;
             if (isComplete()) {
                 return false;
@@ -188,7 +188,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
          * @param rc
          *          read result code
          */
-        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
+        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
             if (BKException.Code.OK == firstError
                 || BKException.Code.NoSuchEntryException == firstError
                 || BKException.Code.NoSuchLedgerExistsException == firstError) {
@@ -226,7 +226,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
          *      the set of hosts that we already received responses.
          * @return host we sent to if we sent. null otherwise.
          */
-        abstract BookieSocketAddress maybeSendSpeculativeRead(BitSet heardFromHostsBitSet);
+        abstract BookieId maybeSendSpeculativeRead(BitSet heardFromHostsBitSet);
 
         /**
          * Whether the read request completed.
@@ -280,7 +280,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
         int numPendings;
 
-        ParallelReadRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
+        ParallelReadRequest(List<BookieId> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
             numPendings = writeSet.size();
         }
@@ -288,7 +288,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         @Override
         void read() {
             for (int i = 0; i < writeSet.size(); i++) {
-                BookieSocketAddress to = ensemble.get(writeSet.get(i));
+                BookieId to = ensemble.get(writeSet.get(i));
                 try {
                     sendReadTo(writeSet.get(i), to, this);
                 } catch (InterruptedException ie) {
@@ -301,7 +301,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
 
         @Override
-        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
+        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
             // if received all responses or this entry doesn't meet quorum write, complete the request.
 
@@ -317,7 +317,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
 
         @Override
-        BookieSocketAddress maybeSendSpeculativeRead(BitSet heardFromHostsBitSet) {
+        BookieId maybeSendSpeculativeRead(BitSet heardFromHostsBitSet) {
             // no speculative read
             return null;
         }
@@ -330,7 +330,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         final BitSet sentReplicas;
         final BitSet erroredReplicas;
 
-        SequenceReadRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
+        SequenceReadRequest(List<BookieId> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
 
             this.sentReplicas = new BitSet(lh.getLedgerMetadata().getWriteQuorumSize());
@@ -362,7 +362,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
          * @return host we sent to if we sent. null otherwise.
          */
         @Override
-        synchronized BookieSocketAddress maybeSendSpeculativeRead(BitSet heardFrom) {
+        synchronized BookieId maybeSendSpeculativeRead(BitSet heardFrom) {
             if (nextReplicaIndexToReadFrom >= getLedgerMetadata().getWriteQuorumSize()) {
                 return null;
             }
@@ -386,7 +386,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             sendNextRead();
         }
 
-        synchronized BookieSocketAddress sendNextRead() {
+        synchronized BookieId sendNextRead() {
             if (nextReplicaIndexToReadFrom >= getLedgerMetadata().getWriteQuorumSize()) {
                 // we are done, the read has failed from all replicas, just fail the
                 // read
@@ -401,7 +401,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             nextReplicaIndexToReadFrom++;
 
             try {
-                BookieSocketAddress to = ensemble.get(bookieIndex);
+                BookieId to = ensemble.get(bookieIndex);
                 sendReadTo(bookieIndex, to, this);
                 sentToHosts.add(to);
                 sentReplicas.set(replica);
@@ -415,7 +415,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
 
         @Override
-        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
+        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
 
             int replica = writeSet.indexOf(bookieIndex);
@@ -438,7 +438,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
 
         @Override
-        boolean complete(int bookieIndex, BookieSocketAddress host, ByteBuf buffer) {
+        boolean complete(int bookieIndex, BookieId host, ByteBuf buffer) {
             boolean completed = super.complete(bookieIndex, host, buffer);
             if (completed) {
                 int numReplicasTried = getNextReplicaIndexToReadFrom();
@@ -446,7 +446,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 // the first successful speculative read as "slow"
                 for (int i = 0; i < numReplicasTried - 1; i++) {
                     int slowBookieIndex = writeSet.get(i);
-                    BookieSocketAddress slowBookieSocketAddress = ensemble.get(slowBookieIndex);
+                    BookieId slowBookieSocketAddress = ensemble.get(slowBookieIndex);
                     clientCtx.getPlacementPolicy().registerSlowBookie(slowBookieSocketAddress, eId);
                 }
             }
@@ -510,7 +510,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     void initiate() {
         long nextEnsembleChange = startEntryId, i = startEntryId;
         this.requestTimeNanos = MathUtils.nowInNano();
-        List<BookieSocketAddress> ensemble = null;
+        List<BookieId> ensemble = null;
         do {
             if (i == nextEnsembleChange) {
                 ensemble = getLedgerMetadata().getEnsembleAt(i);
@@ -542,11 +542,11 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
     private static class ReadContext implements ReadEntryCallbackCtx {
         final int bookieIndex;
-        final BookieSocketAddress to;
+        final BookieId to;
         final LedgerEntryRequest entry;
         long lac = LedgerHandle.INVALID_ENTRY_ID;
 
-        ReadContext(int bookieIndex, BookieSocketAddress to, LedgerEntryRequest entry) {
+        ReadContext(int bookieIndex, BookieId to, LedgerEntryRequest entry) {
             this.bookieIndex = bookieIndex;
             this.to = to;
             this.entry = entry;
@@ -563,7 +563,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
     }
 
-    void sendReadTo(int bookieIndex, BookieSocketAddress to, LedgerEntryRequest entry) throws InterruptedException {
+    void sendReadTo(int bookieIndex, BookieId to, LedgerEntryRequest entry) throws InterruptedException {
         if (lh.throttler != null) {
             lh.throttler.acquire();
         }

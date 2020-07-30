@@ -21,7 +21,7 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
@@ -40,7 +40,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
     boolean completed = false;
     boolean errored = false;
     int lastSeenError = BKException.Code.WriteException;
-    final List<BookieSocketAddress> currentEnsemble;
+    final List<BookieId> currentEnsemble;
 
     long currentNonDurableLastAddConfirmed = LedgerHandle.INVALID_ENTRY_ID;
 
@@ -48,7 +48,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
     final BookieClient bookieClient;
 
     ForceLedgerOp(LedgerHandle lh, BookieClient bookieClient,
-                  List<BookieSocketAddress> ensemble,
+                  List<BookieId> ensemble,
                   CompletableFuture<Void> cb) {
         this.lh = lh;
         this.bookieClient = bookieClient;
@@ -89,7 +89,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
     }
 
     @Override
-    public void forceLedgerComplete(int rc, long ledgerId, BookieSocketAddress addr, Object ctx) {
+    public void forceLedgerComplete(int rc, long ledgerId, BookieId addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
 
         checkState(!completed, "We are waiting for all the bookies, it is not expected an early exit");

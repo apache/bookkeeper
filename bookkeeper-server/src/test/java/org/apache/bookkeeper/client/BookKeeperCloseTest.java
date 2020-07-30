@@ -45,7 +45,7 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKClientClosedException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -480,7 +480,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
             LedgerHandle lh3 = createLedgerWithEntries(bk, 100);
             lh3.close();
 
-            BookieSocketAddress bookieToKill = getBookie(0);
+            BookieId bookieToKill = getBookie(0);
             killBookie(bookieToKill);
             startNewBookie();
 

@@ -34,7 +34,7 @@ public class ResolvedBookieSocketAddressTest {
 
     @Test
     public void testHostnameBookieId() throws Exception {
-        ResolvedBookieSocketAddress hostnameAddress = new ResolvedBookieSocketAddress("localhost", 3181);
+        BookieSocketAddress hostnameAddress = new BookieSocketAddress("localhost", 3181);
         InetSocketAddress inetSocketAddress1 = hostnameAddress.getSocketAddress();
         InetSocketAddress inetSocketAddress2 = hostnameAddress.getSocketAddress();
         assertFalse("InetSocketAddress should be recreated", inetSocketAddress1 == inetSocketAddress2);
@@ -42,7 +42,7 @@ public class ResolvedBookieSocketAddressTest {
 
     @Test
     public void testIPAddressBookieId() throws Exception {
-        ResolvedBookieSocketAddress ipAddress = new ResolvedBookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress ipAddress = new BookieSocketAddress("127.0.0.1", 3181);
         InetSocketAddress inetSocketAddress1 = ipAddress.getSocketAddress();
         InetSocketAddress inetSocketAddress2 = ipAddress.getSocketAddress();
         assertTrue("InetSocketAddress should be cached", inetSocketAddress1 == inetSocketAddress2);

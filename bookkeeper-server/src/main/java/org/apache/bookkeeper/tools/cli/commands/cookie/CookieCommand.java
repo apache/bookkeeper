@@ -34,7 +34,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieShellCommand;
 import org.apache.bookkeeper.tools.common.BKCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
@@ -92,7 +92,7 @@ abstract class CookieCommand<CookieFlagsT extends CliFlags>
 
         String bookieId = cmdFlags.arguments.get(0);
         try {
-            BookieSocketAddress.parse(bookieId);
+            BookieId.parse(bookieId);
         } catch (UnknownHostException nhe) {
             spec.console()
                 .println("Invalid bookie id '"

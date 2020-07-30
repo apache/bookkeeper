@@ -69,7 +69,7 @@ public class NetUtils {
     }
 
     public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver,
-                                                ResolvedBookieSocketAddress addr) {
+                                                BookieSocketAddress addr) {
         List<String> names = new ArrayList<String>(1);
 
         InetSocketAddress inetSocketAddress = addr.getSocketAddress();

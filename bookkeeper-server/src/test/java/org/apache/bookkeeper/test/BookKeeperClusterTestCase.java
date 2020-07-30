@@ -54,8 +54,8 @@ import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.metastore.InMemoryMetaStore;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -96,7 +96,7 @@ public abstract class BookKeeperClusterTestCase {
     protected final List<File> tmpDirs = new LinkedList<File>();
     protected final List<BookieServer> bs = new LinkedList<BookieServer>();
     protected final List<ServerConfiguration> bsConfs = new LinkedList<ServerConfiguration>();
-    private final Map<BookieSocketAddress, TestStatsProvider> bsLoggers = new HashMap<>();
+    private final Map<BookieId, TestStatsProvider> bsLoggers = new HashMap<>();
     protected int numBookies;
     protected BookKeeperTestClient bkc;
 
@@ -346,7 +346,7 @@ public abstract class BookKeeperClusterTestCase {
     /**
      * Get bookie address for bookie at index.
      */
-    public ResolvedBookieSocketAddress getBookie(int index) throws Exception {
+    public BookieSocketAddress getBookie(int index) throws Exception {
         if (bs.size() <= index || index < 0) {
             throw new IllegalArgumentException("Invalid index, there are only " + bs.size()
                                                + " bookies. Asked for " + index);
@@ -357,7 +357,7 @@ public abstract class BookKeeperClusterTestCase {
     /**
      * Get bookie configuration for bookie.
      */
-    public ServerConfiguration getBkConf(BookieSocketAddress addr) throws Exception {
+    public ServerConfiguration getBkConf(BookieId addr) throws Exception {
         int bkIndex = 0;
         for (BookieServer server : bs) {
             if (server.getLocalAddress().equals(addr)) {
@@ -380,7 +380,7 @@ public abstract class BookKeeperClusterTestCase {
      * @return the configuration of killed bookie
      * @throws InterruptedException
      */
-    public ServerConfiguration killBookie(BookieSocketAddress addr) throws Exception {
+    public ServerConfiguration killBookie(BookieId addr) throws Exception {
         BookieServer toRemove = null;
         int toRemoveIndex = 0;
         for (BookieServer server : bs) {
@@ -407,7 +407,7 @@ public abstract class BookKeeperClusterTestCase {
      *          Socket Address
      * @throws InterruptedException
      */
-    public void setBookieToReadOnly(BookieSocketAddress addr) throws InterruptedException, UnknownHostException {
+    public void setBookieToReadOnly(BookieId addr) throws InterruptedException, UnknownHostException {
         for (BookieServer server : bs) {
             if (server.getLocalAddress().equals(addr)) {
                 server.getBookie().getStateManager().doTransitionToReadOnlyMode();
@@ -469,7 +469,7 @@ public abstract class BookKeeperClusterTestCase {
      * @throws InterruptedException
      * @throws IOException
      */
-    public CountDownLatch sleepBookie(BookieSocketAddress addr, final int seconds)
+    public CountDownLatch sleepBookie(BookieId addr, final int seconds)
             throws Exception {
         for (final BookieServer bookie : bs) {
             if (bookie.getLocalAddress().equals(addr)) {
@@ -506,14 +506,14 @@ public abstract class BookKeeperClusterTestCase {
      * @throws InterruptedException
      * @throws IOException
      */
-    public void sleepBookie(BookieSocketAddress addr, final CountDownLatch l)
+    public void sleepBookie(BookieId addr, final CountDownLatch l)
             throws InterruptedException, IOException {
         final CountDownLatch suspendLatch = new CountDownLatch(1);
         sleepBookie(addr, l, suspendLatch);
         suspendLatch.await();
     }
 
-    public void sleepBookie(BookieSocketAddress addr, final CountDownLatch l, final CountDownLatch suspendLatch)
+    public void sleepBookie(BookieId addr, final CountDownLatch l, final CountDownLatch suspendLatch)
             throws InterruptedException, IOException {
         for (final BookieServer bookie : bs) {
             if (bookie.getLocalAddress().equals(addr)) {
@@ -564,7 +564,7 @@ public abstract class BookKeeperClusterTestCase {
      * @throws KeeperException
      * @throws BookieException
      */
-    public void restartBookie(BookieSocketAddress addr) throws Exception {
+    public void restartBookie(BookieId addr) throws Exception {
         BookieServer toRemove = null;
         int toRemoveIndex = 0;
         for (BookieServer server : bs) {
@@ -630,7 +630,7 @@ public abstract class BookKeeperClusterTestCase {
         return startNewBookieAndReturnAddress().getPort();
     }
 
-    public ResolvedBookieSocketAddress startNewBookieAndReturnAddress()
+    public BookieSocketAddress startNewBookieAndReturnAddress()
             throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         bsConfs.add(conf);
@@ -654,7 +654,7 @@ public abstract class BookKeeperClusterTestCase {
         TestStatsProvider provider = new TestStatsProvider();
         BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
                                                BookieServiceInfo.NO_INFO);
-        BookieSocketAddress address = Bookie.getBookieAddress(conf);
+        BookieId address = Bookie.getBookieAddress(conf);
         bsLoggers.put(address, provider);
 
         if (bkc == null) {
@@ -696,7 +696,7 @@ public abstract class BookKeeperClusterTestCase {
             }
         };
 
-        BookieSocketAddress address = Bookie.getBookieAddress(conf);
+        BookieId address = Bookie.getBookieAddress(conf);
         if (bkc == null) {
             bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
@@ -822,7 +822,7 @@ public abstract class BookKeeperClusterTestCase {
      * @return true if the address was created using an IP address, false if the
      *         address was created using a hostname
      */
-    public static boolean isCreatedFromIp(ResolvedBookieSocketAddress addr) {
+    public static boolean isCreatedFromIp(BookieSocketAddress addr) {
         return addr.getSocketAddress().toString().startsWith("/");
     }
 
@@ -832,7 +832,7 @@ public abstract class BookKeeperClusterTestCase {
         }
     }
 
-    public TestStatsProvider getStatsProvider(BookieSocketAddress addr) {
+    public TestStatsProvider getStatsProvider(BookieId addr) {
         return bsLoggers.get(addr);
     }
 

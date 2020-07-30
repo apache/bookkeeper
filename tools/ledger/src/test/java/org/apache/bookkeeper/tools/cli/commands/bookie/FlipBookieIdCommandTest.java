@@ -33,7 +33,7 @@ import org.apache.bookkeeper.client.UpdateLedgerOp;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -66,7 +66,7 @@ public class FlipBookieIdCommandTest extends BookieCommandTestBase {
     private ServerConfiguration serverConfiguration;
 
     @Mock
-    private BookieSocketAddress bookieSocketAddress;
+    private BookieId bookieSocketAddress;
 
     public FlipBookieIdCommandTest() {
         super(3, 0);

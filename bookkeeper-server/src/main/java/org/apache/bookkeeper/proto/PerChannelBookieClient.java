@@ -93,8 +93,8 @@ import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
@@ -170,6 +170,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     private final BookieAddressResolver bookieAddressResolver;
+    final BookieId bookieId;
     final BookieSocketAddress addr;
     final EventLoopGroup eventLoopGroup;
     final ByteBufAllocator allocator;
@@ -336,32 +337,32 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private volatile boolean isWritable = true;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
-                                  BookieSocketAddress addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
+                                  BookieId addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
         this(new ClientConfiguration(), executor, eventLoopGroup, addr, NullStatsLogger.INSTANCE, null, null,
                 null, bookieAddressResolver);
     }
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
-                                  BookieSocketAddress addr,
+                                  BookieId bookieId,
                                   ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry, BookieAddressResolver bookieAddressResolver) throws SecurityException {
-        this(new ClientConfiguration(), executor, eventLoopGroup, addr, NullStatsLogger.INSTANCE,
+        this(new ClientConfiguration(), executor, eventLoopGroup, bookieId, NullStatsLogger.INSTANCE,
                 authProviderFactory, extRegistry, null, bookieAddressResolver);
     }
 
     public PerChannelBookieClient(ClientConfiguration conf, OrderedExecutor executor,
-                                  EventLoopGroup eventLoopGroup, BookieSocketAddress addr,
+                                  EventLoopGroup eventLoopGroup, BookieId bookieId,
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool, BookieAddressResolver bookieAddressResolver) throws SecurityException {
-        this(conf, executor, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, addr, NullStatsLogger.INSTANCE,
+        this(conf, executor, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, bookieId, NullStatsLogger.INSTANCE,
                 authProviderFactory, extRegistry, pcbcPool, null, bookieAddressResolver);
     }
 
     public PerChannelBookieClient(ClientConfiguration conf, OrderedExecutor executor,
                                   EventLoopGroup eventLoopGroup,
                                   ByteBufAllocator allocator,
-                                  BookieSocketAddress addr,
+                                  BookieId bookieId,
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool,
@@ -369,7 +370,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                   BookieAddressResolver bookieAddressResolver) throws SecurityException {
         this.maxFrameSize = conf.getNettyMaxFrameSizeBytes();
         this.conf = conf;
-        this.addr = addr;
+        this.bookieId = bookieId;
+        this.addr = bookieAddressResolver.resolve(bookieId);
         this.executor = executor;
         if (LocalBookiesRegistry.isLocalBookie(addr)) {
             this.eventLoopGroup = new DefaultEventLoopGroup();
@@ -394,7 +396,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         this.bookieAddressResolver = bookieAddressResolver;
 
         this.statsLogger = parentStatsLogger.scope(BookKeeperClientStats.CHANNEL_SCOPE)
-            .scope(addr.getNameForMetrics());
+            .scope(buildStatsLoggerScopeName(addr));
 
         readEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_READ_OP);
         addEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_ADD_OP);
@@ -493,7 +495,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         };
     }
-
+    
+    public static String buildStatsLoggerScopeName(BookieSocketAddress addr) {
+        StringBuilder nameBuilder = new StringBuilder();
+        nameBuilder.append(addr.getHostName().replace('.', '_').replace('-', '_')).append("_").append(addr.getPort());
+        return nameBuilder.toString();
+    }
+ 
     private void completeOperation(GenericCallback<PerChannelBookieClient> op, int rc) {
         //Thread.dumpStack();
         closeLock.readLock().lock();
@@ -570,11 +578,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 pipeline.addLast("mainhandler", PerChannelBookieClient.this);
             }
         });
-
-        ResolvedBookieSocketAddress resolved = bookieAddressResolver.resolve(addr);
-        SocketAddress bookieAddr = resolved.getSocketAddress();
+        
+        SocketAddress bookieAddr = addr.getSocketAddress();
         if (eventLoopGroup instanceof DefaultEventLoopGroup) {
-            bookieAddr = resolved.getLocalAddress();
+            bookieAddr = addr.getLocalAddress();
         }
 
         ChannelFuture future = bootstrap.connect(bookieAddr);
@@ -688,7 +695,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (useV2WireProtocol) {
                 LOG.error("force is not allowed with v2 protocol");
                 executor.executeOrdered(ledgerId, () -> {
-                    cb.forceLedgerComplete(BKException.Code.IllegalOpException, ledgerId, addr, ctx);
+                    cb.forceLedgerComplete(BKException.Code.IllegalOpException, ledgerId, bookieId, ctx);
                 });
                 return;
         }
@@ -744,7 +751,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
                 LOG.error("invalid writeflags {} for v2 protocol", writeFlags);
                 executor.executeOrdered(ledgerId, () -> {
-                    cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, addr, ctx);
+                    cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, bookieId, ctx);
                 });
                 return;
             }
@@ -1670,7 +1677,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             this.cb = new WriteLacCallback() {
                     @Override
                     public void writeLacComplete(int rc, long ledgerId,
-                                                 BookieSocketAddress addr,
+                                                 BookieId addr,
                                                  Object ctx) {
                         logOpResult(rc);
                         originalCallback.writeLacComplete(rc, ledgerId,
@@ -1688,7 +1695,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         @Override
         public void errorOut(final int rc) {
             errorOutAndRunCallback(
-                    () -> cb.writeLacComplete(rc, ledgerId, addr, ctx));
+                    () -> cb.writeLacComplete(rc, ledgerId, bookieId, ctx));
         }
 
         @Override
@@ -1702,7 +1709,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 logResponse(status, "ledger", ledgerId);
             }
             int rc = convertStatus(status, BKException.Code.WriteException);
-            cb.writeLacComplete(rc, ledgerId, addr, ctx);
+            cb.writeLacComplete(rc, ledgerId, bookieId, ctx);
         }
     }
 
@@ -1719,7 +1726,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             this.cb = new ForceLedgerCallback() {
                     @Override
                     public void forceLedgerComplete(int rc, long ledgerId,
-                                                 BookieSocketAddress addr,
+                                                 BookieId addr,
                                                  Object ctx) {
                         logOpResult(rc);
                         originalCallback.forceLedgerComplete(rc, ledgerId,
@@ -1737,7 +1744,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         @Override
         public void errorOut(final int rc) {
             errorOutAndRunCallback(
-                    () -> cb.forceLedgerComplete(rc, ledgerId, addr, ctx));
+                    () -> cb.forceLedgerComplete(rc, ledgerId, bookieId, ctx));
         }
 
         @Override
@@ -1751,7 +1758,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 logResponse(status, "ledger", ledgerId);
             }
             int rc = convertStatus(status, BKException.Code.WriteException);
-            cb.forceLedgerComplete(rc, ledgerId, addr, ctx);
+            cb.forceLedgerComplete(rc, ledgerId, bookieId, ctx);
         }
     }
 
@@ -2116,7 +2123,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         @Override
         public void writeComplete(int rc, long ledgerId, long entryId,
-                                  BookieSocketAddress addr,
+                                  BookieId addr,
                                   Object ctx) {
             logOpResult(rc);
             originalCallback.writeComplete(rc, ledgerId, entryId, addr, ctx);
@@ -2142,7 +2149,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         @Override
         public void errorOut(final int rc) {
             errorOutAndRunCallback(
-                    () -> writeComplete(rc, ledgerId, entryId, addr, ctx));
+                    () -> writeComplete(rc, ledgerId, entryId, bookieId, ctx));
         }
 
         @Override
@@ -2176,7 +2183,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
 
             int rc = convertStatus(status, BKException.Code.WriteException);
-            writeComplete(rc, ledgerId, entryId, addr, ctx);
+            writeComplete(rc, ledgerId, entryId, bookieId, ctx);
         }
     }
 

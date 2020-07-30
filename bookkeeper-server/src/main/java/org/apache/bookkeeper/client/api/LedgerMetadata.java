@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 
 /**
  * Represents the client-side metadata of a ledger. It is immutable.
@@ -125,14 +125,14 @@ public interface LedgerMetadata {
      * @param entryId the entry id to retrieve its ensemble information
      * @return the ensemble which contains the given {@code entryId}.
      */
-    List<BookieSocketAddress> getEnsembleAt(long entryId);
+    List<BookieId> getEnsembleAt(long entryId);
 
     /**
      * Returns all the ensembles of this entry.
      *
      * @return all the ensembles of this entry.
      */
-    NavigableMap<Long, ? extends List<BookieSocketAddress>> getAllEnsembles();
+    NavigableMap<Long, ? extends List<BookieId>> getAllEnsembles();
 
     /**
      * Returns the state of the metadata.

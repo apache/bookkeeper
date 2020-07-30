@@ -18,30 +18,35 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.client;
-
-import org.apache.bookkeeper.net.BookieId;
+package org.apache.bookkeeper.net;
 
 /**
- * This interface returns heuristics used to determine the health of a Bookkeeper server for read
- * ordering.
+ * This is an identifier for a BookieID
  */
-public interface BookiesHealthInfo {
+public final class BookieId {
+
+    private final String id;
+    
+    private BookieId(String id) {
+        this.id = id;
+    }
+    
+    /**
+     * Returns the serialized version of this object
+     * @return 
+     */
+    @Override
+    public String toString() {
+        return id;
+    }
 
     /**
-     * Return the failure history for a bookie.
-     *
-     * @param bookieSocketAddress
-     * @return failed entries on a bookie, -1 if there have been no failures
+     * Parses the given serialized representation of a BookieId
+     * @param serialized
+     * @return the parsed BookieId
      */
-    long getBookieFailureHistory(BookieId bookieSocketAddress);
-
-    /**
-     * Returns pending requests to a bookie.
-     *
-     * @param bookieSocketAddress
-     * @return number of pending requests
-     */
-    long getBookiePendingRequests(BookieId bookieSocketAddress);
+    public static BookieId parse(String serialized) {        
+       return new BookieId(serialized);        
+    }
 
 }

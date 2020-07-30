@@ -52,7 +52,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -72,7 +72,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class RecoverCommandTest extends BookieCommandTestBase {
 
     @Mock
-    private BookieSocketAddress bookieSocketAddress;
+    private BookieId bookieSocketAddress;
 
     @Mock
     private ClientConfiguration clientConfiguration;
@@ -103,7 +103,7 @@ public class RecoverCommandTest extends BookieCommandTestBase {
         PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
         PowerMockito.whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
                     .withArguments(eq(clientConfiguration)).thenReturn(conf);
-        PowerMockito.whenNew(BookieSocketAddress.class).withArguments(anyString(), anyInt())
+        PowerMockito.whenNew(BookieId.class).withArguments(anyString(), anyInt())
                     .thenReturn(bookieSocketAddress);
         PowerMockito.whenNew(ClientConfiguration.class).withParameterTypes(AbstractConfiguration.class)
                     .withArguments(eq(conf)).thenReturn(clientConfiguration);
@@ -121,11 +121,11 @@ public class RecoverCommandTest extends BookieCommandTestBase {
         SortedMap<Long, LedgerMetadata> ledgerMetadataSortedMap = new TreeMap<>();
         ledgerMetadataSortedMap.put(1L, ledgerMetadata);
         when(bookKeeperAdmin.getLedgersContainBookies(any())).thenReturn(ledgerMetadataSortedMap);
-        ArrayList<BookieSocketAddress> arrayList = new ArrayList<>();
+        ArrayList<BookieId> arrayList = new ArrayList<>();
         arrayList.add(bookieSocketAddress);
-        Map<Long, List<BookieSocketAddress>> map = new HashMap<>();
+        Map<Long, List<BookieId>> map = new HashMap<>();
         map.put(1L, arrayList);
-        NavigableMap<Long, ImmutableList<BookieSocketAddress>> navigableMap = Collections.unmodifiableNavigableMap(
+        NavigableMap<Long, ImmutableList<BookieId>> navigableMap = Collections.unmodifiableNavigableMap(
             map.entrySet().stream()
                .collect(TreeMap::new, (m, e) -> m.put(e.getKey(), ImmutableList.copyOf(e.getValue())),
                         TreeMap::putAll));

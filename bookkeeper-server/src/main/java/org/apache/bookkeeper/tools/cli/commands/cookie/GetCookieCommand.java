@@ -27,7 +27,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GetCookieCommand.Flags;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -77,8 +77,7 @@ public class GetCookieCommand extends CookieCommand<Flags> {
         String bookieId = getBookieId(cmdFlags);
 
         try {
-            Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(
-                rm, BookieSocketAddress.parse(bookieId)
+            Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, BookieId.parse(bookieId)
             );
             spec.console().println("Cookie for bookie '" + bookieId + "' is:");
             spec.console().println("---");

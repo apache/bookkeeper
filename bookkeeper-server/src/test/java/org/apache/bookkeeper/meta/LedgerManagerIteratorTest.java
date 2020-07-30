@@ -50,8 +50,8 @@ import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
@@ -88,10 +88,9 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
      * @throws InterruptedException
      */
     void createLedger(LedgerManager lm, Long ledgerId) throws Exception {
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new ResolvedBookieSocketAddress("192.0.2.1", 1234),
-                new ResolvedBookieSocketAddress("192.0.2.2", 1234),
-                new ResolvedBookieSocketAddress("192.0.2.3", 1234));
+        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234));
         LedgerMetadata meta = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
             .withPassword("passwd".getBytes())

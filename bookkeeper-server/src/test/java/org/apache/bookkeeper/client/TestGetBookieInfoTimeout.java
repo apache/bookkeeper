@@ -37,8 +37,8 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
@@ -103,14 +103,14 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         ClientConfiguration cConf = new ClientConfiguration();
         cConf.setGetBookieInfoTimeout(2);
 
-        final BookieSocketAddress bookieToSleep = writelh.getLedgerMetadata().getEnsembleAt(0).get(0);
+        final BookieId bookieToSleep = writelh.getLedgerMetadata().getEnsembleAt(0).get(0);
         int sleeptime = cConf.getBookieInfoTimeout() * 3;
         CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
         latch.await();
 
-        BookieAddressResolver bookieAddressResolver = ResolvedBookieSocketAddress.DUMMY;
+        BookieAddressResolver bookieAddressResolver = BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER;
         // try to get bookie info from the sleeping bookie. It should fail with timeout error
-        ResolvedBookieSocketAddress addr = bookieAddressResolver.resolve(bookieToSleep);
+        BookieSocketAddress addr = bookieAddressResolver.resolve(bookieToSleep);
         BookieClient bc = new BookieClientImpl(cConf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, executor,
                 scheduler, NullStatsLogger.INSTANCE, bookieAddressResolver);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE

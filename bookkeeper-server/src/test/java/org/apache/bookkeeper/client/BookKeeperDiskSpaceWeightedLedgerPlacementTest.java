@@ -35,7 +35,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.slf4j.Logger;
@@ -57,7 +57,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
             super(conf);
         }
 
-        void blockUntilBookieWeightIs(BookieSocketAddress bookie, Optional<Long> target) throws InterruptedException {
+        void blockUntilBookieWeightIs(BookieId bookie, Optional<Long> target) throws InterruptedException {
             long startMsecs = System.currentTimeMillis();
             Optional<Long> freeDiskSpace = Optional.empty();
             while (System.currentTimeMillis() < (startMsecs + MS_WEIGHT_UPDATE_TIMEOUT)) {
@@ -125,7 +125,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
             BookKeeperCheckInfoReader client,
             int bookieIdx, long initialFreeDiskSpace,
              long finalFreeDiskSpace, AtomicBoolean useFinal) throws Exception {
-        BookieSocketAddress addr = bs.get(bookieIdx).getLocalAddress();
+        BookieId addr = bs.get(bookieIdx).getLocalAddress();
         LOG.info("Killing bookie {}", addr);
         ServerConfiguration conf = killBookieAndWaitForZK(bookieIdx);
         client.blockUntilBookieWeightIs(addr, Optional.empty());
@@ -155,14 +155,14 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
                 replaceBookieWithCustomFreeDiskSpaceBookie(client, 0, multiple * freeDiskSpace);
             }
         }
-        Map<BookieSocketAddress, Integer> m = new HashMap<BookieSocketAddress, Integer>();
+        Map<BookieId, Integer> m = new HashMap<BookieId, Integer>();
         for (BookieServer b : bs) {
             m.put(b.getLocalAddress(), 0);
         }
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
+            for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -205,14 +205,14 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
                 replaceBookieWithCustomFreeDiskSpaceBookie(client, 0, multiple * freeDiskSpace);
             }
         }
-        Map<BookieSocketAddress, Integer> m = new HashMap<BookieSocketAddress, Integer>();
+        Map<BookieId, Integer> m = new HashMap<BookieId, Integer>();
         for (BookieServer b : bs) {
             m.put(b.getLocalAddress(), 0);
         }
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
+            for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -247,7 +247,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         }
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
+            for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -295,14 +295,14 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
                 replaceBookieWithCustomFreeDiskSpaceBookie(client, 0, multiple * freeDiskSpace);
             }
         }
-        Map<BookieSocketAddress, Integer> m = new HashMap<BookieSocketAddress, Integer>();
+        Map<BookieId, Integer> m = new HashMap<BookieId, Integer>();
         for (BookieServer b : bs) {
             m.put(b.getLocalAddress(), 0);
         }
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
+            for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -330,7 +330,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
+            for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -375,14 +375,14 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         // let the last two bookies be down initially
         ServerConfiguration conf1 = killBookieAndWaitForZK(numBookies - 1);
         ServerConfiguration conf2 = killBookieAndWaitForZK(numBookies - 2);
-        Map<BookieSocketAddress, Integer> m = new HashMap<BookieSocketAddress, Integer>();
+        Map<BookieId, Integer> m = new HashMap<BookieId, Integer>();
         for (BookieServer b : bs) {
             m.put(b.getLocalAddress(), 0);
         }
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
+            for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -406,7 +406,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         }
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
+            for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -455,14 +455,14 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
                         client, 0, freeDiskSpace, multiple * freeDiskSpace, useHigherValue);
             }
         }
-        Map<BookieSocketAddress, Integer> m = new HashMap<BookieSocketAddress, Integer>();
+        Map<BookieId, Integer> m = new HashMap<BookieId, Integer>();
         for (BookieServer b : bs) {
             m.put(b.getLocalAddress(), 0);
         }
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
+            for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -491,7 +491,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         }
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
+            for (BookieId b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }

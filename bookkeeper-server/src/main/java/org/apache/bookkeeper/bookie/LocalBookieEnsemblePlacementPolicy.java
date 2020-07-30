@@ -33,7 +33,7 @@ import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -49,7 +49,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
 
     static final Logger LOG = LoggerFactory.getLogger(LocalBookieEnsemblePlacementPolicy.class);
 
-    private BookieSocketAddress bookieAddress;
+    private BookieId bookieAddress;
 
     @Override
     public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
@@ -61,7 +61,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
         serverConf.addConfiguration(conf);
 
         try {
-            bookieAddress = Bookie.getBookieAddress(serverConf);
+            bookieAddress = Bookie.getBookieId(serverConf);
         } catch (UnknownHostException e) {
             LOG.warn("Unable to get bookie address", e);
             throw new RuntimeException(e);
@@ -75,27 +75,27 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
     }
 
     @Override
-    public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
-            Set<BookieSocketAddress> readOnlyBookies) {
+    public Set<BookieId> onClusterChanged(Set<BookieId> writableBookies,
+            Set<BookieId> readOnlyBookies) {
         return Collections.emptySet();
     }
 
     @Override
-    public PlacementResult<BookieSocketAddress> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            java.util.Map<String, byte[]> customMetadata, List<BookieSocketAddress> currentEnsemble,
-            BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
+    public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            java.util.Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
+            BookieId bookieToReplace, Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
         throw new BKNotEnoughBookiesException();
     }
 
     @Override
-    public void registerSlowBookie(BookieSocketAddress bookieSocketAddress, long entryId) {
+    public void registerSlowBookie(BookieId bookieSocketAddress, long entryId) {
         return;
     }
 
     @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
-            List<BookieSocketAddress> ensemble,
+            List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         return null;
@@ -103,15 +103,15 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
 
     @Override
     public DistributionSchedule.WriteSet reorderReadLACSequence(
-            List<BookieSocketAddress> ensemble,
+            List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         return null;
     }
 
     @Override
-    public PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize, int writeQuorumSize,
-            int ackQuorumSize, java.util.Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
+    public PlacementResult<List<BookieId>> newEnsemble(int ensembleSize, int writeQuorumSize,
+            int ackQuorumSize, java.util.Map<String, byte[]> customMetadata, Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
         if (ensembleSize > 1) {
             throw new IllegalArgumentException("Local ensemble policy can only return 1 bookie");
@@ -121,12 +121,12 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
     }
 
     @Override
-    public void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieToFreeSpaceMap) {
+    public void updateBookieInfo(Map<BookieId, BookieInfo> bookieToFreeSpaceMap) {
         return;
     }
 
     @Override
-    public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList,
+    public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieId> ensembleList,
             int writeQuorumSize, int ackQuorumSize) {
         return PlacementPolicyAdherence.MEETS_STRICT;
     }

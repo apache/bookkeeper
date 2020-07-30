@@ -36,7 +36,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -62,7 +62,7 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
     private BookKeeperAdmin bookKeeperAdmin;
 
     @Mock
-    private BookieSocketAddress bookieSocketAddress;
+    private BookieId bookieSocketAddress;
 
     @Mock
     private Versioned<Cookie> cookieVersioned;
@@ -84,7 +84,7 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
         PowerMockito.whenNew(ClientConfiguration.class).withArguments(eq(conf)).thenReturn(clientConfiguration);
         PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
                     .withArguments(eq(clientConfiguration)).thenReturn(bookKeeperAdmin);
-        PowerMockito.whenNew(BookieSocketAddress.class).withArguments(anyString()).thenReturn(bookieSocketAddress);
+        PowerMockito.whenNew(BookieId.class).withArguments(anyString()).thenReturn(bookieSocketAddress);
         PowerMockito.mockStatic(Bookie.class);
         PowerMockito.when(Bookie.getBookieAddress(any(ServerConfiguration.class))).thenReturn(bookieSocketAddress);
         PowerMockito.doNothing().when(bookKeeperAdmin).decommissionBookie(eq(bookieSocketAddress));
@@ -114,7 +114,7 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
 
         verifyNew(ClientConfiguration.class, times(1)).withArguments(eq(conf));
         verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(clientConfiguration));
-        verifyNew(BookieSocketAddress.class, never()).withArguments(anyString());
+        verifyNew(BookieId.class, never()).withArguments(anyString());
         verify(bookKeeperAdmin, times(1)).decommissionBookie(eq(bookieSocketAddress));
         verify(cookieVersioned, times(1)).getValue();
         verify(cookieVersioned, times(1)).getVersion();
@@ -127,7 +127,7 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
 
         verifyNew(ClientConfiguration.class, times(1)).withArguments(eq(conf));
         verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(clientConfiguration));
-        verifyNew(BookieSocketAddress.class, times(1)).withArguments(anyString());
+        verifyNew(BookieId.class, times(1)).withArguments(anyString());
         verify(bookKeeperAdmin, times(1)).decommissionBookie(eq(bookieSocketAddress));
         verify(cookieVersioned, times(1)).getValue();
         verify(cookieVersioned, times(1)).getVersion();

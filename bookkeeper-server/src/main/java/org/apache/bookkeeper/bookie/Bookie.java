@@ -81,8 +81,8 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -189,7 +189,7 @@ public class Bookie extends BookieCriticalThread {
     static class NopWriteCallback implements WriteCallback {
         @Override
         public void writeComplete(int rc, long ledgerId, long entryId,
-                                  BookieSocketAddress addr, Object ctx) {
+                                  BookieId addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
                         entryId, ledgerId, addr, rc);
@@ -303,11 +303,11 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
-    static List<BookieSocketAddress> possibleBookieIds(ServerConfiguration conf)
+    static List<BookieId> possibleBookieIds(ServerConfiguration conf)
             throws BookieException {
         // we need to loop through all possible bookie identifiers to ensure it is treated as a new environment
         // just because of bad configuration
-        List<BookieSocketAddress> addresses = Lists.newArrayListWithExpectedSize(3);
+        List<BookieId> addresses = Lists.newArrayListWithExpectedSize(3);
         // we are checking all possibilities here, so we don't need to fail if we can only get
         // loopback address. it will fail anyway when the bookie attempts to listen on loopback address.
         try {
@@ -317,17 +317,17 @@ public class Bookie extends BookieCriticalThread {
                     .setUseHostNameAsBookieID(false)
                     .setAdvertisedAddress(null)
                     .setAllowLoopback(true)
-            ));
+            ).toBookieId());
             // host name
             addresses.add(getBookieAddress(
                 new ServerConfiguration(conf)
                     .setUseHostNameAsBookieID(true)
                     .setAdvertisedAddress(null)
                     .setAllowLoopback(true)
-            ));
+            ).toBookieId());
             // advertised address
             if (null != conf.getAdvertisedAddress()) {
-                addresses.add(getBookieAddress(conf));
+                addresses.add(getBookieAddress(conf).toBookieId());
             }
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
@@ -337,10 +337,10 @@ public class Bookie extends BookieCriticalThread {
 
     static Versioned<Cookie> readAndVerifyCookieFromRegistrationManager(
             Cookie masterCookie, RegistrationManager rm,
-            List<BookieSocketAddress> addresses, boolean allowExpansion)
+            List<BookieId> addresses, boolean allowExpansion)
             throws BookieException {
         Versioned<Cookie> rmCookie = null;
-        for (BookieSocketAddress address : addresses) {
+        for (BookieId address : addresses) {
             try {
                 rmCookie = Cookie.readFromRegistrationManager(rm, address);
                 // If allowStorageExpansion option is set, we should
@@ -420,7 +420,7 @@ public class Bookie extends BookieCriticalThread {
             // 3. read the cookie from registration manager. it is the `source-of-truth` of a given bookie.
             //    if it doesn't exist in registration manager, this bookie is a new bookie, otherwise it is
             //    an old bookie.
-            List<BookieSocketAddress> possibleBookieIds = possibleBookieIds(conf);
+            List<BookieId> possibleBookieIds = possibleBookieIds(conf);
             final Versioned<Cookie> rmCookie = readAndVerifyCookieFromRegistrationManager(
                         masterCookie, rm, possibleBookieIds, allowExpansion);
 
@@ -533,16 +533,20 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
+    public static BookieId getBookieId(ServerConfiguration conf) throws UnknownHostException {
+         return getBookieAddress(conf).toBookieId();
+    }
+    
     /**
      * Return the configured address of the bookie.
      */
-    public static ResolvedBookieSocketAddress getBookieAddress(ServerConfiguration conf)
+    public static BookieSocketAddress getBookieAddress(ServerConfiguration conf)
             throws UnknownHostException {
         // Advertised address takes precedence over the listening interface and the
         // useHostNameAsBookieID settings
         if (conf.getAdvertisedAddress() != null && conf.getAdvertisedAddress().trim().length() > 0) {
             String hostAddress = conf.getAdvertisedAddress().trim();
-            return new ResolvedBookieSocketAddress(hostAddress, conf.getBookiePort());
+            return new BookieSocketAddress(hostAddress, conf.getBookiePort());
         }
 
         String iface = conf.getListeningInterface();
@@ -571,8 +575,8 @@ public class Bookie extends BookieCriticalThread {
             hostAddress = iAddress.getHostAddress();
         }
 
-        ResolvedBookieSocketAddress addr =
-                new ResolvedBookieSocketAddress(hostAddress, conf.getBookiePort());
+        BookieSocketAddress addr =
+                new BookieSocketAddress(hostAddress, conf.getBookiePort());
         if (addr.getSocketAddress().getAddress().isLoopbackAddress()
             && !conf.getAllowLoopback()) {
             throw new UnknownHostException("Trying to listen on loopback address, "
@@ -1486,7 +1490,7 @@ public class Bookie extends BookieCriticalThread {
         int count;
 
         @Override
-        public synchronized void writeComplete(int rc, long l, long e, BookieSocketAddress addr, Object ctx) {
+        public synchronized void writeComplete(int rc, long l, long e, BookieId addr, Object ctx) {
             count--;
             if (count == 0) {
                 notifyAll();

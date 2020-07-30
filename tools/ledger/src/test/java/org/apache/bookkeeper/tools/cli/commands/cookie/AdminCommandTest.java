@@ -41,7 +41,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.Version;
@@ -71,7 +71,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
     private Cookie cookie;
 
     @Mock
-    private BookieSocketAddress bookieSocketAddress;
+    private BookieId bookieSocketAddress;
 
     public AdminCommandTest() throws IOException {
         super(3, 3);

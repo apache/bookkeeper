@@ -41,7 +41,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
@@ -57,12 +57,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link ReadLedgerCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ ReadLedgerCommand.class, BookKeeperAdmin.class, BookieSocketAddress.class, ClientConfiguration.class,
+@PrepareForTest({ ReadLedgerCommand.class, BookKeeperAdmin.class, BookieId.class, ClientConfiguration.class,
     LedgerHandle.class, LedgerEntry.class, OrderedExecutor.class })
 public class ReadLedgerCommandTest extends BookieCommandTestBase {
 
     @Mock
-    private BookieSocketAddress bookieSocketAddress;
+    private BookieId bookieSocketAddress;
 
     @Mock
     private ClientConfiguration clientConfiguration;
@@ -100,7 +100,7 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
         super.setup();
 
         PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(BookieSocketAddress.class).withArguments(anyString()).thenReturn(bookieSocketAddress);
+        PowerMockito.whenNew(BookieId.class).withArguments(anyString()).thenReturn(bookieSocketAddress);
         PowerMockito.whenNew(ClientConfiguration.class).withNoArguments().thenReturn(clientConfiguration);
         PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
                     .withArguments(eq(clientConfiguration)).thenReturn(bookKeeperAdmin);
