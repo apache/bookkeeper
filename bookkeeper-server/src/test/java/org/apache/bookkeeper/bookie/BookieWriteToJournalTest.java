@@ -91,7 +91,7 @@ public class BookieWriteToJournalTest {
         conf.setJournalDirName(journalDir.getPath())
                 .setLedgerDirNames(new String[]{ledgerDir.getPath()})
                 .setMetadataServiceUri(null);
-        BookieId bookieAddress = Bookie.getBookieAddress(conf);
+        BookieId bookieAddress = Bookie.getBookieId(conf);
         CountDownLatch journalJoinLatch = new CountDownLatch(1);
         Journal journal = mock(Journal.class);
         MutableBoolean effectiveAckBeforeSync = new MutableBoolean(false);

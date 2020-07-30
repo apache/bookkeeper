@@ -43,8 +43,8 @@ import org.slf4j.LoggerFactory;
  */
 public class ReadLastConfirmedOpTest {
     private static final Logger log = LoggerFactory.getLogger(ReadLastConfirmedOpTest.class);
-    private final BookieId bookie1 = new BookieSocketAddress("bookie1", 3181);
-    private final BookieId bookie2 = new BookieSocketAddress("bookie2", 3181);
+    private final BookieId bookie1 = new BookieSocketAddress("bookie1", 3181).toBookieId();
+    private final BookieId bookie2 = new BookieSocketAddress("bookie2", 3181).toBookieId();
 
     OrderedExecutor executor = null;
 

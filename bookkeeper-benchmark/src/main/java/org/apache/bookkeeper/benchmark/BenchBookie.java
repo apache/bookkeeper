@@ -192,7 +192,7 @@ public class BenchBookie {
             toSend.writeLong(ledger);
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
-            bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
+            bc.addEntry(new BookieSocketAddress(addr, port).toBookieId(), ledger, new byte[20],
                     entry, ByteBufList.get(toSend), tc, null, BookieProtocol.FLAG_NONE,
                     false, WriteFlag.NONE);
         }
@@ -210,7 +210,7 @@ public class BenchBookie {
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
             lc.resetComplete();
-            bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
+            bc.addEntry(new BookieSocketAddress(addr, port).toBookieId(), ledger, new byte[20],
                         entry, ByteBufList.get(toSend), lc, null,
                         BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
             lc.waitForComplete();
@@ -229,7 +229,7 @@ public class BenchBookie {
             toSend.writeLong(ledger);
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
-            bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
+            bc.addEntry(new BookieSocketAddress(addr, port).toBookieId(), ledger, new byte[20],
                     entry, ByteBufList.get(toSend), tc, null, BookieProtocol.FLAG_NONE,
                     false, WriteFlag.NONE);
         }

@@ -101,44 +101,44 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieId addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieId addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieId addr3 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
-        BookieId addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         // replace node under r2
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
-                                                                addr2, new HashSet<>()).getResult();
+                                                                addr2.toBookieId(), new HashSet<>()).getResult();
         assertEquals(addr3, replacedBookie);
     }
 
     @Test
     public void testReplaceBookieWithEnoughBookiesInDifferentRack() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieId addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieId addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieId addr3 = new BookieSocketAddress("127.0.0.3", 3181); // /3 rack
-        BookieId addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181); // /3 rack
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         // replace node under r2
         Set<BookieId> excludedAddrs = new HashSet<BookieId>();
-        excludedAddrs.add(addr1);
+        excludedAddrs.add(addr1.toBookieId());
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
-                                                                addr2, excludedAddrs).getResult();
+                                                                addr2.toBookieId(), excludedAddrs).getResult();
 
         assertFalse(addr1.equals(replacedBookie));
         assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
@@ -147,25 +147,25 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testReplaceBookieWithNotEnoughBookies() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieId addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieId addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieId addr3 = new BookieSocketAddress("127.0.0.3", 3181); // /3 rack
-        BookieId addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181); // /3 rack
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         // replace node under r2
         Set<BookieId> excludedAddrs = new HashSet<BookieId>();
-        excludedAddrs.add(addr1);
-        excludedAddrs.add(addr3);
-        excludedAddrs.add(addr4);
+        excludedAddrs.add(addr1.toBookieId());
+        excludedAddrs.add(addr3.toBookieId());
+        excludedAddrs.add(addr4.toBookieId());
         try {
-            repp.replaceBookie(1, 1, 1, null, new ArrayList<BookieId>(), addr2, excludedAddrs);
+            repp.replaceBookie(1, 1, 1, null, new ArrayList<BookieId>(), addr2.toBookieId(), excludedAddrs);
             fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
         } catch (BKNotEnoughBookiesException bnebe) {
             // should throw not BKNotEnoughBookiesException
@@ -183,27 +183,27 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testReplaceBookieWithScriptMappingError() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieId addr0 = new BookieSocketAddress("127.0.0.0", 3181); // error mapping to rack here
-        BookieId addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieId addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr0 = new BookieSocketAddress("127.0.0.0", 3181); // error mapping to rack here
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
 
         // Update cluster, add node that maps to non-default rack
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
+        addrs.add(addr1.toBookieId());
 
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         addrs = new HashSet<BookieId>();
-        addrs.add(addr0);
-        addrs.add(addr1);
-        addrs.add(addr2);
+        addrs.add(addr0.toBookieId());
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         // replace node under r2
         Set<BookieId> excludedAddrs = new HashSet<BookieId>();
-        excludedAddrs.add(addr1);
+        excludedAddrs.add(addr1.toBookieId());
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
-                                                                addr2, excludedAddrs).getResult();
+                                                                addr2.toBookieId(), excludedAddrs).getResult();
 
         assertFalse(addr1.equals(replacedBookie));
         assertFalse(addr2.equals(replacedBookie));
@@ -222,27 +222,27 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testReplaceBookieWithScriptMappingError2() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieId addr0 = new BookieSocketAddress("127.0.0.0", 3181); // error mapping to rack here
-        BookieId addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieId addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr0 = new BookieSocketAddress("127.0.0.0", 3181); // error mapping to rack here
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
 
         // Update cluster, add node that maps to default rack first
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr0);
+        addrs.add(addr0.toBookieId());
 
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         addrs = new HashSet<BookieId>();
-        addrs.add(addr0);
-        addrs.add(addr1);
-        addrs.add(addr2);
+        addrs.add(addr0.toBookieId());
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         // replace node under r2
         Set<BookieId> excludedAddrs = new HashSet<BookieId>();
-        excludedAddrs.add(addr1);
+        excludedAddrs.add(addr1.toBookieId());
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
-                                                                addr2, excludedAddrs).getResult();
+                                                                addr2.toBookieId(), excludedAddrs).getResult();
 
         assertFalse(addr1.equals(replacedBookie));
         assertFalse(addr2.equals(replacedBookie));
@@ -252,16 +252,16 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testNewEnsembleWithSingleRack() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieId addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieId addr2 = new BookieSocketAddress("127.0.1.1", 3181); // /1 rack
-        BookieId addr3 = new BookieSocketAddress("127.0.2.1", 3181); // /1 rack
-        BookieId addr4 = new BookieSocketAddress("127.0.3.1", 3181); // /1 rack
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.1.1", 3181); // /1 rack
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.2.1", 3181); // /1 rack
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.3.1", 3181); // /1 rack
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
             List<BookieId> ensemble = repp.newEnsemble(3, 2, 2, null,
@@ -278,16 +278,16 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testNewEnsembleWithMultipleRacks() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieId addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieId addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieId addr3 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
-        BookieId addr4 = new BookieSocketAddress("127.0.2.2", 3181); // /2 rack
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.2.2", 3181); // /2 rack
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
             List<BookieId> ensemble = repp.newEnsemble(3, 2, 2, null,
@@ -306,24 +306,24 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testNewEnsembleWithEnoughRacks() throws Exception {
         ignoreTestIfItIsWindowsOS();
-        BookieId addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieId addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieId addr3 = new BookieSocketAddress("127.0.0.3", 3181); // /3 rack
-        BookieId addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
-        BookieId addr5 = new BookieSocketAddress("127.0.1.1", 3181); // /1 rack
-        BookieId addr6 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
-        BookieId addr7 = new BookieSocketAddress("127.0.1.3", 3181); // /3 rack
-        BookieId addr8 = new BookieSocketAddress("127.0.1.4", 3181); // /4 rack
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181); // /3 rack
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.1.1", 3181); // /1 rack
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
+        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.1.3", 3181); // /3 rack
+        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.1.4", 3181); // /4 rack
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
-        addrs.add(addr5);
-        addrs.add(addr6);
-        addrs.add(addr7);
-        addrs.add(addr8);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+        addrs.add(addr7.toBookieId());
+        addrs.add(addr8.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
             List<BookieId> ensemble1 = repp.newEnsemble(3, 2, 2, null,
@@ -344,16 +344,16 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
     @Test
     public void testRemoveBookieFromCluster() {
         ignoreTestIfItIsWindowsOS();
-        BookieId addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
-        BookieId addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
-        BookieId addr3 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
-        BookieId addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181); // /2 rack
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.1.2", 3181); // /2 rack
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181); // /4 rack
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         addrs.remove(addr1);
         repp.onClusterChanged(addrs, new HashSet<BookieId>());

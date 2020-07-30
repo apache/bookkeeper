@@ -76,7 +76,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         conf.setUseHostNameAsBookieID(true);
         BookieSocketAddress toBookieId = Bookie.getBookieAddress(conf);
         BookieId toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
-                + conf.getBookiePort());
+                + conf.getBookiePort()).toBookieId();
 
         updateLedgerCmd(argv, 0, conf);
 
@@ -97,8 +97,8 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         for (int i = 1; i < 40; i++) {
             ledgers.add(createLedgerWithEntries(bk, 0));
         }
-        BookieId srcBookie = bs.get(0).getLocalAddress();
-        BookieId destBookie = new BookieSocketAddress("1.1.1.1", 2181);
+        BookieId srcBookie = bs.get(0).getBookieId();
+        BookieId destBookie = new BookieSocketAddress("1.1.1.1", 2181).toBookieId();
         String[] argv = new String[] { "updateBookieInLedger", "-sb", srcBookie.toString(), "-db",
                 destBookie.toString(), "-v", "true", "-p", "2" };
         final ServerConfiguration conf = bsConfs.get(0);

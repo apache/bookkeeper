@@ -95,7 +95,7 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
                 ClientUtil.setupLedger(bkc.getLedgerManager(), ledgerId,
                                        LedgerMetadataBuilder.create().withEnsembleSize(3)
                                        .withWriteQuorumSize(3).withAckQuorumSize(3)
-                                       .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1000),
+                                       .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1000).toBookieId(),
                                                                  getBookie(0), getBookie(1))));
                 long underReplicatedLedger = -1;
                 for (int i = 0; i < 10; i++) {

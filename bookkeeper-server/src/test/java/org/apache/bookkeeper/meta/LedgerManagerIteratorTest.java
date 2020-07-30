@@ -88,9 +88,9 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
      * @throws InterruptedException
      */
     void createLedger(LedgerManager lm, Long ledgerId) throws Exception {
-        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234));
+        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
         LedgerMetadata meta = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
             .withPassword("passwd".getBytes())

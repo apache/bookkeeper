@@ -241,7 +241,7 @@ public class Cookie {
             throw new UnknownBookieIdException(e);
         }
         byte[] data = toString().getBytes(UTF_8);
-        rm.writeCookie(address.toString(), new Versioned<>(data, version));
+        rm.writeCookie(address, new Versioned<>(data, version));
     }
 
     /**
@@ -279,7 +279,7 @@ public class Cookie {
             throw new IllegalArgumentException("Invalid version type, expected ZkVersion type");
         }
 
-        rm.removeCookie(address.toString(), version);
+        rm.removeCookie(address, version);
     }
 
     /**
@@ -293,7 +293,7 @@ public class Cookie {
             throws UnknownHostException {
         Builder builder = Cookie.newBuilder();
         builder.setLayoutVersion(CURRENT_COOKIE_LAYOUT_VERSION);
-        builder.setBookieHost(Bookie.getBookieAddress(conf).toString());
+        builder.setBookieHost(Bookie.getBookieId(conf).toString());
         builder.setJournalDirs(Joiner.on(',').join(conf.getJournalDirNames()));
         builder.setLedgerDirs(encodeDirPaths(conf.getLedgerDirNames()));
         return builder;
@@ -326,7 +326,7 @@ public class Cookie {
      */
     public static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm,
                                                          BookieId address) throws BookieException {
-        Versioned<byte[]> cookieData = rm.readCookie(address.toString());
+        Versioned<byte[]> cookieData = rm.readCookie(address);
         try {
             try (BufferedReader reader = new BufferedReader(
                     new StringReader(new String(cookieData.getValue(), UTF_8)))) {

@@ -73,7 +73,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     DistributionSchedule.WriteSet writeSet = DistributionSchedule.NULL_WRITE_SET;
     ClientConfiguration conf = new ClientConfiguration();
     BookieSocketAddress addr1;
-    ResolvedBookieSocketAddress addr2, addr3, addr4;
+    BookieSocketAddress addr2, addr3, addr4;
     io.netty.util.HashedWheelTimer timer;
     final int minNumRacksPerWriteQuorumConfValue = 2;
 
@@ -97,10 +97,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr3.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), NetworkTopology.DEFAULT_REGION + "/rack2");
-        ensemble.add(addr1);
-        ensemble.add(addr2);
-        ensemble.add(addr3);
-        ensemble.add(addr4);
+        ensemble.add(addr1.toBookieId());
+        ensemble.add(addr2.toBookieId());
+        ensemble.add(addr3.toBookieId());
+        ensemble.add(addr4.toBookieId());
         writeSet = writeSetFromValues(0, 1, 2, 3);
 
         timer = new HashedWheelTimer(
@@ -155,12 +155,12 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        addrs.remove(addr1);
+        addrs.remove(addr1.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
@@ -184,14 +184,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        addrs.remove(addr1);
+        addrs.remove(addr1.toBookieId());
         Set<BookieId> ro = new HashSet<BookieId>();
-        ro.add(addr1);
+        ro.add(addr1.toBookieId());
         repp.onClusterChanged(addrs, ro);
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
@@ -212,14 +212,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        repp.registerSlowBookie(addr1, 0L);
+        repp.registerSlowBookie(addr1.toBookieId(), 0L);
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
-        bookiePendingMap.put(addr1, 1L);
+        bookiePendingMap.put(addr1.toBookieId(), 1L);
         repp.onClusterChanged(addrs, new HashSet<>());
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
@@ -242,16 +242,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        repp.registerSlowBookie(addr1, 0L);
-        repp.registerSlowBookie(addr2, 0L);
+        repp.registerSlowBookie(addr1.toBookieId(), 0L);
+        repp.registerSlowBookie(addr2.toBookieId(), 0L);
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
-        bookiePendingMap.put(addr1, 1L);
-        bookiePendingMap.put(addr2, 2L);
+        bookiePendingMap.put(addr1.toBookieId(), 1L);
+        bookiePendingMap.put(addr2.toBookieId(), 2L);
         repp.onClusterChanged(addrs, new HashSet<>());
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
@@ -274,10 +274,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         addrs.remove(addr1);
         addrs.remove(addr2);
@@ -303,15 +303,15 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        addrs.remove(addr1);
-        addrs.remove(addr2);
+        addrs.remove(addr1.toBookieId());
+        addrs.remove(addr2.toBookieId());
         Set<BookieId> roAddrs = new HashSet<BookieId>();
-        roAddrs.add(addr2);
+        roAddrs.add(addr2.toBookieId());
         repp.onClusterChanged(addrs, roAddrs);
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
@@ -332,14 +332,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        repp.registerSlowBookie(addr1, 0L);
+        repp.registerSlowBookie(addr1.toBookieId(), 0L);
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
-        bookiePendingMap.put(addr1, 1L);
+        bookiePendingMap.put(addr1.toBookieId(), 1L);
         addrs.remove(addr2);
         repp.onClusterChanged(addrs, new HashSet<>());
 
@@ -363,18 +363,18 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        addrs.remove(addr1);
-        addrs.remove(addr2);
+        addrs.remove(addr1.toBookieId());
+        addrs.remove(addr2.toBookieId());
         Set<BookieId> ro = new HashSet<BookieId>();
-        ro.add(addr2);
-        repp.registerSlowBookie(addr3, 0L);
+        ro.add(addr2.toBookieId());
+        repp.registerSlowBookie(addr3.toBookieId(), 0L);
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
-        bookiePendingMap.put(addr3, 1L);
+        bookiePendingMap.put(addr3.toBookieId(), 1L);
         addrs.remove(addr2);
         repp.onClusterChanged(addrs, ro);
 
@@ -405,16 +405,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
-        bookiePendingMap.put(addr1, 20L);
-        bookiePendingMap.put(addr2, 7L);
-        bookiePendingMap.put(addr3, 1L); // best bookie -> this one first
-        bookiePendingMap.put(addr4, 5L);
+        bookiePendingMap.put(addr1.toBookieId(), 20L);
+        bookiePendingMap.put(addr2.toBookieId(), 7L);
+        bookiePendingMap.put(addr3.toBookieId(), 1L); // best bookie -> this one first
+        bookiePendingMap.put(addr4.toBookieId(), 5L);
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
@@ -442,34 +442,34 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         // Update cluster
-        BookieId addr5 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieId addr6 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieId addr7 = new BookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
-        addrs.add(addr5);
-        addrs.add(addr6);
-        addrs.add(addr7);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+        addrs.add(addr7.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
-        bookiePendingMap.put(addr1, 1L); // not in write set
-        bookiePendingMap.put(addr2, 20L);
-        bookiePendingMap.put(addr3, 0L); // not in write set
-        bookiePendingMap.put(addr4, 12L);
-        bookiePendingMap.put(addr5, 9L); // not in write set
-        bookiePendingMap.put(addr6, 2L); // best bookie -> this one first
-        bookiePendingMap.put(addr7, 10L);
+        bookiePendingMap.put(addr1.toBookieId(), 1L); // not in write set
+        bookiePendingMap.put(addr2.toBookieId(), 20L);
+        bookiePendingMap.put(addr3.toBookieId(), 0L); // not in write set
+        bookiePendingMap.put(addr4.toBookieId(), 12L);
+        bookiePendingMap.put(addr5.toBookieId(), 9L); // not in write set
+        bookiePendingMap.put(addr6.toBookieId(), 2L); // best bookie -> this one first
+        bookiePendingMap.put(addr7.toBookieId(), 10L);
         List<BookieId> ensemble = new ArrayList<BookieId>();
-        ensemble.add(addr1);
-        ensemble.add(addr2);
-        ensemble.add(addr3);
-        ensemble.add(addr4);
-        ensemble.add(addr5);
-        ensemble.add(addr6);
-        ensemble.add(addr7);
+        ensemble.add(addr1.toBookieId());
+        ensemble.add(addr2.toBookieId());
+        ensemble.add(addr3.toBookieId());
+        ensemble.add(addr4.toBookieId());
+        ensemble.add(addr5.toBookieId());
+        ensemble.add(addr6.toBookieId());
+        ensemble.add(addr7.toBookieId());
 
         DistributionSchedule.WriteSet writeSet = writeSetFromValues(1, 3, 5, 6);
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
@@ -499,16 +499,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
-        bookiePendingMap.put(addr1, 10L); // -> this one first
-        bookiePendingMap.put(addr2, 7L);
-        bookiePendingMap.put(addr3, 1L); // best bookie, but below threshold
-        bookiePendingMap.put(addr4, 5L);
+        bookiePendingMap.put(addr1.toBookieId(), 10L); // -> this one first
+        bookiePendingMap.put(addr2.toBookieId(), 7L);
+        bookiePendingMap.put(addr3.toBookieId(), 1L); // best bookie, but below threshold
+        bookiePendingMap.put(addr4.toBookieId(), 5L);
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
@@ -535,16 +535,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
-        bookiePendingMap.put(addr1, 1L); // -> this one first
-        bookiePendingMap.put(addr2, 7L);
-        bookiePendingMap.put(addr3, 1L);
-        bookiePendingMap.put(addr4, 5L);
+        bookiePendingMap.put(addr1.toBookieId(), 1L); // -> this one first
+        bookiePendingMap.put(addr2.toBookieId(), 7L);
+        bookiePendingMap.put(addr3.toBookieId(), 1L);
+        bookiePendingMap.put(addr4.toBookieId(), 5L);
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
@@ -566,14 +566,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r3");
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         // replace node under r2
         EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse =
-            repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2, new HashSet<>());
+            repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2.toBookieId(), new HashSet<>());
         BookieId replacedBookie = replaceBookieResponse.getResult();
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
         assertEquals(addr3, replacedBookie);
@@ -593,16 +593,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r4");
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         // replace node under r2
         Set<BookieId> excludedAddrs = new HashSet<BookieId>();
-        excludedAddrs.add(addr1);
+        excludedAddrs.add(addr1.toBookieId());
         EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse =
-            repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2, excludedAddrs);
+            repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2.toBookieId(), excludedAddrs);
         BookieId replacedBookie = replaceBookieResponse.getResult();
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
         assertFalse(addr1.equals(replacedBookie));
@@ -623,18 +623,18 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r4");
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         // replace node under r2
         Set<BookieId> excludedAddrs = new HashSet<BookieId>();
-        excludedAddrs.add(addr1);
-        excludedAddrs.add(addr3);
-        excludedAddrs.add(addr4);
+        excludedAddrs.add(addr1.toBookieId());
+        excludedAddrs.add(addr3.toBookieId());
+        excludedAddrs.add(addr4.toBookieId());
         try {
-            repp.replaceBookie(1, 1, 1, null, new ArrayList<BookieId>(), addr2, excludedAddrs);
+            repp.replaceBookie(1, 1, 1, null, new ArrayList<BookieId>(), addr2.toBookieId(), excludedAddrs);
             fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
         } catch (BKNotEnoughBookiesException bnebe) {
             // should throw not enou
@@ -654,19 +654,19 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/r3");
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         // replace node under r2
         List<BookieId> ensembleBookies = new ArrayList<BookieId>();
-        ensembleBookies.add(addr2);
-        ensembleBookies.add(addr4);
+        ensembleBookies.add(addr2.toBookieId());
+        ensembleBookies.add(addr4.toBookieId());
         EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse = repp.replaceBookie(
             1, 1, 1 , null,
             ensembleBookies,
-            addr4,
+            addr4.toBookieId(),
             new HashSet<>());
         BookieId replacedBookie = replaceBookieResponse.getResult();
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
@@ -676,16 +676,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
     @Test
     public void testNewEnsembleWithSingleRack() throws Exception {
-        BookieId addr1 = new BookieSocketAddress("127.0.0.6", 3181);
-        BookieId addr2 = new BookieSocketAddress("127.0.0.7", 3181);
-        BookieId addr3 = new BookieSocketAddress("127.0.0.8", 3181);
-        BookieId addr4 = new BookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.9", 3181);
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
             EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse;
@@ -724,10 +724,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         List<BookieId> ensemble;
         try {
@@ -770,7 +770,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         for (int i = 0; i < numOfRacks; i++) {
             for (int j = 0; j < numOfBookiesPerRack; j++) {
                 int index = i * numOfBookiesPerRack + j;
-                bookieSocketAddresses[index] = new BookieSocketAddress("128.0.0." + index, 3181);
+                bookieSocketAddresses[index] = new BookieSocketAddress("128.0.0." + index, 3181).toBookieId();
                 StaticDNSResolver.addNodeToRack("128.0.0." + index, "/default-region/r" + i);
             }
         }
@@ -778,7 +778,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int numOfBookiesInDefaultRack = 5;
         BookieId[] bookieSocketAddressesInDefaultRack = new BookieId[numOfBookiesInDefaultRack];
         for (int i = 0; i < numOfBookiesInDefaultRack; i++) {
-            bookieSocketAddressesInDefaultRack[i] = new BookieSocketAddress("128.0.0." + (100 + i), 3181);
+            bookieSocketAddressesInDefaultRack[i] = new BookieSocketAddress("128.0.0." + (100 + i), 3181).toBookieId();
             StaticDNSResolver.addNodeToRack("128.0.0." + (100 + i),
                     defaultRackForThisTest);
         }
@@ -860,7 +860,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         for (int i = 0; i < numOfRacks; i++) {
             for (int j = 0; j < numOfBookiesPerRack; j++) {
                 int index = i * numOfBookiesPerRack + j;
-                bookieSocketAddresses[index] = new BookieSocketAddress("128.0.0." + index, 3181);
+                bookieSocketAddresses[index] = new BookieSocketAddress("128.0.0." + index, 3181).toBookieId();
                 StaticDNSResolver.addNodeToRack("128.0.0." + index, "/default-region/r" + i);
             }
         }
@@ -926,7 +926,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         for (int i = 0; i < numOfRacks; i++) {
             for (int j = 0; j < numOfBookiesPerRack; j++) {
                 int index = i * numOfBookiesPerRack + j;
-                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181);
+                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181).toBookieId();
                 rack = "/default-region/r" + i;
                 StaticDNSResolver.addNodeToRack("128.0.0." + index, rack);
                 bookieSocketAddresses.add(bookieAddress);
@@ -940,7 +940,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int numOfBookiesInDefaultRack = 5;
         BookieId[] bookieSocketAddressesInDefaultRack = new BookieId[numOfBookiesInDefaultRack];
         for (int i = 0; i < numOfBookiesInDefaultRack; i++) {
-            bookieSocketAddressesInDefaultRack[i] = new BookieSocketAddress("127.0.0." + (i + 100), 3181);
+            bookieSocketAddressesInDefaultRack[i] = new BookieSocketAddress("127.0.0." + (i + 100), 3181).toBookieId();
             StaticDNSResolver.addNodeToRack("127.0.0." + (i + 100),
                     defaultRackForThisTest);
         }
@@ -976,9 +976,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
          * ensemble
          */
         StaticDNSResolver.addNodeToRack(newBookieAddress1.getHostName(), rackOfOtherBookieInEnsemble);
-        bookieSocketAddresses.add(newBookieAddress1);
-        writableBookies.add(newBookieAddress1);
-        bookieRackMap.put(newBookieAddress1, rackOfOtherBookieInEnsemble);
+        bookieSocketAddresses.add(newBookieAddress1.toBookieId());
+        writableBookies.add(newBookieAddress1.toBookieId());
+        bookieRackMap.put(newBookieAddress1.toBookieId(), rackOfOtherBookieInEnsemble);
 
         repp.onClusterChanged(writableBookies, new HashSet<BookieId>());
         assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
@@ -999,9 +999,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
          * add the newBookie to a new rack.
          */
         StaticDNSResolver.addNodeToRack(newBookieAddress2.getHostName(), newRack);
-        bookieSocketAddresses.add(newBookieAddress2);
-        writableBookies.add(newBookieAddress2);
-        bookieRackMap.put(newBookieAddress2, newRack);
+        bookieSocketAddresses.add(newBookieAddress2.toBookieId());
+        writableBookies.add(newBookieAddress2.toBookieId());
+        bookieRackMap.put(newBookieAddress2.toBookieId(), newRack);
 
         repp.onClusterChanged(writableBookies, new HashSet<BookieId>());
         assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
@@ -1021,7 +1021,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
 
         Set<BookieId> bookiesToExclude = new HashSet<>();
-        bookiesToExclude.add(newBookieAddress2);
+        bookiesToExclude.add(newBookieAddress2.toBookieId());
         repp.onClusterChanged(writableBookies, new HashSet<BookieId>());
         assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
                 numBookiesInDefaultRackGauge.getSample());
@@ -1041,9 +1041,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
          * add the newBookie to rack of the bookie to be replaced.
          */
         StaticDNSResolver.addNodeToRack(newBookieAddress3.getHostName(), rackOfBookieToBeReplaced);
-        bookieSocketAddresses.add(newBookieAddress3);
-        writableBookies.add(newBookieAddress3);
-        bookieRackMap.put(newBookieAddress3, rackOfBookieToBeReplaced);
+        bookieSocketAddresses.add(newBookieAddress3.toBookieId());
+        writableBookies.add(newBookieAddress3.toBookieId());
+        bookieRackMap.put(newBookieAddress3.toBookieId(), rackOfBookieToBeReplaced);
 
         repp.onClusterChanged(writableBookies, new HashSet<BookieId>());
         assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", numOfBookiesInDefaultRack,
@@ -1086,7 +1086,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             rackLocationNames[i] = "/default-region/r" + i;
             for (int j = 0; j < numOfBookiesPerRack; j++) {
                 int index = i * numOfBookiesPerRack + j;
-                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181);
+                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181).toBookieId();
                 StaticDNSResolver.addNodeToRack("128.0.0." + index, rackLocationNames[i]);
                 bookieSocketAddresses.add(bookieAddress);
                 bookieRackMap.put(bookieAddress, rackLocationNames[i]);
@@ -1164,7 +1164,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             rackLocationNames[i] = "/default-region/r" + i;
             for (int j = 0; j < numOfBookiesPerRack; j++) {
                 int index = i * numOfBookiesPerRack + j;
-                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181);
+                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181).toBookieId();
                 StaticDNSResolver.addNodeToRack("128.0.0." + index, rackLocationNames[i]);
                 bookieSocketAddresses.add(bookieAddress);
                 bookieRackMap.put(bookieAddress, rackLocationNames[i]);
@@ -1232,7 +1232,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             rackLocationNames[i] = "/default-region/r" + i;
             for (int j = 0; j < numOfBookiesPerRack; j++) {
                 int index = i * numOfBookiesPerRack + j;
-                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181);
+                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181).toBookieId();
                 StaticDNSResolver.addNodeToRack("128.0.0." + index, rackLocationNames[i]);
                 bookieSocketAddresses.add(bookieAddress);
                 bookieRackMap.put(bookieAddress, rackLocationNames[i]);
@@ -1316,7 +1316,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             rackLocationNames[i] = "/default-region/r" + i;
             for (int j = 0; j < numOfBookiesPerRack; j++) {
                 int index = i * numOfBookiesPerRack + j;
-                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181);
+                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181).toBookieId();
                 StaticDNSResolver.addNodeToRack("128.0.0." + index, rackLocationNames[i]);
                 bookieSocketAddresses.add(bookieAddress);
                 bookieRackMap.put(bookieAddress, rackLocationNames[i]);
@@ -1396,10 +1396,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r2");
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
             int ensembleSize = 3;
@@ -1437,7 +1437,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieId addr;
         for (int i = 0; i < numOfRacksToCreate; i++) {
             for (int j = 0; j < numOfNodesInEachRack; j++) {
-                addr = new BookieSocketAddress("128.0.0." + ((i * numOfNodesInEachRack) + j), 3181);
+                addr = new BookieSocketAddress("128.0.0." + ((i * numOfNodesInEachRack) + j), 3181).toBookieId();
                 // update dns mapping
                 StaticDNSResolver.addNodeToRack("128.0.0." + ((i * numOfNodesInEachRack) + j), "/default-region/r" + i);
                 addrs.add(addr);
@@ -1522,14 +1522,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int availableNumOfRacks = 4;
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
-        addrs.add(addr5);
-        addrs.add(addr6);
-        addrs.add(addr7);
-        addrs.add(addr8);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+        addrs.add(addr7.toBookieId());
+        addrs.add(addr8.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
             int ensembleSize = 3;
@@ -1573,10 +1573,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r3");
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         addrs.remove(addr1);
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
@@ -1599,10 +1599,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 NetworkTopology.DEFAULT_REGION + "/r2");
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
 
         int multiple = 10;
         conf.setDiskWeightBasedPlacementEnabled(true);
@@ -1612,22 +1612,22 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         Map<BookieId, BookieInfo> bookieInfoMap = new HashMap<BookieId, BookieInfo>();
-        bookieInfoMap.put(addr1, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr2, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr3, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr4, new BookieInfo(multiple * 100L, multiple * 100L));
+        bookieInfoMap.put(addr1.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr2.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr3.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr4.toBookieId(), new BookieInfo(multiple * 100L, multiple * 100L));
         repp.updateBookieInfo(bookieInfoMap);
 
         Map<BookieId, Long> selectionCounts = new HashMap<BookieId, Long>();
-        selectionCounts.put(addr3, 0L);
-        selectionCounts.put(addr4, 0L);
+        selectionCounts.put(addr3.toBookieId(), 0L);
+        selectionCounts.put(addr4.toBookieId(), 0L);
         int numTries = 50000;
         EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse;
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy;
         BookieId replacedBookie;
         for (int i = 0; i < numTries; i++) {
             // replace node under r2
-            replaceBookieResponse = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2, new HashSet<>());
+            replaceBookieResponse = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2.toBookieId(), new HashSet<>());
             replacedBookie = replaceBookieResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
             assertTrue("replaced : " + replacedBookie, addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
@@ -1659,11 +1659,11 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 NetworkTopology.DEFAULT_REGION + "/r4");
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr0);
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr0.toBookieId());
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
 
         int multiple = 10, maxMultiple = 4;
         conf.setDiskWeightBasedPlacementEnabled(true);
@@ -1673,19 +1673,19 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         Map<BookieId, BookieInfo> bookieInfoMap = new HashMap<BookieId, BookieInfo>();
-        bookieInfoMap.put(addr0, new BookieInfo(50L, 50L));
-        bookieInfoMap.put(addr1, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr2, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr3, new BookieInfo(200L, 200L));
-        bookieInfoMap.put(addr4, new BookieInfo(multiple * 50L, multiple * 50L));
+        bookieInfoMap.put(addr0.toBookieId(), new BookieInfo(50L, 50L));
+        bookieInfoMap.put(addr1.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr2.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr3.toBookieId(), new BookieInfo(200L, 200L));
+        bookieInfoMap.put(addr4.toBookieId(), new BookieInfo(multiple * 50L, multiple * 50L));
         repp.updateBookieInfo(bookieInfoMap);
 
         Map<BookieId, Long> selectionCounts = new HashMap<BookieId, Long>();
-        selectionCounts.put(addr0, 0L);
-        selectionCounts.put(addr1, 0L);
-        selectionCounts.put(addr2, 0L);
-        selectionCounts.put(addr3, 0L);
-        selectionCounts.put(addr4, 0L);
+        selectionCounts.put(addr0.toBookieId(), 0L);
+        selectionCounts.put(addr1.toBookieId(), 0L);
+        selectionCounts.put(addr2.toBookieId(), 0L);
+        selectionCounts.put(addr3.toBookieId(), 0L);
+        selectionCounts.put(addr4.toBookieId(), 0L);
         int numTries = 50000;
         EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse;
         BookieId replacedBookie;
@@ -1694,7 +1694,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             // addr2 is on /r2 and this is the only one on this rack. So the replacement
             // will come from other racks. However, the weight should be honored in such
             // selections as well
-            replaceBookieResponse = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2, new HashSet<>());
+            replaceBookieResponse = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2.toBookieId(), new HashSet<>());
             replacedBookie = replaceBookieResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
             assertTrue(addr0.equals(replacedBookie) || addr1.equals(replacedBookie) || addr3.equals(replacedBookie)
@@ -1754,15 +1754,15 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
-        addrs.add(addr5);
-        addrs.add(addr6);
-        addrs.add(addr7);
-        addrs.add(addr8);
-        addrs.add(addr9);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+        addrs.add(addr7.toBookieId());
+        addrs.add(addr8.toBookieId());
+        addrs.add(addr9.toBookieId());
 
         int maxMultiple = 4;
         conf.setDiskWeightBasedPlacementEnabled(true);
@@ -1772,15 +1772,15 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         Map<BookieId, BookieInfo> bookieInfoMap = new HashMap<BookieId, BookieInfo>();
-        bookieInfoMap.put(addr1, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr2, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr3, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr4, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr5, new BookieInfo(1000L, 1000L));
-        bookieInfoMap.put(addr6, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr7, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr8, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr9, new BookieInfo(1000L, 1000L));
+        bookieInfoMap.put(addr1.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr2.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr3.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr4.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr5.toBookieId(), new BookieInfo(1000L, 1000L));
+        bookieInfoMap.put(addr6.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr7.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr8.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr9.toBookieId(), new BookieInfo(1000L, 1000L));
 
         repp.updateBookieInfo(bookieInfoMap);
 
@@ -1842,11 +1842,11 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 NetworkTopology.DEFAULT_REGION + "/r3");
         // Update cluster
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
-        addrs.add(addr5);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
 
         int maxMultiple = 4;
         conf.setDiskWeightBasedPlacementEnabled(true);
@@ -1856,21 +1856,21 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         Map<BookieId, BookieInfo> bookieInfoMap = new HashMap<BookieId, BookieInfo>();
-        bookieInfoMap.put(addr1, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr2, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr3, new BookieInfo(1000L, 1000L));
-        bookieInfoMap.put(addr4, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr5, new BookieInfo(1000L, 1000L));
+        bookieInfoMap.put(addr1.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr2.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr3.toBookieId(), new BookieInfo(1000L, 1000L));
+        bookieInfoMap.put(addr4.toBookieId(), new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr5.toBookieId(), new BookieInfo(1000L, 1000L));
 
         repp.updateBookieInfo(bookieInfoMap);
         EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse;
         List<BookieId> ensemble;
         Set<BookieId> excludeList = new HashSet<BookieId>();
         try {
-            excludeList.add(addr1);
-            excludeList.add(addr2);
-            excludeList.add(addr3);
-            excludeList.add(addr4);
+            excludeList.add(addr1.toBookieId());
+            excludeList.add(addr2.toBookieId());
+            excludeList.add(addr3.toBookieId());
+            excludeList.add(addr4.toBookieId());
             ensembleResponse = repp.newEnsemble(3, 2, 2, null, excludeList);
             ensemble = ensembleResponse.getResult();
             fail("Should throw BKNotEnoughBookiesException when there is not enough bookies" + ensemble);
@@ -1912,21 +1912,21 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         HashMap<BookieId, Long> bookieFailures = new HashMap<BookieId, Long>();
 
-        bookieFailures.put(addr1, 20L);
-        bookieFailures.put(addr2, 22L);
+        bookieFailures.put(addr1.toBookieId(), 20L);
+        bookieFailures.put(addr2.toBookieId(), 22L);
 
         // remove failure bookies: addr1 and addr2
         addrs = new HashSet<BookieId>();
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         DistributionSchedule.WriteSet reoderSet = repp.reorderReadSequence(
@@ -1951,10 +1951,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         Set<BookieId> addrs = new HashSet<BookieId>();
-        addrs.add(addr1);
-        addrs.add(addr2);
-        addrs.add(addr3);
-        addrs.add(addr4);
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         // addr4 left
         addrs.remove(addr4);
@@ -2113,17 +2113,17 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 .getGauge(BookKeeperClientStats.NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK);
 
         Set<BookieId> writeableBookies = new HashSet<BookieId>();
-        writeableBookies.add(newAddr1);
-        writeableBookies.add(newAddr2);
+        writeableBookies.add(newAddr1.toBookieId());
+        writeableBookies.add(newAddr2.toBookieId());
         Set<BookieId> readOnlyBookies = new HashSet<BookieId>();
-        readOnlyBookies.add(newAddr3);
-        readOnlyBookies.add(newAddr4);
+        readOnlyBookies.add(newAddr3.toBookieId());
+        readOnlyBookies.add(newAddr4.toBookieId());
         repp.onClusterChanged(writeableBookies, readOnlyBookies);
         // only writable bookie - newAddr1 in default rack
         assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 1, numBookiesInDefaultRackGauge.getSample());
 
-        readOnlyBookies.remove(newAddr4);
-        writeableBookies.add(newAddr4);
+        readOnlyBookies.remove(newAddr4.toBookieId());
+        writeableBookies.add(newAddr4.toBookieId());
         repp.onClusterChanged(writeableBookies, readOnlyBookies);
         // newAddr4 is also added to writable bookie so 2 writable bookies -
         // newAddr1 and newAddr4
@@ -2142,10 +2142,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver
             .changeRack(Collections.singletonList(newAddr1), Collections.singletonList("/default-region/r2"));
         readOnlyBookies.clear();
-        writeableBookies.add(newAddr1);
-        writeableBookies.add(newAddr2);
-        writeableBookies.add(newAddr3);
-        writeableBookies.add(newAddr4);
+        writeableBookies.add(newAddr1.toBookieId());
+        writeableBookies.add(newAddr2.toBookieId());
+        writeableBookies.add(newAddr3.toBookieId());
+        writeableBookies.add(newAddr4.toBookieId());
         repp.onClusterChanged(writeableBookies, readOnlyBookies);
         // newAddr1 rack is changed and it is not in default anymore. So no
         // bookies in default rack anymore
@@ -2183,7 +2183,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         for (int i = 0; i < numOfRacks; i++) {
             for (int j = 0; j < numOfBookiesPerRack; j++) {
                 int index = i * numOfBookiesPerRack + j;
-                bookieSocketAddresses[index] = new BookieSocketAddress("128.0.0." + index, 3181);
+                bookieSocketAddresses[index] = new BookieSocketAddress("128.0.0." + index, 3181).toBookieId();
                 StaticDNSResolver.addNodeToRack("128.0.0." + index, "/default-region/r" + i);
             }
         }
@@ -2191,7 +2191,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int numOfBookiesInDefaultRack = 10;
         BookieId[] bookieSocketAddressesInDefaultRack = new BookieId[numOfBookiesInDefaultRack];
         for (int i = 0; i < numOfBookiesInDefaultRack; i++) {
-            bookieSocketAddressesInDefaultRack[i] = new BookieSocketAddress("127.0.0." + (i + 100), 3181);
+            bookieSocketAddressesInDefaultRack[i] = new BookieSocketAddress("127.0.0." + (i + 100), 3181).toBookieId();
             StaticDNSResolver.addNodeToRack("127.0.0." + (i + 100), defaultRackForThisTest);
         }
 
@@ -2265,13 +2265,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         for (int i = 0; i < numOfRacks; i++) {
             for (int j = 0; j < numOfBookiesPerRack; j++) {
                 int index = i * numOfBookiesPerRack + j;
-                bookieSocketAddressesNonDefaultRack.add(new BookieSocketAddress("128.0.0." + index, 3181));
+                bookieSocketAddressesNonDefaultRack.add(new BookieSocketAddress("128.0.0." + index, 3181).toBookieId());
                 StaticDNSResolver.addNodeToRack("128.0.0." + index, "/default-region/r" + i);
             }
         }
 
         for (int i = 0; i < numOfBookiesInDefaultRack; i++) {
-            bookieSocketAddressesDefaultRack.add(new BookieSocketAddress("127.0.0." + (i + 100), 3181));
+            bookieSocketAddressesDefaultRack.add(new BookieSocketAddress("127.0.0." + (i + 100), 3181).toBookieId());
             StaticDNSResolver.addNodeToRack("127.0.0." + (i + 100), defaultRackForThisTest);
         }
 

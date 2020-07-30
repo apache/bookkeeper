@@ -20,10 +20,13 @@
  */
 package org.apache.bookkeeper.net;
 
+import java.util.Objects;
+import org.apache.bookkeeper.client.api.BookieID;
+
 /**
  * This is an identifier for a BookieID
  */
-public final class BookieId {
+public final class BookieId implements BookieID {
 
     private final String id;
     
@@ -47,6 +50,29 @@ public final class BookieId {
      */
     public static BookieId parse(String serialized) {        
        return new BookieId(serialized);        
+    }
+
+    @Override
+    public int hashCode() {
+        return this.id.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final BookieId other = (BookieId) obj;
+        if (!Objects.equals(this.id, other.id)) {
+            return false;
+        }
+        return true;
     }
 
 }

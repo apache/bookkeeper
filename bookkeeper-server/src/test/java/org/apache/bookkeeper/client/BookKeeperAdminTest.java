@@ -442,7 +442,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
             for (int i = 0; i < bs.size(); i++) {
                 CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
-                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), nonExistingLedgerId);
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), nonExistingLedgerId);
                 try {
                     futureResult.get();
                     fail("asyncGetListOfEntriesOfLedger is supposed to be failed with NoSuchLedgerExistsException");
@@ -471,7 +471,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
             for (int i = 0; i < bs.size(); i++) {
                 CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
-                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), lId);
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), lId);
                 AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
                 assertEquals("Number of entries", numOfEntries,
                         availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
@@ -504,7 +504,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
             for (int i = 0; i < bs.size(); i++) {
                 CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
-                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), lId);
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), lId);
                 AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
                 /*
                  * since num of bookies in the ensemble is 2 and
@@ -577,7 +577,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
          * since no entry is added, callback is supposed to fail with
          * NoSuchLedgerExistsException.
          */
-        bkAdmin.asyncGetListOfEntriesOfLedger(bs.get(0).getLocalAddress(), lId)
+        bkAdmin.asyncGetListOfEntriesOfLedger(bs.get(0).getBookieId(), lId)
                 .whenComplete((availabilityOfEntriesOfLedger, throwable) -> {
                     exceptionInCallback.set(throwable != null);
                     if (throwable != null) {
@@ -596,10 +596,10 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     public void testAreEntriesOfLedgerStoredInTheBookieForLastEmptySegment() throws Exception {
         int lastEntryId = 10;
         long ledgerId = 100L;
-        BookieId bookie0 = new BookieSocketAddress("bookie0:3181");
-        BookieId bookie1 = new BookieSocketAddress("bookie1:3181");
-        BookieId bookie2 = new BookieSocketAddress("bookie2:3181");
-        BookieId bookie3 = new BookieSocketAddress("bookie3:3181");
+        BookieId bookie0 = new BookieSocketAddress("bookie0:3181").toBookieId();
+        BookieId bookie1 = new BookieSocketAddress("bookie1:3181").toBookieId();
+        BookieId bookie2 = new BookieSocketAddress("bookie2:3181").toBookieId();
+        BookieId bookie3 = new BookieSocketAddress("bookie3:3181").toBookieId();
 
         List<BookieId> ensembleOfSegment1 = new ArrayList<BookieId>();
         ensembleOfSegment1.add(bookie0);

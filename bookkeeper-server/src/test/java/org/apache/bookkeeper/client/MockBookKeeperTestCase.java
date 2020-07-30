@@ -310,7 +310,7 @@ public abstract class MockBookKeeperTestCase {
     }
 
     protected BookieId generateBookieSocketAddress(int index) {
-        return new BookieSocketAddress("localhost", 1111 + index);
+        return new BookieSocketAddress("localhost", 1111 + index).toBookieId();
     }
 
     protected ArrayList<BookieId> generateNewEnsemble(int ensembleSize) {

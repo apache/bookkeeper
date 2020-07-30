@@ -100,7 +100,8 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
         int numOfAvailableRacks = 2;
 
         // Update cluster
-        Set<BookieId> addrs = Sets.newHashSet(addr1, addr2, addr3, addr4);
+        Set<BookieId> addrs = Sets.newHashSet(addr1.toBookieId(),
+                addr2.toBookieId(), addr3.toBookieId(), addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<>());
 
         int ensembleSize = 3;

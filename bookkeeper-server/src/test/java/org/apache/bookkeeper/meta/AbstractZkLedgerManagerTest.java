@@ -116,11 +116,11 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             withSettings()
                 .useConstructor(conf, mockZk)
                 .defaultAnswer(CALLS_REAL_METHODS));
-        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 3181),
-                new BookieSocketAddress("192.0.2.2", 3181),
-                new BookieSocketAddress("192.0.2.3", 3181),
-                new BookieSocketAddress("192.0.2.4", 3181),
-                new BookieSocketAddress("192.0.2.5", 3181));
+        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 3181).toBookieId(),
+                new BookieSocketAddress("192.0.2.2", 3181).toBookieId(),
+                new BookieSocketAddress("192.0.2.3", 3181).toBookieId(),
+                new BookieSocketAddress("192.0.2.4", 3181).toBookieId(),
+                new BookieSocketAddress("192.0.2.5", 3181).toBookieId());
         this.metadata = LedgerMetadataBuilder.create()
             .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
             .withEnsembleSize(5)

@@ -96,7 +96,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     }
 
     private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
-        BookieId selfBookie = Bookie.getBookieAddress(baseConf);
+        BookieId selfBookie = Bookie.getBookieId(baseConf);
         createLedgers(numLedgers, createdLedgers, selfBookie);
     }
 
@@ -716,7 +716,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         // Create few ledgers
         final int numLedgers = 5;
 
-        BookieId bookieAddress = new BookieSocketAddress("192.0.0.1", 1234);
+        BookieId bookieAddress = new BookieSocketAddress("192.0.0.1", 1234).toBookieId();
         createLedgers(numLedgers, createdLedgers, bookieAddress);
 
         LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {

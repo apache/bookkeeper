@@ -43,9 +43,9 @@ public class LedgerMetadataTest {
 
     @Test
     public void testGetters() {
-        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234));
+        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
         org.apache.bookkeeper.client.api.LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withDigestType(DigestType.CRC32.toApiDigestType()).withPassword(passwd)
@@ -68,9 +68,9 @@ public class LedgerMetadataTest {
 
     @Test
     public void testToString() {
-        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234));
+        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
 
         LedgerMetadata lm1 = LedgerMetadataBuilder.create()
             .withDigestType(DigestType.CRC32.toApiDigestType())

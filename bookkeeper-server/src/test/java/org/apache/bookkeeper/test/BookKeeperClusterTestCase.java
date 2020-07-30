@@ -346,12 +346,16 @@ public abstract class BookKeeperClusterTestCase {
     /**
      * Get bookie address for bookie at index.
      */
-    public BookieSocketAddress getBookie(int index) throws Exception {
+    public BookieId getBookie(int index) throws Exception {
         if (bs.size() <= index || index < 0) {
             throw new IllegalArgumentException("Invalid index, there are only " + bs.size()
                                                + " bookies. Asked for " + index);
         }
-        return bs.get(index).getLocalAddress();
+        return bs.get(index).getBookieId();
+    }
+    
+    public BookieSocketAddress getBookieAddress(int index) throws Exception {
+        return bkc.getBookieAddressResolver().resolve(getBookie(index));
     }
 
     /**
@@ -627,10 +631,15 @@ public abstract class BookKeeperClusterTestCase {
      */
     public int startNewBookie()
             throws Exception {
-        return startNewBookieAndReturnAddress().getPort();
+        ServerConfiguration conf = newServerConfiguration();
+        bsConfs.add(conf);
+        LOG.info("Starting new bookie on port: {}", conf.getBookiePort());
+        BookieServer server = startBookie(conf);
+        bs.add(server);
+        return server.getLocalAddress().getPort();
     }
 
-    public BookieSocketAddress startNewBookieAndReturnAddress()
+    public BookieId startNewBookieAndReturnBookieId()
             throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         bsConfs.add(conf);
@@ -638,7 +647,7 @@ public abstract class BookKeeperClusterTestCase {
         BookieServer server = startBookie(conf);
         bs.add(server);
 
-        return server.getLocalAddress();
+        return server.getBookieId();
     }
 
     /**
@@ -654,7 +663,7 @@ public abstract class BookKeeperClusterTestCase {
         TestStatsProvider provider = new TestStatsProvider();
         BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
                                                BookieServiceInfo.NO_INFO);
-        BookieId address = Bookie.getBookieAddress(conf);
+        BookieId address = Bookie.getBookieId(conf);
         bsLoggers.put(address, provider);
 
         if (bkc == null) {
@@ -696,7 +705,7 @@ public abstract class BookKeeperClusterTestCase {
             }
         };
 
-        BookieId address = Bookie.getBookieAddress(conf);
+        BookieId address = Bookie.getBookieId(conf);
         if (bkc == null) {
             bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
@@ -705,7 +714,7 @@ public abstract class BookKeeperClusterTestCase {
             : bkc.waitForWritableBookie(address);
 
         server.start();
-        bsLoggers.put(server.getLocalAddress(), provider);
+        bsLoggers.put(server.getBookieId(), provider);
 
         waitForBookie.get(30, TimeUnit.SECONDS);
         LOG.info("New bookie '{}' has been created.", address);
@@ -822,7 +831,8 @@ public abstract class BookKeeperClusterTestCase {
      * @return true if the address was created using an IP address, false if the
      *         address was created using a hostname
      */
-    public static boolean isCreatedFromIp(BookieSocketAddress addr) {
+    public boolean isCreatedFromIp(BookieId bookieId) {
+        BookieSocketAddress addr = bkc.getBookieAddressResolver().resolve(bookieId);
         return addr.getSocketAddress().toString().startsWith("/");
     }
 
@@ -837,7 +847,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     public TestStatsProvider getStatsProvider(int index) throws Exception {
-        return getStatsProvider(bs.get(index).getLocalAddress());
+        return getStatsProvider(bs.get(index).getBookieId());
     }
 
 }

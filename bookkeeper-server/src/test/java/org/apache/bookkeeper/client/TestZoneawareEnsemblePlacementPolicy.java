@@ -65,7 +65,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
     DistributionSchedule.WriteSet writeSet = DistributionSchedule.NULL_WRITE_SET;
     ClientConfiguration conf = new ClientConfiguration();
     BookieSocketAddress addr1;
-    ResolvedBookieSocketAddress addr2, addr3, addr4;
+    BookieSocketAddress addr2, addr3, addr4;
     io.netty.util.HashedWheelTimer timer;
 
     @Override

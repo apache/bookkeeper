@@ -105,7 +105,7 @@ public class ReadLastConfirmedAndEntryOpTest {
         // metadata
         ArrayList<BookieId> ensemble = new ArrayList<>(3);
         for (int i = 0; i < 3; i++) {
-            ensemble.add(new BookieSocketAddress("127.0.0.1", 3181 + i));
+            ensemble.add(new BookieSocketAddress("127.0.0.1", 3181 + i).toBookieId());
         }
         this.ledgerMetadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)

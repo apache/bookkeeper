@@ -170,7 +170,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie : {}", replicaToKill);
         killBookie(replicaToKill);
 
-        BookieId newBkAddr = startNewBookieAndReturnAddress();
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
         LOG.info("New Bookie addr : {}", newBkAddr);
 
         for (int i = 0; i < 10; i++) {
@@ -217,7 +217,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie : {}", replicaToKill);
         ServerConfiguration killedBookieConfig = killBookie(replicaToKill);
 
-        BookieId newBkAddr = startNewBookieAndReturnAddress();
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
         LOG.info("New Bookie addr :" + newBkAddr);
 
         killAllBookies(lh, newBkAddr);
@@ -268,12 +268,12 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         killAllBookies(lh, null);
         // Starte RW1
-        BookieId newBkAddr1 = startNewBookieAndReturnAddress();
+        BookieId newBkAddr1 = startNewBookieAndReturnBookieId();
         LOG.info("New Bookie addr : {}", newBkAddr1);
         ReplicationWorker rw1 = new ReplicationWorker(baseConf);
 
         // Starte RW2
-        BookieId newBkAddr2 = startNewBookieAndReturnAddress();
+        BookieId newBkAddr2 = startNewBookieAndReturnBookieId();
         LOG.info("New Bookie addr : {}", newBkAddr2);
         ReplicationWorker rw2 = new ReplicationWorker(baseConf);
         rw1.start();
@@ -322,7 +322,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie : {}", replicaToKill);
         killBookie(replicaToKill);
 
-        BookieId newBkAddr = startNewBookieAndReturnAddress();
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
         LOG.info("New Bookie addr : {}", newBkAddr);
         ReplicationWorker rw = new ReplicationWorker(baseConf);
         rw.start();
@@ -374,7 +374,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         killBookie(replicaToKillFromFirstLedger);
         lh2.close();
 
-        BookieId newBkAddr = startNewBookieAndReturnAddress();
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
         LOG.info("New Bookie addr : {}", newBkAddr);
 
         ReplicationWorker rw = new ReplicationWorker(baseConf);
@@ -427,7 +427,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie : {}", replicaToKill);
         killBookie(replicaToKill);
 
-        BookieId newBkAddr = startNewBookieAndReturnAddress();
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
         LOG.info("New Bookie addr : {}", newBkAddr);
 
         // set to 3s instead of default 30s
@@ -489,7 +489,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         // start new bookiesToKill number of bookies
         for (int i = 0; i < ensembleSize; i++) {
-            BookieId newBkAddr = startNewBookieAndReturnAddress();
+            BookieId newBkAddr = startNewBookieAndReturnBookieId();
         }
 
         // create couple of replicationworkers
@@ -647,7 +647,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         // start new bookiesToKill number of bookies
         for (int i = 0; i < ensembleSize; i++) {
-            startNewBookieAndReturnAddress();
+            startNewBookieAndReturnBookieId();
         }
 
         // create couple of replicationworkers
@@ -762,7 +762,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie : {}", replicaToKill);
         killBookie(replicaToKill);
 
-        BookieId newBkAddr = startNewBookieAndReturnAddress();
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
         LOG.info("New Bookie addr : {}", newBkAddr);
 
         // Reform ensemble...Making sure that last fragment is not in

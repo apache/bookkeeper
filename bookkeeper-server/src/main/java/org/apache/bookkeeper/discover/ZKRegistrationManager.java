@@ -158,7 +158,7 @@ public class ZKRegistrationManager implements RegistrationManager {
      * @param bookieId bookie id
      * @return
      */
-    public String getCookiePath(String bookieId) {
+    public String getCookiePath(BookieId bookieId) {
         return this.cookiePath + "/" + bookieId;
     }
 
@@ -217,7 +217,7 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public void registerBookie(String bookieId, boolean readOnly,
+    public void registerBookie(BookieId bookieId, boolean readOnly,
                                BookieServiceInfo bookieServiceInfo) throws BookieException {
         if (!readOnly) {
             String regPath = bookieRegistrationPath + "/" + bookieId;
@@ -284,7 +284,7 @@ public class ZKRegistrationManager implements RegistrationManager {
         }
     }
 
-    private void doRegisterReadOnlyBookie(String bookieId, BookieServiceInfo bookieServiceInfo) throws BookieException {
+    private void doRegisterReadOnlyBookie(BookieId bookieId, BookieServiceInfo bookieServiceInfo) throws BookieException {
         try {
             if (null == zk.exists(this.bookieReadonlyRegistrationPath, false)) {
                 try {
@@ -312,7 +312,7 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public void unregisterBookie(String bookieId, boolean readOnly) throws BookieException {
+    public void unregisterBookie(BookieId bookieId, boolean readOnly) throws BookieException {
         String regPath;
         if (!readOnly) {
             regPath = bookieRegistrationPath + "/" + bookieId;
@@ -338,7 +338,7 @@ public class ZKRegistrationManager implements RegistrationManager {
     //
 
     @Override
-    public void writeCookie(String bookieId,
+    public void writeCookie(BookieId bookieId,
                             Versioned<byte[]> cookieData) throws BookieException {
         String zkPath = getCookiePath(bookieId);
         try {
@@ -365,16 +365,16 @@ public class ZKRegistrationManager implements RegistrationManager {
             Thread.currentThread().interrupt();
             throw new MetadataStoreException("Interrupted writing cookie for bookie " + bookieId, ie);
         } catch (NoNodeException nne) {
-            throw new CookieNotFoundException(bookieId);
+            throw new CookieNotFoundException(bookieId.toString());
         } catch (NodeExistsException nee) {
-            throw new CookieExistException(bookieId);
+            throw new CookieExistException(bookieId.toString());
         } catch (KeeperException e) {
             throw new MetadataStoreException("Failed to write cookie for bookie " + bookieId);
         }
     }
 
     @Override
-    public Versioned<byte[]> readCookie(String bookieId) throws BookieException {
+    public Versioned<byte[]> readCookie(BookieId bookieId) throws BookieException {
         String zkPath = getCookiePath(bookieId);
         try {
             Stat stat = zk.exists(zkPath, false);
@@ -383,19 +383,19 @@ public class ZKRegistrationManager implements RegistrationManager {
             LongVersion version = new LongVersion(stat.getVersion());
             return new Versioned<>(data, version);
         } catch (NoNodeException nne) {
-            throw new CookieNotFoundException(bookieId);
+            throw new CookieNotFoundException(bookieId.toString());
         } catch (KeeperException | InterruptedException e) {
             throw new MetadataStoreException("Failed to read cookie for bookie " + bookieId);
         }
     }
 
     @Override
-    public void removeCookie(String bookieId, Version version) throws BookieException {
+    public void removeCookie(BookieId bookieId, Version version) throws BookieException {
         String zkPath = getCookiePath(bookieId);
         try {
             zk.delete(zkPath, (int) ((LongVersion) version).getLongVersion());
         } catch (NoNodeException e) {
-            throw new CookieNotFoundException(bookieId);
+            throw new CookieNotFoundException(bookieId.toString());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new MetadataStoreException("Interrupted deleting cookie for bookie " + bookieId, e);
@@ -593,7 +593,7 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public boolean isBookieRegistered(String bookieId) throws BookieException {
+    public boolean isBookieRegistered(BookieId bookieId) throws BookieException {
         String regPath = bookieRegistrationPath + "/" + bookieId;
         String readonlyRegPath = bookieReadonlyRegistrationPath + "/" + bookieId;
         try {

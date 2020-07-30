@@ -74,11 +74,10 @@ public class GetCookieCommand extends CookieCommand<Flags> {
 
     @Override
     protected void apply(RegistrationManager rm, Flags cmdFlags) throws Exception {
-        String bookieId = getBookieId(cmdFlags);
+        BookieId bookieId = getBookieId(cmdFlags);
 
         try {
-            Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, BookieId.parse(bookieId)
-            );
+            Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieId);
             spec.console().println("Cookie for bookie '" + bookieId + "' is:");
             spec.console().println("---");
             spec.console().println(

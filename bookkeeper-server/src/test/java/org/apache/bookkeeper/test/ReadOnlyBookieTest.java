@@ -127,7 +127,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
             // Expected
         }
 
-        bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(1)))
+        bkc.waitForReadOnlyBookie(Bookie.getBookieId(bsConfs.get(1)))
             .get(30, TimeUnit.SECONDS);
 
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
@@ -145,7 +145,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         // Now add the current ledger dir back to writable dirs list
         ledgerDirsManager.addToWritableDirs(testDir, true);
 
-        bkc.waitForWritableBookie(Bookie.getBookieAddress(bsConfs.get(1)))
+        bkc.waitForWritableBookie(Bookie.getBookieId(bsConfs.get(1)))
             .get(30, TimeUnit.SECONDS);
 
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
@@ -262,7 +262,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         startNewBookie();
         bs.get(1).getBookie().getStateManager().doTransitionToReadOnlyMode();
         try {
-            bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(1)))
+            bkc.waitForReadOnlyBookie(Bookie.getBookieId(bsConfs.get(1)))
                 .get(30, TimeUnit.SECONDS);
 
             bkc.createLedger(2, 2, DigestType.CRC32, "".getBytes());

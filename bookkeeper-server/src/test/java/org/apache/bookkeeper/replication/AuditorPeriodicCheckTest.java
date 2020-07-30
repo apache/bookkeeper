@@ -708,7 +708,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         for (int i = 0; i < numBookies; i++) {
             if (curEnsemble.contains(bs.get(i).getLocalAddress())) {
                 bookieIdx = i;
-                replacedBookie = bs.get(i).getLocalAddress();
+                replacedBookie = bs.get(i).getBookieId();
                 break;
             }
         }

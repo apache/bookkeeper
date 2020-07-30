@@ -344,8 +344,8 @@ public class MetadataUpdateLoopTest {
             lm.blockWrites();
 
             long ledgerId = 1234L;
-            BookieId b0 = new BookieSocketAddress("0.0.0.0:3181");
-            BookieId b1 = new BookieSocketAddress("0.0.0.1:3181");
+            BookieId b0 = new BookieSocketAddress("0.0.0.0:3181").toBookieId();
+            BookieId b1 = new BookieSocketAddress("0.0.0.1:3181").toBookieId();
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(1)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])

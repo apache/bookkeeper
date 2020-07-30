@@ -128,7 +128,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
     private static Set<BookieId> prepareNBookies(int num) {
         Set<BookieId> bookies = new HashSet<>();
         for (int i = 0; i < num; i++) {
-            bookies.add(new BookieSocketAddress("127.0.0.1", 3181 + i));
+            bookies.add(new BookieSocketAddress("127.0.0.1", 3181 + i).toBookieId());
         }
         return bookies;
     }

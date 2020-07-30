@@ -110,7 +110,6 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
 
         BookieAddressResolver bookieAddressResolver = BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER;
         // try to get bookie info from the sleeping bookie. It should fail with timeout error
-        BookieSocketAddress addr = bookieAddressResolver.resolve(bookieToSleep);
         BookieClient bc = new BookieClientImpl(cConf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, executor,
                 scheduler, NullStatsLogger.INSTANCE, bookieAddressResolver);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
@@ -130,7 +129,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
             }
         }
         CallbackObj obj = new CallbackObj(flags);
-        bc.getBookieInfo(addr, flags, new GetBookieInfoCallback() {
+        bc.getBookieInfo(bookieToSleep, flags, new GetBookieInfoCallback() {
             @Override
             public void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
                 CallbackObj obj = (CallbackObj) ctx;

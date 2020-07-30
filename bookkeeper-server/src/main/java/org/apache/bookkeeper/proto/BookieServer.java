@@ -44,6 +44,7 @@ import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -165,6 +166,11 @@ public class BookieServer {
     @VisibleForTesting
     public BookieSocketAddress getLocalAddress() throws UnknownHostException {
         return Bookie.getBookieAddress(conf);
+    }
+    
+    @VisibleForTesting
+    public BookieId getBookieId() throws UnknownHostException {
+        return Bookie.getBookieId(conf);
     }
 
     @VisibleForTesting

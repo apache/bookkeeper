@@ -308,7 +308,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         BookieServer bk = bs.get(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
         bk.getBookie().getStateManager().doTransitionToReadOnlyMode();
-        bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
+        bkc.waitForReadOnlyBookie(Bookie.getBookieId(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
@@ -335,7 +335,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         BookieServer bk = bs.get(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
         bk.getBookie().getStateManager().doTransitionToReadOnlyMode();
-        bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
+        bkc.waitForReadOnlyBookie(Bookie.getBookieId(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
@@ -548,9 +548,9 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         Random rand = new Random();
         for (int i = 0; i < numofledgers; i++) {
             ArrayList<BookieId> ensemble = new ArrayList<BookieId>();
-            ensemble.add(new BookieSocketAddress("99.99.99.99:9999"));
-            ensemble.add(new BookieSocketAddress("11.11.11.11:1111"));
-            ensemble.add(new BookieSocketAddress("88.88.88.88:8888"));
+            ensemble.add(new BookieSocketAddress("99.99.99.99:9999").toBookieId());
+            ensemble.add(new BookieSocketAddress("11.11.11.11:1111").toBookieId());
+            ensemble.add(new BookieSocketAddress("88.88.88.88:8888").toBookieId());
 
             LedgerMetadata metadata = LedgerMetadataBuilder.create()
                 .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)

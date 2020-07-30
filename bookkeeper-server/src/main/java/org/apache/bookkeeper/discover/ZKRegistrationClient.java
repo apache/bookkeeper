@@ -219,7 +219,7 @@ public class ZKRegistrationClient implements RegistrationClient {
     }
 
     @Override
-    public CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(String bookieId) {
+    public CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(BookieId bookieId) {
         String pathAsWritable = bookieRegistrationPath + "/" + bookieId;
         String pathAsReadonly = bookieReadonlyRegistrationPath + "/" + bookieId;
 
@@ -258,10 +258,10 @@ public class ZKRegistrationClient implements RegistrationClient {
 
     @SuppressWarnings("unchecked")
     @VisibleForTesting
-    static BookieServiceInfo deserializeBookieServiceInfo(String bookieId, byte[] bookieServiceInfo)
+    static BookieServiceInfo deserializeBookieServiceInfo(BookieId bookieId, byte[] bookieServiceInfo)
             throws IOException {
         if (bookieServiceInfo == null || bookieServiceInfo.length == 0) {
-            return BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId);
+            return BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId.toString());
         }
 
         BookieServiceInfoFormat builder = BookieServiceInfoFormat.parseFrom(bookieServiceInfo);
@@ -379,14 +379,7 @@ public class ZKRegistrationClient implements RegistrationClient {
             if (READONLY.equals(bookieAddrString)) {
                 continue;
             }
-
-            BookieId bookieAddr;
-            try {
-                bookieAddr = BookieId.parse(bookieAddrString);
-            } catch (IOException e) {
-                log.error("Could not parse bookie address: " + bookieAddrString + ", ignoring this bookie");
-                continue;
-            }
+            BookieId bookieAddr = BookieId.parse(bookieAddrString);
             newBookieAddrs.add(bookieAddr);
         }
         return newBookieAddrs;

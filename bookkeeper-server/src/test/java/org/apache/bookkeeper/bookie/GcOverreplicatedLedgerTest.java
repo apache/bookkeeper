@@ -185,7 +185,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
     private BookieId getBookieNotInEnsemble(LedgerMetadata ledgerMetadata) throws UnknownHostException {
         List<BookieId> allAddresses = Lists.newArrayList();
         for (BookieServer bk : bs) {
-            allAddresses.add(bk.getLocalAddress());
+            allAddresses.add(bk.getBookieId());
         }
         SortedMap<Long, ? extends List<BookieId>> ensembles = ledgerMetadata.getAllEnsembles();
         for (List<BookieId> fragmentEnsembles : ensembles.values()) {

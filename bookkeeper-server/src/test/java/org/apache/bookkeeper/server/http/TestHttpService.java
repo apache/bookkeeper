@@ -675,7 +675,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         // 192.0.2.0/24 is reserved TEST-NET range
         LedgerMetadataBuilder metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
-            .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1000),
+            .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1000).toBookieId(),
                                       getBookie(0),
                                       getBookie(1)));
         ClientUtil.setupLedger(ledgerManager, 1L, metadata);

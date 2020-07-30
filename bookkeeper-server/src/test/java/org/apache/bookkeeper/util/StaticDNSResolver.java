@@ -97,10 +97,12 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping implements Rac
     }
 
     public static void changeRack(List<BookieSocketAddress> bookieAddressList, List<String> rack) {
+        List<BookieId> bookieIds = new ArrayList<>();
         for (int i = 0; i < bookieAddressList.size(); i++) {
             BookieSocketAddress bkAddress = bookieAddressList.get(i);
             name2Racks.put(bkAddress.getHostName(), rack.get(i));
+            bookieIds.add(bkAddress.toBookieId());
         }
-        rackawarePolicy.onBookieRackChange(new ArrayList<>(bookieAddressList));
+        rackawarePolicy.onBookieRackChange(bookieIds);
     }
 }

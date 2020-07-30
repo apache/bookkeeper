@@ -49,6 +49,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.RecoverCommand;
@@ -147,7 +148,7 @@ public class BookieShellTest {
             .setLayoutVersion(Cookie.CURRENT_COOKIE_LAYOUT_VERSION)
             .build();
         this.version = new LongVersion(1L);
-        when(rm.readCookie(anyString()))
+        when(rm.readCookie(any(BookieId.class)))
             .thenReturn(new Versioned<>(cookie.toString().getBytes(UTF_8), version));
 
         this.driver = mock(MetadataBookieDriver.class);
@@ -268,11 +269,11 @@ public class BookieShellTest {
         if (removeCookies) {
             PowerMockito.verifyStatic(MetadataDrivers.class);
             MetadataDrivers.runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class));
-            verify(rm, times(1)).readCookie(anyString());
-            verify(rm, times(1)).removeCookie(anyString(), eq(version));
+            verify(rm, times(1)).readCookie(any(BookieId.class));
+            verify(rm, times(1)).removeCookie(any(BookieId.class), eq(version));
         } else {
-            verify(rm, times(0)).readCookie(anyString());
-            verify(rm, times(0)).removeCookie(anyString(), eq(version));
+            verify(rm, times(0)).readCookie(any(BookieId.class));
+            verify(rm, times(0)).removeCookie(any(BookieId.class), eq(version));
         }
     }
 
@@ -333,11 +334,11 @@ public class BookieShellTest {
         if (removeCookies) {
             PowerMockito.verifyStatic(MetadataDrivers.class);
             MetadataDrivers.runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class));
-            verify(rm, times(1)).readCookie(anyString());
-            verify(rm, times(1)).removeCookie(anyString(), eq(version));
+            verify(rm, times(1)).readCookie(any(BookieId.class));
+            verify(rm, times(1)).removeCookie(any(BookieId.class), eq(version));
         } else {
-            verify(rm, times(0)).readCookie(anyString());
-            verify(rm, times(0)).removeCookie(anyString(), eq(version));
+            verify(rm, times(0)).readCookie(any(BookieId.class));
+            verify(rm, times(0)).removeCookie(any(BookieId.class), eq(version));
         }
     }
 

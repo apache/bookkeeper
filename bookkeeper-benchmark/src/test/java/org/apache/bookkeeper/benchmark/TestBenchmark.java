@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Assert;
@@ -68,7 +69,7 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
 
     @Test
     public void testBookie() throws Exception {
-        BookieSocketAddress bookie = getBookie(0);
+        BookieSocketAddress bookie = getBookieAddress(0);
         BenchBookie.main(new String[] {
                 "--host", bookie.getSocketAddress().getHostName(),
                 "--port", String.valueOf(bookie.getPort()),

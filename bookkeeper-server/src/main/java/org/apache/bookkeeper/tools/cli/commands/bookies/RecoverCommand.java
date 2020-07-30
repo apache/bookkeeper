@@ -126,13 +126,7 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
         final String[] bookieStrs = flags.bookieAddress.split(",");
         final Set<BookieId> bookieAddrs = new HashSet<>();
         for (String bookieStr : bookieStrs) {
-            try {
-                bookieAddrs.add(BookieId.parse(bookieStr));
-            } catch (UnknownHostException err) {
-                System.err.println("BookieSrcs has invalid bookie address format (host:port expected) : "
-                                   + bookieStr);
-                return false;   
-            }
+            bookieAddrs.add(BookieId.parse(bookieStr));
         }
 
         if (!force) {

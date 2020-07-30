@@ -39,11 +39,11 @@ import org.slf4j.LoggerFactory;
 public class LedgerClose2Test {
     private static final Logger log = LoggerFactory.getLogger(LedgerRecovery2Test.class);
 
-    private static final BookieId b1 = new BookieSocketAddress("b1", 3181);
-    private static final BookieId b2 = new BookieSocketAddress("b2", 3181);
-    private static final BookieId b3 = new BookieSocketAddress("b3", 3181);
-    private static final BookieId b4 = new BookieSocketAddress("b4", 3181);
-    private static final BookieId b5 = new BookieSocketAddress("b5", 3181);
+    private static final BookieId b1 = new BookieSocketAddress("b1", 3181).toBookieId();
+    private static final BookieId b2 = new BookieSocketAddress("b2", 3181).toBookieId();
+    private static final BookieId b3 = new BookieSocketAddress("b3", 3181).toBookieId();
+    private static final BookieId b4 = new BookieSocketAddress("b4", 3181).toBookieId();
+    private static final BookieId b5 = new BookieSocketAddress("b5", 3181).toBookieId();
 
     @Test
     public void testTryAddAfterCloseHasBeenCalled() throws Exception {

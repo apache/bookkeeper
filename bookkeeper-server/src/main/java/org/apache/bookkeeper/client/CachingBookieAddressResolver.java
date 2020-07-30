@@ -50,7 +50,7 @@ public class CachingBookieAddressResolver implements BookieAddressResolver {
             return cached;
         }
         try {
-            BookieServiceInfo info = FutureUtils.result(registrationClient.getBookieServiceInfo(address.toString())).getValue();
+            BookieServiceInfo info = FutureUtils.result(registrationClient.getBookieServiceInfo(address)).getValue();
             BookieServiceInfo.Endpoint endpoint = info.getEndpoints().stream(). filter(e -> e.getProtocol().equals("bookie-rpc")).findAny().orElse(null);
             if (endpoint == null) {
                 throw new Exception("bookie " + address + " does not publish a bookie-rpc endpond");

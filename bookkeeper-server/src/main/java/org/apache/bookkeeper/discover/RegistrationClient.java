@@ -31,6 +31,7 @@ import org.apache.bookkeeper.versioning.Versioned;
 /**
  * A registration client, which the bookkeeper client will use to interact with registration service.
  */
+
 @LimitedPrivate
 @Evolving
 public interface RegistrationClient extends AutoCloseable {
@@ -77,9 +78,9 @@ public interface RegistrationClient extends AutoCloseable {
      *
      * @since 4.11
      */
-    default CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(String bookieId) {
+    default CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(BookieId bookieId) {
         try {
-            BookieServiceInfo bookieServiceInfo = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId);
+            BookieServiceInfo bookieServiceInfo = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId.toString());
             return FutureUtils.value(new Versioned<>(bookieServiceInfo, new LongVersion(-1)));
         } catch (UnknownHostException e) {
             return FutureUtils.exception(e);

@@ -442,7 +442,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         final List<BookieId> bkAddresses = ensembles.get(0L);
         BookieId replicaToKillAddr = bkAddresses.get(0);
         for (BookieId bookieSocketAddress : bkAddresses) {
-            if (!isCreatedFromIp((BookieSocketAddress) bookieSocketAddress)){
+            if (!isCreatedFromIp(bookieSocketAddress)) {
                 replicaToKillAddr = bookieSocketAddress;
                 LOG.info("Kill bookie which has registered using hostname");
                 break;
@@ -520,7 +520,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         final List<BookieId> bkAddresses = ensembles.get(0L);
         BookieId replicaToKillAddr = bkAddresses.get(0);
         for (BookieId bookieSocketAddress : bkAddresses) {
-            if (isCreatedFromIp((BookieSocketAddress) bookieSocketAddress)) {
+            if (isCreatedFromIp(bookieSocketAddress)) {
                 replicaToKillAddr = bookieSocketAddress;
                 LOG.info("Kill bookie which has registered using ipaddress");
                 break;

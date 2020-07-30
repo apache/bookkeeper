@@ -185,9 +185,9 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         BookieId bookieAddress;
         List<BookieId> bookieAddresses = new ArrayList<BookieId>();
         for (int i = 0; i < numOfBookies; i++) {
-            bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
             bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
+            regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
         }
         return bookieAddresses;
     }

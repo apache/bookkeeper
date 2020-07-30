@@ -88,7 +88,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         builder.setPayload(ByteString.copyFrom(PAYLOAD_MESSAGE));
         final AuthMessage authMessage = builder.build();
 
-        CompatClient42 client = newCompatClient(bookie1.getLocalAddress());
+        CompatClient42 client = newCompatClient(bookie1.getBookieId());
 
         Request request = new AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
         client.sendRequest(request);
@@ -109,7 +109,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
             .setAuthPluginName(TestAuth.TEST_AUTH_PROVIDER_PLUGIN_NAME);
         builder.setPayload(ByteString.copyFrom(PAYLOAD_MESSAGE));
         final AuthMessage authMessage = builder.build();
-        CompatClient42 client = newCompatClient(bookie1.getLocalAddress());
+        CompatClient42 client = newCompatClient(bookie1.getBookieId());
 
         Request request = new AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
         for (int i = 0; i < 3; i++) {
@@ -142,7 +142,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
             .setAuthPluginName(TestAuth.TEST_AUTH_PROVIDER_PLUGIN_NAME);
         builder.setPayload(ByteString.copyFrom(PAYLOAD_MESSAGE));
         final AuthMessage authMessage = builder.build();
-        CompatClient42 client = newCompatClient(bookie1.getLocalAddress());
+        CompatClient42 client = newCompatClient(bookie1.getBookieId());
 
         Request request = new AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
         for (int i = 0; i < 3; i++) {

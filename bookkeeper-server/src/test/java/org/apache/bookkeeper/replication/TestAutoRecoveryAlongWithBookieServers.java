@@ -77,7 +77,7 @@ public class TestAutoRecoveryAlongWithBookieServers extends
 
         killBookie(replicaToKill);
 
-        BookieId newBkAddr = startNewBookieAndReturnAddress();
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
 
         while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(),
                 basePath)) {

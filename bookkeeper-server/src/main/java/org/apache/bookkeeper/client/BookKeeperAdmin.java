@@ -232,7 +232,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     public BookieServiceInfo getBookieServiceInfo(String bookiedId)
             throws BKException {
         return FutureUtils.result(bkc.getMetadataClientDriver()
-                .getRegistrationClient().getBookieServiceInfo(bookiedId)).getValue();
+                .getRegistrationClient().getBookieServiceInfo(BookieId.parse(bookiedId))).getValue();
     }
 
     /**
@@ -1299,7 +1299,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                  * make sure that there is no bookie registered with the same
                  * bookieid and the cookie for the same bookieid is not existing.
                  */
-                String bookieId = Bookie.getBookieAddress(conf).toString();
+                BookieId bookieId = Bookie.getBookieId(conf);
                 if (rm.isBookieRegistered(bookieId)) {
                     LOG.error("Bookie with bookieId: {} is still registered, "
                         + "If this node is running bookie process, try stopping it first.", bookieId);

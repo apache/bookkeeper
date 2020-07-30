@@ -160,7 +160,7 @@ public class BookieClientTest {
         final Object notifyObject = new Object();
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
-        BookieId addr = bs.getLocalAddress();
+        BookieId addr = bs.getBookieId();
         ResultStruct arc = new ResultStruct();
 
         BookieClient bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
@@ -263,7 +263,7 @@ public class BookieClientTest {
     @Test
     public void testNoLedger() throws Exception {
         ResultStruct arc = new ResultStruct();
-        BookieId addr = bs.getLocalAddress();
+        BookieId addr = bs.getBookieId();
         BookieClient bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
                 UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         synchronized (arc) {
@@ -284,7 +284,8 @@ public class BookieClientTest {
     }
 
     public void testGetBookieInfo(boolean limitStatsLogging) throws IOException, InterruptedException {
-        BookieId addr = bs.getLocalAddress();
+        BookieId bookieId = bs.getBookieId();
+        BookieSocketAddress addr = bs.getLocalAddress();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setLimitStatsLogging(limitStatsLogging);
         TestStatsProvider statsProvider = new TestStatsProvider();
@@ -308,7 +309,7 @@ public class BookieClientTest {
             }
         }
         CallbackObj obj = new CallbackObj(flags);
-        bc.getBookieInfo(addr, flags, new GetBookieInfoCallback() {
+        bc.getBookieInfo(bookieId, flags, new GetBookieInfoCallback() {
             @Override
             public void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
                 CallbackObj obj = (CallbackObj) ctx;
@@ -335,7 +336,7 @@ public class BookieClientTest {
 
         TestOpStatsLogger perChannelBookieClientScopeOfThisAddr = (TestOpStatsLogger) statsLogger
                 .scope(BookKeeperClientStats.CHANNEL_SCOPE)
-                .scope(addr.getNameForMetrics())
+                .scope(PerChannelBookieClient.buildStatsLoggerScopeName(addr))
                 .getOpStatsLogger(BookKeeperClientStats.GET_BOOKIE_INFO_OP);
         int expectedBookieInfoSuccessCount = (limitStatsLogging) ? 0 : 1;
         assertEquals("BookieInfoSuccessCount", expectedBookieInfoSuccessCount,

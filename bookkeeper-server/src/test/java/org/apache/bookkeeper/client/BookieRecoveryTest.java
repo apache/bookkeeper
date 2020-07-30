@@ -306,7 +306,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-        BookieId bookieSrc = bs.get(0).getLocalAddress();
+        BookieId bookieSrc = bs.get(0).getBookieId();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -356,7 +356,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-        BookieId bookieSrc = bs.get(0).getLocalAddress();
+        BookieId bookieSrc = bs.get(0).getBookieId();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -409,7 +409,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-        BookieId bookieSrc = bs.get(0).getLocalAddress();
+        BookieId bookieSrc = bs.get(0).getBookieId();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -450,7 +450,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-        BookieId bookieSrc = bs.get(0).getLocalAddress();
+        BookieId bookieSrc = bs.get(0).getBookieId();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -725,7 +725,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-        BookieId bookieSrc = bs.get(0).getLocalAddress();
+        BookieId bookieSrc = bs.get(0).getBookieId();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -757,7 +757,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
         int removeIndex = r.nextInt(bs.size());
-        BookieId bookieSrc = bs.get(removeIndex).getLocalAddress();
+        BookieId bookieSrc = bs.get(removeIndex).getBookieId();
         bs.get(removeIndex).shutdown();
         bs.remove(removeIndex);
 
@@ -799,7 +799,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
         lh.close();
 
-        BookieId bookieSrc = bs.get(0).getLocalAddress();
+        BookieId bookieSrc = bs.get(0).getBookieId();
         bs.get(0).shutdown();
         bs.remove(0);
         startNewBookie();
@@ -826,7 +826,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         assertTrue("Should be back to fully replication", verifyFullyReplicated(lh, 100));
         lh.close();
 
-        bookieSrc = bs.get(0).getLocalAddress();
+        bookieSrc = bs.get(0).getBookieId();
         bs.get(0).shutdown();
         bs.remove(0);
         startNewBookie();
