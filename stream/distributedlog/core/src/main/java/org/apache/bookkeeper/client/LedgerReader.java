@@ -33,6 +33,7 @@ import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.ResolvedBookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -94,7 +95,7 @@ public class LedgerReader {
         ReadEntryCallback readEntryCallback = new ReadEntryCallback() {
             @Override
             public void readEntryComplete(int rc, long lid, long eid, ByteBuf buffer, Object ctx) {
-                BookieSocketAddress bookieAddress = (BookieSocketAddress) ctx;
+                ResolvedBookieSocketAddress bookieAddress = (ResolvedBookieSocketAddress) ctx;
                 ReadResult<ByteBuf> rr;
                 if (BKException.Code.OK != rc) {
                     rr = new ReadResult<>(eid, rc, null, bookieAddress.getSocketAddress());
@@ -122,8 +123,10 @@ public class LedgerReader {
         List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembleAt(eid);
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
+            ResolvedBookieSocketAddress resolvedNetworkAddress =
+                    clientCtx.getBookieWatcher().getBookieAddressResolver().resolve(ensemble.get(idx));
             clientCtx.getBookieClient().readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,
-                                   ensemble.get(idx), BookieProtocol.FLAG_NONE);
+                                   resolvedNetworkAddress, BookieProtocol.FLAG_NONE);
         }
     }
 
