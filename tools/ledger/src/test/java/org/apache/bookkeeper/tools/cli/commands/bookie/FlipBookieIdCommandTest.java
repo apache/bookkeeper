@@ -87,7 +87,7 @@ public class FlipBookieIdCommandTest extends BookieCommandTestBase {
         PowerMockito.whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
                     .withArguments(eq(conf)).thenReturn(serverConfiguration);
         PowerMockito.mockStatic(Bookie.class);
-        PowerMockito.when(Bookie.getBookieAddress(eq(serverConfiguration))).thenReturn(bookieSocketAddress);
+        PowerMockito.when(Bookie.getBookieId(eq(serverConfiguration))).thenReturn(bookieSocketAddress);
     }
 
     @Test

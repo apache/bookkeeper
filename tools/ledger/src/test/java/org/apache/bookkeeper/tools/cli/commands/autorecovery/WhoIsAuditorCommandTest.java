@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,6 +29,7 @@ import java.net.URI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
@@ -77,7 +79,7 @@ public class WhoIsAuditorCommandTest extends BookieCommandTestBase {
                     .thenReturn(bookieId);
 
         PowerMockito.mockStatic(CommandHelpers.class);
-        PowerMockito.when(CommandHelpers.getBookieSocketAddrStringRepresentation(eq(bookieId))).thenReturn("");
+        PowerMockito.when(CommandHelpers.getBookieSocketAddrStringRepresentation(eq(bookieId), any(BookieAddressResolver.class))).thenReturn("");
     }
 
     @Test

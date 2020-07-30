@@ -79,8 +79,8 @@ public class DefaultStorageContainerControllerTest {
         serverList2.add(2L);
         serverList2.add(3L);
 
-        BookieId address1 = new BookieSocketAddress("127.0.0.1", 4181);
-        BookieId address2 = new BookieSocketAddress("127.0.0.1", 4182);
+        BookieId address1 = new BookieSocketAddress("127.0.0.1", 4181).toBookieId();
+        BookieId address2 = new BookieSocketAddress("127.0.0.1", 4182).toBookieId();
 
         Pair<BookieId, LinkedList<Long>> pair1 = Pair.of(address1, serverList1);
         Pair<BookieId, LinkedList<Long>> pair2 = Pair.of(address1, serverList2);
@@ -105,14 +105,14 @@ public class DefaultStorageContainerControllerTest {
 
     private static Set<BookieId> newCluster(int numServers) {
         Set<BookieId> cluster = IntStream.range(0, numServers)
-            .mapToObj(idx -> new BookieSocketAddress("127.0.0.1", 4181 + idx))
+            .mapToObj(idx -> new BookieSocketAddress("127.0.0.1", 4181 + idx).toBookieId())
             .collect(Collectors.toSet());
         return ImmutableSet.copyOf(cluster);
     }
 
     private static Set<BookieId> newCluster(int numServers, int startServerIdx) {
         Set<BookieId> cluster = IntStream.range(0, numServers)
-            .mapToObj(idx -> new BookieSocketAddress("127.0.0.1", 4181 + startServerIdx + idx))
+            .mapToObj(idx -> new BookieSocketAddress("127.0.0.1", 4181 + startServerIdx + idx).toBookieId())
             .collect(Collectors.toSet());
         return ImmutableSet.copyOf(cluster);
     }
@@ -132,7 +132,7 @@ public class DefaultStorageContainerControllerTest {
         for (Map.Entry<String, ServerAssignmentData> entry : newAssignment.getServersMap().entrySet()) {
             log.info("Check assignment for server {} = {}", entry.getKey(), entry.getValue());
 
-            BookieId address = new BookieSocketAddress(entry.getKey());
+            BookieId address = BookieId.parse(entry.getKey());
             assignedServers.add(address);
             assertEquals(serverIdx + 1, assignedServers.size());
 
@@ -175,7 +175,7 @@ public class DefaultStorageContainerControllerTest {
         for (Map.Entry<String, ServerAssignmentData> entry : newAssignment.getServersMap().entrySet()) {
             log.info("Check assignment for server {} = {}", entry.getKey(), entry.getValue());
 
-            BookieId address = new BookieSocketAddress(entry.getKey());
+            BookieId address = BookieId.parse(entry.getKey());
             assignedServers.add(address);
             assertEquals(serverIdx + 1, assignedServers.size());
 

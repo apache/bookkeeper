@@ -87,13 +87,7 @@ public class DefaultStorageContainerController implements StorageContainerContro
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(e1 -> {
-                        try {
-                            return BookieId.parse(e1.getKey());
-                        } catch (UnknownHostException uhe) {
-                            log.error("Invalid cluster ");
-                            throw new UncheckedExecutionException("Invalid server found in current assignment map"
-                                + e1.getKey(), uhe);
-                        }
+                        return BookieId.parse(e1.getKey());
                     },
                     e2 -> e2.getValue().getContainersList().stream().collect(Collectors.toSet())
                 ));

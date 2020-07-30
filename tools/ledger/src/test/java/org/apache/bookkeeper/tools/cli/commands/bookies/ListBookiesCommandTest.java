@@ -35,6 +35,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.tools.cli.helpers.DiscoveryCommandTestBase;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -99,7 +101,7 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
             PowerMockito.verifyStatic(
                 CommandHelpers.class,
                 times(numCalls));
-            CommandHelpers.getBookieSocketAddrStringRepresentation(eq(new BookieId("127.0.0.1", startPort + 1)));
+            CommandHelpers.getBookieSocketAddrStringRepresentation(eq(new BookieSocketAddress("127.0.0.1", startPort + 1).toBookieId()), any(BookieAddressResolver.class));
         }
     }
 
@@ -215,14 +217,14 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         PowerMockito.verifyStatic(
                 CommandHelpers.class,
                 times(0));
-        CommandHelpers.getBookieSocketAddrStringRepresentation(any());
+        CommandHelpers.getBookieSocketAddrStringRepresentation(any(), any());
 
         assertTrue(cmd.apply(bkFlags, new String[]{"-ro"}));
 
         PowerMockito.verifyStatic(
                 CommandHelpers.class,
                 times(0));
-        CommandHelpers.getBookieSocketAddrStringRepresentation(any());
+        CommandHelpers.getBookieSocketAddrStringRepresentation(any(), any());
     }
 
 }

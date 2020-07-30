@@ -61,13 +61,13 @@ public class BookieServiceInfoTest {
     public void testDeserializeBookieServiceInfo() throws Exception {
         BookieId bookieId = BookieId.parse("127.0.0.1:3181");
         {
-            BookieServiceInfo expected = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId);
+            BookieServiceInfo expected = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId.toString());
             BookieServiceInfo deserialized = deserializeBookieServiceInfo(bookieId, null);
 
             assertBookieServiceInfoEquals(expected, deserialized);
         }
         {
-            BookieServiceInfo expected = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId);
+            BookieServiceInfo expected = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId.toString());
             BookieServiceInfo deserialized = deserializeBookieServiceInfo(bookieId, new byte[]{});
 
             assertBookieServiceInfoEquals(expected, deserialized);

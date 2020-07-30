@@ -86,7 +86,7 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
                     .withArguments(eq(clientConfiguration)).thenReturn(bookKeeperAdmin);
         PowerMockito.whenNew(BookieId.class).withArguments(anyString()).thenReturn(bookieSocketAddress);
         PowerMockito.mockStatic(Bookie.class);
-        PowerMockito.when(Bookie.getBookieAddress(any(ServerConfiguration.class))).thenReturn(bookieSocketAddress);
+        PowerMockito.when(Bookie.getBookieId(any(ServerConfiguration.class))).thenReturn(bookieSocketAddress);
         PowerMockito.doNothing().when(bookKeeperAdmin).decommissionBookie(eq(bookieSocketAddress));
 
         RegistrationManager registrationManager = mock(RegistrationManager.class);

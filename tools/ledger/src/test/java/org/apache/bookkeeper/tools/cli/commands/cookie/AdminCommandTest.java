@@ -69,7 +69,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
 
     @Mock
     private Cookie cookie;
-
+    
     @Mock
     private BookieId bookieSocketAddress;
 
@@ -124,7 +124,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
         }).when(MetadataDrivers.class, "runFunctionWithRegistrationManager", any(ServerConfiguration.class),
                 any(Function.class));
 
-        PowerMockito.when(Bookie.getBookieAddress(eq(serverConfiguration))).thenReturn(bookieSocketAddress);
+        PowerMockito.when(Bookie.getBookieId(eq(serverConfiguration))).thenReturn(bookieSocketAddress);
         when(bookieSocketAddress.toString()).thenReturn("1");
         PowerMockito.when(Cookie.readFromRegistrationManager(eq(registrationManager), eq(serverConfiguration)))
                     .thenReturn(cookieVersioned);
@@ -174,7 +174,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
 
     private void mockListOrDeleteCookies() throws UnknownHostException {
 
-        when(Bookie.getBookieAddress(any(ServerConfiguration.class))).thenReturn(bookieSocketAddress);
+        when(Bookie.getBookieId(any(ServerConfiguration.class))).thenReturn(bookieSocketAddress);
     }
 
     @Test
