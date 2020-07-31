@@ -83,7 +83,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiPredicate;
 
-import java.util.function.Consumer;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import lombok.SneakyThrows;
@@ -346,7 +345,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final ExtensionRegistry extRegistry;
     private final SecurityHandlerFactory shFactory;
     private volatile boolean isWritable = true;
-    private long lastBookieUnavailableLog = 0;
+    private long lastBookieUnavailableLogTimestamp = 0;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieId addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
@@ -2485,11 +2484,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     Throwable cause = future.cause();
                     if (cause instanceof UnknownHostException || cause instanceof NativeIoException) {
                         // Don't log stack trace for common errors
-                        logBookieUnavailable((nil) -> LOG.warn("Could not connect to bookie: {}/{}, current state {} : {}",
+                        logBookieUnavailable(() -> LOG.warn("Could not connect to bookie: {}/{}, current state {} : {}",
                                 future.channel(), bookieId, state, future.cause().getMessage()));
                     } else {
                         // Regular exceptions, include stack trace
-                        logBookieUnavailable((nil) -> LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
+                        logBookieUnavailable(() -> LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
                                 future.channel(), bookieId, state, future.cause()));
                     }
 
@@ -2520,11 +2519,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             makeWritable();
         }
 
-        private void logBookieUnavailable(Consumer<Void> log) {
+        private void logBookieUnavailable(Runnable logger) {
             final long now = System.currentTimeMillis();
-            if ((now - lastBookieUnavailableLog) > 30_000) {
-                log.accept(null);
-                lastBookieUnavailableLog = now;
+            if ((now - lastBookieUnavailableLogTimestamp) > conf.getClientConnectBookieUnavailableLogThrottlingMs()) {
+                logger.run();
+                lastBookieUnavailableLogTimestamp = now;
             }
         }
     }
