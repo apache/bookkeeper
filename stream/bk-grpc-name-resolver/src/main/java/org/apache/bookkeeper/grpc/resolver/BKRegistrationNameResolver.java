@@ -38,7 +38,7 @@ import org.apache.bookkeeper.client.CachingBookieAddressResolver;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 
 /**
@@ -113,7 +113,7 @@ class BKRegistrationNameResolver extends NameResolver {
         });
     }
 
-    private List<EquivalentAddressGroup> hostsToEquivalentAddressGroups(Set<BookieSocketAddress> bookies) {
+    private List<EquivalentAddressGroup> hostsToEquivalentAddressGroups(Set<BookieId> bookies) {
         return bookies.stream()
             .map(addr -> new EquivalentAddressGroup(
                 Collections.singletonList(bookieAddressResolver.resolve(addr).getSocketAddress()),
