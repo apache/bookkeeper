@@ -25,6 +25,9 @@ import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 
+/**
+ * Watch for Bookkeeper cluster status.
+ */
 public interface BookieWatcher {
     Set<BookieId> getBookies() throws BKException;
     Set<BookieId> getAllBookies() throws BKException;

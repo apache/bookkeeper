@@ -135,15 +135,18 @@ public class BookieSocketAddress {
     public int hashCode() {
         return this.hostname.hashCode() + 13 * this.port;
     }
-    
+
     /**
-     * Create a BookieID in legacy format hostname:port
+     * Create a BookieID in legacy format hostname:port.
      * @return the BookieID
      */
     public BookieId toBookieId() {
         return BookieId.parse(this.toString());
     }
 
+    /**
+     * Simple converter from legacy BookieId to a real network address.
+     */
     public static BookieAddressResolver LEGACY_BOOKIEID_RESOLVER = (BookieId b) -> {
         try {
             return new BookieSocketAddress(b.toString());

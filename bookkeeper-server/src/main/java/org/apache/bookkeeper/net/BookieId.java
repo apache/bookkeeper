@@ -24,19 +24,19 @@ import java.util.Objects;
 import org.apache.bookkeeper.client.api.BookieID;
 
 /**
- * This is an identifier for a BookieID
+ * This is an identifier for a BookieID.
  */
 public final class BookieId implements BookieID {
 
     private final String id;
-    
+
     private BookieId(String id) {
         this.id = id;
     }
-    
+
     /**
-     * Returns the serialized version of this object
-     * @return 
+     * Returns the serialized version of this object.
+     * @return the bookieId
      */
     @Override
     public String toString() {
@@ -44,12 +44,12 @@ public final class BookieId implements BookieID {
     }
 
     /**
-     * Parses the given serialized representation of a BookieId
+     * Parses the given serialized representation of a BookieId.
      * @param serialized
      * @return the parsed BookieId
      */
-    public static BookieId parse(String serialized) {        
-       return new BookieId(serialized);        
+    public static BookieId parse(String serialized) {
+       return new BookieId(serialized);
     }
 
     @Override

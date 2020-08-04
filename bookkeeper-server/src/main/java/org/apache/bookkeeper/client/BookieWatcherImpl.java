@@ -28,18 +28,14 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.Sets;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
@@ -50,10 +46,8 @@ import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdher
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -115,7 +109,7 @@ class BookieWatcherImpl implements BookieWatcher {
     private volatile Set<BookieId> readOnlyBookies = Collections.emptySet();
 
     private CompletableFuture<?> initialWritableBookiesFuture = null;
-    private CompletableFuture<?> initialReadonlyBookiesFuture = null;    
+    private CompletableFuture<?> initialReadonlyBookiesFuture = null;
 
     private final CachingBookieAddressResolver bookieAddressResolver;
 
@@ -183,14 +177,14 @@ class BookieWatcherImpl implements BookieWatcher {
     private void invalidateResolvedBookieAddressCache(Set<BookieId> changedBookies) {
         for (BookieId address : changedBookies) {
             this.bookieAddressResolver.invalidateBookieAddress(address);
-        }        
+        }
     }
     // this callback is already not executed in zookeeper thread
     private synchronized void processWritableBookiesChanged(Set<BookieId> newBookieAddrs) {
         // Update watcher outside ZK callback thread, to avoid deadlock in case some other
         // component is trying to do a blocking ZK operation
         invalidateResolvedBookieAddressCache(Sets.difference(this.writableBookies, newBookieAddrs));
-        this.writableBookies = newBookieAddrs;        
+        this.writableBookies = newBookieAddrs;
         placementPolicy.onClusterChanged(newBookieAddrs, readOnlyBookies);
         // we don't need to close clients here, because:
         // a. the dead bookies will be removed from topology, which will not be used in new ensemble.
@@ -210,7 +204,7 @@ class BookieWatcherImpl implements BookieWatcher {
 
     private synchronized void processReadOnlyBookiesChanged(Set<BookieId> readOnlyBookies) {
         invalidateResolvedBookieAddressCache(Sets.difference(this.readOnlyBookies, readOnlyBookies));
-        this.readOnlyBookies = readOnlyBookies;        
+        this.readOnlyBookies = readOnlyBookies;
         placementPolicy.onClusterChanged(writableBookies, readOnlyBookies);
     }
 

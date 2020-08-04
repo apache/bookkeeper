@@ -27,7 +27,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,8 +41,8 @@ import java.util.function.Supplier;
 
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
-import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
@@ -64,7 +63,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     protected final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     protected Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
     // Initialize to empty set
-    protected ImmutableSet<BookieId> readOnlyBookies = ImmutableSet.of();    
+    protected ImmutableSet<BookieId> readOnlyBookies = ImmutableSet.of();
     boolean isWeighted;
     protected WeightedRandomSelection<BookieNode> weightedSelection;
     // for now, we just maintain the writable bookies' topology
@@ -740,7 +739,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 if (node != null) {
                     // refresh the rack info if its a known bookie
                     BookieNode newNode = createBookieNode(bookieAddress);
-                    topology.remove(node);                    
+                    topology.remove(node);
                     topology.add(newNode);
                     knownBookies.put(bookieAddress, newNode);
                 }

@@ -495,7 +495,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.bookieWatcher = new BookieWatcherImpl(
                 conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
                 this.statsLogger.scope(WATCHER_SCOPE));
-        
+
         // initialize bookie client
         this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
                 scheduler, rootStatsLogger, this.bookieWatcher.getBookieAddressResolver());
@@ -637,7 +637,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     BookieWatcher getBookieWatcher() {
         return bookieWatcher;
     }
-    
+
     public BookieAddressResolver getBookieAddressResolver() {
         return bookieWatcher.getBookieAddressResolver();
     }

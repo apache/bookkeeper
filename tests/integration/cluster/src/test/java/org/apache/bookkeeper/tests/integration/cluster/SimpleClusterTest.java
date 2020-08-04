@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tests.containers.BookieContainer;
 import org.junit.FixMethodOrder;
@@ -42,7 +43,7 @@ public class SimpleClusterTest extends BookKeeperClusterTestBase {
 
     @Test
     public void test000_ClusterIsEmpty() throws Exception {
-        Set<BookieSocketAddress> bookies =
+        Set<BookieId> bookies =
             FutureUtils.result(metadataClientDriver.getRegistrationClient().getWritableBookies()).getValue();
         assertTrue(bookies.isEmpty());
     }
@@ -55,7 +56,7 @@ public class SimpleClusterTest extends BookKeeperClusterTestBase {
         assertEquals(1, bkCluster.getBookieContainers().size());
         assertSame(container, bkCluster.getBookie(bookieName));
 
-        Set<BookieSocketAddress> bookies =
+        Set<BookieId> bookies =
             FutureUtils.result(metadataClientDriver.getRegistrationClient().getWritableBookies()).getValue();
         assertEquals(1, bookies.size());
     }
@@ -70,7 +71,7 @@ public class SimpleClusterTest extends BookKeeperClusterTestBase {
 
         waitUntilBookieUnregistered(bookieName);
 
-        Set<BookieSocketAddress> bookies =
+        Set<BookieId> bookies =
             FutureUtils.result(metadataClientDriver.getRegistrationClient().getWritableBookies()).getValue();
         assertEquals(0, bookies.size());
     }
