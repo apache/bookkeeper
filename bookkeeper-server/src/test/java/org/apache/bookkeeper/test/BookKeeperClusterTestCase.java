@@ -274,7 +274,7 @@ public abstract class BookKeeperClusterTestCase {
             if (autoRecovery != null && isAutoRecoveryEnabled()) {
                 autoRecovery.shutdown();
                 LOG.debug("Shutdown auto recovery for bookieserver:"
-                        + server.getLocalAddress());
+                        + server.getBookieId());
             }
         }
         bs.clear();
@@ -364,7 +364,7 @@ public abstract class BookKeeperClusterTestCase {
     public ServerConfiguration getBkConf(BookieId addr) throws Exception {
         int bkIndex = 0;
         for (BookieServer server : bs) {
-            if (server.getLocalAddress().equals(addr)) {
+            if (server.getBookieId().equals(addr)) {
                 break;
             }
             ++bkIndex;
@@ -388,7 +388,7 @@ public abstract class BookKeeperClusterTestCase {
         BookieServer toRemove = null;
         int toRemoveIndex = 0;
         for (BookieServer server : bs) {
-            if (server.getLocalAddress().equals(addr)) {
+            if (server.getBookieId().equals(addr)) {
                 server.shutdown();
                 toRemove = server;
                 break;
@@ -413,7 +413,7 @@ public abstract class BookKeeperClusterTestCase {
      */
     public void setBookieToReadOnly(BookieId addr) throws InterruptedException, UnknownHostException {
         for (BookieServer server : bs) {
-            if (server.getLocalAddress().equals(addr)) {
+            if (server.getBookieId().equals(addr)) {
                 server.getBookie().getStateManager().doTransitionToReadOnlyMode();
                 break;
             }
@@ -438,7 +438,7 @@ public abstract class BookKeeperClusterTestCase {
         server.shutdown();
         stopAutoRecoveryService(server);
         bs.remove(server);
-        bsLoggers.remove(server.getLocalAddress());
+        bsLoggers.remove(server.getBookieId());
         return bsConfs.remove(index);
     }
 
@@ -456,7 +456,7 @@ public abstract class BookKeeperClusterTestCase {
         BookieServer server = bs.get(index);
         ServerConfiguration ret = killBookie(index);
         while (zkc.exists(ZKMetadataDriverBase.resolveZkLedgersRootPath(baseConf) + "/" + AVAILABLE_NODE + "/"
-                + server.getLocalAddress().toString(), false) != null) {
+                + server.getBookieId().toString(), false) != null) {
             Thread.sleep(500);
         }
         return ret;
@@ -476,18 +476,18 @@ public abstract class BookKeeperClusterTestCase {
     public CountDownLatch sleepBookie(BookieId addr, final int seconds)
             throws Exception {
         for (final BookieServer bookie : bs) {
-            if (bookie.getLocalAddress().equals(addr)) {
+            if (bookie.getBookieId().equals(addr)) {
                 final CountDownLatch l = new CountDownLatch(1);
                 Thread sleeper = new Thread() {
                         @Override
                         public void run() {
                             try {
                                 bookie.suspendProcessing();
-                                LOG.info("bookie {} is asleep", bookie.getLocalAddress());
+                                LOG.info("bookie {} is asleep", bookie.getBookieId());
                                 l.countDown();
                                 Thread.sleep(seconds * 1000);
                                 bookie.resumeProcessing();
-                                LOG.info("bookie {} is awake", bookie.getLocalAddress());
+                                LOG.info("bookie {} is awake", bookie.getBookieId());
                             } catch (Exception e) {
                                 LOG.error("Error suspending bookie", e);
                             }
@@ -520,7 +520,7 @@ public abstract class BookKeeperClusterTestCase {
     public void sleepBookie(BookieId addr, final CountDownLatch l, final CountDownLatch suspendLatch)
             throws InterruptedException, IOException {
         for (final BookieServer bookie : bs) {
-            if (bookie.getLocalAddress().equals(addr)) {
+            if (bookie.getBookieId().equals(addr)) {
                 LOG.info("Sleep bookie {}.", addr);
                 Thread sleeper = new Thread() {
                     @Override
@@ -572,7 +572,7 @@ public abstract class BookKeeperClusterTestCase {
         BookieServer toRemove = null;
         int toRemoveIndex = 0;
         for (BookieServer server : bs) {
-            if (server.getLocalAddress().equals(addr)) {
+            if (server.getBookieId().equals(addr)) {
                 toRemove = server;
                 break;
             }
@@ -764,7 +764,7 @@ public abstract class BookKeeperClusterTestCase {
             autoRecoveryProcess.start();
             autoRecoveryProcesses.put(bserver, autoRecoveryProcess);
             LOG.debug("Starting Auditor Recovery for the bookie:"
-                    + bserver.getLocalAddress());
+                    + bserver.getBookieId());
         }
     }
 
@@ -774,7 +774,7 @@ public abstract class BookKeeperClusterTestCase {
         if (null != autoRecoveryMain && isAutoRecoveryEnabled()) {
             autoRecoveryMain.shutdown();
             LOG.debug("Shutdown auto recovery for bookieserver:"
-                    + toRemove.getLocalAddress());
+                    + toRemove.getBookieId());
         }
     }
 
@@ -802,7 +802,7 @@ public abstract class BookKeeperClusterTestCase {
                 .entrySet()) {
             autoRecoveryProcess.getValue().shutdown();
             LOG.debug("Shutdown Auditor Recovery for the bookie:"
-                    + autoRecoveryProcess.getKey().getLocalAddress());
+                    + autoRecoveryProcess.getKey().getBookieId());
         }
     }
 

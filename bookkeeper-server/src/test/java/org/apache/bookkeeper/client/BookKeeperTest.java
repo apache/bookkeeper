@@ -1037,7 +1037,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             LOG.info("Putting all non ensemble bookies to sleep.");
             for (BookieServer bookieServer : bs) {
                 try {
-                    if (!lh.getCurrentEnsemble().contains(bookieServer.getLocalAddress())) {
+                    if (!lh.getCurrentEnsemble().contains(bookieServer.getBookieId())) {
                         sleepBookie(bookieServer.getBookieId(), sleepLatchCase2);
                     }
                 } catch (UnknownHostException ignored) {}

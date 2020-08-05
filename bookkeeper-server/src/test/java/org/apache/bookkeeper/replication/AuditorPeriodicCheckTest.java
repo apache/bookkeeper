@@ -105,7 +105,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             ServerConfiguration conf = new ServerConfiguration(bsConfs.get(i));
             conf.setAuditorPeriodicCheckInterval(CHECK_INTERVAL);
 
-            String addr = bs.get(i).getLocalAddress().toString();
+            String addr = bs.get(i).getBookieId().toString();
 
             AuditorElector auditorElector = new AuditorElector(addr, conf);
             auditorElectors.put(addr, auditorElector);
@@ -706,7 +706,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         // Identify a bookie in the current ledger ensemble to be replaced
         BookieId replacedBookie = null;
         for (int i = 0; i < numBookies; i++) {
-            if (curEnsemble.contains(bs.get(i).getLocalAddress())) {
+            if (curEnsemble.contains(bs.get(i).getBookieId())) {
                 bookieIdx = i;
                 replacedBookie = bs.get(i).getBookieId();
                 break;
@@ -714,7 +714,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         }
         assertNotEquals("Couldn't find ensemble bookie in bookie list", -1, bookieIdx);
 
-        LOG.info("Killing bookie " + bs.get(bookieIdx).getLocalAddress());
+        LOG.info("Killing bookie " + bs.get(bookieIdx).getBookieId());
         ServerConfiguration conf = killBookie(bookieIdx);
         Bookie writeFailingBookie = new Bookie(conf) {
             @Override

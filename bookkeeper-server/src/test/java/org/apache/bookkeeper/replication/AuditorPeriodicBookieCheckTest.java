@@ -67,7 +67,7 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
         conf.setAuditorPeriodicBookieCheckInterval(CHECK_INTERVAL);
         conf.setMetadataServiceUri(metadataServiceUri);
         conf.setProperty("clientConnectTimeoutMillis", 500);
-        String addr = bs.get(0).getLocalAddress().toString();
+        String addr = bs.get(0).getBookieId().toString();
 
         auditorElector = new AuditorElector(addr, conf);
         auditorElector.start();

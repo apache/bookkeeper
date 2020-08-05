@@ -147,7 +147,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
     private void startAuditorElectors() throws Exception {
         for (BookieServer bserver : bs) {
-            String addr = bserver.getLocalAddress().toString();
+            String addr = bserver.getBookieId().toString();
             AuditorElector auditorElector = new AuditorElector(addr, baseConf);
             auditorElectors.put(addr, auditorElector);
             auditorElector.start();
@@ -850,7 +850,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
     private String shutdownBookie(int bkShutdownIndex) throws Exception {
         BookieServer bkServer = bs.get(bkShutdownIndex);
-        String bookieAddr = bkServer.getLocalAddress().toString();
+        String bookieAddr = bkServer.getBookieId().toString();
         LOG.debug("Shutting down bookie:" + bookieAddr);
         killBookie(bkShutdownIndex);
         auditorElectors.get(bookieAddr).shutdown();
@@ -930,7 +930,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         byte[] data = zkc.getData(electionPath, false, null);
         assertNotNull("Auditor election failed", data);
         for (BookieServer bks : bs) {
-            if (new String(data).contains(bks.getLocalAddress().getPort() + "")) {
+            if (new String(data).contains(bks.getBookieId() + "")) {
                 auditors.add(bks);
             }
         }
@@ -941,7 +941,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
     private Auditor getAuditorBookiesAuditor() throws Exception {
         BookieServer auditorBookieServer = getAuditorBookie();
-        String bookieAddr = auditorBookieServer.getLocalAddress().toString();
+        String bookieAddr = auditorBookieServer.getBookieId().toString();
         return auditorElectors.get(bookieAddr).auditor;
     }
 
@@ -962,7 +962,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         int indexOf = bs.indexOf(getAuditorBookie());
         int bkIndexDownBookie = 0;
         for (int i = 0; i < bs.size(); i++) {
-            if (i == indexOf || bs.get(i).getLocalAddress().toString().equals(exclude)) {
+            if (i == indexOf || bs.get(i).getBookieId().toString().equals(exclude)) {
                 continue;
             }
             bkIndexDownBookie = i;

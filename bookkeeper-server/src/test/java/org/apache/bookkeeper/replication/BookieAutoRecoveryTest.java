@@ -590,7 +590,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         BookieId inetSocketAddress = openLedger.getLedgerMetadata().getAllEnsembles().get(0L)
                 .get(ledgerReplicaIndex);
         assertEquals("Rereplication has been failed and ledgerReplicaIndex :"
-                + ledgerReplicaIndex, newBookieServer.getLocalAddress(),
+                + ledgerReplicaIndex, newBookieServer.getBookieId(),
                 inetSocketAddress);
         openLedger.close();
     }

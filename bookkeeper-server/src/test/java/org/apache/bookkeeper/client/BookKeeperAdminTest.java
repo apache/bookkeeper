@@ -165,8 +165,8 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         assertTrue("There are supposed to be underreplicatedledgers", underreplicatedLedgerItr.hasNext());
         UnderreplicatedLedger underreplicatedLedger = underreplicatedLedgerItr.next();
         assertEquals("Underreplicated ledgerId", ledgerId, underreplicatedLedger.getLedgerId());
-        assertTrue("Missingreplica of Underreplicated ledgerId should contain " + bookieToKill.getLocalAddress(),
-                underreplicatedLedger.getReplicaList().contains(bookieToKill.getLocalAddress().toString()));
+        assertTrue("Missingreplica of Underreplicated ledgerId should contain " + bookieToKill.getBookieId(),
+                underreplicatedLedger.getReplicaList().contains(bookieToKill.getBookieId().toString()));
         if (storeSystemTimeAsLedgerUnderreplicatedMarkTime) {
             long ctimeOfURL = underreplicatedLedger.getCtime();
             assertTrue("ctime of underreplicated ledger should be greater than test starttime",
@@ -534,23 +534,23 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             Assert.assertEquals(availableBookies.size(), bs.size());
 
             for (int i = 0; i < bs.size(); i++) {
-                availableBookies.contains(bs.get(i).getLocalAddress());
+                availableBookies.contains(bs.get(i).getBookieId());
             }
 
             BookieServer killedBookie = bs.get(1);
             killBookieAndWaitForZK(1);
 
             Collection<BookieId> remainingBookies = bkAdmin.getAvailableBookies();
-            Assert.assertFalse(remainingBookies.contains(killedBookie.getLocalAddress()));
+            Assert.assertFalse(remainingBookies.contains(killedBookie.getBookieId()));
 
             Collection<BookieId> allBookies = bkAdmin.getAllBookies();
             for (int i = 0; i < bs.size(); i++) {
-                remainingBookies.contains(bs.get(i).getLocalAddress());
-                allBookies.contains(bs.get(i).getLocalAddress());
+                remainingBookies.contains(bs.get(i).getBookieId());
+                allBookies.contains(bs.get(i).getBookieId());
             }
 
             Assert.assertEquals(remainingBookies.size(), allBookies.size() - 1);
-            Assert.assertTrue(allBookies.contains(killedBookie.getLocalAddress()));
+            Assert.assertTrue(allBookies.contains(killedBookie.getBookieId()));
         }
     }
 
@@ -682,9 +682,9 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         ServerConfiguration bkConf = newServerConfiguration().setForceReadOnlyBookie(readonly);
         BookieServer bkServer = startBookie(bkConf);
 
-        String bookieId = bkServer.getLocalAddress().toString();
-        String host = bkServer.getLocalAddress().getHostName();
-        int port = bkServer.getLocalAddress().getPort();
+        String bookieId = bkServer.getBookieId().toString();
+        String host = bkServer.getBookieId().getHostName();
+        int port = bkServer.getBookieId().getPort();
 
         if (legacy) {
             String regPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(bkConf) + "/" + AVAILABLE_NODE;
