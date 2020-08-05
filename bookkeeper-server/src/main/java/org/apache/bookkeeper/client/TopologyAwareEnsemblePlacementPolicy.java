@@ -43,6 +43,7 @@ import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieNode;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
@@ -776,6 +777,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
     protected BookieNode createBookieNode(BookieId addr) {
         return new BookieNode(addr, resolveNetworkLocation(addr));
+    }
+    
+    protected BookieNode createDummyLocalBookieNode(String hostname) {
+        return new BookieNode(BookieId.parse(hostname+":0"),
+                NetUtils.resolveNetworkLocation(dnsResolver, new BookieSocketAddress(hostname, 0)));
     }
 
     protected String resolveNetworkLocation(BookieId addr) {

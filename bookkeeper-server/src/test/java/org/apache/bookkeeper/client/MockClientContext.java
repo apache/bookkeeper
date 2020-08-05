@@ -33,6 +33,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.MockRegistrationClient;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.MockLedgerManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.MockBookieClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -61,7 +62,8 @@ public class MockClientContext implements ClientContext {
         MockRegistrationClient regClient = new MockRegistrationClient();
         EnsemblePlacementPolicy placementPolicy = new DefaultEnsemblePlacementPolicy();
         BookieWatcherImpl bookieWatcherImpl = new BookieWatcherImpl(conf, placementPolicy,
-                                                                    regClient, NullStatsLogger.INSTANCE);
+                                                                    regClient, new CachingBookieAddressResolver(regClient),
+                                                                    NullStatsLogger.INSTANCE);
         bookieWatcherImpl.initialBlockingBookieRead();
 
         return new MockClientContext()

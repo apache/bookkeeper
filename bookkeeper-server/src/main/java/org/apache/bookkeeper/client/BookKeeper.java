@@ -486,14 +486,15 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.requestTimer = requestTimer;
             this.ownTimer = false;
         }
-
+        
+        CachingBookieAddressResolver bookieAddressResolver = new CachingBookieAddressResolver(metadataDriver.getRegistrationClient());
+        
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
-                dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger);
-
-
+                dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger, bookieAddressResolver);
+        
         this.bookieWatcher = new BookieWatcherImpl(
-                conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
+                conf, this.placementPolicy, metadataDriver.getRegistrationClient(), bookieAddressResolver, 
                 this.statsLogger.scope(WATCHER_SCOPE));
 
         // initialize bookie client
@@ -558,12 +559,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                                                       DNSToSwitchMapping dnsResolver,
                                                                       HashedWheelTimer timer,
                                                                       FeatureProvider featureProvider,
-                                                                      StatsLogger statsLogger)
+                                                                      StatsLogger statsLogger,
+                                                                      BookieAddressResolver bookieAddressResolver)
         throws IOException {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
             return ReflectionUtils.newInstance(policyCls).initialize(conf, java.util.Optional.ofNullable(dnsResolver),
-                    timer, featureProvider, statsLogger, bookieWatcher.getBookieAddressResolver());
+                    timer, featureProvider, statsLogger, bookieAddressResolver);
         } catch (ConfigurationException e) {
             throw new IOException("Failed to initialize ensemble placement policy : ", e);
         }

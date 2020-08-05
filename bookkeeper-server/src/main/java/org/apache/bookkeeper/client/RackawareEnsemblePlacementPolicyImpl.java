@@ -205,7 +205,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         BookieNode bn = null;
         if (!ignoreLocalNodeInPlacementPolicy) {
             try {
-                bn = createBookieNode(new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0).toBookieId());
+                bn = createDummyLocalBookieNode(InetAddress.getLocalHost().getHostAddress());
             } catch (IOException e) {
                 LOG.error("Failed to get local host address : ", e);
             }

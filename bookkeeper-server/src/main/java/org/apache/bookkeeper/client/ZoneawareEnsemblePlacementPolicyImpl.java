@@ -248,8 +248,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             this.topology = new NetworkTopologyImpl();
         }
         try {
-            myNode = createBookieNode(
-                    new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0).toBookieId());
+            myNode = createDummyLocalBookieNode(InetAddress.getLocalHost().getHostAddress());
             myZone = getZoneAwareNodeLocation(myNode).getZone();
         } catch (IOException e) {
             LOG.error("Failed to get local host address : ", e);

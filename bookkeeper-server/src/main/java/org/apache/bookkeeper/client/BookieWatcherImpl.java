@@ -116,9 +116,10 @@ class BookieWatcherImpl implements BookieWatcher {
     public BookieWatcherImpl(ClientConfiguration conf,
                              EnsemblePlacementPolicy placementPolicy,
                              RegistrationClient registrationClient,
+                             CachingBookieAddressResolver bookieAddressResolver,
                              StatsLogger statsLogger)  {
         this.conf = conf;
-        this.bookieAddressResolver = new CachingBookieAddressResolver(registrationClient);
+        this.bookieAddressResolver = bookieAddressResolver;
         this.placementPolicy = placementPolicy;
         this.registrationClient = registrationClient;
         this.quarantinedBookies = CacheBuilder.newBuilder()
