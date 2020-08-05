@@ -683,8 +683,8 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         BookieServer bkServer = startBookie(bkConf);
 
         String bookieId = bkServer.getBookieId().toString();
-        String host = bkServer.getBookieId().getHostName();
-        int port = bkServer.getBookieId().getPort();
+        String host = bkServer.getLocalAddress().getHostName();
+        int port = bkServer.getLocalAddress().getPort();
 
         if (legacy) {
             String regPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(bkConf) + "/" + AVAILABLE_NODE;
