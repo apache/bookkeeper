@@ -470,7 +470,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
-                .newEnsembleEntry(0L,bookieAddresses.subList(0, 5))
+                .newEnsembleEntry(0L, bookieAddresses.subList(0, 5))
                 .newEnsembleEntry(20L, bookieAddresses.subList(1, 6))
                 .withClosedState()
                 .withLastEntryId(100)

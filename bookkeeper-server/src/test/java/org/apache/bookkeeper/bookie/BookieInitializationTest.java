@@ -37,7 +37,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
@@ -413,7 +412,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setUseHostNameAsBookieID(true)
             .setListeningInterface(null);
 
-        final BookieId bookieId = BookieId.parse(InetAddress.getLocalHost().getCanonicalHostName() + ":" + conf.getBookiePort());
+        final BookieId bookieId =
+                BookieId.parse(InetAddress.getLocalHost().getCanonicalHostName() + ":" + conf.getBookiePort());
 
         driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
         try (StateManager manager = new BookieStateManager(conf, driver)) {

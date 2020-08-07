@@ -71,7 +71,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         assertEquals("10.0.0.1", conf.getAdvertisedAddress());
 
         BookieSocketAddress bkAddress = new BookieSocketAddress("10.0.0.1", bookiePort);
-        assertEquals(bkAddress, Bookie.getBookieAddress(conf));        
+        assertEquals(bkAddress, Bookie.getBookieAddress(conf));
         assertEquals(bkAddress.toBookieId(), Bookie.getBookieId(conf));
 
         Bookie b = new Bookie(conf);
