@@ -223,11 +223,16 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         }
 
         // only three racks
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(0)).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(1)).getHostName(), "/rack2");
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(2)).getHostName(), "/rack3");
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(3)).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(4)).getHostName(), "/rack2");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(0)).getHostName(), "/rack1");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(1)).getHostName(), "/rack2");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(2)).getHostName(), "/rack3");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(3)).getHostName(), "/rack1");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(4)).getHostName(), "/rack2");
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
@@ -434,13 +439,20 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         }
 
         // only three racks
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(0)).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(1)).getHostName(), "/rack2");
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(2)).getHostName(), "/rack3");
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(3)).getHostName(), "/rack4");
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(4)).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(5)).getHostName(), "/rack2");
-        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver().resolve(bookieAddresses.get(6)).getHostName(), "/rack3");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(0)).getHostName(), "/rack1");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(1)).getHostName(), "/rack2");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(2)).getHostName(), "/rack3");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(3)).getHostName(), "/rack4");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(4)).getHostName(), "/rack1");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(5)).getHostName(), "/rack2");
+        StaticDNSResolver.addNodeToRack(bkc.getBookieAddressResolver()
+                .resolve(bookieAddresses.get(6)).getHostName(), "/rack3");
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();

@@ -43,10 +43,10 @@ import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdher
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementResult;
 import org.apache.bookkeeper.client.ZoneawareEnsemblePlacementPolicyImpl.ZoneAwareNodeLocation;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.junit.Test;
@@ -97,7 +97,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
                 conf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS, conf.getTimeoutTimerNumTicks());
 
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
     }
 
@@ -154,7 +155,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(1);
         newConf.setMinNumZonesPerWriteQuorum(1);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -219,7 +221,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(2);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -277,7 +280,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         ClientConfiguration newConf = (ClientConfiguration) this.conf.clone();
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -341,7 +345,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(3);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -389,7 +394,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setMinNumZonesPerWriteQuorum(3);
         newConf.setEnforceStrictZoneawarePlacement(false);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
         zepp.onClusterChanged(rwAddrs, roAddrs);
 
@@ -433,7 +439,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(2);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -528,7 +535,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(2);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -638,7 +646,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(5);
         newConf.setMinNumZonesPerWriteQuorum(minNumZonesPerWriteQuorum);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         zepp.onClusterChanged(rwAddrs, roAddrs);
@@ -714,7 +723,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(3);
         newConf.setMinNumZonesPerWriteQuorum(3);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -807,7 +817,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(3);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -873,7 +884,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(2);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -907,7 +919,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newConf.setDesiredNumZonesPerWriteQuorum(4);
         newConf.setMinNumZonesPerWriteQuorum(4);
         zepp = new ZoneawareEnsemblePlacementPolicy();
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         zepp.onClusterChanged(rwAddrs, roAddrs);
@@ -960,7 +973,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
          */
         newConf.setBookieMaxWeightMultipleForWeightBasedPlacement(-1);
         newConf.setMinNumZonesPerWriteQuorum(0);
-        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         zepp.onClusterChanged(addrs, new HashSet<BookieId>());
@@ -1034,7 +1048,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         ClientConfiguration confLocal = new ClientConfiguration();
         confLocal.addConfiguration(conf);
         confLocal.setNetworkTopologyStabilizePeriodSeconds(99999);
-        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> addrs = new HashSet<BookieId>();
@@ -1089,7 +1104,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         confLocal.setEnforceStrictZoneawarePlacement(false);
         confLocal.setMinNumZonesPerWriteQuorum(3);
         confLocal.setDesiredNumZonesPerWriteQuorum(4);
-        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -1155,7 +1171,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         confLocal.setEnforceStrictZoneawarePlacement(false);
         confLocal.setMinNumZonesPerWriteQuorum(3);
         confLocal.setDesiredNumZonesPerWriteQuorum(4);
-        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         Set<BookieId> rwAddrs = new HashSet<BookieId>();
@@ -1234,7 +1251,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         confLocal.setEnforceStrictZoneawarePlacement(true);
         confLocal.setMinNumZonesPerWriteQuorum(2);
         confLocal.setDesiredNumZonesPerWriteQuorum(3);
-        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
         List<BookieId> ensemble = new ArrayList<BookieId>();
