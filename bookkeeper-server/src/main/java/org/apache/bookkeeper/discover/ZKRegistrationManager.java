@@ -284,7 +284,8 @@ public class ZKRegistrationManager implements RegistrationManager {
         }
     }
 
-    private void doRegisterReadOnlyBookie(BookieId bookieId, BookieServiceInfo bookieServiceInfo) throws BookieException {
+    private void doRegisterReadOnlyBookie(BookieId bookieId, BookieServiceInfo bookieServiceInfo)
+            throws BookieException {
         try {
             if (null == zk.exists(this.bookieReadonlyRegistrationPath, false)) {
                 try {

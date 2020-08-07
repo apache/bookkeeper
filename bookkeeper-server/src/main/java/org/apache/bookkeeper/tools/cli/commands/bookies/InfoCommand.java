@@ -84,7 +84,8 @@ public class InfoCommand extends BookieCommand<CliFlags> {
             for (Map.Entry<BookieId, BookieInfo> e : map.entrySet()) {
                 BookieInfo bInfo = e.getValue();
                 BookieId bookieId = e.getKey();
-                System.out.println(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId, bk.getBookieAddressResolver())
+                System.out.println(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId,
+                        bk.getBookieAddressResolver())
                     + ":\tFree: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace())
                     + "\tTotal: " + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
             }

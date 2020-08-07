@@ -196,7 +196,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             clientConfiguration = v3Conf;
         }
         return new PerChannelBookieClient(clientConfiguration, executor, eventLoopGroup, allocator, address,
-                                   statsLoggerForPCBC, authProviderFactory, registry, pcbcPool, shFactory, bookieAddressResolver);
+                                   statsLoggerForPCBC, authProviderFactory, registry, pcbcPool,
+                                   shFactory, bookieAddressResolver);
     }
 
     public PerChannelBookieClientPool lookupClient(BookieId addr) {

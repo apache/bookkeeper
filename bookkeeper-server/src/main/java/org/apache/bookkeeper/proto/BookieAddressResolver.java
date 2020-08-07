@@ -23,11 +23,11 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
  that it to a network address.
  */
 public interface BookieAddressResolver {
-    
+
     /**
      * Maps a logical address to a network address.
      * @param address
      * @return a mapped address.
      */
-    public BookieSocketAddress resolve(BookieId address);
+    BookieSocketAddress resolve(BookieId address);
 }

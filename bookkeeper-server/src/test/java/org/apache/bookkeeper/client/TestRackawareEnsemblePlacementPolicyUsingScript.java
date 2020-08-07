@@ -41,9 +41,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.CommonConfigurationKeys;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.Shell;
@@ -86,7 +86,8 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
                 conf.getTimeoutTimerNumTicks());
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer,
+                DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
     }
 
     @After
@@ -421,7 +422,8 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
                 newConf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS, newConf.getTimeoutTimerNumTicks());
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer,
+                DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
         repp.uninitalize();
         repp = new RackawareEnsemblePlacementPolicy();
@@ -471,7 +473,8 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
             for (int j = 0; j < writeQuorumSize; j++) {
                 int bookieIdx = (i + j) % ensembleSize;
                 BookieId addr = ensemble.get(bookieIdx);
-                String hostAddress = repp.bookieAddressResolver.resolve(addr).getSocketAddress().getAddress().getHostAddress();
+                String hostAddress = repp.bookieAddressResolver.resolve(addr)
+                                            .getSocketAddress().getAddress().getHostAddress();
                 String rack = "/" + hostAddress.charAt(hostAddress.length() - 1);
                 racks.add(rack);
             }

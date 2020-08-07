@@ -18,7 +18,6 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
-import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;

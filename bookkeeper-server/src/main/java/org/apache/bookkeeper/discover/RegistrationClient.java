@@ -80,7 +80,8 @@ public interface RegistrationClient extends AutoCloseable {
      */
     default CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(BookieId bookieId) {
         try {
-            BookieServiceInfo bookieServiceInfo = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId.toString());
+            BookieServiceInfo bookieServiceInfo = BookieServiceInfoUtils
+                    .buildLegacyBookieServiceInfo(bookieId.toString());
             return FutureUtils.value(new Versioned<>(bookieServiceInfo, new LongVersion(-1)));
         } catch (UnknownHostException e) {
             return FutureUtils.exception(e);

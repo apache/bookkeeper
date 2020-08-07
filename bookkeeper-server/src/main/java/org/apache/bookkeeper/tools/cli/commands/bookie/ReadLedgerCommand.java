@@ -184,7 +184,8 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                     new DefaultThreadFactory("BookKeeperClientSchedulerPool"));
 
                 BookieClient bookieClient = new BookieClientImpl(conf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT,
-                                                                 executor, scheduler, NullStatsLogger.INSTANCE, bk.getBookieAddressResolver());
+                                                                 executor, scheduler, NullStatsLogger.INSTANCE,
+                                                                 bk.getBookieAddressResolver());
 
                 LongStream.range(flags.firstEntryId, lastEntry).forEach(entryId -> {
                     CompletableFuture<Void> future = new CompletableFuture<>();

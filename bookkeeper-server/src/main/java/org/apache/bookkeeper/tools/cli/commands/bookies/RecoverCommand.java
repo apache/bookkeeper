@@ -23,7 +23,6 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;

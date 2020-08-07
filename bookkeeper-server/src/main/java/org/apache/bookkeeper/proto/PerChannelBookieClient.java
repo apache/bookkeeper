@@ -57,7 +57,6 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
-import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
@@ -345,8 +344,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieId bookieId,
                                   ClientAuthProvider.Factory authProviderFactory,
-                                  ExtensionRegistry extRegistry, BookieAddressResolver bookieAddressResolver) throws SecurityException {
-        this(new ClientConfiguration(), executor, eventLoopGroup, bookieId, NullStatsLogger.INSTANCE,
+                                  ExtensionRegistry extRegistry, BookieAddressResolver bookieAddressResolver)
+            throws SecurityException {
+        this(new ClientConfiguration(), executor, eventLoopGroup, bookieId,
+                NullStatsLogger.INSTANCE,
                 authProviderFactory, extRegistry, null, bookieAddressResolver);
     }
 
@@ -354,7 +355,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                   EventLoopGroup eventLoopGroup, BookieId bookieId,
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
-                                  PerChannelBookieClientPool pcbcPool, BookieAddressResolver bookieAddressResolver) throws SecurityException {
+                                  PerChannelBookieClientPool pcbcPool, BookieAddressResolver bookieAddressResolver)
+            throws SecurityException {
         this(conf, executor, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, bookieId, NullStatsLogger.INSTANCE,
                 authProviderFactory, extRegistry, pcbcPool, null, bookieAddressResolver);
     }
@@ -495,13 +497,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         };
     }
-    
+
     public static String buildStatsLoggerScopeName(BookieSocketAddress addr) {
         StringBuilder nameBuilder = new StringBuilder();
         nameBuilder.append(addr.getHostName().replace('.', '_').replace('-', '_')).append("_").append(addr.getPort());
         return nameBuilder.toString();
     }
- 
+
     private void completeOperation(GenericCallback<PerChannelBookieClient> op, int rc) {
         //Thread.dumpStack();
         closeLock.readLock().lock();
@@ -578,7 +580,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 pipeline.addLast("mainhandler", PerChannelBookieClient.this);
             }
         });
-        
+
         SocketAddress bookieAddr = addr.getSocketAddress();
         if (eventLoopGroup instanceof DefaultEventLoopGroup) {
             bookieAddr = addr.getLocalAddress();
