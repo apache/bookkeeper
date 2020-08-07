@@ -147,7 +147,7 @@ public class BookieSocketAddress {
     /**
      * Simple converter from legacy BookieId to a real network address.
      */
-    public static BookieAddressResolver LEGACY_BOOKIEID_RESOLVER = (BookieId b) -> {
+    public static final BookieAddressResolver LEGACY_BOOKIEID_RESOLVER = (BookieId b) -> {
         try {
             return new BookieSocketAddress(b.toString());
         } catch (UnknownHostException err) {

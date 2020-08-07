@@ -25,8 +25,8 @@ import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemb
 import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
-import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.Node;
 
 /**

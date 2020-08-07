@@ -21,7 +21,6 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
-import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Collection;

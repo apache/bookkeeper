@@ -54,7 +54,6 @@ import org.apache.bookkeeper.conf.Configurable;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieNode;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NetworkTopologyImpl;

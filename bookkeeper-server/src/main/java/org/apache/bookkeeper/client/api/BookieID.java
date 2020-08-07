@@ -29,5 +29,5 @@ package org.apache.bookkeeper.client.api;
  * </ul>
  */
 public interface BookieID {
-    
+
 }

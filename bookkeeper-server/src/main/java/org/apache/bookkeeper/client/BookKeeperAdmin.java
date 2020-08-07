@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
@@ -227,7 +226,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     public BookieAddressResolver getBookieAddressResolver() {
         return bkc.bookieWatcher.getBookieAddressResolver();
     }
-    
+
     @SneakyThrows
     public BookieServiceInfo getBookieServiceInfo(String bookiedId)
             throws BKException {

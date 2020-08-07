@@ -778,9 +778,9 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     protected BookieNode createBookieNode(BookieId addr) {
         return new BookieNode(addr, resolveNetworkLocation(addr));
     }
-    
+
     protected BookieNode createDummyLocalBookieNode(String hostname) {
-        return new BookieNode(BookieId.parse(hostname+":0"),
+        return new BookieNode(BookieId.parse(hostname + ":0"),
                 NetUtils.resolveNetworkLocation(dnsResolver, new BookieSocketAddress(hostname, 0)));
     }
 

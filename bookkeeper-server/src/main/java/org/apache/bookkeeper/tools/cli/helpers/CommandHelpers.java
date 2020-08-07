@@ -54,8 +54,8 @@ public final class CommandHelpers {
             bookieSocketAddrStringRepresentation = hostname + "(" + otherFormOfHostname + ")" + ":"
                 + networkAddress.getSocketAddress().getPort();
         } else {
-            bookieSocketAddrStringRepresentation = bookidId+" - "+hostname + "(" + otherFormOfHostname + ")" + ":"
-                + networkAddress.getSocketAddress().getPort();
+            bookieSocketAddrStringRepresentation = bookidId + " - " + hostname + "(" + otherFormOfHostname + ")" + ":"
+                    + networkAddress.getSocketAddress().getPort();
         }
         return bookieSocketAddrStringRepresentation;
     }

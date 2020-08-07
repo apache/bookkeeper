@@ -26,8 +26,8 @@ import java.util.Set;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
-import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;

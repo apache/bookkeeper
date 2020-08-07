@@ -486,15 +486,16 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.requestTimer = requestTimer;
             this.ownTimer = false;
         }
-        
-        CachingBookieAddressResolver bookieAddressResolver = new CachingBookieAddressResolver(metadataDriver.getRegistrationClient());
-        
+
+        CachingBookieAddressResolver bookieAddressResolver =
+                new CachingBookieAddressResolver(metadataDriver.getRegistrationClient());
+
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
                 dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger, bookieAddressResolver);
-        
+
         this.bookieWatcher = new BookieWatcherImpl(
-                conf, this.placementPolicy, metadataDriver.getRegistrationClient(), bookieAddressResolver, 
+                conf, this.placementPolicy, metadataDriver.getRegistrationClient(), bookieAddressResolver,
                 this.statsLogger.scope(WATCHER_SCOPE));
 
         // initialize bookie client

@@ -31,8 +31,9 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
  */
 @Slf4j
 public class CachingBookieAddressResolver implements BookieAddressResolver {
-    
-    private final ConcurrentHashMap<BookieId, BookieSocketAddress> resolvedBookieAddressCache = new ConcurrentHashMap<>();
+
+    private final ConcurrentHashMap<BookieId, BookieSocketAddress> resolvedBookieAddressCache
+            = new ConcurrentHashMap<>();
     private final RegistrationClient registrationClient;
 
     public CachingBookieAddressResolver(RegistrationClient registrationClient) {
@@ -66,5 +67,5 @@ public class CachingBookieAddressResolver implements BookieAddressResolver {
             throw new RuntimeException("Cannot resolve address of bookie " + address, ex);
         }
     }
-    
+
 }

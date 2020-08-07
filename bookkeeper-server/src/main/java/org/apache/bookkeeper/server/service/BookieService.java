@@ -28,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher.EndpointInfo;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
-import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;

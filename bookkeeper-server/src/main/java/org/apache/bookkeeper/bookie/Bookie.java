@@ -536,7 +536,7 @@ public class Bookie extends BookieCriticalThread {
     public static BookieId getBookieId(ServerConfiguration conf) throws UnknownHostException {
          return getBookieAddress(conf).toBookieId();
     }
-    
+
     /**
      * Return the configured address of the bookie.
      */
