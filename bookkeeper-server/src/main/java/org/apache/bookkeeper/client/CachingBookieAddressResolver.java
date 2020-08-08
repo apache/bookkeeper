@@ -32,8 +32,8 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 @Slf4j
 public class CachingBookieAddressResolver implements BookieAddressResolver {
 
-    private final ConcurrentHashMap<BookieId, BookieSocketAddress> resolvedBookieAddressCache
-            = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<BookieId, BookieSocketAddress> resolvedBookieAddressCache =
+                                                                            new ConcurrentHashMap<>();
     private final RegistrationClient registrationClient;
 
     public CachingBookieAddressResolver(RegistrationClient registrationClient) {
@@ -52,7 +52,8 @@ public class CachingBookieAddressResolver implements BookieAddressResolver {
         }
         try {
             BookieServiceInfo info = FutureUtils.result(registrationClient.getBookieServiceInfo(address)).getValue();
-            BookieServiceInfo.Endpoint endpoint = info.getEndpoints().stream(). filter(e -> e.getProtocol().equals("bookie-rpc")).findAny().orElse(null);
+            BookieServiceInfo.Endpoint endpoint = info.getEndpoints()
+                    .stream().filter(e -> e.getProtocol().equals("bookie-rpc")).findAny().orElse(null);
             if (endpoint == null) {
                 throw new Exception("bookie " + address + " does not publish a bookie-rpc endpond");
             }

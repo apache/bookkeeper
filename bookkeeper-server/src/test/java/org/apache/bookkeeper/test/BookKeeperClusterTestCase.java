@@ -353,7 +353,7 @@ public abstract class BookKeeperClusterTestCase {
         }
         return bs.get(index).getBookieId();
     }
-    
+
     public BookieSocketAddress getBookieAddress(int index) throws Exception {
         return bkc.getBookieAddressResolver().resolve(getBookie(index));
     }
@@ -826,8 +826,7 @@ public abstract class BookKeeperClusterTestCase {
      * created using hostname. Represent as '/IPaddress' if the
      * InetSocketAddress was created using an IPaddress
      *
-     * @param addr
-     *            inetaddress
+     * @param bookieId id
      * @return true if the address was created using an IP address, false if the
      *         address was created using a hostname
      */

@@ -46,10 +46,9 @@ import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeature;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StaticDNSResolver;
@@ -1247,17 +1246,21 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             int k = 0;
             for (; k < RegionAwareEnsemblePlacementPolicy.REMOTE_NODE_IN_REORDER_SEQUENCE; k++) {
                 BookieId address = ensemble.get(readSet.get(k));
-                assertEquals(myRegion, StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(address).getHostName()));
+                assertEquals(myRegion, StaticDNSResolver.getRegion(repp.bookieAddressResolver
+                                                                       .resolve(address).getHostName()));
             }
             BookieId remoteAddress = ensemble.get(readSet.get(k));
-            assertFalse(myRegion.equals(StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(remoteAddress).getHostName())));
+            assertFalse(myRegion.equals(StaticDNSResolver.getRegion(repp.bookieAddressResolver
+                                                                        .resolve(remoteAddress).getHostName())));
             k++;
             BookieId localAddress = ensemble.get(readSet.get(k));
-            assertEquals(myRegion, StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(localAddress).getHostName()));
+            assertEquals(myRegion, StaticDNSResolver.getRegion(repp.bookieAddressResolver
+                                                                        .resolve(localAddress).getHostName()));
             k++;
             for (; k < ensembleSize; k++) {
                 BookieId address = ensemble.get(readSet.get(k));
-                assertFalse(myRegion.equals(StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(address).getHostName())));
+                assertFalse(myRegion.equals(StaticDNSResolver.getRegion(repp.bookieAddressResolver
+                                                                        .resolve(address).getHostName())));
             }
         }
     }
@@ -1317,7 +1320,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     private Set<BookieId> getBookiesForRegion(List<BookieId> ensemble, String region) {
         Set<BookieId> regionBookies = new HashSet<BookieId>();
         for (BookieId address : ensemble) {
-            String r = StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(address).getHostName());
+            String r = StaticDNSResolver.getRegion(repp.bookieAddressResolver
+                                                       .resolve(address).getHostName());
             if (r.equals(region)) {
                 regionBookies.add(address);
             }
@@ -1331,7 +1335,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                                           List<Integer> finalSet) {
         for (int i = 0; i < writeSet.size(); i++) {
             int bi = writeSet.get(i);
-            String r = StaticDNSResolver.getRegion(repp.bookieAddressResolver.resolve(ensemble.get(bi)).getHostName());
+            String r = StaticDNSResolver.getRegion(repp.bookieAddressResolver
+                                                       .resolve(ensemble.get(bi)).getHostName());
             if (r.equals(region)) {
                 finalSet.add(bi);
             }

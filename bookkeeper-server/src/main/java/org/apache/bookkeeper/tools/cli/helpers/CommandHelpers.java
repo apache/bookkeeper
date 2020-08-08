@@ -38,7 +38,8 @@ public final class CommandHelpers {
      * where hostname and otherformofhostname are ipaddress and
      * canonicalhostname or viceversa
      */
-    public static String getBookieSocketAddrStringRepresentation(BookieId bookidId, BookieAddressResolver bookieAddressResolver) {
+    public static String getBookieSocketAddrStringRepresentation(BookieId bookidId,
+                                                                 BookieAddressResolver bookieAddressResolver) {
         BookieSocketAddress networkAddress = bookieAddressResolver.resolve(bookidId);
         String hostname = networkAddress.getHostName();
         boolean isHostNameIpAddress = InetAddresses.isInetAddress(hostname);

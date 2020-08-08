@@ -44,12 +44,12 @@ import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemb
 import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.EnsembleForReplacementWithNoConstraints;
 import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.TruePredicate;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieNode;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.Node;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -705,13 +705,15 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             ensembleResponse = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
             List<BookieId> ensemble = ensembleResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
-            assertEquals(0, getNumCoveredWriteQuorums(ensemble, 2, conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+            assertEquals(0, getNumCoveredWriteQuorums(ensemble, 2, conf.getMinNumRacksPerWriteQuorum(),
+                                                      repp.bookieAddressResolver));
             assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
             EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse2;
             ensembleResponse2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
             List<BookieId> ensemble2 = ensembleResponse2.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy2 = ensembleResponse2.isAdheringToPolicy();
-            assertEquals(0, getNumCoveredWriteQuorums(ensemble2, 2, conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+            assertEquals(0, getNumCoveredWriteQuorums(ensemble2, 2, conf.getMinNumRacksPerWriteQuorum(),
+                                                      repp.bookieAddressResolver));
             assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -836,7 +838,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         ensemble = ensembleResponse.getResult();
         isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
         assertEquals("Number of writeQuorum sets covered", ensembleSize,
-                getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+                getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(),
+                                                      repp.bookieAddressResolver));
         assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
 
         ensembleResponse = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize,
@@ -845,7 +848,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         ensemble = ensembleResponse.getResult();
         isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
         assertEquals("Number of writeQuorum sets covered", ensembleSize,
-                getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+                getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(),
+                                                      repp.bookieAddressResolver));
         assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
     }
 
@@ -898,7 +902,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             ensemble = ensembleResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
             assertEquals("Number of writeQuorum sets covered", ensembleSize,
-                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(),
+                                                      repp.bookieAddressResolver));
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
 
             ensembleResponse = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, new HashSet<>(),
@@ -906,7 +911,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             ensemble = ensembleResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
             assertEquals("Number of writeQuorum sets covered", ensembleSize,
-                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(),
+                                                      repp.bookieAddressResolver));
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
         }
     }
@@ -1424,7 +1430,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                                  acqQuorumSize, null, new HashSet<>());
             List<BookieId> ensemble = ensembleResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
-            int numCovered = getNumCoveredWriteQuorums(ensemble, writeQuorumSize, conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver);
+            int numCovered = getNumCoveredWriteQuorums(ensemble, writeQuorumSize,
+                                                       conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver);
             assertTrue(numCovered >= 1 && numCovered < 3);
             assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
             ensembleSize = 4;
@@ -1433,7 +1440,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                                  acqQuorumSize, null, new HashSet<>());
             List<BookieId> ensemble2 = ensembleResponse2.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy2 = ensembleResponse2.isAdheringToPolicy();
-            numCovered = getNumCoveredWriteQuorums(ensemble2, writeQuorumSize, conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver);
+            numCovered = getNumCoveredWriteQuorums(ensemble2, writeQuorumSize,
+                                                   conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver);
             assertTrue(numCovered >= 1 && numCovered < 3);
             assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy2);
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -1510,7 +1518,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                              writeQuorumSize, null, new HashSet<>());
         List<BookieId> ensemble = ensembleResponse.getResult();
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
-        int numCovered = getNumCoveredWriteQuorums(ensemble, writeQuorumSize, minNumRacksPerWriteQuorum, repp.bookieAddressResolver);
+        int numCovered = getNumCoveredWriteQuorums(ensemble, writeQuorumSize,
+                                                   minNumRacksPerWriteQuorum, repp.bookieAddressResolver);
         assertEquals("minimum number of racks covered for writequorum ensemble: " + ensemble, ensembleSize, numCovered);
         assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
     }
@@ -1556,7 +1565,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             List<BookieId> ensemble1 = ensembleResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy1 = ensembleResponse.isAdheringToPolicy();
             assertEquals(ensembleSize,
-                    getNumCoveredWriteQuorums(ensemble1, writeQuorumSize, conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+                    getNumCoveredWriteQuorums(ensemble1, writeQuorumSize, conf.getMinNumRacksPerWriteQuorum(),
+                                                      repp.bookieAddressResolver));
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy1);
             ensembleSize = 4;
             writeQuorumSize = 4;
@@ -1565,7 +1575,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             List<BookieId> ensemble2 = ensembleResponse2.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy2 = ensembleResponse2.isAdheringToPolicy();
             assertEquals(ensembleSize,
-                    getNumCoveredWriteQuorums(ensemble2, writeQuorumSize, conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+                    getNumCoveredWriteQuorums(ensemble2, writeQuorumSize, conf.getMinNumRacksPerWriteQuorum(),
+                                                      repp.bookieAddressResolver));
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy2);
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -1643,7 +1654,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieId replacedBookie;
         for (int i = 0; i < numTries; i++) {
             // replace node under r2
-            replaceBookieResponse = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2.toBookieId(), new HashSet<>());
+            replaceBookieResponse = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
+                                                       addr2.toBookieId(), new HashSet<>());
             replacedBookie = replaceBookieResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
             assertTrue("replaced : " + replacedBookie, addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
@@ -1711,7 +1723,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             // addr2 is on /r2 and this is the only one on this rack. So the replacement
             // will come from other racks. However, the weight should be honored in such
             // selections as well
-            replaceBookieResponse = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2.toBookieId(), new HashSet<>());
+            replaceBookieResponse = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
+                                                       addr2.toBookieId(), new HashSet<>());
             replacedBookie = replaceBookieResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
             assertTrue(addr0.equals(replacedBookie) || addr1.equals(replacedBookie) || addr3.equals(replacedBookie)
@@ -1822,8 +1835,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             ensemble = ensembleResponse.getResult();
             assertTrue(
                     "Rackaware selection not happening "
-                            + getNumCoveredWriteQuorums(ensemble, writeQuorumSize, conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver),
-                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver) >= 2);
+                            + getNumCoveredWriteQuorums(ensemble, writeQuorumSize,
+                                    conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver),
+                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize,
+                            conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver) >= 2);
             for (BookieId b : ensemble) {
                 selectionCounts.put(b, selectionCounts.get(b) + 1);
             }
@@ -2243,14 +2258,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             ensemble = ensembleResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
             assertEquals("Number of writeQuorum sets covered", ensembleSize,
-                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(),
+                                                      repp.bookieAddressResolver));
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
 
             ensembleResponse = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, null, new HashSet<>());
             ensemble = ensembleResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
             assertEquals("Number of writeQuorum sets covered", ensembleSize,
-                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, clientConf.getMinNumRacksPerWriteQuorum(),
+                                                      repp.bookieAddressResolver));
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
             Collection<BookieId> bookiesOfDefaultRackInEnsemble = CollectionUtils
                     .intersection(Arrays.asList(bookieSocketAddressesInDefaultRack), ensemble);

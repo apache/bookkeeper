@@ -43,8 +43,8 @@ import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdher
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementResult;
 import org.apache.bookkeeper.client.ZoneawareEnsemblePlacementPolicyImpl.ZoneAwareNodeLocation;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -758,7 +758,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
          * quorum of size 6, to replace bookie addr7 (/zone2/ud2), new bookie
          * should be from /zone2/ud2.
          */
-        PlacementResult<BookieId> replacePlacementResult = zepp.replaceBookie(6, 6, 2, null, ensemble, addr7.toBookieId(),
+        PlacementResult<BookieId> replacePlacementResult = zepp.replaceBookie(6, 6, 2, null, ensemble,
+                addr7.toBookieId(),
                 excludedBookies);
         BookieId replacedBookie = replacePlacementResult.getResult();
         assertEquals("replaced bookie", addr8, replacedBookie);
@@ -770,7 +771,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
          * here addr8 is excluded, and writeQuorumSize is 3. So to replace
          * bookie addr7, addr6 (belonging to same zone) is the candidate.
          */
-        replacePlacementResult = zepp.replaceBookie(6, 3, 2, null, ensemble, addr7.toBookieId(), excludedBookies);
+        replacePlacementResult = zepp.replaceBookie(6, 3, 2, null, ensemble, addr7.toBookieId(),
+                excludedBookies);
         replacedBookie = replacePlacementResult.getResult();
         assertEquals("replaced bookie", addr6, replacedBookie);
 
@@ -779,7 +781,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
             /*
              * here addr6 is also excluded, so replaceBookie should fail.
              */
-            replacedBookie = zepp.replaceBookie(6, 3, 2, null, ensemble, addr7.toBookieId(), excludedBookies).getResult();
+            replacedBookie = zepp.replaceBookie(6, 3, 2, null, ensemble, addr7.toBookieId(), excludedBookies)
+                    .getResult();
             fail("Expected BKNotEnoughBookiesException for replaceBookie with added excludedBookies");
         } catch (BKException.BKNotEnoughBookiesException bkne) {
             // expected NotEnoughBookiesException
@@ -1017,7 +1020,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         BookieId replacedBookie;
         for (int i = 0; i < numTries; i++) {
             // replace bookie response
-            replacedBookieResponse = zepp.replaceBookie(1, 1, 1, null, newEnsemble, addr2.toBookieId(), excludedBookies);
+            replacedBookieResponse = zepp.replaceBookie(1, 1, 1, null, newEnsemble, addr2.toBookieId(),
+                    excludedBookies);
             replacedBookie = replacedBookieResponse.getResult();
             /*
              * only addr3 and addr4 are eligible for replacedBookie.

@@ -167,7 +167,7 @@ public class BookieServer {
     public BookieSocketAddress getLocalAddress() throws UnknownHostException {
         return Bookie.getBookieAddress(conf);
     }
-    
+
     @VisibleForTesting
     public BookieId getBookieId() throws UnknownHostException {
         return Bookie.getBookieId(conf);

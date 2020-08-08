@@ -47,12 +47,14 @@ public class ZoneawareEnsemblePlacementPolicy extends ZoneawareEnsemblePlacement
 
     @Override
     public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
-            Optional<DNSToSwitchMapping> optionalDnsResolver, HashedWheelTimer timer, FeatureProvider featureProvider,
+            Optional<DNSToSwitchMapping> optionalDnsResolver, HashedWheelTimer timer,
+            FeatureProvider featureProvider,
             StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) {
         if (conf.getNetworkTopologyStabilizePeriodSeconds() > 0) {
             ClientConfiguration confClone = new ClientConfiguration(conf);
             confClone.setNetworkTopologyStabilizePeriodSeconds(0);
-            super.initialize(confClone, optionalDnsResolver, timer, featureProvider, statsLogger, bookieAddressResolver);
+            super.initialize(confClone, optionalDnsResolver, timer, featureProvider,
+                    statsLogger, bookieAddressResolver);
             slave = new ZoneawareEnsemblePlacementPolicyImpl();
             slave.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger, bookieAddressResolver);
         } else {

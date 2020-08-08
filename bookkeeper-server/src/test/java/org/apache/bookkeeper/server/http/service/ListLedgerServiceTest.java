@@ -29,7 +29,6 @@ import static org.junit.Assert.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import java.io.IOException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;

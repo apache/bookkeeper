@@ -27,10 +27,10 @@ import org.apache.bookkeeper.client.RackChangeNotifier;
 import org.apache.bookkeeper.net.AbstractDNSToSwitchMapping;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieNode;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NodeBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
