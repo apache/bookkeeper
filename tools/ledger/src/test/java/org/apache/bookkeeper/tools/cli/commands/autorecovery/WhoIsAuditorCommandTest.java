@@ -79,7 +79,9 @@ public class WhoIsAuditorCommandTest extends BookieCommandTestBase {
                     .thenReturn(bookieId);
 
         PowerMockito.mockStatic(CommandHelpers.class);
-        PowerMockito.when(CommandHelpers.getBookieSocketAddrStringRepresentation(eq(bookieId), any(BookieAddressResolver.class))).thenReturn("");
+        PowerMockito.when(CommandHelpers
+                .getBookieSocketAddrStringRepresentation(
+                        eq(bookieId), any(BookieAddressResolver.class))).thenReturn("");
     }
 
     @Test

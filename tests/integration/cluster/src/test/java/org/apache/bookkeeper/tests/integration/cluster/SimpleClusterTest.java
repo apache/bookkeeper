@@ -28,7 +28,6 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tests.containers.BookieContainer;
 import org.junit.FixMethodOrder;
 import org.junit.Test;

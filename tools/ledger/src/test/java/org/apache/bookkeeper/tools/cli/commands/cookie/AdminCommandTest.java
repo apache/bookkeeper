@@ -69,7 +69,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
 
     @Mock
     private Cookie cookie;
-    
+
     @Mock
     private BookieId bookieSocketAddress;
 

@@ -21,7 +21,6 @@ package org.apache.bookkeeper.metadata.etcd;
 import com.coreos.jetcd.Client;
 import com.coreos.jetcd.data.ByteSequence;
 import com.google.common.collect.Maps;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +32,6 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.metadata.etcd.helpers.KeySetReader;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.versioning.Versioned;
 
 /**

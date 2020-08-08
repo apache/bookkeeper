@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Assert;

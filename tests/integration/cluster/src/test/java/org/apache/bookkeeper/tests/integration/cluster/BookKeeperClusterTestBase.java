@@ -33,7 +33,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tests.integration.topologies.BKCluster;
 import org.apache.bookkeeper.tests.integration.topologies.BKClusterSpec;
@@ -99,9 +98,11 @@ public abstract class BookKeeperClusterTestBase {
     }
 
     private static boolean findIfBookieRegistered(String bookieName) throws Exception {
-        CachingBookieAddressResolver resolver = new CachingBookieAddressResolver(metadataClientDriver.getRegistrationClient());
+        CachingBookieAddressResolver resolver =
+                new CachingBookieAddressResolver(metadataClientDriver.getRegistrationClient());
         Set<BookieId> bookies =
-            FutureUtils.result(metadataClientDriver.getRegistrationClient().getWritableBookies()).getValue();
+            FutureUtils.result(metadataClientDriver
+                    .getRegistrationClient().getWritableBookies()).getValue();
         Optional<BookieId> registered =
             bookies.stream().filter(addr -> resolver.resolve(addr).getHostName().equals(bookieName)).findFirst();
         return registered.isPresent();

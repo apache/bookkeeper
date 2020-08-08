@@ -28,7 +28,6 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils;
 import org.apache.bookkeeper.tests.integration.utils.DockerUtils;
 import org.jboss.arquillian.junit.Arquillian;

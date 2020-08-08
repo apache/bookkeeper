@@ -18,7 +18,6 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.value;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -28,7 +27,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedBytes;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -101,7 +99,9 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
             PowerMockito.verifyStatic(
                 CommandHelpers.class,
                 times(numCalls));
-            CommandHelpers.getBookieSocketAddrStringRepresentation(eq(new BookieSocketAddress("127.0.0.1", startPort + 1).toBookieId()), any(BookieAddressResolver.class));
+            CommandHelpers.getBookieSocketAddrStringRepresentation(
+                    eq(new BookieSocketAddress("127.0.0.1", startPort + 1).toBookieId()),
+                    any(BookieAddressResolver.class));
         }
     }
 
