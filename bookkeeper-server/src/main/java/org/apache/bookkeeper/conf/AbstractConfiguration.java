@@ -186,6 +186,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // option to limit stats logging
     public static final String LIMIT_STATS_LOGGING = "limitStatsLogging";
 
+    public static final String ENABLE_BOOKIE_ADDRESS_RESOLVER = "enableBookieAddressResolver";
+
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {
@@ -1159,6 +1161,38 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setLimitStatsLogging(boolean limitStatsLogging) {
         setProperty(LIMIT_STATS_LOGGING, limitStatsLogging);
+        return getThis();
+    }
+
+
+    /**
+     * Return the flag indicating whether enable Bookie Address Resolution
+     * using Metadata Service.
+     *
+     * @return
+     *      the boolean flag indicating whether to use Bookie Address Resolver
+     * @see #setEnableBookieAddressResolver(boolean)
+     * @since 4.12.0
+     */
+    public boolean isEnableBookieAddressResolver() {
+        return getBoolean(ENABLE_BOOKIE_ADDRESS_RESOLVER, true);
+    }
+
+    /**
+     * Sets flag to enable Bookie Address Resolution using Metadata Service.
+     * If this flag is set to false the client won't use the Metadata Service
+     * to lookup the current address of a Bookie but it will split the BookieId
+     * into hostname:port parts and use this information to connect to the Bookie
+     * as it happened up to version 4.11.x.
+     *
+     *
+     * @param enableBookieAddressResolver
+     *          flag to enable BookieAddress resolution.
+     * @return configuration.
+     * @since 4.12.0
+     */
+    public T setEnableBookieAddressResolver(boolean enableBookieAddressResolver) {
+        setProperty(ENABLE_BOOKIE_ADDRESS_RESOLVER, enableBookieAddressResolver);
         return getThis();
     }
 

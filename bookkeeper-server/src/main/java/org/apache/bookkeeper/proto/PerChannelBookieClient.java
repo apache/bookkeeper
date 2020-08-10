@@ -168,7 +168,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
-    private final BookieAddressResolver bookieAddressResolver;
     final BookieId bookieId;
     final BookieSocketAddress addr;
     final EventLoopGroup eventLoopGroup;
@@ -395,7 +394,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (shFactory != null) {
             shFactory.init(NodeType.Client, conf, allocator);
         }
-        this.bookieAddressResolver = bookieAddressResolver;
 
         this.statsLogger = parentStatsLogger.scope(BookKeeperClientStats.CHANNEL_SCOPE)
             .scope(buildStatsLoggerScopeName(addr));

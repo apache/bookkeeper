@@ -111,12 +111,12 @@ class BookieWatcherImpl implements BookieWatcher {
     private CompletableFuture<?> initialWritableBookiesFuture = null;
     private CompletableFuture<?> initialReadonlyBookiesFuture = null;
 
-    private final CachingBookieAddressResolver bookieAddressResolver;
+    private final BookieAddressResolver bookieAddressResolver;
 
     public BookieWatcherImpl(ClientConfiguration conf,
                              EnsemblePlacementPolicy placementPolicy,
                              RegistrationClient registrationClient,
-                             CachingBookieAddressResolver bookieAddressResolver,
+                             BookieAddressResolver bookieAddressResolver,
                              StatsLogger statsLogger)  {
         this.conf = conf;
         this.bookieAddressResolver = bookieAddressResolver;

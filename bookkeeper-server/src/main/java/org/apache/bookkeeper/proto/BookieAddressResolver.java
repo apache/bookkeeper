@@ -26,8 +26,16 @@ public interface BookieAddressResolver {
 
     /**
      * Maps a logical address to a network address.
-     * @param address
+     * @param bookieId
      * @return a mapped address.
      */
-    BookieSocketAddress resolve(BookieId address);
+    BookieSocketAddress resolve(BookieId bookieId);
+
+    /**
+     * Receive notification that probably the mapping is no more valid,
+     * like in case of a Network error.
+     * @param bookieId
+     */
+    default void invalidateBookieAddress(BookieId bookieId) {
+    }
 }
