@@ -1002,7 +1002,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
             newEnsemble = newEnsembleResponse.getResult();
             selectionCounts.put(newEnsemble.get(0), selectionCounts.get(newEnsemble.get(0)) + 1);
         }
-        double observedMultiple = ((double) selectionCounts.get(addr4) / (double) selectionCounts.get(addr3));
+        double observedMultiple = ((double) selectionCounts.get(addr4.toBookieId())
+                / (double) selectionCounts.get(addr3.toBookieId()));
         /*
          * since there is no cap on maxWeight, observedMultiple should be
          * roughly equal to multiple
@@ -1026,10 +1027,12 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
             /*
              * only addr3 and addr4 are eligible for replacedBookie.
              */
-            assertTrue("replaced : " + replacedBookie, addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
+            assertTrue("replaced : " + replacedBookie, addr3.toBookieId().equals(replacedBookie)
+                    || addr4.toBookieId().equals(replacedBookie));
             selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie) + 1);
         }
-        observedMultiple = ((double) selectionCounts.get(addr4) / (double) selectionCounts.get(addr3));
+        observedMultiple = ((double) selectionCounts.get(addr4.toBookieId())
+                / (double) selectionCounts.get(addr3.toBookieId()));
         /*
          * since there is no cap on maxWeight, observedMultiple should be
          * roughly equal to multiple
@@ -1132,7 +1135,8 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         Set<BookieId> newEnsembleSet = new HashSet<BookieId>(
                 newEnsemblePlacementResult.getResult());
         assertEquals("New ensemble should contain 4 rw bookies", 4, newEnsembleSet.size());
-        assertFalse("excludeBookie should not be included in the ensemble", newEnsembleSet.contains(addr5));
+        assertFalse("excludeBookie should not be included in the ensemble",
+                newEnsembleSet.contains(addr5.toBookieId()));
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
                 newEnsemblePlacementResult.isAdheringToPolicy());
 

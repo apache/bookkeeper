@@ -45,27 +45,27 @@ public class CachingBookieAddressResolver implements BookieAddressResolver {
     }
 
     @Override
-    public BookieSocketAddress resolve(BookieId address) {
-        BookieSocketAddress cached = resolvedBookieAddressCache.get(address);
+    public BookieSocketAddress resolve(BookieId bookieId) {
+        BookieSocketAddress cached = resolvedBookieAddressCache.get(bookieId);
         if (cached != null) {
             return cached;
         }
         try {
-            BookieServiceInfo info = FutureUtils.result(registrationClient.getBookieServiceInfo(address)).getValue();
+            BookieServiceInfo info = FutureUtils.result(registrationClient.getBookieServiceInfo(bookieId)).getValue();
             BookieServiceInfo.Endpoint endpoint = info.getEndpoints()
                     .stream().filter(e -> e.getProtocol().equals("bookie-rpc")).findAny().orElse(null);
             if (endpoint == null) {
-                throw new Exception("bookie " + address + " does not publish a bookie-rpc endpond");
+                throw new Exception("bookie " + bookieId + " does not publish a bookie-rpc endpoint");
             }
             BookieSocketAddress res = new BookieSocketAddress(endpoint.getHost(), endpoint.getPort());
-            log.info("Resolved {} as {}", address, res);
-            resolvedBookieAddressCache.put(address, res);
+            log.info("Resolved {} as {}", bookieId, res);
+            resolvedBookieAddressCache.put(bookieId, res);
             return res;
         } catch (Exception ex) {
             if (ex instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            throw new RuntimeException("Cannot resolve address of bookie " + address, ex);
+            throw new BookieIdNotResolvedException(bookieId, ex);
         }
     }
 

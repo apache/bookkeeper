@@ -28,8 +28,9 @@ public interface BookieAddressResolver {
      * Maps a logical address to a network address.
      * @param bookieId
      * @return a mapped address.
+     * @throws BookieIdNotResolvedException if it is not possible to resolve the address of the BookieId
      */
-    BookieSocketAddress resolve(BookieId bookieId);
+    BookieSocketAddress resolve(BookieId bookieId) throws BookieIdNotResolvedException;
 
     /**
      * Receive notification that probably the mapping is no more valid,
@@ -37,5 +38,24 @@ public interface BookieAddressResolver {
      * @param bookieId
      */
     default void invalidateBookieAddress(BookieId bookieId) {
+    }
+
+    /**
+     * This error happens when there is not enough information to resolve a BookieId
+     * to a BookieSocketAddress, this can happen when the Bookie is down
+     * and it is not publishing its EndpointInfo.
+     */
+    class BookieIdNotResolvedException extends RuntimeException {
+        private final BookieId bookieId;
+
+        public BookieIdNotResolvedException(BookieId bookieId, Throwable cause) {
+            super("Cannot resolve bookieId " + bookieId + ", bookie does not exist or is not running", cause);
+            this.bookieId = bookieId;
+        }
+
+        public BookieId getBookieId() {
+            return bookieId;
+        }
+
     }
 }

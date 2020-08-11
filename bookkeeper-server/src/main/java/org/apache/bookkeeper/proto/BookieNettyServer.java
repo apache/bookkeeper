@@ -412,7 +412,7 @@ class BookieNettyServer {
 
             // use the same address 'name', so clients can find local Bookie still discovering them using ZK
             jvmBootstrap.bind(bookieAddress.getLocalAddress()).sync();
-            LocalBookiesRegistry.registerLocalBookieAddress(bookieAddress);
+            LocalBookiesRegistry.registerLocalBookieAddress(bookieAddress.toBookieId());
         }
     }
 
@@ -440,7 +440,7 @@ class BookieNettyServer {
             }
         }
         if (jvmEventLoopGroup != null) {
-            LocalBookiesRegistry.unregisterLocalBookieAddress(bookieAddress);
+            LocalBookiesRegistry.unregisterLocalBookieAddress(bookieAddress.toBookieId());
             jvmEventLoopGroup.shutdownGracefully();
         }
 

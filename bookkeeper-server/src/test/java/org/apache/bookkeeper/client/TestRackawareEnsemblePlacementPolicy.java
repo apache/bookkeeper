@@ -285,8 +285,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr3.toBookieId());
         addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        addrs.remove(addr1);
-        addrs.remove(addr2);
+        addrs.remove(addr1.toBookieId());
+        addrs.remove(addr2.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
@@ -348,7 +348,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.registerSlowBookie(addr1.toBookieId(), 0L);
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
         bookiePendingMap.put(addr1.toBookieId(), 1L);
-        addrs.remove(addr2);
+        addrs.remove(addr2.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<>());
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
@@ -384,7 +384,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.registerSlowBookie(addr3.toBookieId(), 0L);
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
         bookiePendingMap.put(addr3.toBookieId(), 1L);
-        addrs.remove(addr2);
+        addrs.remove(addr2.toBookieId());
         repp.onClusterChanged(addrs, ro);
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
@@ -618,8 +618,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2.toBookieId(), excludedAddrs);
         BookieId replacedBookie = replaceBookieResponse.getResult();
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
-        assertFalse(addr1.equals(replacedBookie));
-        assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
+        assertFalse(addr1.toBookieId().equals(replacedBookie));
+        assertTrue(addr3.toBookieId().equals(replacedBookie) || addr4.toBookieId().equals(replacedBookie));
         assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
     }
 
@@ -1604,7 +1604,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr3.toBookieId());
         addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        addrs.remove(addr1);
+        addrs.remove(addr1.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
     }
 
@@ -1658,11 +1658,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                                                        addr2.toBookieId(), new HashSet<>());
             replacedBookie = replaceBookieResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
-            assertTrue("replaced : " + replacedBookie, addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
+            assertTrue("replaced : " + replacedBookie, addr3.toBookieId().equals(replacedBookie)
+                    || addr4.toBookieId().equals(replacedBookie));
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
             selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie) + 1);
         }
-        double observedMultiple = ((double) selectionCounts.get(addr4) / (double) selectionCounts.get(addr3));
+        double observedMultiple = ((double) selectionCounts.get(addr4.toBookieId())
+                / (double) selectionCounts.get(addr3.toBookieId()));
         assertTrue("Weights not being honored " + observedMultiple, Math.abs(observedMultiple - multiple) < 1);
     }
 
@@ -1727,8 +1729,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                                                        addr2.toBookieId(), new HashSet<>());
             replacedBookie = replaceBookieResponse.getResult();
             isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
-            assertTrue(addr0.equals(replacedBookie) || addr1.equals(replacedBookie) || addr3.equals(replacedBookie)
-                    || addr4.equals(replacedBookie));
+            assertTrue(addr0.toBookieId().equals(replacedBookie)
+                    || addr1.toBookieId().equals(replacedBookie)
+                    || addr3.toBookieId().equals(replacedBookie)
+                    || addr4.toBookieId().equals(replacedBookie));
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
             selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie) + 1);
         }
@@ -1737,15 +1741,17 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
          * So the median calculated by WeightedRandomSelection is (100 + 200) / 2 = 150
          */
         double medianWeight = 150;
-        double medianSelectionCounts = (double) (medianWeight / bookieInfoMap.get(addr1).getWeight())
-            * selectionCounts.get(addr1);
-        double observedMultiple1 = ((double) selectionCounts.get(addr4) / (double) medianSelectionCounts);
-        double observedMultiple2 = ((double) selectionCounts.get(addr4) / (double) selectionCounts.get(addr3));
+        double medianSelectionCounts = (double) (medianWeight / bookieInfoMap.get(addr1.toBookieId()).getWeight())
+            * selectionCounts.get(addr1.toBookieId());
+        double observedMultiple1 = ((double) selectionCounts.get(addr4.toBookieId())
+                / (double) medianSelectionCounts);
+        double observedMultiple2 = ((double) selectionCounts.get(addr4.toBookieId())
+                / (double) selectionCounts.get(addr3.toBookieId()));
         LOG.info("oM1 " + observedMultiple1 + " oM2 " + observedMultiple2);
         assertTrue("Weights not being honored expected " + maxMultiple + " observed " + observedMultiple1,
                 Math.abs(observedMultiple1 - maxMultiple) < 1);
         // expected multiple for addr3
-        double expected = (medianWeight * maxMultiple) / bookieInfoMap.get(addr3).getWeight();
+        double expected = (medianWeight * maxMultiple) / bookieInfoMap.get(addr3.toBookieId()).getWeight();
         assertTrue("Weights not being honored expected " + expected + " observed " + observedMultiple2,
                 Math.abs(observedMultiple2 - expected) < 1);
     }
@@ -1846,8 +1852,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // the median weight used is 100 since addr2 and addr6 have the same weight, we use their
         // selection counts as the same as median
-        double observedMultiple1 = ((double) selectionCounts.get(addr5) / (double) selectionCounts.get(addr2));
-        double observedMultiple2 = ((double) selectionCounts.get(addr9) / (double) selectionCounts.get(addr6));
+        double observedMultiple1 = ((double) selectionCounts.get(addr5.toBookieId())
+                / (double) selectionCounts.get(addr2.toBookieId()));
+        double observedMultiple2 = ((double) selectionCounts.get(addr9.toBookieId())
+                / (double) selectionCounts.get(addr6.toBookieId()));
         assertTrue("Weights not being honored expected 2 observed " + observedMultiple1,
                 Math.abs(observedMultiple1 - maxMultiple) < 0.5);
         assertTrue("Weights not being honored expected 4 observed " + observedMultiple2,
@@ -1967,10 +1975,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         DistributionSchedule.WriteSet reoderSet = repp.reorderReadSequence(
                 ensemble, getBookiesHealthInfo(bookieFailures, new HashMap<>()), writeSet);
         LOG.info("reorder set : {}", reoderSet);
-        assertEquals(ensemble.get(reoderSet.get(2)), addr1);
-        assertEquals(ensemble.get(reoderSet.get(3)), addr2);
-        assertEquals(ensemble.get(reoderSet.get(0)), addr3);
-        assertEquals(ensemble.get(reoderSet.get(1)), addr4);
+        assertEquals(ensemble.get(reoderSet.get(2)), addr1.toBookieId());
+        assertEquals(ensemble.get(reoderSet.get(3)), addr2.toBookieId());
+        assertEquals(ensemble.get(reoderSet.get(0)), addr3.toBookieId());
+        assertEquals(ensemble.get(reoderSet.get(1)), addr4.toBookieId());
     }
 
     @Test
@@ -1993,7 +2001,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         // addr4 left
-        addrs.remove(addr4);
+        addrs.remove(addr4.toBookieId());
         Set<BookieId> deadBookies = repp.onClusterChanged(addrs, new HashSet<BookieId>());
         assertTrue(deadBookies.isEmpty());
 
@@ -2003,7 +2011,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 repp.newEnsemble(3, 2, 2, null, new HashSet<BookieId>());
             List<BookieId> ensemble = ensembleResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
-            assertFalse(ensemble.contains(addr4));
+            assertFalse(ensemble.contains(addr4.toBookieId()));
             assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
         }
 
@@ -2013,7 +2021,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         List<BookieId> ensemble = ensembleResponse.getResult();
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.isAdheringToPolicy();
         assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-        assertTrue(ensemble.contains(addr4));
+        assertTrue(ensemble.contains(addr4.toBookieId()));
     }
 
     @Test

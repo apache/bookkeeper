@@ -219,7 +219,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr3.toBookieId());
         addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        addrs.remove(addr1);
+        addrs.remove(addr1.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
@@ -371,7 +371,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp.registerSlowBookie(addr1.toBookieId(), 0L);
         Map<BookieId, Long> bookiePendingMap = new HashMap<>();
         bookiePendingMap.put(addr1.toBookieId(), 1L);
-        addrs.remove(addr2);
+        addrs.remove(addr2.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
@@ -465,8 +465,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null,
                 new ArrayList<BookieId>(), addr2.toBookieId(), excludedAddrs).getResult();
 
-        assertFalse(addr1.equals(replacedBookie));
-        assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
+        assertFalse(addr1.toBookieId().equals(replacedBookie));
+        assertTrue(addr3.toBookieId().equals(replacedBookie)
+                || addr4.toBookieId().equals(replacedBookie));
     }
 
     @Test
@@ -688,23 +689,23 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         try {
             List<BookieId> ensemble = repp.newEnsemble(6, 6, 4, null,
                     new HashSet<BookieId>()).getResult();
-            assert(ensemble.contains(addr4));
-            assert(ensemble.contains(addr8));
+            assert(ensemble.contains(addr4.toBookieId()));
+            assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 6);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
             ensemble = repp.newEnsemble(7, 7, 4, null, new HashSet<BookieId>()).getResult();
-            assert(ensemble.contains(addr4));
-            assert(ensemble.contains(addr8));
+            assert(ensemble.contains(addr4.toBookieId()));
+            assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 7);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
             ensemble = repp.newEnsemble(8, 8, 5, null, new HashSet<BookieId>()).getResult();
-            assert(ensemble.contains(addr4));
-            assert(ensemble.contains(addr8));
+            assert(ensemble.contains(addr4.toBookieId()));
+            assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 8);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
             ensemble = repp.newEnsemble(9, 9, 5, null, new HashSet<BookieId>()).getResult();
-            assert(ensemble.contains(addr4));
-            assert(ensemble.contains(addr8));
+            assert(ensemble.contains(addr4.toBookieId()));
+            assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 9);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -759,12 +760,12 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             List<BookieId> ensemble = repp.newEnsemble(6, 6, 4, null,
                                                                   new HashSet<BookieId>()).getResult();
             assertEquals(2, getNumRegionsInEnsemble(ensemble));
-            assert(ensemble.contains(addr1));
-            assert(ensemble.contains(addr3));
-            assert(ensemble.contains(addr4));
-            assert(ensemble.contains(addr7));
-            assert(ensemble.contains(addr8));
-            assert(ensemble.contains(addr9));
+            assert(ensemble.contains(addr1.toBookieId()));
+            assert(ensemble.contains(addr3.toBookieId()));
+            assert(ensemble.contains(addr4.toBookieId()));
+            assert(ensemble.contains(addr7.toBookieId()));
+            assert(ensemble.contains(addr8.toBookieId()));
+            assert(ensemble.contains(addr9.toBookieId()));
             assert(ensemble.size() == 6);
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -780,12 +781,12 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             ((SettableFeature) featureProvider.scope("region2").getFeature("disallowBookies")).set(false);
             List<BookieId> ensemble = repp.newEnsemble(6, 6, 4, null,
                                                                   new HashSet<BookieId>()).getResult();
-            assert(ensemble.contains(addr1));
-            assert(ensemble.contains(addr3));
-            assert(ensemble.contains(addr4));
-            assert(ensemble.contains(addr7));
-            assert(ensemble.contains(addr8));
-            assert(ensemble.contains(addr9));
+            assert(ensemble.contains(addr1.toBookieId()));
+            assert(ensemble.contains(addr3.toBookieId()));
+            assert(ensemble.contains(addr4.toBookieId()));
+            assert(ensemble.contains(addr7.toBookieId()));
+            assert(ensemble.contains(addr8.toBookieId()));
+            assert(ensemble.contains(addr9.toBookieId()));
             assert(ensemble.size() == 6);
             assertEquals(2, getNumRegionsInEnsemble(ensemble));
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -867,7 +868,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             excludedAddrs.add(addr10.toBookieId());
             List<BookieId> ensemble = repp.newEnsemble(10, 10, 10, null,
                                                                   excludedAddrs).getResult();
-            assert(ensemble.contains(addr11) && ensemble.contains(addr12));
+            assert(ensemble.contains(addr11.toBookieId()) && ensemble.contains(addr12.toBookieId()));
             assert(ensemble.size() == 10);
             assertEquals(5, getNumRegionsInEnsemble(ensemble));
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -991,9 +992,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         } else {
             BookieId bookieToReplace;
             BookieId replacedBookieExpected;
-            if (ensemble.contains(addr4)) {
+            if (ensemble.contains(addr4.toBookieId())) {
                 bookieToReplace = addr4.toBookieId();
-                if (ensemble.contains(addr5)) {
+                if (ensemble.contains(addr5.toBookieId())) {
                     replacedBookieExpected = addr6.toBookieId();
                 } else {
                     replacedBookieExpected = addr5.toBookieId();

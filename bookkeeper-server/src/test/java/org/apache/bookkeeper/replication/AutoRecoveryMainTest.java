@@ -100,7 +100,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
         ZooKeeper zk1 = zkMetadataClientDriver1.getZk();
         Auditor auditor1 = main1.auditorElector.getAuditor();
         BookieId currentAuditor = AuditorElector.getCurrentAuditor(bsConfs.get(0), zk1);
-        assertTrue("Current Auditor should be AR1", currentAuditor.equals(Bookie.getBookieAddress(bsConfs.get(0))));
+        assertTrue("Current Auditor should be AR1", currentAuditor.equals(Bookie.getBookieId(bsConfs.get(0))));
         assertTrue("Auditor of AR1 should be running", auditor1.isRunning());
 
         /*
@@ -116,7 +116,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          * auditors are not running.
          */
         assertTrue("Current Auditor should still be AR1",
-                currentAuditor.equals(Bookie.getBookieAddress(bsConfs.get(0))));
+                currentAuditor.equals(Bookie.getBookieId(bsConfs.get(0))));
         Auditor auditor2 = main2.auditorElector.getAuditor();
         Auditor auditor3 = main3.auditorElector.getAuditor();
         assertTrue("AR2's Auditor should not be running", (auditor2 == null || !auditor2.isRunning()));
@@ -154,7 +154,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          * the AR3 should be current auditor.
          */
         currentAuditor = AuditorElector.getCurrentAuditor(bsConfs.get(2), zk3);
-        assertTrue("Current Auditor should be AR3", currentAuditor.equals(Bookie.getBookieAddress(bsConfs.get(2))));
+        assertTrue("Current Auditor should be AR3", currentAuditor.equals(Bookie.getBookieId(bsConfs.get(2))));
         auditor3 = main3.auditorElector.getAuditor();
         assertTrue("Auditor of AR3 should be running", auditor3.isRunning());
 

@@ -141,8 +141,9 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
                                                                 addr2.toBookieId(), excludedAddrs).getResult();
 
-        assertFalse(addr1.equals(replacedBookie));
-        assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
+        assertFalse(addr1.toBookieId().equals(replacedBookie));
+        assertTrue(addr3.toBookieId().equals(replacedBookie)
+                || addr4.toBookieId().equals(replacedBookie));
     }
 
     @Test
@@ -206,9 +207,9 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
                                                                 addr2.toBookieId(), excludedAddrs).getResult();
 
-        assertFalse(addr1.equals(replacedBookie));
-        assertFalse(addr2.equals(replacedBookie));
-        assertTrue(addr0.equals(replacedBookie));
+        assertFalse(addr1.toBookieId().equals(replacedBookie));
+        assertFalse(addr2.toBookieId().equals(replacedBookie));
+        assertTrue(addr0.toBookieId().equals(replacedBookie));
     }
 
     /*
@@ -245,9 +246,9 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
                                                                 addr2.toBookieId(), excludedAddrs).getResult();
 
-        assertFalse(addr1.equals(replacedBookie));
-        assertFalse(addr2.equals(replacedBookie));
-        assertTrue(addr0.equals(replacedBookie));
+        assertFalse(addr1.toBookieId().equals(replacedBookie));
+        assertFalse(addr2.toBookieId().equals(replacedBookie));
+        assertTrue(addr0.toBookieId().equals(replacedBookie));
     }
 
     @Test
@@ -356,7 +357,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         addrs.add(addr3.toBookieId());
         addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        addrs.remove(addr1);
+        addrs.remove(addr1.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
     }
 

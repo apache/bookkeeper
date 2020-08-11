@@ -119,7 +119,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
                 assertTrue("Failed to update the ledger metadata to use bookie host name",
                         ensemble.contains(toBookieAddr));
                 assertFalse("Failed to update the ledger metadata to use bookie host name",
-                        ensemble.contains(curBookieAddr));
+                        ensemble.contains(curBookieAddr.toBookieId()));
             }
         }
     }

@@ -325,13 +325,14 @@ public class BookieServer {
 
     @Override
     public  String toString() {
-        String id = "UNKNOWN";
-
+        String addr = "UNKNOWN";
+        String id = "?";
         try {
-            id = Bookie.getBookieAddress(conf).toString();
+            addr = Bookie.getBookieAddress(conf).toString();
+            id = getBookieId().toString();
         } catch (UnknownHostException e) {
             //Ignored...
         }
-        return "Bookie Server listening on " + id;
+        return "Bookie Server listening on " + addr + " with id " + id;
     }
 }
