@@ -338,6 +338,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private void triggerFlushAndAddEntry(long ledgerId, long entryId, ByteBuf entry)
             throws IOException, BookieException {
+        triggerFlush();
         dbLedgerStorageStats.getThrottledWriteRequests().inc();
         long absoluteTimeoutNanos = System.nanoTime() + maxThrottleTimeNanos;
 
@@ -370,6 +371,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             // Wait some time and try again
             try {
                 Thread.sleep(1);
+                triggerFlush();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IOException("Interrupted when adding entry " + ledgerId + "@" + entryId);
@@ -379,6 +381,23 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         // Timeout expired and we weren't able to insert in write cache
         dbLedgerStorageStats.getRejectedWriteRequests().inc();
         throw new OperationRejectedException();
+    }
+
+    private void triggerFlush() {
+        // Write cache is full, we need to trigger a flush so that it gets rotated
+        // If the flush has already been triggered or flush has already switched the
+        // cache, we don't need to trigger another flush
+        if (!isFlushOngoing.get() && hasFlushBeenTriggered.compareAndSet(false, true)) {
+            // Trigger an early flush in background
+            log.info("Write cache is full, triggering flush");
+            executor.execute(() -> {
+                try {
+                    flush();
+                } catch (IOException e) {
+                    log.error("Error during flush", e);
+                }
+            });
+        }
     }
 
     @Override
