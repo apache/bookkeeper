@@ -160,9 +160,11 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                                               int minNumRacksPerWriteQuorum,
                                                               boolean enforceMinNumRacksPerWriteQuorum,
                                                               boolean ignoreLocalNodeInPlacementPolicy,
-                                                              StatsLogger statsLogger) {
+                                                              StatsLogger statsLogger,
+                                                              BookieAddressResolver bookieAddressResolver) {
         checkNotNull(statsLogger, "statsLogger should not be null, use NullStatsLogger instead.");
         this.statsLogger = statsLogger;
+        this.bookieAddressResolver = bookieAddressResolver;
         this.bookiesJoinedCounter = statsLogger.getOpStatsLogger(BOOKIES_JOINED);
         this.bookiesLeftCounter = statsLogger.getOpStatsLogger(BOOKIES_LEFT);
         this.readReorderedCounter = statsLogger.getOpStatsLogger(READ_REQUESTS_REORDERED);
@@ -299,7 +301,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 conf.getMinNumRacksPerWriteQuorum(),
                 conf.getEnforceMinNumRacksPerWriteQuorum(),
                 conf.getIgnoreLocalNodeInPlacementPolicy(),
-                statsLogger);
+                statsLogger,
+                bookieAddressResolver);
     }
 
     @Override

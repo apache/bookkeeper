@@ -438,7 +438,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         // replace node under r2
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null,
                 new ArrayList<BookieId>(), addr2.toBookieId(), new HashSet<BookieId>()).getResult();
-        assertEquals(addr3, replacedBookie);
+        assertEquals(addr3.toBookieId(), replacedBookie);
     }
 
     @Test
@@ -1470,14 +1470,14 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         DistributionSchedule.WriteSet reoderSet = repp.reorderReadSequence(
                 ensemble, getBookiesHealthInfo(bookieFailures, new HashMap<>()), writeSet2);
         LOG.info("reorder set : {}", reoderSet);
-        assertEquals(ensemble.get(reoderSet.get(0)), addr6);
-        assertEquals(ensemble.get(reoderSet.get(1)), addr7);
-        assertEquals(ensemble.get(reoderSet.get(2)), addr5);
-        assertEquals(ensemble.get(reoderSet.get(3)), addr2);
-        assertEquals(ensemble.get(reoderSet.get(4)), addr3);
-        assertEquals(ensemble.get(reoderSet.get(5)), addr8);
-        assertEquals(ensemble.get(reoderSet.get(6)), addr1);
-        assertEquals(ensemble.get(reoderSet.get(7)), addr4);
+        assertEquals(ensemble.get(reoderSet.get(0)), addr6.toBookieId());
+        assertEquals(ensemble.get(reoderSet.get(1)), addr7.toBookieId());
+        assertEquals(ensemble.get(reoderSet.get(2)), addr5.toBookieId());
+        assertEquals(ensemble.get(reoderSet.get(3)), addr2.toBookieId());
+        assertEquals(ensemble.get(reoderSet.get(4)), addr3.toBookieId());
+        assertEquals(ensemble.get(reoderSet.get(5)), addr8.toBookieId());
+        assertEquals(ensemble.get(reoderSet.get(6)), addr1.toBookieId());
+        assertEquals(ensemble.get(reoderSet.get(7)), addr4.toBookieId());
     }
 
 }

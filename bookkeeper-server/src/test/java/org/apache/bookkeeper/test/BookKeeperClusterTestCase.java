@@ -401,7 +401,7 @@ public abstract class BookKeeperClusterTestCase {
             bsLoggers.remove(addr);
             return bsConfs.remove(toRemoveIndex);
         }
-        throw new IllegalArgumentException("Cannot find bookie to kill " + addr + " among " + bs);
+        return null;
     }
 
     /**

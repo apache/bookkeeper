@@ -27,6 +27,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.Node;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
@@ -57,19 +58,19 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
                                                           int minNumRacksPerWriteQuorum,
                                                           boolean enforceMinNumRacksPerWriteQuorum,
                                                           boolean ignoreLocalNodeInPlacementPolicy,
-            StatsLogger statsLogger) {
+            StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) {
         if (stabilizePeriodSeconds > 0) {
             super.initialize(dnsResolver, timer, reorderReadsRandom, 0, reorderThresholdPendingRequests, isWeighted,
                     maxWeightMultiple, minNumRacksPerWriteQuorum, enforceMinNumRacksPerWriteQuorum,
-                    ignoreLocalNodeInPlacementPolicy, statsLogger);
+                    ignoreLocalNodeInPlacementPolicy, statsLogger, bookieAddressResolver);
             slave = new RackawareEnsemblePlacementPolicyImpl(enforceDurability);
             slave.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
                     reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
-                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger);
+                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger, bookieAddressResolver);
         } else {
             super.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
                     reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
-                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger);
+                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger, bookieAddressResolver);
             slave = null;
         }
         return this;

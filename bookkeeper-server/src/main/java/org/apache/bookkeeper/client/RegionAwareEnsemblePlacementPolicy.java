@@ -134,7 +134,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds,
                                 this.reorderThresholdPendingRequests, this.isWeighted, this.maxWeightMultiple,
                                 this.minNumRacksPerWriteQuorum, this.enforceMinNumRacksPerWriteQuorum,
-                                this.ignoreLocalNodeInPlacementPolicy, statsLogger)
+                                this.ignoreLocalNodeInPlacementPolicy, statsLogger, bookieAddressResolver)
                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
             }
 
@@ -185,7 +185,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds,
                                 this.reorderThresholdPendingRequests, this.isWeighted, this.maxWeightMultiple,
                                 this.minNumRacksPerWriteQuorum, this.enforceMinNumRacksPerWriteQuorum,
-                                this.ignoreLocalNodeInPlacementPolicy, statsLogger)
+                                this.ignoreLocalNodeInPlacementPolicy, statsLogger, bookieAddressResolver)
                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
             }
             minRegionsForDurability = conf.getInt(REPP_MINIMUM_REGIONS_FOR_DURABILITY,

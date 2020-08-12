@@ -41,11 +41,13 @@ public class CachingBookieAddressResolver implements BookieAddressResolver {
     }
 
     public void invalidateBookieAddress(BookieId address) {
-        resolvedBookieAddressCache.remove(address);
+        log.info("invalidateBookieAddress " + address);
+//        resolvedBookieAddressCache.remove(address);
     }
 
     @Override
     public BookieSocketAddress resolve(BookieId bookieId) {
+        log.info("resolve {} current cache {}", bookieId, resolvedBookieAddressCache);
         BookieSocketAddress cached = resolvedBookieAddressCache.get(bookieId);
         if (cached != null) {
             return cached;
@@ -61,10 +63,14 @@ public class CachingBookieAddressResolver implements BookieAddressResolver {
             log.info("Resolved {} as {}", bookieId, res);
             resolvedBookieAddressCache.put(bookieId, res);
             return res;
+        } catch (BKException.BKBookieException ex) {
+            log.info("cannot resolve {}, current cache {}", bookieId, resolvedBookieAddressCache, ex);
+            return BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER.resolve(bookieId);
         } catch (Exception ex) {
             if (ex instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
+            log.info("cannot resolve {}, current cache {}", bookieId, resolvedBookieAddressCache);
             throw new BookieIdNotResolvedException(bookieId, ex);
         }
     }
