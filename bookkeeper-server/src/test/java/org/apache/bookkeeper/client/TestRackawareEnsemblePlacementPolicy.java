@@ -589,7 +589,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr2.toBookieId(), new HashSet<>());
         BookieId replacedBookie = replaceBookieResponse.getResult();
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
-        assertEquals(addr3, replacedBookie);
+        assertEquals(addr3.toBookieId(), replacedBookie);
         assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
     }
 
@@ -683,7 +683,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             new HashSet<>());
         BookieId replacedBookie = replaceBookieResponse.getResult();
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
-        assertEquals(addr1, replacedBookie);
+        assertEquals(addr1.toBookieId(), replacedBookie);
         assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
     }
 
@@ -1037,7 +1037,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 bookieInEnsembleToBeReplaced, new HashSet<>());
         replacedBookieAddress = replaceBookieResponse.getResult();
         isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
-        assertEquals("It should be newBookieAddress2", newBookieAddress2, replacedBookieAddress);
+        assertEquals("It should be newBookieAddress2", newBookieAddress2.toBookieId(), replacedBookieAddress);
         assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
 
         Set<BookieId> bookiesToExclude = new HashSet<>();
@@ -1077,7 +1077,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 ensemble, bookieInEnsembleToBeReplaced, bookiesToExclude);
         replacedBookieAddress = replaceBookieResponse.getResult();
         isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
-        assertEquals("It should be newBookieAddress3", newBookieAddress3, replacedBookieAddress);
+        assertEquals("It should be newBookieAddress3", newBookieAddress3.toBookieId(), replacedBookieAddress);
         assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
     }
 

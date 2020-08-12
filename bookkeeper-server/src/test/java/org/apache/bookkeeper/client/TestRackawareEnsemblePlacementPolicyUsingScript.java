@@ -117,7 +117,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         // replace node under r2
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
                                                                 addr2.toBookieId(), new HashSet<>()).getResult();
-        assertEquals(addr3, replacedBookie);
+        assertEquals(addr3.toBookieId(), replacedBookie);
     }
 
     @Test

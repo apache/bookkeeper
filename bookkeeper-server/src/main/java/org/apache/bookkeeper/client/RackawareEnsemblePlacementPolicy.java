@@ -66,11 +66,13 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
             slave = new RackawareEnsemblePlacementPolicyImpl(enforceDurability);
             slave.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
                     reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
-                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger, bookieAddressResolver);
+                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger,
+                    bookieAddressResolver);
         } else {
             super.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
                     reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
-                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger, bookieAddressResolver);
+                    enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, statsLogger,
+                    bookieAddressResolver);
             slave = null;
         }
         return this;
