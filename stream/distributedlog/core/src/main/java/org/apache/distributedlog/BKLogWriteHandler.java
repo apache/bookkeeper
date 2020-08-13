@@ -1085,8 +1085,10 @@ class BKLogWriteHandler extends BKLogHandler {
 
     private CompletableFuture<List<LogSegmentMetadata>> setLogSegmentsOlderThanDLSNTruncated(
             List<LogSegmentMetadata> logSegments, final DLSN dlsn) {
-        LOG.debug("Setting truncation status on logs older than {} from {} for {}",
-            dlsn, logSegments, getFullyQualifiedName());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Setting truncation status on logs older than {} from {} for {}",
+                    dlsn, logSegments, getFullyQualifiedName());
+        }
         List<LogSegmentMetadata> truncateList = new ArrayList<LogSegmentMetadata>(logSegments.size());
         LogSegmentMetadata partialTruncate = null;
         LOG.info("{}: Truncating log segments older than {}", getFullyQualifiedName(), dlsn);

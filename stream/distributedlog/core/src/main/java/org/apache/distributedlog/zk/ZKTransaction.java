@@ -18,6 +18,7 @@
 package org.apache.distributedlog.zk;
 
 import com.google.common.collect.Lists;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,7 +45,7 @@ public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCa
         this.zkc = zkc;
         this.ops = Lists.newArrayList();
         this.zkOps = Lists.newArrayList();
-        this.result = new CompletableFuture<Void>();
+        this.result = new CompletableFuture<>();
     }
 
     @Override
@@ -63,13 +64,17 @@ public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCa
         if (!done.compareAndSet(false, true)) {
             return result;
         }
-        try {
-            zkc.get().multi(zkOps, this, result);
-        } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            result.completeExceptionally(Utils.zkException(e, ""));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            result.completeExceptionally(Utils.zkException(e, ""));
+        if (zkOps.isEmpty()) {
+            this.processResult(KeeperException.Code.OK.intValue(), null, null, Collections.emptyList());
+        } else {
+            try {
+                zkc.get().multi(zkOps, this, result);
+            } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
+                result.completeExceptionally(Utils.zkException(e, ""));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                result.completeExceptionally(Utils.zkException(e, ""));
+            }
         }
         return result;
     }
