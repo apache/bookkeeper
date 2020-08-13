@@ -137,6 +137,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String BOOKIE_HEALTH_CHECK_INTERVAL_SECONDS = "bookieHealthCheckIntervalSeconds";
     protected static final String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
     protected static final String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
+    protected static final String BOOKIE_QUARANTINE_RATIO = "bookieQuarantineRatio";
 
     // Bookie info poll interval
     protected static final String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
@@ -1397,6 +1398,26 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setBookieQuarantineTime(int quarantineTime, TimeUnit unit) {
         setProperty(BOOKIE_QUARANTINE_TIME_SECONDS, unit.toSeconds(quarantineTime));
+        return this;
+    }
+
+    /**
+     * Get the bookie quarantine ratio.
+     *
+     * @return
+     */
+    public double getBookieQuarantineRatio() {
+        return getDouble(BOOKIE_QUARANTINE_RATIO, 1.0);
+    }
+
+    /**
+     * set the bookie quarantine ratio. default is 1.0.
+     *
+     * @param ratio
+     * @return client configuration
+     */
+    public ClientConfiguration setBookieQuarantineRatio(double ratio) {
+        setProperty(BOOKIE_QUARANTINE_RATIO, ratio);
         return this;
     }
 
