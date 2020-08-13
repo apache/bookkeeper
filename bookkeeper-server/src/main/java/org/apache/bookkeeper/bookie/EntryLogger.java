@@ -1056,7 +1056,7 @@ public class EntryLogger {
 
         if (header.ledgersMapOffset == 0L) {
             // The index was not stored in the log file (possibly because the bookie crashed before flushing it)
-            throw new IOException("No ledgers map index found on entryLogId" + entryLogId);
+            throw new IOException("No ledgers map index found on entryLogId " + entryLogId);
         }
 
         if (LOG.isDebugEnabled()) {
