@@ -44,6 +44,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
@@ -111,6 +112,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     // The stats logger for this client.
     private final StatsLogger statsLogger;
     private final BookKeeperClientStats clientStats;
+    private final double bookieQuarantineRatio;
 
     // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
@@ -522,6 +524,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
 
+        this.bookieQuarantineRatio = conf.getBookieQuarantineRatio();
         scheduleBookieHealthCheckIfEnabled(conf);
     }
 
@@ -549,6 +552,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         bookieInfoScheduler = null;
         bookieClient = null;
         allocator = UnpooledByteBufAllocator.DEFAULT;
+        bookieQuarantineRatio = 1.0;
     }
 
     private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
@@ -598,7 +602,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     void checkForFaultyBookies() {
         List<BookieSocketAddress> faultyBookies = bookieClient.getFaultyBookies();
         for (BookieSocketAddress faultyBookie : faultyBookies) {
-            bookieWatcher.quarantineBookie(faultyBookie);
+            if (Math.random() <= bookieQuarantineRatio) {
+                bookieWatcher.quarantineBookie(faultyBookie);
+                statsLogger.getCounter(BookKeeperServerStats.BOOKIE_QUARANTINE).inc();
+            } else {
+                statsLogger.getCounter(BookKeeperServerStats.BOOKIE_QUARANTINE_SKIP).inc();
+            }
         }
     }
 
