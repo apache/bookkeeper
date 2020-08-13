@@ -94,9 +94,12 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
 
     private static Set<BookieSocketAddress> createBookies(int startPort, int numBookies) {
         Set<BookieSocketAddress> bookies = new TreeSet<>(new BookieAddressComparator());
-        for (int i = 0; i < numBookies; i++) {
+        int i = 0;
+        for (; i < numBookies - 1; i++) {
             bookies.add(new BookieSocketAddress("127.0.0.1", startPort + i));
         }
+        // mix an unknown hostname bookieId
+        bookies.add(new BookieSocketAddress("unknown", startPort + i));
         return bookies;
     }
 
@@ -105,8 +108,14 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
             PowerMockito.verifyStatic(
                 CommandHelpers.class,
                 times(numCalls));
-            CommandHelpers.getBookieSocketAddrStringRepresentation(
-                eq(new BookieSocketAddress("127.0.0.1", startPort + 1)));
+            if (i == numBookies - 1){
+                CommandHelpers.getBookieSocketAddrStringRepresentation(
+                        eq(new BookieSocketAddress("unknown", startPort + i)));
+            } else {
+                CommandHelpers.getBookieSocketAddrStringRepresentation(
+                        eq(new BookieSocketAddress("127.0.0.1", startPort + i)));
+            }
+
         }
     }
 

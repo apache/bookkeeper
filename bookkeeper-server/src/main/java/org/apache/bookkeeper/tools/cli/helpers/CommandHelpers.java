@@ -19,9 +19,11 @@
 package org.apache.bookkeeper.tools.cli.helpers;
 
 import com.google.common.net.InetAddresses;
+import java.net.InetAddress;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+
 
 /**
  * Helper classes used by the cli commands.
@@ -29,25 +31,38 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CommandHelpers {
 
+    private  static final String UNKNOWN = "UNKNOWN";
     /*
      * The string returned is of the form:
-     * 'hostname'('otherformofhostname'):'port number'
-     *
-     * where hostname and otherformofhostname are ipaddress and
-     * canonicalhostname or viceversa
+     * BookieID:bookieId, IP:ip, Port: port, Hostname: hostname
+     * When using hostname as bookie id, it's possible that the host is no longer valid and
+     * can't get a ip from the hostname, so using UNKNOWN to indicate ip is unknown for the hostname
      */
     public static String getBookieSocketAddrStringRepresentation(BookieSocketAddress bookieId) {
         String hostname = bookieId.getHostName();
-        boolean isHostNameIpAddress = InetAddresses.isInetAddress(hostname);
-        String otherFormOfHostname = null;
-        if (isHostNameIpAddress) {
-            otherFormOfHostname = bookieId.getSocketAddress().getAddress().getCanonicalHostName();
+        String bookieID = bookieId.toString();
+        String realHostname;
+        String ip = null;
+        if (InetAddresses.isInetAddress(hostname)){
+            ip = hostname;
+            realHostname = bookieId.getSocketAddress().getAddress().getCanonicalHostName();
         } else {
-            otherFormOfHostname = bookieId.getSocketAddress().getAddress().getHostAddress();
+           InetAddress ia = bookieId.getSocketAddress().getAddress();
+           if (null != ia){
+              ip = ia.getHostAddress();
+           } else {
+              ip = UNKNOWN;
+           }
+           realHostname = hostname;
         }
-        String bookieSocketAddrStringRepresentation = hostname + "(" + otherFormOfHostname + ")" + ":"
-                + bookieId.getSocketAddress().getPort();
-        return bookieSocketAddrStringRepresentation;
+        return formatBookieSocketAddress(bookieID, ip, bookieId.getPort(), realHostname);
+    }
+
+    /**
+     * Format {@link BookieSocketAddress}.
+     **/
+    public static String formatBookieSocketAddress(String bookieId, String ip, int port, String hostName){
+       return String.format("BookieID:%s, IP:%s, Port:%d, Hostname:%s", bookieId, ip, port, hostName);
     }
 
 }
