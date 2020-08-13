@@ -22,6 +22,7 @@
 
 BINDIR=`dirname "$0"`
 BK_HOME=`cd ${BINDIR}/..;pwd`
+mkdir -p $BK_HOME/logs
 
 source ${BK_HOME}/bin/common.sh
 source ${BK_HOME}/conf/bk_cli_env.sh
