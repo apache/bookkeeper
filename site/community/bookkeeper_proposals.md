@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 38*
+*Next Proposal Number: 41*
 
 ### Inprogress
 
@@ -110,6 +110,7 @@ Proposal | State
 [BP-36: Stats documentation annotation](../../bps/BP-36-stats-documentation-annotation) | Accepted
 [BP-37: Improve configuration management for better documentation](../../bps/BP-37-conf-documentation) | Accepted
 [BP-38: Publish Bookie Service Info on Metadata Service](../../bps/BP-38-bookie-endpoint-discovery) | Accepted
+[BP-41: Separate BookieId from Separate BookieId from Bookie Network Address](../../bps/BP-41-bookieid) | Draft
 
 ### Adopted
 
