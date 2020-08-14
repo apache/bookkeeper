@@ -82,7 +82,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
 
         assertEquals(1, bookies.size());
         BookieId address = bookies.iterator().next();
-        assertEquals(bkAddress, address);
+        assertEquals(bkAddress.toBookieId(), address);
 
         b.shutdown();
         bka.close();

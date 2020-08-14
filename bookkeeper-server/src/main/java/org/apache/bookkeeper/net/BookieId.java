@@ -31,6 +31,7 @@ public final class BookieId implements BookieID {
     private final String id;
 
     private BookieId(String id) {
+        validateBookieId(id);
         this.id = id;
     }
 
@@ -50,6 +51,10 @@ public final class BookieId implements BookieID {
      */
     public static BookieId parse(String serialized) {
        return new BookieId(serialized);
+    }
+
+    public String getId() {
+        return id;
     }
 
     @Override
@@ -73,6 +78,13 @@ public final class BookieId implements BookieID {
             return false;
         }
         return true;
+    }
+
+    private static void validateBookieId(String id) {
+        Objects.requireNonNull(id, "BookieId cannot be null");
+        if (!(id.matches("[a-zA-Z0-9:-_.]+"))) {
+            throw new IllegalArgumentException("BookieId " + id + " is not valid");
+        }
     }
 
 }

@@ -188,7 +188,7 @@ public class BookieShellTest {
     @Test
     public void testRecoverCmdInvalidBookieAddress() throws Exception {
         RecoverCmd cmd = (RecoverCmd) shell.commands.get("recover");
-        CommandLine cmdLine = parseCommandLine(cmd, "127.0.0.1");
+        CommandLine cmdLine = parseCommandLine(cmd, "non.valid$$bookie.id");
         assertEquals(-1, cmd.runCmd(cmdLine));
         PowerMockito.verifyNew(BookKeeperAdmin.class, never()).withArguments(any(ClientConfiguration.class));
     }

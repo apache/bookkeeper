@@ -125,7 +125,13 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
         final String[] bookieStrs = flags.bookieAddress.split(",");
         final Set<BookieId> bookieAddrs = new HashSet<>();
         for (String bookieStr : bookieStrs) {
-            bookieAddrs.add(BookieId.parse(bookieStr));
+            try {
+                bookieAddrs.add(BookieId.parse(bookieStr));
+            } catch (IllegalArgumentException err) {
+                System.err.println("BookieSrcs has invalid bookie id format: "
+                                   + bookieStr);
+                return false;
+            }
         }
 
         if (!force) {
