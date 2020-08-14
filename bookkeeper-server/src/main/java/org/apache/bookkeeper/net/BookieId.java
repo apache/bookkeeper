@@ -82,7 +82,7 @@ public final class BookieId implements BookieID {
 
     private static void validateBookieId(String id) {
         Objects.requireNonNull(id, "BookieId cannot be null");
-        if (!(id.matches("[a-zA-Z0-9:-_.]+"))) {
+        if (!(id.matches("[a-zA-Z0-9:-_.\\-]+"))) {
             throw new IllegalArgumentException("BookieId " + id + " is not valid");
         }
     }

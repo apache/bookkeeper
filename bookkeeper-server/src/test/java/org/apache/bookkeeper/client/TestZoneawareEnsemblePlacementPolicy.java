@@ -762,7 +762,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
                 addr7.toBookieId(),
                 excludedBookies);
         BookieId replacedBookie = replacePlacementResult.getResult();
-        assertEquals("replaced bookie", addr8, replacedBookie);
+        assertEquals("replaced bookie", addr8.toBookieId(), replacedBookie);
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
                 replacePlacementResult.isAdheringToPolicy());
 
@@ -774,7 +774,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         replacePlacementResult = zepp.replaceBookie(6, 3, 2, null, ensemble, addr7.toBookieId(),
                 excludedBookies);
         replacedBookie = replacePlacementResult.getResult();
-        assertEquals("replaced bookie", addr6, replacedBookie);
+        assertEquals("replaced bookie", addr6.toBookieId(), replacedBookie);
 
         excludedBookies.add(addr6.toBookieId());
         try {
@@ -1210,7 +1210,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
          * restrictions on ensSize and writeQSize and also bookie belonging to
          * DEFAULT_ZONE_AND_UPGRADEDOMAIN can be a candidate.
          */
-        assertEquals("ReplaceBookie candidate", addr7, replaceBookie);
+        assertEquals("ReplaceBookie candidate", addr7.toBookieId(), replaceBookie);
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
                 replaceResponse.isAdheringToPolicy());
 

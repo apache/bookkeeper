@@ -23,6 +23,7 @@ package org.apache.bookkeeper.net;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import org.junit.Test;
+import java.util.UUID;
 
 /**
  * Unit tests for BookieId class.
@@ -48,6 +49,36 @@ public class BookieIdTest {
     @Test
     public void testHashcode() {
         assertEquals(BookieId.parse("test").hashCode(), BookieId.parse("test").hashCode());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidate1() {
+        BookieId.parse("non valid");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidate2() {
+        BookieId.parse("non$valid");
+    }
+
+    @Test
+    public void testValidateHostnamePort() {
+        BookieId.parse("this.is.an.hostname:1234");
+    }
+
+    @Test
+    public void testValidateIPv4Port() {
+        BookieId.parse("1.2.3.4:1234");
+    }
+
+    @Test
+    public void testValidateUUID() {
+        BookieId.parse(UUID.randomUUID().toString());
+    }
+
+    @Test
+    public void testWithDashAndUnderscore() {
+        BookieId.parse("testRegisterUnregister_ReadonlyBookie-readonly:3181");
     }
 
 }
