@@ -47,7 +47,8 @@ public class CachingBookieAddressResolver implements BookieAddressResolver {
 
     @Override
     public BookieSocketAddress resolve(BookieId bookieId) {
-        log.info("resolve {} current cache {}", bookieId, resolvedBookieAddressCache);
+        log.info("resolve {} current cache {}", bookieId, resolvedBookieAddressCache,
+                new Exception("resolving " + bookieId).fillInStackTrace());
         BookieSocketAddress cached = resolvedBookieAddressCache.get(bookieId);
         if (cached != null) {
             return cached;

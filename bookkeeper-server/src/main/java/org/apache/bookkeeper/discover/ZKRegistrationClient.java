@@ -60,6 +60,7 @@ import org.apache.zookeeper.data.Stat;
 /**
  * ZooKeeper based {@link RegistrationClient}.
  */
+
 @Slf4j
 public class ZKRegistrationClient implements RegistrationClient {
 
@@ -140,9 +141,13 @@ public class ZKRegistrationClient implements RegistrationClient {
             if (this.version.compare(bookieSet.getVersion()) == Occurred.BEFORE) {
                 this.version = bookieSet.getVersion();
                 this.bookies = bookieSet.getValue();
-
-                for (RegistrationListener listener : listeners) {
-                    listener.onBookiesChanged(bookieSet);
+                if (!listeners.isEmpty()) {
+                    CompletableFuture.runAsync(() -> {
+                    log.info("HEre "+Thread.currentThread().getName()+" "+scheduler+" "+scheduler.getClass());
+                    for (RegistrationListener listener : listeners) {
+                        listener.onBookiesChanged(bookieSet);
+                    }
+                    });
                 }
             }
             FutureUtils.complete(firstRunFuture, null);
@@ -225,6 +230,7 @@ public class ZKRegistrationClient implements RegistrationClient {
 
         CompletableFuture<Versioned<BookieServiceInfo>> promise = new CompletableFuture<>();
         zk.getData(pathAsWritable, false, (int rc, String path, Object o, byte[] bytes, Stat stat) -> {
+            CompletableFuture.runAsync(() -> {
             if (KeeperException.Code.OK.intValue() == rc) {
                 try {
                     BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes);
@@ -252,6 +258,7 @@ public class ZKRegistrationClient implements RegistrationClient {
             } else {
                 promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
             }
+            });
         }, null);
         return promise;
     }

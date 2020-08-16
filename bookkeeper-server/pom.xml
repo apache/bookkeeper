@@ -220,6 +220,7 @@
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
            <trimStackTrace>false</trimStackTrace>
+           <rerunFailingTestsCount>0</rerunFailingTestsCount>
           <properties>
             <property>
               <name>listener</name>

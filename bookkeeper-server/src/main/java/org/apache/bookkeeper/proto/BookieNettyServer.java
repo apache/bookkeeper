@@ -351,6 +351,7 @@ class BookieNettyServer {
             });
 
             // Bind and start to accept incoming connections
+            LOG.info("Binding bookie-rpc endpoint to {}", address);
             Channel listen = bootstrap.bind(address.getAddress(), address.getPort()).sync().channel();
             if (listen.localAddress() instanceof InetSocketAddress) {
                 if (conf.getBookiePort() == 0) {

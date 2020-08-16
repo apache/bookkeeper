@@ -239,7 +239,9 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
             }
             break;
         case NodeDataChanged:
-            new ReadLedgerMetadataTask(ledgerId).run();
+            scheduler.submit(() -> {
+                new ReadLedgerMetadataTask(ledgerId).run();
+            });
             break;
         default:
             if (LOG.isDebugEnabled()) {
@@ -267,6 +269,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         StringCallback scb = new StringCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, String name) {
+                scheduler.submit(() -> {
                 if (rc == Code.OK.intValue()) {
                     promise.complete(new Versioned<>(metadata, new LongVersion(0)));
                 } else if (rc == Code.NODEEXISTS.intValue()) {
@@ -309,6 +312,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     promise.completeExceptionally(
                             new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                 }
+                });
             }
         };
         final byte[] data;
@@ -346,6 +350,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         VoidCallback callbackForDelete = new VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
+                scheduler.submit(() -> {
                 if (rc == KeeperException.Code.NONODE.intValue()) {
                     LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}.  Returning success.", ledgerId);
                     FutureUtils.complete(promise, null);
@@ -369,6 +374,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     promise.completeExceptionally(
                             new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                 }
+                });
             }
         };
         String ledgerZnodePath = getLedgerPath(ledgerId);
@@ -435,6 +441,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         zk.getData(getLedgerPath(ledgerId), watcher, new DataCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
+                scheduler.submit(() -> {
                 if (rc == KeeperException.Code.NONODE.intValue()) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("No such ledger: " + ledgerId,
@@ -461,13 +468,14 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 try {
                     LongVersion version = new LongVersion(stat.getVersion());
                     LedgerMetadata metadata = serDe.parseConfig(data, Optional.of(stat.getCtime()));
-                    promise.complete(new Versioned<>(metadata, version));
+                        promise.complete(new Versioned<>(metadata, version));
                 } catch (Throwable t) {
                     LOG.error("Could not parse ledger metadata for ledger: {}", ledgerId, t);
                     promise.completeExceptionally(new BKException.ZKException(
                             new Exception("Could not parse ledger metadata for ledger: "
                                     + ledgerId, t).fillInStackTrace()));
                 }
+                });
             }
         }, null);
         return promise;
@@ -495,19 +503,21 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                    new StatCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, Stat stat) {
-                if (KeeperException.Code.BADVERSION.intValue() == rc) {
-                    promise.completeExceptionally(new BKException.BKMetadataVersionException());
-                } else if (KeeperException.Code.OK.intValue() == rc) {
-                    // update metadata version
-                    promise.complete(new Versioned<>(metadata, new LongVersion(stat.getVersion())));
-                } else if (KeeperException.Code.NONODE.intValue() == rc) {
-                    LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", ledgerId);
-                    promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
-                } else {
-                    LOG.warn("Conditional update ledger metadata failed: {}", KeeperException.Code.get(rc));
-                    promise.completeExceptionally(
-                            new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
-                }
+                scheduler.submit(() -> {
+                    if (KeeperException.Code.BADVERSION.intValue() == rc) {
+                        promise.completeExceptionally(new BKException.BKMetadataVersionException());
+                    } else if (KeeperException.Code.OK.intValue() == rc) {
+                        // update metadata version
+                        promise.complete(new Versioned<>(metadata, new LongVersion(stat.getVersion())));
+                    } else if (KeeperException.Code.NONODE.intValue() == rc) {
+                        LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", ledgerId);
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
+                    } else {
+                        LOG.warn("Conditional update ledger metadata failed: {}", KeeperException.Code.get(rc));
+                        promise.completeExceptionally(
+                                new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
+                    }
+                });
             }
         }, null);
         return promise;
@@ -546,6 +556,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         ZkUtils.getChildrenInSingleNode(zk, path, new GenericCallback<List<String>>() {
             @Override
             public void operationComplete(int rc, List<String> ledgerNodes) {
+                scheduler.submit(() -> {
                 if (Code.NONODE.intValue() == rc) {
                     finalCb.processResult(successRc, null, ctx);
                     return;
@@ -571,6 +582,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 for (Long ledger : zkActiveLedgers) {
                     processor.process(ledger, mcb);
                 }
+            });
             }
         });
     }
