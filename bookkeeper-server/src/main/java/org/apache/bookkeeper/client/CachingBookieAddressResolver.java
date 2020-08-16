@@ -17,7 +17,6 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
@@ -31,28 +30,14 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
  */
 @Slf4j
 public class CachingBookieAddressResolver implements BookieAddressResolver {
-
-    private final ConcurrentHashMap<BookieId, BookieSocketAddress> resolvedBookieAddressCache =
-                                                                            new ConcurrentHashMap<>();
     private final RegistrationClient registrationClient;
 
     public CachingBookieAddressResolver(RegistrationClient registrationClient) {
         this.registrationClient = registrationClient;
     }
 
-    public void invalidateBookieAddress(BookieId address) {
-        log.info("invalidateBookieAddress " + address);
-//        resolvedBookieAddressCache.remove(address);
-    }
-
     @Override
     public BookieSocketAddress resolve(BookieId bookieId) {
-        log.info("resolve {} current cache {}", bookieId, resolvedBookieAddressCache,
-                new Exception("resolving " + bookieId).fillInStackTrace());
-        BookieSocketAddress cached = resolvedBookieAddressCache.get(bookieId);
-        if (cached != null) {
-            return cached;
-        }
         try {
             BookieServiceInfo info = FutureUtils.result(registrationClient.getBookieServiceInfo(bookieId)).getValue();
             BookieServiceInfo.Endpoint endpoint = info.getEndpoints()
@@ -62,16 +47,13 @@ public class CachingBookieAddressResolver implements BookieAddressResolver {
             }
             BookieSocketAddress res = new BookieSocketAddress(endpoint.getHost(), endpoint.getPort());
             log.info("Resolved {} as {}", bookieId, res);
-            resolvedBookieAddressCache.put(bookieId, res);
             return res;
         } catch (BKException.BKBookieException ex) {
-            log.info("cannot resolve {}, current cache {}", bookieId, resolvedBookieAddressCache, ex);
             return BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER.resolve(bookieId);
         } catch (Exception ex) {
             if (ex instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            log.info("cannot resolve {}, current cache {}", bookieId, resolvedBookieAddressCache);
             throw new BookieIdNotResolvedException(bookieId, ex);
         }
     }

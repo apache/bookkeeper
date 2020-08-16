@@ -25,10 +25,12 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -142,12 +144,9 @@ public class ZKRegistrationClient implements RegistrationClient {
                 this.version = bookieSet.getVersion();
                 this.bookies = bookieSet.getValue();
                 if (!listeners.isEmpty()) {
-                    CompletableFuture.runAsync(() -> {
-                    log.info("HEre "+Thread.currentThread().getName()+" "+scheduler+" "+scheduler.getClass());
                     for (RegistrationListener listener : listeners) {
                         listener.onBookiesChanged(bookieSet);
                     }
-                    });
                 }
             }
             FutureUtils.complete(firstRunFuture, null);
@@ -182,6 +181,8 @@ public class ZKRegistrationClient implements RegistrationClient {
     private WatchTask watchWritableBookiesTask = null;
     @Getter(AccessLevel.PACKAGE)
     private WatchTask watchReadOnlyBookiesTask = null;
+    private final ConcurrentHashMap<BookieId, Versioned<BookieServiceInfo>> bookieServiceInfoCache =
+                                                                            new ConcurrentHashMap<>();
 
     // registration paths
     private final String bookieRegistrationPath;
@@ -225,16 +226,33 @@ public class ZKRegistrationClient implements RegistrationClient {
 
     @Override
     public CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(BookieId bookieId) {
+        Versioned<BookieServiceInfo> resultFromCache = bookieServiceInfoCache.get(bookieId);
+        if (resultFromCache != null) {
+            return CompletableFuture.completedFuture(resultFromCache);
+        }
+        return internalGetBookieServiceInfo(bookieId);
+    }
+
+    /**
+     * Read BookieServiceInfo from ZooKeeper.
+     *
+     * @param bookieId
+     * @return an handle to the result of the operation.
+     */
+    private CompletableFuture<Versioned<BookieServiceInfo>> internalGetBookieServiceInfo(BookieId bookieId) {
         String pathAsWritable = bookieRegistrationPath + "/" + bookieId;
         String pathAsReadonly = bookieReadonlyRegistrationPath + "/" + bookieId;
 
         CompletableFuture<Versioned<BookieServiceInfo>> promise = new CompletableFuture<>();
         zk.getData(pathAsWritable, false, (int rc, String path, Object o, byte[] bytes, Stat stat) -> {
-            CompletableFuture.runAsync(() -> {
             if (KeeperException.Code.OK.intValue() == rc) {
                 try {
                     BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes);
-                    promise.complete(new Versioned<>(bookieServiceInfo, new LongVersion(stat.getCversion())));
+                    Versioned<BookieServiceInfo> result = new Versioned<>(bookieServiceInfo,
+                            new LongVersion(stat.getCversion()));
+                    log.info("Update BookieInfoCache (writable bookie) {} -> {}", bookieId, result.getValue());
+                    bookieServiceInfoCache.put(bookieId, result);
+                    promise.complete(result);
                 } catch (IOException ex) {
                     promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
                     return;
@@ -245,7 +263,11 @@ public class ZKRegistrationClient implements RegistrationClient {
                     if (KeeperException.Code.OK.intValue() == rc2) {
                         try {
                             BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes2);
-                            promise.complete(new Versioned<>(bookieServiceInfo, new LongVersion(stat2.getCversion())));
+                            Versioned<BookieServiceInfo> result =
+                                    new Versioned<>(bookieServiceInfo, new LongVersion(stat2.getCversion()));
+                            log.info("Update BookieInfoCache (readonly bookie) {} -> {}", bookieId, result.getValue());
+                            bookieServiceInfoCache.put(bookieId, result);
+                            promise.complete(result);
                         } catch (IOException ex) {
                             promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
                             return;
@@ -258,7 +280,6 @@ public class ZKRegistrationClient implements RegistrationClient {
             } else {
                 promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
             }
-            });
         }, null);
         return promise;
     }
@@ -292,6 +313,14 @@ public class ZKRegistrationClient implements RegistrationClient {
         return bsi;
     }
 
+    /**
+     * Reads the list of bookies at the given path and eagerly caches the BookieServiceInfo
+     * structure.
+     *
+     * @param regPath the path on ZooKeeper
+     * @param watcher an optional watcher
+     * @return an handle to the operation
+     */
     private CompletableFuture<Versioned<Set<BookieId>>> getChildren(String regPath, Watcher watcher) {
         CompletableFuture<Versioned<Set<BookieId>>> future = FutureUtils.createFuture();
         zk.getChildren(regPath, watcher, (rc, path, ctx, children, stat) -> {
@@ -303,7 +332,19 @@ public class ZKRegistrationClient implements RegistrationClient {
 
             Version version = new LongVersion(stat.getCversion());
             Set<BookieId> bookies = convertToBookieAddresses(children);
-            future.complete(new Versioned<>(bookies, version));
+            List<CompletableFuture<Versioned<BookieServiceInfo>>> bookieInfoUpdated = new ArrayList<>(bookies.size());
+            for (BookieId id : bookies) {
+                bookieInfoUpdated.add(getBookieServiceInfo(id));
+            }
+            FutureUtils
+                    .collect(bookieInfoUpdated)
+                    .whenComplete((List<Versioned<BookieServiceInfo>> info, Throwable error) -> {
+                        if (error != null) {
+                            future.completeExceptionally(error);
+                        } else {
+                            future.complete(new Versioned<>(bookies, version));
+                        }
+                    });
         }, null);
         return future;
     }

@@ -33,14 +33,6 @@ public interface BookieAddressResolver {
     BookieSocketAddress resolve(BookieId bookieId) throws BookieIdNotResolvedException;
 
     /**
-     * Receive notification that probably the mapping is no more valid,
-     * like in case of a Network error.
-     * @param bookieId
-     */
-    default void invalidateBookieAddress(BookieId bookieId) {
-    }
-
-    /**
      * This error happens when there is not enough information to resolve a BookieId
      * to a BookieSocketAddress, this can happen when the Bookie is down
      * and it is not publishing its EndpointInfo.

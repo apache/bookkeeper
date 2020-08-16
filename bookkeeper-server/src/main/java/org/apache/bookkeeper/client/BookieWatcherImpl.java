@@ -27,7 +27,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-import com.google.common.collect.Sets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -129,7 +128,6 @@ class BookieWatcherImpl implements BookieWatcher {
                     @Override
                     public void onRemoval(RemovalNotification<BookieId, Boolean> bookie) {
                         log.info("Bookie {} is no longer quarantined", bookie.getKey());
-                        bookieAddressResolver.invalidateBookieAddress(bookie.getKey());
                     }
 
                 }).build();
@@ -175,16 +173,10 @@ class BookieWatcherImpl implements BookieWatcher {
         }
     }
 
-    private void invalidateResolvedBookieAddressCache(Set<BookieId> changedBookies) {
-        for (BookieId address : changedBookies) {
-            this.bookieAddressResolver.invalidateBookieAddress(address);
-        }
-    }
     // this callback is already not executed in zookeeper thread
     private synchronized void processWritableBookiesChanged(Set<BookieId> newBookieAddrs) {
         // Update watcher outside ZK callback thread, to avoid deadlock in case some other
         // component is trying to do a blocking ZK operation
-        invalidateResolvedBookieAddressCache(Sets.difference(this.writableBookies, newBookieAddrs));
         this.writableBookies = newBookieAddrs;
         placementPolicy.onClusterChanged(newBookieAddrs, readOnlyBookies);
         // we don't need to close clients here, because:
@@ -204,7 +196,6 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     private synchronized void processReadOnlyBookiesChanged(Set<BookieId> readOnlyBookies) {
-        invalidateResolvedBookieAddressCache(Sets.difference(this.readOnlyBookies, readOnlyBookies));
         this.readOnlyBookies = readOnlyBookies;
         placementPolicy.onClusterChanged(writableBookies, readOnlyBookies);
     }
@@ -350,7 +341,6 @@ class BookieWatcherImpl implements BookieWatcher {
             quarantinedBookies.put(bookie, Boolean.TRUE);
             log.warn("Bookie {} has been quarantined because of read/write errors.", bookie);
         }
-        bookieAddressResolver.invalidateBookieAddress(bookie);
     }
 
 
