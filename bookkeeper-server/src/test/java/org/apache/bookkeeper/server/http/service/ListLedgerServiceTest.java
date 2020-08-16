@@ -161,9 +161,7 @@ public class ListLedgerServiceTest extends BookKeeperClusterTestCase {
                 assertEquals(1, entry.getValue().size());
                 assertEquals(entry.getValue().size(), members.size());
                 JsonNode member = members.get(0);
-                BookieSocketAddress address = bkc.getBookieAddressResolver().resolve(entry.getValue().get(0));
-                assertEquals(address.getHostName(), member.get("hostName").asText());
-                assertEquals(address.getPort(), member.get("port").asInt());
+                assertEquals(entry.getValue().get(0).getId(), member.get("id").asText());
             }
         });
     }
