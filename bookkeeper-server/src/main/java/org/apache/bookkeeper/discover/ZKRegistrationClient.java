@@ -226,11 +226,15 @@ public class ZKRegistrationClient implements RegistrationClient {
 
     @Override
     public CompletableFuture<Versioned<BookieServiceInfo>> getBookieServiceInfo(BookieId bookieId) {
+        // we can only serve data from cache here,
+        // because it can happen than this method is called inside the main
+        // zookeeper client event loop thread
         Versioned<BookieServiceInfo> resultFromCache = bookieServiceInfoCache.get(bookieId);
         if (resultFromCache != null) {
             return CompletableFuture.completedFuture(resultFromCache);
+        } else {
+            return FutureUtils.exception(new BKException.BKBookieHandleNotAvailableException());
         }
-        return internalGetBookieServiceInfo(bookieId);
     }
 
     /**
@@ -334,7 +338,8 @@ public class ZKRegistrationClient implements RegistrationClient {
             Set<BookieId> bookies = convertToBookieAddresses(children);
             List<CompletableFuture<Versioned<BookieServiceInfo>>> bookieInfoUpdated = new ArrayList<>(bookies.size());
             for (BookieId id : bookies) {
-                bookieInfoUpdated.add(getBookieServiceInfo(id));
+                // eagerly popupate the cache
+                bookieInfoUpdated.add(internalGetBookieServiceInfo(id));
             }
             FutureUtils
                     .collect(bookieInfoUpdated)
