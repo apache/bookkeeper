@@ -48,7 +48,8 @@ public class CachingBookieAddressResolver implements BookieAddressResolver {
             BookieSocketAddress res = new BookieSocketAddress(endpoint.getHost(), endpoint.getPort());
             log.info("Resolved {} as {}", bookieId, res);
             return res;
-        } catch (BKException.BKBookieException ex) {
+        } catch (BKException.BKBookieHandleNotAvailableException ex) {
+            log.info("Cannot resolve {}, falling back to legacy resolved", bookieId, ex);
             return BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER.resolve(bookieId);
         } catch (Exception ex) {
             if (ex instanceof InterruptedException) {

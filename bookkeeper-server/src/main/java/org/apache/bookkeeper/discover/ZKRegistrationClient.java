@@ -230,6 +230,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         // because it can happen than this method is called inside the main
         // zookeeper client event loop thread
         Versioned<BookieServiceInfo> resultFromCache = bookieServiceInfoCache.get(bookieId);
+        log.info("getBookieServiceInfo {} -> {}", bookieId, resultFromCache);
         if (resultFromCache != null) {
             return CompletableFuture.completedFuture(resultFromCache);
         } else {
@@ -238,12 +239,12 @@ public class ZKRegistrationClient implements RegistrationClient {
     }
 
     /**
-     * Read BookieServiceInfo from ZooKeeper.
+     * Read BookieServiceInfo from ZooKeeper and updates the local cache.
      *
      * @param bookieId
      * @return an handle to the result of the operation.
      */
-    private CompletableFuture<Versioned<BookieServiceInfo>> internalGetBookieServiceInfo(BookieId bookieId) {
+    private CompletableFuture<Versioned<BookieServiceInfo>> readBookieServiceInfo(BookieId bookieId) {
         String pathAsWritable = bookieRegistrationPath + "/" + bookieId;
         String pathAsReadonly = bookieReadonlyRegistrationPath + "/" + bookieId;
 
@@ -339,7 +340,7 @@ public class ZKRegistrationClient implements RegistrationClient {
             List<CompletableFuture<Versioned<BookieServiceInfo>>> bookieInfoUpdated = new ArrayList<>(bookies.size());
             for (BookieId id : bookies) {
                 // eagerly popupate the cache
-                bookieInfoUpdated.add(internalGetBookieServiceInfo(id));
+                bookieInfoUpdated.add(readBookieServiceInfo(id));
             }
             FutureUtils
                     .collect(bookieInfoUpdated)
