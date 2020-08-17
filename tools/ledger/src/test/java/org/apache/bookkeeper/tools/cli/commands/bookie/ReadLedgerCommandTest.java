@@ -43,14 +43,12 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.mockito.ArgumentMatchers.any;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -161,7 +159,8 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
         verifyNew(DefaultThreadFactory.class, times(1)).withArguments(anyString());
         verifyNew(BookieClientImpl.class, times(1))
             .withArguments(eq(clientConfiguration), eq(nioEventLoopGroup), eq(UnpooledByteBufAllocator.DEFAULT),
-                           eq(orderedExecutor), eq(scheduledExecutorService), eq(NullStatsLogger.INSTANCE), eq(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER));
+                           eq(orderedExecutor), eq(scheduledExecutorService),
+                           eq(NullStatsLogger.INSTANCE), eq(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER));
         verify(nioEventLoopGroup, times(1)).shutdownGracefully();
         verify(orderedExecutor, times(1)).shutdown();
         verify(bookieClient, times(1)).close();

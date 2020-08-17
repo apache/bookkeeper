@@ -339,17 +339,18 @@ public class ZKRegistrationClient implements RegistrationClient {
             Set<BookieId> bookies = convertToBookieAddresses(children);
             List<CompletableFuture<Versioned<BookieServiceInfo>>> bookieInfoUpdated = new ArrayList<>(bookies.size());
             for (BookieId id : bookies) {
-                // eagerly popupate the cache
-                bookieInfoUpdated.add(readBookieServiceInfo(id));
+                // update the cache for new bookies
+                if (!bookieServiceInfoCache.containsKey(id)) {
+                    bookieInfoUpdated.add(readBookieServiceInfo(id));
+                }
             }
             FutureUtils
                     .collect(bookieInfoUpdated)
                     .whenComplete((List<Versioned<BookieServiceInfo>> info, Throwable error) -> {
-                        if (error != null) {
-                            future.completeExceptionally(error);
-                        } else {
-                            future.complete(new Versioned<>(bookies, version));
-                        }
+                        // we are ignoring errors intentionally
+                        // there could be bookies that published unparseable information
+                        // or other temporary/permanent or temporary errors
+                        future.complete(new Versioned<>(bookies, version));
                     });
         }, null);
         return future;
