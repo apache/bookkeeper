@@ -42,12 +42,15 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -57,12 +60,11 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link ReadLedgerCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ ReadLedgerCommand.class, BookKeeperAdmin.class, BookieId.class, ClientConfiguration.class,
+@PrepareForTest({ ReadLedgerCommand.class, BookKeeperAdmin.class, ClientConfiguration.class,
     LedgerHandle.class, LedgerEntry.class, OrderedExecutor.class })
 public class ReadLedgerCommandTest extends BookieCommandTestBase {
 
-    @Mock
-    private BookieId bookieSocketAddress;
+    private BookieId bookieSocketAddress = BookieId.parse("localhost:9000");
 
     @Mock
     private ClientConfiguration clientConfiguration;
@@ -100,10 +102,10 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
         super.setup();
 
         PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(BookieId.class).withArguments(anyString()).thenReturn(bookieSocketAddress);
         PowerMockito.whenNew(ClientConfiguration.class).withNoArguments().thenReturn(clientConfiguration);
         PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
                     .withArguments(eq(clientConfiguration)).thenReturn(bookKeeperAdmin);
+        when(bookKeeperAdmin.getBookieAddressResolver()).thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
         when(bookKeeperAdmin.openLedger(anyLong())).thenReturn(ledgerHandle);
         when(ledgerHandle.getLastAddConfirmed()).thenReturn(1L);
@@ -130,8 +132,7 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
         when(Executors.newSingleThreadScheduledExecutor(eq(defaultThreadFactory))).thenReturn(scheduledExecutorService);
 
         PowerMockito.whenNew(BookieClientImpl.class)
-                    .withArguments(eq(clientConfiguration), eq(nioEventLoopGroup), eq(UnpooledByteBufAllocator.DEFAULT),
-                                   eq(orderedExecutor), eq(scheduledExecutorService), eq(NullStatsLogger.INSTANCE))
+                    .withAnyArguments()
                     .thenReturn(bookieClient);
 
 
@@ -155,12 +156,12 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
     @Test
     public void testWithBookieAddress() throws Exception {
         ReadLedgerCommand cmd = new ReadLedgerCommand();
-        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-b", "localhost:9000" }));
+        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-b", bookieSocketAddress.getId() }));
         verifyNew(NioEventLoopGroup.class, times(1)).withNoArguments();
         verifyNew(DefaultThreadFactory.class, times(1)).withArguments(anyString());
         verifyNew(BookieClientImpl.class, times(1))
             .withArguments(eq(clientConfiguration), eq(nioEventLoopGroup), eq(UnpooledByteBufAllocator.DEFAULT),
-                           eq(orderedExecutor), eq(scheduledExecutorService), eq(NullStatsLogger.INSTANCE));
+                           eq(orderedExecutor), eq(scheduledExecutorService), eq(NullStatsLogger.INSTANCE), eq(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER));
         verify(nioEventLoopGroup, times(1)).shutdownGracefully();
         verify(orderedExecutor, times(1)).shutdown();
         verify(bookieClient, times(1)).close();

@@ -26,7 +26,7 @@ import org.apache.bookkeeper.client.api.BookieID;
 /**
  * This is an identifier for a BookieID.
  */
-public class BookieId implements BookieID {
+public final class BookieId implements BookieID {
 
     private final String id;
 

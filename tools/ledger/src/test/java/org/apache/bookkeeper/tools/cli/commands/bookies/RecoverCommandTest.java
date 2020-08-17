@@ -68,11 +68,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link RecoverCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ RecoverCommand.class, MetadataDrivers.class, Cookie.class })
+@PrepareForTest({ RecoverCommand.class, MetadataDrivers.class, Cookie.class})
 public class RecoverCommandTest extends BookieCommandTestBase {
 
-    @Mock
-    private BookieId bookieSocketAddress;
+    private BookieId bookieSocketAddress = BookieId.parse("127.0.0.1:8000");
 
     @Mock
     private ClientConfiguration clientConfiguration;
@@ -99,12 +98,9 @@ public class RecoverCommandTest extends BookieCommandTestBase {
     @Override
     public void setup() throws Exception {
         super.setup();
-
         PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
         PowerMockito.whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
                     .withArguments(eq(clientConfiguration)).thenReturn(conf);
-        PowerMockito.whenNew(BookieId.class).withArguments(anyString(), anyInt())
-                    .thenReturn(bookieSocketAddress);
         PowerMockito.whenNew(ClientConfiguration.class).withParameterTypes(AbstractConfiguration.class)
                     .withArguments(eq(conf)).thenReturn(clientConfiguration);
         PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
@@ -164,7 +160,7 @@ public class RecoverCommandTest extends BookieCommandTestBase {
     @Test
     public void testBookieListCheck() {
         RecoverCommand cmd = new RecoverCommand();
-        Assert.assertFalse(cmd.apply(bkFlags, new String[] { "-bs", "127.0.0.1:8000,8001" }));
+        Assert.assertFalse(cmd.apply(bkFlags, new String[] { "-bs", "127.0.0.1:8000,$nonvalidbookieid:8001" }));
     }
 
     @Test

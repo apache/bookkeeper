@@ -31,6 +31,7 @@ import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,7 +74,7 @@ public class InfoCommandTest extends BookieCommandTestBase {
             .withParameterTypes(ClientConfiguration.class)
             .withArguments(any(ClientConfiguration.class))
             .thenReturn(bk);
-
+        when(bk.getBookieAddressResolver()).thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         this.bookieId = BookieId.parse("localhost:9999");
         this.bInfo = mock(BookieInfoReader.BookieInfo.class);
         map.put(bookieId, bInfo);

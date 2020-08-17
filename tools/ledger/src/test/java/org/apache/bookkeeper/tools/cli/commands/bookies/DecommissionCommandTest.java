@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
+import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -61,8 +62,7 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
     @Mock
     private BookKeeperAdmin bookKeeperAdmin;
 
-    @Mock
-    private BookieId bookieSocketAddress;
+    private BookieId bookieSocketAddress = BookieId.parse(UUID.randomUUID().toString());
 
     @Mock
     private Versioned<Cookie> cookieVersioned;
@@ -84,7 +84,6 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
         PowerMockito.whenNew(ClientConfiguration.class).withArguments(eq(conf)).thenReturn(clientConfiguration);
         PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
                     .withArguments(eq(clientConfiguration)).thenReturn(bookKeeperAdmin);
-        PowerMockito.whenNew(BookieId.class).withArguments(anyString()).thenReturn(bookieSocketAddress);
         PowerMockito.mockStatic(Bookie.class);
         PowerMockito.when(Bookie.getBookieId(any(ServerConfiguration.class))).thenReturn(bookieSocketAddress);
         PowerMockito.doNothing().when(bookKeeperAdmin).decommissionBookie(eq(bookieSocketAddress));
@@ -114,7 +113,6 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
 
         verifyNew(ClientConfiguration.class, times(1)).withArguments(eq(conf));
         verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(clientConfiguration));
-        verifyNew(BookieId.class, never()).withArguments(anyString());
         verify(bookKeeperAdmin, times(1)).decommissionBookie(eq(bookieSocketAddress));
         verify(cookieVersioned, times(1)).getValue();
         verify(cookieVersioned, times(1)).getVersion();
@@ -123,11 +121,10 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
     @Test
     public void testWithBookieId() throws Exception {
         DecommissionCommand cmd = new DecommissionCommand();
-        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-b", "1" }));
+        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-b", bookieSocketAddress.getId() }));
 
         verifyNew(ClientConfiguration.class, times(1)).withArguments(eq(conf));
         verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(clientConfiguration));
-        verifyNew(BookieId.class, times(1)).withArguments(anyString());
         verify(bookKeeperAdmin, times(1)).decommissionBookie(eq(bookieSocketAddress));
         verify(cookieVersioned, times(1)).getValue();
         verify(cookieVersioned, times(1)).getVersion();

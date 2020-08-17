@@ -32,6 +32,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.discover.BookieServiceInfoUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
@@ -77,6 +79,8 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
 
         when(regClient.getWritableBookies())
             .thenReturn(value(new Versioned<>(writableBookies, new LongVersion(0L))));
+        when(regClient.getBookieServiceInfo(any(BookieId.class)))
+            .thenReturn(value(new Versioned<>(BookieServiceInfoUtils.buildLegacyBookieServiceInfo("localhost:1234"), new LongVersion(0))));
         when(regClient.getReadOnlyBookies())
             .thenReturn(value(new Versioned<>(readonlyBookies, new LongVersion(0L))));
         when(regClient.getAllBookies())
