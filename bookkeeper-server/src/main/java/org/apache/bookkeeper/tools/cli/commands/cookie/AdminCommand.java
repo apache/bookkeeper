@@ -149,7 +149,7 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
         return runFunctionWithRegistrationManager(bkConf, rm -> {
             try {
                 ServerConfiguration conf = new ServerConfiguration(bkConf);
-                String newBookieId = Bookie.getBookieAddress(conf).toString();
+                String newBookieId = Bookie.getBookieId(conf).toString();
                 // read oldcookie
                 Versioned<Cookie> oldCookie = null;
                 try {

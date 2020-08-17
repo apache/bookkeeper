@@ -70,8 +70,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
     @Mock
     private Cookie cookie;
 
-    @Mock
-    private BookieId bookieSocketAddress;
+    private BookieId bookieSocketAddress = BookieId.parse("localhost:9000");
 
     public AdminCommandTest() throws IOException {
         super(3, 3);
@@ -125,7 +124,6 @@ public class AdminCommandTest extends BookieCommandTestBase {
                 any(Function.class));
 
         PowerMockito.when(Bookie.getBookieId(eq(serverConfiguration))).thenReturn(bookieSocketAddress);
-        when(bookieSocketAddress.toString()).thenReturn("1");
         PowerMockito.when(Cookie.readFromRegistrationManager(eq(registrationManager), eq(serverConfiguration)))
                     .thenReturn(cookieVersioned);
         PowerMockito.when(Cookie.readFromRegistrationManager(eq(registrationManager), eq(bookieSocketAddress)))

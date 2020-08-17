@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -50,6 +51,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
     CountDownLatch.class })
 public class ListLedgersCommandTest extends BookieCommandTestBase {
 
+    private final BookieId bookieAddress = BookieId.parse(UUID.randomUUID().toString());
+
     public ListLedgersCommandTest() {
         super(3, 3);
     }
@@ -61,7 +64,6 @@ public class ListLedgersCommandTest extends BookieCommandTestBase {
 
         PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
 
-        BookieId bookieAddress = mock(BookieId.class);
         PowerMockito.whenNew(BookieId.class).withParameterTypes(String.class).withArguments(anyString())
             .thenReturn(bookieAddress);
 
@@ -95,7 +97,7 @@ public class ListLedgersCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testWithBookieId() {
-        testCommand("-id", "1");
+        testCommand("-id", bookieAddress.getId());
     }
 
     private void testCommand(String... args) {

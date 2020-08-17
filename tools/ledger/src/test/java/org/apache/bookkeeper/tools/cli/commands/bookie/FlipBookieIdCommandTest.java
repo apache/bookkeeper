@@ -65,8 +65,7 @@ public class FlipBookieIdCommandTest extends BookieCommandTestBase {
     @Mock
     private ServerConfiguration serverConfiguration;
 
-    @Mock
-    private BookieId bookieSocketAddress;
+    private BookieId bookieSocketAddress = BookieId.parse("localhost:9000");
 
     public FlipBookieIdCommandTest() {
         super(3, 0);

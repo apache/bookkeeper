@@ -26,6 +26,7 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import java.net.URI;
+import java.util.UUID;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
@@ -72,7 +73,7 @@ public class WhoIsAuditorCommandTest extends BookieCommandTestBase {
         when(builder.sessionTimeoutMs(anyInt())).thenReturn(builder);
         when(builder.build()).thenReturn(zk);
 
-        BookieId bookieId = mock(BookieId.class);
+        BookieId bookieId = BookieId.parse(UUID.randomUUID().toString());
 
         PowerMockito.mockStatic(AuditorElector.class);
         PowerMockito.when(AuditorElector.getCurrentAuditor(eq(conf), eq(zk)))
