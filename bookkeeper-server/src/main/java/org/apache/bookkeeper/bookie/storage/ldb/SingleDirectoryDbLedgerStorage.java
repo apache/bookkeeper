@@ -338,25 +338,25 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private void triggerFlushAndAddEntry(long ledgerId, long entryId, ByteBuf entry)
             throws IOException, BookieException {
-        // Write cache is full, we need to trigger a flush so that it gets rotated
-        // If the flush has already been triggered or flush has already switched the
-        // cache, we don't need to trigger another flush
-        if (!isFlushOngoing.get() && hasFlushBeenTriggered.compareAndSet(false, true)) {
-            // Trigger an early flush in background
-            log.info("Write cache is full, triggering flush");
-            executor.execute(() -> {
-                try {
-                    flush();
-                } catch (IOException e) {
-                    log.error("Error during flush", e);
-                }
-            });
-        }
-
         dbLedgerStorageStats.getThrottledWriteRequests().inc();
         long absoluteTimeoutNanos = System.nanoTime() + maxThrottleTimeNanos;
 
         while (System.nanoTime() < absoluteTimeoutNanos) {
+            // Write cache is full, we need to trigger a flush so that it gets rotated
+            // If the flush has already been triggered or flush has already switched the
+            // cache, we don't need to trigger another flush
+            if (!isFlushOngoing.get() && hasFlushBeenTriggered.compareAndSet(false, true)) {
+                // Trigger an early flush in background
+                log.info("Write cache is full, triggering flush");
+                executor.execute(() -> {
+                        try {
+                            flush();
+                        } catch (IOException e) {
+                            log.error("Error during flush", e);
+                        }
+                    });
+            }
+
             long stamp = writeCacheRotationLock.readLock();
             try {
                 if (writeCache.put(ledgerId, entryId, entry)) {
