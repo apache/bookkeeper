@@ -49,12 +49,17 @@ public class CachingBookieAddressResolver implements BookieAddressResolver {
             log.info("Resolved {} as {}", bookieId, res);
             return res;
         } catch (BKException.BKBookieHandleNotAvailableException ex) {
-            log.info("Cannot resolve {}, falling back to legacy resolved", bookieId, ex);
-            return BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER.resolve(bookieId);
+            if (bookieId.getId().endsWith(":0")) {
+                log.info("Resolving fake bookie Id {} using legacy bookie resolver", bookieId, ex);
+                return BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER.resolve(bookieId);
+            }
+            log.info("Cannot resolve {}, bookie is unknown", bookieId, ex);
+            throw new BookieIdNotResolvedException(bookieId, ex);
         } catch (Exception ex) {
             if (ex instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
+            log.info("Cannot resolve {} ", bookieId, ex);
             throw new BookieIdNotResolvedException(bookieId, ex);
         }
     }
