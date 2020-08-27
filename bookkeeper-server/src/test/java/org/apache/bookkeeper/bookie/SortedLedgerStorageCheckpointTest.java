@@ -224,8 +224,8 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         });
 
         // simulate entry log is rotated (due to compaction)
-        EntryLogManagerForSingleEntryLog entryLogManager = (EntryLogManagerForSingleEntryLog) storage.getEntryLogger()
-                .getEntryLogManager();
+        EntryLogManagerForSingleEntryLog entryLogManager =
+            (EntryLogManagerForSingleEntryLog) ((EntryLogger) storage.getEntryLogger()).getEntryLogManager();
         entryLogManager.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
         long leastUnflushedLogId = storage.getEntryLogger().getLeastUnflushedLogId();
         long currentLogId = entryLogManager.getCurrentLogId();

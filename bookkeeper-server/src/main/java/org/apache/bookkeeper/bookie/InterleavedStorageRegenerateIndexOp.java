@@ -30,7 +30,7 @@ import java.util.PrimitiveIterator.OfLong;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
+import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.checksum.DigestManager;

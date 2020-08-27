@@ -37,6 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.bookie.storage.EntryLoggerIface;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -260,7 +261,7 @@ public class SortedLedgerStorage
     @Override
     public void checkpoint(final Checkpoint checkpoint) throws IOException {
         long numBytesFlushed = memTable.flush(this, checkpoint);
-        interleavedLedgerStorage.getEntryLogger().prepareSortedLedgerStorageCheckpoint(numBytesFlushed);
+        ((EntryLogger) interleavedLedgerStorage.getEntryLogger()).prepareSortedLedgerStorageCheckpoint(numBytesFlushed);
         interleavedLedgerStorage.checkpoint(checkpoint);
     }
 
@@ -315,9 +316,9 @@ public class SortedLedgerStorage
             public void run() {
                 try {
                     LOG.info("Started flushing mem table.");
-                    interleavedLedgerStorage.getEntryLogger().prepareEntryMemTableFlush();
+                    ((EntryLogger) interleavedLedgerStorage.getEntryLogger()).prepareEntryMemTableFlush();
                     memTable.flush(SortedLedgerStorage.this);
-                    if (interleavedLedgerStorage.getEntryLogger().commitEntryMemTableFlush()) {
+                    if (((EntryLogger) interleavedLedgerStorage.getEntryLogger()).commitEntryMemTableFlush()) {
                         interleavedLedgerStorage.checkpointer.startCheckpoint(cp);
                     }
                 } catch (Exception e) {
@@ -341,7 +342,7 @@ public class SortedLedgerStorage
     }
 
     @Override
-    public EntryLogger getEntryLogger() {
+    public EntryLoggerIface getEntryLogger() {
         return interleavedLedgerStorage.getEntryLogger();
     }
 

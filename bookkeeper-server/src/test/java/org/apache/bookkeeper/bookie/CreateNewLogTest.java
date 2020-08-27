@@ -516,7 +516,7 @@ public class CreateNewLogTest {
                 if (i % 2 == 0) {
                     ((EntryLogManagerBase) el.getEntryLogManager()).createNewLog((long) i);
                 } else {
-                    el.createNewCompactionLog();
+                    el.newCompactionLog(i);
                 }
             } catch (IOException e) {
                 LOG.error("Received exception while creating newLog", e);

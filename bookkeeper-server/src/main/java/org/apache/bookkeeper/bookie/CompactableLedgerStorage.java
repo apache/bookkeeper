@@ -22,7 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
-
+import org.apache.bookkeeper.bookie.storage.EntryLoggerIface;
 /**
  * Interface that identifies LedgerStorage implementations using EntryLogger and running periodic entries compaction.
  */
@@ -31,7 +31,7 @@ public interface CompactableLedgerStorage extends LedgerStorage {
     /**
      * @return the EntryLogger used by the ledger storage
      */
-    EntryLogger getEntryLogger();
+    EntryLoggerIface getEntryLogger();
 
     /**
      * Get an iterator over a range of ledger ids stored in the bookie.

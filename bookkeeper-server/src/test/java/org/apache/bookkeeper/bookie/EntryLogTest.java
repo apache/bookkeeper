@@ -114,7 +114,7 @@ public class EntryLogTest {
     @After
     public void tearDown() throws Exception {
         if (null != this.entryLogger) {
-            entryLogger.shutdown();
+            entryLogger.close();
         }
 
         for (File dir : tempDirs) {
@@ -125,7 +125,7 @@ public class EntryLogTest {
 
     @Test
     public void testDeferCreateNewLog() throws Exception {
-        entryLogger.shutdown();
+        entryLogger.close();
 
         // mark `curDir` as filled
         this.conf.setMinUsableSizeForEntryLogCreation(1);
@@ -149,7 +149,7 @@ public class EntryLogTest {
 
     @Test
     public void testDeferCreateNewLogWithoutEnoughDiskSpaces() throws Exception {
-        entryLogger.shutdown();
+        entryLogger.close();
 
         // mark `curDir` as filled
         this.conf.setMinUsableSizeForEntryLogCreation(Long.MAX_VALUE);
@@ -182,7 +182,7 @@ public class EntryLogTest {
         entryLogger.addEntry(3L, generateEntry(3, 1).nioBuffer());
         entryLogger.addEntry(2L, generateEntry(2, 1).nioBuffer());
         entryLogger.flush();
-        entryLogger.shutdown();
+        entryLogger.close();
         // now lets truncate the file to corrupt the last entry, which simulates a partial write
         File f = new File(curDir, "0.log");
         RandomAccessFile raf = new RandomAccessFile(f, "rw");
@@ -235,7 +235,7 @@ public class EntryLogTest {
                 positions[i][j] = logger.addEntry((long) i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
-            logger.shutdown();
+            logger.close();
         }
         // delete last log id
         File lastLogId = new File(curDir, "lastId");
@@ -250,7 +250,7 @@ public class EntryLogTest {
                 positions[i][j] = logger.addEntry((long) i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
-            logger.shutdown();
+            logger.close();
         }
 
         EntryLogger newLogger = new EntryLogger(conf, dirsMgr);
@@ -291,7 +291,7 @@ public class EntryLogTest {
                     .getLocalizedMessage());
         } finally {
             if (entryLogger != null) {
-                entryLogger.shutdown();
+                entryLogger.close();
             }
         }
     }
@@ -367,7 +367,7 @@ public class EntryLogTest {
         entryLogger.addEntry(2L, generateEntry(2, 1).nioBuffer());
         entryLogger.addEntry(1L, generateEntry(1, 2).nioBuffer());
         ((EntryLogManagerBase) entryLogger.getEntryLogManager()).createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
-        entryLogger.shutdown();
+        entryLogger.close();
 
         // Rewrite the entry log header to be on V0 format
         File f = new File(curDir, "0.log");
@@ -404,7 +404,7 @@ public class EntryLogTest {
      */
     @Test
     public void testPreAllocateLog() throws Exception {
-        entryLogger.shutdown();
+        entryLogger.close();
 
         // enable pre-allocation case
         conf.setEntryLogFilePreAllocationEnabled(true);
@@ -417,7 +417,7 @@ public class EntryLogTest {
         entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
         // the Future<BufferedLogChannel> is not null all the time
         assertNotNull(entryLogger.getEntryLoggerAllocator().getPreallocationFuture());
-        entryLogger.shutdown();
+        entryLogger.close();
 
         // disable pre-allocation case
         conf.setEntryLogFilePreAllocationEnabled(false);
@@ -462,7 +462,7 @@ public class EntryLogTest {
      */
     @Test
     public void testFlushOrder() throws Exception {
-        entryLogger.shutdown();
+        entryLogger.close();
 
         int logSizeLimit = 256 * 1024;
         conf.setEntryLogPerLedgerEnabled(false);
@@ -512,7 +512,7 @@ public class EntryLogTest {
                      * here we are adding entry of size logSizeLimit with
                      * rolllog=true, so it would create a new entrylog.
                      */
-                    entryLogger.addEntry(123, generateEntry(123, 456, logSizeLimit), true);
+                    entryLogger.addEntry(123, generateEntry(123, 456, logSizeLimit));
                 } catch (InterruptedException | BrokenBarrierException | IOException e) {
                     LOG.error("Exception happened for entryLogManager.createNewLog", e);
                     exceptionHappened.set(true);
@@ -1087,7 +1087,7 @@ public class EntryLogTest {
      */
     @Test
     public void testCacheMaximumSizeEvictionPolicy() throws Exception {
-        entryLogger.shutdown();
+        entryLogger.close();
         final int cacheMaximumSize = 20;
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
