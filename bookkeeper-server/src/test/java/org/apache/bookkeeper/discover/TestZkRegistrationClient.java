@@ -133,13 +133,41 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         return bookies;
     }
 
+    private void prepareReadBookieServiceInfo(BookieId address, boolean readonly) throws Exception {
+        if (readonly) {
+            mockZkGetData(regPath + "/" + address.toString(),
+                        false,
+                        Code.NONODE.intValue(),
+                        new byte[] {},
+                        new Stat());
+            mockZkGetData(regReadonlyPath + "/" + address.toString(),
+                        false,
+                        Code.OK.intValue(),
+                        new byte[] {},
+                        new Stat());
+        } else {
+            mockZkGetData(regPath + "/" + address.toString(),
+                        false,
+                        Code.OK.intValue(),
+                        new byte[] {},
+                        new Stat());
+            mockZkGetData(regReadonlyPath + "/" + address.toString(),
+                        false,
+                        Code.NONODE.intValue(),
+                        new byte[] {},
+                        new Stat());
+        }
+    }
+
     @Test
     public void testGetWritableBookies() throws Exception {
         Set<BookieId> addresses = prepareNBookies(10);
         List<String> children = Lists.newArrayList();
         for (BookieId address : addresses) {
             children.add(address.toString());
+            prepareReadBookieServiceInfo(address, false);
         }
+
         Stat stat = mock(Stat.class);
         when(stat.getCversion()).thenReturn(1234);
         mockGetChildren(
@@ -158,8 +186,12 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
     public void testGetAllBookies() throws Exception {
         Set<BookieId> addresses = prepareNBookies(10);
         List<String> children = Lists.newArrayList();
+
+        int i = 0;
         for (BookieId address : addresses) {
             children.add(address.toString());
+            boolean readonly = i++ % 2 == 0;
+            prepareReadBookieServiceInfo(address, readonly);
         }
         Stat stat = mock(Stat.class);
         when(stat.getCversion()).thenReturn(1234);
@@ -181,6 +213,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         List<String> children = Lists.newArrayList();
         for (BookieId address : addresses) {
             children.add(address.toString());
+            prepareReadBookieServiceInfo(address, false);
         }
         Stat stat = mock(Stat.class);
         when(stat.getCversion()).thenReturn(1234);
@@ -269,6 +302,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         List<String> children = Lists.newArrayList();
         for (BookieId address : addresses) {
             children.add(address.toString());
+            prepareReadBookieServiceInfo(address, !isWritable);
         }
         Stat stat = mock(Stat.class);
         when(stat.getCversion()).thenReturn(1234);
@@ -355,6 +389,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         List<String> newChildren = Lists.newArrayList();
         for (BookieId address : newAddresses) {
             newChildren.add(address.toString());
+            prepareReadBookieServiceInfo(address, !isWritable);
         }
         Stat newStat = mock(Stat.class);
         when(newStat.getCversion()).thenReturn(1235);
@@ -393,6 +428,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         newChildren = Lists.newArrayList();
         for (BookieId address : newAddresses) {
             newChildren.add(address.toString());
+            prepareReadBookieServiceInfo(address, !isWritable);
         }
         newStat = mock(Stat.class);
         when(newStat.getCversion()).thenReturn(1236);
@@ -469,6 +505,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         List<String> children = Lists.newArrayList();
         for (BookieId address : addresses) {
             children.add(address.toString());
+            prepareReadBookieServiceInfo(address, !isWritable);
         }
         Stat stat = mock(Stat.class);
         when(stat.getCversion()).thenReturn(1234);
