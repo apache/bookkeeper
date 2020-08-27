@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,31 +18,36 @@
  * under the License.
  *
  */
+package org.apache.bookkeeper.bookie.storage;
 
-package org.apache.bookkeeper.bookie;
+import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
- * Read Only Entry Logger.
+ * Scan entries in a entry log file.
  */
-public class ReadOnlyEntryLogger extends EntryLogger {
+public interface EntryLogScanner {
+    /**
+     * Tests whether or not the entries belongs to the specified ledger
+     * should be processed.
+     *
+     * @param ledgerId
+     *          Ledger ID.
+     * @return true if and only the entries of the ledger should be scanned.
+     */
+    boolean accept(long ledgerId);
 
-    public ReadOnlyEntryLogger(ServerConfiguration conf) throws IOException {
-        super(conf);
-    }
-
-    @Override
-    public boolean removeEntryLog(long entryLogId) {
-        // can't remove entry log in readonly mode
-        return false;
-    }
-
-    @Override
-    public synchronized long addEntry(long ledgerId, ByteBuffer entry) throws IOException {
-        throw new IOException("Can't add entry to a readonly entry logger.");
-    }
+    /**
+     * Process an entry.
+     *
+     * @param ledgerId
+     *          Ledger ID.
+     * @param offset
+     *          File offset of this entry.
+     * @param entry
+     *          Entry ByteBuf
+     * @throws IOException
+     */
+    void process(long ledgerId, long offset, ByteBuf entry) throws IOException;
 }

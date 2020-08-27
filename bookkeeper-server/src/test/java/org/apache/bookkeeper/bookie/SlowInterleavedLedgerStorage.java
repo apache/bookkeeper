@@ -76,9 +76,9 @@ public class SlowInterleavedLedgerStorage extends InterleavedLedgerStorage {
         }
 
         @Override
-        public long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
+        public long addEntry(long ledger, ByteBuf entry) throws IOException {
             delayMs(addDelay);
-            return super.addEntry(ledger, entry, rollLog);
+            return super.addEntry(ledger, entry);
         }
 
         @Override

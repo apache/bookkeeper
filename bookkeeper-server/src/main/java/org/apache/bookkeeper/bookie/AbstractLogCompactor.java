@@ -57,7 +57,10 @@ public abstract class AbstractLogCompactor {
      */
     public void cleanUpAndRecover() {}
 
-    static class Throttler {
+    /**
+     * class Throttler.
+     */
+    public static class Throttler {
         private final RateLimiter rateLimiter;
         private final boolean isThrottleByBytes;
 

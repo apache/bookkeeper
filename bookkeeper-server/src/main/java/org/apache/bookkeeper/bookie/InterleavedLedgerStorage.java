@@ -59,6 +59,7 @@ import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
+import org.apache.bookkeeper.bookie.storage.EntryLoggerIface;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -284,7 +285,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         LOG.info("Shutting down GC thread");
         gcThread.shutdown();
         LOG.info("Shutting down entry logger");
-        entryLogger.shutdown();
+        entryLogger.close();
         try {
             ledgerCache.close();
         } catch (IOException e) {
@@ -512,7 +513,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public EntryLogger getEntryLogger() {
+    public EntryLoggerIface getEntryLogger() {
         return entryLogger;
     }
 
@@ -535,7 +536,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         /*
          * Log the entry
          */
-        long pos = entryLogger.addEntry(ledgerId, entry, rollLog);
+        long pos = entryLogger.addEntry(ledgerId, entry);
 
         /*
          * Set offset of entry id to be the current ledger position

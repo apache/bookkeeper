@@ -68,6 +68,7 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerEntryPage;
 import org.apache.bookkeeper.bookie.StateManager;
+import org.apache.bookkeeper.bookie.storage.EntryLoggerIface;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.common.util.Watcher;
@@ -91,7 +92,7 @@ import org.slf4j.LoggerFactory;
  * <p>This is meant only to be used from {@link DbLedgerStorage}.
  */
 public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage {
-    private final EntryLogger entryLogger;
+    private final EntryLoggerIface entryLogger;
 
     private final LedgerMetadataIndex ledgerIndex;
     private final EntryLocationIndex entryLocationIndex;
@@ -265,7 +266,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             flush();
 
             gcThread.shutdown();
-            entryLogger.shutdown();
+            entryLogger.close();
 
             cleanupExecutor.shutdown();
             cleanupExecutor.awaitTermination(1, TimeUnit.SECONDS);
@@ -589,8 +590,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             while (count < readAheadCacheBatchSize
                     && size < maxReadAheadBytesSize
                     && currentEntryLogId == firstEntryLogId) {
-                ByteBuf entry = entryLogger.internalReadEntry(orginalLedgerId, firstEntryId, currentEntryLocation,
-                        false /* validateEntry */);
+                ByteBuf entry = entryLogger.readEntry(orginalLedgerId,
+                        firstEntryId, currentEntryLocation);
 
                 try {
                     long currentEntryLedgerId = entry.getLong(0);
@@ -722,7 +723,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             Batch batch = entryLocationIndex.newBatch();
             writeCacheBeingFlushed.forEach((ledgerId, entryId, entry) -> {
                 try {
-                    long location = entryLogger.addEntry(ledgerId, entry, true);
+                    long location = entryLogger.addEntry(ledgerId, entry);
                     entryLocationIndex.addLocation(batch, ledgerId, entryId, location);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -864,7 +865,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
-    public EntryLogger getEntryLogger() {
+    public EntryLoggerIface getEntryLogger() {
         return entryLogger;
     }
 
