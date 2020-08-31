@@ -61,6 +61,12 @@ public class BookieIdTest {
         BookieId.parse("non$valid");
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateReservedWord() {
+        // 'readonly' is a reserved word for the ZK based implementation
+        BookieId.parse("readonly");
+    }
+
     @Test
     public void testValidateHostnamePort() {
         BookieId.parse("this.is.an.hostname:1234");

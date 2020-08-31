@@ -81,7 +81,8 @@ public final class BookieId {
 
     private static void validateBookieId(String id) {
         Objects.requireNonNull(id, "BookieId cannot be null");
-        if (!(id.matches("[a-zA-Z0-9:-_.\\-]+"))) {
+        if (!(id.matches("[a-zA-Z0-9:-_.\\-]+"))
+                || "readonly".equalsIgnoreCase(id)) {
             throw new IllegalArgumentException("BookieId " + id + " is not valid");
         }
     }
