@@ -109,7 +109,6 @@ class BookieWatcherImpl implements BookieWatcher {
 
     private CompletableFuture<?> initialWritableBookiesFuture = null;
     private CompletableFuture<?> initialReadonlyBookiesFuture = null;
-    private CompletableFuture<?> initialAllBookiesFuture = null;
 
     private final BookieAddressResolver bookieAddressResolver;
 
@@ -208,15 +207,11 @@ class BookieWatcherImpl implements BookieWatcher {
      */
     public void initialBlockingBookieRead() throws BKException {
 
-        CompletableFuture<?> all;
         CompletableFuture<?> writable;
         CompletableFuture<?> readonly;
         synchronized (this) {
             if (initialReadonlyBookiesFuture == null) {
                 assert initialWritableBookiesFuture == null;
-                assert initialAllBookiesFuture == null;
-
-                all = this.registrationClient.getAllBookies();
 
                 writable = this.registrationClient.watchWritableBookies(
                             bookies -> processWritableBookiesChanged(bookies.getValue()));
@@ -225,18 +220,10 @@ class BookieWatcherImpl implements BookieWatcher {
                             bookies -> processReadOnlyBookiesChanged(bookies.getValue()));
                 initialWritableBookiesFuture = writable;
                 initialReadonlyBookiesFuture = readonly;
-                initialAllBookiesFuture = all;
             } else {
                 writable = initialWritableBookiesFuture;
                 readonly = initialReadonlyBookiesFuture;
-                all = initialAllBookiesFuture;
             }
-        }
-        try {
-            FutureUtils.result(all, EXCEPTION_FUNC);
-        } catch (BKInterruptedException ie) {
-            Thread.currentThread().interrupt();
-            throw ie;
         }
         try {
             FutureUtils.result(writable, EXCEPTION_FUNC);
