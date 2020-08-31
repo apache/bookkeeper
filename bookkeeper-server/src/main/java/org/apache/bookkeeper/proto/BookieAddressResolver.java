@@ -41,7 +41,7 @@ public interface BookieAddressResolver {
         private final BookieId bookieId;
 
         public BookieIdNotResolvedException(BookieId bookieId, Throwable cause) {
-            super("Cannot resolve bookieId " + bookieId + ", bookie does not exist or is not running", cause);
+            super("Cannot resolve bookieId " + bookieId + ", bookie does not exist or it is not running", cause);
             this.bookieId = bookieId;
         }
 

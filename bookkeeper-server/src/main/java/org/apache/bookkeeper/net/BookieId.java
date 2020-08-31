@@ -21,12 +21,11 @@
 package org.apache.bookkeeper.net;
 
 import java.util.Objects;
-import org.apache.bookkeeper.client.api.BookieID;
 
 /**
  * This is an identifier for a BookieID.
  */
-public final class BookieId implements BookieID {
+public final class BookieId {
 
     private final String id;
 
