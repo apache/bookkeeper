@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.Set;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.client.CachingBookieAddressResolver;
+import org.apache.bookkeeper.client.DefaultBookieAddressResolver;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
@@ -87,7 +87,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
             ).getValue();
             if (!bookies.isEmpty()) {
                 System.out.println("ReadWrite Bookies :");
-                printBookies(bookies, new CachingBookieAddressResolver(regClient));
+                printBookies(bookies, new DefaultBookieAddressResolver(regClient));
                 hasBookies = true;
             }
         }
@@ -97,7 +97,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
             ).getValue();
             if (!bookies.isEmpty()) {
                 System.out.println("Readonly Bookies :");
-                printBookies(bookies, new CachingBookieAddressResolver(regClient));
+                printBookies(bookies, new DefaultBookieAddressResolver(regClient));
                 hasBookies = true;
             }
         }
@@ -107,7 +107,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
             ).getValue();
             if (!bookies.isEmpty()) {
                 System.out.println("All Bookies :");
-                printBookies(bookies, new CachingBookieAddressResolver(regClient));
+                printBookies(bookies, new DefaultBookieAddressResolver(regClient));
                 hasBookies = true;
             }
         }

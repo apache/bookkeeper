@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
-import org.apache.bookkeeper.client.CachingBookieAddressResolver;
+import org.apache.bookkeeper.client.DefaultBookieAddressResolver;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
@@ -53,13 +53,13 @@ class BKRegistrationNameResolver extends NameResolver {
     private Listener listener;
     private boolean shutdown;
     private boolean resolving;
-    private CachingBookieAddressResolver bookieAddressResolver;
+    private DefaultBookieAddressResolver bookieAddressResolver;
 
     BKRegistrationNameResolver(MetadataClientDriver clientDriver,
                                URI serviceURI) {
         this.clientDriver = clientDriver;
         this.serviceURI = serviceURI;
-        this.bookieAddressResolver = new CachingBookieAddressResolver(clientDriver.getRegistrationClient());
+        this.bookieAddressResolver = new DefaultBookieAddressResolver(clientDriver.getRegistrationClient());
         this.executor = Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder().setNameFormat("registration-name-resolver").build());
     }

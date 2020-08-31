@@ -490,7 +490,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
 
         BookieAddressResolver bookieAddressResolver =
-                new CachingBookieAddressResolver(metadataDriver.getRegistrationClient());
+                new DefaultBookieAddressResolver(metadataDriver.getRegistrationClient());
 
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,

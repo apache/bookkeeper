@@ -26,13 +26,14 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 
 /**
- * Resolved BookieIDs to Network addresses.
+ * Resolve BookieIDs to Network addresses.
  */
 @Slf4j
-public class CachingBookieAddressResolver implements BookieAddressResolver {
+public class DefaultBookieAddressResolver implements BookieAddressResolver {
+
     private final RegistrationClient registrationClient;
 
-    public CachingBookieAddressResolver(RegistrationClient registrationClient) {
+    public DefaultBookieAddressResolver(RegistrationClient registrationClient) {
         this.registrationClient = registrationClient;
     }
 

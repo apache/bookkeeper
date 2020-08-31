@@ -62,7 +62,7 @@ public class MockClientContext implements ClientContext {
         EnsemblePlacementPolicy placementPolicy = new DefaultEnsemblePlacementPolicy();
         BookieWatcherImpl bookieWatcherImpl = new BookieWatcherImpl(conf, placementPolicy,
                                                                     regClient,
-                                                                    new CachingBookieAddressResolver(regClient),
+                                                                    new DefaultBookieAddressResolver(regClient),
                                                                     NullStatsLogger.INSTANCE);
         bookieWatcherImpl.initialBlockingBookieRead();
 

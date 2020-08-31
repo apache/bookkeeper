@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.client.CachingBookieAddressResolver;
+import org.apache.bookkeeper.client.DefaultBookieAddressResolver;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
@@ -98,8 +98,8 @@ public abstract class BookKeeperClusterTestBase {
     }
 
     private static boolean findIfBookieRegistered(String bookieName) throws Exception {
-        CachingBookieAddressResolver resolver =
-                new CachingBookieAddressResolver(metadataClientDriver.getRegistrationClient());
+        DefaultBookieAddressResolver resolver =
+                new DefaultBookieAddressResolver(metadataClientDriver.getRegistrationClient());
         Set<BookieId> bookies =
             FutureUtils.result(metadataClientDriver
                     .getRegistrationClient().getWritableBookies()).getValue();
