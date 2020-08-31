@@ -76,7 +76,6 @@ import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -490,13 +489,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.ownTimer = false;
         }
 
-        BookieAddressResolver bookieAddressResolver;
-        if (this.conf.isEnableBookieAddressResolver()) {
-             bookieAddressResolver =
+        BookieAddressResolver bookieAddressResolver =
                 new CachingBookieAddressResolver(metadataDriver.getRegistrationClient());
-        } else {
-            bookieAddressResolver = BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER;
-        }
 
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,

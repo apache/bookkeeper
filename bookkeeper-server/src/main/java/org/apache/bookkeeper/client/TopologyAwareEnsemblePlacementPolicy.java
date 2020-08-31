@@ -785,7 +785,13 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     }
 
     protected String resolveNetworkLocation(BookieId addr) {
-        return NetUtils.resolveNetworkLocation(dnsResolver, bookieAddressResolver.resolve(addr));
+        try {
+            return NetUtils.resolveNetworkLocation(dnsResolver, bookieAddressResolver.resolve(addr));
+        } catch (BookieAddressResolver.BookieIdNotResolvedException err) {
+            LOG.error("Cannot resolve bookieId {} to a network address, resolving as {}", addr,
+                      NetworkTopology.DEFAULT_REGION_AND_RACK, err);
+            return NetworkTopology.DEFAULT_REGION_AND_RACK;
+        }
     }
 
     protected Set<Node> convertBookiesToNodes(Collection<BookieId> excludeBookies) {

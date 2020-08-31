@@ -26,6 +26,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -41,7 +42,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.SafeRunnable;
@@ -329,7 +329,12 @@ public class ZKRegistrationClient implements RegistrationClient {
     private CompletableFuture<Versioned<Set<BookieId>>> getChildren(String regPath, Watcher watcher) {
         CompletableFuture<Versioned<Set<BookieId>>> future = FutureUtils.createFuture();
         zk.getChildren(regPath, watcher, (rc, path, ctx, children, stat) -> {
-            if (Code.OK != rc) {
+            if (KeeperException.Code.NONODE.intValue() == rc) {
+                future.complete(new Versioned<>(Collections.emptySet(), new LongVersion(-1)));
+                return;
+            }
+
+            if (KeeperException.Code.OK.intValue() != rc) {
                 ZKException zke = new ZKException(KeeperException.create(KeeperException.Code.get(rc), path));
                 future.completeExceptionally(zke.fillInStackTrace());
                 return;
