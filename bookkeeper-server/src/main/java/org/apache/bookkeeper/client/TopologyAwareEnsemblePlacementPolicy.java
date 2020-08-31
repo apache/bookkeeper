@@ -780,7 +780,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     }
 
     protected BookieNode createDummyLocalBookieNode(String hostname) {
-        return new BookieNode(BookieId.parse(hostname + ":0"),
+        return new BookieNode(BookieSocketAddress.createDummyBookieIdForHostname(hostname),
                 NetUtils.resolveNetworkLocation(dnsResolver, new BookieSocketAddress(hostname, 0)));
     }
 
