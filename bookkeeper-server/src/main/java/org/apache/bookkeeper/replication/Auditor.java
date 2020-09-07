@@ -94,7 +94,7 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -1015,12 +1015,12 @@ public class Auditor implements AutoCloseable {
 
     private List<String> getAvailableBookies() throws BKException {
         // Get the available bookies
-        Collection<BookieSocketAddress> availableBkAddresses = admin.getAvailableBookies();
-        Collection<BookieSocketAddress> readOnlyBkAddresses = admin.getReadOnlyBookies();
+        Collection<BookieId> availableBkAddresses = admin.getAvailableBookies();
+        Collection<BookieId> readOnlyBkAddresses = admin.getReadOnlyBookies();
         availableBkAddresses.addAll(readOnlyBkAddresses);
 
         List<String> availableBookies = new ArrayList<String>();
-        for (BookieSocketAddress addr : availableBkAddresses) {
+        for (BookieId addr : availableBkAddresses) {
             availableBookies.add(addr.toString());
         }
         return availableBookies;
@@ -1153,7 +1153,7 @@ public class Auditor implements AutoCloseable {
         @Override
         public void operationComplete(int rc, Set<LedgerFragment> fragments) {
             if (rc == BKException.Code.OK) {
-                Set<BookieSocketAddress> bookies = Sets.newHashSet();
+                Set<BookieId> bookies = Sets.newHashSet();
                 for (LedgerFragment f : fragments) {
                     bookies.addAll(f.getAddresses());
                 }
@@ -1162,8 +1162,7 @@ public class Auditor implements AutoCloseable {
                     callback.processResult(Code.OK, null, null);
                     return;
                 }
-                publishSuspectedLedgersAsync(
-                    bookies.stream().map(BookieSocketAddress::toString).collect(Collectors.toList()),
+                publishSuspectedLedgersAsync(bookies.stream().map(BookieId::toString).collect(Collectors.toList()),
                     Sets.newHashSet(lh.getId())
                 ).whenComplete((result, cause) -> {
                     if (null != cause) {
@@ -1296,10 +1295,10 @@ public class Auditor implements AutoCloseable {
                         if (metadata.isClosed()) {
                             boolean foundSegmentNotAdheringToPlacementPolicy = false;
                             boolean foundSegmentSoftlyAdheringToPlacementPolicy = false;
-                            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble : metadata
+                            for (Map.Entry<Long, ? extends List<BookieId>> ensemble : metadata
                                     .getAllEnsembles().entrySet()) {
                                 long startEntryIdOfSegment = ensemble.getKey();
-                                List<BookieSocketAddress> ensembleOfSegment = ensemble.getValue();
+                                List<BookieId> ensembleOfSegment = ensemble.getValue();
                                 PlacementPolicyAdherence segmentAdheringToPlacementPolicy = admin
                                         .isEnsembleAdheringToPlacementPolicy(ensembleOfSegment, writeQuorumSize,
                                                 ackQuorumSize);
@@ -1380,17 +1379,17 @@ public class Auditor implements AutoCloseable {
         /*
          * segment details, like start entryid of the segment and ensemble List.
          */
-        private final Entry<Long, ? extends List<BookieSocketAddress>> segmentEnsemble;
+        private final Entry<Long, ? extends List<BookieId>> segmentEnsemble;
         // bookie missing these entries
-        private final BookieSocketAddress bookieMissingEntries;
+        private final BookieId bookieMissingEntries;
         /*
          * entries of this segment which are supposed to contain in this bookie
          * but missing in this bookie.
          */
         private final List<Long> unavailableEntriesList;
 
-        private MissingEntriesInfo(long ledgerId, Entry<Long, ? extends List<BookieSocketAddress>> segmentEnsemble,
-                BookieSocketAddress bookieMissingEntries, List<Long> unavailableEntriesList) {
+        private MissingEntriesInfo(long ledgerId, Entry<Long, ? extends List<BookieId>> segmentEnsemble,
+                BookieId bookieMissingEntries, List<Long> unavailableEntriesList) {
             this.ledgerId = ledgerId;
             this.segmentEnsemble = segmentEnsemble;
             this.bookieMissingEntries = bookieMissingEntries;
@@ -1401,11 +1400,11 @@ public class Auditor implements AutoCloseable {
             return ledgerId;
         }
 
-        private Entry<Long, ? extends List<BookieSocketAddress>> getSegmentEnsemble() {
+        private Entry<Long, ? extends List<BookieId>> getSegmentEnsemble() {
             return segmentEnsemble;
         }
 
-        private BookieSocketAddress getBookieMissingEntries() {
+        private BookieId getBookieMissingEntries() {
             return bookieMissingEntries;
         }
 
@@ -1503,7 +1502,7 @@ public class Auditor implements AutoCloseable {
             int ensembleSize = metadata.getEnsembleSize();
             RoundRobinDistributionSchedule distributionSchedule = new RoundRobinDistributionSchedule(writeQuorumSize,
                     ackQuorumSize, ensembleSize);
-            List<Entry<Long, ? extends List<BookieSocketAddress>>> segments = new LinkedList<>(
+            List<Entry<Long, ? extends List<BookieId>>> segments = new LinkedList<>(
                     metadata.getAllEnsembles().entrySet());
             /*
              * since there are multiple segments, MultiCallback should be
@@ -1511,11 +1510,11 @@ public class Auditor implements AutoCloseable {
              */
             MultiCallback mcbForThisLedger = new MultiCallback(ensembleSize * segments.size(), mcbForThisLedgerRange,
                     null, BKException.Code.OK, BKException.Code.ReadException);
-            HashMap<BookieSocketAddress, List<BookieExpectedToContainSegmentInfo>> bookiesSegmentInfoMap =
-                    new HashMap<BookieSocketAddress, List<BookieExpectedToContainSegmentInfo>>();
+            HashMap<BookieId, List<BookieExpectedToContainSegmentInfo>> bookiesSegmentInfoMap =
+                    new HashMap<BookieId, List<BookieExpectedToContainSegmentInfo>>();
             for (int segmentNum = 0; segmentNum < segments.size(); segmentNum++) {
-                final Entry<Long, ? extends List<BookieSocketAddress>> segmentEnsemble = segments.get(segmentNum);
-                final List<BookieSocketAddress> ensembleOfSegment = segmentEnsemble.getValue();
+                final Entry<Long, ? extends List<BookieId>> segmentEnsemble = segments.get(segmentNum);
+                final List<BookieId> ensembleOfSegment = segmentEnsemble.getValue();
                 final long startEntryIdOfSegment = segmentEnsemble.getKey();
                 final boolean lastSegment = (segmentNum == (segments.size() - 1));
                 final long lastEntryIdOfSegment = lastSegment ? lastEntryId
@@ -1530,7 +1529,7 @@ public class Auditor implements AutoCloseable {
                 final boolean emptySegment = lastSegment ? (startEntryIdOfSegment > lastEntryId)
                         : (startEntryIdOfSegment == segments.get(segmentNum + 1).getKey());
                 for (int bookieIndex = 0; bookieIndex < ensembleOfSegment.size(); bookieIndex++) {
-                    final BookieSocketAddress bookieInEnsemble = ensembleOfSegment.get(bookieIndex);
+                    final BookieId bookieInEnsemble = ensembleOfSegment.get(bookieIndex);
                     final BitSet entriesStripedToThisBookie = emptySegment ? EMPTY_BITSET
                             : distributionSchedule.getEntriesStripedToTheBookie(bookieIndex, startEntryIdOfSegment,
                                     lastEntryIdOfSegment);
@@ -1560,9 +1559,9 @@ public class Auditor implements AutoCloseable {
                             lastEntryIdOfSegment, segmentEnsemble, entriesStripedToThisBookie));
                 }
             }
-            for (Entry<BookieSocketAddress, List<BookieExpectedToContainSegmentInfo>> bookiesSegmentInfoTuple :
+            for (Entry<BookieId, List<BookieExpectedToContainSegmentInfo>> bookiesSegmentInfoTuple :
                 bookiesSegmentInfoMap.entrySet()) {
-                final BookieSocketAddress bookieInEnsemble = bookiesSegmentInfoTuple.getKey();
+                final BookieId bookieInEnsemble = bookiesSegmentInfoTuple.getKey();
                 final List<BookieExpectedToContainSegmentInfo> bookieSegmentInfoList = bookiesSegmentInfoTuple
                         .getValue();
                 admin.asyncGetListOfEntriesOfLedger(bookieInEnsemble, ledgerInRange)
@@ -1576,11 +1575,11 @@ public class Auditor implements AutoCloseable {
     private static class BookieExpectedToContainSegmentInfo {
         private final long startEntryIdOfSegment;
         private final long lastEntryIdOfSegment;
-        private final Entry<Long, ? extends List<BookieSocketAddress>> segmentEnsemble;
+        private final Entry<Long, ? extends List<BookieId>> segmentEnsemble;
         private final BitSet entriesOfSegmentStripedToThisBookie;
 
         private BookieExpectedToContainSegmentInfo(long startEntryIdOfSegment, long lastEntryIdOfSegment,
-                Entry<Long, ? extends List<BookieSocketAddress>> segmentEnsemble,
+                Entry<Long, ? extends List<BookieId>> segmentEnsemble,
                 BitSet entriesOfSegmentStripedToThisBookie) {
             this.startEntryIdOfSegment = startEntryIdOfSegment;
             this.lastEntryIdOfSegment = lastEntryIdOfSegment;
@@ -1596,7 +1595,7 @@ public class Auditor implements AutoCloseable {
             return lastEntryIdOfSegment;
         }
 
-        public Entry<Long, ? extends List<BookieSocketAddress>> getSegmentEnsemble() {
+        public Entry<Long, ? extends List<BookieId>> getSegmentEnsemble() {
             return segmentEnsemble;
         }
 
@@ -1611,14 +1610,14 @@ public class Auditor implements AutoCloseable {
         private final int ensembleSize;
         private final int writeQuorumSize;
         private final int ackQuorumSize;
-        private final BookieSocketAddress bookieInEnsemble;
+        private final BookieId bookieInEnsemble;
         private final List<BookieExpectedToContainSegmentInfo> bookieExpectedToContainSegmentInfoList;
         private final ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries;
         private final ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies;
         private final MultiCallback mcbForThisLedger;
 
         private GetListOfEntriesOfLedgerCallbackForReplicasCheck(long ledgerInRange, int ensembleSize,
-                int writeQuorumSize, int ackQuorumSize, BookieSocketAddress bookieInEnsemble,
+                int writeQuorumSize, int ackQuorumSize, BookieId bookieInEnsemble,
                 List<BookieExpectedToContainSegmentInfo> bookieExpectedToContainSegmentInfoList,
                 ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries,
                 ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies,
@@ -1688,7 +1687,7 @@ public class Auditor implements AutoCloseable {
                 final long lastEntryIdOfSegment = bookieExpectedToContainSegmentInfo.getLastEntryIdOfSegment();
                 final BitSet entriesStripedToThisBookie = bookieExpectedToContainSegmentInfo
                         .getEntriesOfSegmentStripedToThisBookie();
-                final Entry<Long, ? extends List<BookieSocketAddress>> segmentEnsemble =
+                final Entry<Long, ? extends List<BookieId>> segmentEnsemble =
                         bookieExpectedToContainSegmentInfo.getSegmentEnsemble();
                 final List<Long> unavailableEntriesList = availabilityOfEntriesOfLedger
                         .getUnavailableEntries(startEntryIdOfSegment, lastEntryIdOfSegment, entriesStripedToThisBookie);
@@ -1856,7 +1855,7 @@ public class Auditor implements AutoCloseable {
             for (int listInd = 0; listInd < missingEntriesInfoList.size(); listInd++) {
                 MissingEntriesInfo missingEntriesInfo = missingEntriesInfoList.get(listInd);
                 List<Long> unavailableEntriesList = missingEntriesInfo.getUnavailableEntriesList();
-                Entry<Long, ? extends List<BookieSocketAddress>> segmentEnsemble =
+                Entry<Long, ? extends List<BookieId>> segmentEnsemble =
                         missingEntriesInfo.getSegmentEnsemble();
                 missingEntries.addAll(unavailableEntriesList);
                 errMessage.append("In segment starting at " + segmentEnsemble.getKey() + " with ensemble "
@@ -1907,7 +1906,7 @@ public class Auditor implements AutoCloseable {
             errMessage.append("Ledger : " + ledgerWithUnavailableBookies + " has following unavailable bookies : ");
             for (int listInd = 0; listInd < missingBookiesInfoList.size(); listInd++) {
                 MissingEntriesInfo missingBookieInfo = missingBookiesInfoList.get(listInd);
-                Entry<Long, ? extends List<BookieSocketAddress>> segmentEnsemble =
+                Entry<Long, ? extends List<BookieId>> segmentEnsemble =
                         missingBookieInfo.getSegmentEnsemble();
                 errMessage.append("In segment starting at " + segmentEnsemble.getKey() + " with ensemble "
                         + segmentEnsemble.getValue() + ", following bookie has not responded "

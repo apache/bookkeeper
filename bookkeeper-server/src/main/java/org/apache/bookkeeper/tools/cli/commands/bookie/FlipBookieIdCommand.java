@@ -32,7 +32,7 @@ import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -144,9 +144,9 @@ public class FlipBookieIdCommand extends BookieCommand<FlipBookieIdCommand.FlipB
         final BookKeeperAdmin admin = new BookKeeperAdmin(bk);
         final UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, admin);
         final ServerConfiguration serverConfiguration = new ServerConfiguration(conf);
-        final BookieSocketAddress newBookieId = Bookie.getBookieAddress(serverConfiguration);
+        final BookieId newBookieId = Bookie.getBookieId(serverConfiguration);
         serverConfiguration.setUseHostNameAsBookieID(!flags.hostname);
-        final BookieSocketAddress oldBookieId = Bookie.getBookieAddress(serverConfiguration);
+        final BookieId oldBookieId = Bookie.getBookieId(serverConfiguration);
 
         BookieShell.UpdateLedgerNotifier progressable = new BookieShell.UpdateLedgerNotifier() {
             long lastReport = System.nanoTime();

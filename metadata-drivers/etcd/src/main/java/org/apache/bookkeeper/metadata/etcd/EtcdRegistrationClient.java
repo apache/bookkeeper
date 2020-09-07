@@ -21,7 +21,6 @@ package org.apache.bookkeeper.metadata.etcd;
 import com.coreos.jetcd.Client;
 import com.coreos.jetcd.data.ByteSequence;
 import com.google.common.collect.Maps;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +31,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.metadata.etcd.helpers.KeySetReader;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.Versioned;
 
 /**
@@ -41,23 +40,19 @@ import org.apache.bookkeeper.versioning.Versioned;
 @Slf4j
 class EtcdRegistrationClient implements RegistrationClient {
 
-    private static Function<ByteSequence, BookieSocketAddress> newBookieSocketAddressFunc(String prefix) {
+    private static Function<ByteSequence, BookieId> newBookieSocketAddressFunc(String prefix) {
         return bs -> {
             String addrStr = bs.toStringUtf8();
-            try {
-                return new BookieSocketAddress(addrStr.replace(prefix, ""));
-            } catch (UnknownHostException e) {
-                throw new RuntimeException("Unknown bookie address '" + addrStr + "' : ", e);
-            }
+            return BookieId.parse(addrStr.replace(prefix, ""));
         };
     }
 
     private final EtcdWatchClient watchClient;
-    private final KeySetReader<BookieSocketAddress> writableBookiesReader;
-    private final KeySetReader<BookieSocketAddress> readonlyBookiesReader;
-    private Map<RegistrationListener, Consumer<Versioned<Set<BookieSocketAddress>>>> writableListeners =
+    private final KeySetReader<BookieId> writableBookiesReader;
+    private final KeySetReader<BookieId> readonlyBookiesReader;
+    private Map<RegistrationListener, Consumer<Versioned<Set<BookieId>>>> writableListeners =
         Maps.newHashMap();
-    private Map<RegistrationListener, Consumer<Versioned<Set<BookieSocketAddress>>>> readonlyListeners =
+    private Map<RegistrationListener, Consumer<Versioned<Set<BookieId>>>> readonlyListeners =
         Maps.newHashMap();
 
     EtcdRegistrationClient(String scope,
@@ -88,26 +83,26 @@ class EtcdRegistrationClient implements RegistrationClient {
     }
 
     @Override
-    public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getWritableBookies() {
+    public CompletableFuture<Versioned<Set<BookieId>>> getWritableBookies() {
         return writableBookiesReader.read();
     }
 
     @Override
-    public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getAllBookies() {
+    public CompletableFuture<Versioned<Set<BookieId>>> getAllBookies() {
         return FutureUtils.exception(new BKException.BKIllegalOpException());
     }
 
     @Override
-    public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getReadOnlyBookies() {
+    public CompletableFuture<Versioned<Set<BookieId>>> getReadOnlyBookies() {
         return readonlyBookiesReader.read();
     }
 
     private static CompletableFuture<Void> registerListener(
-        KeySetReader<BookieSocketAddress> keySetReader,
-        Map<RegistrationListener, Consumer<Versioned<Set<BookieSocketAddress>>>> listeners,
+        KeySetReader<BookieId> keySetReader,
+        Map<RegistrationListener, Consumer<Versioned<Set<BookieId>>>> listeners,
         RegistrationListener listener
     ) {
-        Consumer<Versioned<Set<BookieSocketAddress>>> consumer;
+        Consumer<Versioned<Set<BookieId>>> consumer;
         synchronized (listeners) {
             consumer = listeners.get(listener);
             if (null != consumer) {
@@ -124,11 +119,11 @@ class EtcdRegistrationClient implements RegistrationClient {
     }
 
     private static CompletableFuture<Void> unregisterListener(
-        KeySetReader<BookieSocketAddress> keySetReader,
-        Map<RegistrationListener, Consumer<Versioned<Set<BookieSocketAddress>>>> listeners,
+        KeySetReader<BookieId> keySetReader,
+        Map<RegistrationListener, Consumer<Versioned<Set<BookieId>>>> listeners,
         RegistrationListener listener
     ) {
-        Consumer<Versioned<Set<BookieSocketAddress>>> consumer = listeners.get(listener);
+        Consumer<Versioned<Set<BookieId>>> consumer = listeners.get(listener);
         if (null == consumer) {
             return FutureUtils.Void();
         } else {

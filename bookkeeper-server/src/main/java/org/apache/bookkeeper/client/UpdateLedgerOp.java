@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.BookieShell.UpdateLedgerNotifier;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +75,7 @@ public class UpdateLedgerOp {
      *             if there is an error when updating bookie id in ledger
      *             metadata
      */
-    public void updateBookieIdInLedgers(final BookieSocketAddress oldBookieId, final BookieSocketAddress newBookieId,
+    public void updateBookieIdInLedgers(final BookieId oldBookieId, final BookieId newBookieId,
                                         final int rate, int maxOutstandingReads, final int limit,
                                         final UpdateLedgerNotifier progressable)
             throws IOException, InterruptedException {
@@ -161,11 +161,11 @@ public class UpdateLedgerOp {
     }
 
     private static LedgerMetadata replaceBookieInEnsembles(LedgerMetadata metadata,
-                                                           BookieSocketAddress oldBookieId,
-                                                           BookieSocketAddress newBookieId) {
+                                                           BookieId oldBookieId,
+                                                           BookieId newBookieId) {
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);
-        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : metadata.getAllEnsembles().entrySet()) {
-            List<BookieSocketAddress> newEnsemble = e.getValue().stream()
+        for (Map.Entry<Long, ? extends List<BookieId>> e : metadata.getAllEnsembles().entrySet()) {
+            List<BookieId> newEnsemble = e.getValue().stream()
                 .map(b -> b.equals(oldBookieId) ? newBookieId : b)
                 .collect(Collectors.toList());
             builder.replaceEnsembleEntry(e.getKey(), newEnsemble);

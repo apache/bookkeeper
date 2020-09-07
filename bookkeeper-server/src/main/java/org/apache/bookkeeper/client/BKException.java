@@ -244,6 +244,9 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
         public BKNotEnoughBookiesException() {
             super(BKException.Code.NotEnoughBookiesException);
         }
+        public BKNotEnoughBookiesException(Throwable cause) {
+            super(BKException.Code.NotEnoughBookiesException, cause);
+        }
     }
 
     /**

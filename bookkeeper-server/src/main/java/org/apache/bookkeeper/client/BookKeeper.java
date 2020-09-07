@@ -75,8 +75,9 @@ import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.DataFormats;
@@ -476,9 +477,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     .build();
         }
 
-        // initialize bookie client
-        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
-                scheduler, rootStatsLogger);
 
         if (null == requestTimer) {
             this.requestTimer = new HashedWheelTimer(
@@ -491,14 +489,21 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.ownTimer = false;
         }
 
+        BookieAddressResolver bookieAddressResolver =
+                new DefaultBookieAddressResolver(metadataDriver.getRegistrationClient());
+
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
-                dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger);
-
+                dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger, bookieAddressResolver);
 
         this.bookieWatcher = new BookieWatcherImpl(
-                conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
+                conf, this.placementPolicy, metadataDriver.getRegistrationClient(), bookieAddressResolver,
                 this.statsLogger.scope(WATCHER_SCOPE));
+
+        // initialize bookie client
+        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
+                scheduler, rootStatsLogger, this.bookieWatcher.getBookieAddressResolver());
+
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
             ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
@@ -559,12 +564,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                                                       DNSToSwitchMapping dnsResolver,
                                                                       HashedWheelTimer timer,
                                                                       FeatureProvider featureProvider,
-                                                                      StatsLogger statsLogger)
+                                                                      StatsLogger statsLogger,
+                                                                      BookieAddressResolver bookieAddressResolver)
         throws IOException {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
             return ReflectionUtils.newInstance(policyCls).initialize(conf, java.util.Optional.ofNullable(dnsResolver),
-                    timer, featureProvider, statsLogger);
+                    timer, featureProvider, statsLogger, bookieAddressResolver);
         } catch (ConfigurationException e) {
             throw new IOException("Failed to initialize ensemble placement policy : ", e);
         }
@@ -600,8 +606,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     void checkForFaultyBookies() {
-        List<BookieSocketAddress> faultyBookies = bookieClient.getFaultyBookies();
-        for (BookieSocketAddress faultyBookie : faultyBookies) {
+        List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
+        for (BookieId faultyBookie : faultyBookies) {
             if (Math.random() <= bookieQuarantineRatio) {
                 bookieWatcher.quarantineBookie(faultyBookie);
                 statsLogger.getCounter(BookKeeperServerStats.BOOKIE_QUARANTINE).inc();
@@ -642,6 +648,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     @VisibleForTesting
     BookieWatcher getBookieWatcher() {
         return bookieWatcher;
+    }
+
+    public BookieAddressResolver getBookieAddressResolver() {
+        return bookieWatcher.getBookieAddressResolver();
     }
 
     public OrderedExecutor getMainWorkerPool() {
@@ -754,7 +764,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      * @throws InterruptedException
      */
-    public Map<BookieSocketAddress, BookieInfo> getBookieInfo() throws BKException, InterruptedException {
+    public Map<BookieId, BookieInfo> getBookieInfo() throws BKException, InterruptedException {
         return bookieInfoReader.getBookieInfo();
     }
 

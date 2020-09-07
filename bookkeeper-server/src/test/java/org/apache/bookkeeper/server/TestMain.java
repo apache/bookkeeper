@@ -88,6 +88,7 @@ public class TestMain {
 
         BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
         when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
+        when(mockServer.getBookieId()).thenReturn(bookieAddress.toBookieId());
 
         LifecycleComponentStack stack = buildBookieServer(conf);
         assertEquals(3, stack.getNumComponents());
@@ -118,6 +119,7 @@ public class TestMain {
 
         BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
         when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
+        when(mockServer.getBookieId()).thenReturn(bookieAddress.toBookieId());
 
         LifecycleComponentStack stack = buildBookieServer(conf);
         assertEquals(2, stack.getNumComponents());
@@ -147,6 +149,7 @@ public class TestMain {
 
         BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
         when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
+        when(mockServer.getBookieId()).thenReturn(bookieAddress.toBookieId());
 
         try {
             buildBookieServer(conf);

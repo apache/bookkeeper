@@ -30,7 +30,7 @@ import org.junit.Test;
  * Tests for BookieSocketAddress getSocketAddress cache logic.
  */
 
-public class BookieSocketAddressTest {
+public class ResolvedBookieSocketAddressTest {
 
     @Test
     public void testHostnameBookieId() throws Exception {

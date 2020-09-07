@@ -39,7 +39,7 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
@@ -61,7 +61,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyLedgerHandle.class);
 
     private Object metadataLock = new Object();
-    private final NavigableMap<Long, List<BookieSocketAddress>> newEnsemblesFromRecovery = new TreeMap<>();
+    private final NavigableMap<Long, List<BookieId>> newEnsemblesFromRecovery = new TreeMap<>();
 
     class MetadataUpdater extends SafeRunnable {
 
@@ -212,7 +212,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
      * on the close.
      */
     @Override
-    void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
+    void handleBookieFailure(final Map<Integer, BookieId> failedBookies) {
         // handleBookieFailure should always run in the ordered executor thread for this
         // ledger, so this synchronized should be unnecessary, but putting it here now
         // just in case (can be removed when we validate threads)
@@ -221,9 +221,9 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
 
             long lac = getLastAddConfirmed();
             LedgerMetadata metadata = getLedgerMetadata();
-            List<BookieSocketAddress> currentEnsemble = getCurrentEnsemble();
+            List<BookieId> currentEnsemble = getCurrentEnsemble();
             try {
-                List<BookieSocketAddress> newEnsemble = EnsembleUtils.replaceBookiesInEnsemble(
+                List<BookieId> newEnsemble = EnsembleUtils.replaceBookiesInEnsemble(
                         clientCtx.getBookieWatcher(), metadata, currentEnsemble, failedBookies, logContext);
                 Set<Integer> replaced = EnsembleUtils.diffEnsemble(currentEnsemble, newEnsemble);
                 if (!replaced.isEmpty()) {
@@ -339,7 +339,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     }
 
     @Override
-    List<BookieSocketAddress> getCurrentEnsemble() {
+    List<BookieId> getCurrentEnsemble() {
         synchronized (metadataLock) {
             if (!newEnsemblesFromRecovery.isEmpty()) {
                 return newEnsemblesFromRecovery.lastEntry().getValue();

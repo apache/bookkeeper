@@ -46,7 +46,7 @@ import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Version.Occurred;
@@ -64,8 +64,8 @@ import org.junit.rules.TestName;
 @Slf4j
 public class EtcdRegistrationTest extends EtcdTestBase {
 
-    static String newBookie(int i) {
-        return "127.0.0.1:" + (3181 + i);
+    static BookieId newBookie(int i) {
+        return BookieId.parse("127.0.0.1:" + (3181 + i));
     }
 
     @Rule
@@ -75,7 +75,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
     private RegistrationClient regClient;
 
     protected static RegistrationListener newRegistrationListener(
-        LinkedBlockingQueue<Versioned<Set<BookieSocketAddress>>> notifications) {
+        LinkedBlockingQueue<Versioned<Set<BookieId>>> notifications) {
         return bookies -> {
             log.info("Received new bookies: {}", bookies);
             try {
@@ -133,12 +133,12 @@ public class EtcdRegistrationTest extends EtcdTestBase {
 
     private void testRegisterBookie(boolean readonly) throws Exception {
         runNumBookiesTest(scope, 3, readonly, (scope, numBookies, ro) -> {
-            Set<BookieSocketAddress> expectedBookies = Sets.newHashSet();
+            Set<BookieId> expectedBookies = Sets.newHashSet();
             for (int i = 0; i < numBookies; i++) {
-                expectedBookies.add(new BookieSocketAddress(newBookie(i)));
+                expectedBookies.add(newBookie(i));
             }
-            Set<BookieSocketAddress> writableBookies = result(regClient.getWritableBookies()).getValue();
-            Set<BookieSocketAddress> readonlyBookies = result(regClient.getReadOnlyBookies()).getValue();
+            Set<BookieId> writableBookies = result(regClient.getWritableBookies()).getValue();
+            Set<BookieId> readonlyBookies = result(regClient.getReadOnlyBookies()).getValue();
             if (ro) {
                 assertEquals(0, writableBookies.size());
                 assertEquals(numBookies, readonlyBookies.size());
@@ -163,11 +163,11 @@ public class EtcdRegistrationTest extends EtcdTestBase {
     }
 
     private void testWatchBookies(boolean readonly) throws Exception {
-        LinkedBlockingQueue<Versioned<Set<BookieSocketAddress>>> writableChanges = new LinkedBlockingQueue<>();
-        LinkedBlockingQueue<Versioned<Set<BookieSocketAddress>>> readonlyChanges = new LinkedBlockingQueue<>();
+        LinkedBlockingQueue<Versioned<Set<BookieId>>> writableChanges = new LinkedBlockingQueue<>();
+        LinkedBlockingQueue<Versioned<Set<BookieId>>> readonlyChanges = new LinkedBlockingQueue<>();
         result(regClient.watchReadOnlyBookies(newRegistrationListener(readonlyChanges)));
         result(regClient.watchWritableBookies(newRegistrationListener(writableChanges)));
-        Versioned<Set<BookieSocketAddress>> versionedBookies = writableChanges.take();
+        Versioned<Set<BookieId>> versionedBookies = writableChanges.take();
         assertTrue(versionedBookies.getValue().isEmpty());
         versionedBookies = readonlyChanges.take();
         assertTrue(versionedBookies.getValue().isEmpty());
@@ -175,7 +175,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
         final int numBookies = 3;
         final List<EtcdRegistrationManager> bookies = createNumBookies(readonly, numBookies, scope, 1);
 
-        LinkedBlockingQueue<Versioned<Set<BookieSocketAddress>>> changes;
+        LinkedBlockingQueue<Versioned<Set<BookieId>>> changes;
         if (readonly) {
             changes = readonlyChanges;
         } else {
@@ -183,9 +183,9 @@ public class EtcdRegistrationTest extends EtcdTestBase {
         }
 
         Version preVersion = new LongVersion(-1);
-        Set<BookieSocketAddress> expectedBookies = new HashSet<>();
+        Set<BookieId> expectedBookies = new HashSet<>();
         for (int i = 0; i < numBookies; i++) {
-            BookieSocketAddress address = new BookieSocketAddress(newBookie(i));
+            BookieId address = newBookie(i);
             expectedBookies.add(address);
 
             versionedBookies = changes.take();
@@ -234,7 +234,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
     public void testRegisterBookieWaitUntilPreviousExpiredSuccess() throws Exception {
         long ttlSeconds = 1;
         long leaseId = -0xabcd;
-        String bookieId = runtime.getMethodName() + ":3181";
+        BookieId bookieId = BookieId.parse(runtime.getMethodName() + ":3181");
         try (EtcdRegistrationManager regManager = new EtcdRegistrationManager(
             newEtcdClient(), scope, ttlSeconds)
         ) {
@@ -258,7 +258,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
     public void testRegisterBookieWaitUntilPreviousExpiredFailure() throws Exception {
         long ttlSeconds = 1;
         long leaseId = -0xabcd;
-        String bookieId = runtime.getMethodName() + ":3181";
+        BookieId bookieId = BookieId.parse(runtime.getMethodName() + ":3181");
         try (EtcdRegistrationManager regManager = new EtcdRegistrationManager(
             newEtcdClient(), scope, 10000000 * ttlSeconds)
         ) {
@@ -292,7 +292,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
     private void testRegisterBookieWithSameLeaseId(boolean readonly) throws Exception {
         long ttlSeconds = 1;
         long leaseId = -0xabcd;
-        String bookieId = runtime.getMethodName() + ":3181";
+        BookieId bookieId = BookieId.parse(runtime.getMethodName() + ":3181");
         try (EtcdRegistrationManager regManager = new EtcdRegistrationManager(
             newEtcdClient(), scope, 10000000 * ttlSeconds)
         ) {
@@ -308,8 +308,8 @@ public class EtcdRegistrationTest extends EtcdTestBase {
         }
     }
 
-    private Set<BookieSocketAddress> getBookies(boolean readonly) throws Exception {
-        Set<BookieSocketAddress> bookies;
+    private Set<BookieId> getBookies(boolean readonly) throws Exception {
+        Set<BookieId> bookies;
         if (readonly) {
             bookies = result(regClient.getReadOnlyBookies()).getValue();
         } else {
@@ -329,16 +329,17 @@ public class EtcdRegistrationTest extends EtcdTestBase {
     }
 
     private void testRegisterUnregister(boolean readonly) throws Exception {
-        String bookieId = runtime.getMethodName();
+        String bookieIdStr = runtime.getMethodName();
         if (readonly) {
-            bookieId += "-readonly";
+            bookieIdStr += "-readonly";
         }
-        bookieId += ":3181";
+        bookieIdStr += ":3181";
+        BookieId bookieId = BookieId.parse(bookieIdStr);
         try (EtcdRegistrationManager regMgr = new EtcdRegistrationManager(
             newEtcdClient(), scope, 1000000000
         )) {
             // before registration
-            Set<BookieSocketAddress> bookies = getBookies(readonly);
+            Set<BookieId> bookies = getBookies(readonly);
             log.info("before registration : bookies = {}", bookies);
             assertEquals(0, bookies.size());
             // registered
@@ -347,7 +348,7 @@ public class EtcdRegistrationTest extends EtcdTestBase {
             log.info("after registered: bookies = {}", bookies);
             assertEquals(1, bookies.size());
             assertEquals(
-                Sets.newHashSet(new BookieSocketAddress(bookieId)),
+                Sets.newHashSet(bookieId),
                 bookies);
             // unregistered
             regMgr.unregisterBookie(bookieId, readonly);
@@ -368,11 +369,11 @@ public class EtcdRegistrationTest extends EtcdTestBase {
     }
 
     private void testConcurrentRegistration(boolean readonly) throws Exception {
-        final String bookieId;
+        final BookieId bookieId;
         if (readonly) {
-            bookieId = runtime.getMethodName() + "-readonly:3181";
+            bookieId = BookieId.parse(runtime.getMethodName() + "-readonly:3181");
         } else {
-            bookieId = runtime.getMethodName() + ":3181";
+            bookieId = BookieId.parse(runtime.getMethodName() + ":3181");
         }
         final int numBookies = 10;
         @Cleanup("shutdown")

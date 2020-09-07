@@ -46,7 +46,7 @@ import org.apache.bookkeeper.client.LedgerMetadataUtils;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 
 import org.slf4j.Logger;
@@ -201,10 +201,10 @@ public class LedgerMetadataSerDe {
                 }
             }
 
-            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry : metadata.getAllEnsembles().entrySet()) {
+            for (Map.Entry<Long, ? extends List<BookieId>> entry : metadata.getAllEnsembles().entrySet()) {
                 LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
                 segmentBuilder.setFirstEntryId(entry.getKey());
-                for (BookieSocketAddress addr : entry.getValue()) {
+                for (BookieId addr : entry.getValue()) {
                     segmentBuilder.addEnsembleMember(addr.toString());
                 }
                 builder.addSegment(segmentBuilder.build());
@@ -268,11 +268,11 @@ public class LedgerMetadataSerDe {
                     }
                 }
 
-                for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry :
+                for (Map.Entry<Long, ? extends List<BookieId>> entry :
                          metadata.getAllEnsembles().entrySet()) {
                     LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
                     segmentBuilder.setFirstEntryId(entry.getKey());
-                    for (BookieSocketAddress addr : entry.getValue()) {
+                    for (BookieId addr : entry.getValue()) {
                         segmentBuilder.addEnsembleMember(addr.toString());
                     }
                     builder.addSegment(segmentBuilder.build());
@@ -294,10 +294,10 @@ public class LedgerMetadataSerDe {
                 writer.append(String.valueOf(metadata.getEnsembleSize())).append(LINE_SPLITTER);
                 writer.append(String.valueOf(metadata.getLength())).append(LINE_SPLITTER);
 
-                for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry :
+                for (Map.Entry<Long, ? extends List<BookieId>> entry :
                          metadata.getAllEnsembles().entrySet()) {
                     writer.append(String.valueOf(entry.getKey()));
-                    for (BookieSocketAddress addr : entry.getValue()) {
+                    for (BookieId addr : entry.getValue()) {
                         writer.append(FIELD_SPLITTER).append(addr.toString());
                     }
                     writer.append(LINE_SPLITTER);
@@ -431,9 +431,9 @@ public class LedgerMetadataSerDe {
         }
 
         for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
-            List<BookieSocketAddress> addrs = new ArrayList<>();
+            List<BookieId> addrs = new ArrayList<>();
             for (String addr : s.getEnsembleMemberList()) {
-                addrs.add(new BookieSocketAddress(addr));
+                addrs.add(BookieId.parse(addr));
             }
             builder.newEnsembleEntry(s.getFirstEntryId(), addrs);
         }
@@ -472,9 +472,9 @@ public class LedgerMetadataSerDe {
                     break;
                 }
 
-                ArrayList<BookieSocketAddress> addrs = new ArrayList<BookieSocketAddress>();
+                ArrayList<BookieId> addrs = new ArrayList<BookieId>();
                 for (int j = 1; j < parts.length; j++) {
-                    addrs.add(new BookieSocketAddress(parts[j]));
+                    addrs.add(BookieId.parse(parts[j]));
                 }
                 builder.newEnsembleEntry(Long.parseLong(parts[0]), addrs);
 

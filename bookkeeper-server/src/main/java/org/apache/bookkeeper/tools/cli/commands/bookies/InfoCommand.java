@@ -29,7 +29,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.tools.framework.CliFlags;
@@ -72,7 +72,7 @@ public class InfoCommand extends BookieCommand<CliFlags> {
         ClientConfiguration clientConf = new ClientConfiguration(conf);
         clientConf.setDiskWeightBasedPlacementEnabled(true);
         try (BookKeeper bk = new BookKeeper(clientConf)) {
-            Map<BookieSocketAddress, BookieInfo> map = bk.getBookieInfo();
+            Map<BookieId, BookieInfo> map = bk.getBookieInfo();
             if (map.size() == 0) {
                 System.out.println("Failed to retrieve bookie information from any of the bookies");
                 bk.close();
@@ -81,10 +81,11 @@ public class InfoCommand extends BookieCommand<CliFlags> {
 
             System.out.println("Free disk space info:");
             long totalFree = 0, total = 0;
-            for (Map.Entry<BookieSocketAddress, BookieInfo> e : map.entrySet()) {
+            for (Map.Entry<BookieId, BookieInfo> e : map.entrySet()) {
                 BookieInfo bInfo = e.getValue();
-                BookieSocketAddress bookieId = e.getKey();
-                System.out.println(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId)
+                BookieId bookieId = e.getKey();
+                System.out.println(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId,
+                        bk.getBookieAddressResolver())
                     + ":\tFree: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace())
                     + "\tTotal: " + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
             }
@@ -93,7 +94,7 @@ public class InfoCommand extends BookieCommand<CliFlags> {
             Map<String, BookieInfo> dedupedMap = map.entrySet()
                 .stream()
                 .collect(Collectors.toMap(
-                    entry -> entry.getKey().getHostName(),
+                    entry -> entry.getKey().toString(),
                     entry -> entry.getValue(),
                     (key1, key2) -> key2
                 ));

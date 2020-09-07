@@ -55,6 +55,7 @@ import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -102,9 +103,9 @@ public class ReadLastConfirmedAndEntryOpTest {
         internalConf = ClientInternalConf.fromConfig(conf);
 
         // metadata
-        ArrayList<BookieSocketAddress> ensemble = new ArrayList<>(3);
+        ArrayList<BookieId> ensemble = new ArrayList<>(3);
         for (int i = 0; i < 3; i++) {
-            ensemble.add(new BookieSocketAddress("127.0.0.1", 3181 + i));
+            ensemble.add(new BookieSocketAddress("127.0.0.1", 3181 + i).toBookieId());
         }
         this.ledgerMetadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
@@ -147,7 +148,7 @@ public class ReadLastConfirmedAndEntryOpTest {
     @Data
     static class ReadLastConfirmedAndEntryHolder {
 
-        private final BookieSocketAddress address;
+        private final BookieId address;
         private final ReadEntryCallback callback;
         private final ReadLastConfirmedAndEntryContext context;
 
@@ -171,10 +172,10 @@ public class ReadLastConfirmedAndEntryOpTest {
         byte[] bytesWithDigest = new byte[dataWithDigest.readableBytes()];
         assertEquals(bytesWithDigest.length, dataWithDigest.getBytes(bytesWithDigest));
 
-        final Map<BookieSocketAddress, ReadLastConfirmedAndEntryHolder> callbacks =
+        final Map<BookieId, ReadLastConfirmedAndEntryHolder> callbacks =
             Collections.synchronizedMap(new HashMap<>());
         doAnswer(invocationOnMock -> {
-            BookieSocketAddress address = invocationOnMock.getArgument(0);
+            BookieId address = invocationOnMock.getArgument(0);
             ReadEntryCallback callback = invocationOnMock.getArgument(6);
             ReadLastConfirmedAndEntryContext context = invocationOnMock.getArgument(7);
 
@@ -184,8 +185,7 @@ public class ReadLastConfirmedAndEntryOpTest {
 
             callbacks.put(address, holder);
             return null;
-        }).when(mockBookieClient).readEntryWaitForLACUpdate(
-            any(BookieSocketAddress.class),
+        }).when(mockBookieClient).readEntryWaitForLACUpdate(any(BookieId.class),
             anyLong(),
             anyLong(),
             anyLong(),
@@ -222,9 +222,9 @@ public class ReadLastConfirmedAndEntryOpTest {
         // 2) complete second bookie with valid entry response. this will trigger double-release bug described in
         //    {@link https://github.com/apache/bookkeeper/issues/1476}
 
-        Iterator<Entry<BookieSocketAddress, ReadLastConfirmedAndEntryHolder>> iter = callbacks.entrySet().iterator();
+        Iterator<Entry<BookieId, ReadLastConfirmedAndEntryHolder>> iter = callbacks.entrySet().iterator();
         assertTrue(iter.hasNext());
-        Entry<BookieSocketAddress, ReadLastConfirmedAndEntryHolder> firstBookieEntry = iter.next();
+        Entry<BookieId, ReadLastConfirmedAndEntryHolder> firstBookieEntry = iter.next();
         ReadLastConfirmedAndEntryHolder firstBookieHolder = firstBookieEntry.getValue();
         ReadLastConfirmedAndEntryContext firstContext = firstBookieHolder.context;
         firstContext.setLastAddConfirmed(entryId);
@@ -236,7 +236,7 @@ public class ReadLastConfirmedAndEntryOpTest {
         LedgerEntryImpl entry = LedgerEntryImpl.create(LEDGERID, Long.MAX_VALUE);
 
         assertTrue(iter.hasNext());
-        Entry<BookieSocketAddress, ReadLastConfirmedAndEntryHolder> secondBookieEntry = iter.next();
+        Entry<BookieId, ReadLastConfirmedAndEntryHolder> secondBookieEntry = iter.next();
         ReadLastConfirmedAndEntryHolder secondBookieHolder = secondBookieEntry.getValue();
         ReadLastConfirmedAndEntryContext secondContext = secondBookieHolder.context;
         secondContext.setLastAddConfirmed(entryId);

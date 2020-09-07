@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 public class LedgerMetadataUtils {
     static final Logger LOG = LoggerFactory.getLogger(LedgerMetadataUtils.class);
 
-    static List<BookieSocketAddress> getCurrentEnsemble(LedgerMetadata metadata) {
+    static List<BookieId> getCurrentEnsemble(LedgerMetadata metadata) {
         return getLastEnsembleValue(metadata);
     }
 
@@ -46,7 +46,7 @@ public class LedgerMetadataUtils {
      * @return the entry id of the next ensemble change (-1 if no further ensemble changes)
      */
     static long getNextEnsembleChange(LedgerMetadata metadata, long entryId) {
-        SortedMap<Long, ? extends List<BookieSocketAddress>> tailMap = metadata.getAllEnsembles().tailMap(entryId + 1);
+        SortedMap<Long, ? extends List<BookieId>> tailMap = metadata.getAllEnsembles().tailMap(entryId + 1);
 
         if (tailMap.isEmpty()) {
             return -1;
@@ -55,15 +55,15 @@ public class LedgerMetadataUtils {
         }
     }
 
-    static Set<BookieSocketAddress> getBookiesInThisLedger(LedgerMetadata metadata) {
-        Set<BookieSocketAddress> bookies = new HashSet<BookieSocketAddress>();
-        for (List<BookieSocketAddress> ensemble : metadata.getAllEnsembles().values()) {
+    static Set<BookieId> getBookiesInThisLedger(LedgerMetadata metadata) {
+        Set<BookieId> bookies = new HashSet<BookieId>();
+        for (List<BookieId> ensemble : metadata.getAllEnsembles().values()) {
             bookies.addAll(ensemble);
         }
         return bookies;
     }
 
-    static List<BookieSocketAddress> getLastEnsembleValue(LedgerMetadata metadata) {
+    static List<BookieId> getLastEnsembleValue(LedgerMetadata metadata) {
         checkArgument(!metadata.getAllEnsembles().isEmpty(), "Metadata should never be created with no ensembles");
         return metadata.getAllEnsembles().lastEntry().getValue();
     }

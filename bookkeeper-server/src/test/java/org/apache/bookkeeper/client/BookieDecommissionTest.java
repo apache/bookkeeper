@@ -77,7 +77,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
              * if we try to call decommissionBookie for a bookie which is not
              * shutdown, then it should throw BKIllegalOpException
              */
-            bkAdmin.decommissionBookie(bs.get(0).getLocalAddress());
+            bkAdmin.decommissionBookie(bs.get(0).getBookieId());
             fail("Expected BKIllegalOpException because that bookie is not shutdown yet");
         } catch (BKIllegalOpException bkioexc) {
             // expected IllegalException
@@ -88,7 +88,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
          * this decommisionBookie should make sure that there are no
          * underreplicated ledgers because of this bookie
          */
-        bkAdmin.decommissionBookie(Bookie.getBookieAddress(killedBookieConf));
+        bkAdmin.decommissionBookie(Bookie.getBookieId(killedBookieConf));
         bkAdmin.triggerAudit();
         Thread.sleep(500);
         Iterator<UnderreplicatedLedger> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
@@ -101,7 +101,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         }
 
         killedBookieConf = killBookie(0);
-        bkAdmin.decommissionBookie(Bookie.getBookieAddress(killedBookieConf));
+        bkAdmin.decommissionBookie(Bookie.getBookieId(killedBookieConf));
         bkAdmin.triggerAudit();
         Thread.sleep(500);
         ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
@@ -161,7 +161,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
          * info. Check BOOKKEEPER-237 and BOOKKEEPER-325. But later
          * ReplicationWorker will fence the ledger.
          */
-        bkAdmin.decommissionBookie(Bookie.getBookieAddress(killedBookieConf));
+        bkAdmin.decommissionBookie(Bookie.getBookieId(killedBookieConf));
         bkAdmin.triggerAudit();
         Thread.sleep(500);
         Iterator<UnderreplicatedLedger> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);

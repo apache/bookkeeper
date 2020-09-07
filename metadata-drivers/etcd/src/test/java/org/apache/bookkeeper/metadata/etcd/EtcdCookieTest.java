@@ -28,6 +28,7 @@ import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Version.Occurred;
@@ -74,7 +75,7 @@ public class EtcdCookieTest extends EtcdTestBase {
 
     @Test
     public void readWriteRemoveCookie() throws Exception {
-        String bookieId = runtime.getMethodName() + ":3181";
+        BookieId bookieId = BookieId.parse(runtime.getMethodName() + ":3181");
 
         // read the cookie doesn't exist
         try {

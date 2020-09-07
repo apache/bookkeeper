@@ -21,25 +21,25 @@
 package org.apache.bookkeeper.proto;
 
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 
 /**
  * Local registry for embedded Bookies.
  */
 public class LocalBookiesRegistry {
 
-    private static final ConcurrentHashMap<BookieSocketAddress, Boolean> localBookiesRegistry =
+    private static final ConcurrentHashMap<BookieId, Boolean> localBookiesRegistry =
         new ConcurrentHashMap<>();
 
-    static void registerLocalBookieAddress(BookieSocketAddress address) {
+    static void registerLocalBookieAddress(BookieId address) {
         localBookiesRegistry.put(address, Boolean.TRUE);
     }
-    static void unregisterLocalBookieAddress(BookieSocketAddress address) {
+    static void unregisterLocalBookieAddress(BookieId address) {
         if (address != null) {
             localBookiesRegistry.remove(address);
         }
     }
-    public static boolean isLocalBookie(BookieSocketAddress address) {
+    public static boolean isLocalBookie(BookieId address) {
         return localBookiesRegistry.containsKey(address);
     }
 

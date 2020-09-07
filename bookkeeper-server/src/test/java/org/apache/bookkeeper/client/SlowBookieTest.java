@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -73,7 +73,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final CountDownLatch b0latch = new CountDownLatch(1);
         final CountDownLatch b1latch = new CountDownLatch(1);
         final CountDownLatch addEntrylatch = new CountDownLatch(1);
-        List<BookieSocketAddress> curEns = lh.getCurrentEnsemble();
+        List<BookieId> curEns = lh.getCurrentEnsemble();
         try {
             sleepBookie(curEns.get(0), b0latch);
             for (int i = 0; i < 10; i++) {
@@ -295,7 +295,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         return lh2;
     }
 
-    private void setTargetChannelState(BookKeeper bkc, BookieSocketAddress address,
+    private void setTargetChannelState(BookKeeper bkc, BookieId address,
                                        long key, boolean state) throws Exception {
         ((BookieClientImpl) bkc.getBookieClient()).lookupClient(address).obtain((rc, pcbc) -> {
             pcbc.setWritable(state);

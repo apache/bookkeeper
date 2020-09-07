@@ -61,6 +61,7 @@ import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -146,7 +147,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
     private void startAuditorElectors() throws Exception {
         for (BookieServer bserver : bs) {
-            String addr = bserver.getLocalAddress().toString();
+            String addr = bserver.getBookieId().toString();
             AuditorElector auditorElector = new AuditorElector(addr, baseConf);
             auditorElectors.put(addr, auditorElector);
             auditorElector.start();
@@ -307,7 +308,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         BookieServer bk = bs.get(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
         bk.getBookie().getStateManager().doTransitionToReadOnlyMode();
-        bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
+        bkc.waitForReadOnlyBookie(Bookie.getBookieId(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
@@ -334,7 +335,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         BookieServer bk = bs.get(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
         bk.getBookie().getStateManager().doTransitionToReadOnlyMode();
-        bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
+        bkc.waitForReadOnlyBookie(Bookie.getBookieId(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
@@ -546,10 +547,10 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         int numofledgers = 5;
         Random rand = new Random();
         for (int i = 0; i < numofledgers; i++) {
-            ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
-            ensemble.add(new BookieSocketAddress("99.99.99.99:9999"));
-            ensemble.add(new BookieSocketAddress("11.11.11.11:1111"));
-            ensemble.add(new BookieSocketAddress("88.88.88.88:8888"));
+            ArrayList<BookieId> ensemble = new ArrayList<BookieId>();
+            ensemble.add(new BookieSocketAddress("99.99.99.99:9999").toBookieId());
+            ensemble.add(new BookieSocketAddress("11.11.11.11:1111").toBookieId());
+            ensemble.add(new BookieSocketAddress("88.88.88.88:8888").toBookieId());
 
             LedgerMetadata metadata = LedgerMetadataBuilder.create()
                 .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
@@ -849,7 +850,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
     private String shutdownBookie(int bkShutdownIndex) throws Exception {
         BookieServer bkServer = bs.get(bkShutdownIndex);
-        String bookieAddr = bkServer.getLocalAddress().toString();
+        String bookieAddr = bkServer.getBookieId().toString();
         LOG.debug("Shutting down bookie:" + bookieAddr);
         killBookie(bkShutdownIndex);
         auditorElectors.get(bookieAddr).shutdown();
@@ -929,7 +930,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         byte[] data = zkc.getData(electionPath, false, null);
         assertNotNull("Auditor election failed", data);
         for (BookieServer bks : bs) {
-            if (new String(data).contains(bks.getLocalAddress().getPort() + "")) {
+            if (new String(data).contains(bks.getBookieId() + "")) {
                 auditors.add(bks);
             }
         }
@@ -940,7 +941,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
     private Auditor getAuditorBookiesAuditor() throws Exception {
         BookieServer auditorBookieServer = getAuditorBookie();
-        String bookieAddr = auditorBookieServer.getLocalAddress().toString();
+        String bookieAddr = auditorBookieServer.getBookieId().toString();
         return auditorElectors.get(bookieAddr).auditor;
     }
 
@@ -961,7 +962,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         int indexOf = bs.indexOf(getAuditorBookie());
         int bkIndexDownBookie = 0;
         for (int i = 0; i < bs.size(); i++) {
-            if (i == indexOf || bs.get(i).getLocalAddress().toString().equals(exclude)) {
+            if (i == indexOf || bs.get(i).getBookieId().toString().equals(exclude)) {
                 continue;
             }
             bkIndexDownBookie = i;

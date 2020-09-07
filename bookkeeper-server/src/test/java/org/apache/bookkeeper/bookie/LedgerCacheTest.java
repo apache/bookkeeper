@@ -46,7 +46,7 @@ import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -790,7 +790,7 @@ public class LedgerCacheTest {
         assertTrue("Bookie is expected to be in Read mode", bookie.isReadOnly());
         // write fail
         bookie.addEntry(generateEntry(1, 3), false, new BookkeeperInternalCallbacks.WriteCallback(){
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx){
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx){
                 LOG.info("fail write to bk");
                 assertTrue(rc != OK);
             }

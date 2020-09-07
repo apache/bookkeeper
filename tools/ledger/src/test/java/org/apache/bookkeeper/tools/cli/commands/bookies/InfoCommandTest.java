@@ -30,6 +30,7 @@ import org.apache.bookkeeper.client.BookieInfoReader;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Before;
@@ -46,10 +47,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest({InfoCommand.class})
 public class InfoCommandTest extends BookieCommandTestBase {
 
-    private BookieSocketAddress bookieId;
+    private BookieId bookieId;
     private BookieInfoReader.BookieInfo bInfo;
     private BookKeeper bk;
-    private Map<BookieSocketAddress, BookieInfoReader.BookieInfo> map = new HashMap<>();
+    private Map<BookieId, BookieInfoReader.BookieInfo> map = new HashMap<>();
 
     public InfoCommandTest() {
         super(1, 0);
@@ -73,8 +74,8 @@ public class InfoCommandTest extends BookieCommandTestBase {
             .withParameterTypes(ClientConfiguration.class)
             .withArguments(any(ClientConfiguration.class))
             .thenReturn(bk);
-
-        this.bookieId = new BookieSocketAddress("localhost", 9999);
+        when(bk.getBookieAddressResolver()).thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        this.bookieId = BookieId.parse("localhost:9999");
         this.bInfo = mock(BookieInfoReader.BookieInfo.class);
         map.put(bookieId, bInfo);
         when(bk.getBookieInfo()).thenReturn(map);

@@ -34,16 +34,16 @@ import org.junit.Test;
 public class LocalBookiesRegistryTest extends BookKeeperClusterTestCase {
 
     public LocalBookiesRegistryTest() {
-        super(3);
+        super(1);
         baseConf.setDisableServerSocketBind(true);
         baseConf.setEnableLocalTransport(true);
     }
 
     @Test
     public void testAccessibleLocalBookiesRegistry() throws Exception {
-        assertEquals(3, bs.size());
+        assertEquals(1, bs.size());
         for (BookieServer bk : bs) {
-            assertTrue(LocalBookiesRegistry.isLocalBookie(bk.getLocalAddress()));
+            assertTrue(LocalBookiesRegistry.isLocalBookie(bk.getBookieId()));
         }
     }
 }

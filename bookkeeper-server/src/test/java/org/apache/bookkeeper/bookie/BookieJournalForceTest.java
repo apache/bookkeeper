@@ -45,7 +45,7 @@ import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.test.TestStatsProvider;
@@ -101,7 +101,7 @@ public class BookieJournalForceTest {
         long entryId = 0;
         journal.logAddEntry(ledgerId, entryId, DATA, false /* ackBeforeSync */, new WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                 latch.countDown();
             }
         }, null);
@@ -162,7 +162,7 @@ public class BookieJournalForceTest {
         long entryId = 0;
         journal.logAddEntry(ledgerId, entryId, DATA, true /* ackBeforeSync */, new WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                 latch.countDown();
             }
         }, null);
@@ -225,7 +225,7 @@ public class BookieJournalForceTest {
         for (long entryId = 0; entryId < numEntries; entryId++) {
             journal.logAddEntry(ledgerId, entryId, DATA, true /* ackBeforeSync */, new WriteCallback() {
                 @Override
-                public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+                public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                     latch.countDown();
                 }
             }, null);
@@ -277,13 +277,13 @@ public class BookieJournalForceTest {
         for (long entryId = 0; entryId < numEntries; entryId++) {
             journal.logAddEntry(ledgerIdAckBeforeSync, entryId, DATA, true, new WriteCallback() {
                 @Override
-                public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+                public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                     latchAckBeforeSynch.countDown();
                 }
             }, null);
             journal.logAddEntry(ledgerIdAckAfterSync, entryId, DATA, false, new WriteCallback() {
                 @Override
-                public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+                public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                     latchAckAfterSynch.countDown();
                 }
             }, null);
@@ -345,7 +345,7 @@ public class BookieJournalForceTest {
         long ledgerId = 1;
         journal.forceLedger(ledgerId, new WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                 latch.countDown();
             }
         }, null);

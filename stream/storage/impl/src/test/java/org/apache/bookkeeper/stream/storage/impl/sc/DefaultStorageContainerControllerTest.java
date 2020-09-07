@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
@@ -78,12 +79,12 @@ public class DefaultStorageContainerControllerTest {
         serverList2.add(2L);
         serverList2.add(3L);
 
-        BookieSocketAddress address1 = new BookieSocketAddress("127.0.0.1", 4181);
-        BookieSocketAddress address2 = new BookieSocketAddress("127.0.0.1", 4182);
+        BookieId address1 = new BookieSocketAddress("127.0.0.1", 4181).toBookieId();
+        BookieId address2 = new BookieSocketAddress("127.0.0.1", 4182).toBookieId();
 
-        Pair<BookieSocketAddress, LinkedList<Long>> pair1 = Pair.of(address1, serverList1);
-        Pair<BookieSocketAddress, LinkedList<Long>> pair2 = Pair.of(address1, serverList2);
-        Pair<BookieSocketAddress, LinkedList<Long>> pair3 = Pair.of(address2, serverList2);
+        Pair<BookieId, LinkedList<Long>> pair1 = Pair.of(address1, serverList1);
+        Pair<BookieId, LinkedList<Long>> pair2 = Pair.of(address1, serverList2);
+        Pair<BookieId, LinkedList<Long>> pair3 = Pair.of(address2, serverList2);
 
         assertEquals(-1, comparator.compare(pair1, pair2));
         assertEquals(-1, comparator.compare(pair1, pair2));
@@ -102,36 +103,36 @@ public class DefaultStorageContainerControllerTest {
                 Collections.emptySet()));
     }
 
-    private static Set<BookieSocketAddress> newCluster(int numServers) {
-        Set<BookieSocketAddress> cluster = IntStream.range(0, numServers)
-            .mapToObj(idx -> new BookieSocketAddress("127.0.0.1", 4181 + idx))
+    private static Set<BookieId> newCluster(int numServers) {
+        Set<BookieId> cluster = IntStream.range(0, numServers)
+            .mapToObj(idx -> new BookieSocketAddress("127.0.0.1", 4181 + idx).toBookieId())
             .collect(Collectors.toSet());
         return ImmutableSet.copyOf(cluster);
     }
 
-    private static Set<BookieSocketAddress> newCluster(int numServers, int startServerIdx) {
-        Set<BookieSocketAddress> cluster = IntStream.range(0, numServers)
-            .mapToObj(idx -> new BookieSocketAddress("127.0.0.1", 4181 + startServerIdx + idx))
+    private static Set<BookieId> newCluster(int numServers, int startServerIdx) {
+        Set<BookieId> cluster = IntStream.range(0, numServers)
+            .mapToObj(idx -> new BookieSocketAddress("127.0.0.1", 4181 + startServerIdx + idx).toBookieId())
             .collect(Collectors.toSet());
         return ImmutableSet.copyOf(cluster);
     }
 
     private static void verifyAssignmentData(ClusterAssignmentData newAssignment,
-                                             Set<BookieSocketAddress> currentCluster,
+                                             Set<BookieId> currentCluster,
                                              boolean isInitialIdealState)
             throws Exception {
         int numServers = currentCluster.size();
 
         assertEquals(numServers, newAssignment.getServersCount());
         Set<Long> assignedContainers = Sets.newHashSet();
-        Set<BookieSocketAddress> assignedServers = Sets.newHashSet();
+        Set<BookieId> assignedServers = Sets.newHashSet();
 
         int numContainersPerServer = NUM_STORAGE_CONTAINERS / numServers;
         int serverIdx = 0;
         for (Map.Entry<String, ServerAssignmentData> entry : newAssignment.getServersMap().entrySet()) {
             log.info("Check assignment for server {} = {}", entry.getKey(), entry.getValue());
 
-            BookieSocketAddress address = new BookieSocketAddress(entry.getKey());
+            BookieId address = BookieId.parse(entry.getKey());
             assignedServers.add(address);
             assertEquals(serverIdx + 1, assignedServers.size());
 
@@ -160,13 +161,13 @@ public class DefaultStorageContainerControllerTest {
     }
 
     private static void verifyAssignmentDataWhenHasMoreServers(ClusterAssignmentData newAssignment,
-                                                               Set<BookieSocketAddress> currentCluster)
+                                                               Set<BookieId> currentCluster)
             throws Exception {
         int numServers = currentCluster.size();
 
         assertEquals(numServers, newAssignment.getServersCount());
         Set<Long> assignedContainers = Sets.newHashSet();
-        Set<BookieSocketAddress> assignedServers = Sets.newHashSet();
+        Set<BookieId> assignedServers = Sets.newHashSet();
 
         int numEmptyServers = 0;
         int numAssignedServers = 0;
@@ -174,7 +175,7 @@ public class DefaultStorageContainerControllerTest {
         for (Map.Entry<String, ServerAssignmentData> entry : newAssignment.getServersMap().entrySet()) {
             log.info("Check assignment for server {} = {}", entry.getKey(), entry.getValue());
 
-            BookieSocketAddress address = new BookieSocketAddress(entry.getKey());
+            BookieId address = BookieId.parse(entry.getKey());
             assignedServers.add(address);
             assertEquals(serverIdx + 1, assignedServers.size());
 
@@ -209,7 +210,7 @@ public class DefaultStorageContainerControllerTest {
         ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
 
         int numServers = 8;
-        Set<BookieSocketAddress> currentCluster = newCluster(numServers);
+        Set<BookieId> currentCluster = newCluster(numServers);
 
         ClusterAssignmentData newAssignment = controller.computeIdealState(
             clusterMetadata,
@@ -224,7 +225,7 @@ public class DefaultStorageContainerControllerTest {
         ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
 
         int numServers = 8;
-        Set<BookieSocketAddress> currentCluster = newCluster(numServers);
+        Set<BookieId> currentCluster = newCluster(numServers);
         ClusterAssignmentData newAssignment = controller.computeIdealState(
             clusterMetadata,
             emptyAssignment,
@@ -245,7 +246,7 @@ public class DefaultStorageContainerControllerTest {
         ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
 
         int numServers = 8;
-        Set<BookieSocketAddress> currentCluster = newCluster(numServers);
+        Set<BookieId> currentCluster = newCluster(numServers);
 
         ClusterAssignmentData assignmentData = controller.computeIdealState(
             clusterMetadata,
@@ -254,7 +255,7 @@ public class DefaultStorageContainerControllerTest {
         verifyAssignmentData(assignmentData, currentCluster, true);
 
         int newNumServers = 4;
-        Set<BookieSocketAddress> newCluster = newCluster(newNumServers);
+        Set<BookieId> newCluster = newCluster(newNumServers);
 
         ClusterAssignmentData newAssignmentData = controller.computeIdealState(
             clusterMetadata,
@@ -268,7 +269,7 @@ public class DefaultStorageContainerControllerTest {
         ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
 
         int numServers = 4;
-        Set<BookieSocketAddress> currentCluster = newCluster(numServers);
+        Set<BookieId> currentCluster = newCluster(numServers);
 
         ClusterAssignmentData assignmentData = controller.computeIdealState(
             clusterMetadata,
@@ -277,7 +278,7 @@ public class DefaultStorageContainerControllerTest {
         verifyAssignmentData(assignmentData, currentCluster, true);
 
         int newNumServers = 8;
-        Set<BookieSocketAddress> newCluster = newCluster(newNumServers);
+        Set<BookieId> newCluster = newCluster(newNumServers);
 
         ClusterAssignmentData newAssignmentData = controller.computeIdealState(
             clusterMetadata,
@@ -291,7 +292,7 @@ public class DefaultStorageContainerControllerTest {
         ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
 
         int numServers = 4;
-        Set<BookieSocketAddress> currentCluster = newCluster(numServers);
+        Set<BookieId> currentCluster = newCluster(numServers);
 
         ClusterAssignmentData assignmentData = controller.computeIdealState(
             clusterMetadata,
@@ -299,10 +300,10 @@ public class DefaultStorageContainerControllerTest {
             currentCluster);
         verifyAssignmentData(assignmentData, currentCluster, true);
 
-        Set<BookieSocketAddress> serversToAdd = newCluster(6, numServers);
-        Set<BookieSocketAddress> serversToRemove = newCluster(2);
+        Set<BookieId> serversToAdd = newCluster(6, numServers);
+        Set<BookieId> serversToRemove = newCluster(2);
 
-        Set<BookieSocketAddress> newCluster = Sets.newHashSet(currentCluster);
+        Set<BookieId> newCluster = Sets.newHashSet(currentCluster);
         newCluster.addAll(serversToAdd);
         serversToRemove.forEach(newCluster::remove);
 
@@ -318,7 +319,7 @@ public class DefaultStorageContainerControllerTest {
         ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
 
         int numServers = 2 * NUM_STORAGE_CONTAINERS;
-        Set<BookieSocketAddress> currentCluster = newCluster(numServers);
+        Set<BookieId> currentCluster = newCluster(numServers);
 
         ClusterAssignmentData assignmentData = controller.computeIdealState(
             clusterMetadata,
@@ -332,7 +333,7 @@ public class DefaultStorageContainerControllerTest {
         ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
 
         int numServers = 4;
-        Set<BookieSocketAddress> currentCluster = newCluster(numServers);
+        Set<BookieId> currentCluster = newCluster(numServers);
 
         ClusterAssignmentData assignmentData = controller.computeIdealState(
             clusterMetadata,
@@ -341,7 +342,7 @@ public class DefaultStorageContainerControllerTest {
         verifyAssignmentData(assignmentData, currentCluster, true);
 
         numServers = 2 * NUM_STORAGE_CONTAINERS;
-        Set<BookieSocketAddress> newCluster = newCluster(numServers);
+        Set<BookieId> newCluster = newCluster(numServers);
         ClusterAssignmentData newAssignment = controller.computeIdealState(
             clusterMetadata,
             assignmentData,

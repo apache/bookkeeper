@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.bookkeeper.client.api.WriteFlag;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -47,7 +47,7 @@ public interface BookieClient {
      *
      * @return the list of faulty bookies
      */
-    List<BookieSocketAddress> getFaultyBookies();
+    List<BookieId> getFaultyBookies();
 
     /**
      * Check whether the channel used to write to a bookie channel is writable.
@@ -67,7 +67,7 @@ public interface BookieClient {
      * @param ledgerId the ledger we wish to send a request to
      *
      */
-    boolean isWritable(BookieSocketAddress address, long ledgerId);
+    boolean isWritable(BookieId address, long ledgerId);
 
     /**
      * Get the number of outstanding requests on the channel used to connect
@@ -82,7 +82,7 @@ public interface BookieClient {
      * @param ledgerId the ledger whose channel we wish to query
      * @return the number of requests currently outstanding
      */
-    long getNumPendingRequests(BookieSocketAddress address, long ledgerId);
+    long getNumPendingRequests(BookieId address, long ledgerId);
 
     /**
      * Send a force request to the server. When complete all entries which have
@@ -94,7 +94,7 @@ public interface BookieClient {
      * @param cb the callback notified when the request completes
      * @param ctx a context object passed to the callback on completion
      */
-    void forceLedger(BookieSocketAddress address, long ledgerId,
+    void forceLedger(BookieId address, long ledgerId,
                      ForceLedgerCallback cb, Object ctx);
 
     /**
@@ -106,7 +106,7 @@ public interface BookieClient {
      * @param cb the callback notified when the request completes
      * @param ctx a context object passed to the callback on completion
      */
-    void readLac(BookieSocketAddress address, long ledgerId, ReadLacCallback cb, Object ctx);
+    void readLac(BookieId address, long ledgerId, ReadLacCallback cb, Object ctx);
 
     /**
      * Explicitly write the last add confirmed for ledger {@code ledgerId} to the bookie at
@@ -120,7 +120,7 @@ public interface BookieClient {
      * @param cb the callback notified when the request completes
      * @param ctx a context object passed to the callback on completion
      */
-    void writeLac(BookieSocketAddress address, long ledgerId, byte[] masterKey,
+    void writeLac(BookieId address, long ledgerId, byte[] masterKey,
                   long lac, ByteBufList toSend, WriteLacCallback cb, Object ctx);
 
     /**
@@ -139,7 +139,7 @@ public interface BookieClient {
      * @param writeFlags a set of write flags
      *                   {@link org.apache.bookkeeper.client.api.WriteFlags}
      */
-    void addEntry(BookieSocketAddress address, long ledgerId, byte[] masterKey,
+    void addEntry(BookieId address, long ledgerId, byte[] masterKey,
                   long entryId, ByteBufList toSend, WriteCallback cb, Object ctx,
                   int options, boolean allowFastFail, EnumSet<WriteFlag> writeFlags);
 
@@ -147,7 +147,7 @@ public interface BookieClient {
      * Read entry with a null masterkey, disallowing failfast.
      * @see #readEntry(BookieSocketAddress,long,long,ReadEntryCallback,Object,int,byte[],boolean)
      */
-    default void readEntry(BookieSocketAddress address, long ledgerId, long entryId,
+    default void readEntry(BookieId address, long ledgerId, long entryId,
                            ReadEntryCallback cb, Object ctx, int flags) {
         readEntry(address, ledgerId, entryId, cb, ctx, flags, null);
     }
@@ -156,7 +156,7 @@ public interface BookieClient {
      * Read entry, disallowing failfast.
      * @see #readEntry(BookieSocketAddress,long,long,ReadEntryCallback,Object,int,byte[],boolean)
      */
-    default void readEntry(BookieSocketAddress address, long ledgerId, long entryId,
+    default void readEntry(BookieId address, long ledgerId, long entryId,
                            ReadEntryCallback cb, Object ctx, int flags, byte[] masterKey) {
         readEntry(address, ledgerId, entryId, cb, ctx, flags, masterKey, false);
     }
@@ -176,7 +176,7 @@ public interface BookieClient {
      * @param allowFastFail fail the read immediately if the channel is non-writable
      *                      {@link #isWritable(BookieSocketAddress,long)}
      */
-    void readEntry(BookieSocketAddress address, long ledgerId, long entryId,
+    void readEntry(BookieId address, long ledgerId, long entryId,
                    ReadEntryCallback cb, Object ctx, int flags, byte[] masterKey,
                    boolean allowFastFail);
 
@@ -194,7 +194,7 @@ public interface BookieClient {
      * @param cb the callback notified when the request completes
      * @param ctx a context object passed to the callback on completion
      */
-    void readEntryWaitForLACUpdate(BookieSocketAddress address,
+    void readEntryWaitForLACUpdate(BookieId address,
                                    long ledgerId,
                                    long entryId,
                                    long previousLAC,
@@ -214,7 +214,7 @@ public interface BookieClient {
      *
      * @see org.apache.bookkeeper.client.BookieInfoReader.BookieInfo
      */
-    void getBookieInfo(BookieSocketAddress address, long requested,
+    void getBookieInfo(BookieId address, long requested,
                        GetBookieInfoCallback cb, Object ctx);
 
     /**
@@ -222,12 +222,12 @@ public interface BookieClient {
      * and returns Future for the result.
      *
      * @param address
-     *            BookieSocketAddress of the bookie
+     *            BookieId of the bookie
      * @param ledgerId
      *            ledgerId
      * @return returns Future
      */
-    CompletableFuture<AvailabilityOfEntriesOfLedger> getListOfEntriesOfLedger(BookieSocketAddress address,
+    CompletableFuture<AvailabilityOfEntriesOfLedger> getListOfEntriesOfLedger(BookieId address,
             long ledgerId);
 
     /**

@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import junit.framework.TestCase;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
@@ -74,7 +75,8 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
                 conf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS, conf.getTimeoutTimerNumTicks());
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer,
+                DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
     }
 
@@ -99,18 +101,19 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
         int numOfAvailableRacks = 2;
 
         // Update cluster
-        Set<BookieSocketAddress> addrs = Sets.newHashSet(addr1, addr2, addr3, addr4);
+        Set<BookieId> addrs = Sets.newHashSet(addr1.toBookieId(),
+                addr2.toBookieId(), addr3.toBookieId(), addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<>());
 
         int ensembleSize = 3;
         int writeQuorumSize = 2;
         int acqQuorumSize = 2;
-        List<BookieSocketAddress> ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize,
+        List<BookieId> ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize,
                 acqQuorumSize, Collections.emptyMap(), Collections.emptySet()).getResult();
         int numCovered = TestRackawareEnsemblePlacementPolicy.getNumCoveredWriteQuorums(ensemble, writeQuorumSize,
-                conf.getMinNumRacksPerWriteQuorum());
+                conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver);
         assertTrue(numCovered >= 1 && numCovered < 3);
-        assertTrue(ensemble.contains(addr1));
+        assertTrue(ensemble.contains(addr1.toBookieId()));
 
         List<BookieSocketAddress> bookieAddressList = new ArrayList<>();
         List<String> rackList = new ArrayList<>();
@@ -122,8 +125,8 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
         ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize, Collections.emptyMap(),
                                     Collections.emptySet()).getResult();
         assertEquals(3, TestRackawareEnsemblePlacementPolicy.getNumCoveredWriteQuorums(ensemble, writeQuorumSize,
-                conf.getMinNumRacksPerWriteQuorum()));
-        assertTrue(ensemble.contains(addr1));
-        assertTrue(ensemble.contains(addr2));
+                conf.getMinNumRacksPerWriteQuorum(), repp.bookieAddressResolver));
+        assertTrue(ensemble.contains(addr1.toBookieId()));
+        assertTrue(ensemble.contains(addr2.toBookieId()));
     }
 }

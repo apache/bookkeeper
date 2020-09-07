@@ -21,7 +21,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.List;
 
 import org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -45,10 +45,10 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     volatile boolean hasValidResponse = false;
     volatile boolean completed = false;
     RecoveryData maxRecoveredData;
-    final List<BookieSocketAddress> currentEnsemble;
+    final List<BookieId> currentEnsemble;
 
     TryReadLastConfirmedOp(LedgerHandle lh, BookieClient bookieClient,
-                           List<BookieSocketAddress> ensemble, LastConfirmedDataCallback cb, long lac) {
+                           List<BookieId> ensemble, LastConfirmedDataCallback cb, long lac) {
         this.lh = lh;
         this.bookieClient = bookieClient;
         this.cb = cb;

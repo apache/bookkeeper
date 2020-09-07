@@ -40,6 +40,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.CreateMode;
@@ -103,7 +104,7 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
             InetSocketAddress address = new InetSocketAddress("127.0.0.1", 3181 + i);
             addressSet.add(address);
             bookieDriver.getRegistrationManager().registerBookie(
-                "127.0.0.1:" + (3181 + i), false, BookieServiceInfo.EMPTY
+                BookieId.parse("127.0.0.1:" + (3181 + i)), false, BookieServiceInfo.EMPTY
             );
         }
 
@@ -138,7 +139,7 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
             InetSocketAddress address = new InetSocketAddress("127.0.0.1", 3181 + i);
             addressSet.add(address);
             bookieDriver.getRegistrationManager().registerBookie(
-                "127.0.0.1:" + (3181 + i), false, BookieServiceInfo.EMPTY
+                BookieId.parse("127.0.0.1:" + (3181 + i)), false, BookieServiceInfo.EMPTY
             );
         }
 

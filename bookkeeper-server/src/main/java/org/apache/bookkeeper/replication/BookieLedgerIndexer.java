@@ -28,7 +28,7 @@ import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.zookeeper.AsyncCallback;
@@ -65,12 +65,11 @@ public class BookieLedgerIndexer {
         Processor<Long> ledgerProcessor = new Processor<Long>() {
                 @Override
                 public void process(Long ledgerId, AsyncCallback.VoidCallback iterCallback) {
-                    ledgerManager.readLedgerMetadata(ledgerId).whenComplete(
-                            (metadata, exception) -> {
+                    ledgerManager.readLedgerMetadata(ledgerId).whenComplete((metadata, exception) -> {
                                 if (exception == null) {
-                                    for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble
+                                    for (Map.Entry<Long, ? extends List<BookieId>> ensemble
                                              : metadata.getValue().getAllEnsembles().entrySet()) {
-                                        for (BookieSocketAddress bookie : ensemble.getValue()) {
+                                        for (BookieId bookie : ensemble.getValue()) {
                                             putLedger(bookie2ledgersMap, bookie.toString(), ledgerId);
                                         }
                                     }

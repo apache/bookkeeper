@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,9 +26,11 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import java.net.URI;
+import java.util.UUID;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
@@ -70,14 +73,16 @@ public class WhoIsAuditorCommandTest extends BookieCommandTestBase {
         when(builder.sessionTimeoutMs(anyInt())).thenReturn(builder);
         when(builder.build()).thenReturn(zk);
 
-        BookieSocketAddress bookieId = mock(BookieSocketAddress.class);
+        BookieId bookieId = BookieId.parse(UUID.randomUUID().toString());
 
         PowerMockito.mockStatic(AuditorElector.class);
         PowerMockito.when(AuditorElector.getCurrentAuditor(eq(conf), eq(zk)))
                     .thenReturn(bookieId);
 
         PowerMockito.mockStatic(CommandHelpers.class);
-        PowerMockito.when(CommandHelpers.getBookieSocketAddrStringRepresentation(eq(bookieId))).thenReturn("");
+        PowerMockito.when(CommandHelpers
+                .getBookieSocketAddrStringRepresentation(
+                        eq(bookieId), any(BookieAddressResolver.class))).thenReturn("");
     }
 
     @Test

@@ -62,7 +62,7 @@ import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.KeeperException;
@@ -151,7 +151,7 @@ public class BookieWriteLedgerTest extends
         startNewBookie();
 
         // Shutdown three bookies in the last ensemble and continue writing
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
+        List<BookieId> ensemble = lh.getLedgerMetadata()
                 .getAllEnsembles().entrySet().iterator().next().getValue();
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));
@@ -196,7 +196,7 @@ public class BookieWriteLedgerTest extends
 
         CountDownLatch sleepLatch1 = new CountDownLatch(1);
         CountDownLatch sleepLatch2 = new CountDownLatch(1);
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
+        List<BookieId> ensemble = lh.getLedgerMetadata()
                 .getAllEnsembles().entrySet().iterator().next().getValue();
 
         sleepBookie(ensemble.get(0), sleepLatch1);
@@ -293,7 +293,7 @@ public class BookieWriteLedgerTest extends
         CountDownLatch sleepLatch1 = new CountDownLatch(1);
 
         // get bookie at index-0
-        BookieSocketAddress bookie1 = lh.getCurrentEnsemble().get(0);
+        BookieId bookie1 = lh.getCurrentEnsemble().get(0);
         sleepBookie(bookie1, sleepLatch1);
 
         int i = numEntriesToWrite;
@@ -332,7 +332,7 @@ public class BookieWriteLedgerTest extends
 
         sleepLatch1.countDown();
         // get the bookie at index-0 again, this must be different.
-        BookieSocketAddress bookie2 = lh.getCurrentEnsemble().get(0);
+        BookieId bookie2 = lh.getCurrentEnsemble().get(0);
 
         assertFalse(
                 "Delayed write error must have forced ensemble change",
@@ -390,7 +390,7 @@ public class BookieWriteLedgerTest extends
         startNewBookie();
 
         // Shutdown one bookie in the last ensemble and continue writing
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next()
+        List<BookieId> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next()
                 .getValue();
         killBookie(ensemble.get(0));
 
@@ -529,7 +529,7 @@ public class BookieWriteLedgerTest extends
         startNewBookie();
 
         // Shutdown one bookie in the last ensemble and continue writing
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next()
+        List<BookieId> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next()
                 .getValue();
         killBookie(ensemble.get(0));
 
@@ -879,7 +879,7 @@ public class BookieWriteLedgerTest extends
         startNewBookie();
 
         // Shutdown three bookies in the last ensemble and continue writing
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
+        List<BookieId> ensemble = lh.getLedgerMetadata()
                 .getAllEnsembles().entrySet().iterator().next().getValue();
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));
@@ -952,7 +952,7 @@ public class BookieWriteLedgerTest extends
         }
         // Start One more bookie and shutdown one from last ensemble before reading
         startNewBookie();
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next()
+        List<BookieId> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next()
                 .getValue();
         killBookie(ensemble.get(0));
 
@@ -1020,7 +1020,7 @@ public class BookieWriteLedgerTest extends
         }
 
         CountDownLatch sleepLatch1 = new CountDownLatch(1);
-        List<BookieSocketAddress> ensemble;
+        List<BookieId> ensemble;
 
         ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next().getValue();
 
@@ -1106,7 +1106,7 @@ public class BookieWriteLedgerTest extends
                 if (j == numEntriesToWrite / 2) {
                     // Start One more bookie and shutdown one from last ensemble at half-way
                     startNewBookie();
-                    List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet()
+                    List<BookieId> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet()
                             .iterator().next().getValue();
                     killBookie(ensemble.get(0));
                 }
@@ -1175,7 +1175,7 @@ public class BookieWriteLedgerTest extends
         }
         // Start One more bookie and shutdown one from last ensemble before reading
         startNewBookie();
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next()
+        List<BookieId> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next()
                 .getValue();
         killBookie(ensemble.get(0));
 

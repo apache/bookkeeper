@@ -42,6 +42,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -79,7 +80,7 @@ public class BookieStateManager implements StateManager {
     private final AtomicBoolean forceReadOnly = new AtomicBoolean(false);
     private volatile boolean availableForHighPriorityWrites = true;
 
-    private final String bookieId;
+    private final BookieId bookieId;
     private ShutdownHandler shutdownHandler;
     private final Supplier<RegistrationManager> rm;
     // Expose Stats
@@ -101,7 +102,7 @@ public class BookieStateManager implements StateManager {
             ledgerDirsManager.getAllLedgerDirs(),
             () -> {
                 try {
-                    return Bookie.getBookieAddress(conf).toString();
+                    return Bookie.getBookieId(conf);
                 } catch (UnknownHostException e) {
                     throw new UncheckedIOException("Failed to resolve bookie id", e);
                 }
@@ -112,7 +113,7 @@ public class BookieStateManager implements StateManager {
                               StatsLogger statsLogger,
                               Supplier<RegistrationManager> rm,
                               List<File> statusDirs,
-                              Supplier<String> bookieIdSupplier,
+                              Supplier<BookieId> bookieIdSupplier,
                               Supplier<BookieServiceInfo> bookieServiceInfoProvider) throws IOException {
         this.conf = conf;
         this.rm = rm;

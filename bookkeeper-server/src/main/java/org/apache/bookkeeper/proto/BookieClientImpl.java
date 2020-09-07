@@ -55,6 +55,7 @@ import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.FutureGetListOfEntriesOfLedger;
@@ -86,8 +87,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
     private final EventLoopGroup eventLoopGroup;
     private final ByteBufAllocator allocator;
-    final ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool> channels =
-            new ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool>();
+    final ConcurrentHashMap<BookieId, PerChannelBookieClientPool> channels =
+            new ConcurrentHashMap<BookieId, PerChannelBookieClientPool>();
 
     private final ClientAuthProvider.Factory authProviderFactory;
     private final ExtensionRegistry registry;
@@ -99,13 +100,14 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     private final ReentrantReadWriteLock closeLock;
     private final StatsLogger statsLogger;
     private final int numConnectionsPerBookie;
+    private final BookieAddressResolver bookieAddressResolver;
 
     private final long bookieErrorThresholdPerInterval;
 
     public BookieClientImpl(ClientConfiguration conf, EventLoopGroup eventLoopGroup,
                             ByteBufAllocator allocator,
                             OrderedExecutor executor, ScheduledExecutorService scheduler,
-                            StatsLogger statsLogger) throws IOException {
+                            StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) throws IOException {
         this.conf = conf;
         this.v3Conf = new ClientConfiguration(conf);
         this.v3Conf.setUseV2WireProtocol(false);
@@ -115,7 +117,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         this.executor = executor;
         this.closed = false;
         this.closeLock = new ReentrantReadWriteLock();
-
+        this.bookieAddressResolver = bookieAddressResolver;
         this.registry = ExtensionRegistry.newInstance();
         this.authProviderFactory = AuthProviderFactoryFactory.newClientAuthProviderFactory(conf);
 
@@ -150,8 +152,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     @Override
-    public List<BookieSocketAddress> getFaultyBookies() {
-        List<BookieSocketAddress> faultyBookies = Lists.newArrayList();
+    public List<BookieId> getFaultyBookies() {
+        List<BookieId> faultyBookies = Lists.newArrayList();
         for (PerChannelBookieClientPool channelPool : channels.values()) {
             if (channelPool instanceof DefaultPerChannelBookieClientPool) {
                 DefaultPerChannelBookieClientPool pool = (DefaultPerChannelBookieClientPool) channelPool;
@@ -164,14 +166,14 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     @Override
-    public boolean isWritable(BookieSocketAddress address, long key) {
+    public boolean isWritable(BookieId address, long key) {
         final PerChannelBookieClientPool pcbcPool = lookupClient(address);
         // if null, let the write initiate connect of fail with whatever error it produces
         return pcbcPool == null || pcbcPool.isWritable(key);
     }
 
     @Override
-    public long getNumPendingRequests(BookieSocketAddress address, long ledgerId) {
+    public long getNumPendingRequests(BookieId address, long ledgerId) {
         PerChannelBookieClientPool pcbcPool = lookupClient(address);
         if (pcbcPool == null) {
             return 0;
@@ -183,7 +185,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     @Override
-    public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool,
+    public PerChannelBookieClient create(BookieId address, PerChannelBookieClientPool pcbcPool,
             SecurityHandlerFactory shFactory, boolean forceUseV3) throws SecurityException {
         StatsLogger statsLoggerForPCBC = statsLogger;
         if (conf.getLimitStatsLogging()) {
@@ -194,10 +196,11 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             clientConfiguration = v3Conf;
         }
         return new PerChannelBookieClient(clientConfiguration, executor, eventLoopGroup, allocator, address,
-                                   statsLoggerForPCBC, authProviderFactory, registry, pcbcPool, shFactory);
+                                   statsLoggerForPCBC, authProviderFactory, registry, pcbcPool,
+                                   shFactory, bookieAddressResolver);
     }
 
-    public PerChannelBookieClientPool lookupClient(BookieSocketAddress addr) {
+    public PerChannelBookieClientPool lookupClient(BookieId addr) {
         PerChannelBookieClientPool clientPool = channels.get(addr);
         if (null == clientPool) {
             closeLock.readLock().lock();
@@ -227,7 +230,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     @Override
-    public void forceLedger(final BookieSocketAddress addr, final long ledgerId,
+    public void forceLedger(final BookieId addr, final long ledgerId,
             final ForceLedgerCallback cb, final Object ctx) {
         final PerChannelBookieClientPool client = lookupClient(addr);
         if (client == null) {
@@ -252,7 +255,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     @Override
-    public void writeLac(final BookieSocketAddress addr, final long ledgerId, final byte[] masterKey,
+    public void writeLac(final BookieId addr, final long ledgerId, final byte[] masterKey,
             final long lac, final ByteBufList toSend, final WriteLacCallback cb, final Object ctx) {
         final PerChannelBookieClientPool client = lookupClient(addr);
         if (client == null) {
@@ -282,7 +285,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     private void completeAdd(final int rc,
                              final long ledgerId,
                              final long entryId,
-                             final BookieSocketAddress addr,
+                             final BookieId addr,
                              final WriteCallback cb,
                              final Object ctx) {
         try {
@@ -302,7 +305,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     @Override
-    public void addEntry(final BookieSocketAddress addr,
+    public void addEntry(final BookieId addr,
                          final long ledgerId,
                          final byte[] masterKey,
                          final long entryId,
@@ -330,7 +333,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     @Override
-    public CompletableFuture<AvailabilityOfEntriesOfLedger> getListOfEntriesOfLedger(BookieSocketAddress address,
+    public CompletableFuture<AvailabilityOfEntriesOfLedger> getListOfEntriesOfLedger(BookieId address,
             long ledgerId) {
         FutureGetListOfEntriesOfLedger futureResult = new FutureGetListOfEntriesOfLedger(ledgerId);
         final PerChannelBookieClientPool client = lookupClient(address);
@@ -383,7 +386,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         private ByteBufList toSend;
         private long ledgerId;
         private long entryId;
-        private BookieSocketAddress addr;
+        private BookieId addr;
         private Object ctx;
         private WriteCallback cb;
         private int options;
@@ -393,7 +396,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
         static ChannelReadyForAddEntryCallback create(
                 BookieClientImpl bookieClient, ByteBufList toSend, long ledgerId,
-                long entryId, BookieSocketAddress addr, Object ctx,
+                long entryId, BookieId addr, Object ctx,
                 WriteCallback cb, int options, byte[] masterKey, boolean allowFastFail,
                 EnumSet<WriteFlag> writeFlags) {
             ChannelReadyForAddEntryCallback callback = RECYCLER.get();
@@ -456,7 +459,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     @Override
-    public void readLac(final BookieSocketAddress addr, final long ledgerId, final ReadLacCallback cb,
+    public void readLac(final BookieId addr, final long ledgerId, final ReadLacCallback cb,
             final Object ctx) {
         final PerChannelBookieClientPool client = lookupClient(addr);
         if (client == null) {
@@ -481,19 +484,19 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     @Override
-    public void readEntry(BookieSocketAddress addr, long ledgerId, long entryId,
+    public void readEntry(BookieId addr, long ledgerId, long entryId,
                           ReadEntryCallback cb, Object ctx, int flags) {
         readEntry(addr, ledgerId, entryId, cb, ctx, flags, null);
     }
 
     @Override
-    public void readEntry(final BookieSocketAddress addr, final long ledgerId, final long entryId,
+    public void readEntry(final BookieId addr, final long ledgerId, final long entryId,
                           final ReadEntryCallback cb, final Object ctx, int flags, byte[] masterKey) {
         readEntry(addr, ledgerId, entryId, cb, ctx, flags, masterKey, false);
     }
 
     @Override
-    public void readEntry(final BookieSocketAddress addr, final long ledgerId, final long entryId,
+    public void readEntry(final BookieId addr, final long ledgerId, final long entryId,
                           final ReadEntryCallback cb, final Object ctx, int flags, byte[] masterKey,
                           final boolean allowFastFail) {
         final PerChannelBookieClientPool client = lookupClient(addr);
@@ -514,7 +517,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
 
     @Override
-    public void readEntryWaitForLACUpdate(final BookieSocketAddress addr,
+    public void readEntryWaitForLACUpdate(final BookieId addr,
                                           final long ledgerId,
                                           final long entryId,
                                           final long previousLAC,
@@ -540,7 +543,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     @Override
-    public void getBookieInfo(final BookieSocketAddress addr, final long requested, final GetBookieInfoCallback cb,
+    public void getBookieInfo(final BookieId addr, final long requested, final GetBookieInfoCallback cb,
             final Object ctx) {
         final PerChannelBookieClientPool client = lookupClient(addr);
         if (client == null) {
@@ -633,7 +636,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         WriteCallback cb = new WriteCallback() {
 
             @Override
-            public void writeComplete(int rc, long ledger, long entry, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledger, long entry, BookieId addr, Object ctx) {
                 Counter counter = (Counter) ctx;
                 counter.dec();
                 if (rc != 0) {
@@ -652,8 +655,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
                 new DefaultThreadFactory("BookKeeperClientScheduler"));
         BookieClientImpl bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
-                null, executor, scheduler, NullStatsLogger.INSTANCE);
-        BookieSocketAddress addr = new BookieSocketAddress(args[0], Integer.parseInt(args[1]));
+                null, executor, scheduler, NullStatsLogger.INSTANCE, b -> BookieSocketAddress.class.cast(b));
+        BookieId addr = new BookieSocketAddress(args[0], Integer.parseInt(args[1])).toBookieId();
 
         for (int i = 0; i < 100000; i++) {
             counter.inc();

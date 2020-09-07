@@ -42,7 +42,7 @@ import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.BookieException.UnknownBookieIdException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -234,14 +234,14 @@ public class Cookie {
      */
     public void writeToRegistrationManager(RegistrationManager rm, ServerConfiguration conf, Version version)
             throws BookieException {
-        BookieSocketAddress address = null;
+        BookieId address = null;
         try {
-            address = Bookie.getBookieAddress(conf);
+            address = Bookie.getBookieId(conf);
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
         byte[] data = toString().getBytes(UTF_8);
-        rm.writeCookie(address.toString(), new Versioned<>(data, version));
+        rm.writeCookie(address, new Versioned<>(data, version));
     }
 
     /**
@@ -255,9 +255,9 @@ public class Cookie {
     public void deleteFromRegistrationManager(RegistrationManager rm,
                                               ServerConfiguration conf,
                                               Version version) throws BookieException {
-        BookieSocketAddress address = null;
+        BookieId address = null;
         try {
-            address = Bookie.getBookieAddress(conf);
+            address = Bookie.getBookieId(conf);
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
@@ -273,13 +273,13 @@ public class Cookie {
      * @throws BookieException when fail to delete cookie.
      */
     public void deleteFromRegistrationManager(RegistrationManager rm,
-                                              BookieSocketAddress address,
+                                              BookieId address,
                                               Version version) throws BookieException {
         if (!(version instanceof LongVersion)) {
             throw new IllegalArgumentException("Invalid version type, expected ZkVersion type");
         }
 
-        rm.removeCookie(address.toString(), version);
+        rm.removeCookie(address, version);
     }
 
     /**
@@ -293,7 +293,7 @@ public class Cookie {
             throws UnknownHostException {
         Builder builder = Cookie.newBuilder();
         builder.setLayoutVersion(CURRENT_COOKIE_LAYOUT_VERSION);
-        builder.setBookieHost(Bookie.getBookieAddress(conf).toString());
+        builder.setBookieHost(Bookie.getBookieId(conf).toString());
         builder.setJournalDirs(Joiner.on(',').join(conf.getJournalDirNames()));
         builder.setLedgerDirs(encodeDirPaths(conf.getLedgerDirNames()));
         return builder;
@@ -310,7 +310,7 @@ public class Cookie {
     public static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm, ServerConfiguration conf)
             throws BookieException {
         try {
-            return readFromRegistrationManager(rm, Bookie.getBookieAddress(conf));
+            return readFromRegistrationManager(rm, Bookie.getBookieId(conf));
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
@@ -325,8 +325,8 @@ public class Cookie {
      * @throws BookieException when fail to read cookie
      */
     public static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm,
-                                                         BookieSocketAddress address) throws BookieException {
-        Versioned<byte[]> cookieData = rm.readCookie(address.toString());
+                                                         BookieId address) throws BookieException {
+        Versioned<byte[]> cookieData = rm.readCookie(address);
         try {
             try (BufferedReader reader = new BufferedReader(
                     new StringReader(new String(cookieData.getValue(), UTF_8)))) {

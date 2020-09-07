@@ -41,7 +41,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.FutureGetListOfEntriesOfLedger;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
@@ -64,15 +64,15 @@ public class MockBookieClient implements BookieClient {
     static final Logger LOG = LoggerFactory.getLogger(MockBookieClient.class);
 
     final OrderedExecutor executor;
-    final ConcurrentHashMap<BookieSocketAddress, ConcurrentHashMap<Long, LedgerData>> data = new ConcurrentHashMap<>();
-    final Set<BookieSocketAddress> errorBookies =
-        Collections.newSetFromMap(new ConcurrentHashMap<BookieSocketAddress, Boolean>());
+    final ConcurrentHashMap<BookieId, ConcurrentHashMap<Long, LedgerData>> data = new ConcurrentHashMap<>();
+    final Set<BookieId> errorBookies =
+        Collections.newSetFromMap(new ConcurrentHashMap<BookieId, Boolean>());
 
     /**
      * Runs before or after an operation. Can stall the operation or error it.
      */
     public interface Hook {
-        CompletableFuture<Void> runHook(BookieSocketAddress bookie, long ledgerId, long entryId);
+        CompletableFuture<Void> runHook(BookieId bookie, long ledgerId, long entryId);
     }
 
     private Hook preReadHook = (bookie, ledgerId, entryId) -> FutureUtils.value(null);
@@ -100,17 +100,17 @@ public class MockBookieClient implements BookieClient {
         this.postWriteHook = hook;
     }
 
-    public void errorBookies(BookieSocketAddress... bookies) {
+    public void errorBookies(BookieId... bookies) {
         errorBookies.addAll(Arrays.asList(bookies));
     }
 
-    public void removeErrors(BookieSocketAddress... bookies) {
-        for (BookieSocketAddress b : bookies) {
+    public void removeErrors(BookieId... bookies) {
+        for (BookieId b : bookies) {
             errorBookies.remove(b);
         }
     }
 
-    public void seedEntries(BookieSocketAddress bookie, long ledgerId, long entryId, long lac) throws Exception {
+    public void seedEntries(BookieId bookie, long ledgerId, long entryId, long lac) throws Exception {
         DigestManager digestManager = DigestManager.instantiate(ledgerId, new byte[0], DigestType.CRC32C,
                 UnpooledByteBufAllocator.DEFAULT, false);
         ByteBuf entry = ByteBufList.coalesce(digestManager.computeDigestAndPackageForSending(
@@ -121,22 +121,22 @@ public class MockBookieClient implements BookieClient {
     }
 
     @Override
-    public List<BookieSocketAddress> getFaultyBookies() {
+    public List<BookieId> getFaultyBookies() {
         return Collections.emptyList();
     }
 
     @Override
-    public boolean isWritable(BookieSocketAddress address, long ledgerId) {
+    public boolean isWritable(BookieId address, long ledgerId) {
         return true;
     }
 
     @Override
-    public long getNumPendingRequests(BookieSocketAddress address, long ledgerId) {
+    public long getNumPendingRequests(BookieId address, long ledgerId) {
         return 0;
     }
 
     @Override
-    public void forceLedger(BookieSocketAddress addr, long ledgerId,
+    public void forceLedger(BookieId addr, long ledgerId,
                             ForceLedgerCallback cb, Object ctx) {
         executor.executeOrdered(ledgerId,
                 safeRun(() -> {
@@ -146,7 +146,7 @@ public class MockBookieClient implements BookieClient {
     }
 
     @Override
-    public void writeLac(BookieSocketAddress addr, long ledgerId, byte[] masterKey,
+    public void writeLac(BookieId addr, long ledgerId, byte[] masterKey,
                          long lac, ByteBufList toSend, WriteLacCallback cb, Object ctx) {
         executor.executeOrdered(ledgerId,
                 safeRun(() -> {
@@ -156,7 +156,7 @@ public class MockBookieClient implements BookieClient {
     }
 
     @Override
-    public void addEntry(BookieSocketAddress addr, long ledgerId, byte[] masterKey,
+    public void addEntry(BookieId addr, long ledgerId, byte[] masterKey,
                          long entryId, ByteBufList toSend, WriteCallback cb, Object ctx,
                          int options, boolean allowFastFail, EnumSet<WriteFlag> writeFlags) {
         toSend.retain();
@@ -185,7 +185,7 @@ public class MockBookieClient implements BookieClient {
     }
 
     @Override
-    public void readLac(BookieSocketAddress addr, long ledgerId, ReadLacCallback cb, Object ctx) {
+    public void readLac(BookieId addr, long ledgerId, ReadLacCallback cb, Object ctx) {
         executor.executeOrdered(ledgerId,
                 safeRun(() -> {
                         cb.readLacComplete(BKException.Code.IllegalOpException,
@@ -194,7 +194,7 @@ public class MockBookieClient implements BookieClient {
     }
 
     @Override
-    public void readEntry(BookieSocketAddress addr, long ledgerId, long entryId,
+    public void readEntry(BookieId addr, long ledgerId, long entryId,
                           ReadEntryCallback cb, Object ctx, int flags, byte[] masterKey,
                           boolean allowFastFail) {
         preReadHook.runHook(addr, ledgerId, entryId)
@@ -232,7 +232,7 @@ public class MockBookieClient implements BookieClient {
     }
 
     @Override
-    public void readEntryWaitForLACUpdate(BookieSocketAddress addr,
+    public void readEntryWaitForLACUpdate(BookieId addr,
                                           long ledgerId,
                                           long entryId,
                                           long previousLAC,
@@ -248,7 +248,7 @@ public class MockBookieClient implements BookieClient {
     }
 
     @Override
-    public void getBookieInfo(BookieSocketAddress addr, long requested,
+    public void getBookieInfo(BookieId addr, long requested,
                               GetBookieInfoCallback cb, Object ctx) {
         executor.executeOrdered(addr,
                 safeRun(() -> {
@@ -258,7 +258,7 @@ public class MockBookieClient implements BookieClient {
     }
 
     @Override
-    public CompletableFuture<AvailabilityOfEntriesOfLedger> getListOfEntriesOfLedger(BookieSocketAddress address,
+    public CompletableFuture<AvailabilityOfEntriesOfLedger> getListOfEntriesOfLedger(BookieId address,
             long ledgerId) {
         FutureGetListOfEntriesOfLedger futureResult = new FutureGetListOfEntriesOfLedger(ledgerId);
         executor.executeOrdered(address, safeRun(() -> {
@@ -277,7 +277,7 @@ public class MockBookieClient implements BookieClient {
     public void close() {
     }
 
-    private ConcurrentHashMap<Long, LedgerData> getBookieData(BookieSocketAddress addr) {
+    private ConcurrentHashMap<Long, LedgerData> getBookieData(BookieId addr) {
         return data.computeIfAbsent(addr, (key) -> new ConcurrentHashMap<>());
     }
 

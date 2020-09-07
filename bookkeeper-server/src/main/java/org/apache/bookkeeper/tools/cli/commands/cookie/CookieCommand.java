@@ -34,6 +34,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tools.cli.helpers.BookieShellCommand;
 import org.apache.bookkeeper.tools.common.BKCommand;
@@ -85,7 +86,7 @@ abstract class CookieCommand<CookieFlagsT extends CliFlags>
         }
     }
 
-    protected String getBookieId(CookieFlagsT cmdFlags) throws UnknownHostException {
+    protected BookieId getBookieId(CookieFlagsT cmdFlags) throws UnknownHostException {
         checkArgument(
             cmdFlags.arguments.size() == 1,
             "No bookie id or more bookie ids is specified");
@@ -100,7 +101,7 @@ abstract class CookieCommand<CookieFlagsT extends CliFlags>
                     + " Bookie id should be in the format of '<hostname>:<port>'");
             throw nhe;
         }
-        return bookieId;
+        return BookieId.parse(bookieId);
     }
 
     protected byte[] readCookieDataFromFile(String cookieFile) throws IOException {

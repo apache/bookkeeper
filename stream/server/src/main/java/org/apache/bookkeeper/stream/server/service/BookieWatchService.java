@@ -32,7 +32,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.server.conf.BookieConfiguration;
 
@@ -77,7 +77,7 @@ public class BookieWatchService
 
     private static void waitingForNumBookies(RegistrationClient client, int minNumBookies) throws Exception {
         Stopwatch stopwatch = Stopwatch.createStarted();
-        Set<BookieSocketAddress> bookies = FutureUtils.result(client.getWritableBookies()).getValue();
+        Set<BookieId> bookies = FutureUtils.result(client.getWritableBookies()).getValue();
         while (bookies.size() < minNumBookies) {
             TimeUnit.SECONDS.sleep(1);
             bookies = FutureUtils.result(client.getWritableBookies()).getValue();

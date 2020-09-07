@@ -61,7 +61,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -105,7 +105,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             ServerConfiguration conf = new ServerConfiguration(bsConfs.get(i));
             conf.setAuditorPeriodicCheckInterval(CHECK_INTERVAL);
 
-            String addr = bs.get(i).getLocalAddress().toString();
+            String addr = bs.get(i).getBookieId().toString();
 
             AuditorElector auditorElector = new AuditorElector(addr, conf);
             auditorElectors.put(addr, auditorElector);
@@ -698,23 +698,23 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         }
     }
 
-    private BookieSocketAddress replaceBookieWithWriteFailingBookie(LedgerHandle lh) throws Exception {
+    private BookieId replaceBookieWithWriteFailingBookie(LedgerHandle lh) throws Exception {
         int bookieIdx = -1;
         Long entryId = lh.getLedgerMetadata().getAllEnsembles().firstKey();
-        List<BookieSocketAddress> curEnsemble = lh.getLedgerMetadata().getAllEnsembles().get(entryId);
+        List<BookieId> curEnsemble = lh.getLedgerMetadata().getAllEnsembles().get(entryId);
 
         // Identify a bookie in the current ledger ensemble to be replaced
-        BookieSocketAddress replacedBookie = null;
+        BookieId replacedBookie = null;
         for (int i = 0; i < numBookies; i++) {
-            if (curEnsemble.contains(bs.get(i).getLocalAddress())) {
+            if (curEnsemble.contains(bs.get(i).getBookieId())) {
                 bookieIdx = i;
-                replacedBookie = bs.get(i).getLocalAddress();
+                replacedBookie = bs.get(i).getBookieId();
                 break;
             }
         }
         assertNotEquals("Couldn't find ensemble bookie in bookie list", -1, bookieIdx);
 
-        LOG.info("Killing bookie " + bs.get(bookieIdx).getLocalAddress());
+        LOG.info("Killing bookie " + bs.get(bookieIdx).getBookieId());
         ServerConfiguration conf = killBookie(bookieIdx);
         Bookie writeFailingBookie = new Bookie(conf) {
             @Override
@@ -754,7 +754,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         // kill one of the bookies and replace it with one that rejects write;
         // This way we get into the under replication state
-        BookieSocketAddress replacedBookie = replaceBookieWithWriteFailingBookie(lh);
+        BookieId replacedBookie = replaceBookieWithWriteFailingBookie(lh);
 
         // Write a few entries; this should cause under replication
         byte[] data = "foobar".getBytes();
@@ -796,9 +796,9 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         // check that ensemble has changed and the bookie that rejected writes has
         // been replaced in the ensemble
         LedgerHandle newLh = bkc.openLedger(lh.getId(), DigestType.CRC32, "passwd".getBytes());
-        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e :
+        for (Map.Entry<Long, ? extends List<BookieId>> e :
                  newLh.getLedgerMetadata().getAllEnsembles().entrySet()) {
-            List<BookieSocketAddress> ensemble = e.getValue();
+            List<BookieId> ensemble = e.getValue();
             assertFalse("Ensemble hasn't been updated", ensemble.contains(replacedBookie));
         }
         newLh.close();

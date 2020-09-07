@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 
 /**
  * Represents the entries of a segment of a ledger which are stored on subset of
@@ -33,7 +33,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
  */
 public class LedgerFragment {
     private final Set<Integer> bookieIndexes;
-    private final List<BookieSocketAddress> ensemble;
+    private final List<BookieId> ensemble;
     private final long firstEntryId;
     private final long lastKnownEntryId;
     private final long ledgerId;
@@ -50,7 +50,7 @@ public class LedgerFragment {
         this.bookieIndexes = bookieIndexes;
         this.ensemble = lh.getLedgerMetadata().getEnsembleAt(firstEntryId);
         this.schedule = lh.getDistributionSchedule();
-        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = lh
+        SortedMap<Long, ? extends List<BookieId>> ensembles = lh
                 .getLedgerMetadata().getAllEnsembles();
         this.isLedgerClosed = lh.getLedgerMetadata().isClosed()
                 || !ensemble.equals(ensembles.get(ensembles.lastKey()));
@@ -106,12 +106,12 @@ public class LedgerFragment {
     /**
      * Gets the failedBookie address.
      */
-    public BookieSocketAddress getAddress(int bookieIndex) {
+    public BookieId getAddress(int bookieIndex) {
         return ensemble.get(bookieIndex);
     }
 
-    public Set<BookieSocketAddress> getAddresses() {
-        Set<BookieSocketAddress> addresses = new HashSet<BookieSocketAddress>();
+    public Set<BookieId> getAddresses() {
+        Set<BookieId> addresses = new HashSet<BookieId>();
         for (int bookieIndex : bookieIndexes) {
             addresses.add(ensemble.get(bookieIndex));
         }
@@ -213,7 +213,7 @@ public class LedgerFragment {
      *
      * @return the ensemble for the segment which this fragment is a part of
      */
-    public List<BookieSocketAddress> getEnsemble() {
+    public List<BookieId> getEnsemble() {
         return this.ensemble;
     }
 

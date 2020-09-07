@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -110,7 +110,7 @@ public class LedgerFragmentReplicator {
     private void replicateFragmentInternal(final LedgerHandle lh,
             final LedgerFragment lf,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
-            final Set<BookieSocketAddress> newBookies,
+            final Set<BookieId> newBookies,
             final BiConsumer<Long, Long> onReadEntryFailureCallback) throws InterruptedException {
         if (!lf.isClosed()) {
             LOG.error("Trying to replicate an unclosed fragment;"
@@ -184,7 +184,7 @@ public class LedgerFragmentReplicator {
      */
     void replicate(final LedgerHandle lh, final LedgerFragment lf,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
-            final Set<BookieSocketAddress> targetBookieAddresses,
+            final Set<BookieId> targetBookieAddresses,
             final BiConsumer<Long, Long> onReadEntryFailureCallback)
             throws InterruptedException {
         Set<LedgerFragment> partionedFragments = splitIntoSubFragments(lh, lf,
@@ -201,7 +201,7 @@ public class LedgerFragmentReplicator {
     private void replicateNextBatch(final LedgerHandle lh,
             final Iterator<LedgerFragment> fragments,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
-            final Set<BookieSocketAddress> targetBookieAddresses,
+            final Set<BookieId> targetBookieAddresses,
             final BiConsumer<Long, Long> onReadEntryFailureCallback) {
         if (fragments.hasNext()) {
             try {
@@ -305,14 +305,14 @@ public class LedgerFragmentReplicator {
     private void recoverLedgerFragmentEntry(final Long entryId,
             final LedgerHandle lh,
             final AsyncCallback.VoidCallback ledgerFragmentEntryMcb,
-            final Set<BookieSocketAddress> newBookies,
+            final Set<BookieId> newBookies,
             final BiConsumer<Long, Long> onReadEntryFailureCallback) throws InterruptedException {
         final long ledgerId = lh.getId();
         final AtomicInteger numCompleted = new AtomicInteger(0);
         final AtomicBoolean completed = new AtomicBoolean(false);
         final WriteCallback multiWriteCallback = new WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                 if (rc != BKException.Code.OK) {
                     LOG.error("BK error writing entry for ledgerId: {}, entryId: {}, bookie: {}",
                             ledgerId, entryId, addr, BKException.create(rc));
@@ -363,7 +363,7 @@ public class LedgerFragmentReplicator {
                         .computeDigestAndPackageForSending(entryId,
                                 lh.getLastAddConfirmed(), entry.getLength(),
                                 Unpooled.wrappedBuffer(data, 0, data.length));
-                for (BookieSocketAddress newBookie : newBookies) {
+                for (BookieId newBookie : newBookies) {
                     bkc.getBookieClient().addEntry(newBookie, lh.getId(),
                             lh.getLedgerKey(), entryId, ByteBufList.clone(toSend),
                             multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD,
@@ -385,11 +385,11 @@ public class LedgerFragmentReplicator {
         final LedgerHandle lh;
         final LedgerManager ledgerManager;
         final long fragmentStartId;
-        final Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie;
+        final Map<BookieId, BookieId> oldBookie2NewBookie;
 
         SingleFragmentCallback(AsyncCallback.VoidCallback ledgerFragmentsMcb,
                                LedgerHandle lh, LedgerManager ledgerManager, long fragmentStartId,
-                               Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie) {
+                               Map<BookieId, BookieId> oldBookie2NewBookie) {
             this.ledgerFragmentsMcb = ledgerFragmentsMcb;
             this.lh = lh;
             this.ledgerManager = ledgerManager;
@@ -414,7 +414,7 @@ public class LedgerFragmentReplicator {
      */
     private static void updateEnsembleInfo(
             LedgerManager ledgerManager, AsyncCallback.VoidCallback ensembleUpdatedCb, long fragmentStartId,
-            LedgerHandle lh, Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie) {
+            LedgerHandle lh, Map<BookieId, BookieId> oldBookie2NewBookie) {
 
         MetadataUpdateLoop updateLoop = new MetadataUpdateLoop(
                 ledgerManager,
@@ -422,12 +422,12 @@ public class LedgerFragmentReplicator {
                 lh::getVersionedLedgerMetadata,
                 (metadata) -> {
                     // returns true if any of old bookies exist in ensemble
-                    List<BookieSocketAddress> ensemble = metadata.getAllEnsembles().get(fragmentStartId);
+                    List<BookieId> ensemble = metadata.getAllEnsembles().get(fragmentStartId);
                     return oldBookie2NewBookie.keySet().stream().anyMatch(ensemble::contains);
                 },
                 (currentMetadata) -> {
                     // replace all old bookies with new bookies in ensemble
-                    List<BookieSocketAddress> newEnsemble = currentMetadata.getAllEnsembles().get(fragmentStartId)
+                    List<BookieId> newEnsemble = currentMetadata.getAllEnsembles().get(fragmentStartId)
                         .stream().map((bookie) -> oldBookie2NewBookie.getOrDefault(bookie, bookie))
                         .collect(Collectors.toList());
                     return LedgerMetadataBuilder.from(currentMetadata)

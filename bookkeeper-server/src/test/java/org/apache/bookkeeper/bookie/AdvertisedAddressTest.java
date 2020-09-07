@@ -30,6 +30,7 @@ import java.util.Collection;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.IOUtils;
@@ -71,16 +72,17 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
 
         BookieSocketAddress bkAddress = new BookieSocketAddress("10.0.0.1", bookiePort);
         assertEquals(bkAddress, Bookie.getBookieAddress(conf));
+        assertEquals(bkAddress.toBookieId(), Bookie.getBookieId(conf));
 
         Bookie b = new Bookie(conf);
         b.start();
 
         BookKeeperAdmin bka = new BookKeeperAdmin(baseClientConf);
-        Collection<BookieSocketAddress> bookies = bka.getAvailableBookies();
+        Collection<BookieId> bookies = bka.getAvailableBookies();
 
         assertEquals(1, bookies.size());
-        BookieSocketAddress address = bookies.iterator().next();
-        assertEquals(bkAddress, address);
+        BookieId address = bookies.iterator().next();
+        assertEquals(bkAddress.toBookieId(), address);
 
         b.shutdown();
         bka.close();
@@ -100,6 +102,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
 
         BookieSocketAddress bkAddress = new BookieSocketAddress("10.0.0.1", bookiePort);
         assertEquals(bkAddress, Bookie.getBookieAddress(conf));
+        assertEquals(bkAddress.toBookieId(), Bookie.getBookieId(conf));
     }
 
 }

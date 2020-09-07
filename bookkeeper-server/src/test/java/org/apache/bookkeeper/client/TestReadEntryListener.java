@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
@@ -230,7 +230,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        List<BookieSocketAddress> ensemble =
+        List<BookieId> ensemble =
                 lh.getLedgerMetadata().getEnsembleAt(5);
         // kill two bookies
         killBookie(ensemble.get(0));
@@ -269,7 +269,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        List<BookieSocketAddress> ensemble =
+        List<BookieId> ensemble =
             lh.getLedgerMetadata().getEnsembleAt(5);
         // kill bookies
         killBookie(ensemble.get(0));

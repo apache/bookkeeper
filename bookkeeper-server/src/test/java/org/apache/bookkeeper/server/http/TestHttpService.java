@@ -593,7 +593,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
     AuditorElector auditorElector;
     private Future<?> startAuditorElector() throws Exception {
-        String addr = bs.get(0).getLocalAddress().toString();
+        String addr = bs.get(0).getBookieId().toString();
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setAuditorPeriodicBookieCheckInterval(1);
         conf.setMetadataServiceUri("zk://" + zkUtil.getZooKeeperConnectString() + "/ledgers");
@@ -675,8 +675,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         // 192.0.2.0/24 is reserved TEST-NET range
         LedgerMetadataBuilder metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
-            .newEnsembleEntry(0L, Lists.newArrayList(
-                                      new BookieSocketAddress("192.0.2.1", 1000),
+            .newEnsembleEntry(0L, Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1000).toBookieId(),
                                       getBookie(0),
                                       getBookie(1)));
         ClientUtil.setupLedger(ledgerManager, 1L, metadata);

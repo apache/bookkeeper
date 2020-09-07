@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
@@ -95,16 +95,16 @@ public class BookieInfoReader {
          * Contains the most recently obtained information on the contained bookies.
          * When an error happens querying a bookie, the entry is removed.
          */
-        private final Map<BookieSocketAddress, BookieInfo> infoMap = new HashMap<>();
+        private final Map<BookieId, BookieInfo> infoMap = new HashMap<>();
 
         /**
          * Contains the most recently reported set of bookies from BookieWatcher
          * A partial query consists of every member of mostRecentlyReportedBookies
          * minus the entries in bookieInfoMap.
          */
-        private Collection<BookieSocketAddress> mostRecentlyReportedBookies = new ArrayList<>();
+        private Collection<BookieId> mostRecentlyReportedBookies = new ArrayList<>();
 
-        public void updateBookies(Collection<BookieSocketAddress> updatedBookieSet) {
+        public void updateBookies(Collection<BookieId> updatedBookieSet) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(
                         "updateBookies: current: {}, new: {}",
@@ -115,11 +115,11 @@ public class BookieInfoReader {
         }
 
         @SuppressWarnings("unchecked")
-        public Collection<BookieSocketAddress> getPartialScanTargets() {
+        public Collection<BookieId> getPartialScanTargets() {
             return CollectionUtils.subtract(mostRecentlyReportedBookies, infoMap.keySet());
         }
 
-        public Collection<BookieSocketAddress> getFullScanTargets() {
+        public Collection<BookieId> getFullScanTargets() {
             return mostRecentlyReportedBookies;
         }
 
@@ -129,7 +129,7 @@ public class BookieInfoReader {
          * @param bookie bookie for which to get info
          * @return Info for bookie, null otherwise
          */
-        public BookieInfo getInfo(BookieSocketAddress bookie) {
+        public BookieInfo getInfo(BookieId bookie) {
             return infoMap.get(bookie);
         }
 
@@ -138,7 +138,7 @@ public class BookieInfoReader {
          *
          * @param bookie bookie on which we observed an error
          */
-        public void clearInfo(BookieSocketAddress bookie) {
+        public void clearInfo(BookieId bookie) {
             infoMap.remove(bookie);
         }
 
@@ -148,14 +148,14 @@ public class BookieInfoReader {
          * @param bookie bookie for which we obtained new info
          * @param info the new info
          */
-        public void gotInfo(BookieSocketAddress bookie, BookieInfo info) {
+        public void gotInfo(BookieId bookie, BookieInfo info) {
             infoMap.put(bookie, info);
         }
 
         /**
          * Get bookie info map.
          */
-        public Map<BookieSocketAddress, BookieInfo> getBookieMap() {
+        public Map<BookieId, BookieInfo> getBookieMap() {
             return infoMap;
         }
     }
@@ -246,7 +246,7 @@ public class BookieInfoReader {
                         LOG.debug("Running periodic BookieInfo scan");
                     }
                     try {
-                        Collection<BookieSocketAddress> updatedBookies = bk.bookieWatcher.getBookies();
+                        Collection<BookieId> updatedBookies = bk.bookieWatcher.getBookies();
                         bookieInfoMap.updateBookies(updatedBookies);
                     } catch (BKException e) {
                         LOG.info("Got exception while querying bookies from watcher, rerunning after {}s",
@@ -270,7 +270,7 @@ public class BookieInfoReader {
         scheduler.schedule(() -> getReadWriteBookieInfo(), delaySeconds, TimeUnit.SECONDS);
     }
 
-    synchronized void availableBookiesChanged(Set<BookieSocketAddress> updatedBookiesList) {
+    synchronized void availableBookiesChanged(Set<BookieId> updatedBookiesList) {
         if (LOG.isInfoEnabled()) {
             LOG.info("Scheduling bookie info read due to changes in available bookies.");
         }
@@ -286,7 +286,7 @@ public class BookieInfoReader {
      * @param bookie to lookup
      * @return None if absent, free disk space if present
      */
-    synchronized Optional<Long> getFreeDiskSpace(BookieSocketAddress bookie) {
+    synchronized Optional<Long> getFreeDiskSpace(BookieId bookie) {
         BookieInfo bookieInfo = bookieInfoMap.getInfo(bookie);
         if (bookieInfo != null) {
             return Optional.of(bookieInfo.getFreeDiskSpace());
@@ -306,7 +306,7 @@ public class BookieInfoReader {
      */
     synchronized void getReadWriteBookieInfo() {
         State queuedType = instanceState.getAndClearQueuedType();
-        Collection<BookieSocketAddress> toScan;
+        Collection<BookieId> toScan;
         if (queuedType == State.FULL) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Doing full scan");
@@ -335,12 +335,12 @@ public class BookieInfoReader {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Getting bookie info for: {}", toScan);
         }
-        for (BookieSocketAddress b : toScan) {
+        for (BookieId b : toScan) {
             bkc.getBookieInfo(b, requested,
                     new GetBookieInfoCallback() {
                         void processReadInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
                             synchronized (BookieInfoReader.this) {
-                                BookieSocketAddress b = (BookieSocketAddress) ctx;
+                                BookieId b = (BookieId) ctx;
                                 if (rc != BKException.Code.OK) {
                                     if (LOG.isErrorEnabled()) {
                                         LOG.error("Reading bookie info from bookie {} failed due to {}",
@@ -396,26 +396,26 @@ public class BookieInfoReader {
         }
     }
 
-    Map<BookieSocketAddress, BookieInfo> getBookieInfo() throws BKException, InterruptedException {
+    Map<BookieId, BookieInfo> getBookieInfo() throws BKException, InterruptedException {
         BookieClient bkc = bk.getBookieClient();
         final AtomicInteger totalSent = new AtomicInteger();
         final AtomicInteger totalCompleted = new AtomicInteger();
-        final ConcurrentMap<BookieSocketAddress, BookieInfo> map =
-            new ConcurrentHashMap<BookieSocketAddress, BookieInfo>();
+        final ConcurrentMap<BookieId, BookieInfo> map =
+            new ConcurrentHashMap<BookieId, BookieInfo>();
         final CountDownLatch latch = new CountDownLatch(1);
         long requested = BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE
                          | BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
 
-        Collection<BookieSocketAddress> bookies;
+        Collection<BookieId> bookies;
         bookies = bk.bookieWatcher.getBookies();
         bookies.addAll(bk.bookieWatcher.getReadOnlyBookies());
 
         totalSent.set(bookies.size());
-        for (BookieSocketAddress b : bookies) {
+        for (BookieId b : bookies) {
             bkc.getBookieInfo(b, requested, new GetBookieInfoCallback() {
                         @Override
                         public void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
-                            BookieSocketAddress b = (BookieSocketAddress) ctx;
+                            BookieId b = (BookieId) ctx;
                             if (rc != BKException.Code.OK) {
                                 if (LOG.isErrorEnabled()) {
                                     LOG.error("Reading bookie info from bookie {} failed due to {}",

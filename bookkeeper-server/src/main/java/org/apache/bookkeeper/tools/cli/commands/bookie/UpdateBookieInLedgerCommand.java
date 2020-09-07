@@ -31,7 +31,7 @@ import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -108,13 +108,13 @@ public class UpdateBookieInLedgerCommand extends BookieCommand<UpdateBookieInLed
     private boolean updateLedger(ServerConfiguration conf, UpdateBookieInLedgerFlags flags)
             throws InterruptedException, BKException, IOException {
 
-        BookieSocketAddress srcBookieAddress;
-        BookieSocketAddress destBookieAddress;
+        BookieId srcBookieAddress;
+        BookieId destBookieAddress;
         try {
-            String[] bookieAddress = flags.srcBookie.split(":");
-            srcBookieAddress = new BookieSocketAddress(bookieAddress[0], Integer.parseInt(bookieAddress[1]));
-            bookieAddress = flags.destBookie.split(":");
-            destBookieAddress = new BookieSocketAddress(bookieAddress[0], Integer.parseInt(bookieAddress[1]));
+            String bookieAddress = flags.srcBookie;
+            srcBookieAddress = BookieId.parse(bookieAddress);
+            bookieAddress = flags.destBookie;
+            destBookieAddress = BookieId.parse(bookieAddress);
         } catch (Exception e) {
             LOG.error("Bookie address must in <address>:<port> format");
             return false;

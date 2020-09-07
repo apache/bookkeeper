@@ -34,10 +34,11 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
+import org.apache.bookkeeper.client.DefaultBookieAddressResolver;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 
 /**
@@ -52,11 +53,13 @@ class BKRegistrationNameResolver extends NameResolver {
     private Listener listener;
     private boolean shutdown;
     private boolean resolving;
+    private DefaultBookieAddressResolver bookieAddressResolver;
 
     BKRegistrationNameResolver(MetadataClientDriver clientDriver,
                                URI serviceURI) {
         this.clientDriver = clientDriver;
         this.serviceURI = serviceURI;
+        this.bookieAddressResolver = new DefaultBookieAddressResolver(clientDriver.getRegistrationClient());
         this.executor = Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder().setNameFormat("registration-name-resolver").build());
     }
@@ -110,10 +113,10 @@ class BKRegistrationNameResolver extends NameResolver {
         });
     }
 
-    private static List<EquivalentAddressGroup> hostsToEquivalentAddressGroups(Set<BookieSocketAddress> bookies) {
+    private List<EquivalentAddressGroup> hostsToEquivalentAddressGroups(Set<BookieId> bookies) {
         return bookies.stream()
             .map(addr -> new EquivalentAddressGroup(
-                Collections.singletonList(addr.getSocketAddress()),
+                Collections.singletonList(bookieAddressResolver.resolve(addr).getSocketAddress()),
                 Attributes.EMPTY
             ))
             .collect(Collectors.toList());

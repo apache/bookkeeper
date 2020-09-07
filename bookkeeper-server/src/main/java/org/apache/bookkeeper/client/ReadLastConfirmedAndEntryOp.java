@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.ReadLastConfirmedAndEntryContext;
@@ -65,7 +65,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     private final long prevEntryId;
     private long lastAddConfirmed;
     private long timeOutInMillis;
-    private final List<BookieSocketAddress> currentEnsemble;
+    private final List<BookieId> currentEnsemble;
     private ScheduledFuture<?> speculativeTask = null;
 
     abstract class ReadLACAndEntryRequest implements AutoCloseable {
@@ -76,12 +76,12 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         int firstError = BKException.Code.OK;
         int numMissedEntryReads = 0;
 
-        final List<BookieSocketAddress> ensemble;
+        final List<BookieId> ensemble;
         final DistributionSchedule.WriteSet writeSet;
         final DistributionSchedule.WriteSet orderedEnsemble;
         final LedgerEntryImpl entryImpl;
 
-        ReadLACAndEntryRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
+        ReadLACAndEntryRequest(List<BookieId> ensemble, long lId, long eId) {
             this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
             this.writeSet = lh.getDistributionSchedule().getEnsembleSet(eId);
@@ -119,7 +119,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
          * @return return true if we managed to complete the entry;
          *         otherwise return false if the read entry is not complete or it is already completed before
          */
-        boolean complete(int bookieIndex, BookieSocketAddress host, final ByteBuf buffer, long entryId) {
+        boolean complete(int bookieIndex, BookieId host, final ByteBuf buffer, long entryId) {
             ByteBuf content;
             try {
                 content = lh.getDigestManager().verifyDigestAndReturnData(entryId, buffer);
@@ -190,7 +190,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
          * @param rc
          *          read result code
          */
-        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
+        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
             translateAndSetFirstError(rc);
 
             if (BKException.Code.NoSuchEntryException == rc || BKException.Code.NoSuchLedgerExistsException == rc) {
@@ -217,7 +217,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
          *      the set of hosts that we already received responses.
          * @return host we sent to if we sent. null otherwise.
          */
-        abstract BookieSocketAddress maybeSendSpeculativeRead(BitSet heardFromHostsBitSet);
+        abstract BookieId maybeSendSpeculativeRead(BitSet heardFromHostsBitSet);
 
         /**
          * Whether the read request completed.
@@ -247,7 +247,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
         int numPendings;
 
-        ParallelReadRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
+        ParallelReadRequest(List<BookieId> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
             numPendings = orderedEnsemble.size();
         }
@@ -255,7 +255,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         @Override
         void read() {
             for (int i = 0; i < orderedEnsemble.size(); i++) {
-                BookieSocketAddress to = ensemble.get(orderedEnsemble.get(i));
+                BookieId to = ensemble.get(orderedEnsemble.get(i));
                 try {
                     sendReadTo(orderedEnsemble.get(i), to, this);
                 } catch (InterruptedException ie) {
@@ -268,7 +268,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         }
 
         @Override
-        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
+        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
             --numPendings;
             // if received all responses or this entry doesn't meet quorum write, complete the request.
@@ -283,7 +283,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         }
 
         @Override
-        BookieSocketAddress maybeSendSpeculativeRead(BitSet heardFromHostsBitSet) {
+        BookieId maybeSendSpeculativeRead(BitSet heardFromHostsBitSet) {
             // no speculative read
             return null;
         }
@@ -297,7 +297,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         final BitSet erroredReplicas;
         final BitSet emptyResponseReplicas;
 
-        SequenceReadRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
+        SequenceReadRequest(List<BookieId> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
 
             this.sentReplicas = new BitSet(orderedEnsemble.size());
@@ -335,7 +335,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
          * @return host we sent to if we sent. null otherwise.
          */
         @Override
-        synchronized BookieSocketAddress maybeSendSpeculativeRead(BitSet heardFrom) {
+        synchronized BookieId maybeSendSpeculativeRead(BitSet heardFrom) {
             if (nextReplicaIndexToReadFrom >= getLedgerMetadata().getEnsembleSize()) {
                 return null;
             }
@@ -357,7 +357,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             sendNextRead();
         }
 
-        synchronized BookieSocketAddress sendNextRead() {
+        synchronized BookieId sendNextRead() {
             if (nextReplicaIndexToReadFrom >= getLedgerMetadata().getEnsembleSize()) {
                 // we are done, the read has failed from all replicas, just fail the
                 // read
@@ -378,7 +378,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             nextReplicaIndexToReadFrom++;
 
             try {
-                BookieSocketAddress to = ensemble.get(bookieIndex);
+                BookieId to = ensemble.get(bookieIndex);
                 sendReadTo(bookieIndex, to, this);
                 sentReplicas.set(replica);
                 return to;
@@ -391,7 +391,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         }
 
         @Override
-        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
+        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
 
             int replica = getReplicaIndex(bookieIndex);
@@ -412,7 +412,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         }
 
         @Override
-        boolean complete(int bookieIndex, BookieSocketAddress host, ByteBuf buffer, long entryId) {
+        boolean complete(int bookieIndex, BookieId host, ByteBuf buffer, long entryId) {
             boolean completed = super.complete(bookieIndex, host, buffer, entryId);
             if (completed) {
                 int numReplicasTried = getNextReplicaIndexToReadFrom();
@@ -420,7 +420,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 // first speculative read as slow
                 for (int i = 0; i < numReplicasTried; i++) {
                     int slowBookieIndex = orderedEnsemble.get(i);
-                    BookieSocketAddress slowBookieSocketAddress = ensemble.get(slowBookieIndex);
+                    BookieId slowBookieSocketAddress = ensemble.get(slowBookieIndex);
                     clientCtx.getPlacementPolicy().registerSlowBookie(slowBookieSocketAddress, entryId);
                 }
             }
@@ -430,7 +430,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
     ReadLastConfirmedAndEntryOp(LedgerHandle lh,
                                 ClientContext clientCtx,
-                                List<BookieSocketAddress> ensemble,
+                                List<BookieId> ensemble,
                                 LastConfirmedAndEntryCallback cb,
                                 long prevEntryId,
                                 long timeOutInMillis) {
@@ -506,7 +506,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         }
     }
 
-    void sendReadTo(int bookieIndex, BookieSocketAddress to, ReadLACAndEntryRequest entry) throws InterruptedException {
+    void sendReadTo(int bookieIndex, BookieId to, ReadLACAndEntryRequest entry) throws InterruptedException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Calling Read LAC and Entry with {} and long polling interval {} on Bookie {} - Parallel {}",
                     prevEntryId, timeOutInMillis, to, parallelRead);
@@ -557,7 +557,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                     getClass().getName(), ledgerId, entryId, rc);
         }
         ReadLastConfirmedAndEntryContext rCtx = (ReadLastConfirmedAndEntryContext) ctx;
-        BookieSocketAddress bookie = rCtx.getBookieAddress();
+        BookieId bookie = rCtx.getBookieAddress();
         numResponsesPending--;
         if (BKException.Code.OK == rc) {
             if (LOG.isTraceEnabled()) {

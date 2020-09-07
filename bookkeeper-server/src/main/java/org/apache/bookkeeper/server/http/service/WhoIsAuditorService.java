@@ -25,7 +25,7 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -57,7 +57,7 @@ public class WhoIsAuditorService implements HttpEndpointService {
         HttpServiceResponse response = new HttpServiceResponse();
 
         if (HttpServer.Method.GET == request.getMethod()) {
-            BookieSocketAddress bookieId = null;
+            BookieId bookieId = null;
             try {
                 bookieId = AuditorElector.getCurrentAuditor(conf, zk);
 
@@ -74,10 +74,7 @@ public class WhoIsAuditorService implements HttpEndpointService {
             }
 
             response.setCode(HttpServer.StatusCode.OK);
-            response.setBody("Auditor: "
-                + bookieId.getSocketAddress().getAddress().getCanonicalHostName() + "/"
-                + bookieId.getSocketAddress().getAddress().getHostAddress() + ":"
-                + bookieId.getSocketAddress().getPort());
+            response.setBody("Auditor: " + bookieId);
             LOG.debug("response body:" + response.getBody());
             return response;
         } else {

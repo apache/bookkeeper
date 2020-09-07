@@ -47,6 +47,7 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
@@ -141,7 +142,7 @@ public class BookieClientTest {
     };
 
     WriteCallback wrcb = new WriteCallback() {
-        public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+        public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
             if (ctx != null) {
                 synchronized (ctx) {
                     if (ctx instanceof ResultStruct) {
@@ -159,11 +160,12 @@ public class BookieClientTest {
         final Object notifyObject = new Object();
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
-        BookieSocketAddress addr = bs.getLocalAddress();
+        BookieId addr = bs.getBookieId();
         ResultStruct arc = new ResultStruct();
 
         BookieClient bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
-                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE);
+                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE,
+                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         ByteBufList bb = createByteBuffer(1, 1, 1);
         bc.addEntry(addr, 1, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
         synchronized (arc) {
@@ -262,9 +264,10 @@ public class BookieClientTest {
     @Test
     public void testNoLedger() throws Exception {
         ResultStruct arc = new ResultStruct();
-        BookieSocketAddress addr = bs.getLocalAddress();
+        BookieId addr = bs.getBookieId();
         BookieClient bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
-                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE);
+                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE,
+                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         synchronized (arc) {
             bc.readEntry(addr, 2, 13, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
@@ -283,13 +286,14 @@ public class BookieClientTest {
     }
 
     public void testGetBookieInfo(boolean limitStatsLogging) throws IOException, InterruptedException {
+        BookieId bookieId = bs.getBookieId();
         BookieSocketAddress addr = bs.getLocalAddress();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setLimitStatsLogging(limitStatsLogging);
         TestStatsProvider statsProvider = new TestStatsProvider();
         TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
         BookieClient bc = new BookieClientImpl(clientConf, new NioEventLoopGroup(), UnpooledByteBufAllocator.DEFAULT,
-                executor, scheduler, statsLogger);
+                executor, scheduler, statsLogger, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
                 | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 
@@ -307,7 +311,7 @@ public class BookieClientTest {
             }
         }
         CallbackObj obj = new CallbackObj(flags);
-        bc.getBookieInfo(addr, flags, new GetBookieInfoCallback() {
+        bc.getBookieInfo(bookieId, flags, new GetBookieInfoCallback() {
             @Override
             public void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
                 CallbackObj obj = (CallbackObj) ctx;
@@ -334,7 +338,7 @@ public class BookieClientTest {
 
         TestOpStatsLogger perChannelBookieClientScopeOfThisAddr = (TestOpStatsLogger) statsLogger
                 .scope(BookKeeperClientStats.CHANNEL_SCOPE)
-                .scope(PerChannelBookieClient.buildStatsLoggerScopeName(addr))
+                .scope(PerChannelBookieClient.buildStatsLoggerScopeName(addr.toBookieId()))
                 .getOpStatsLogger(BookKeeperClientStats.GET_BOOKIE_INFO_OP);
         int expectedBookieInfoSuccessCount = (limitStatsLogging) ? 0 : 1;
         assertEquals("BookieInfoSuccessCount", expectedBookieInfoSuccessCount,

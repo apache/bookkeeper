@@ -43,7 +43,7 @@ import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -137,7 +137,7 @@ class LedgerCreateOp {
 
         // select bookies for first ensemble
         try {
-            List<BookieSocketAddress> ensemble = bk.getBookieWatcher()
+            List<BookieId> ensemble = bk.getBookieWatcher()
                 .newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata);
             metadataBuilder.newEnsembleEntry(0L, ensemble);
         } catch (BKNotEnoughBookiesException e) {
@@ -217,10 +217,10 @@ class LedgerCreateOp {
                 return;
             }
 
-            List<BookieSocketAddress> curEns = lh.getLedgerMetadata().getEnsembleAt(0L);
+            List<BookieId> curEns = lh.getLedgerMetadata().getEnsembleAt(0L);
             LOG.info("Ensemble: {} for ledger: {}", curEns, lh.getId());
 
-            for (BookieSocketAddress bsa : curEns) {
+            for (BookieId bsa : curEns) {
                 clientStats.getEnsembleBookieDistributionCounter(bsa.toString()).inc();
             }
 

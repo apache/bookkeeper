@@ -27,7 +27,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.WriteHandle;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils;
 import org.apache.bookkeeper.tests.integration.utils.DockerUtils;
 import org.jboss.arquillian.junit.Arquillian;
@@ -116,8 +116,8 @@ public class TestCLI {
         int numEntries = 100;
         try (BookKeeper bk = new BookKeeper(zookeeper)) {
             long ledgerId;
-            BookieSocketAddress toReplace;
-            BookieSocketAddress replaceWith = new BookieSocketAddress("192.0.2.1:3181");
+            BookieId toReplace;
+            BookieId replaceWith = BookieId.parse("192.0.2.1:3181");
             try (WriteHandle writelh = bk.newCreateLedgerOp()
                     .withDigestType(DigestType.CRC32C).withPassword(TestSmoke.PASSWD)
                     .withEnsembleSize(1).withWriteQuorumSize(1).withAckQuorumSize(1).execute().get()) {

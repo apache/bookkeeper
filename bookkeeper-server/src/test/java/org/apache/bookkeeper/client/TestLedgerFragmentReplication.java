@@ -40,6 +40,7 @@ import java.util.function.BiConsumer;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -96,13 +97,13 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
-        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
+        BookieId replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
                 .get(0L).get(0);
 
         LOG.info("Killing Bookie : {}", replicaToKill);
         killBookie(replicaToKill);
 
-        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
         LOG.info("New Bookie addr : {}", newBkAddr);
 
         for (int i = 0; i < 10; i++) {
@@ -120,11 +121,11 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         }
 
         // Killing all bookies except newly replicated bookie
-        SortedMap<Long, ? extends List<BookieSocketAddress>> allBookiesBeforeReplication = lh
+        SortedMap<Long, ? extends List<BookieId>> allBookiesBeforeReplication = lh
                 .getLedgerMetadata().getAllEnsembles();
-        for (Entry<Long, ? extends List<BookieSocketAddress>> entry : allBookiesBeforeReplication.entrySet()) {
-            List<BookieSocketAddress> bookies = entry.getValue();
-            for (BookieSocketAddress bookie : bookies) {
+        for (Entry<Long, ? extends List<BookieId>> entry : allBookiesBeforeReplication.entrySet()) {
+            List<BookieId> bookies = entry.getValue();
+            for (BookieId bookie : bookies) {
                 if (newBkAddr.equals(bookie)) {
                     continue;
                 }
@@ -150,7 +151,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
-        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
+        BookieId replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
                 .get(0L).get(0);
 
         startNewBookie();
@@ -162,10 +163,10 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
             lh.addEntry(data);
         }
 
-        BookieSocketAddress replicaToKill2 = lh.getLedgerMetadata()
+        BookieId replicaToKill2 = lh.getLedgerMetadata()
                 .getAllEnsembles().get(0L).get(1);
 
-        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
         LOG.info("New Bookie addr : {}", newBkAddr);
 
         LOG.info("Killing Bookie : {}", replicaToKill2);
@@ -209,7 +210,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         }
 
         // Kill the first Bookie
-        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
+        BookieId replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
                 .get(0L).get(0);
         killBookie(replicaToKill);
         LOG.info("Killed Bookie =" + replicaToKill);
@@ -241,10 +242,9 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
     @Test
     public void testSplitIntoSubFragmentsWithDifferentFragmentBoundaries()
             throws Exception {
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234));
+        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
         LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
             .withPassword(TEST_PSSWD).withDigestType(TEST_DIGEST_TYPE.toApiDigestType())
@@ -353,14 +353,14 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         int lastEntryId = 10;
         int rereplicationEntryBatchSize = 10;
 
-        List<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
-        ensemble.add(new BookieSocketAddress("bookie0:3181"));
-        ensemble.add(new BookieSocketAddress("bookie1:3181"));
-        ensemble.add(new BookieSocketAddress("bookie2:3181"));
-        ensemble.add(new BookieSocketAddress("bookie3:3181"));
-        ensemble.add(new BookieSocketAddress("bookie4:3181"));
-        ensemble.add(new BookieSocketAddress("bookie5:3181"));
-        ensemble.add(new BookieSocketAddress("bookie6:3181"));
+        List<BookieId> ensemble = new ArrayList<BookieId>();
+        ensemble.add(BookieId.parse("bookie0:3181"));
+        ensemble.add(BookieId.parse("bookie1:3181"));
+        ensemble.add(BookieId.parse("bookie2:3181"));
+        ensemble.add(BookieId.parse("bookie3:3181"));
+        ensemble.add(BookieId.parse("bookie4:3181"));
+        ensemble.add(BookieId.parse("bookie5:3181"));
+        ensemble.add(BookieId.parse("bookie6:3181"));
 
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create();
         builder.withEnsembleSize(7).withWriteQuorumSize(3).withAckQuorumSize(2)

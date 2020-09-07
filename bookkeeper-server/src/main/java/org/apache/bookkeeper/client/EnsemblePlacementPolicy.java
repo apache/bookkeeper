@@ -33,8 +33,9 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
@@ -216,7 +217,8 @@ public interface EnsemblePlacementPolicy {
                                        Optional<DNSToSwitchMapping> optionalDnsResolver,
                                        HashedWheelTimer hashedWheelTimer,
                                        FeatureProvider featureProvider,
-                                       StatsLogger statsLogger);
+                                       StatsLogger statsLogger,
+                                       BookieAddressResolver bookieAddressResolver);
 
     /**
      * Uninitialize the policy.
@@ -239,8 +241,8 @@ public interface EnsemblePlacementPolicy {
      *          All the bookies in the cluster available for readonly.
      * @return the dead bookies during this cluster change.
      */
-    Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
-                                              Set<BookieSocketAddress> readOnlyBookies);
+    Set<BookieId> onClusterChanged(Set<BookieId> writableBookies,
+                                              Set<BookieId> readOnlyBookies);
 
     /**
      * Choose <i>numBookies</i> bookies for ensemble. If the count is more than the number of available
@@ -267,11 +269,11 @@ public interface EnsemblePlacementPolicy {
      * @throws BKNotEnoughBookiesException if not enough bookies available.
      * @return a placement result containing list of bookie addresses for the ensemble.
      */
-    PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize,
+    PlacementResult<List<BookieId>> newEnsemble(int ensembleSize,
                                                            int writeQuorumSize,
                                                            int ackQuorumSize,
                                                            Map<String, byte[]> customMetadata,
-                                                           Set<BookieSocketAddress> excludeBookies)
+                                                           Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException;
 
     /**
@@ -294,13 +296,13 @@ public interface EnsemblePlacementPolicy {
      * @throws BKNotEnoughBookiesException
      * @return a placement result containing the new bookie address.
      */
-    PlacementResult<BookieSocketAddress> replaceBookie(int ensembleSize,
+    PlacementResult<BookieId> replaceBookie(int ensembleSize,
                                                        int writeQuorumSize,
                                                        int ackQuorumSize,
                                                        Map<String, byte[]> customMetadata,
-                                                       List<BookieSocketAddress> currentEnsemble,
-                                                       BookieSocketAddress bookieToReplace,
-                                                       Set<BookieSocketAddress> excludeBookies)
+                                                       List<BookieId> currentEnsemble,
+                                                       BookieId bookieToReplace,
+                                                       Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException;
 
     /**
@@ -311,7 +313,7 @@ public interface EnsemblePlacementPolicy {
      * @param entryId
      *          Entry ID that caused a speculative timeout on the bookie.
      */
-    void registerSlowBookie(BookieSocketAddress bookieSocketAddress, long entryId);
+    void registerSlowBookie(BookieId bookieSocketAddress, long entryId);
 
     /**
      * Reorder the read sequence of a given write quorum <i>writeSet</i>.
@@ -328,7 +330,7 @@ public interface EnsemblePlacementPolicy {
      * @since 4.5
      */
     DistributionSchedule.WriteSet reorderReadSequence(
-            List<BookieSocketAddress> ensemble,
+            List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet);
 
@@ -348,7 +350,7 @@ public interface EnsemblePlacementPolicy {
      * @since 4.5
      */
     DistributionSchedule.WriteSet reorderReadLACSequence(
-            List<BookieSocketAddress> ensemble,
+            List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet);
 
@@ -359,7 +361,7 @@ public interface EnsemblePlacementPolicy {
      *          A map that has the bookie to BookieInfo
      * @since 4.5
      */
-    default void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieInfoMap) {
+    default void updateBookieInfo(Map<BookieId, BookieInfo> bookieInfoMap) {
     }
 
     /**
@@ -408,14 +410,14 @@ public interface EnsemblePlacementPolicy {
      * considered as FAIL.
      *
      * @param ensembleList
-     *            list of BookieSocketAddress of bookies in the ensemble
+     *            list of BookieId of bookies in the ensemble
      * @param writeQuorumSize
      *            writeQuorumSize of the ensemble
      * @param ackQuorumSize
      *            ackQuorumSize of the ensemble
      * @return
      */
-    default PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList,
+    default PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieId> ensembleList,
             int writeQuorumSize, int ackQuorumSize) {
         return PlacementPolicyAdherence.FAIL;
     }
@@ -426,14 +428,14 @@ public interface EnsemblePlacementPolicy {
      * 'minNumRacksPerWriteQuorum' number of racks.
      *
      * @param ackedBookies
-     *            list of BookieSocketAddress of bookies that have acknowledged a write.
+     *            list of BookieId of bookies that have acknowledged a write.
      * @param writeQuorumSize
      *            writeQuorumSize of the ensemble
      * @param ackQuorumSize
      *            ackQuorumSize of the ensemble
      * @return
      */
-    default boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies,
+    default boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieId> ackedBookies,
                                                              int writeQuorumSize,
                                                              int ackQuorumSize) {
         return true;

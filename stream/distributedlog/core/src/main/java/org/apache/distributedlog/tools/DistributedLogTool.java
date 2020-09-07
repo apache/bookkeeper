@@ -64,7 +64,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerReader;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.cli.CommandLine;
@@ -1000,29 +1000,29 @@ import org.slf4j.LoggerFactory;
         private void printEppStatsHeader(DistributedLogManager dlm) throws Exception {
             String label = "Ledger Placement :";
             System.out.println(label);
-            Map<BookieSocketAddress, Integer> totals = new HashMap<BookieSocketAddress, Integer>();
+            Map<BookieId, Integer> totals = new HashMap<BookieId, Integer>();
             List<LogSegmentMetadata> segments = dlm.getLogSegments();
             for (LogSegmentMetadata segment : segments) {
                 if (include(segment)) {
                     merge(totals, getBookieStats(segment));
                 }
             }
-            List<Map.Entry<BookieSocketAddress, Integer>> entries =
-                    new ArrayList<Map.Entry<BookieSocketAddress, Integer>>(totals.entrySet());
-            Collections.sort(entries, new Comparator<Map.Entry<BookieSocketAddress, Integer>>() {
+            List<Map.Entry<BookieId, Integer>> entries =
+                    new ArrayList<Map.Entry<BookieId, Integer>>(totals.entrySet());
+            Collections.sort(entries, new Comparator<Map.Entry<BookieId, Integer>>() {
                 @Override
-                public int compare(Map.Entry<BookieSocketAddress, Integer> o1,
-                                   Map.Entry<BookieSocketAddress, Integer> o2) {
+                public int compare(Map.Entry<BookieId, Integer> o1,
+                                   Map.Entry<BookieId, Integer> o2) {
                     return o2.getValue() - o1.getValue();
                 }
             });
             int width = 0;
             int totalEntries = 0;
-            for (Map.Entry<BookieSocketAddress, Integer> entry : entries) {
+            for (Map.Entry<BookieId, Integer> entry : entries) {
                 width = Math.max(width, label.length() + 1 + entry.getKey().toString().length());
                 totalEntries += entry.getValue();
             }
-            for (Map.Entry<BookieSocketAddress, Integer> entry : entries) {
+            for (Map.Entry<BookieId, Integer> entry : entries) {
                 System.out.println(String.format("%" + width + "s\t%6.2f%%\t\t%d",
                         entry.getKey(), entry.getValue() * 1.0 / totalEntries, entry.getValue()));
             }
@@ -1032,16 +1032,16 @@ import org.slf4j.LoggerFactory;
             System.out.println(segment.getLogSegmentSequenceNumber() + "\t: " + segment);
         }
 
-        private Map<BookieSocketAddress, Integer> getBookieStats(LogSegmentMetadata segment) throws Exception {
-            Map<BookieSocketAddress, Integer> stats = new HashMap<BookieSocketAddress, Integer>();
+        private Map<BookieId, Integer> getBookieStats(LogSegmentMetadata segment) throws Exception {
+            Map<BookieId, Integer> stats = new HashMap<BookieId, Integer>();
             LedgerHandle lh = bkc.client().get().openLedgerNoRecovery(segment.getLogSegmentId(),
                     BookKeeper.DigestType.CRC32, getConf().getBKDigestPW().getBytes(UTF_8));
             long eidFirst = 0;
-            for (SortedMap.Entry<Long, ? extends List<BookieSocketAddress>>
+            for (SortedMap.Entry<Long, ? extends List<BookieId>>
                     entry : LedgerReader.bookiesForLedger(lh).entrySet()) {
                 long eidLast = entry.getKey().longValue();
                 long count = eidLast - eidFirst + 1;
-                for (BookieSocketAddress bookie : entry.getValue()) {
+                for (BookieId bookie : entry.getValue()) {
                     merge(stats, bookie, (int) count);
                 }
                 eidFirst = eidLast;
@@ -1049,7 +1049,7 @@ import org.slf4j.LoggerFactory;
             return stats;
         }
 
-        void merge(Map<BookieSocketAddress, Integer> m, BookieSocketAddress bookie, Integer count) {
+        void merge(Map<BookieId, Integer> m, BookieId bookie, Integer count) {
             if (m.containsKey(bookie)) {
                 m.put(bookie, count + m.get(bookie).intValue());
             } else {
@@ -1057,8 +1057,8 @@ import org.slf4j.LoggerFactory;
             }
         }
 
-        void merge(Map<BookieSocketAddress, Integer> m1, Map<BookieSocketAddress, Integer> m2) {
-            for (Map.Entry<BookieSocketAddress, Integer> entry : m2.entrySet()) {
+        void merge(Map<BookieId, Integer> m1, Map<BookieId, Integer> m2) {
+            for (Map.Entry<BookieId, Integer> entry : m2.entrySet()) {
                 merge(m1, entry.getKey(), entry.getValue());
             }
         }

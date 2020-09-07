@@ -23,7 +23,7 @@ package org.apache.bookkeeper.client;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
             lh.addEntry(msg);
         }
 
-        BookieSocketAddress bookieToQuarantine = lh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
+        BookieId bookieToQuarantine = lh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
         sleepBookie(bookieToQuarantine, baseClientConf.getAddEntryTimeout() * 2).await();
 
         byte[] tempMsg = "temp-msg".getBytes();
@@ -97,7 +97,7 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
     public void testNoQuarantineOnBkRestart() throws Exception {
         final LedgerHandle lh = bkc.createLedger(2, 2, 2, BookKeeper.DigestType.CRC32, new byte[] {});
         final int numEntries = 20;
-        BookieSocketAddress bookieToRestart = lh.getLedgerMetadata().getEnsembleAt(0).get(0);
+        BookieId bookieToRestart = lh.getLedgerMetadata().getEnsembleAt(0).get(0);
 
         // we add entries on a separate thread so that we can restart a bookie on the current thread
         Thread addEntryThread = new Thread() {
@@ -132,8 +132,8 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
             byte[] msg = ("msg-" + i).getBytes();
             lh.addEntry(msg);
         }
-        BookieSocketAddress bookie1 = lh.getLedgerMetadata().getEnsembleAt(0).get(0);
-        BookieSocketAddress bookie2 = lh.getLedgerMetadata().getEnsembleAt(0).get(1);
+        BookieId bookie1 = lh.getLedgerMetadata().getEnsembleAt(0).get(0);
+        BookieId bookie2 = lh.getLedgerMetadata().getEnsembleAt(0).get(1);
         try {
             // we read an entry that is not added
             lh.readEntries(10, 10);

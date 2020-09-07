@@ -18,14 +18,13 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
-import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.net.URI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
@@ -74,12 +73,12 @@ public class WhoIsAuditorCommand extends BookieCommand<CliFlags> {
                                 .connectString(zkServers)
                                 .sessionTimeoutMs(conf.getZkTimeout())
                                 .build();
-            BookieSocketAddress bookieId = AuditorElector.getCurrentAuditor(conf, zk);
+            BookieId bookieId = AuditorElector.getCurrentAuditor(conf, zk);
             if (bookieId == null) {
                 LOG.info("No auditor elected");
                 return false;
             }
-            LOG.info("Auditor: " + getBookieSocketAddrStringRepresentation(bookieId));
+            LOG.info("Auditor: " + bookieId);
         } finally {
             if (zk != null) {
                 zk.close();

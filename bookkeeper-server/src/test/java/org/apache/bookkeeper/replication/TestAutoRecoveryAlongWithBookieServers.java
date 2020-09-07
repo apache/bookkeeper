@@ -30,7 +30,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.junit.Before;
@@ -73,11 +73,11 @@ public class TestAutoRecoveryAlongWithBookieServers extends
             lh.addEntry(testData);
         }
         lh.close();
-        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
+        BookieId replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
 
         killBookie(replicaToKill);
 
-        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
 
         while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(),
                 basePath)) {
@@ -85,10 +85,10 @@ public class TestAutoRecoveryAlongWithBookieServers extends
         }
 
         // Killing all bookies except newly replicated bookie
-        for (Entry<Long, ? extends List<BookieSocketAddress>> entry :
+        for (Entry<Long, ? extends List<BookieId>> entry :
                  lh.getLedgerMetadata().getAllEnsembles().entrySet()) {
-            List<BookieSocketAddress> bookies = entry.getValue();
-            for (BookieSocketAddress bookie : bookies) {
+            List<BookieId> bookies = entry.getValue();
+            for (BookieId bookie : bookies) {
                 if (bookie.equals(newBkAddr)) {
                     continue;
                 }

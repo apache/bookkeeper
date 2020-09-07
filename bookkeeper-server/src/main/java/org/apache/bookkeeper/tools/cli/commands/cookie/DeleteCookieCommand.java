@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand.Flags;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -72,7 +73,7 @@ public class DeleteCookieCommand extends CookieCommand<Flags> {
 
     @Override
     protected void apply(RegistrationManager rm, Flags cmdFlags) throws Exception {
-        String bookieId = getBookieId(cmdFlags);
+        BookieId bookieId = getBookieId(cmdFlags);
 
         try {
             rm.removeCookie(bookieId, new LongVersion(-1));

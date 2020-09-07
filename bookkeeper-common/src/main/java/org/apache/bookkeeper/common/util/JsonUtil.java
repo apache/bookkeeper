@@ -30,7 +30,7 @@ public class JsonUtil {
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
         } catch (Exception e) {
-            throw new ParseJsonException("Failed to serialize Object to Json string");
+            throw new ParseJsonException("Failed to serialize Object to Json string", e);
         }
     }
 
@@ -38,7 +38,7 @@ public class JsonUtil {
         try {
             return mapper.readValue(jsonStr, valueType);
         }  catch (Exception e) {
-            throw new ParseJsonException("Failed to deserialize Object from Json string");
+            throw new ParseJsonException("Failed to deserialize Object from Json string", e);
         }
     }
 
@@ -48,6 +48,10 @@ public class JsonUtil {
     public static class ParseJsonException extends Exception {
         public ParseJsonException(String message) {
             super(message);
+        }
+
+        public ParseJsonException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

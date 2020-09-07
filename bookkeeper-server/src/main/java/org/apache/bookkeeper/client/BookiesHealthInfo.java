@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 
 /**
  * This interface returns heuristics used to determine the health of a Bookkeeper server for read
@@ -34,7 +34,7 @@ public interface BookiesHealthInfo {
      * @param bookieSocketAddress
      * @return failed entries on a bookie, -1 if there have been no failures
      */
-    long getBookieFailureHistory(BookieSocketAddress bookieSocketAddress);
+    long getBookieFailureHistory(BookieId bookieSocketAddress);
 
     /**
      * Returns pending requests to a bookie.
@@ -42,6 +42,6 @@ public interface BookiesHealthInfo {
      * @param bookieSocketAddress
      * @return number of pending requests
      */
-    long getBookiePendingRequests(BookieSocketAddress bookieSocketAddress);
+    long getBookiePendingRequests(BookieId bookieSocketAddress);
 
 }

@@ -68,7 +68,7 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
 
     @Test
     public void testBookie() throws Exception {
-        BookieSocketAddress bookie = getBookie(0);
+        BookieSocketAddress bookie = getBookieAddress(0);
         BenchBookie.main(new String[] {
                 "--host", bookie.getSocketAddress().getHostName(),
                 "--port", String.valueOf(bookie.getPort()),

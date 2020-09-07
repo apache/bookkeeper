@@ -29,7 +29,7 @@ import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -84,8 +84,8 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
             if (bookieId == null || bookieId.isEmpty()) {
                 throw new IllegalArgumentException("BookieId is required");
             }
-            BookieSocketAddress address = new BookieSocketAddress(bookieId);
-            Collection<BookieSocketAddress> allBookies = admin.getAllBookies();
+            BookieId address = BookieId.parse(bookieId);
+            Collection<BookieId> allBookies = admin.getAllBookies();
             if (!allBookies.contains(address)) {
                 System.out.println("Bookie " + bookieId + " does not exist, only " + allBookies);
                 return false;

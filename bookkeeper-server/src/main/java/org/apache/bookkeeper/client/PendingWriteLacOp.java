@@ -21,7 +21,7 @@ import java.util.BitSet;
 import java.util.List;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
@@ -51,9 +51,9 @@ class PendingWriteLacOp implements WriteLacCallback {
     LedgerHandle lh;
     ClientContext clientCtx;
 
-    final List<BookieSocketAddress> currentEnsemble;
+    final List<BookieId> currentEnsemble;
 
-    PendingWriteLacOp(LedgerHandle lh, ClientContext clientCtx, List<BookieSocketAddress> ensemble,
+    PendingWriteLacOp(LedgerHandle lh, ClientContext clientCtx, List<BookieId> ensemble,
                       AddLacCallback cb, Object ctx) {
         this.lh = lh;
         this.clientCtx = clientCtx;
@@ -91,7 +91,7 @@ class PendingWriteLacOp implements WriteLacCallback {
     }
 
     @Override
-    public void writeLacComplete(int rc, long ledgerId, BookieSocketAddress addr, Object ctx) {
+    public void writeLacComplete(int rc, long ledgerId, BookieId addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
 
         if (completed) {
