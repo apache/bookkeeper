@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol.ParsedAddRequest;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.MathUtils;
@@ -116,7 +116,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
 
     @Override
     public void writeComplete(int rc, long ledgerId, long entryId,
-                              BookieSocketAddress addr, Object ctx) {
+                              BookieId addr, Object ctx) {
         if (BookieProtocol.EOK == rc) {
             requestProcessor.getRequestStats().getAddEntryStats()
                 .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);

@@ -35,7 +35,7 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -149,7 +149,7 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
         return runFunctionWithRegistrationManager(bkConf, rm -> {
             try {
                 ServerConfiguration conf = new ServerConfiguration(bkConf);
-                String newBookieId = Bookie.getBookieAddress(conf).toString();
+                String newBookieId = Bookie.getBookieId(conf).toString();
                 // read oldcookie
                 Versioned<Cookie> oldCookie = null;
                 try {
@@ -247,7 +247,7 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
     }
 
     private boolean listOrDeleteCookies(ServerConfiguration bkConf, boolean delete, boolean force) throws Exception {
-        BookieSocketAddress bookieAddress = Bookie.getBookieAddress(bkConf);
+        BookieId bookieAddress = Bookie.getBookieId(bkConf);
         File[] journalDirs = bkConf.getJournalDirs();
         File[] ledgerDirs = bkConf.getLedgerDirs();
         File[] indexDirs = bkConf.getIndexDirs();

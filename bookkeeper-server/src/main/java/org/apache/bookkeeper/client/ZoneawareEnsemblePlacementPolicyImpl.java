@@ -29,8 +29,8 @@ import com.google.common.cache.CacheLoader;
 
 import io.netty.util.HashedWheelTimer;
 
+import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -52,8 +52,8 @@ import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.Configurable;
 import org.apache.bookkeeper.feature.FeatureProvider;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieNode;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NetworkTopologyImpl;
@@ -61,6 +61,7 @@ import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
 import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.net.StabilizeNetworkTopology;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -90,7 +91,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     private final Random rand;
     protected StatsLogger statsLogger = null;
     // Use a loading cache so slow bookies are expired. Use entryId as values.
-    protected Cache<BookieSocketAddress, Long> slowBookies;
+    protected Cache<BookieId, Long> slowBookies;
     protected BookieNode myNode = null;
     protected String myZone = null;
     protected boolean reorderReadsRandom = false;
@@ -101,7 +102,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     protected int desiredNumZonesPerWriteQuorum;
     protected boolean enforceStrictZoneawarePlacement;
     protected HashedWheelTimer timer;
-    protected final ConcurrentMap<BookieSocketAddress, ZoneAwareNodeLocation> address2NodePlacement;
+    protected final ConcurrentMap<BookieId, ZoneAwareNodeLocation> address2NodePlacement;
 
     @StatsDoc(name = FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER, help = "Counter for number of times"
             + " DNSResolverDecorator failed to resolve Network Location")
@@ -147,11 +148,11 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
     ZoneawareEnsemblePlacementPolicyImpl() {
         super();
-        address2NodePlacement = new ConcurrentHashMap<BookieSocketAddress, ZoneAwareNodeLocation>();
+        address2NodePlacement = new ConcurrentHashMap<BookieId, ZoneAwareNodeLocation>();
         rand = new Random(System.currentTimeMillis());
     }
 
-    protected ZoneAwareNodeLocation getZoneAwareNodeLocation(BookieSocketAddress addr) {
+    protected ZoneAwareNodeLocation getZoneAwareNodeLocation(BookieId addr) {
         ZoneAwareNodeLocation nodeLocation = address2NodePlacement.get(addr);
         if (null == nodeLocation) {
             String networkLocation = resolveNetworkLocation(addr);
@@ -181,8 +182,9 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     @Override
     public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
             Optional<DNSToSwitchMapping> optionalDnsResolver, HashedWheelTimer timer, FeatureProvider featureProvider,
-            StatsLogger statsLogger) {
+            StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) {
         this.statsLogger = statsLogger;
+        this.bookieAddressResolver = bookieAddressResolver;
         this.timer = timer;
         this.bookiesJoinedCounter = statsLogger.getOpStatsLogger(BOOKIES_JOINED);
         this.bookiesLeftCounter = statsLogger.getOpStatsLogger(BOOKIES_LEFT);
@@ -246,9 +248,9 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             this.topology = new NetworkTopologyImpl();
         }
         try {
-            myNode = createBookieNode(new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0));
+            myNode = createDummyLocalBookieNode(InetAddress.getLocalHost().getHostAddress());
             myZone = getZoneAwareNodeLocation(myNode).getZone();
-        } catch (UnknownHostException e) {
+        } catch (IOException e) {
             LOG.error("Failed to get local host address : ", e);
             throw new RuntimeException(e);
         }
@@ -257,9 +259,9 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
         slowBookies = CacheBuilder.newBuilder()
                 .expireAfterWrite(conf.getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
-                .build(new CacheLoader<BookieSocketAddress, Long>() {
+                .build(new CacheLoader<BookieId, Long>() {
                     @Override
-                    public Long load(BookieSocketAddress key) throws Exception {
+                    public Long load(BookieId key) throws Exception {
                         return -1L;
                     }
                 });
@@ -287,8 +289,8 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
-    public PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize, int writeQuorumSize,
-            int ackQuorumSize, Set<BookieSocketAddress> excludeBookies,
+    public PlacementResult<List<BookieId>> newEnsemble(int ensembleSize, int writeQuorumSize,
+            int ackQuorumSize, Set<BookieId> excludeBookies,
             org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble<BookieNode> parentEnsemble,
             org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate<BookieNode> parentPredicate)
             throws BKNotEnoughBookiesException {
@@ -329,8 +331,8 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
-    public PlacementResult<List<BookieSocketAddress>> newEnsemble(int ensembleSize, int writeQuorumSize,
-            int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
+    public PlacementResult<List<BookieId>> newEnsemble(int ensembleSize, int writeQuorumSize,
+            int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
         if (enforceStrictZoneawarePlacement) {
             if (ensembleSize % writeQuorumSize != 0) {
@@ -387,7 +389,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             }
         }
         int desiredNumZonesPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, desiredNumZonesPerWriteQuorum);
-        List<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>(
+        List<BookieId> newEnsemble = new ArrayList<BookieId>(
                 Collections.nCopies(ensembleSize, null));
         rwLock.readLock().lock();
         try {
@@ -395,9 +397,9 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 return createNewEnsembleRandomly(newEnsemble, writeQuorumSize, ackQuorumSize, customMetadata,
                         excludeBookies);
             }
-            Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = addDefaultFaultDomainBookies(excludeBookies);
+            Set<BookieId> comprehensiveExclusionBookiesSet = addDefaultFaultDomainBookies(excludeBookies);
             for (int index = 0; index < ensembleSize; index++) {
-                BookieSocketAddress selectedBookie = setBookieInTheEnsemble(ensembleSize, writeQuorumSize, newEnsemble,
+                BookieId selectedBookie = setBookieInTheEnsemble(ensembleSize, writeQuorumSize, newEnsemble,
                         newEnsemble, index, desiredNumZonesPerWriteQuorumForThisEnsemble,
                         comprehensiveExclusionBookiesSet);
                 comprehensiveExclusionBookiesSet.add(selectedBookie);
@@ -410,23 +412,23 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
-    public PlacementResult<BookieSocketAddress> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, List<BookieSocketAddress> currentEnsemble,
-            BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
+    public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
+            BookieId bookieToReplace, Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
         int bookieToReplaceIndex = currentEnsemble.indexOf(bookieToReplace);
         int desiredNumZonesPerWriteQuorumForThisEnsemble = (writeQuorumSize < desiredNumZonesPerWriteQuorum)
                 ? writeQuorumSize : desiredNumZonesPerWriteQuorum;
-        List<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>(currentEnsemble);
+        List<BookieId> newEnsemble = new ArrayList<BookieId>(currentEnsemble);
         rwLock.readLock().lock();
         try {
             if (!enforceStrictZoneawarePlacement) {
                 return selectBookieRandomly(newEnsemble, bookieToReplace, excludeBookies, writeQuorumSize,
                         ackQuorumSize);
             }
-            Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = addDefaultFaultDomainBookies(excludeBookies);
+            Set<BookieId> comprehensiveExclusionBookiesSet = addDefaultFaultDomainBookies(excludeBookies);
             comprehensiveExclusionBookiesSet.addAll(currentEnsemble);
-            BookieSocketAddress candidateAddr = setBookieInTheEnsemble(ensembleSize, writeQuorumSize, currentEnsemble,
+            BookieId candidateAddr = setBookieInTheEnsemble(ensembleSize, writeQuorumSize, currentEnsemble,
                     newEnsemble, bookieToReplaceIndex, desiredNumZonesPerWriteQuorumForThisEnsemble,
                     comprehensiveExclusionBookiesSet);
             return PlacementResult.of(candidateAddr,
@@ -436,9 +438,9 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
     }
 
-    private PlacementResult<List<BookieSocketAddress>> createNewEnsembleRandomly(List<BookieSocketAddress> newEnsemble,
+    private PlacementResult<List<BookieId>> createNewEnsembleRandomly(List<BookieId> newEnsemble,
             int writeQuorumSize, int ackQuorumSize, Map<String, byte[]> customMetadata,
-            Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
+            Set<BookieId> excludeBookies) throws BKNotEnoughBookiesException {
         int ensembleSize = newEnsemble.size();
         Set<BookieNode> bookiesToConsider = getBookiesToConsider(excludeBookies);
         if (bookiesToConsider.size() < newEnsemble.size()) {
@@ -455,10 +457,10 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
     }
 
-    private PlacementResult<BookieSocketAddress> selectBookieRandomly(List<BookieSocketAddress> newEnsemble,
-            BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies, int writeQuorumSize,
+    private PlacementResult<BookieId> selectBookieRandomly(List<BookieId> newEnsemble,
+            BookieId bookieToReplace, Set<BookieId> excludeBookies, int writeQuorumSize,
             int ackQuorumSize) throws BKNotEnoughBookiesException {
-        Set<BookieSocketAddress> bookiesToExcludeIncludingEnsemble = new HashSet<BookieSocketAddress>(excludeBookies);
+        Set<BookieId> bookiesToExcludeIncludingEnsemble = new HashSet<BookieId>(excludeBookies);
         bookiesToExcludeIncludingEnsemble.addAll(newEnsemble);
         Set<BookieNode> bookiesToConsider = getBookiesToConsider(bookiesToExcludeIncludingEnsemble);
         int bookieToReplaceIndex = newEnsemble.indexOf(bookieToReplace);
@@ -467,13 +469,13 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             LOG.error("There is no bookie available to replace a bookie");
             throw new BKNotEnoughBookiesException();
         }
-        BookieSocketAddress candidateAddr = (selectCandidateNode(bookiesToConsider)).getAddr();
+        BookieId candidateAddr = (selectCandidateNode(bookiesToConsider)).getAddr();
         newEnsemble.set(bookieToReplaceIndex, candidateAddr);
         return PlacementResult.of(candidateAddr,
                 isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
     }
 
-    private Set<BookieNode> getBookiesToConsider(Set<BookieSocketAddress> excludeBookies) {
+    private Set<BookieNode> getBookiesToConsider(Set<BookieId> excludeBookies) {
         Set<Node> leaves = topology.getLeaves(NodeBase.ROOT);
         Set<BookieNode> bookiesToConsider = new HashSet<BookieNode>();
         BookieNode bookieNode;
@@ -535,11 +537,11 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      * a node randomly. 12) If even after Step10 there are no eligible
      * candidates then throw BKNotEnoughBookiesException.
      */
-    private BookieSocketAddress setBookieInTheEnsemble(int ensembleSize, int writeQuorumSize,
-            List<BookieSocketAddress> currentEnsemble, List<BookieSocketAddress> newEnsemble, int bookieToReplaceIndex,
-            int desiredNumZonesPerWriteQuorumForThisEnsemble, Set<BookieSocketAddress> excludeBookies)
+    private BookieId setBookieInTheEnsemble(int ensembleSize, int writeQuorumSize,
+            List<BookieId> currentEnsemble, List<BookieId> newEnsemble, int bookieToReplaceIndex,
+            int desiredNumZonesPerWriteQuorumForThisEnsemble, Set<BookieId> excludeBookies)
                     throws BKNotEnoughBookiesException {
-        BookieSocketAddress bookieToReplace = currentEnsemble.get(bookieToReplaceIndex);
+        BookieId bookieToReplace = currentEnsemble.get(bookieToReplaceIndex);
         Set<String> zonesToExclude = null;
         Set<BookieNode> bookiesToConsiderAfterExcludingZonesAndUDs = null;
         for (int numberOfNeighborsToConsider = (desiredNumZonesPerWriteQuorumForThisEnsemble
@@ -564,7 +566,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             throw new BKNotEnoughBookiesException();
         }
 
-        BookieSocketAddress candidateAddr = selectCandidateNode(bookiesToConsiderAfterExcludingZonesAndUDs).getAddr();
+        BookieId candidateAddr = selectCandidateNode(bookiesToConsiderAfterExcludingZonesAndUDs).getAddr();
         newEnsemble.set(bookieToReplaceIndex, candidateAddr);
         return candidateAddr;
     }
@@ -574,8 +576,8 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      * returns a new set, by adding excludedBookies and bookies in
      * defaultfaultdomain.
      */
-    protected Set<BookieSocketAddress> addDefaultFaultDomainBookies(Set<BookieSocketAddress> excludeBookies) {
-        Set<BookieSocketAddress> comprehensiveExclusionBookiesSet = new HashSet<BookieSocketAddress>(excludeBookies);
+    protected Set<BookieId> addDefaultFaultDomainBookies(Set<BookieId> excludeBookies) {
+        Set<BookieId> comprehensiveExclusionBookiesSet = new HashSet<BookieId>(excludeBookies);
         Set<Node> defaultFaultDomainLeaves = topology.getLeaves(getDefaultFaultDomain());
         for (Node node : defaultFaultDomainLeaves) {
             if (node instanceof BookieNode) {
@@ -626,7 +628,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         return excludedZonesString.toString();
     }
 
-    private Set<BookieNode> getBookiesToConsider(String excludedZonesString, Set<BookieSocketAddress> excludeBookies) {
+    private Set<BookieNode> getBookiesToConsider(String excludedZonesString, Set<BookieId> excludeBookies) {
         Set<BookieNode> bookiesToConsider = new HashSet<BookieNode>();
         Set<Node> leaves = topology.getLeaves(excludedZonesString);
         for (Node leaf : leaves) {
@@ -652,8 +654,8 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      * upgrade domains.
      */
     private Set<BookieNode> getBookiesToConsiderAfterExcludingZonesAndUDs(int ensembleSize, int writeQuorumSize,
-            List<BookieSocketAddress> currentEnsemble, int bookieToReplaceIndex,
-            Set<BookieSocketAddress> excludeBookies, Set<String> excludeZones) {
+            List<BookieId> currentEnsemble, int bookieToReplaceIndex,
+            Set<BookieId> excludeBookies, Set<String> excludeZones) {
         Set<BookieNode> bookiesToConsiderAfterExcludingZonesAndUDs = new HashSet<BookieNode>();
         HashMap<String, Set<String>> excludingUDsOfZonesToConsider = new HashMap<String, Set<String>>();
         Set<BookieNode> bookiesToConsiderAfterExcludingZones = getBookiesToConsider(
@@ -711,7 +713,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     /*
      * Gets the set of zones of neighboring nodes.
      */
-    private Set<String> getZonesOfNeighboringNodesInEnsemble(List<BookieSocketAddress> currentEnsemble, int indexOfNode,
+    private Set<String> getZonesOfNeighboringNodesInEnsemble(List<BookieId> currentEnsemble, int indexOfNode,
             int numOfNeighboringNodes) {
         Set<String> zonesOfNeighboringNodes = new HashSet<String>();
         int ensembleSize = currentEnsemble.size();
@@ -720,7 +722,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 continue;
             }
             int index = (indexOfNode + i + ensembleSize) % ensembleSize;
-            BookieSocketAddress addrofNode = currentEnsemble.get(index);
+            BookieId addrofNode = currentEnsemble.get(index);
             if (addrofNode == null) {
                 continue;
             }
@@ -735,7 +737,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      * 'indexOfNode', so that writequorums, containing this index, would have
      * atleast minNumZonesPerWriteQuorum.
      */
-    private Set<String> getZonesToExcludeToMaintainMinZones(List<BookieSocketAddress> currentEnsemble, int indexOfNode,
+    private Set<String> getZonesToExcludeToMaintainMinZones(List<BookieId> currentEnsemble, int indexOfNode,
             int writeQuorumSize) {
         int ensSize = currentEnsemble.size();
         Set<String> zonesToExclude = new HashSet<String>();
@@ -747,7 +749,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 if (indexInEnsemble == indexOfNode) {
                     continue;
                 }
-                BookieSocketAddress bookieAddr = currentEnsemble.get(indexInEnsemble);
+                BookieId bookieAddr = currentEnsemble.get(indexInEnsemble);
                 if (bookieAddr == null) {
                     continue;
                 }
@@ -774,7 +776,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      * Gets the set of upgradedomains of neighboring nodes (writeQuorumSize)
      * which belong to this 'zone'.
      */
-    private Set<String> getUpgradeDomainsOfAZoneInNeighboringNodes(List<BookieSocketAddress> currentEnsemble,
+    private Set<String> getUpgradeDomainsOfAZoneInNeighboringNodes(List<BookieId> currentEnsemble,
             int indexOfNode, int writeQuorumSize, String zone) {
         int ensSize = currentEnsemble.size();
         Set<String> upgradeDomainsOfAZoneInNeighboringNodes = new HashSet<String>();
@@ -783,7 +785,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 continue;
             }
             int indexInEnsemble = (indexOfNode + i + ensSize) % ensSize;
-            BookieSocketAddress bookieAddr = currentEnsemble.get(indexInEnsemble);
+            BookieId bookieAddr = currentEnsemble.get(indexInEnsemble);
             if (bookieAddr == null) {
                 continue;
             }
@@ -801,7 +803,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      * there are multiple bookies from the 'zone' in a write quorum then they
      * will be atleast from minimum of two upgrade domains.
      */
-    private Set<String> getUDsToExcludeToMaintainMinUDsInWriteQuorums(List<BookieSocketAddress> currentEnsemble,
+    private Set<String> getUDsToExcludeToMaintainMinUDsInWriteQuorums(List<BookieId> currentEnsemble,
             int indexOfNode, int writeQuorumSize, String zone) {
         int ensSize = currentEnsemble.size();
         Set<String> upgradeDomainsToExclude = new HashSet<String>();
@@ -813,7 +815,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 if (indexInEnsemble == indexOfNode) {
                     continue;
                 }
-                BookieSocketAddress bookieAddr = currentEnsemble.get(indexInEnsemble);
+                BookieId bookieAddr = currentEnsemble.get(indexInEnsemble);
                 if (bookieAddr == null) {
                     continue;
                 }
@@ -830,18 +832,18 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
-    public void registerSlowBookie(BookieSocketAddress bookieSocketAddress, long entryId) {
+    public void registerSlowBookie(BookieId bookieSocketAddress, long entryId) {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public DistributionSchedule.WriteSet reorderReadSequence(List<BookieSocketAddress> ensemble,
+    public DistributionSchedule.WriteSet reorderReadSequence(List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo, DistributionSchedule.WriteSet writeSet) {
         return writeSet;
     }
 
     @Override
-    public DistributionSchedule.WriteSet reorderReadLACSequence(List<BookieSocketAddress> ensemble,
+    public DistributionSchedule.WriteSet reorderReadLACSequence(List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo, DistributionSchedule.WriteSet writeSet) {
         DistributionSchedule.WriteSet retList = reorderReadSequence(ensemble, bookiesHealthInfo, writeSet);
         retList.addMissingIndices(ensemble.size());
@@ -857,14 +859,14 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      * domains.
      */
     @Override
-    public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleList,
+    public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieId> ensembleList,
             int writeQuorumSize, int ackQuorumSize) {
         PlacementPolicyAdherence placementPolicyAdherence = PlacementPolicyAdherence.MEETS_STRICT;
         rwLock.readLock().lock();
         try {
             HashMap<String, Set<String>> bookiesLocationInWriteSet = new HashMap<String, Set<String>>();
             HashMap<String, Integer> numOfBookiesInZones = new HashMap<String, Integer>();
-            BookieSocketAddress bookieNode;
+            BookieId bookieNode;
             if (ensembleList.size() % writeQuorumSize != 0) {
                 placementPolicyAdherence = PlacementPolicyAdherence.FAIL;
                 if (LOG.isDebugEnabled()) {
@@ -966,7 +968,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
-    public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies, int writeQuorumSize,
+    public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieId> ackedBookies, int writeQuorumSize,
             int ackQuorumSize) {
         HashSet<String> zonesOfAckedBookies = new HashSet<>();
         int minNumZonesPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumZonesPerWriteQuorum);
@@ -974,7 +976,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
         readLock.lock();
         try {
-            for (BookieSocketAddress ackedBookie : ackedBookies) {
+            for (BookieId ackedBookie : ackedBookies) {
                 zonesOfAckedBookies.add(getZoneAwareNodeLocation(ackedBookie).getZone());
             }
             areAckedBookiesAdheringToPlacementPolicy = ((zonesOfAckedBookies

@@ -40,6 +40,7 @@ import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
@@ -94,9 +95,9 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         LedgerHandle readLh = bkc.openLedgerNoRecovery(lh.getId(), digestType, "".getBytes());
         long lastLAC = readLh.getLastAddConfirmed();
         assertEquals(numEntries - 2, lastLAC);
-        List<BookieSocketAddress> ensemble =
+        List<BookieId> ensemble =
             lh.getCurrentEnsemble();
-        for (BookieSocketAddress addr : ensemble) {
+        for (BookieId addr : ensemble) {
             killBookie(addr);
         }
         // write another batch of entries, which will trigger ensemble change
@@ -132,11 +133,10 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         final CountDownLatch createLatch = new CountDownLatch(1);
         final CountDownLatch removeLatch = new CountDownLatch(1);
 
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234),
-                new BookieSocketAddress("192.0.2.4", 1234));
+        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.3", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.4", 1234).toBookieId());
         idGenerator.generateLedgerId(new GenericCallback<Long>() {
                 @Override
                 public void operationComplete(int rc, final Long lid) {

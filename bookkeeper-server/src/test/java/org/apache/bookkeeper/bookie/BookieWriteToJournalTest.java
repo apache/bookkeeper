@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.Rule;
@@ -91,7 +91,7 @@ public class BookieWriteToJournalTest {
         conf.setJournalDirName(journalDir.getPath())
                 .setLedgerDirNames(new String[]{ledgerDir.getPath()})
                 .setMetadataServiceUri(null);
-        BookieSocketAddress bookieAddress = Bookie.getBookieAddress(conf);
+        BookieId bookieAddress = Bookie.getBookieId(conf);
         CountDownLatch journalJoinLatch = new CountDownLatch(1);
         Journal journal = mock(Journal.class);
         MutableBoolean effectiveAckBeforeSync = new MutableBoolean(false);
@@ -128,7 +128,7 @@ public class BookieWriteToJournalTest {
             final ByteBuf data = buildEntry(ledgerId, entryId, -1);
             final long expectedEntryId = entryId;
             b.addEntry(data, ackBeforeSync, (int rc, long ledgerId1, long entryId1,
-                    BookieSocketAddress addr, Object ctx) -> {
+                    BookieId addr, Object ctx) -> {
                 assertSame(expectedCtx, ctx);
                 assertEquals(ledgerId, ledgerId1);
                 assertEquals(expectedEntryId, entryId1);
@@ -171,7 +171,7 @@ public class BookieWriteToJournalTest {
         final ByteBuf data = buildEntry(ledgerId, entryId, -1);
         final long expectedEntryId = entryId;
         b.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
-                BookieSocketAddress addr, Object ctx) -> {
+                BookieId addr, Object ctx) -> {
             if (rc != BKException.Code.OK) {
                 latchForceLedger1.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
                 return;
@@ -181,7 +181,7 @@ public class BookieWriteToJournalTest {
         result(latchForceLedger1);
 
         b.addEntry(data, true /* ackBeforesync */, (int rc, long ledgerId1, long entryId1,
-                        BookieSocketAddress addr, Object ctx) -> {
+                        BookieId addr, Object ctx) -> {
                     if (rc != BKException.Code.OK) {
                         latchAddEntry.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
                         return;
@@ -192,7 +192,7 @@ public class BookieWriteToJournalTest {
 
         // issue a new "forceLedger"
         b.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
-                BookieSocketAddress addr, Object ctx) -> {
+                BookieId addr, Object ctx) -> {
             if (rc != BKException.Code.OK) {
                 latchForceLedger2.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
                 return;

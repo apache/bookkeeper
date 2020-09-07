@@ -32,6 +32,7 @@ import java.io.PrintStream;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.CookieCommandTestBase;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -94,7 +95,7 @@ public class DeleteCookieCommandTest extends CookieCommandTestBase {
         assertTrue(runCommand(new String[] { BOOKIE_ID }));
         String consoleOutput = getConsoleOutput();
         assertTrue(consoleOutput, consoleOutput.isEmpty());
-        verify(rm, times(1)).removeCookie(eq(BOOKIE_ID), eq(new LongVersion(-1L)));
+        verify(rm, times(1)).removeCookie(eq(BookieId.parse(BOOKIE_ID)), eq(new LongVersion(-1L)));
     }
 
     /**
@@ -103,14 +104,14 @@ public class DeleteCookieCommandTest extends CookieCommandTestBase {
     @Test
     public void testDeleteNonExistedCookie() throws Exception {
         doThrow(new CookieNotFoundException())
-            .when(rm).removeCookie(eq(BOOKIE_ID), eq(new LongVersion(-1L)));
+            .when(rm).removeCookie(eq(BookieId.parse(BOOKIE_ID)), eq(new LongVersion(-1L)));
 
         assertFalse(runCommand(new String[] { BOOKIE_ID }));
         String consoleOutput = getConsoleOutput();
         assertTrue(
             consoleOutput,
             consoleOutput.contains("Cookie not found for bookie '" + BOOKIE_ID + "'"));
-        verify(rm, times(1)).removeCookie(eq(BOOKIE_ID), eq(new LongVersion(-1L)));
+        verify(rm, times(1)).removeCookie(eq(BookieId.parse(BOOKIE_ID)), eq(new LongVersion(-1L)));
     }
 
     /**
@@ -119,7 +120,7 @@ public class DeleteCookieCommandTest extends CookieCommandTestBase {
     @Test
     public void testDeleteCookieException() throws Exception {
         doThrow(new OperationRejectedException())
-            .when(rm).removeCookie(eq(BOOKIE_ID), eq(new LongVersion(-1L)));
+            .when(rm).removeCookie(eq(BookieId.parse(BOOKIE_ID)), eq(new LongVersion(-1L)));
 
         assertFalse(runCommand(new String[] { BOOKIE_ID }));
         String consoleOutput = getConsoleOutput();
@@ -129,7 +130,7 @@ public class DeleteCookieCommandTest extends CookieCommandTestBase {
         assertTrue(
             consoleOutput,
             consoleOutput.contains(OperationRejectedException.class.getName()));
-        verify(rm, times(1)).removeCookie(eq(BOOKIE_ID), eq(new LongVersion(-1L)));
+        verify(rm, times(1)).removeCookie(eq(BookieId.parse(BOOKIE_ID)), eq(new LongVersion(-1L)));
     }
 
 }

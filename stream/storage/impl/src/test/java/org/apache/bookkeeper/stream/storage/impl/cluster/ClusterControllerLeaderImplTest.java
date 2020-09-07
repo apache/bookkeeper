@@ -44,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
@@ -187,8 +187,7 @@ public class ClusterControllerLeaderImplTest {
         assertTrue(clusterController.getLastSuccessfulAssigmentAt() < 0);
 
         // notify the registration client that a new host is added
-        Set<BookieSocketAddress> cluster = Sets.newSet(
-            new BookieSocketAddress("127.0.0.1", 4181));
+        Set<BookieId> cluster = Sets.newSet(BookieId.parse("127.0.0.1:4181"));
         Version version = new LongVersion(0L);
 
         regListenerRef.get().onBookiesChanged(new Versioned<>(cluster, version));
@@ -205,10 +204,10 @@ public class ClusterControllerLeaderImplTest {
         assertEquals(lastSuccessfulAssignmentAt, clusterController.getLastSuccessfulAssigmentAt());
 
         // multiple hosts added and removed
-        cluster.add(new BookieSocketAddress("127.0.0.1", 4182));
-        cluster.add(new BookieSocketAddress("127.0.0.1", 4183));
-        cluster.add(new BookieSocketAddress("127.0.0.1", 4184));
-        cluster.add(new BookieSocketAddress("127.0.0.1", 4185));
+        cluster.add(BookieId.parse("127.0.0.1:4182"));
+        cluster.add(BookieId.parse("127.0.0.1:4183"));
+        cluster.add(BookieId.parse("127.0.0.1:4184"));
+        cluster.add(BookieId.parse("127.0.0.1:4185"));
         version = new LongVersion(1L);
 
         regListenerRef.get().onBookiesChanged(new Versioned<>(cluster, version));

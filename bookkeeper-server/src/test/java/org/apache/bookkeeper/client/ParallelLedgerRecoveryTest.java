@@ -55,7 +55,7 @@ import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
@@ -440,7 +440,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                                        new WriteCallback() {
                                            @Override
                                            public void writeComplete(int rc, long ledgerId, long entryId,
-                                                                     BookieSocketAddress addr, Object ctx) {
+                                                                     BookieId addr, Object ctx) {
                                                addSuccess.set(BKException.Code.OK == rc);
                                                addLatch.countDown();
                                            }
@@ -494,12 +494,12 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
             private final int rc;
             private final long ledgerId;
             private final long entryId;
-            private final BookieSocketAddress addr;
+            private final BookieId addr;
             private final Object ctx;
 
             WriteCallbackEntry(WriteCallback cb,
                                int rc, long ledgerId, long entryId,
-                               BookieSocketAddress addr, Object ctx) {
+                               BookieId addr, Object ctx) {
                 this.cb = cb;
                 this.rc = rc;
                 this.ledgerId = ledgerId;
@@ -531,7 +531,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
             super.addEntry(entry, ackBeforeSync, new WriteCallback() {
                 @Override
                 public void writeComplete(int rc, long ledgerId, long entryId,
-                                          BookieSocketAddress addr, Object ctx) {
+                                          BookieId addr, Object ctx) {
                     if (delayAddResponse.get()) {
                         delayQueue.add(new WriteCallbackEntry(cb, rc, ledgerId, entryId, addr, ctx));
                     } else {
@@ -594,7 +594,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         LOG.info("Create ledger {}", lh0.getId());
 
         // 0) place the bookie with a fake bookie
-        BookieSocketAddress address = lh0.getCurrentEnsemble().get(0);
+        BookieId address = lh0.getCurrentEnsemble().get(0);
         ServerConfiguration conf = killBookie(address);
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         DelayResponseBookie fakeBookie = new DelayResponseBookie(conf);

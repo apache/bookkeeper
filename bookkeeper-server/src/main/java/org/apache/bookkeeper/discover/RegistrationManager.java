@@ -21,6 +21,7 @@ package org.apache.bookkeeper.discover;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 
@@ -62,7 +63,7 @@ public interface RegistrationManager extends AutoCloseable {
      * @param serviceInfo information about services exposed by the Bookie
      * @throws BookieException when fail to register a bookie.
      */
-    void registerBookie(String bookieId, boolean readOnly, BookieServiceInfo serviceInfo) throws BookieException;
+    void registerBookie(BookieId bookieId, boolean readOnly, BookieServiceInfo serviceInfo) throws BookieException;
 
     /**
      * Unregistering the bookie server as <i>bookieId</i>.
@@ -71,7 +72,7 @@ public interface RegistrationManager extends AutoCloseable {
      * @param readOnly whether to register it as writable or readonly
      * @throws BookieException when fail to unregister a bookie.
      */
-    void unregisterBookie(String bookieId, boolean readOnly) throws BookieException;
+    void unregisterBookie(BookieId bookieId, boolean readOnly) throws BookieException;
 
     /**
      * Checks if Bookie with the given BookieId is registered as readwrite or
@@ -82,7 +83,7 @@ public interface RegistrationManager extends AutoCloseable {
      *          readwrite or readonly bookie.
      * @throws BookieException
      */
-    boolean isBookieRegistered(String bookieId) throws BookieException;
+    boolean isBookieRegistered(BookieId bookieId) throws BookieException;
 
     /**
      * Write the cookie data, which will be used for verifying the integrity of the bookie environment.
@@ -91,7 +92,7 @@ public interface RegistrationManager extends AutoCloseable {
      * @param cookieData cookie data
      * @throws BookieException when fail to write cookie
      */
-    void writeCookie(String bookieId, Versioned<byte[]> cookieData) throws BookieException;
+    void writeCookie(BookieId bookieId, Versioned<byte[]> cookieData) throws BookieException;
 
     /**
      * Read the cookie data, which will be used for verifying the integrity of the bookie environment.
@@ -100,7 +101,7 @@ public interface RegistrationManager extends AutoCloseable {
      * @return versioned cookie data
      * @throws BookieException when fail to read cookie
      */
-    Versioned<byte[]> readCookie(String bookieId) throws BookieException;
+    Versioned<byte[]> readCookie(BookieId bookieId) throws BookieException;
 
     /**
      * Remove the cookie data.
@@ -109,7 +110,7 @@ public interface RegistrationManager extends AutoCloseable {
      * @param version version of the cookie data
      * @throws BookieException when fail to remove cookie
      */
-    void removeCookie(String bookieId, Version version) throws BookieException;
+    void removeCookie(BookieId bookieId, Version version) throws BookieException;
 
     /**
      * Prepare ledgers root node, availableNode, readonly node..

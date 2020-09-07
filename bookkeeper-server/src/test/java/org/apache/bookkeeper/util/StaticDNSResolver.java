@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.RackChangeNotifier;
 import org.apache.bookkeeper.net.AbstractDNSToSwitchMapping;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
@@ -96,10 +97,12 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping implements Rac
     }
 
     public static void changeRack(List<BookieSocketAddress> bookieAddressList, List<String> rack) {
+        List<BookieId> bookieIds = new ArrayList<>();
         for (int i = 0; i < bookieAddressList.size(); i++) {
             BookieSocketAddress bkAddress = bookieAddressList.get(i);
             name2Racks.put(bkAddress.getHostName(), rack.get(i));
+            bookieIds.add(bkAddress.toBookieId());
         }
-        rackawarePolicy.onBookieRackChange(bookieAddressList);
+        rackawarePolicy.onBookieRackChange(bookieIds);
     }
 }

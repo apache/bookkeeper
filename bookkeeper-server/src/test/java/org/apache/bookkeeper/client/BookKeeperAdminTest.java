@@ -60,6 +60,7 @@ import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -164,8 +165,8 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         assertTrue("There are supposed to be underreplicatedledgers", underreplicatedLedgerItr.hasNext());
         UnderreplicatedLedger underreplicatedLedger = underreplicatedLedgerItr.next();
         assertEquals("Underreplicated ledgerId", ledgerId, underreplicatedLedger.getLedgerId());
-        assertTrue("Missingreplica of Underreplicated ledgerId should contain " + bookieToKill.getLocalAddress(),
-                underreplicatedLedger.getReplicaList().contains(bookieToKill.getLocalAddress().toString()));
+        assertTrue("Missingreplica of Underreplicated ledgerId should contain " + bookieToKill.getBookieId(),
+                underreplicatedLedger.getReplicaList().contains(bookieToKill.getBookieId().toString()));
         if (storeSystemTimeAsLedgerUnderreplicatedMarkTime) {
             long ctimeOfURL = underreplicatedLedger.getCtime();
             assertTrue("ctime of underreplicated ledger should be greater than test starttime",
@@ -441,7 +442,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
             for (int i = 0; i < bs.size(); i++) {
                 CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
-                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), nonExistingLedgerId);
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), nonExistingLedgerId);
                 try {
                     futureResult.get();
                     fail("asyncGetListOfEntriesOfLedger is supposed to be failed with NoSuchLedgerExistsException");
@@ -470,7 +471,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
             for (int i = 0; i < bs.size(); i++) {
                 CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
-                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), lId);
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), lId);
                 AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
                 assertEquals("Number of entries", numOfEntries,
                         availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
@@ -503,7 +504,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
             for (int i = 0; i < bs.size(); i++) {
                 CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
-                        .asyncGetListOfEntriesOfLedger(bs.get(i).getLocalAddress(), lId);
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), lId);
                 AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
                 /*
                  * since num of bookies in the ensemble is 2 and
@@ -529,27 +530,27 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                 (zkc.exists(bookieCookiePath, false) != null));
 
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
-            Collection<BookieSocketAddress> availableBookies = bkAdmin.getAvailableBookies();
+            Collection<BookieId> availableBookies = bkAdmin.getAvailableBookies();
             Assert.assertEquals(availableBookies.size(), bs.size());
 
             for (int i = 0; i < bs.size(); i++) {
-                availableBookies.contains(bs.get(i).getLocalAddress());
+                availableBookies.contains(bs.get(i).getBookieId());
             }
 
             BookieServer killedBookie = bs.get(1);
             killBookieAndWaitForZK(1);
 
-            Collection<BookieSocketAddress> remainingBookies = bkAdmin.getAvailableBookies();
-            Assert.assertFalse(remainingBookies.contains(killedBookie.getLocalAddress()));
+            Collection<BookieId> remainingBookies = bkAdmin.getAvailableBookies();
+            Assert.assertFalse(remainingBookies.contains(killedBookie.getBookieId()));
 
-            Collection<BookieSocketAddress> allBookies = bkAdmin.getAllBookies();
+            Collection<BookieId> allBookies = bkAdmin.getAllBookies();
             for (int i = 0; i < bs.size(); i++) {
-                remainingBookies.contains(bs.get(i).getLocalAddress());
-                allBookies.contains(bs.get(i).getLocalAddress());
+                remainingBookies.contains(bs.get(i).getBookieId());
+                allBookies.contains(bs.get(i).getBookieId());
             }
 
             Assert.assertEquals(remainingBookies.size(), allBookies.size() - 1);
-            Assert.assertTrue(allBookies.contains(killedBookie.getLocalAddress()));
+            Assert.assertTrue(allBookies.contains(killedBookie.getBookieId()));
         }
     }
 
@@ -576,7 +577,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
          * since no entry is added, callback is supposed to fail with
          * NoSuchLedgerExistsException.
          */
-        bkAdmin.asyncGetListOfEntriesOfLedger(bs.get(0).getLocalAddress(), lId)
+        bkAdmin.asyncGetListOfEntriesOfLedger(bs.get(0).getBookieId(), lId)
                 .whenComplete((availabilityOfEntriesOfLedger, throwable) -> {
                     exceptionInCallback.set(throwable != null);
                     if (throwable != null) {
@@ -595,17 +596,17 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     public void testAreEntriesOfLedgerStoredInTheBookieForLastEmptySegment() throws Exception {
         int lastEntryId = 10;
         long ledgerId = 100L;
-        BookieSocketAddress bookie0 = new BookieSocketAddress("bookie0:3181");
-        BookieSocketAddress bookie1 = new BookieSocketAddress("bookie1:3181");
-        BookieSocketAddress bookie2 = new BookieSocketAddress("bookie2:3181");
-        BookieSocketAddress bookie3 = new BookieSocketAddress("bookie3:3181");
+        BookieId bookie0 = new BookieSocketAddress("bookie0:3181").toBookieId();
+        BookieId bookie1 = new BookieSocketAddress("bookie1:3181").toBookieId();
+        BookieId bookie2 = new BookieSocketAddress("bookie2:3181").toBookieId();
+        BookieId bookie3 = new BookieSocketAddress("bookie3:3181").toBookieId();
 
-        List<BookieSocketAddress> ensembleOfSegment1 = new ArrayList<BookieSocketAddress>();
+        List<BookieId> ensembleOfSegment1 = new ArrayList<BookieId>();
         ensembleOfSegment1.add(bookie0);
         ensembleOfSegment1.add(bookie1);
         ensembleOfSegment1.add(bookie2);
 
-        List<BookieSocketAddress> ensembleOfSegment2 = new ArrayList<BookieSocketAddress>();
+        List<BookieId> ensembleOfSegment2 = new ArrayList<BookieId>();
         ensembleOfSegment2.add(bookie3);
         ensembleOfSegment2.add(bookie1);
         ensembleOfSegment2.add(bookie2);
@@ -681,7 +682,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         ServerConfiguration bkConf = newServerConfiguration().setForceReadOnlyBookie(readonly);
         BookieServer bkServer = startBookie(bkConf);
 
-        String bookieId = bkServer.getLocalAddress().toString();
+        String bookieId = bkServer.getBookieId().toString();
         String host = bkServer.getLocalAddress().getHostName();
         int port = bkServer.getLocalAddress().getPort();
 

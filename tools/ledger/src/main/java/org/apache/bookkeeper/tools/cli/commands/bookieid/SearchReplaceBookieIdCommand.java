@@ -30,7 +30,7 @@ import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.ClientCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -83,8 +83,8 @@ public class SearchReplaceBookieIdCommand extends ClientCommand<SearchReplaceBoo
             LedgerManager ledgerManager = ((org.apache.bookkeeper.client.BookKeeper) bk).getLedgerManager();
             long i = 0;
 
-            BookieSocketAddress fromAddr = new BookieSocketAddress(flags.from);
-            BookieSocketAddress toAddr = new BookieSocketAddress(flags.to);
+            BookieId fromAddr = BookieId.parse(flags.from);
+            BookieId toAddr = BookieId.parse(flags.to);
             System.out.println(String.format("Replacing bookie id %s with %s in metadata", fromAddr, toAddr));
             RateLimiter limiter = RateLimiter.create(flags.rate);
             for (Long lid : admin.listLedgers()) {
@@ -97,7 +97,7 @@ public class SearchReplaceBookieIdCommand extends ClientCommand<SearchReplaceBoo
                     md.getValue().getAllEnsembles().entrySet().stream()
                         .filter(e -> e.getValue().contains(fromAddr))
                         .forEach(e -> {
-                                List<BookieSocketAddress> ensemble = new ArrayList<>(e.getValue());
+                                List<BookieId> ensemble = new ArrayList<>(e.getValue());
                                 ensemble.replaceAll((a) -> {
                                         if (a.equals(fromAddr)) {
                                             return toAddr;

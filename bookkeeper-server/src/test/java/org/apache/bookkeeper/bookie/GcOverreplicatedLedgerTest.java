@@ -40,7 +40,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerTestCase;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
@@ -82,7 +82,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
 
         LedgerMetadata newLedgerMetadata = ledgerManager.readLedgerMetadata(lh.getId()).get().getValue();
 
-        BookieSocketAddress bookieNotInEnsemble = getBookieNotInEnsemble(newLedgerMetadata);
+        BookieId bookieNotInEnsemble = getBookieNotInEnsemble(newLedgerMetadata);
         ServerConfiguration bkConf = getBkConf(bookieNotInEnsemble);
         bkConf.setGcOverreplicatedLedgerWaitTime(10, TimeUnit.MILLISECONDS);
 
@@ -114,9 +114,9 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
         activeLedgers.put(lh.getId(), true);
 
         LedgerMetadata newLedgerMetadata = ledgerManager.readLedgerMetadata(lh.getId()).get().getValue();
-        BookieSocketAddress address = null;
-        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembleMap = newLedgerMetadata.getAllEnsembles();
-        for (List<BookieSocketAddress> ensemble : ensembleMap.values()) {
+        BookieId address = null;
+        SortedMap<Long, ? extends List<BookieId>> ensembleMap = newLedgerMetadata.getAllEnsembles();
+        for (List<BookieId> ensemble : ensembleMap.values()) {
             address = ensemble.get(0);
         }
         ServerConfiguration bkConf = getBkConf(address);
@@ -150,7 +150,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
         activeLedgers.put(lh.getId(), true);
 
         LedgerMetadata newLedgerMetadata = ledgerManager.readLedgerMetadata(lh.getId()).get().getValue();
-        BookieSocketAddress bookieNotInEnsemble = getBookieNotInEnsemble(newLedgerMetadata);
+        BookieId bookieNotInEnsemble = getBookieNotInEnsemble(newLedgerMetadata);
         ServerConfiguration bkConf = getBkConf(bookieNotInEnsemble);
         bkConf.setGcOverreplicatedLedgerWaitTime(10, TimeUnit.MILLISECONDS);
 
@@ -182,13 +182,13 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
         Assert.assertTrue(activeLedgers.containsKey(lh.getId()));
     }
 
-    private BookieSocketAddress getBookieNotInEnsemble(LedgerMetadata ledgerMetadata) throws UnknownHostException {
-        List<BookieSocketAddress> allAddresses = Lists.newArrayList();
+    private BookieId getBookieNotInEnsemble(LedgerMetadata ledgerMetadata) throws UnknownHostException {
+        List<BookieId> allAddresses = Lists.newArrayList();
         for (BookieServer bk : bs) {
-            allAddresses.add(bk.getLocalAddress());
+            allAddresses.add(bk.getBookieId());
         }
-        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = ledgerMetadata.getAllEnsembles();
-        for (List<BookieSocketAddress> fragmentEnsembles : ensembles.values()) {
+        SortedMap<Long, ? extends List<BookieId>> ensembles = ledgerMetadata.getAllEnsembles();
+        for (List<BookieId> fragmentEnsembles : ensembles.values()) {
             allAddresses.removeAll(fragmentEnsembles);
         }
         Assert.assertEquals(allAddresses.size(), 1);

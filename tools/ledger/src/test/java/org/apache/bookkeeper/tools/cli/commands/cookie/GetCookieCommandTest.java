@@ -34,6 +34,7 @@ import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.CookieCommandTestBase;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -100,12 +101,12 @@ public class GetCookieCommandTest extends CookieCommandTestBase {
             .setJournalDirs("/path/to/journal/dir")
             .setLedgerDirs("/path/to/ledger/dirs")
             .build();
-        when(rm.readCookie(eq(BOOKIE_ID)))
+        when(rm.readCookie(eq(BookieId.parse(BOOKIE_ID))))
             .thenReturn(new Versioned<>(cookie.toString().getBytes(UTF_8), new LongVersion(-1L)));
-        assertTrue(runCommand(new String[] { BOOKIE_ID }));
+        assertTrue(runCommand(new String[] { BOOKIE_ID.toString() }));
         String consoleOutput = getConsoleOutput();
         assertTrue(consoleOutput, consoleOutput.contains(cookie.toString()));
-        verify(rm, times(1)).readCookie(eq(BOOKIE_ID));
+        verify(rm, times(1)).readCookie(eq(BookieId.parse(BOOKIE_ID)));
     }
 
     /**
@@ -114,14 +115,14 @@ public class GetCookieCommandTest extends CookieCommandTestBase {
     @Test
     public void testGetNonExistedCookie() throws Exception {
         doThrow(new CookieNotFoundException())
-            .when(rm).readCookie(eq(BOOKIE_ID));
+            .when(rm).readCookie(eq(BookieId.parse(BOOKIE_ID)));
 
         assertFalse(runCommand(new String[] { BOOKIE_ID }));
         String consoleOutput = getConsoleOutput();
         assertTrue(
             consoleOutput,
             consoleOutput.contains("Cookie not found for bookie '" + BOOKIE_ID + "'"));
-        verify(rm, times(1)).readCookie(eq(BOOKIE_ID));
+        verify(rm, times(1)).readCookie(eq(BookieId.parse(BOOKIE_ID)));
     }
 
     /**
@@ -130,7 +131,7 @@ public class GetCookieCommandTest extends CookieCommandTestBase {
     @Test
     public void testGetCookieException() throws Exception {
         doThrow(new OperationRejectedException())
-            .when(rm).readCookie(eq(BOOKIE_ID));
+            .when(rm).readCookie(eq(BookieId.parse(BOOKIE_ID)));
 
         assertFalse(runCommand(new String[] { BOOKIE_ID }));
         String consoleOutput = getConsoleOutput();
@@ -140,7 +141,7 @@ public class GetCookieCommandTest extends CookieCommandTestBase {
         assertTrue(
             consoleOutput,
             consoleOutput.contains(OperationRejectedException.class.getName()));
-        verify(rm, times(1)).readCookie(eq(BOOKIE_ID));
+        verify(rm, times(1)).readCookie(eq(BookieId.parse(BOOKIE_ID)));
     }
 
 }

@@ -23,7 +23,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.List;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -49,7 +49,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
 
     private final LastConfirmedDataCallback cb;
     private final DistributionSchedule.QuorumCoverageSet coverageSet;
-    private final List<BookieSocketAddress> currentEnsemble;
+    private final List<BookieId> currentEnsemble;
 
     /**
      * Wrapper to get all recovered data from the request.
@@ -62,7 +62,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
                                DistributionSchedule schedule,
                                DigestManager digestManager,
                                long ledgerId,
-                               List<BookieSocketAddress> ensemble,
+                               List<BookieId> ensemble,
                                byte[] ledgerKey,
                                LastConfirmedDataCallback cb) {
         this.cb = cb;

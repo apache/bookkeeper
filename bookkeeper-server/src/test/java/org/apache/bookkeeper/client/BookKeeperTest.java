@@ -52,7 +52,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -982,7 +982,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies,
+        public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieId> ackedBookies,
                                                                 int writeQuorumSize,
                                                                 int ackQuorumSize) {
             conditionFirstInvocationLatch.countDown();
@@ -1027,7 +1027,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         currPlacementPolicy.setConditionFirstInvocationLatch(countDownLatch);
         currPlacementPolicy.setWriteQuorumSizeToUseForTesting(writeQuorumSize);
 
-        BookieSocketAddress bookieToSleep;
+        BookieId bookieToSleep;
 
         try (LedgerHandle lh = bk.createLedger(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password)) {
             CountDownLatch sleepLatchCase1 = new CountDownLatch(1);
@@ -1037,8 +1037,8 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             LOG.info("Putting all non ensemble bookies to sleep.");
             for (BookieServer bookieServer : bs) {
                 try {
-                    if (!lh.getCurrentEnsemble().contains(bookieServer.getLocalAddress())) {
-                        sleepBookie(bookieServer.getLocalAddress(), sleepLatchCase2);
+                    if (!lh.getCurrentEnsemble().contains(bookieServer.getBookieId())) {
+                        sleepBookie(bookieServer.getBookieId(), sleepLatchCase2);
                     }
                 } catch (UnknownHostException ignored) {}
             }

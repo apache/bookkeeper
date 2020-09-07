@@ -36,7 +36,7 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 
 /**
  * Builder for building LedgerMetadata objects.
@@ -54,7 +54,7 @@ public class LedgerMetadataBuilder {
     private Optional<Long> lastEntryId = Optional.empty();
     private Optional<Long> length = Optional.empty();
 
-    private TreeMap<Long, List<BookieSocketAddress>> ensembles = new TreeMap<>();
+    private TreeMap<Long, List<BookieId>> ensembles = new TreeMap<>();
 
     private Optional<DigestType> digestType = Optional.empty();
     private Optional<byte[]> password = Optional.empty();
@@ -131,7 +131,7 @@ public class LedgerMetadataBuilder {
         return this;
     }
 
-    public LedgerMetadataBuilder newEnsembleEntry(long firstEntry, List<BookieSocketAddress> ensemble) {
+    public LedgerMetadataBuilder newEnsembleEntry(long firstEntry, List<BookieId> ensemble) {
         checkArgument(ensemble.size() == ensembleSize,
                       "Size of passed in ensemble must match the ensembleSize of the builder");
         checkArgument(ensembles.isEmpty() || firstEntry > ensembles.lastKey(),
@@ -140,7 +140,7 @@ public class LedgerMetadataBuilder {
         return this;
     }
 
-    public LedgerMetadataBuilder replaceEnsembleEntry(long firstEntry, List<BookieSocketAddress> ensemble) {
+    public LedgerMetadataBuilder replaceEnsembleEntry(long firstEntry, List<BookieId> ensemble) {
         checkArgument(ensemble.size() == ensembleSize,
                       "Size of passed in ensemble must match the ensembleSize of the builder");
         checkArgument(ensembles.containsKey(firstEntry),

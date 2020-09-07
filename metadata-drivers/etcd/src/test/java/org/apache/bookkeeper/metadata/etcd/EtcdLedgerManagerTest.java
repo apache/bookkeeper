@@ -57,7 +57,7 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.metadata.etcd.helpers.ValueStream;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
@@ -96,10 +96,10 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
     @Test
     public void testLedgerCRUD() throws Exception {
         long ledgerId = System.currentTimeMillis();
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234));
+        List<BookieId> ensemble = Lists.newArrayList(
+                BookieId.parse("192.0.2.1:1234"),
+                BookieId.parse("192.0.2.2:1234"),
+                BookieId.parse("192.0.2.3:1234"));
         LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
             .withPassword("test-password".getBytes(UTF_8))
@@ -352,9 +352,9 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         assertNull(metadataQueue2.poll());
     }
 
-    static List<BookieSocketAddress> createNumBookies(int numBookies) {
+    static List<BookieId> createNumBookies(int numBookies) {
         return IntStream.range(0, numBookies)
-            .mapToObj(idx -> new BookieSocketAddress("127.0.0.1", 3181 + idx))
+            .mapToObj(idx -> BookieId.parse("127.0.0.1:" + (3181 + idx)))
             .collect(Collectors.toList());
     }
 }

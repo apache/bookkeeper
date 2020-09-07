@@ -25,6 +25,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.proto.MockBookieClient;
@@ -42,8 +43,8 @@ import org.slf4j.LoggerFactory;
  */
 public class ReadLastConfirmedOpTest {
     private static final Logger log = LoggerFactory.getLogger(ReadLastConfirmedOpTest.class);
-    private final BookieSocketAddress bookie1 = new BookieSocketAddress("bookie1", 3181);
-    private final BookieSocketAddress bookie2 = new BookieSocketAddress("bookie2", 3181);
+    private final BookieId bookie1 = new BookieSocketAddress("bookie1", 3181).toBookieId();
+    private final BookieId bookie2 = new BookieSocketAddress("bookie2", 3181).toBookieId();
 
     OrderedExecutor executor = null;
 
@@ -68,7 +69,7 @@ public class ReadLastConfirmedOpTest {
     @Test
     public void testBookieFailsAfterLedgerMissingOnFirst() throws Exception {
         long ledgerId = 0xf00b;
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(bookie1, bookie2);
+        List<BookieId> ensemble = Lists.newArrayList(bookie1, bookie2);
         byte[] ledgerKey = new byte[0];
 
         MockBookieClient bookieClient = new MockBookieClient(executor);
