@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.junit.Test;
@@ -138,7 +138,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
 
         // sleep second bookie
         CountDownLatch sleepLatch = new CountDownLatch(1);
-        BookieSocketAddress second = lnospec.getLedgerMetadata().getAllEnsembles().get(0L).get(1);
+        BookieId second = lnospec.getLedgerMetadata().getAllEnsembles().get(0L).get(1);
         sleepBookie(second, sleepLatch);
 
         try {
@@ -217,7 +217,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
                        && latch1.getDuration() < timeout * 3);
 
             // bookies 1 & 2 should be registered as slow bookies because of speculative reads
-            Set<BookieSocketAddress> expectedSlowBookies = new HashSet<>();
+            Set<BookieId> expectedSlowBookies = new HashSet<>();
             expectedSlowBookies.add(l.getLedgerMetadata().getAllEnsembles().get(0L).get(1));
             expectedSlowBookies.add(l.getLedgerMetadata().getAllEnsembles().get(0L).get(2));
             assertEquals(((RackawareEnsemblePlacementPolicy) bkspec.getPlacementPolicy()).slowBookies.asMap().keySet(),
@@ -328,7 +328,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
 
         LedgerHandle l = bkspec.openLedger(id, digestType, passwd);
 
-        List<BookieSocketAddress> ensemble = l.getLedgerMetadata().getAllEnsembles().get(0L);
+        List<BookieId> ensemble = l.getLedgerMetadata().getAllEnsembles().get(0L);
         BitSet allHosts = new BitSet(ensemble.size());
         for (int i = 0; i < ensemble.size(); i++) {
             allHosts.set(i, true);

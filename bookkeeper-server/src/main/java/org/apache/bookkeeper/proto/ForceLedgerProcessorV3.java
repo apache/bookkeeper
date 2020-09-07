@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import io.netty.channel.Channel;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -58,7 +58,7 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         }
 
         BookkeeperInternalCallbacks.WriteCallback wcb =
-                (int rc, long ledgerId1, long entryId, BookieSocketAddress addr, Object ctx) -> {
+                (int rc, long ledgerId1, long entryId, BookieId addr, Object ctx) -> {
 
             checkArgument(entryId == Bookie.METAENTRY_ID_FORCE_LEDGER,
                     "entryId must be METAENTRY_ID_FORCE_LEDGER but was {}", entryId);

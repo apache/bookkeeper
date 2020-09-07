@@ -56,7 +56,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.ClientConnectionPeer;
@@ -556,11 +556,13 @@ public class TestTLS extends BookKeeperClusterTestCase {
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         LedgerMetadata metadata = testClient(clientConf, 2);
         assertTrue(metadata.getAllEnsembles().size() > 0);
-        Collection<? extends List<BookieSocketAddress>> ensembles = metadata.getAllEnsembles().values();
-        for (List<BookieSocketAddress> bookies : ensembles) {
-            for (BookieSocketAddress bookieAddress : bookies) {
-                int port = bookieAddress.getPort();
-                assertTrue(tlsBookiePorts.contains(port));
+        Collection<? extends List<BookieId>> ensembles = metadata.getAllEnsembles().values();
+        try (BookKeeper client = new BookKeeper(clientConf)) {
+            for (List<BookieId> bookies : ensembles) {
+                for (BookieId bookieAddress : bookies) {
+                    int port = client.getBookieAddressResolver().resolve(bookieAddress).getPort();
+                    assertTrue(tlsBookiePorts.contains(port));
+                }
             }
         }
     }

@@ -44,6 +44,7 @@ import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -165,6 +166,11 @@ public class BookieServer {
     @VisibleForTesting
     public BookieSocketAddress getLocalAddress() throws UnknownHostException {
         return Bookie.getBookieAddress(conf);
+    }
+
+    @VisibleForTesting
+    public BookieId getBookieId() throws UnknownHostException {
+        return Bookie.getBookieId(conf);
     }
 
     @VisibleForTesting
@@ -319,13 +325,14 @@ public class BookieServer {
 
     @Override
     public  String toString() {
-        String id = "UNKNOWN";
-
+        String addr = "UNKNOWN";
+        String id = "?";
         try {
-            id = Bookie.getBookieAddress(conf).toString();
+            addr = Bookie.getBookieAddress(conf).toString();
+            id = getBookieId().toString();
         } catch (UnknownHostException e) {
             //Ignored...
         }
-        return "Bookie Server listening on " + id;
+        return "Bookie Server listening on " + addr + " with id " + id;
     }
 }

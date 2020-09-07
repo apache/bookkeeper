@@ -41,6 +41,7 @@ import java.util.function.Supplier;
 
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
@@ -48,6 +49,7 @@ import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
@@ -58,16 +60,17 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         ITopologyAwareEnsemblePlacementPolicy<BookieNode> {
     static final Logger LOG = LoggerFactory.getLogger(TopologyAwareEnsemblePlacementPolicy.class);
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
-    protected final Map<BookieSocketAddress, BookieNode> knownBookies = new HashMap<BookieSocketAddress, BookieNode>();
+    protected final Map<BookieId, BookieNode> knownBookies = new HashMap<BookieId, BookieNode>();
     protected final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     protected Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
     // Initialize to empty set
-    protected ImmutableSet<BookieSocketAddress> readOnlyBookies = ImmutableSet.of();
+    protected ImmutableSet<BookieId> readOnlyBookies = ImmutableSet.of();
     boolean isWeighted;
     protected WeightedRandomSelection<BookieNode> weightedSelection;
     // for now, we just maintain the writable bookies' topology
     protected NetworkTopology topology;
     protected DNSToSwitchMapping dnsResolver;
+    protected BookieAddressResolver bookieAddressResolver;
     @StatsDoc(
             name = BOOKIES_JOINED,
             help = "The distribution of number of bookies joined the cluster on each network topology change"
@@ -92,7 +95,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
         public static final EnsembleForReplacementWithNoConstraints INSTANCE =
             new EnsembleForReplacementWithNoConstraints();
-        static final List<BookieSocketAddress> EMPTY_LIST = new ArrayList<BookieSocketAddress>(0);
+        static final List<BookieId> EMPTY_LIST = new ArrayList<BookieId>(0);
 
         @Override
         public boolean addNode(BookieNode node) {
@@ -101,7 +104,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
 
         @Override
-        public List<BookieSocketAddress> toList() {
+        public List<BookieId> toList() {
             return EMPTY_LIST;
         }
 
@@ -458,8 +461,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
 
         @Override
-        public List<BookieSocketAddress> toList() {
-            ArrayList<BookieSocketAddress> addresses = new ArrayList<BookieSocketAddress>(ensembleSize);
+        public List<BookieId> toList() {
+            ArrayList<BookieId> addresses = new ArrayList<BookieId>(ensembleSize);
             for (BookieNode bn : chosenNodes) {
                 addresses.add(bn.getAddr());
             }
@@ -473,7 +476,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
          */
         @Override
         public boolean validate() {
-            HashSet<BookieSocketAddress> addresses = new HashSet<BookieSocketAddress>(ensembleSize);
+            HashSet<BookieId> addresses = new HashSet<BookieId>(ensembleSize);
             HashSet<String> racksOrRegions = new HashSet<String>();
             for (BookieNode bn : chosenNodes) {
                 if (addresses.contains(bn.getAddr())) {
@@ -619,7 +622,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
     @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
-            List<BookieSocketAddress> ensemble,
+            List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         return writeSet;
@@ -627,7 +630,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
     @Override
     public DistributionSchedule.WriteSet reorderReadLACSequence(
-            List<BookieSocketAddress> ensemble,
+            List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         DistributionSchedule.WriteSet retList = reorderReadSequence(
@@ -637,12 +640,12 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     }
 
     @Override
-    public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
-            Set<BookieSocketAddress> readOnlyBookies) {
+    public Set<BookieId> onClusterChanged(Set<BookieId> writableBookies,
+            Set<BookieId> readOnlyBookies) {
         rwLock.writeLock().lock();
         try {
-            ImmutableSet<BookieSocketAddress> joinedBookies, leftBookies, deadBookies;
-            Set<BookieSocketAddress> oldBookieSet = knownBookies.keySet();
+            ImmutableSet<BookieId> joinedBookies, leftBookies, deadBookies;
+            Set<BookieId> oldBookieSet = knownBookies.keySet();
             // left bookies : bookies in known bookies, but not in new writable bookie cluster.
             leftBookies = Sets.difference(oldBookieSet, writableBookies).immutableCopy();
             // joined bookies : bookies in new writable bookie cluster, but not in known bookies
@@ -670,8 +673,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
      * this method should be called in writelock scope of 'rwLock'
      */
     @Override
-    public void handleBookiesThatLeft(Set<BookieSocketAddress> leftBookies) {
-        for (BookieSocketAddress addr : leftBookies) {
+    public void handleBookiesThatLeft(Set<BookieId> leftBookies) {
+        for (BookieId addr : leftBookies) {
             try {
                 BookieNode node = knownBookies.remove(addr);
                 if (null != node) {
@@ -701,9 +704,9 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
      * this method should be called in writelock scope of 'rwLock'
      */
     @Override
-    public void handleBookiesThatJoined(Set<BookieSocketAddress> joinedBookies) {
+    public void handleBookiesThatJoined(Set<BookieId> joinedBookies) {
         // node joined
-        for (BookieSocketAddress addr : joinedBookies) {
+        for (BookieId addr : joinedBookies) {
             try {
                 BookieNode node = createBookieNode(addr);
                 topology.add(node);
@@ -729,15 +732,15 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     }
 
     @Override
-    public void onBookieRackChange(List<BookieSocketAddress> bookieAddressList) {
+    public void onBookieRackChange(List<BookieId> bookieAddressList) {
         rwLock.writeLock().lock();
         try {
-            for (BookieSocketAddress bookieAddress : bookieAddressList) {
+            for (BookieId bookieAddress : bookieAddressList) {
                 BookieNode node = knownBookies.get(bookieAddress);
                 if (node != null) {
                     // refresh the rack info if its a known bookie
-                    topology.remove(node);
                     BookieNode newNode = createBookieNode(bookieAddress);
+                    topology.remove(node);
                     topology.add(newNode);
                     knownBookies.put(bookieAddress, newNode);
                 }
@@ -748,7 +751,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     }
 
     @Override
-    public void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieInfoMap) {
+    public void updateBookieInfo(Map<BookieId, BookieInfo> bookieInfoMap) {
         if (!isWeighted) {
             LOG.info("bookieFreeDiskInfo callback called even without weighted placement policy being used.");
             return;
@@ -772,17 +775,28 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
     }
 
-    protected BookieNode createBookieNode(BookieSocketAddress addr) {
+    protected BookieNode createBookieNode(BookieId addr) {
         return new BookieNode(addr, resolveNetworkLocation(addr));
     }
 
-    protected String resolveNetworkLocation(BookieSocketAddress addr) {
-        return NetUtils.resolveNetworkLocation(dnsResolver, addr);
+    protected BookieNode createDummyLocalBookieNode(String hostname) {
+        return new BookieNode(BookieSocketAddress.createDummyBookieIdForHostname(hostname),
+                NetUtils.resolveNetworkLocation(dnsResolver, new BookieSocketAddress(hostname, 0)));
     }
 
-    protected Set<Node> convertBookiesToNodes(Collection<BookieSocketAddress> excludeBookies) {
+    protected String resolveNetworkLocation(BookieId addr) {
+        try {
+            return NetUtils.resolveNetworkLocation(dnsResolver, bookieAddressResolver.resolve(addr));
+        } catch (BookieAddressResolver.BookieIdNotResolvedException err) {
+            LOG.error("Cannot resolve bookieId {} to a network address, resolving as {}", addr,
+                      NetworkTopology.DEFAULT_REGION_AND_RACK, err);
+            return NetworkTopology.DEFAULT_REGION_AND_RACK;
+        }
+    }
+
+    protected Set<Node> convertBookiesToNodes(Collection<BookieId> excludeBookies) {
         Set<Node> nodes = new HashSet<Node>();
-        for (BookieSocketAddress addr : excludeBookies) {
+        for (BookieId addr : excludeBookies) {
             BookieNode bn = knownBookies.get(addr);
             if (null == bn) {
                 bn = createBookieNode(addr);

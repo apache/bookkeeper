@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Map;
 
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -266,7 +266,7 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
         private int ackQuorumSize;
         private final BitSet ackSet = new BitSet();
         // grows on reset()
-        private BookieSocketAddress[] failureMap = new BookieSocketAddress[0];
+        private BookieId[] failureMap = new BookieId[0];
 
         private final Handle<AckSetImpl> recyclerHandle;
         private static final Recycler<AckSetImpl> RECYCLER = new Recycler<AckSetImpl>() {
@@ -295,7 +295,7 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
             this.writeQuorumSize = writeQuorumSize;
             ackSet.clear();
             if (failureMap.length < ensembleSize) {
-                failureMap = new BookieSocketAddress[ensembleSize];
+                failureMap = new BookieId[ensembleSize];
             }
             Arrays.fill(failureMap, null);
         }
@@ -309,15 +309,15 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
 
         @Override
         public boolean failBookieAndCheck(int bookieIndexHeardFrom,
-                                          BookieSocketAddress address) {
+                                          BookieId address) {
             ackSet.clear(bookieIndexHeardFrom);
             failureMap[bookieIndexHeardFrom] = address;
             return failed() > (writeQuorumSize - ackQuorumSize);
         }
 
         @Override
-        public Map<Integer, BookieSocketAddress> getFailedBookies() {
-            ImmutableMap.Builder<Integer, BookieSocketAddress> builder = new ImmutableMap.Builder<>();
+        public Map<Integer, BookieId> getFailedBookies() {
+            ImmutableMap.Builder<Integer, BookieId> builder = new ImmutableMap.Builder<>();
             for (int i = 0; i < failureMap.length; i++) {
                 if (failureMap[i] != null) {
                     builder.put(i, failureMap[i]);

@@ -22,7 +22,9 @@ import com.google.common.net.InetAddresses;
 import java.net.InetAddress;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 
 
 /**
@@ -38,16 +40,18 @@ public final class CommandHelpers {
      * When using hostname as bookie id, it's possible that the host is no longer valid and
      * can't get a ip from the hostname, so using UNKNOWN to indicate ip is unknown for the hostname
      */
-    public static String getBookieSocketAddrStringRepresentation(BookieSocketAddress bookieId) {
-        String hostname = bookieId.getHostName();
-        String bookieID = bookieId.toString();
+    public static String getBookieSocketAddrStringRepresentation(BookieId bookidId,
+                                                                 BookieAddressResolver bookieAddressResolver) {
+        BookieSocketAddress networkAddress = bookieAddressResolver.resolve(bookidId);
+        String hostname = networkAddress.getHostName();
+        String bookieID = networkAddress.toString();
         String realHostname;
         String ip = null;
         if (InetAddresses.isInetAddress(hostname)){
             ip = hostname;
-            realHostname = bookieId.getSocketAddress().getAddress().getCanonicalHostName();
+            realHostname = networkAddress.getSocketAddress().getAddress().getCanonicalHostName();
         } else {
-           InetAddress ia = bookieId.getSocketAddress().getAddress();
+           InetAddress ia = networkAddress.getSocketAddress().getAddress();
            if (null != ia){
               ip = ia.getHostAddress();
            } else {
@@ -55,13 +59,13 @@ public final class CommandHelpers {
            }
            realHostname = hostname;
         }
-        return formatBookieSocketAddress(bookieID, ip, bookieId.getPort(), realHostname);
+        return formatBookieSocketAddress(bookieID, ip, networkAddress.getPort(), realHostname);
     }
 
     /**
      * Format {@link BookieSocketAddress}.
      **/
-    public static String formatBookieSocketAddress(String bookieId, String ip, int port, String hostName){
+    public static String formatBookieSocketAddress(String bookieId, String ip, int port, String hostName) {
        return String.format("BookieID:%s, IP:%s, Port:%d, Hostname:%s", bookieId, ip, port, hostName);
     }
 

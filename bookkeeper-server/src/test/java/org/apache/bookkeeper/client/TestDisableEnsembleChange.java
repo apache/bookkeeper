@@ -41,7 +41,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.feature.SettableFeature;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -89,7 +89,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         final byte[] entry = "test-disable-ensemble-change".getBytes(UTF_8);
 
         assertEquals(1, lh.getLedgerMetadata().getAllEnsembles().size());
-        ArrayList<BookieSocketAddress> ensembleBeforeFailure =
+        ArrayList<BookieId> ensembleBeforeFailure =
                 new ArrayList<>(lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next().getValue());
 
         final RateLimiter rateLimiter = RateLimiter.create(10);
@@ -121,10 +121,10 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         // check the ensemble after failure
         assertEquals("No new ensemble should be added when disable ensemble change.",
                 1, lh.getLedgerMetadata().getAllEnsembles().size());
-        ArrayList<BookieSocketAddress> ensembleAfterFailure =
+        ArrayList<BookieId> ensembleAfterFailure =
                 new ArrayList<>(lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next().getValue());
-        assertArrayEquals(ensembleBeforeFailure.toArray(new BookieSocketAddress[ensembleBeforeFailure.size()]),
-                ensembleAfterFailure.toArray(new BookieSocketAddress[ensembleAfterFailure.size()]));
+        assertArrayEquals(ensembleBeforeFailure.toArray(new BookieId[ensembleBeforeFailure.size()]),
+                ensembleAfterFailure.toArray(new BookieId[ensembleAfterFailure.size()]));
 
         // enable ensemble change
         disableEnsembleChangeFeature.set(false);
@@ -241,7 +241,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
             lh.addEntry(entry);
         }
 
-        List<BookieSocketAddress> curEns = lh.getCurrentEnsemble();
+        List<BookieId> curEns = lh.getCurrentEnsemble();
 
         final CountDownLatch wakeupLatch = new CountDownLatch(1);
         final CountDownLatch suspendLatch = new CountDownLatch(1);

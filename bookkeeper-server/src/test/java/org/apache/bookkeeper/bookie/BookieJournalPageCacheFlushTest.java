@@ -45,7 +45,7 @@ import org.apache.bookkeeper.bookie.Journal.ForceWriteRequest;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.junit.Rule;
 import org.junit.Test;
@@ -119,7 +119,7 @@ public class BookieJournalPageCacheFlushTest {
         long startTime = System.currentTimeMillis();
         journal.logAddEntry(ledgerId, entryId, DATA, false /* ackBeforeSync */, new WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                 latch.countDown();
             }
         }, null);
@@ -186,7 +186,7 @@ public class BookieJournalPageCacheFlushTest {
         long startTime = System.currentTimeMillis();
         journal.logAddEntry(ledgerId, entryId, DATA, true /* ackBeforeSync */, new WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                 latch.countDown();
             }
         }, null);
@@ -248,7 +248,7 @@ public class BookieJournalPageCacheFlushTest {
         LogMark lastLogMarkBeforeWrite = journal.getLastLogMark().markLog().getCurMark();
         journal.logAddEntry(ledgerId, entryId, DATA, true, new WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                 latch.countDown();
             }
         }, null);
@@ -262,7 +262,7 @@ public class BookieJournalPageCacheFlushTest {
         // add an entry to journal, wake up journal main thread which is blocked on queue.take()
         journal.logAddEntry(ledgerId, entryId + 1, DATA, true, new WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
                 latch.countDown();
             }
         }, null);

@@ -71,6 +71,7 @@ import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerLayout;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -146,7 +147,7 @@ class EtcdRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public void registerBookie(String bookieId, boolean readOnly,
+    public void registerBookie(BookieId bookieId, boolean readOnly,
                                BookieServiceInfo bookieServiceInfo) throws BookieException {
         if (readOnly) {
             doRegisterReadonlyBookie(bookieId, bkRegister.get());
@@ -267,7 +268,7 @@ class EtcdRegistrationManager implements RegistrationManager {
         }
     }
 
-    private void doRegisterReadonlyBookie(String bookieId, long leaseId) throws MetadataStoreException {
+    private void doRegisterReadonlyBookie(BookieId bookieId, long leaseId) throws MetadataStoreException {
         String readonlyRegPath = getReadonlyBookiePath(scope, bookieId);
         doRegisterBookie(readonlyRegPath, leaseId);
         String writableRegPath = getWritableBookiePath(scope, bookieId);
@@ -275,7 +276,7 @@ class EtcdRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public void unregisterBookie(String bookieId, boolean readOnly) throws BookieException {
+    public void unregisterBookie(BookieId bookieId, boolean readOnly) throws BookieException {
         String regPath;
         if (readOnly) {
             regPath = getReadonlyBookiePath(scope, bookieId);
@@ -291,7 +292,7 @@ class EtcdRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public boolean isBookieRegistered(String bookieId) throws BookieException {
+    public boolean isBookieRegistered(BookieId bookieId) throws BookieException {
         CompletableFuture<GetResponse> getWritableFuture = kvClient.get(
             ByteSequence.fromString(getWritableBookiePath(scope, bookieId)),
             GetOption.newBuilder()
@@ -308,7 +309,7 @@ class EtcdRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public void writeCookie(String bookieId, Versioned<byte[]> cookieData) throws BookieException {
+    public void writeCookie(BookieId bookieId, Versioned<byte[]> cookieData) throws BookieException {
         ByteSequence cookiePath = ByteSequence.fromString(getCookiePath(scope, bookieId));
         Txn txn = kvClient.txn();
         if (Version.NEW == cookieData.getVersion()) {
@@ -346,11 +347,11 @@ class EtcdRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public Versioned<byte[]> readCookie(String bookieId) throws BookieException {
+    public Versioned<byte[]> readCookie(BookieId bookieId) throws BookieException {
         ByteSequence cookiePath = ByteSequence.fromString(getCookiePath(scope, bookieId));
         GetResponse resp = msResult(kvClient.get(cookiePath));
         if (resp.getCount() <= 0) {
-            throw new CookieNotFoundException(bookieId);
+            throw new CookieNotFoundException(bookieId.toString());
         } else {
             KeyValue kv = resp.getKvs().get(0);
             return new Versioned<>(
@@ -360,7 +361,7 @@ class EtcdRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public void removeCookie(String bookieId, Version version) throws BookieException {
+    public void removeCookie(BookieId bookieId, Version version) throws BookieException {
         ByteSequence cookiePath = ByteSequence.fromString(getCookiePath(scope, bookieId));
         Txn delTxn = kvClient.txn()
             .If(new Cmp(
@@ -384,7 +385,7 @@ class EtcdRegistrationManager implements RegistrationManager {
                     "Failed to remove cookie from " + cookiePath.toStringUtf8()
                         + " for bookie " + bookieId + " : bad version '" + version + "'");
             } else {
-                throw new CookieNotFoundException(bookieId);
+                throw new CookieNotFoundException(bookieId.toString());
             }
         } else {
             log.info("Removed cookie from {} for bookie {}",

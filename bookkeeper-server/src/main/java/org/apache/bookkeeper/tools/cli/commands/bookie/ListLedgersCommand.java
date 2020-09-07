@@ -34,7 +34,7 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand.ListLedgersFlags;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
@@ -121,8 +121,8 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
     public boolean handler(ServerConfiguration conf, ListLedgersFlags flags)
         throws UnknownHostException, MetadataException, ExecutionException {
 
-        final BookieSocketAddress bookieAddress = StringUtils.isBlank(flags.bookieId) ? null :
-                                                      new BookieSocketAddress(flags.bookieId);
+        final BookieId bookieAddress = StringUtils.isBlank(flags.bookieId) ? null :
+                                                      BookieId.parse(flags.bookieId);
 
         runFunctionWithLedgerManagerFactory(conf, mFactory -> {
             try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {

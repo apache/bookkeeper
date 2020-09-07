@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.commands.cookie.UpdateCookieCommand.Flags;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -81,7 +82,7 @@ public class UpdateCookieCommand extends CookieCommand<Flags> {
 
     @Override
     protected void apply(RegistrationManager rm, Flags cmdFlags) throws Exception {
-        String bookieId = getBookieId(cmdFlags);
+        BookieId bookieId = getBookieId(cmdFlags);
 
         byte[] data = readCookieDataFromFile(cmdFlags.cookieFile);
         Versioned<byte[]> cookie = new Versioned<>(data, new LongVersion(-1L));

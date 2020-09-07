@@ -41,6 +41,7 @@ import org.apache.bookkeeper.auth.TestAuth;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol.AuthRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.AuthResponse;
@@ -87,7 +88,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         builder.setPayload(ByteString.copyFrom(PAYLOAD_MESSAGE));
         final AuthMessage authMessage = builder.build();
 
-        CompatClient42 client = newCompatClient(bookie1.getLocalAddress());
+        CompatClient42 client = newCompatClient(bookie1.getBookieId());
 
         Request request = new AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
         client.sendRequest(request);
@@ -108,7 +109,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
             .setAuthPluginName(TestAuth.TEST_AUTH_PROVIDER_PLUGIN_NAME);
         builder.setPayload(ByteString.copyFrom(PAYLOAD_MESSAGE));
         final AuthMessage authMessage = builder.build();
-        CompatClient42 client = newCompatClient(bookie1.getLocalAddress());
+        CompatClient42 client = newCompatClient(bookie1.getBookieId());
 
         Request request = new AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
         for (int i = 0; i < 3; i++) {
@@ -141,7 +142,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
             .setAuthPluginName(TestAuth.TEST_AUTH_PROVIDER_PLUGIN_NAME);
         builder.setPayload(ByteString.copyFrom(PAYLOAD_MESSAGE));
         final AuthMessage authMessage = builder.build();
-        CompatClient42 client = newCompatClient(bookie1.getLocalAddress());
+        CompatClient42 client = newCompatClient(bookie1.getBookieId());
 
         Request request = new AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
         for (int i = 0; i < 3; i++) {
@@ -178,7 +179,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         return s;
     }
 
-    CompatClient42 newCompatClient(BookieSocketAddress addr) throws Exception {
+    CompatClient42 newCompatClient(BookieId addr) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setUseV2WireProtocol(true);
         return new CompatClient42(conf, executor, eventLoopGroup, addr, authProvider, extRegistry);
@@ -193,18 +194,18 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         CompatClient42(ClientConfiguration conf,
                        OrderedExecutor executor,
                        EventLoopGroup eventLoopGroup,
-                       BookieSocketAddress addr,
+                       BookieId addr,
                        ClientAuthProvider.Factory authProviderFactory,
                        ExtensionRegistry extRegistry) throws Exception {
-            super(
-                conf,
+            super(conf,
                 executor,
                 eventLoopGroup,
                 addr,
                 NullStatsLogger.INSTANCE,
                 authProviderFactory,
                 extRegistry,
-                null);
+                null,
+                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
             state = ConnectionState.CONNECTING;
             ChannelFuture future = connect();

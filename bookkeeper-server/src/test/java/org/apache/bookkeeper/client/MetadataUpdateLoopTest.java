@@ -46,6 +46,7 @@ import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.MockLedgerManager;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -71,25 +72,24 @@ public class MetadataUpdateLoopTest {
         try (LedgerManager lm = new MockLedgerManager()) {
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(5)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
-                .newEnsembleEntry(0L, Lists.newArrayList(
-                                          new BookieSocketAddress("0.0.0.0:3181"),
-                                          new BookieSocketAddress("0.0.0.1:3181"),
-                                          new BookieSocketAddress("0.0.0.2:3181"),
-                                          new BookieSocketAddress("0.0.0.3:3181"),
-                                          new BookieSocketAddress("0.0.0.4:3181"))).build();
+                .newEnsembleEntry(0L, Lists.newArrayList(BookieId.parse("0.0.0.0:3181"),
+                                          BookieId.parse("0.0.0.1:3181"),
+                                          BookieId.parse("0.0.0.2:3181"),
+                                          BookieId.parse("0.0.0.3:3181"),
+                                          BookieId.parse("0.0.0.4:3181"))).build();
             long ledgerId = 1234L;
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
 
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
 
-            BookieSocketAddress newAddress = new BookieSocketAddress("0.0.0.5:3181");
+            BookieId newAddress = BookieId.parse("0.0.0.5:3181");
             MetadataUpdateLoop loop = new MetadataUpdateLoop(
                     lm,
                     ledgerId,
                     reference::get,
                     (currentMetadata) -> true,
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
+                        List<BookieId> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, newAddress);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -111,10 +111,10 @@ public class MetadataUpdateLoopTest {
             lm.blockWrites();
 
             long ledgerId = 1234L;
-            BookieSocketAddress b0 = new BookieSocketAddress("0.0.0.0:3181");
-            BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
-            BookieSocketAddress b2 = new BookieSocketAddress("0.0.0.2:3181");
-            BookieSocketAddress b3 = new BookieSocketAddress("0.0.0.3:3181");
+            BookieId b0 = BookieId.parse("0.0.0.0:3181");
+            BookieId b1 = BookieId.parse("0.0.0.1:3181");
+            BookieId b2 = BookieId.parse("0.0.0.2:3181");
+            BookieId b3 = BookieId.parse("0.0.0.3:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
@@ -129,7 +129,7 @@ public class MetadataUpdateLoopTest {
                     reference1::get,
                     (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b0),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
+                        List<BookieId> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, b2);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -142,7 +142,7 @@ public class MetadataUpdateLoopTest {
                     reference2::get,
                     (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b1),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
+                        List<BookieId> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(1, b3);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -179,9 +179,9 @@ public class MetadataUpdateLoopTest {
             lm.blockWrites();
 
             long ledgerId = 1234L;
-            BookieSocketAddress b0 = new BookieSocketAddress("0.0.0.0:3181");
-            BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
-            BookieSocketAddress b2 = new BookieSocketAddress("0.0.0.2:3181");
+            BookieId b0 = BookieId.parse("0.0.0.0:3181");
+            BookieId b1 = BookieId.parse("0.0.0.1:3181");
+            BookieId b2 = BookieId.parse("0.0.0.2:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
@@ -195,7 +195,7 @@ public class MetadataUpdateLoopTest {
                     reference::get,
                     (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b0),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
+                        List<BookieId> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, b2);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -206,7 +206,7 @@ public class MetadataUpdateLoopTest {
                     reference::get,
                     (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b0),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
+                        List<BookieId> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, b2);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -232,10 +232,10 @@ public class MetadataUpdateLoopTest {
     public void testConflictOnLocalUpdate() throws Exception {
         try (DeferCallbacksMockLedgerManager lm = spy(new DeferCallbacksMockLedgerManager(1))) {
             long ledgerId = 1234L;
-            BookieSocketAddress b0 = new BookieSocketAddress("0.0.0.0:3181");
-            BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
-            BookieSocketAddress b2 = new BookieSocketAddress("0.0.0.2:3181");
-            BookieSocketAddress b3 = new BookieSocketAddress("0.0.0.3:3181");
+            BookieId b0 = BookieId.parse("0.0.0.0:3181");
+            BookieId b1 = BookieId.parse("0.0.0.1:3181");
+            BookieId b2 = BookieId.parse("0.0.0.2:3181");
+            BookieId b3 = BookieId.parse("0.0.0.3:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
@@ -249,7 +249,7 @@ public class MetadataUpdateLoopTest {
                     reference::get,
                     (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b0),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
+                        List<BookieId> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, b2);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -262,7 +262,7 @@ public class MetadataUpdateLoopTest {
                     reference::get,
                     (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b1),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
+                        List<BookieId> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(1, b3);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -280,9 +280,9 @@ public class MetadataUpdateLoopTest {
         }
     }
 
-    private static BookieSocketAddress address(String s) {
+    private static BookieId address(String s) {
         try {
-            return new BookieSocketAddress(s);
+            return BookieId.parse(s);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -299,7 +299,7 @@ public class MetadataUpdateLoopTest {
             long ledgerId = 1234L;
 
             int ensembleSize = 100;
-            List<BookieSocketAddress> initialEnsemble = IntStream.range(0, ensembleSize)
+            List<BookieId> initialEnsemble = IntStream.range(0, ensembleSize)
                 .mapToObj((i) -> address(String.format("0.0.0.%d:3181", i)))
                 .collect(Collectors.toList());
 
@@ -310,7 +310,7 @@ public class MetadataUpdateLoopTest {
 
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
 
-            List<BookieSocketAddress> replacementBookies = IntStream.range(0, ensembleSize)
+            List<BookieId> replacementBookies = IntStream.range(0, ensembleSize)
                 .mapToObj((i) -> address(String.format("0.0.%d.1:3181", i)))
                 .collect(Collectors.toList());
 
@@ -321,7 +321,7 @@ public class MetadataUpdateLoopTest {
                     reference::get,
                     (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(initialEnsemble.get(i)),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
+                        List<BookieId> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(i, replacementBookies.get(i));
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -344,8 +344,8 @@ public class MetadataUpdateLoopTest {
             lm.blockWrites();
 
             long ledgerId = 1234L;
-            BookieSocketAddress b0 = new BookieSocketAddress("0.0.0.0:3181");
-            BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
+            BookieId b0 = new BookieSocketAddress("0.0.0.0:3181").toBookieId();
+            BookieId b1 = new BookieSocketAddress("0.0.0.1:3181").toBookieId();
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(1)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
@@ -376,7 +376,7 @@ public class MetadataUpdateLoopTest {
                         }
                     },
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
+                        List<BookieId> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, b1);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },

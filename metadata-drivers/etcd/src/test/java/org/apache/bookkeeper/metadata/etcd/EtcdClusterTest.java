@@ -45,6 +45,7 @@ import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerLayout;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -202,7 +203,7 @@ public class EtcdClusterTest extends EtcdTestBase {
                                          int numBookies,
                                          boolean readonly) throws Exception {
         for (int i = 0; i < numBookies; i++) {
-            String bookieId = "bookie-" + i + ":3181";
+            BookieId bookieId = BookieId.parse("bookie-" + i + ":3181");
             String bookiePath;
             if (readonly) {
                 bookiePath = EtcdUtils.getReadonlyBookiePath(scope, bookieId);
@@ -221,7 +222,7 @@ public class EtcdClusterTest extends EtcdTestBase {
                                          int numBookies,
                                          boolean readonly) throws Exception {
         for (int i = 0; i < numBookies; i++) {
-            String bookieId = "bookie-" + i + ":3181";
+            BookieId bookieId = BookieId.parse("bookie-" + i + ":3181");
             String bookiePath;
             if (readonly) {
                 bookiePath = EtcdUtils.getReadonlyBookiePath(scope, bookieId);

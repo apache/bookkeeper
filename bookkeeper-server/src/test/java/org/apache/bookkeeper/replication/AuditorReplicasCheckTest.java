@@ -53,6 +53,7 @@ import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorPeriodicCheckTest.TestAuditor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -119,7 +120,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
 
         @Override
         public CompletableFuture<AvailabilityOfEntriesOfLedger> asyncGetListOfEntriesOfLedger(
-                BookieSocketAddress address, long ledgerId) {
+                BookieId address, long ledgerId) {
             CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult =
                     new CompletableFuture<AvailabilityOfEntriesOfLedger>();
             Integer errorReturnValue = errorReturnValueForGetAvailabilityOfEntriesOfLedger.get(address.toString(),
@@ -179,26 +180,26 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         servConf.setAuditorPeriodicReplicasCheckInterval(1000);
     }
 
-    List<BookieSocketAddress> addAndRegisterBookies(RegistrationManager regManager, int numOfBookies)
+    List<BookieId> addAndRegisterBookies(RegistrationManager regManager, int numOfBookies)
             throws BookieException {
-        BookieSocketAddress bookieAddress;
-        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
+        BookieId bookieAddress;
+        List<BookieId> bookieAddresses = new ArrayList<BookieId>();
         for (int i = 0; i < numOfBookies; i++) {
-            bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
             bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
+            regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
         }
         return bookieAddresses;
     }
 
     private void createClosedLedgerMetadata(LedgerManager lm, long ledgerId, int ensembleSize, int writeQuorumSize,
-            int ackQuorumSize, Map<Long, List<BookieSocketAddress>> segmentEnsembles, long lastEntryId, int length,
+            int ackQuorumSize, Map<Long, List<BookieId>> segmentEnsembles, long lastEntryId, int length,
             DigestType digestType, byte[] password) throws InterruptedException, ExecutionException {
         LedgerMetadataBuilder ledgerMetadataBuilder = LedgerMetadataBuilder.create();
         ledgerMetadataBuilder.withEnsembleSize(ensembleSize).withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize).withClosedState().withLastEntryId(lastEntryId).withLength(length)
                 .withDigestType(digestType).withPassword(password);
-        for (Map.Entry<Long, List<BookieSocketAddress>> mapEntry : segmentEnsembles.entrySet()) {
+        for (Map.Entry<Long, List<BookieId>> mapEntry : segmentEnsembles.entrySet()) {
             ledgerMetadataBuilder.newEnsembleEntry(mapEntry.getKey(), mapEntry.getValue());
         }
         LedgerMetadata initMeta = ledgerMetadataBuilder.build();
@@ -206,12 +207,12 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
     }
 
     private void createNonClosedLedgerMetadata(LedgerManager lm, long ledgerId, int ensembleSize, int writeQuorumSize,
-            int ackQuorumSize, Map<Long, List<BookieSocketAddress>> segmentEnsembles, DigestType digestType,
+            int ackQuorumSize, Map<Long, List<BookieId>> segmentEnsembles, DigestType digestType,
             byte[] password) throws InterruptedException, ExecutionException {
         LedgerMetadataBuilder ledgerMetadataBuilder = LedgerMetadataBuilder.create();
         ledgerMetadataBuilder.withEnsembleSize(ensembleSize).withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize).withDigestType(digestType).withPassword(password);
-        for (Map.Entry<Long, List<BookieSocketAddress>> mapEntry : segmentEnsembles.entrySet()) {
+        for (Map.Entry<Long, List<BookieId>> mapEntry : segmentEnsembles.entrySet()) {
             ledgerMetadataBuilder.newEnsembleEntry(mapEntry.getKey(), mapEntry.getValue());
         }
         LedgerMetadata initMeta = ledgerMetadataBuilder.build();
@@ -278,7 +279,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
                 new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
         MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
                 new MultiKeyMap<String, Integer>();
-        List<BookieSocketAddress> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
+        List<BookieId> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
@@ -299,12 +300,12 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * BookieHandleNotAvailableException so asyncGetListOfEntriesOfLedger will
          * return BookieHandleNotAvailableException.
          */
-        Map<Long, List<BookieSocketAddress>> segmentEnsembles = new HashMap<Long, List<BookieSocketAddress>>();
+        Map<Long, List<BookieId>> segmentEnsembles = new HashMap<Long, List<BookieId>>();
         segmentEnsembles.put(0L, bookieAddresses);
         long ledgerId = 1L;
         createClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
                 lastEntryId, length, digestType, password);
-        for (BookieSocketAddress bookieSocketAddress : bookieAddresses) {
+        for (BookieId bookieSocketAddress : bookieAddresses) {
             errorReturnValueForGetAvailabilityOfEntriesOfLedger.put(bookieSocketAddress.toString(),
                     Long.toString(ledgerId), BKException.Code.BookieHandleNotAvailableException);
         }
@@ -325,7 +326,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         ledgerId = 2L;
         createClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
                 lastEntryId, length, digestType, password);
-        for (BookieSocketAddress bookieSocketAddress : bookieAddresses) {
+        for (BookieId bookieSocketAddress : bookieAddresses) {
             errorReturnValueForGetAvailabilityOfEntriesOfLedger.put(bookieSocketAddress.toString(),
                     Long.toString(ledgerId), BKException.Code.BookieHandleNotAvailableException);
         }
@@ -338,7 +339,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         ledgerId = 3L;
         createNonClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
                 digestType, password);
-        for (BookieSocketAddress bookieSocketAddress : bookieAddresses) {
+        for (BookieId bookieSocketAddress : bookieAddresses) {
             errorReturnValueForGetAvailabilityOfEntriesOfLedger.put(bookieSocketAddress.toString(),
                     Long.toString(ledgerId), BKException.Code.BookieHandleNotAvailableException);
         }
@@ -354,7 +355,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         ledgerId = 4L;
         createNonClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
                 digestType, password);
-        for (BookieSocketAddress bookieSocketAddress : bookieAddresses) {
+        for (BookieId bookieSocketAddress : bookieAddresses) {
             errorReturnValueForGetAvailabilityOfEntriesOfLedger.put(bookieSocketAddress.toString(),
                     Long.toString(ledgerId), BKException.Code.BookieHandleNotAvailableException);
         }
@@ -376,7 +377,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
                 new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
         MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
                 new MultiKeyMap<String, Integer>();
-        List<BookieSocketAddress> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
+        List<BookieId> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
@@ -398,12 +399,12 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * Empty one for all of the bookies, so this ledger would be counted in
          * ledgersFoundHavingNoReplicaOfAnEntry .
          */
-        Map<Long, List<BookieSocketAddress>> segmentEnsembles = new HashMap<Long, List<BookieSocketAddress>>();
+        Map<Long, List<BookieId>> segmentEnsembles = new HashMap<Long, List<BookieId>>();
         segmentEnsembles.put(0L, bookieAddresses);
         long ledgerId = 1L;
         createClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
                 lastEntryId, length, digestType, password);
-        for (BookieSocketAddress bookieSocketAddress : bookieAddresses) {
+        for (BookieId bookieSocketAddress : bookieAddresses) {
             returnAvailabilityOfEntriesOfLedger.put(bookieSocketAddress.toString(), Long.toString(ledgerId),
                     AvailabilityOfEntriesOfLedger.EMPTY_AVAILABILITYOFENTRIESOFLEDGER);
         }
@@ -426,7 +427,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         ledgerId = 2L;
         createClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
                 lastEntryId, length, digestType, password);
-        for (BookieSocketAddress bookieSocketAddress : bookieAddresses) {
+        for (BookieId bookieSocketAddress : bookieAddresses) {
             errorReturnValueForGetAvailabilityOfEntriesOfLedger.put(bookieSocketAddress.toString(),
                     Long.toString(ledgerId), BKException.Code.NoSuchLedgerExistsException);
         }
@@ -443,7 +444,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         ledgerId = 3L;
         createNonClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
                 digestType, password);
-        for (BookieSocketAddress bookieSocketAddress : bookieAddresses) {
+        for (BookieId bookieSocketAddress : bookieAddresses) {
             returnAvailabilityOfEntriesOfLedger.put(bookieSocketAddress.toString(), Long.toString(ledgerId),
                     AvailabilityOfEntriesOfLedger.EMPTY_AVAILABILITYOFENTRIESOFLEDGER);
         }
@@ -466,7 +467,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         ledgerId = 4L;
         createClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
                 lastEntryId, length, digestType, password);
-        for (BookieSocketAddress bookieSocketAddress : bookieAddresses) {
+        for (BookieId bookieSocketAddress : bookieAddresses) {
             returnAvailabilityOfEntriesOfLedger.put(bookieSocketAddress.toString(), Long.toString(ledgerId),
                     new AvailabilityOfEntriesOfLedger(new long[] { 0L }));
         }
@@ -512,7 +513,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
                 new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
         MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
                 new MultiKeyMap<String, Integer>();
-        List<BookieSocketAddress> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
+        List<BookieId> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
@@ -529,7 +530,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * would be counted towards
          * ledgersFoundHavingLessThanAQReplicasOfAnEntry.
          */
-        Map<Long, List<BookieSocketAddress>> segmentEnsembles = new HashMap<Long, List<BookieSocketAddress>>();
+        Map<Long, List<BookieId>> segmentEnsembles = new HashMap<Long, List<BookieId>>();
         int ensembleSize = 4;
         int writeQuorumSize = 3;
         int ackQuorumSize = 2;
@@ -667,7 +668,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
                 new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
         MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
                 new MultiKeyMap<String, Integer>();
-        List<BookieSocketAddress> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
+        List<BookieId> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
@@ -683,7 +684,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * for this ledger a copy of entry 3, so this ledger would be counted
          * towards ledgersFoundHavingLessThanWQReplicasOfAnEntry.
          */
-        Map<Long, List<BookieSocketAddress>> segmentEnsembles = new HashMap<Long, List<BookieSocketAddress>>();
+        Map<Long, List<BookieId>> segmentEnsembles = new HashMap<Long, List<BookieId>>();
         int ensembleSize = 4;
         int writeQuorumSize = 3;
         int ackQuorumSize = 2;
@@ -820,7 +821,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
                 new MultiKeyMap<String, AvailabilityOfEntriesOfLedger>();
         MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger =
                 new MultiKeyMap<String, Integer>();
-        List<BookieSocketAddress> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
+        List<BookieId> bookieAddresses = addAndRegisterBookies(regManager, numOfBookies);
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
@@ -839,7 +840,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * numLedgersFoundHavingNoReplicaOfAnEntry/LessThanAQReplicasOfAnEntry
          * /WQReplicasOfAnEntry.
          */
-        Map<Long, List<BookieSocketAddress>> segmentEnsembles = new HashMap<Long, List<BookieSocketAddress>>();
+        Map<Long, List<BookieId>> segmentEnsembles = new HashMap<Long, List<BookieId>>();
         int ensembleSize = 4;
         int writeQuorumSize = 3;
         int ackQuorumSize = 2;

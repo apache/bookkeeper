@@ -19,7 +19,7 @@
 package org.apache.bookkeeper.stream.storage.impl.sc;
 
 import java.util.Set;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 
@@ -38,6 +38,6 @@ public interface StorageContainerController {
      */
     ClusterAssignmentData computeIdealState(ClusterMetadata clusterMetadata,
                                             ClusterAssignmentData currentState,
-                                            Set<BookieSocketAddress> currentCluster);
+                                            Set<BookieId> currentCluster);
 
 }

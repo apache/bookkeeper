@@ -40,7 +40,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -143,10 +143,10 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
 
         long lastEntry = flags.lastEntryId;
 
-        final BookieSocketAddress bookie;
+        final BookieId bookie;
         if (flags.bookieAddresss != null) {
             // A particular bookie was specified
-            bookie = new BookieSocketAddress(flags.bookieAddresss);
+            bookie = BookieId.parse(flags.bookieAddresss);
         } else {
             bookie = null;
         }
@@ -184,7 +184,8 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                     new DefaultThreadFactory("BookKeeperClientSchedulerPool"));
 
                 BookieClient bookieClient = new BookieClientImpl(conf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT,
-                                                                 executor, scheduler, NullStatsLogger.INSTANCE);
+                                                                 executor, scheduler, NullStatsLogger.INSTANCE,
+                                                                 bk.getBookieAddressResolver());
 
                 LongStream.range(flags.firstEntryId, lastEntry).forEach(entryId -> {
                     CompletableFuture<Void> future = new CompletableFuture<>();

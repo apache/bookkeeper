@@ -25,13 +25,14 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.zookeeper.AsyncCallback;
@@ -50,6 +51,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
     CountDownLatch.class })
 public class ListLedgersCommandTest extends BookieCommandTestBase {
 
+    private final BookieId bookieAddress = BookieId.parse(UUID.randomUUID().toString());
+
     public ListLedgersCommandTest() {
         super(3, 3);
     }
@@ -61,8 +64,7 @@ public class ListLedgersCommandTest extends BookieCommandTestBase {
 
         PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
 
-        BookieSocketAddress bookieAddress = mock(BookieSocketAddress.class);
-        PowerMockito.whenNew(BookieSocketAddress.class).withParameterTypes(String.class).withArguments(anyString())
+        PowerMockito.whenNew(BookieId.class).withParameterTypes(String.class).withArguments(anyString())
             .thenReturn(bookieAddress);
 
         PowerMockito.mockStatic(MetadataDrivers.class);
@@ -95,7 +97,7 @@ public class ListLedgersCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testWithBookieId() {
-        testCommand("-id", "1");
+        testCommand("-id", bookieAddress.getId());
     }
 
     private void testCommand(String... args) {

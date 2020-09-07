@@ -40,7 +40,7 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -185,7 +185,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         // kill first bookie server to start a fake one to simulate a slow bookie
         // and failed to add entry on crash
         // until write succeed
-        BookieSocketAddress host = beforelh.getCurrentEnsemble().get(slowBookieIdx);
+        BookieId host = beforelh.getCurrentEnsemble().get(slowBookieIdx);
         ServerConfiguration conf = killBookie(host);
 
         Bookie fakeBookie = new Bookie(conf) {
@@ -259,7 +259,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         bs.add(startBookie(conf, deadBookie1));
 
         // kill first bookie server
-        BookieSocketAddress bookie1 = lhbefore.getCurrentEnsemble().get(0);
+        BookieId bookie1 = lhbefore.getCurrentEnsemble().get(0);
         ServerConfiguration conf1 = killBookie(bookie1);
 
         // Try to recover and fence the ledger after killing one bookie in the
@@ -274,7 +274,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         // restart the first server, kill the second
         bsConfs.add(conf1);
         bs.add(startBookie(conf1));
-        BookieSocketAddress bookie2 = lhbefore.getCurrentEnsemble().get(1);
+        BookieId bookie2 = lhbefore.getCurrentEnsemble().get(1);
         ServerConfiguration conf2 = killBookie(bookie2);
 
         // using async, because this could trigger an assertion
@@ -340,7 +340,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         bs.add(startBookie(conf, deadBookie1));
 
         // kill first bookie server
-        BookieSocketAddress bookie1 = lhbefore.getCurrentEnsemble().get(0);
+        BookieId bookie1 = lhbefore.getCurrentEnsemble().get(0);
         killBookie(bookie1);
 
         // Try to recover and fence the ledger after killing one bookie in the
@@ -391,9 +391,9 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
             fail("Failed to add " + numEntries + " to ledger handle " + lh.getId());
         }
         // kill first 2 bookies to replace bookies
-        BookieSocketAddress bookie1 = lh.getCurrentEnsemble().get(0);
+        BookieId bookie1 = lh.getCurrentEnsemble().get(0);
         ServerConfiguration conf1 = killBookie(bookie1);
-        BookieSocketAddress bookie2 = lh.getCurrentEnsemble().get(1);
+        BookieId bookie2 = lh.getCurrentEnsemble().get(1);
         ServerConfiguration conf2 = killBookie(bookie2);
 
         // replace these two bookies

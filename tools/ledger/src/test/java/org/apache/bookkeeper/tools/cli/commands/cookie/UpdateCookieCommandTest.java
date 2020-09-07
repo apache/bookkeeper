@@ -36,6 +36,7 @@ import java.nio.file.Paths;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.CookieCommandTestBase;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -129,7 +130,7 @@ public class UpdateCookieCommandTest extends CookieCommandTestBase {
         assertTrue(runCommand(new String[] { "-cf", fileName, BOOKIE_ID }));
         String consoleOutput = getConsoleOutput();
         assertTrue(consoleOutput, consoleOutput.isEmpty());
-        verify(rm, times(1)).writeCookie(eq(BOOKIE_ID), any(Versioned.class));
+        verify(rm, times(1)).writeCookie(eq(BookieId.parse(BOOKIE_ID)), any(Versioned.class));
     }
 
     /**
@@ -139,7 +140,7 @@ public class UpdateCookieCommandTest extends CookieCommandTestBase {
     @Test
     public void testUpdateNonExistedCookie() throws Exception {
         doThrow(new CookieNotFoundException())
-            .when(rm).writeCookie(eq(BOOKIE_ID), any(Versioned.class));
+            .when(rm).writeCookie(eq(BookieId.parse(BOOKIE_ID)), any(Versioned.class));
 
         File file = testFolder.newFile("test-cookie-file");
         byte[] content = "test-update-cookie".getBytes(UTF_8);
@@ -150,7 +151,7 @@ public class UpdateCookieCommandTest extends CookieCommandTestBase {
         assertTrue(
             consoleOutput,
             consoleOutput.contains("Cookie not found for bookie '" + BOOKIE_ID + "'"));
-        verify(rm, times(1)).writeCookie(eq(BOOKIE_ID), any(Versioned.class));
+        verify(rm, times(1)).writeCookie(eq(BookieId.parse(BOOKIE_ID)), any(Versioned.class));
     }
 
     /**
@@ -160,7 +161,7 @@ public class UpdateCookieCommandTest extends CookieCommandTestBase {
     @Test
     public void testUpdateCookieException() throws Exception {
         doThrow(new OperationRejectedException())
-            .when(rm).writeCookie(eq(BOOKIE_ID), any(Versioned.class));
+            .when(rm).writeCookie(eq(BookieId.parse(BOOKIE_ID)), any(Versioned.class));
 
         File file = testFolder.newFile("test-cookie-file");
         byte[] content = "test-update-cookie".getBytes(UTF_8);
@@ -174,7 +175,7 @@ public class UpdateCookieCommandTest extends CookieCommandTestBase {
         assertTrue(
             consoleOutput,
             consoleOutput.contains(OperationRejectedException.class.getName()));
-        verify(rm, times(1)).writeCookie(eq(BOOKIE_ID), any(Versioned.class));
+        verify(rm, times(1)).writeCookie(eq(BookieId.parse(BOOKIE_ID)), any(Versioned.class));
     }
 
 }

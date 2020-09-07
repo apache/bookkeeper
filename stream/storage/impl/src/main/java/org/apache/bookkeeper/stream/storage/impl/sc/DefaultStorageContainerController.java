@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -33,7 +32,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.proto.cluster.ServerAssignmentData;
@@ -51,11 +50,11 @@ import org.apache.commons.lang3.tuple.Pair;
 public class DefaultStorageContainerController implements StorageContainerController {
 
     static final class ServerAssignmentDataComparator
-        implements Comparator<Pair<BookieSocketAddress, LinkedList<Long>>> {
+        implements Comparator<Pair<BookieId, LinkedList<Long>>> {
 
         @Override
-        public int compare(Pair<BookieSocketAddress, LinkedList<Long>> o1,
-                           Pair<BookieSocketAddress, LinkedList<Long>> o2) {
+        public int compare(Pair<BookieId, LinkedList<Long>> o1,
+                           Pair<BookieId, LinkedList<Long>> o2) {
             int res = Integer.compare(o1.getValue().size(), o2.getValue().size());
             if (0 == res) {
                 // two servers have same number of container
@@ -73,7 +72,7 @@ public class DefaultStorageContainerController implements StorageContainerContro
     @Override
     public ClusterAssignmentData computeIdealState(ClusterMetadata clusterMetadata,
                                                    ClusterAssignmentData currentState,
-                                                   Set<BookieSocketAddress> currentCluster) {
+                                                   Set<BookieId> currentCluster) {
 
         if (currentCluster.isEmpty()) {
             log.info("Current cluster is empty. No alive server is found.");
@@ -81,20 +80,13 @@ public class DefaultStorageContainerController implements StorageContainerContro
         }
 
         // 1. get current server assignments
-        Map<BookieSocketAddress, Set<Long>> currentServerAssignments;
+        Map<BookieId, Set<Long>> currentServerAssignments;
         try {
             currentServerAssignments = currentState.getServersMap()
                 .entrySet()
                 .stream()
-                .collect(Collectors.toMap(
-                    e1 -> {
-                        try {
-                            return new BookieSocketAddress(e1.getKey());
-                        } catch (UnknownHostException uhe) {
-                            log.error("Invalid cluster ");
-                            throw new UncheckedExecutionException("Invalid server found in current assignment map"
-                                + e1.getKey(), uhe);
-                        }
+                .collect(Collectors.toMap(e1 -> {
+                        return BookieId.parse(e1.getKey());
                     },
                     e2 -> e2.getValue().getContainersList().stream().collect(Collectors.toSet())
                 ));
@@ -103,7 +95,7 @@ public class DefaultStorageContainerController implements StorageContainerContro
                 currentState, uee.getCause().getMessage());
             currentServerAssignments = Maps.newHashMap();
         }
-        Set<BookieSocketAddress> currentServersAssigned = currentServerAssignments.keySet();
+        Set<BookieId> currentServersAssigned = currentServerAssignments.keySet();
 
         // 2. if no servers is assigned, initialize the ideal state
         if (currentServersAssigned.isEmpty()) {
@@ -111,9 +103,9 @@ public class DefaultStorageContainerController implements StorageContainerContro
         }
 
         // 3. get the cluster diffs
-        Set<BookieSocketAddress> serversAdded =
+        Set<BookieId> serversAdded =
             Sets.difference(currentCluster, currentServersAssigned).immutableCopy();
-        Set<BookieSocketAddress> serversRemoved =
+        Set<BookieId> serversRemoved =
             Sets.difference(currentServersAssigned, currentCluster).immutableCopy();
 
         if (serversAdded.isEmpty() && serversRemoved.isEmpty()) {
@@ -132,10 +124,10 @@ public class DefaultStorageContainerController implements StorageContainerContro
             .collect(Collectors.toSet());
 
         // 5. use an ordered set as priority deque to sort the servers by the number of assigned containers
-        TreeSet<Pair<BookieSocketAddress, LinkedList<Long>>> assignmentQueue =
+        TreeSet<Pair<BookieId, LinkedList<Long>>> assignmentQueue =
             new TreeSet<>(new ServerAssignmentDataComparator());
-        for (Map.Entry<BookieSocketAddress, Set<Long>> entry : currentServerAssignments.entrySet()) {
-            BookieSocketAddress host = entry.getKey();
+        for (Map.Entry<BookieId, Set<Long>> entry : currentServerAssignments.entrySet()) {
+            BookieId host = entry.getKey();
 
             if (!currentCluster.contains(host)) {
                 if (log.isTraceEnabled()) {
@@ -151,13 +143,13 @@ public class DefaultStorageContainerController implements StorageContainerContro
         }
 
         // 6. add new servers
-        for (BookieSocketAddress server : serversAdded) {
+        for (BookieId server : serversAdded) {
             assignmentQueue.add(Pair.of(server, Lists.newLinkedList()));
         }
 
         // 7. assign the containers that are needed to be reassigned.
         for (Long containerId : containersToReassign) {
-            Pair<BookieSocketAddress, LinkedList<Long>> leastLoadedServer = assignmentQueue.pollFirst();
+            Pair<BookieId, LinkedList<Long>> leastLoadedServer = assignmentQueue.pollFirst();
             leastLoadedServer.getValue().add(containerId);
             assignmentQueue.add(leastLoadedServer);
         }
@@ -170,8 +162,8 @@ public class DefaultStorageContainerController implements StorageContainerContro
             diffAllowed = clusterMetadata.getNumStorageContainers() % assignmentQueue.size() == 0 ? 0 : 1;
         }
 
-        Pair<BookieSocketAddress, LinkedList<Long>> leastLoaded = assignmentQueue.first();
-        Pair<BookieSocketAddress, LinkedList<Long>> mostLoaded = assignmentQueue.last();
+        Pair<BookieId, LinkedList<Long>> leastLoaded = assignmentQueue.first();
+        Pair<BookieId, LinkedList<Long>> mostLoaded = assignmentQueue.last();
         while (mostLoaded.getValue().size() - leastLoaded.getValue().size() > diffAllowed) {
             leastLoaded = assignmentQueue.pollFirst();
             mostLoaded = assignmentQueue.pollLast();
@@ -201,8 +193,8 @@ public class DefaultStorageContainerController implements StorageContainerContro
     }
 
     static ClusterAssignmentData initializeIdealState(ClusterMetadata clusterMetadata,
-                                                      Set<BookieSocketAddress> currentCluster) {
-        List<BookieSocketAddress> serverList = Lists.newArrayListWithExpectedSize(currentCluster.size());
+                                                      Set<BookieId> currentCluster) {
+        List<BookieId> serverList = Lists.newArrayListWithExpectedSize(currentCluster.size());
         serverList.addAll(currentCluster);
         Collections.shuffle(serverList);
 
@@ -212,7 +204,7 @@ public class DefaultStorageContainerController implements StorageContainerContro
 
         Map<String, ServerAssignmentData> assignmentMap = Maps.newHashMap();
         for (int serverIdx = 0; serverIdx < serverList.size(); serverIdx++) {
-            BookieSocketAddress server = serverList.get(serverIdx);
+            BookieId server = serverList.get(serverIdx);
 
             int finalServerIdx = serverIdx;
             ServerAssignmentData assignmentData = ServerAssignmentData.newBuilder()

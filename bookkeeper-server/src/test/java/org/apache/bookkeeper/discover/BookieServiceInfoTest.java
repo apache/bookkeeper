@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.bookkeeper.discover.BookieServiceInfo.Endpoint;
+import org.apache.bookkeeper.net.BookieId;
 import org.junit.Test;
 
 /**
@@ -50,7 +51,7 @@ public class BookieServiceInfoTest {
             expected.setProperties(properties);
 
             byte[] serialized = serializeBookieServiceInfo(expected);
-            BookieServiceInfo deserialized = deserializeBookieServiceInfo(bookieId, serialized);
+            BookieServiceInfo deserialized = deserializeBookieServiceInfo(BookieId.parse(bookieId), serialized);
 
             assertBookieServiceInfoEquals(expected, deserialized);
         }
@@ -58,15 +59,15 @@ public class BookieServiceInfoTest {
 
     @Test
     public void testDeserializeBookieServiceInfo() throws Exception {
-        String bookieId = "127.0.0.1:3181";
+        BookieId bookieId = BookieId.parse("127.0.0.1:3181");
         {
-            BookieServiceInfo expected = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId);
+            BookieServiceInfo expected = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId.toString());
             BookieServiceInfo deserialized = deserializeBookieServiceInfo(bookieId, null);
 
             assertBookieServiceInfoEquals(expected, deserialized);
         }
         {
-            BookieServiceInfo expected = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId);
+            BookieServiceInfo expected = BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId.toString());
             BookieServiceInfo deserialized = deserializeBookieServiceInfo(bookieId, new byte[]{});
 
             assertBookieServiceInfoEquals(expected, deserialized);

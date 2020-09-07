@@ -38,7 +38,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.api.WriteFlag;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
@@ -73,7 +73,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     boolean isRecoveryAdd = false;
     long requestTimeNanos;
     long qwcLatency; // Quorum Write Completion Latency after response from quorum bookies.
-    Set<BookieSocketAddress> addEntrySuccessBookies;
+    Set<BookieId> addEntrySuccessBookies;
     long writeDelayedStartTime; // min fault domains completion latency after response from ack quorum bookies
 
     long currentLedgerLength;
@@ -82,10 +82,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     boolean hasRun;
     EnumSet<WriteFlag> writeFlags;
     boolean allowFailFast = false;
-    List<BookieSocketAddress> ensemble;
+    List<BookieId> ensemble;
 
     static PendingAddOp create(LedgerHandle lh, ClientContext clientCtx,
-                               List<BookieSocketAddress> ensemble,
+                               List<BookieId> ensemble,
                                ByteBuf payload, EnumSet<WriteFlag> writeFlags,
                                AddCallbackWithLatency cb, Object ctx) {
         PendingAddOp op = RECYCLER.get();
@@ -146,7 +146,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         return this.entryId;
     }
 
-    void sendWriteRequest(List<BookieSocketAddress> ensemble, int bookieIndex) {
+    void sendWriteRequest(List<BookieId> ensemble, int bookieIndex) {
         int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
         clientCtx.getBookieClient().addEntry(ensemble.get(bookieIndex),
@@ -188,7 +188,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
     }
 
-    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble, int bookieIndex) {
+    void unsetSuccessAndSendWriteRequest(List<BookieId> ensemble, int bookieIndex) {
         // update the ensemble
         this.ensemble = ensemble;
 
@@ -283,7 +283,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     }
 
     @Override
-    public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+    public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
         --pendingWriteRequests;
 
@@ -360,7 +360,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             if (clientCtx.getConf().delayEnsembleChange) {
                 if (ackSet.failBookieAndCheck(bookieIndex, addr)
                         || rc == BKException.Code.WriteOnReadOnlyBookieException) {
-                    Map<Integer, BookieSocketAddress> failedBookies = ackSet.getFailedBookies();
+                    Map<Integer, BookieId> failedBookies = ackSet.getFailedBookies();
                     LOG.warn("Failed to write entry ({}, {}) to bookies {}, handling failures.",
                             ledgerId, entryId, failedBookies);
                     // we can't meet ack quorum requirement, trigger ensemble change.

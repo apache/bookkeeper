@@ -32,7 +32,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -91,10 +91,9 @@ public class DecommissionCommand extends BookieCommand<DecommissionCommand.Decom
         BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
         try {
             final String remoteBookieidToDecommission = flags.remoteBookieIdToDecommission;
-            final BookieSocketAddress bookieAddressToDecommission = (StringUtils.isBlank(remoteBookieidToDecommission)
-                                                                         ? Bookie.getBookieAddress(conf)
-                                                                         : new BookieSocketAddress(
-                                                                             remoteBookieidToDecommission));
+            final BookieId bookieAddressToDecommission = (StringUtils.isBlank(remoteBookieidToDecommission)
+                                                                  ? Bookie.getBookieId(conf)
+                                                                  : BookieId.parse(remoteBookieidToDecommission));
             admin.decommissionBookie(bookieAddressToDecommission);
             LOG.info("The ledgers stored in the given decommissioning bookie: {} are properly replicated",
                      bookieAddressToDecommission);
