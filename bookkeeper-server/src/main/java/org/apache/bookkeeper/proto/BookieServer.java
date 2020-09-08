@@ -44,6 +44,7 @@ import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.discover.BookieServiceInfoUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
@@ -85,13 +86,23 @@ public class BookieServer {
     public BookieServer(ServerConfiguration conf) throws IOException,
             KeeperException, InterruptedException, BookieException,
             UnavailableException, CompatibilityException, SecurityException {
-        this(conf, NullStatsLogger.INSTANCE, BookieServiceInfo.NO_INFO);
+        this(conf, NullStatsLogger.INSTANCE, null);
     }
 
     public BookieServer(ServerConfiguration conf, StatsLogger statsLogger,
             Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws IOException, KeeperException, InterruptedException,
             BookieException, UnavailableException, CompatibilityException, SecurityException {
+        if (bookieServiceInfoProvider == null) {
+            bookieServiceInfoProvider = () -> {
+                try {
+                    return BookieServiceInfoUtils
+                            .buildLegacyBookieServiceInfo(this.getLocalAddress().toBookieId().toString());
+                } catch (IOException err) {
+                    throw new RuntimeException(err);
+                }
+            };
+        }
         this.conf = conf;
         validateUser(conf);
         String configAsString;

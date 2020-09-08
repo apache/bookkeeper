@@ -46,6 +46,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
+import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.channel.unix.Errors.NativeIoException;
@@ -599,7 +600,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         SocketAddress bookieAddr = addr.getSocketAddress();
         if (eventLoopGroup instanceof DefaultEventLoopGroup) {
-            bookieAddr = addr.getLocalAddress();
+            bookieAddr = new LocalAddress(bookieId.toString());
         }
 
         ChannelFuture future = bootstrap.connect(bookieAddr);
