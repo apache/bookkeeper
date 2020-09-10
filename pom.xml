@@ -168,7 +168,7 @@
     <spotbugs-annotations.version>3.1.8</spotbugs-annotations.version>
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.8.3</testcontainers.version>
-    <vertx.version>3.4.1</vertx.version>
+    <vertx.version>3.5.3</vertx.version>
     <zookeeper.version>3.5.7</zookeeper.version>
     <jctools.version>2.1.2</jctools.version>
     <!-- plugin dependencies -->
