@@ -34,7 +34,7 @@
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
-          <additionalparam>-Xdoclint:none</additionalparam>
+          <doclint>-Xdoclint:none</doclint>
           <subpackages>org.apache.bookkeeper.stats</subpackages>
           <groups>
             <group>

@@ -45,7 +45,7 @@
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
-          <additionalparam>-Xdoclint:none -notimestamp</additionalparam>
+          <doclint>-Xdoclint:none -notimestamp</doclint>
           <groups>
             <group>
               <title>Core Library</title>
