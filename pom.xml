@@ -871,7 +871,7 @@
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <!-- Prevent missing javadoc comments from being marked as errors -->
-          <additionalparam>-Xdoclint:none -notimestamp</additionalparam>
+          <doclint>-Xdoclint:none -notimestamp</doclint>
           <additionalOptions>
             <additionalOption>-Xdoclint:none -notimestamp</additionalOption>
           </additionalOptions>
