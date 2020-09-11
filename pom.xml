@@ -150,8 +150,8 @@
     <lombok.version>1.18.10</lombok.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>3.0.0</mockito.version>
-    <netty.version>4.1.32.Final</netty.version>
-    <netty-boringssl.version>2.0.20.Final</netty-boringssl.version>
+    <netty.version>4.1.50.Final</netty.version>
+    <netty-boringssl.version>2.0.31.Final</netty-boringssl.version>
     <ostrich.version>9.1.3</ostrich.version>
     <powermock.version>2.0.2</powermock.version>
     <prometheus.version>0.8.1</prometheus.version>
@@ -161,7 +161,7 @@
     <protoc3.version>3.5.1-1</protoc3.version>
     <protoc-gen-grpc-java.version>1.12.0</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
-    <rocksdb.version>5.13.1</rocksdb.version>
+    <rocksdb.version>6.10.2</rocksdb.version>
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <slf4j.version>1.7.25</slf4j.version>
     <snakeyaml.version>1.19</snakeyaml.version>
@@ -191,7 +191,7 @@
     <maven-javadoc-plugin.version>3.1.1</maven-javadoc-plugin.version>
     <maven-shade-plugin.version>3.2.0</maven-shade-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>2.21.0</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
     <nar-maven-plugin.version>3.5.2</nar-maven-plugin.version>
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.5.0</protobuf-maven-plugin.version>
