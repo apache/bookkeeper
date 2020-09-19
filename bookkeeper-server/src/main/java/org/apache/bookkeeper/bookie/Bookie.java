@@ -85,6 +85,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.SimpleBookieServiceInfoProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -329,6 +330,9 @@ public class Bookie extends BookieCriticalThread {
             if (null != conf.getAdvertisedAddress()) {
                 addresses.add(getBookieAddress(conf).toBookieId());
             }
+            if (null != conf.getBookieId()) {
+                addresses.add(BookieId.parse(conf.getBookieId()));
+            }
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
@@ -534,7 +538,11 @@ public class Bookie extends BookieCriticalThread {
     }
 
     public static BookieId getBookieId(ServerConfiguration conf) throws UnknownHostException {
-         return getBookieAddress(conf).toBookieId();
+        String customBookieId = conf.getBookieId();
+        if (customBookieId != null) {
+            return BookieId.parse(customBookieId);
+        }
+        return getBookieAddress(conf).toBookieId();
     }
 
     /**
@@ -619,7 +627,7 @@ public class Bookie extends BookieCriticalThread {
 
     public Bookie(ServerConfiguration conf)
             throws IOException, InterruptedException, BookieException {
-        this(conf, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT, BookieServiceInfo.NO_INFO);
+        this(conf, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT, new SimpleBookieServiceInfoProvider(conf));
     }
 
     private static LedgerStorage buildLedgerStorage(ServerConfiguration conf) throws IOException {

@@ -140,7 +140,7 @@ public class BookieShellTest {
         when(admin.getConf()).thenReturn(this.clientConf);
         this.rm = PowerMockito.mock(RegistrationManager.class);
         this.cookie = Cookie.newBuilder()
-            .setBookieHost("127.0.0.1:3181")
+            .setBookieId("127.0.0.1:3181")
             .setInstanceId("xyz")
             .setJournalDirs("/path/to/journal/dir")
             .setLedgerDirs("/path/to/journal/dir")

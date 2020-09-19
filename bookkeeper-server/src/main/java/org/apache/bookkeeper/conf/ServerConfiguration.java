@@ -38,6 +38,7 @@ import org.apache.bookkeeper.common.conf.validators.RangeValidator;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.ConfigurationException;
@@ -148,6 +149,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String LISTENING_INTERFACE = "listeningInterface";
     protected static final String ALLOW_LOOPBACK = "allowLoopback";
     protected static final String ADVERTISED_ADDRESS = "advertisedAddress";
+    protected static final String BOOKIE_ID = "bookieId";
     protected static final String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
 
     protected static final String JOURNAL_DIR = "journalDirectory";
@@ -1003,6 +1005,38 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setAllowLoopback(boolean allow) {
         this.setProperty(ALLOW_LOOPBACK, allow);
+        return this;
+    }
+
+     /**
+     * Get the configured BookieId for the bookie.
+     *
+     * <p>If present, this setting will take precedence over the
+     * automatic BookieId generation, based on Network Addresses.
+     *
+     * @see #setBookieId(java.lang.String)
+     * @see #getAdvertisedAddress()
+     * @return the configure address to be advertised
+     */
+    public String getBookieId() {
+        return this.getString(BOOKIE_ID, null);
+    }
+
+    /**
+     * Configure the bookie to advertise a specific BookieId.
+     *
+     * <p>By default, a bookie will advertise a BookieId computed
+     * from the primary network endpoint addresss.
+     *
+     * @see #getBookieId()
+     * @see #setAdvertisedAddress(java.lang.String)
+     * @param bookieId the bookie id
+     *
+     * @return server configuration
+     */
+    public ServerConfiguration setBookieId(String bookieId) {
+        BookieId.parse(bookieId);
+        this.setProperty(BOOKIE_ID, bookieId);
         return this;
     }
 

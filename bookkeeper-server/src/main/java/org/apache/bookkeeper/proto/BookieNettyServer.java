@@ -44,6 +44,7 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.socket.SocketChannel;
@@ -77,6 +78,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.util.ByteBufList;
@@ -103,6 +105,7 @@ class BookieNettyServer {
     volatile boolean suspended = false;
     ChannelGroup allChannels;
     final BookieSocketAddress bookieAddress;
+    final BookieId bookieId;
     final InetSocketAddress bindAddress;
 
     final BookieAuthProvider.Factory authProviderFactory;
@@ -160,7 +163,7 @@ class BookieNettyServer {
         } else {
             jvmEventLoopGroup = null;
         }
-
+        bookieId = Bookie.getBookieId(conf);
         bookieAddress = Bookie.getBookieAddress(conf);
         if (conf.getListeningInterface() == null) {
             bindAddress = new InetSocketAddress(conf.getBookiePort());
@@ -410,10 +413,10 @@ class BookieNettyServer {
                     pipeline.addLast("contextHandler", contextHandler);
                 }
             });
-
+            LOG.info("Binding jvm bookie-rpc endpoint to {}", bookieId.toString());
             // use the same address 'name', so clients can find local Bookie still discovering them using ZK
-            jvmBootstrap.bind(bookieAddress.getLocalAddress()).sync();
-            LocalBookiesRegistry.registerLocalBookieAddress(bookieAddress.toBookieId());
+            jvmBootstrap.bind(new LocalAddress(bookieId.toString())).sync();
+            LocalBookiesRegistry.registerLocalBookieAddress(bookieId);
         }
     }
 

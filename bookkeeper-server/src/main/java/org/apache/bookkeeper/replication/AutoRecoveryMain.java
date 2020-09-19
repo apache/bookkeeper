@@ -100,7 +100,7 @@ public class AutoRecoveryMain {
         });
 
         auditorElector = new AuditorElector(
-            Bookie.getBookieAddress(conf).toString(),
+            Bookie.getBookieId(conf).toString(),
             conf,
             bkc,
             statsLogger.scope(AUDITOR_SCOPE),

@@ -672,7 +672,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         TestOpStatsLogger placementPolicyCheckStatsLogger = (TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
 
-        final TestAuditor auditor = new TestAuditor(Bookie.getBookieAddress(servConf).toString(), servConf,
+        final TestAuditor auditor = new TestAuditor(Bookie.getBookieId(servConf).toString(), servConf,
                 statsLogger);
         auditorRef.setValue(auditor);
         CountDownLatch latch = auditor.getLatch();

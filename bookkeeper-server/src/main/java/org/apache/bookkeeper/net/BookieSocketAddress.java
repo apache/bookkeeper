@@ -24,7 +24,6 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.COLON;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.net.InetAddresses;
-import io.netty.channel.local.LocalAddress;
 
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -104,15 +103,6 @@ public class BookieSocketAddress {
         return socketAddress.orElseGet(() -> {
             return new InetSocketAddress(hostname, port);
         });
-    }
-
-    /**
-     * Maps the socketAddress to a "local" address.
-     */
-    @JsonIgnore
-    public LocalAddress getLocalAddress() {
-        // for local address, we just need "port" to differentiate different addresses.
-        return new LocalAddress("" + port);
     }
 
     // Return the String "serialized" version of this object.

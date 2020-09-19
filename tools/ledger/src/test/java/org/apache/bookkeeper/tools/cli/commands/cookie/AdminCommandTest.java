@@ -131,7 +131,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
         when(cookieVersioned.getValue()).thenReturn(cookie);
         Cookie.Builder builder = mock(Cookie.Builder.class);
         PowerMockito.when(Cookie.newBuilder(eq(cookie))).thenReturn(builder);
-        PowerMockito.when(builder.setBookieHost(anyString())).thenReturn(builder);
+        PowerMockito.when(builder.setBookieId(anyString())).thenReturn(builder);
         when(builder.build()).thenReturn(cookie);
 
         PowerMockito.when(serverConfiguration.setUseHostNameAsBookieID(anyBoolean())).thenReturn(serverConfiguration);

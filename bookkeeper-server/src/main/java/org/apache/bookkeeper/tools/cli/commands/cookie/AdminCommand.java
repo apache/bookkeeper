@@ -160,7 +160,7 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
                               useHostname, nne);
                     return false;
                 }
-                Cookie newCookie = Cookie.newBuilder(oldCookie.getValue()).setBookieHost(newBookieId).build();
+                Cookie newCookie = Cookie.newBuilder(oldCookie.getValue()).setBookieId(newBookieId).build();
 
                 boolean hasCookieUpdatedInDirs = verifyCookie(newCookie, journalDirectories[0]);
                 for (File dir : ledgerDirectories) {
