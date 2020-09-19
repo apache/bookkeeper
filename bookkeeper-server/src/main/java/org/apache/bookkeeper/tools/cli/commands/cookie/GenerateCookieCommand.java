@@ -110,7 +110,7 @@ public class GenerateCookieCommand extends CookieCommand<Flags> {
         }
 
         Builder builder = Cookie.newBuilder();
-        builder.setBookieHost(bookieId.toString());
+        builder.setBookieId(bookieId.toString());
         if (StringUtils.isEmpty(instanceId)) {
             builder.setInstanceId(null);
         } else {

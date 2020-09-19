@@ -258,7 +258,9 @@ public class ZKRegistrationClient implements RegistrationClient {
                     bookieServiceInfoCache.put(bookieId, result);
                     promise.complete(result);
                 } catch (IOException ex) {
-                    promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
+                    log.error("Cannot update BookieInfo for {}", ex);
+                    promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path)
+                            .initCause(ex));
                     return;
                 }
             } else if (KeeperException.Code.NONODE.intValue() == rc) {
@@ -273,7 +275,9 @@ public class ZKRegistrationClient implements RegistrationClient {
                             bookieServiceInfoCache.put(bookieId, result);
                             promise.complete(result);
                         } catch (IOException ex) {
-                            promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2));
+                            log.error("Cannot update BookieInfo for {}", ex);
+                            promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2)
+                                    .initCause(ex));
                             return;
                         }
                     } else {
@@ -343,14 +347,18 @@ public class ZKRegistrationClient implements RegistrationClient {
                     bookieInfoUpdated.add(readBookieServiceInfo(id));
                 }
             }
-            FutureUtils
-                    .collect(bookieInfoUpdated)
-                    .whenComplete((List<Versioned<BookieServiceInfo>> info, Throwable error) -> {
-                        // we are ignoring errors intentionally
-                        // there could be bookies that published unparseable information
-                        // or other temporary/permanent or temporary errors
-                        future.complete(new Versioned<>(bookies, version));
-                    });
+            if (bookieInfoUpdated.isEmpty()) {
+                future.complete(new Versioned<>(bookies, version));
+            } else {
+                FutureUtils
+                        .collect(bookieInfoUpdated)
+                        .whenComplete((List<Versioned<BookieServiceInfo>> info, Throwable error) -> {
+                            // we are ignoring errors intentionally
+                            // there could be bookies that publish unparseable information
+                            // or other temporary/permanent errors
+                            future.complete(new Versioned<>(bookies, version));
+                        });
+            }
         }, null);
         return future;
     }

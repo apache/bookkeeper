@@ -37,6 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
@@ -99,6 +100,7 @@ public abstract class BookKeeperClusterTestCase {
     private final Map<BookieId, TestStatsProvider> bsLoggers = new HashMap<>();
     protected int numBookies;
     protected BookKeeperTestClient bkc;
+    protected boolean useUUIDasBookieId = true;
 
     /*
      * Loopback interface is set as the listening interface and allowloopback is
@@ -632,6 +634,12 @@ public abstract class BookKeeperClusterTestCase {
     public int startNewBookie()
             throws Exception {
         ServerConfiguration conf = newServerConfiguration();
+
+        // use a random BookieId
+        if (useUUIDasBookieId) {
+            conf.setBookieId(UUID.randomUUID().toString());
+        }
+
         bsConfs.add(conf);
         LOG.info("Starting new bookie on port: {}", conf.getBookiePort());
         BookieServer server = startBookie(conf);
@@ -661,8 +669,7 @@ public abstract class BookKeeperClusterTestCase {
     protected BookieServer startBookie(ServerConfiguration conf)
             throws Exception {
         TestStatsProvider provider = new TestStatsProvider();
-        BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
-                                               BookieServiceInfo.NO_INFO);
+        BookieServer server = new BookieServer(conf, provider.getStatsLogger(""), null);
         BookieId address = Bookie.getBookieId(conf);
         bsLoggers.put(address, provider);
 
@@ -696,8 +703,7 @@ public abstract class BookKeeperClusterTestCase {
     protected BookieServer startBookie(ServerConfiguration conf, final Bookie b)
             throws Exception {
         TestStatsProvider provider = new TestStatsProvider();
-        BookieServer server = new BookieServer(conf, provider.getStatsLogger(""),
-                                        BookieServiceInfo.NO_INFO) {
+        BookieServer server = new BookieServer(conf, provider.getStatsLogger(""), null) {
             @Override
             protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator,
                                        Supplier<BookieServiceInfo> s) {

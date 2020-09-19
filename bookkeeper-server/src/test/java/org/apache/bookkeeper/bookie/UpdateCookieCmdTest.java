@@ -54,6 +54,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
 
     public UpdateCookieCmdTest() {
         super(1);
+        useUUIDasBookieId = false;
     }
 
     @Override
@@ -148,7 +149,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
         Cookie.Builder cookieBuilder = Cookie.newBuilder(cookie);
         conf.setUseHostNameAsBookieID(false); // sets to hostname
         final String newBookieHost = Bookie.getBookieAddress(conf).toString();
-        cookieBuilder.setBookieHost(newBookieHost);
+        cookieBuilder.setBookieId(newBookieHost);
         cookieBuilder.build().writeToRegistrationManager(rm, conf, Version.NEW);
         verifyCookieInZooKeeper(conf, 2);
 

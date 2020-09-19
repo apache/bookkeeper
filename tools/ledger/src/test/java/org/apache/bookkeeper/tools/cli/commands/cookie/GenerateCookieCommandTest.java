@@ -136,7 +136,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
         String instanceId = "test-instance-id";
 
         Cookie cookie = Cookie.newBuilder()
-            .setBookieHost(BOOKIE_ID)
+            .setBookieId(BOOKIE_ID)
             .setInstanceId(instanceId)
             .setJournalDirs(journalDir)
             .setLedgerDirs(Cookie.encodeDirPaths(ledgersDir.split(",")))
@@ -172,7 +172,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
         String instanceId = "test-instance-id";
 
         Cookie cookie = Cookie.newBuilder()
-            .setBookieHost(BOOKIE_ID)
+            .setBookieId(BOOKIE_ID)
             .setInstanceId(instanceId)
             .setJournalDirs(journalDir)
             .setLedgerDirs(Cookie.encodeDirPaths(ledgersDir.split(",")))
