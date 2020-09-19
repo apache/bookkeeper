@@ -96,7 +96,7 @@ public class GetCookieCommandTest extends CookieCommandTestBase {
     @Test
     public void testGetCookieFromExistentCookieFile() throws Exception {
         Cookie cookie = Cookie.newBuilder()
-            .setBookieHost(BOOKIE_ID)
+            .setBookieId(BOOKIE_ID)
             .setInstanceId("test-instance-id")
             .setJournalDirs("/path/to/journal/dir")
             .setLedgerDirs("/path/to/ledger/dirs")

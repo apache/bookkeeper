@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+import java.util.UUID;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -105,4 +106,38 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         assertEquals(bkAddress.toBookieId(), Bookie.getBookieId(conf));
     }
 
+    /**
+     * Test starting bookie with a bookieId.
+     */
+    @Test
+    public void testSetBookieId() throws Exception {
+        String uuid = UUID.randomUUID().toString();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(newDirectory(false))
+            .setLedgerDirNames(new String[] { newDirectory(false) })
+            .setBookiePort(bookiePort)
+            .setBookieId(uuid)
+            .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        conf.setAdvertisedAddress("10.0.0.1");
+        assertEquals("10.0.0.1", conf.getAdvertisedAddress());
+        assertEquals(uuid, conf.getBookieId());
+
+        BookieSocketAddress bkAddress = new BookieSocketAddress("10.0.0.1", bookiePort);
+        assertEquals(bkAddress, Bookie.getBookieAddress(conf));
+        assertEquals(uuid, Bookie.getBookieId(conf).getId());
+
+        Bookie b = new Bookie(conf);
+        b.start();
+
+        BookKeeperAdmin bka = new BookKeeperAdmin(baseClientConf);
+        Collection<BookieId> bookies = bka.getAvailableBookies();
+
+        assertEquals(1, bookies.size());
+        BookieId address = bookies.iterator().next();
+        assertEquals(BookieId.parse(uuid), address);
+
+        b.shutdown();
+        bka.close();
+    }
 }
