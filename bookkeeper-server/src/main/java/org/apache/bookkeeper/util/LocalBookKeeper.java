@@ -168,7 +168,7 @@ public class LocalBookKeeper {
 
     private List<File> runBookies(String dirSuffix)
             throws Exception {
-        List<File> tempDirs = new ArrayList<File>();
+        List<File> tempDirs = new ArrayList<>();
         try {
             runBookies(tempDirs, dirSuffix);
             return tempDirs;
@@ -391,7 +391,9 @@ public class LocalBookKeeper {
             throw e;
         } finally {
             if (stopOnExit) {
-                cleanupDirectories(bkTmpDirs);
+                if (null != bkTmpDirs) {
+                    cleanupDirectories(bkTmpDirs);
+                }
                 if (null != zkTmpDir) {
                     FileUtils.deleteDirectory(zkTmpDir);
                 }
