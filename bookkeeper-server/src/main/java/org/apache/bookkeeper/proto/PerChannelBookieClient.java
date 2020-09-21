@@ -345,6 +345,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final ExtensionRegistry extRegistry;
     private final SecurityHandlerFactory shFactory;
     private volatile boolean isWritable = true;
+    private long lastBookieUnavailableLogTimestamp = 0;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieId addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
@@ -2483,12 +2484,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     Throwable cause = future.cause();
                     if (cause instanceof UnknownHostException || cause instanceof NativeIoException) {
                         // Don't log stack trace for common errors
-                        LOG.warn("Could not connect to bookie: {}/{}, current state {} : {}",
-                                future.channel(), bookieId, state, future.cause().getMessage());
+                        logBookieUnavailable(() -> LOG.warn("Could not connect to bookie: {}/{}, current state {} : {}",
+                                future.channel(), bookieId, state, future.cause().getMessage()));
                     } else {
                         // Regular exceptions, include stack trace
-                        LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
-                                future.channel(), bookieId, state, future.cause());
+                        logBookieUnavailable(() -> LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
+                                future.channel(), bookieId, state, future.cause()));
                     }
 
                     rc = BKException.Code.BookieHandleNotAvailableException;
@@ -2516,6 +2517,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
 
             makeWritable();
+        }
+
+        private void logBookieUnavailable(Runnable logger) {
+            final long now = System.currentTimeMillis();
+            if ((now - lastBookieUnavailableLogTimestamp) > conf.getClientConnectBookieUnavailableLogThrottlingMs()) {
+                logger.run();
+                lastBookieUnavailableLogTimestamp = now;
+            }
         }
     }
 
