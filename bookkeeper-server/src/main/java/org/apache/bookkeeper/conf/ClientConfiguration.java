@@ -190,6 +190,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Registration Client
     protected static final String REGISTRATION_CLIENT_CLASS = "registrationClientClass";
 
+    // Logs
+    protected static final String CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING =
+            "clientConnectBookieUnavailableLogThrottling";
+
     /**
      * Construct a default client-side configuration.
      */
@@ -1925,6 +1929,28 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public boolean getStoreSystemtimeAsLedgerCreationTime() {
         return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME, false);
+    }
+
+    /**
+     * Set the log frequency when a bookie is unavailable, in order to limit log filesize.
+     *
+     * @param throttleValue
+     * @param unit
+     * @return client configuration.
+     */
+    public ClientConfiguration setClientConnectBookieUnavailableLogThrottling(
+            int throttleValue, TimeUnit unit) {
+        setProperty(CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING, unit.toMillis(throttleValue));
+        return this;
+    }
+
+    /**
+     * Get the log frequency when a bookie is unavailable, in milliseconds.
+     *
+     * @return log frequency when a bookie is unavailable, in milliseconds.
+     */
+    public long getClientConnectBookieUnavailableLogThrottlingMs() {
+        return getLong(CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING, 5_000L);
     }
 
     @Override
