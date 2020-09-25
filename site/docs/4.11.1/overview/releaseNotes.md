@@ -34,6 +34,8 @@ below.
 
 - [https://github.com/apache/bookkeeper/pull/2327] Bookie Client add quarantine ratio when error count exceed threshold
 
+- [https://github.com/apache/bookkeeper/pull/2415] Spammy log when one bookie of ensemble is down
+
 ## Compatiblity
 
 This is a point release and it does not bring API changes.
