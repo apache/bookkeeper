@@ -187,9 +187,9 @@ commands:
     use this command to update ledger metadata by replacing src-bookie to dest-bookie where data has been copied/moved.
     Start the bookie process on dest-bookie and dest-bookie will serve copied ledger data from src-bookie.
   options:
-  - flag: -srcBookie <bookie-id>
+  - flag: -srcBookie BOOKIE_ID
     description: Source Bookie Id
-  - flag: -destBookie <bookie-id>
+  - flag: -destBookie BOOKIE_ID
     description: Destination Bookie Id
   - flag: -updatespersec N
     description: Number of ledgers updating per second (default 5 per sec)
