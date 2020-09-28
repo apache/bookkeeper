@@ -999,11 +999,17 @@ public class EntryLogger implements EntryLoggerIface {
                     return;
                 }
                 long offset = pos;
-                pos += 4;
+
                 int entrySize = headerBuffer.readInt();
+                if (entrySize <= 0) { // hitting padding
+                    pos++;
+                    headerBuffer.clear();
+                    continue;
+                }
                 long ledgerId = headerBuffer.readLong();
                 headerBuffer.clear();
 
+                pos += 4;
                 if (ledgerId == INVALID_LID || !scanner.accept(ledgerId)) {
                     // skip this entry
                     pos += entrySize;
@@ -1011,11 +1017,6 @@ public class EntryLogger implements EntryLoggerIface {
                 }
                 // read the entry
                 data.clear();
-                if (entrySize <= 0) {
-                    LOG.warn("bad read for ledger entry from entryLog {}@{} (entry size {})",
-                            entryLogId, pos, entrySize);
-                    return;
-                }
                 data.capacity(entrySize);
                 int rc = readFromLogChannel(entryLogId, bc, data, pos);
                 if (rc != entrySize) {
@@ -1080,7 +1081,9 @@ public class EntryLogger implements EntryLoggerIface {
                 bc.read(sizeBuffer.get(), offset);
 
                 int ledgersMapSize = sizeBuffer.get().readInt();
-
+                if (ledgersMapSize <= 0) {
+                    break;
+                }
                 // Read the index into a buffer
                 ledgersMap.clear();
                 bc.read(ledgersMap, offset + 4, ledgersMapSize);
