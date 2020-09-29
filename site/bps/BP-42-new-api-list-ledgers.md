@@ -1,6 +1,6 @@
 ---
 title: "BP-42: New Client API - list ledgers"
-issue: https://github.com/apache/bookkeeper/<issue-number>
+issue: https://github.com/apache/bookkeeper/issues/2422
 state: "Under Discussion"
 release: "N/A"
 ---
