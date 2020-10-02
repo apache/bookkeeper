@@ -1,5 +1,5 @@
 ---
-id: doc1
+id: getting-started
 title: Latin-ish Lol
 sidebar_label: Example Page
 ---

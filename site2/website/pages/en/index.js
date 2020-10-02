@@ -16,9 +16,9 @@ const GridBlock = CompLibrary.GridBlock;
 const CWD = process.cwd();
 const siteConfig = require(`${CWD}/siteConfig.js`);
 // const translate = require('../../server/translate.js').translate;
-const users = require(`${CWD}/data/users.js`)
-const featuredUsers = users.filter(x => x.hasOwnProperty('featured'))
-featuredUsers.sort((a, b) => (a.featured > b.featured) ? 1 : -1);
+// const users = require(`${CWD}/data/users.js`)
+// const featuredUsers = users.filter(x => x.hasOwnProperty('featured'))
+// featuredUsers.sort((a, b) => (a.featured > b.featured) ? 1 : -1);
 
 function imgUrl(img) {
     return siteConfig.baseUrl + 'img/' + img;
@@ -147,6 +147,7 @@ const UsersBlock = props => (
         <p align="center"><small style={{color: 'black', fontSize: '1.7rem'}}>Used by companies such as</small></p>
         <div class="logo-wrapper">
             {
+/* TODO: Ghatage/eolivelli: Confirm with companies if it is OK to use their logo for BookKeeper website.
                 featuredUsers.map(
                     c => (
                         (() => {
@@ -165,9 +166,11 @@ const UsersBlock = props => (
                             }
                         })()
                     )
-                )}
+                )
+*/
+	}
         </div>
-        <p align="center"><small style={{color: 'black', fontSize: '1.7rem'}}><a href="/powered-by">... and many more</a></small></p>
+        <p align="center"><small style={{color: 'black', fontSize: '1.7rem'}}>and many more</small></p>
 
     </Container>
 );
@@ -176,7 +179,7 @@ const ApacheBlock = prop => (
     <Container>
         <div className="Block" style={{textAlign: 'center'}}>
             <p>
-                Apache BookKeeeper is available under the <a href="https://www.apache.org/licenses">Apache License, version 2.0</a>.
+                Apache BookKeeper is available under the <a href="https://www.apache.org/licenses">Apache License, version 2.0</a>.
             </p>
         </div>
     </Container>

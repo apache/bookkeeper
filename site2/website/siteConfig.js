@@ -20,7 +20,7 @@ const users = [
   },
 ];
 
-const url = 'http://ghatage.github.io/';
+const url = 'https://bookkeeper.apache.org/'
 const javadocUrl = url + '/api';
 const restApiUrl = url + '/en' + "/admin-rest-api";
 const functionsApiUrl = url + '/en' + "/functions-rest-api";
@@ -48,9 +48,9 @@ const siteConfig = {
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    {doc: 'doc1', label: 'Documentation'},
-    {doc: 'doc4', label: 'Project'},
-    {page: 'help', label: 'Community'},
+    {doc: 'getting-started', label: 'Documentation'},
+    {page: 'community', label: 'Community'},
+    {page: 'project', label: 'Project'},
     {blog: true, label: 'Blog'},
   ],
 
