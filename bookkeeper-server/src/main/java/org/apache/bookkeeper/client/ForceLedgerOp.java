@@ -107,7 +107,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
             if (ackSet.completeBookieAndCheck(bookieIndex)) {
                 completed = true;
                 // we are able to say that every bookie sync'd its own journal
-                // for every ackknowledged entry before issuing the force() call
+                // for every acknowledged entry before issuing the force() call
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("After force on ledger {} updating LastAddConfirmed to {} ",
                               ledgerId, currentNonDurableLastAddConfirmed);

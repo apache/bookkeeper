@@ -37,6 +37,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -447,7 +448,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 conf,
                 scheduler,
                 rootStatsLogger,
-                java.util.Optional.ofNullable(zkc));
+                Optional.ofNullable(zkc));
         } catch (ConfigurationException ce) {
             LOG.error("Failed to initialize metadata client driver using invalid metadata service uri", ce);
             throw new IOException("Failed to initialize metadata client driver", ce);
@@ -569,7 +570,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         throws IOException {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
-            return ReflectionUtils.newInstance(policyCls).initialize(conf, java.util.Optional.ofNullable(dnsResolver),
+            return ReflectionUtils.newInstance(policyCls).initialize(conf, Optional.ofNullable(dnsResolver),
                     timer, featureProvider, statsLogger, bookieAddressResolver);
         } catch (ConfigurationException e) {
             throw new IOException("Failed to initialize ensemble placement policy : ", e);

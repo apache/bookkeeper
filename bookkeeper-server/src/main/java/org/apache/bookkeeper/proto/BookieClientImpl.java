@@ -214,7 +214,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                 if (null == oldClientPool) {
                     clientPool = newClientPool;
                     // initialize the pool only after we put the pool into the map
-                    clientPool.intialize();
+                    clientPool.initialize();
                 } else {
                     clientPool = oldClientPool;
                     newClientPool.close(false);
