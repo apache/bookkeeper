@@ -1,8 +1,7 @@
 ---
-title: New Version 1.0.0
-author: Eric Nakagawa
-authorURL: http://twitter.com/ericnakagawa
-authorFBID: 661277173
+title: New Website Version 1.0.0
+author: Anup Ghatage
+authorURL: http://twitter.com/ghatageanup
 ---
 
-This blog post will test file name parsing issues when periods are present.
+Welcome to the new Apache Bookkeeper website!
