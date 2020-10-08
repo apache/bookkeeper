@@ -1009,6 +1009,9 @@ public class EntryLogger {
                     continue;
                 }
                 // read the entry
+                if (entrySize == 0) {
+                    continue;
+                }
 
                 data.clear();
                 if (entrySize < 0) {
