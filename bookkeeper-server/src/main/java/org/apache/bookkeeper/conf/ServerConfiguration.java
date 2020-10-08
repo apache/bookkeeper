@@ -290,6 +290,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Perform local consistency check on bookie startup
     protected static final String LOCAL_CONSISTENCY_CHECK_ON_STARTUP = "localConsistencyCheckOnStartup";
 
+    // Certificate role based authorization
+    protected static final String AUTHORIZED_ROLES = "authorizedRoles";
+
     /**
      * Construct a default configuration object.
      */
@@ -3381,5 +3384,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public boolean isLocalConsistencyCheckOnStartup() {
         return this.getBoolean(LOCAL_CONSISTENCY_CHECK_ON_STARTUP, false);
+    }
+
+    /**
+     * Get the authorized roles.
+     *
+     * @return String array of configured auth roles.
+     */
+    public String[] getAuthorizedRoles() {
+        return getStringArray(AUTHORIZED_ROLES);
+    }
+
+    /**
+     * Set authorized roles.
+     *
+     * @return Configuration Object with roles set
+     */
+    public ServerConfiguration setAuthorizedRoles(String roles) {
+        this.setProperty(AUTHORIZED_ROLES, roles);
+        return this;
     }
 }
