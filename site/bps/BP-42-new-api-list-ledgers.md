@@ -11,7 +11,7 @@ The new Client API (`org.apache.bookkeeper.client.api.BookKeeper`) aims to repla
 For example, it does not expose a method to list available ledgers, comparable to `BookKeeperAdmin#listLedgers()`.
 
 #### Ledgers listing 
-The goal here is to extends the Client API for listing ledgers. Moreover current method  `BookKeeperAdmin#listLedgers()` does not report errors from the metadata driver; for instance, if an IOException occurs during iterator flow, the error is not visible to the caller and the iteration is stopped (e.g. hasNext will return false). However there is no intention to change this behaviour in this proposal.
+The goal here is to extend the Client API for listing ledgers. Moreover current method  `BookKeeperAdmin#listLedgers()` does not report errors from the metadata driver; for instance, if an IOException occurs during iterator flow, the error is not visible to the caller and the iteration is stopped (e.g. hasNext will return false). However there is no intention to change this behaviour in this proposal.
 
 #### Simpler access to LedgerMetadata
 The goal here is to streamline the access to `LedgerMetadata`, directly from BookKeeper interface.
@@ -71,6 +71,7 @@ This proposal adds new interfaces to `org.apache.bookkeeper.client.api` package,
 The implementation is pretty similar to `BookKeeperAdmin#listLedgers()` but there are few enhancements:
 - Handle metadata driver errors, since the IOException is directly thrown up to caller, allowing user to handle network errors in a more suitable way.
 - Leave the possibility to restrict/filter returned ledgers in future, without API breaking changes   
+- Dispose some resources needed to retrieve ledgers (`ListLedgersResult` extends `AutoCloseable`)) (will be empty for current implementations)
 
 The implementation will be the same used in BookKeeperAdmin, iterating over `LedgerRangeIterator`, which already handles ledgers search properly.
 
