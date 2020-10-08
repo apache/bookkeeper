@@ -42,4 +42,4 @@ jobs:
         with:
           java-version: 1.11
       - name: Build with Maven
-        run: mvn clean package -B -nsu -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=ERROR
+        run: mvn clean package -B -nsu -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
