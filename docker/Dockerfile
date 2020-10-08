@@ -28,7 +28,7 @@ ENV BOOKIE_PORT=3181
 EXPOSE $BOOKIE_PORT
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-11
+ENV JAVA_HOME=/usr/lib/jvm/jre-11
 
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
@@ -52,7 +52,8 @@ RUN set -x \
     && pip install zk-shell \
     && rm -rf get-pip.py \
     && yum remove -y wget \
-    && yum clean all
+    && yum clean all \
+    && ls /usr/lib/jvm
 
 WORKDIR /opt/bookkeeper
 
