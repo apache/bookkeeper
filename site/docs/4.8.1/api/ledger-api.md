@@ -810,7 +810,7 @@ writing the entry to SO buffers without waiting for an fsync.
 In this case the LastAddConfirmed pointer is not advanced to the writer side neither is updated on the reader's side, this is because **there is some chance to lose the entry**.
 Such entries will be still readable using readUnconfirmed() API, but they won't be readable using Long Poll reads or regular read() API.
 
-In order to get guarantees of durability the writer must use explicitly the [force()](../javadoc/org/apache/bookkeeper/client/api/ForceableHandle) API which will return only after all the bookies in the ensemble ackknowledge the call after
+In order to get guarantees of durability the writer must use explicitly the [force()](../javadoc/org/apache/bookkeeper/client/api/ForceableHandle) API which will return only after all the bookies in the ensemble acknowledge the call after
 performing an fsync to the disk which is storing the journal.
 This way the LastAddConfirmed pointer is advanced on the writer side and it will be eventually available to the readers.
 

@@ -120,7 +120,7 @@ public class LedgerHandle implements WriteHandle {
 
      /**
       * Next entryId which is expected to move forward during {@link #sendAddSuccessCallbacks() }. This is important
-      * in order to have an ordered sequence of addEntry ackknowledged to the writer
+      * in order to have an ordered sequence of addEntry acknowledged to the writer
       */
     volatile long pendingAddsSequenceHead;
 
@@ -1212,7 +1212,7 @@ public class LedgerHandle implements WriteHandle {
         doAsyncAddEntry(op);
     }
 
-    private boolean isWritesetWritable(DistributionSchedule.WriteSet writeSet,
+    private boolean isWriteSetWritable(DistributionSchedule.WriteSet writeSet,
                                        long key, int allowedNonWritableCount) {
         if (allowedNonWritableCount < 0) {
             allowedNonWritableCount = 0;
@@ -1246,14 +1246,14 @@ public class LedgerHandle implements WriteHandle {
         }
 
         final long startTime = MathUtils.nowInNano();
-        boolean success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
+        boolean success = isWriteSetWritable(writeSet, key, allowedNonWritableCount);
 
         if (!success && durationMs > 0) {
             int backoff = 1;
             final int maxBackoff = 4;
             final long deadline = startTime + TimeUnit.MILLISECONDS.toNanos(durationMs);
 
-            while (!isWritesetWritable(writeSet, key, allowedNonWritableCount)) {
+            while (!isWriteSetWritable(writeSet, key, allowedNonWritableCount)) {
                 if (MathUtils.nowInNano() < deadline) {
                     long maxSleep = MathUtils.elapsedMSec(startTime);
                     if (maxSleep < 0) {
@@ -1265,7 +1265,7 @@ public class LedgerHandle implements WriteHandle {
                         TimeUnit.MILLISECONDS.sleep(sleepMs);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
+                        success = isWriteSetWritable(writeSet, key, allowedNonWritableCount);
                         break;
                     }
                     if (backoff <= maxBackoff) {
