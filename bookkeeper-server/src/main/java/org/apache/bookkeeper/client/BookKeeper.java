@@ -503,7 +503,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         // initialize bookie client
         this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
-                scheduler, rootStatsLogger, this.bookieWatcher.getBookieAddressResolver());
+                scheduler, rootStatsLogger, bookieAddressResolver);
 
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
