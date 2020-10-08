@@ -157,6 +157,10 @@ class AuthHandler {
             return true;
         }
 
+        public boolean isAuthenticated() {
+            return authenticated;
+        }
+
         static class AuthResponseCallbackLegacy implements AuthCallbacks.GenericCallback<AuthToken> {
             final BookieProtocol.AuthRequest req;
             final Channel channel;

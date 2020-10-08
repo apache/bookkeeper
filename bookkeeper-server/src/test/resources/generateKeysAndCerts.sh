@@ -61,7 +61,7 @@ openssl req \
         -days 365000 \
         -nodes \
         -x509 \
-        -subj "/C=US/ST=CA/L=San Francisco/O=Dummy/CN=apache.bookkeeper.org" \
+        -subj "/C=US/ST=CA/L=San Francisco/O=Dummy/OU=0:testRole,testRole1;1:testCluster/CN=apache.bookkeeper.org" \
         -out client-cert.pem \
         -keyout client-key.pem
 

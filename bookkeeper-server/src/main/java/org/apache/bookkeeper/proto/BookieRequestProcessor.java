@@ -564,10 +564,19 @@ public class BookieRequestProcessor implements RequestProcessor {
                     AuthHandler.ServerSideHandler authHandler = c.pipeline()
                             .get(AuthHandler.ServerSideHandler.class);
                     authHandler.authProvider.onProtocolUpgrade();
-                    if (future.isSuccess()) {
+
+                    /*
+                     * Success of the future doesn't guarantee success in authentication
+                     * future.isSuccess() only checks if the result field is not null
+                     */
+                    if (future.isSuccess() && authHandler.isAuthenticated()) {
                         LOG.info("Session is protected by: {}", sslHandler.engine().getSession().getCipherSuite());
                     } else {
-                        LOG.error("TLS Handshake failure.", future.cause());
+                        if (future.isSuccess()) {
+                            LOG.error("TLS Handshake failed: Could not authenticate.");
+                        } else {
+                            LOG.error("TLS Handshake failure: {} ", future.cause());
+                        }
                         BookkeeperProtocol.Response.Builder errResponse = BookkeeperProtocol.Response.newBuilder()
                                 .setHeader(r.getHeader()).setStatus(BookkeeperProtocol.StatusCode.EIO);
                         c.writeAndFlush(errResponse.build());
