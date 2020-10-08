@@ -1558,23 +1558,23 @@ public class Bookie extends BookieCriticalThread {
                 LOG.error("Formatting journal directory failed");
                 return false;
             }
+        }
 
-            File[] ledgerDirs = conf.getLedgerDirs();
-            for (File dir : ledgerDirs) {
+        File[] ledgerDirs = conf.getLedgerDirs();
+        for (File dir : ledgerDirs) {
+            if (!cleanDir(dir)) {
+                LOG.error("Formatting ledger directory " + dir + " failed");
+                return false;
+            }
+        }
+
+        // Clean up index directories if they are separate from the ledger dirs
+        File[] indexDirs = conf.getIndexDirs();
+        if (null != indexDirs) {
+            for (File dir : indexDirs) {
                 if (!cleanDir(dir)) {
                     LOG.error("Formatting ledger directory " + dir + " failed");
                     return false;
-                }
-            }
-
-            // Clean up index directories if they are separate from the ledger dirs
-            File[] indexDirs = conf.getIndexDirs();
-            if (null != indexDirs) {
-                for (File dir : indexDirs) {
-                    if (!cleanDir(dir)) {
-                        LOG.error("Formatting ledger directory " + dir + " failed");
-                        return false;
-                    }
                 }
             }
         }
