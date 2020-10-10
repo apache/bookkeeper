@@ -37,7 +37,7 @@ import org.apache.bookkeeper.util.PortManager;
 import org.junit.Test;
 
 /**
- * Tests of the main BookKeeper client.
+ * Tests of the main BookKeeper client and the BP-41 bookieAddressTracking feature.
  */
 @Slf4j
 public class BookieNetworkAddressChangeTest extends BookKeeperClusterTestCase {
