@@ -169,7 +169,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String BOOKIE_FAILURE_HISTORY_EXPIRATION_MS = "bookieFailureHistoryExpirationMSec";
 
     // Discovery
-    protected static final String FOLLOW_BOOKIE_ADDRESS_TRACKING = "followBookieAddressChanges";
+    protected static final String FOLLOW_BOOKIE_ADDRESS_TRACKING = "enableBookieAddressTracking";
 
     // Names of dynamic features
     protected static final String DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME = "disableEnsembleChangeFeatureName";
