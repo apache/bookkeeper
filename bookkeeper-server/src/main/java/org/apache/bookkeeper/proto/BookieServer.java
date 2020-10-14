@@ -115,21 +115,16 @@ public class BookieServer {
 
         ByteBufAllocator allocator = getAllocator(conf);
         this.statsLogger = statsLogger;
-        this.nettyServer = new BookieNettyServer(this.conf, null, allocator);
         try {
             this.bookie = newBookie(conf, allocator, bookieServiceInfoProvider);
         } catch (IOException | KeeperException | InterruptedException | BookieException e) {
-            // interrupted on constructing a bookie
-            this.nettyServer.shutdown();
             throw e;
         }
-        final SecurityHandlerFactory shFactory;
-
-        shFactory = SecurityProviderFactoryFactory
+        final SecurityHandlerFactory shFactory = SecurityProviderFactoryFactory
                 .getSecurityProviderFactory(conf.getTLSProviderFactoryClass());
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
                 statsLogger.scope(SERVER_SCOPE), shFactory, bookie.getAllocator());
-        this.nettyServer.setRequestProcessor(this.requestProcessor);
+        this.nettyServer = new BookieNettyServer(this.conf, this.requestProcessor, allocator);
     }
 
     /**

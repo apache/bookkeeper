@@ -98,7 +98,7 @@ class BookieNettyServer {
     final ServerConfiguration conf;
     final EventLoopGroup eventLoopGroup;
     final EventLoopGroup jvmEventLoopGroup;
-    RequestProcessor requestProcessor;
+    final RequestProcessor requestProcessor;
     final AtomicBoolean isRunning = new AtomicBoolean(false);
     final AtomicBoolean isClosed = new AtomicBoolean(false);
     final Object suspensionLock = new Object();
@@ -171,11 +171,6 @@ class BookieNettyServer {
             bindAddress = bookieAddress.getSocketAddress();
         }
         listenOn(bindAddress, bookieAddress);
-    }
-
-    public BookieNettyServer setRequestProcessor(RequestProcessor processor) {
-        this.requestProcessor = processor;
-        return this;
     }
 
     boolean isRunning() {
