@@ -1779,7 +1779,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     /**
      * Enable/Disable bookie address changes tracking.
      *
-     * @param enabled
+     * @param value
      *          flag to enable/disable bookie address changes tracking
      * @return client configuration.
      */
