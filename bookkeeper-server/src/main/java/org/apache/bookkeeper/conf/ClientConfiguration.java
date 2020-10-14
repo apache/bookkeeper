@@ -1783,8 +1783,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      *          flag to enable/disable bookie address changes tracking
      * @return client configuration.
      */
-    public ClientConfiguration setEnableBookieAddressTracking(boolean enabled) {
-        setProperty(FOLLOW_BOOKIE_ADDRESS_TRACKING, enabled);
+    public ClientConfiguration setEnableBookieAddressTracking(boolean value) {
+        setProperty(FOLLOW_BOOKIE_ADDRESS_TRACKING, value);
         return this;
     }
 
