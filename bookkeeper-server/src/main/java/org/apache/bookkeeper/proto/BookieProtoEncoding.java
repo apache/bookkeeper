@@ -356,10 +356,10 @@ public class BookieProtoEncoding {
 
     private static ByteBuf serializeProtobuf(MessageLite msg, ByteBufAllocator allocator) {
         int size = msg.getSerializedSize();
-        ByteBuf buf = allocator.heapBuffer(size, size);
+        ByteBuf buf = allocator.directBuffer(size, size);
 
         try {
-            msg.writeTo(CodedOutputStream.newInstance(buf.array(), buf.arrayOffset() + buf.writerIndex(), size));
+            msg.writeTo(CodedOutputStream.newInstance(buf.nioBuffer(buf.readerIndex(), size)));
         } catch (IOException e) {
             // This is in-memory serialization, should not fail
             throw new RuntimeException(e);
