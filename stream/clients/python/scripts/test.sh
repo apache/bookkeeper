@@ -19,6 +19,7 @@ set -e -x -u
 
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
+PY_VERSION="3.8" NOXSESSION="unit" ${SCRIPT_DIR}/docker_tests.sh
 PY_VERSION="3.7" NOXSESSION="lint,lint_setup_py,unit" ${SCRIPT_DIR}/docker_tests.sh
 PY_VERSION="3.6" NOXSESSION="unit" ${SCRIPT_DIR}/docker_tests.sh
 PY_VERSION="3.5" NOXSESSION="unit" ${SCRIPT_DIR}/docker_tests.sh
