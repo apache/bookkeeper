@@ -32,8 +32,8 @@ dependencies = [
     'six>=1.10.0',
     'pytz',
     'futures>=3.2.0;python_version<"3.2"',
-    'grpcio<1.26.0,>=1.8.2',
-    'pymmh3>=0.0.3'
+    'grpcio<1.28,>=1.8.2',
+    'pymmh3>=0.0.5'
 ]
 extras = {
 }
