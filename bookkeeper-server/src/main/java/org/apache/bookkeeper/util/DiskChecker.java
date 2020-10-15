@@ -239,7 +239,7 @@ public class DiskChecker {
      * @throws DiskWarnThresholdException
      *             If disk has less than configured amount of free space.
      * @throws DiskOutOfSpaceException
-     *             If disk is full or having less space than threshhold
+     *             If disk is full or having less space than threshold
      */
     public float checkDir(File dir) throws DiskErrorException,
             DiskOutOfSpaceException, DiskWarnThresholdException {
@@ -278,7 +278,7 @@ public class DiskChecker {
 
     private void validateThreshold(float diskSpaceThreshold, float diskSpaceWarnThreshold) {
         if (diskSpaceThreshold <= 0 || diskSpaceThreshold >= 1 || diskSpaceWarnThreshold - diskSpaceThreshold > 1e-6) {
-            throw new IllegalArgumentException("Disk space threashold: "
+            throw new IllegalArgumentException("Disk space threshold: "
                     + diskSpaceThreshold + " and warn threshold: " + diskSpaceWarnThreshold
                     + " are not valid. Should be > 0 and < 1 and diskSpaceThreshold >= diskSpaceWarnThreshold");
         }
