@@ -72,7 +72,7 @@ source ${BK_CONFDIR}/bk_cli_env.sh
 
 detect_jdk8() {
 
-  if [ -f "$JAVA_HOME/bin/jshell" ]; then
+  if [ -f "$JAVA_HOME/lib/modules" ]; then
      echo "0"
   else
      echo "1"
