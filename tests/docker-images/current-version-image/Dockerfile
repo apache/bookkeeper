@@ -30,13 +30,13 @@ ENV BOOKIE_GRPC_PORT=4181
 EXPOSE ${BOOKIE_PORT} ${BOOKIE_HTTP_PORT} ${BOOKIE_GRPC_PORT}
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
+ENV JAVA_HOME=/usr/lib/jvm/jdk-11
 
 # prepare utils
 RUN set -x \
     && adduser "${BK_USER}" \
     && yum install -y epel-release \
-    && yum install -y java-1.8.0-openjdk-headless wget bash python-pip python-devel sudo netcat gcc gcc-c++ \
+    && yum install -y java-11-openjdk-devel wget bash python-pip python-devel sudo netcat gcc gcc-c++ \
     && mkdir -pv /opt \
     && cd /opt \
     # install zookeeper shell
