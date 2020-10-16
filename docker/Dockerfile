@@ -20,7 +20,7 @@
 FROM centos:7
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG BK_VERSION=4.9.0
+ARG BK_VERSION=4.11.0
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
 ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
 
@@ -28,12 +28,12 @@ ENV BOOKIE_PORT=3181
 EXPOSE $BOOKIE_PORT
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
+ENV JAVA_HOME=/usr/lib/jvm/jdk-11
 
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-1.8.0-openjdk-headless wget bash python sudo\
+    && yum install -y java-11-openjdk-devel wget bash python sudo\
     && mkdir -pv /opt \
     && cd /opt \
     && wget -q "${DISTRO_URL}" \
@@ -52,7 +52,8 @@ RUN set -x \
     && pip install zk-shell \
     && rm -rf get-pip.py \
     && yum remove -y wget \
-    && yum clean all
+    && yum clean all \
+    && ls /usr/lib/jvm
 
 WORKDIR /opt/bookkeeper
 
