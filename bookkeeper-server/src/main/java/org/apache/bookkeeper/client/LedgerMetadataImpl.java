@@ -49,6 +49,8 @@ import org.slf4j.LoggerFactory;
 class LedgerMetadataImpl implements LedgerMetadata {
     static final Logger LOG = LoggerFactory.getLogger(LedgerMetadataImpl.class);
 
+    private final long ledgerId;
+
     private final int metadataFormatVersion;
     private final int ensembleSize;
     private final int writeQuorumSize;
@@ -71,7 +73,8 @@ class LedgerMetadataImpl implements LedgerMetadata {
 
     private long cToken;
 
-    LedgerMetadataImpl(int metadataFormatVersion,
+    LedgerMetadataImpl(long ledgerId,
+                       int metadataFormatVersion,
                        int ensembleSize,
                        int writeQuorumSize,
                        int ackQuorumSize,
@@ -97,6 +100,7 @@ class LedgerMetadataImpl implements LedgerMetadata {
                       || (!digestType.isPresent() && !password.isPresent()),
                       "Either both password and digest type must be set, or neither");
 
+        this.ledgerId = ledgerId;
         this.metadataFormatVersion = metadataFormatVersion;
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
@@ -133,6 +137,11 @@ class LedgerMetadataImpl implements LedgerMetadata {
         this.cToken = cToken;
 
         this.customMetadata = ImmutableMap.copyOf(customMetadata);
+    }
+
+    @Override
+    public long getLedgerId() {
+        return ledgerId;
     }
 
     @Override

@@ -246,7 +246,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
                 new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
                 new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
         LedgerMetadata metadata = LedgerMetadataBuilder.create()
-            .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
+            .withId(124L).withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
             .withPassword(TEST_PSSWD).withDigestType(TEST_DIGEST_TYPE.toApiDigestType())
             .withClosedState().withLastEntryId(-1).withLength(0)
             .newEnsembleEntry(0L, ensemble)
@@ -363,7 +363,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         ensemble.add(BookieId.parse("bookie6:3181"));
 
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create();
-        builder.withEnsembleSize(7).withWriteQuorumSize(3).withAckQuorumSize(2)
+        builder.withId(124L).withEnsembleSize(7).withWriteQuorumSize(3).withAckQuorumSize(2)
                 .withDigestType(TEST_DIGEST_TYPE.toApiDigestType()).withPassword(TEST_PSSWD)
                 .newEnsembleEntry(0, ensemble).withLastEntryId(lastEntryId).withLength(512).withClosedState();
         LedgerMetadata met = builder.build();
