@@ -1,3 +1,9 @@
 #!/bin/bash
 
-docker build --build-arg BK_VERSION=$DOCKER_TAG -t $IMAGE_NAME .
+# When we build 'latest' tag we want to not override BK_VERSION variable
+if [[ $DOCKER_TAG = "latest" ]]
+then
+  docker build --build-arg -t $IMAGE_NAME .
+else
+  docker build --build-arg BK_VERSION=$DOCKER_TAG -t $IMAGE_NAME .
+fi
