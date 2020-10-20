@@ -7419,7 +7419,7 @@ label.panel-block {
 
 .footer {
   background-color: whitesmoke;
-  padding: 3rem 1.5rem 6rem; }
+  padding: 6rem 1.5rem; }
 
 img.bk-javadoc-icon {
   margin-right: 1.5rem; }
@@ -7485,8 +7485,8 @@ footer.footer {
 .toc {
   overflow-y: scroll;
   bottom: 0;
-  top: 10rem;
-  position: fixed;
+  top: 5rem;
+  position: sticky;
   max-width: 20rem;
   padding: 0 0 5% 0; }
   .toc .section-nav .toc-entry.toc-h2 {
@@ -7539,17 +7539,17 @@ h2.bk-subtitle {
   width: 80%; }
   .bk-docs-container .bk-main-content {
     min-height: 70vh; }
+  .bk-docs-container .container {
+    top: 5rem;
+    position: sticky; }
 
 .bk-community-container {
   width: 60%; }
 
 aside.sidebar {
   width: 15rem;
-  position: fixed;
   overflow-y: scroll;
-  bottom: 0;
-  top: 10rem;
-  padding: 0 0 5% 0; }
+  bottom: 0; }
   aside.sidebar p + ul.sidebar-items {
     margin-top: 0.2rem; }
   aside.sidebar ul.sidebar-items {

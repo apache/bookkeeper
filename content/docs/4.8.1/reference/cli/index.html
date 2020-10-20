@@ -1572,14 +1572,14 @@ Start the bookie process on dest-bookie and dest-bookie will serve copied ledger
   <tbody>
     
     <tr>
-      <td><code>-srcBookie <bookie-id>&lt;/code&gt;&lt;/td&gt;
+      <td><code>-srcBookie BOOKIE_ID</code></td>
       <td>Source Bookie Id</td>
-    &lt;/tr&gt;
+    </tr>
     
     <tr>
-      <td><code>-destBookie <bookie-id>&lt;/code&gt;&lt;/td&gt;
+      <td><code>-destBookie BOOKIE_ID</code></td>
       <td>Destination Bookie Id</td>
-    &lt;/tr&gt;
+    </tr>
     
     <tr>
       <td><code>-updatespersec N</code></td>
@@ -1601,83 +1601,72 @@ Start the bookie process on dest-bookie and dest-bookie will serve copied ledger
       <td>Print messages on every configured seconds if verbose turned on (default 10 secs)</td>
     </tr>
     
-  &lt;/tbody&gt;
-&lt;/table&gt;
- <!-- if command.options -->
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
 <hr />
 
 <h3 id="bookkeeper-shell-whoisauditor">whoisauditor</h3>
 
 <p>Print the node which holds the auditor lock</p>
 
-
 <h5>Usage</h5>
 
-```shell
-$ bin/bookkeeper shell whoisauditor
-```
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell whoisauditor
+</code></pre></div></div>
 
- <!-- if command.options -->
+<p><!-- if command.options --></p>
 <hr />
 
 <h3 id="bookkeeper-shell-whatisinstanceid">whatisinstanceid</h3>
 
 <p>Print the instanceid of the cluster</p>
 
-
 <h5>Usage</h5>
 
-```shell
-$ bin/bookkeeper shell whatisinstanceid
-```
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell whatisinstanceid
+</code></pre></div></div>
 
- <!-- if command.options -->
+<p><!-- if command.options --></p>
 <hr />
 
 <h3 id="bookkeeper-shell-convert-to-db-storage">convert-to-db-storage</h3>
 
 <p>Convert bookie indexes from InterleavedStorage to DbLedgerStorage format</p>
 
-
 <h5>Usage</h5>
 
-```shell
-$ bin/bookkeeper shell convert-to-db-storage
-```
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell convert-to-db-storage
+</code></pre></div></div>
 
- <!-- if command.options -->
+<p><!-- if command.options --></p>
 <hr />
 
 <h3 id="bookkeeper-shell-convert-to-interleaved-storage">convert-to-interleaved-storage</h3>
 
 <p>Convert bookie indexes from DbLedgerStorage to InterleavedStorage format</p>
 
-
 <h5>Usage</h5>
 
-```shell
-$ bin/bookkeeper shell convert-to-interleaved-storage
-```
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell convert-to-interleaved-storage
+</code></pre></div></div>
 
- <!-- if command.options -->
+<p><!-- if command.options --></p>
 <hr />
 
 <h3 id="bookkeeper-shell-rebuild-db-ledger-locations-index">rebuild-db-ledger-locations-index</h3>
 
 <p>Rebuild DbLedgerStorage locations index</p>
 
-
 <h5>Usage</h5>
 
-```shell
-$ bin/bookkeeper shell rebuild-db-ledger-locations-index
-```
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell rebuild-db-ledger-locations-index
+</code></pre></div></div>
 
- <!-- if command.options -->
+<p><!-- if command.options --></p>
 
- <!-- for command in commands -->
+<p><!-- for command in commands --></p>
 
-</bookie-id></code></td></tr></bookie-id></code></td></tr></tbody></table>
 
         </section>
 
