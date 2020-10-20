@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.ZKRegistrationClient;
@@ -52,6 +53,7 @@ public class RegistrationServiceProvider
     private final RetryPolicy bkZkRetryPolicy;
     private final String regPath;
     private final ScheduledExecutorService regExecutor;
+    private final boolean bookieAddresschangeTracking;
     private ZooKeeperClient zkClient;
     private RegistrationClient client;
 
@@ -67,6 +69,8 @@ public class RegistrationServiceProvider
             Integer.MAX_VALUE);
         this.regExecutor = Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder().setNameFormat("registration-service-provider-scheduler").build());
+        ClientConfiguration clientConfiguration = new ClientConfiguration(bkServerConf);
+        this.bookieAddresschangeTracking = clientConfiguration.getEnableBookieAddressTracking();
     }
 
     @Override
@@ -101,7 +105,7 @@ public class RegistrationServiceProvider
                 log.error("Failed to create zookeeper client to {}", zkServers, e);
                 throw e;
             }
-            client = new ZKRegistrationClient(zkClient, regPath, regExecutor);
+            client = new ZKRegistrationClient(zkClient, regPath, regExecutor, bookieAddresschangeTracking);
         }
     }
 

@@ -182,7 +182,8 @@ public class ZKRegistrationClient implements RegistrationClient {
     private WatchTask watchReadOnlyBookiesTask = null;
     private final ConcurrentHashMap<BookieId, Versioned<BookieServiceInfo>> bookieServiceInfoCache =
                                                                             new ConcurrentHashMap<>();
-
+    private final Watcher bookieServiceInfoCacheInvalidation;
+    private final boolean bookieAddressTracking;
     // registration paths
     private final String bookieRegistrationPath;
     private final String bookieAllRegistrationPath;
@@ -190,10 +191,17 @@ public class ZKRegistrationClient implements RegistrationClient {
 
     public ZKRegistrationClient(ZooKeeper zk,
                                 String ledgersRootPath,
-                                ScheduledExecutorService scheduler) {
+                                ScheduledExecutorService scheduler,
+                                boolean bookieAddressTracking) {
         this.zk = zk;
         this.scheduler = scheduler;
-
+        // Following Bookie Network Address Changes is an expensive operation
+        // as it requires additional ZooKeeper watches
+        // we can disable this feature, in case the BK cluster has only
+        // static addresses
+        this.bookieAddressTracking = bookieAddressTracking;
+        this.bookieServiceInfoCacheInvalidation = bookieAddressTracking
+                                                    ? new BookieServiceInfoCacheInvalidationWatcher() : null;
         this.bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
         this.bookieAllRegistrationPath = ledgersRootPath + "/" + COOKIE_NODE;
         this.bookieReadonlyRegistrationPath = this.bookieRegistrationPath + "/" + READONLY;
@@ -202,6 +210,10 @@ public class ZKRegistrationClient implements RegistrationClient {
     @Override
     public void close() {
         // no-op
+    }
+
+    public boolean isBookieAddressTracking() {
+        return bookieAddressTracking;
     }
 
     public ZooKeeper getZk() {
@@ -243,12 +255,13 @@ public class ZKRegistrationClient implements RegistrationClient {
      * @param bookieId
      * @return an handle to the result of the operation.
      */
-    private CompletableFuture<Versioned<BookieServiceInfo>> readBookieServiceInfo(BookieId bookieId) {
+    private CompletableFuture<Versioned<BookieServiceInfo>> readBookieServiceInfoAsync(BookieId bookieId) {
         String pathAsWritable = bookieRegistrationPath + "/" + bookieId;
         String pathAsReadonly = bookieReadonlyRegistrationPath + "/" + bookieId;
 
         CompletableFuture<Versioned<BookieServiceInfo>> promise = new CompletableFuture<>();
-        zk.getData(pathAsWritable, null, (int rc, String path, Object o, byte[] bytes, Stat stat) -> {
+        zk.getData(pathAsWritable, bookieServiceInfoCacheInvalidation,
+                (int rc, String path, Object o, byte[] bytes, Stat stat) -> {
             if (KeeperException.Code.OK.intValue() == rc) {
                 try {
                     BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes);
@@ -265,7 +278,8 @@ public class ZKRegistrationClient implements RegistrationClient {
                 }
             } else if (KeeperException.Code.NONODE.intValue() == rc) {
                 // not found, looking for a readonly bookie
-                zk.getData(pathAsReadonly, null, (int rc2, String path2, Object o2, byte[] bytes2, Stat stat2) -> {
+                zk.getData(pathAsReadonly, bookieServiceInfoCacheInvalidation,
+                        (int rc2, String path2, Object o2, byte[] bytes2, Stat stat2) -> {
                     if (KeeperException.Code.OK.intValue() == rc2) {
                         try {
                             BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes2);
@@ -344,7 +358,7 @@ public class ZKRegistrationClient implements RegistrationClient {
             for (BookieId id : bookies) {
                 // update the cache for new bookies
                 if (!bookieServiceInfoCache.containsKey(id)) {
-                    bookieInfoUpdated.add(readBookieServiceInfo(id));
+                    bookieInfoUpdated.add(readBookieServiceInfoAsync(id));
                 }
             }
             if (bookieInfoUpdated.isEmpty()) {
@@ -445,6 +459,48 @@ public class ZKRegistrationClient implements RegistrationClient {
             newBookieAddrs.add(bookieAddr);
         }
         return newBookieAddrs;
+    }
+
+    private static BookieId stripBookieIdFromPath(String path) {
+        final int slash = path.lastIndexOf('/');
+        if (slash >= 0) {
+            try {
+                return BookieId.parse(path.substring(slash + 1));
+            } catch (IllegalArgumentException e) {
+                log.warn("Cannot decode bookieId from {}", path, e);
+            }
+        }
+        return null;
+    }
+
+    private class BookieServiceInfoCacheInvalidationWatcher implements Watcher {
+
+        @Override
+        public void process(WatchedEvent we) {
+            log.debug("zk event {} for {} state {}", we.getType(), we.getPath(), we.getState());
+            if (we.getState() == KeeperState.Expired) {
+                log.info("zk session expired, invalidating cache");
+                bookieServiceInfoCache.clear();
+                return;
+            }
+            BookieId bookieId = stripBookieIdFromPath(we.getPath());
+            if (bookieId == null) {
+                return;
+            }
+            switch (we.getType()) {
+                case NodeDeleted:
+                    log.info("Invalidate cache for {}", bookieId);
+                    bookieServiceInfoCache.remove(bookieId);
+                    break;
+                case NodeDataChanged:
+                    log.info("refresh cache for {}", bookieId);
+                    readBookieServiceInfoAsync(bookieId);
+                    break;
+                default:
+                    log.debug("ignore cache event {} for {}", we.getType(), bookieId);
+                    break;
+            }
+        }
     }
 
 }

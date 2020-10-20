@@ -83,7 +83,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ ZKRegistrationClient.class, ZkUtils.class })
 @Slf4j
-public class TestZkRegistrationClient extends MockZooKeeperTestCase {
+public abstract class AbstractTestZkRegistrationClient extends MockZooKeeperTestCase {
+
+
 
     @Rule
     public final TestName runtime = new TestName();
@@ -95,6 +97,13 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
     private ZKRegistrationClient zkRegistrationClient;
     private ScheduledExecutorService mockExecutor;
     private MockExecutorController controller;
+
+    private final boolean bookieAddressChangeTracking;
+
+    public AbstractTestZkRegistrationClient(boolean bookieAddressChangeTracking) {
+        this.bookieAddressChangeTracking = bookieAddressChangeTracking;
+    }
+
 
     @Override
     @Before
@@ -114,8 +123,10 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         this.zkRegistrationClient = new ZKRegistrationClient(
             mockZk,
             ledgersPath,
-            mockExecutor
+            mockExecutor,
+            bookieAddressChangeTracking
         );
+        assertEquals(bookieAddressChangeTracking, zkRegistrationClient.isBookieAddressTracking());
     }
 
     @After
@@ -136,23 +147,23 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
     private void prepareReadBookieServiceInfo(BookieId address, boolean readonly) throws Exception {
         if (readonly) {
             mockZkGetData(regPath + "/" + address.toString(),
-                        false,
+                        zkRegistrationClient.isBookieAddressTracking(),
                         Code.NONODE.intValue(),
                         new byte[] {},
                         new Stat());
             mockZkGetData(regReadonlyPath + "/" + address.toString(),
-                        false,
+                        zkRegistrationClient.isBookieAddressTracking(),
                         Code.OK.intValue(),
                         new byte[] {},
                         new Stat());
         } else {
             mockZkGetData(regPath + "/" + address.toString(),
-                        false,
+                        zkRegistrationClient.isBookieAddressTracking(),
                         Code.OK.intValue(),
                         new byte[] {},
                         new Stat());
             mockZkGetData(regReadonlyPath + "/" + address.toString(),
-                        false,
+                        zkRegistrationClient.isBookieAddressTracking(),
                         Code.NONODE.intValue(),
                         new byte[] {},
                         new Stat());

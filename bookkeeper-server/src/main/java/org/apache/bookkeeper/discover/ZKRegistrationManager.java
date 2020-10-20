@@ -515,7 +515,8 @@ public class ZKRegistrationManager implements RegistrationManager {
         try (RegistrationClient regClient = new ZKRegistrationClient(
             zk,
             ledgersRootPath,
-            null
+            null,
+            false
         )) {
             if (availableNodeExists) {
                 Collection<BookieId> rwBookies = FutureUtils
