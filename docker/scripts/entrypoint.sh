@@ -21,7 +21,6 @@
 # */
 
 export PATH=$PATH:/opt/bookkeeper/bin
-export JAVA_HOME=/usr/lib/jvm/jdk-11
 
 BK_HOME=/opt/bookkeeper
 BINDIR=${BK_HOME}/bin
