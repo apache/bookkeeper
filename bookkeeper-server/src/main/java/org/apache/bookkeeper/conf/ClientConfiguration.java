@@ -168,6 +168,9 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String ENABLE_BOOKIE_FAILURE_TRACKING = "enableBookieFailureTracking";
     protected static final String BOOKIE_FAILURE_HISTORY_EXPIRATION_MS = "bookieFailureHistoryExpirationMSec";
 
+    // Discovery
+    protected static final String FOLLOW_BOOKIE_ADDRESS_TRACKING = "enableBookieAddressTracking";
+
     // Names of dynamic features
     protected static final String DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME = "disableEnsembleChangeFeatureName";
 
@@ -1761,6 +1764,27 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setDelayEnsembleChange(boolean enabled) {
         setProperty(DELAY_ENSEMBLE_CHANGE, enabled);
+        return this;
+    }
+
+    /**
+     * Whether to enable bookie address changes tracking.
+     *
+     * @return flag to enable/disable bookie address changes tracking
+     */
+    public boolean getEnableBookieAddressTracking() {
+        return getBoolean(FOLLOW_BOOKIE_ADDRESS_TRACKING, true);
+    }
+
+    /**
+     * Enable/Disable bookie address changes tracking.
+     *
+     * @param value
+     *          flag to enable/disable bookie address changes tracking
+     * @return client configuration.
+     */
+    public ClientConfiguration setEnableBookieAddressTracking(boolean value) {
+        setProperty(FOLLOW_BOOKIE_ADDRESS_TRACKING, value);
         return this;
     }
 
