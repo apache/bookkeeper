@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 # When we build 'latest' tag we want to not override BK_VERSION variable
 if [[ "$DOCKER_TAG" = "latest" ]]
 then
