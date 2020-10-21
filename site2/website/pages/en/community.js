@@ -21,277 +21,329 @@ function Help(props) {
 
   const supportLinks = [
     {
-      content: `Learn more about the [license.](http://www.apache.org/licenses/)`,
-      title: 'Apache License',
+      content: `Subscribe to [Apache BookKeeper Mailing Lists](${docUrl('mailing-lists')}) to learn more about latest developments.`,
+      title: "Mailing lists"
     },
     {
-      content: 'Ask questions about the documentation and project',
-      title: 'Join the community',
+      content: `There is an Apache BookKeeper channel that is used for informal discussions for BookKeeper developers and users.  
+      The Slack channel is at http://apachebookkeeper.slack.com/.  
+      You can self-register at https://apachebookkeeper.herokuapp.com/.`,
+      title: "Apache BookKeeper on Slack"
     },
     {
-      content: "Learn more about our [sponsors.](http://www.apache.org/licenses/)",
-      title: 'Sponsorship',
+      content: `Learn more about the upcoming and on-going releases at [Apache BookKeeper Release Management.](${docUrl('release-management')})`,
+      title: "Release Mangement"
     },
+    {
+      content: `Planning to contribute back to the project? Read our [Contribution Guide.](${docUrl('contributing')})`,
+      title: "Contribution Guide"
+    },
+    {
+      content: `Confused on which coding standard to pick? Read our [Coding Guide.](${docUrl('coding-guide')})`,
+      title: "Coding Guide"
+    },
+    {
+      content: `What to learn about how to write tests, which tests are appropriate where, and when do tests run. Read our [Testing Guide.](${docUrl('testing-guide')})`,
+      title: "Testing Guide"
+    },
+    {
+      content: `Found a bug or facing a functional issue? Refer our [Issue Report Guide](${docUrl('issue-report-guide')})`,
+      title: "Issue Report Guide"
+    },
+    {
+      content: `Interested in learning how Apache BookKeeper releases are managed? Checkout our [Release Guide.](${docUrl('release-guide')})`,
+      title: "Release Guide"
+    },
+    {
+      content: `Read more about this project at [Apache BookKeeper Papers And Presentations](${docUrl('papers-and-presentations')})`,
+      title: "Papers And Presentations"
+    },
+    {
+      content: `Have a new idea which might lead to a major change in the code-base? File a [BookKeeper Proposal](${docUrl('bookkeeper-proposals')})`,
+      title: "BookKeeper Proposals"
+    }
   ];
 
+  const pmcDetails = [
+      {
+        "username": "breed",
+        "name": "Ben Reed",
+        "organization": "Facebook",
+        "timezone": "-8"
+      },
+      {
+        "username": "drusek",
+        "name": "Dave Rusek",
+        "organization": "Twitter",
+        "timezone": "-7"
+      },
+      {
+        "username": "eolivelli",
+        "name": "Enrico Olivelli",
+        "organization": "Diennea",
+        "timezone": "+2"
+      },
+      {
+        "username": "fcuny",
+        "name": "Franck Cuny",
+        "organization": "Twitter",
+        "timezone": "-8"
+      },
+      {
+        "username": "fpj",
+        "name": "Flavio Junqueira",
+        "organization": "Pravega",
+        "timezone": "+1"
+      },
+      {
+        "username": "hsaputra",
+        "name": "Henry Saputra",
+        "organization": "",
+        "timezone": "-8"
+      },
+      {
+        "username": "ivank",
+        "name": "Ivan Kelly",
+        "organization": "Splunk",
+        "timezone": "+2"
+      },
+      {
+        "username": "jiannan",
+        "name": "Jiannan Wang",
+        "organization": "Yahoo Inc.",
+        "timezone": "+8"
+      },
+      {
+        "username": "jujjuri",
+        "name": "Venkateswararao (JV) Jujjuri",
+        "organization": "Salesforce",
+        "timezone": "-8"
+      },
+      {
+        "username": "lstewart",
+        "name": "Leigh Stewart",
+        "organization": "Twitter",
+        "timezone": "-8"
+      },
+      {
+        "username": "mmerli",
+        "name": "Matteo Merli",
+        "organization": "Splunk",
+        "timezone": "-8"        
+      },
+      {
+        "username": "rakeshr",
+        "name": "Rakesh Radhakrishnan",
+        "organization": "Huawei",
+        "timezone": "+5:30"     
+      },
+      {
+        "username": "sijie",
+        "name": "Sijie Guo",
+        "organization": "StreamNative",
+        "timezone": "-8"  
+      },
+      {
+        "username": "umamahesh",
+        "name": "Uma Maheswara Rao G",
+        "organization": "Intel",
+        "timezone": "+5"  
+      },
+      {
+        "username": "zhaijia",
+        "name": "Jia Zhai",
+        "organization": "StreamNative",
+        "timezone": "+8"  
+      },
+      {
+        "username": "rdhabalia",
+        "name": "Rajan Dhabalia",
+        "organization": "Yahoo Inc.",
+        "timezone": "-8"  
+      },
+      {
+        "username": "reddycharan",
+        "name": "Charan Reddy Guttapalem",
+        "organization": "Salesforce",
+        "timezone": "-8" 
+      }
+  ];
+
+  const pmcDetailsRows = pmcDetails.map(function(row){
+    return (
+        <tr>
+          <td>{row.username}</td>
+          <td>{row.name}</td>
+          <td>{row.organization}</td>
+          <td>{row.timezone}</td>
+        </tr>
+      )
+    });
+
+  const committerDetails = [
+    {
+      "username": "ayegorov",
+      "name": "Andrey Yegorov",
+      "organization": "Salesforce",
+      "timezone": "-8" 
+    },
+    {
+      "username": "breed",
+      "name": "Ben Reed",
+      "organization": "Facebook",
+      "timezone": "-8"
+    },
+    {
+      "username": "drusek",
+      "name": "Dave Rusek",
+      "organization": "Twitter",
+      "timezone": "-7"
+    },
+    {
+      "username": "eolivelli",
+      "name": "Enrico Olivelli",
+      "organization": "Diennea",
+      "timezone": "+2"
+    },
+    {
+      "username": "fcuny",
+      "name": "Franck Cuny",
+      "organization": "Twitter",
+      "timezone": "-8"
+    },
+    {
+      "username": "fpj",
+      "name": "Flavio Junqueira",
+      "organization": "Pravega",
+      "timezone": "+1"
+    },
+    {
+      "username": "hsaputra",
+      "name": "Henry Saputra",
+      "organization": "",
+      "timezone": "-8"
+    },
+    {
+      "username": "ivank",
+      "name": "Ivan Kelly",
+      "organization": "Splunk",
+      "timezone": "+2"
+    },
+    {
+      "username": "jiannan",
+      "name": "Jiannan Wang",
+      "organization": "Yahoo Inc.",
+      "timezone": "+8"
+    },
+    {
+      "username": "jujjuri",
+      "name": "Venkateswararao (JV) Jujjuri",
+      "organization": "Salesforce",
+      "timezone": "-8"
+    },
+    {
+      "username": "mmerli",
+      "name": "Matteo Merli",
+      "organization": "Splunk",
+      "timezone": "-8"
+    },
+    {
+      "username": "rakeshr",
+      "name": "Rakesh Radhakrishnan",
+      "organization": "Huawei",
+      "timezone": "+5:30"     
+    },
+    {
+      "username": "reddycharan",
+      "name": "Charan Reddy Guttapalem",
+      "organization": "Salesforce",
+      "timezone": "-8" 
+    },
+    {
+      "username": "robindh",
+      "name": "Robin Dhamankar",
+      "organization": "Facebook",
+      "timezone": "-8" 
+    },
+    {
+      "username": "sboobna",
+      "name": "Siddharth Boobna",
+      "organization": "Salesforce",
+      "timezone": "-8" 
+    },
+    {
+      "username": "sijie",
+      "name": "Sijie Guo",
+      "organization": "StreamNative",
+      "timezone": "-8" 
+    },
+    {
+      "username": "sjust",
+      "name": "Sam Just",
+      "organization": "Salesforce",
+      "timezone": "-8" 
+    },
+    {
+      "username": "umamahesh",
+      "name": "Uma Maheswara Rao G",
+      "organization": "Intel",
+      "timezone": "+5" 
+    },
+    {
+      "username": "zhaijia",
+      "name": "Jia Zhai",
+      "organization": "StreamNative",
+      "timezone": "+8" 
+    }
+  ];
+
+  const committerDetailsRows = committerDetails.map(function(row){
+    return (
+        <tr>
+          <td>{row.username}</td>
+          <td>{row.name}</td>
+          <td>{row.organization}</td>
+          <td>{row.timezone}</td>
+        </tr>
+      )
+    });
+  
   return (
     <div className="docMainWrapper wrapper">
       <Container className="mainContainer documentContainer postContainer">
-        <div className="post">
-          <header className="postHeader">
-            <h1>Need help?</h1>
-          </header>
-          <p>This project is maintained by a dedicated group of people.</p>
-          <GridBlock contents={supportLinks} layout="threeColumn" />
-	  <p>BookKeeper’s PMC members are:</p>
-	  <table>
-  <thead>
-    <tr>
-      <th>Username</th>
-      <th>Name</th>
-      <th>Organization</th>
-      <th>Timezone</th>
-    </tr>
-  </thead>
-		<tbody>
-    <tr>
-      <td>breed</td>
-      <td>Ben Reed</td>
-      <td>Facebook</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>drusek</td>
-      <td>Dave Rusek</td>
-      <td>Twitter</td>
-      <td>-7</td>
-    </tr>
-    <tr>
-      <td>eolivelli</td>
-      <td>Enrico Olivelli</td>
-      <td>Diennea</td>
-      <td>+2</td>
-    </tr>
-    <tr>
-      <td>fcuny</td>
-      <td>Franck Cuny</td>
-      <td>Twitter</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>fpj</td>
-      <td>Flavio Junqueira</td>
-      <td>Pravega</td>
-      <td>+1</td>
-    </tr>
-    <tr>
-      <td>hsaputra</td>
-      <td>Henry Saputra</td>
-      <td> </td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>ivank</td>
-      <td>Ivan Kelly</td>
-      <td>Splunk</td>
-      <td>+2</td>
-    </tr>
-    <tr>
-      <td>jiannan</td>
-      <td>Jiannan Wang</td>
-      <td>Yahoo Inc.</td>
-      <td>+8</td>
-    </tr>
-    <tr>
-      <td>jujjuri</td>
-      <td>Venkateswararao (JV) Jujjuri</td>
-      <td>Salesforce</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>lstewart</td>
-      <td>Leigh Stewart</td>
-      <td>Twitter</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>mmerli</td>
-      <td>Matteo Merli</td>
-      <td>Splunk</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>rakeshr</td>
-      <td>Rakesh Radhakrishnan</td>
-      <td>Huawei</td>
-      <td>+5:30</td>
-    </tr>
-    <tr>
-      <td>sijie</td>
-      <td>Sijie Guo</td>
-      <td>StreamNative</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>umamahesh</td>
-      <td>Uma Maheswara Rao G</td>
-      <td>Intel</td>
-      <td>+5</td>
-    </tr>
-    <tr>
-      <td>zhaijia</td>
-      <td>Jia Zhai</td>
-      <td>StreamNative</td>
-      <td>+8</td>
-    </tr>
-    <tr>
-      <td>rdhabalia</td>
-      <td>Rajan Dhabalia</td>
-      <td>Yahoo Inc.</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>reddycharan</td>
-      <td>Charan Reddy Guttapalem</td>
-      <td>Salesforce</td>
-      <td>-8</td>
-    </tr>
-		</tbody>
-	  </table>
-
-
-<h2 id="committers">Committers</h2>
-
-<p>BookKeeper’s active committers are:</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Username</th>
-      <th>Name</th>
-      <th>Organization</th>
-      <th>Timezone</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>ayegorov</td>
-      <td>Andrey Yegorov</td>
-      <td>Salesforce</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>breed</td>
-      <td>Ben Reed</td>
-      <td>Facebook</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>drusek</td>
-      <td>Dave Rusek</td>
-      <td>Twitter</td>
-      <td>-7</td>
-    </tr>
-    <tr>
-      <td>eolivelli</td>
-      <td>Enrico Olivelli</td>
-      <td>Diennea</td>
-      <td>+2</td>
-    </tr>
-    <tr>
-      <td>fcuny</td>
-      <td>Franck Cuny</td>
-      <td>Twitter</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>fpj</td>
-      <td>Flavio Junqueira</td>
-      <td>Pravega</td>
-      <td>+1</td>
-    </tr>
-    <tr>
-      <td>hsaputra</td>
-      <td>Henry Saputra</td>
-      <td> </td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>ivank</td>
-      <td>Ivan Kelly</td>
-      <td>Splunk</td>
-      <td>+2</td>
-    </tr>
-    <tr>
-      <td>jiannan</td>
-      <td>Jiannan Wang</td>
-      <td>Yahoo Inc.</td>
-      <td>+8</td>
-    </tr>
-    <tr>
-      <td>jujjuri</td>
-      <td>Venkateswararao (JV) Jujjuri</td>
-      <td>Salesforce</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>mmerli</td>
-      <td>Matteo Merli</td>
-      <td>Splunk</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>rakeshr</td>
-      <td>Rakesh Radhakrishnan</td>
-      <td>Huawei</td>
-      <td>+5:30</td>
-    </tr>
-    <tr>
-      <td>reddycharan</td>
-      <td>Charan Reddy G</td>
-      <td>Salesforce</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>robindh</td>
-      <td>Robin Dhamankar</td>
-      <td>Facebook</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>sboobna</td>
-      <td>Siddharth Boobna</td>
-      <td>Salesforce</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>sijie</td>
-      <td>Sijie Guo</td>
-      <td>StreamNative</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>sjust</td>
-      <td>Sam Just</td>
-      <td>Salesforce</td>
-      <td>-8</td>
-    </tr>
-    <tr>
-      <td>umamahesh</td>
-      <td>Uma Maheswara Rao G</td>
-      <td>Intel</td>
-      <td>+5</td>
-    </tr>
-    <tr>
-      <td>zhaijia</td>
-      <td>Jia Zhai</td>
-      <td>StreamNative</td>
-      <td>+8</td>
-    </tr>
-  </tbody>
-</table>
-
-        </div>
+          <div className="post">
+            <GridBlock contents={supportLinks} layout="threeColumn"/>
+            <h2 id="pmc">Project Management Committee (PMC)</h2>
+            <p>BookKeeper’s PMC members are:</p>
+            <table>
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Name</th>
+                    <th>Organization</th>
+                    <th>Timezone</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pmcDetailsRows}
+                </tbody>
+            </table>
+            <h2 id="committers">Committers</h2>
+            <p>BookKeeper’s active committers are:</p>
+            <table>
+                <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Name</th>
+                    <th>Organization</th>
+                    <th>Timezone</th>
+                </tr>
+                </thead>
+                <tbody>
+                  {committerDetailsRows}
+                </tbody>
+            </table>
+          </div>
       </Container>
     </div>
   );
