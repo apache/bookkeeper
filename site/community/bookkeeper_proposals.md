@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 41*
+*Next Proposal Number: 43*
 
 ### Inprogress
 
@@ -109,8 +109,8 @@ Proposal | State
 [BP-35: 128 bits support](../../bps/BP-35-128-bits-support) | Accepted
 [BP-36: Stats documentation annotation](../../bps/BP-36-stats-documentation-annotation) | Accepted
 [BP-37: Improve configuration management for better documentation](../../bps/BP-37-conf-documentation) | Accepted
-[BP-38: Publish Bookie Service Info on Metadata Service](../../bps/BP-38-bookie-endpoint-discovery) | Accepted
-[BP-41: Separate BookieId from Separate BookieId from Bookie Network Address](../../bps/BP-41-bookieid) | Draft
+[BP-41: Separate BookieId from Separate BookieId from Bookie Network Address](../../bps/BP-41-bookieid) | Accepted
+[BP-42: New Client API - list ledgers](../../bps/BP-42-new-api-list-ledgers) | Accepted
 
 ### Adopted
 
@@ -129,6 +129,7 @@ Proposal | Release
 [BP-17 - Define BookKeeper public http endpoints](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-17%3A+Define+BookKeeper+public+http+endpoints) | 4.6.0
 [BP-20: Github workflow for bookkeeper proposals](../../bps/BP-20-github-workflow-for-bookkeeper-proposals) | 4.7.0
 [BP-25: Move checksum to proto](../../bps/BP-25-MovingChecksumToProto) | 4.7.0
+[BP-38: Publish Bookie Service Info on Metadata Service](../../bps/BP-38-bookie-endpoint-discovery) | 4.11.0
 
 ### Discarded
 
