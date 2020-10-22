@@ -356,6 +356,13 @@ public class BookieProtoEncoding {
 
     private static ByteBuf serializeProtobuf(MessageLite msg, ByteBufAllocator allocator) {
         int size = msg.getSerializedSize();
+        // Protobuf serialization is the last step of the netty pipeline. We used to allocate
+        // a heap buffer while serializing and pass it down to netty library.
+        // In AbstractChannel#filterOutboundMessage(), netty copies that data to a direct buffer if
+        // it is currently in heap (otherwise skips it and uses it directly).
+        // Allocating a direct buffer reducing unncessary CPU cycles for buffer copies in BK client
+        // and also helps alleviate pressure off the GC, since there is less memory churn.
+        // Bookies aren't usually CPU bound. This change improves READ_ENTRY code paths by a small factor as well.
         ByteBuf buf = allocator.directBuffer(size, size);
 
         try {
