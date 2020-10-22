@@ -229,7 +229,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
 
             if (null == connectRetryPolicy) {
                 connectRetryPolicy =
-                        new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, Integer.MAX_VALUE);
+                        new BoundExponentialBackoffRetryPolicy(0, 0, Integer.MAX_VALUE);
             }
             if (null == operationRetryPolicy) {
                 operationRetryPolicy =
