@@ -812,6 +812,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             LOG.info("lostBookieRecoveryDelay Znode is already present, so using "
                     + "existing lostBookieRecoveryDelay Znode value");
             return false;
+        } catch (KeeperException.NoNodeException nne) {
+            LOG.error("lostBookieRecoveryDelay Znode not found. Please verify if Auditor has been initialized.", nne);
+            return false;
         } catch (KeeperException ke) {
             LOG.error("Error while initializing LostBookieRecoveryDelay", ke);
             throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
