@@ -241,7 +241,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         // because it can happen than this method is called inside the main
         // zookeeper client event loop thread
         Versioned<BookieServiceInfo> resultFromCache = bookieServiceInfoCache.get(bookieId);
-        log.info("getBookieServiceInfo {} -> {}", bookieId, resultFromCache);
+        log.debug("getBookieServiceInfo {} -> {}", bookieId, resultFromCache);
         if (resultFromCache != null) {
             return CompletableFuture.completedFuture(resultFromCache);
         } else {
@@ -346,6 +346,9 @@ public class ZKRegistrationClient implements RegistrationClient {
     private CompletableFuture<Versioned<Set<BookieId>>> getChildren(String regPath, Watcher watcher) {
         CompletableFuture<Versioned<Set<BookieId>>> future = FutureUtils.createFuture();
         zk.getChildren(regPath, watcher, (rc, path, ctx, children, stat) -> {
+            if (KeeperException.Code.NONODE.intValue() != rc) {
+                future.complete(new Versioned<>(Sets.newHashSet(), new LongVersion(-1)));
+            }
             if (KeeperException.Code.OK.intValue() != rc) {
                 ZKException zke = new ZKException(KeeperException.create(KeeperException.Code.get(rc), path));
                 future.completeExceptionally(zke.fillInStackTrace());
@@ -462,6 +465,9 @@ public class ZKRegistrationClient implements RegistrationClient {
     }
 
     private static BookieId stripBookieIdFromPath(String path) {
+        if (path == null) {
+            return null;
+        }
         final int slash = path.lastIndexOf('/');
         if (slash >= 0) {
             try {

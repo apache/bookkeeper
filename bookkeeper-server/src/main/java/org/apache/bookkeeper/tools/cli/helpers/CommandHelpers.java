@@ -44,9 +44,8 @@ public final class CommandHelpers {
                                                                  BookieAddressResolver bookieAddressResolver) {
         BookieSocketAddress networkAddress = bookieAddressResolver.resolve(bookidId);
         String hostname = networkAddress.getHostName();
-        String bookieID = networkAddress.toString();
         String realHostname;
-        String ip = null;
+        String ip;
         if (InetAddresses.isInetAddress(hostname)){
             ip = hostname;
             realHostname = networkAddress.getSocketAddress().getAddress().getCanonicalHostName();
@@ -59,14 +58,14 @@ public final class CommandHelpers {
            }
            realHostname = hostname;
         }
-        return formatBookieSocketAddress(bookieID, ip, networkAddress.getPort(), realHostname);
+        return formatBookieSocketAddress(bookidId, ip, networkAddress.getPort(), realHostname);
     }
 
     /**
      * Format {@link BookieSocketAddress}.
      **/
-    public static String formatBookieSocketAddress(String bookieId, String ip, int port, String hostName) {
-       return String.format("BookieID:%s, IP:%s, Port:%d, Hostname:%s", bookieId, ip, port, hostName);
+    private static String formatBookieSocketAddress(BookieId bookieId, String ip, int port, String hostName) {
+       return String.format("BookieID:%s, IP:%s, Port:%d, Hostname:%s", bookieId.toString(), ip, port, hostName);
     }
 
 }
