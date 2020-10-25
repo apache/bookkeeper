@@ -31,6 +31,8 @@ import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand.Flags;
 import org.apache.bookkeeper.tools.cli.helpers.ClientCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A client command that simply tests if a cluster is healthy.
@@ -39,6 +41,7 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
 
     private static final String NAME = "simpletest";
     private static final String DESC = "Simple test to create a ledger and write entries to it.";
+    private static final Logger LOG = LoggerFactory.getLogger(SimpleTestCommand.class);
 
     /**
      * Flags for simple test command.
@@ -81,17 +84,17 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
             .withPassword(new byte[0])
             .execute())) {
 
-            System.out.println("Ledger ID: " + wh.getId());
+            LOG.info("Ledger ID: " + wh.getId());
             long lastReport = System.nanoTime();
             for (int i = 0; i < flags.numEntries; i++) {
                 wh.append(data);
                 if (TimeUnit.SECONDS.convert(System.nanoTime() - lastReport,
                         TimeUnit.NANOSECONDS) > 1) {
-                    System.out.println(i + " entries written");
+                    LOG.info(i + " entries written");
                     lastReport = System.nanoTime();
                 }
             }
-            System.out.println(flags.numEntries + " entries written to ledger " + wh.getId());
+            LOG.info(flags.numEntries + " entries written to ledger " + wh.getId());
         }
     }
 }
