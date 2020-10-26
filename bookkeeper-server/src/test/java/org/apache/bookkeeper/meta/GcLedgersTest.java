@@ -600,7 +600,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
+        public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         }
 
         @Override

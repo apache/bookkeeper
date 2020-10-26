@@ -189,7 +189,7 @@ class BookieNettyServer {
             for (Channel channel : allChannels) {
                 // To suspend processing in the bookie, submit a task
                 // that keeps the event loop busy until resume is
-                // explicitely invoked
+                // explicitly invoked
                 channel.eventLoop().submit(() -> {
                     while (suspended && isRunning()) {
                         try {

@@ -767,7 +767,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
-    public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
+    public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         getOrAddLedgerInfo(ledgerId).setExplicitLac(lac);
     }
 
