@@ -28,7 +28,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 
 /**
- * Bookkeeper Client API listLedgers test.
+ * Bookkeeper Client API ledger metadata and ledgers listing test.
  */
 public class LedgerMetadataTest extends BookKeeperClusterTestCase {
 

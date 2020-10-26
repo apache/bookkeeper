@@ -20,8 +20,21 @@ package org.apache.bookkeeper.client.api;
  */
 public interface ListLedgersResult extends AutoCloseable {
 
+    /**
+     * Creates a <code>LedgersIterator</code>.
+     * This method must be called once per <code>ListLedgersResult</code> instance.
+     * @return a <code>LedgersIterator</code> instance.
+     */
     LedgersIterator iterator();
 
+    /**
+     * Creates a <code>Iterable</code>, which wraps a <code>LedgersIterator</code>.
+     * This method must be called once per <code>ListLedgersResult</code> instance.
+     * <br>
+     * Metadata store access exceptions (<code>IOException</code>) are wrapped within a RuntimeException.
+     * if you want to take care of these cases, it is better to use <code>LedgersIterator</code>.
+     * @return a <code>Iterable</code> instance, containing ledger ids.
+     */
     Iterable<Long> toIterable();
 
 }
