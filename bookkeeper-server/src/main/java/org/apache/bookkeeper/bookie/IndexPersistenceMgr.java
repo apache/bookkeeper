@@ -177,7 +177,7 @@ public class IndexPersistenceMgr {
      * the FileInfo from cache, that FileInfo is then evicted and closed before we
      * could even increase the reference counter.
      */
-    CachedFileInfo getFileInfo(final Long ledger, final byte masterKey[]) throws IOException {
+    CachedFileInfo getFileInfo(final Long ledger, final byte[] masterKey) throws IOException {
         try {
             CachedFileInfo fi;
             persistenceMgrStats.getPendingGetFileInfoCounter().inc();
@@ -213,7 +213,7 @@ public class IndexPersistenceMgr {
             if (ee.getCause() instanceof IOException) {
                 throw (IOException) ee.getCause();
             } else {
-                throw new LedgerCache.NoIndexForLedger("Failed to load file info for ledger " + ledger, ee);
+                throw new LedgerCache.NoIndexForLedgerException("Failed to load file info for ledger " + ledger, ee);
             }
         } finally {
             persistenceMgrStats.getPendingGetFileInfoCounter().dec();
@@ -374,6 +374,19 @@ public class IndexPersistenceMgr {
         }
     }
 
+    void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                          Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
+        CachedFileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            fi.cancelWaitForLastAddConfirmedUpdate(watcher);
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
+    }
+
     long updateLastAddConfirmed(long ledgerId, long lac) throws IOException {
         CachedFileInfo fi = null;
         try {
@@ -438,7 +451,6 @@ public class IndexPersistenceMgr {
         try {
             fi = getFileInfo(ledgerId, null);
             fi.setExplicitLac(lac);
-            return;
         } finally {
             if (null != fi) {
                 fi.release();
@@ -452,7 +464,7 @@ public class IndexPersistenceMgr {
             fi = getFileInfo(ledgerId, null);
             return fi.getExplicitLac();
         } catch (IOException e) {
-            LOG.error("Exception during getLastAddConfirmed: {}", e);
+            LOG.error("Exception during getLastAddConfirmed", e);
             return null;
         } finally {
             if (null != fi) {
@@ -584,7 +596,7 @@ public class IndexPersistenceMgr {
         if (count == 0) {
             return;
         }
-        ByteBuffer buffs[] = new ByteBuffer[count];
+        ByteBuffer[] buffs = new ByteBuffer[count];
         for (int j = 0; j < count; j++) {
             buffs[j] = entries.get(start + j).getPageToWrite();
             if (entries.get(start + j).getLedger() != ledger) {

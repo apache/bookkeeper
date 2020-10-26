@@ -20,30 +20,56 @@
  */
 package org.apache.bookkeeper.client;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.net.InetAddresses;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.common.component.ComponentStarter;
+import org.apache.bookkeeper.common.component.Lifecycle;
+import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.server.Main;
+import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.apache.bookkeeper.util.PortManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -139,8 +165,8 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         assertTrue("There are supposed to be underreplicatedledgers", underreplicatedLedgerItr.hasNext());
         UnderreplicatedLedger underreplicatedLedger = underreplicatedLedgerItr.next();
         assertEquals("Underreplicated ledgerId", ledgerId, underreplicatedLedger.getLedgerId());
-        assertTrue("Missingreplica of Underreplicated ledgerId should contain " + bookieToKill.getLocalAddress(),
-                underreplicatedLedger.getReplicaList().contains(bookieToKill.getLocalAddress().toString()));
+        assertTrue("Missingreplica of Underreplicated ledgerId should contain " + bookieToKill.getBookieId(),
+                underreplicatedLedger.getReplicaList().contains(bookieToKill.getBookieId().toString()));
         if (storeSystemTimeAsLedgerUnderreplicatedMarkTime) {
             long ctimeOfURL = underreplicatedLedger.getCtime();
             assertTrue("ctime of underreplicated ledger should be greater than test starttime",
@@ -184,7 +210,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         }
         Assert.assertFalse("initBookie shouldn't have succeeded, since cookie in ZK is not deleted yet",
                 BookKeeperAdmin.initBookie(confOfExistingBookie));
-        String bookieId = Bookie.getBookieAddress(confOfExistingBookie).toString();
+        String bookieId = Bookie.getBookieId(confOfExistingBookie).toString();
         String bookieCookiePath =
             ZKMetadataDriverBase.resolveZkLedgersRootPath(confOfExistingBookie)
                 + "/" + BookKeeperConstants.COOKIE_NODE
@@ -398,5 +424,309 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             lh.close();
         }
         bk.close();
+    }
+
+    @Test
+    public void testGetListOfEntriesOfClosedLedger() throws Exception {
+        testGetListOfEntriesOfLedger(true);
+    }
+
+    @Test
+    public void testGetListOfEntriesOfNotClosedLedger() throws Exception {
+        testGetListOfEntriesOfLedger(false);
+    }
+
+    @Test
+    public void testGetListOfEntriesOfNonExistingLedger() throws Exception {
+        long nonExistingLedgerId = 56789L;
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            for (int i = 0; i < bs.size(); i++) {
+                CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), nonExistingLedgerId);
+                try {
+                    futureResult.get();
+                    fail("asyncGetListOfEntriesOfLedger is supposed to be failed with NoSuchLedgerExistsException");
+                } catch (ExecutionException ee) {
+                    assertTrue(ee.getCause() instanceof BKException);
+                    BKException e = (BKException) ee.getCause();
+                    assertEquals(e.getCode(), BKException.Code.NoSuchLedgerExistsException);
+                }
+            }
+        }
+    }
+
+    public void testGetListOfEntriesOfLedger(boolean isLedgerClosed) throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        int numOfEntries = 6;
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle lh = bkc.createLedger(numOfBookies, numOfBookies, digestType, "testPasswd".getBytes());
+        long lId = lh.getId();
+        for (int i = 0; i < numOfEntries; i++) {
+            lh.addEntry("000".getBytes());
+        }
+        if (isLedgerClosed) {
+            lh.close();
+        }
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            for (int i = 0; i < bs.size(); i++) {
+                CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), lId);
+                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
+                assertEquals("Number of entries", numOfEntries,
+                        availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
+                for (int j = 0; j < numOfEntries; j++) {
+                    assertTrue("Entry should be available: " + j, availabilityOfEntriesOfLedger.isEntryAvailable(j));
+                }
+                assertFalse("Entry should not be available: " + numOfEntries,
+                        availabilityOfEntriesOfLedger.isEntryAvailable(numOfEntries));
+            }
+        }
+        bkc.close();
+    }
+
+    @Test
+    public void testGetListOfEntriesOfLedgerWithJustOneBookieInWriteQuorum() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        int numOfEntries = 6;
+        BookKeeper bkc = new BookKeeper(conf);
+        /*
+         * in this testsuite there are going to be 2 (numOfBookies) and if
+         * writeQuorum is 1 then it will stripe entries to those two bookies.
+         */
+        LedgerHandle lh = bkc.createLedger(2, 1, digestType, "testPasswd".getBytes());
+        long lId = lh.getId();
+        for (int i = 0; i < numOfEntries; i++) {
+            lh.addEntry("000".getBytes());
+        }
+
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            for (int i = 0; i < bs.size(); i++) {
+                CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
+                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), lId);
+                AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
+                /*
+                 * since num of bookies in the ensemble is 2 and
+                 * writeQuorum/ackQuorum is 1, it will stripe to these two
+                 * bookies and hence in each bookie there will be only
+                 * numOfEntries/2 entries.
+                 */
+                assertEquals("Number of entries", numOfEntries / 2,
+                        availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
+            }
+        }
+        bkc.close();
+    }
+
+    @Test
+    public void testGetBookies() throws Exception {
+        String ledgersRootPath = "/ledgers";
+        Assert.assertTrue("Cluster rootpath should have been created successfully " + ledgersRootPath,
+                (zkc.exists(ledgersRootPath, false) != null));
+        String bookieCookiePath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseConf)
+                + "/" + BookKeeperConstants.COOKIE_NODE;
+        Assert.assertTrue("AvailableBookiesPath should have been created successfully " + bookieCookiePath,
+                (zkc.exists(bookieCookiePath, false) != null));
+
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            Collection<BookieId> availableBookies = bkAdmin.getAvailableBookies();
+            Assert.assertEquals(availableBookies.size(), bs.size());
+
+            for (int i = 0; i < bs.size(); i++) {
+                availableBookies.contains(bs.get(i).getBookieId());
+            }
+
+            BookieServer killedBookie = bs.get(1);
+            killBookieAndWaitForZK(1);
+
+            Collection<BookieId> remainingBookies = bkAdmin.getAvailableBookies();
+            Assert.assertFalse(remainingBookies.contains(killedBookie.getBookieId()));
+
+            Collection<BookieId> allBookies = bkAdmin.getAllBookies();
+            for (int i = 0; i < bs.size(); i++) {
+                remainingBookies.contains(bs.get(i).getBookieId());
+                allBookies.contains(bs.get(i).getBookieId());
+            }
+
+            Assert.assertEquals(remainingBookies.size(), allBookies.size() - 1);
+            Assert.assertTrue(allBookies.contains(killedBookie.getBookieId()));
+        }
+    }
+
+    @Test
+    public void testGetListOfEntriesOfLedgerWithEntriesNotStripedToABookie() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        BookKeeper bkc = new BookKeeper(conf);
+        /*
+         * in this testsuite there are going to be 2 (numOfBookies) bookies and
+         * we are having ensemble of size 2.
+         */
+        LedgerHandle lh = bkc.createLedger(2, 1, digestType, "testPasswd".getBytes());
+        long lId = lh.getId();
+        /*
+         * ledger is writeclosed without adding any entry.
+         */
+        lh.close();
+        CountDownLatch callbackCalled = new CountDownLatch(1);
+        AtomicBoolean exceptionInCallback = new AtomicBoolean(false);
+        AtomicInteger exceptionCode = new AtomicInteger(BKException.Code.OK);
+        BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
+        /*
+         * since no entry is added, callback is supposed to fail with
+         * NoSuchLedgerExistsException.
+         */
+        bkAdmin.asyncGetListOfEntriesOfLedger(bs.get(0).getBookieId(), lId)
+                .whenComplete((availabilityOfEntriesOfLedger, throwable) -> {
+                    exceptionInCallback.set(throwable != null);
+                    if (throwable != null) {
+                        exceptionCode.set(BKException.getExceptionCode(throwable));
+                    }
+                    callbackCalled.countDown();
+                });
+        callbackCalled.await();
+        assertTrue("Exception occurred", exceptionInCallback.get());
+        assertEquals("Exception code", BKException.Code.NoSuchLedgerExistsException, exceptionCode.get());
+        bkAdmin.close();
+        bkc.close();
+    }
+
+    @Test
+    public void testAreEntriesOfLedgerStoredInTheBookieForLastEmptySegment() throws Exception {
+        int lastEntryId = 10;
+        long ledgerId = 100L;
+        BookieId bookie0 = new BookieSocketAddress("bookie0:3181").toBookieId();
+        BookieId bookie1 = new BookieSocketAddress("bookie1:3181").toBookieId();
+        BookieId bookie2 = new BookieSocketAddress("bookie2:3181").toBookieId();
+        BookieId bookie3 = new BookieSocketAddress("bookie3:3181").toBookieId();
+
+        List<BookieId> ensembleOfSegment1 = new ArrayList<BookieId>();
+        ensembleOfSegment1.add(bookie0);
+        ensembleOfSegment1.add(bookie1);
+        ensembleOfSegment1.add(bookie2);
+
+        List<BookieId> ensembleOfSegment2 = new ArrayList<BookieId>();
+        ensembleOfSegment2.add(bookie3);
+        ensembleOfSegment2.add(bookie1);
+        ensembleOfSegment2.add(bookie2);
+
+        LedgerMetadataBuilder builder = LedgerMetadataBuilder.create();
+        builder.withEnsembleSize(3)
+                .withWriteQuorumSize(3)
+                .withAckQuorumSize(2)
+                .withDigestType(digestType.toApiDigestType())
+                .withPassword(PASSWORD.getBytes())
+                .newEnsembleEntry(0, ensembleOfSegment1)
+                .newEnsembleEntry(lastEntryId + 1, ensembleOfSegment2)
+                .withLastEntryId(lastEntryId).withLength(65576).withClosedState();
+        LedgerMetadata meta = builder.build();
+
+        assertFalse("expected areEntriesOfLedgerStoredInTheBookie to return False for bookie3",
+                BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId, bookie3, meta));
+        assertTrue("expected areEntriesOfLedgerStoredInTheBookie to return true for bookie2",
+                BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId, bookie2, meta));
+    }
+
+    @Test
+    public void testBookkeeperAdminFormatResetsLedgerIds() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        /*
+         * in this testsuite there are going to be 2 (numOfBookies) ledgers
+         * written and when formatting the BookieAdmin i expect that the
+         * ledger ids restart from 0
+         */
+        int numOfLedgers = 2;
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            Set<Long> ledgerIds = new HashSet<>();
+            for (int n = 0; n < numOfLedgers; n++) {
+                try (LedgerHandle lh = bkc.createLedger(numOfBookies, numOfBookies, digestType, "L".getBytes())) {
+                    ledgerIds.add(lh.getId());
+                    lh.addEntry("000".getBytes());
+                }
+            }
+
+            try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+                bkAdmin.format(baseConf, false, true);
+            }
+
+            /**
+             * ledgers created after format produce the same ids
+             */
+            for (int n = 0; n < numOfLedgers; n++) {
+                try (LedgerHandle lh = bkc.createLedger(numOfBookies, numOfBookies, digestType, "L".getBytes())) {
+                    lh.addEntry("000".getBytes());
+                    assertTrue(ledgerIds.contains(lh.getId()));
+                }
+            }
+        }
+    }
+
+    private void testBookieServiceInfo(boolean readonly, boolean legacy) throws Exception {
+        File tmpDir = createTempDir("bookie", "test");
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[]{tmpDir.getPath()})
+                .setBookiePort(PortManager.nextFreePort())
+                .setMetadataServiceUri(metadataServiceUri);
+
+        LifecycleComponent server = Main.buildBookieServer(new BookieConfiguration(conf));
+        // 2. start the server
+        CompletableFuture<Void> stackComponentFuture = ComponentStarter.startComponent(server);
+        while (server.lifecycleState() != Lifecycle.State.STARTED) {
+            Thread.sleep(100);
+        }
+
+        ServerConfiguration bkConf = newServerConfiguration().setForceReadOnlyBookie(readonly);
+        BookieServer bkServer = startBookie(bkConf);
+
+        String bookieId = bkServer.getBookieId().toString();
+        String host = bkServer.getLocalAddress().getHostName();
+        int port = bkServer.getLocalAddress().getPort();
+
+        if (legacy) {
+            String regPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(bkConf) + "/" + AVAILABLE_NODE;
+            regPath = readonly
+                    ? regPath + READONLY + "/" + bookieId
+                    : regPath + "/" + bookieId;
+            // deleting the metadata, so that the bookie registration should
+            // continue successfully with legacy BookieServiceInfo
+            zkc.setData(regPath, new byte[]{}, -1);
+        }
+
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            BookieServiceInfo bookieServiceInfo = bkAdmin.getBookieServiceInfo(bookieId);
+
+            assertThat(bookieServiceInfo.getEndpoints().size(), is(1));
+            BookieServiceInfo.Endpoint endpoint = bookieServiceInfo.getEndpoints().stream()
+                    .filter(e -> Objects.equals(e.getId(), bookieId))
+                    .findFirst()
+                    .get();
+            assertNotNull("Endpoint " + bookieId + " not found.", endpoint);
+
+            assertThat(endpoint.getHost(), is(host));
+            assertThat(endpoint.getPort(), is(port));
+            assertThat(endpoint.getProtocol(), is("bookie-rpc"));
+        }
+
+        bkServer.shutdown();
+        stackComponentFuture.cancel(true);
+    }
+
+    @Test
+    public void testBookieServiceInfoWritable() throws Exception {
+        testBookieServiceInfo(false, false);
+    }
+
+    @Test
+    public void testBookieServiceInfoReadonly() throws Exception {
+        testBookieServiceInfo(true, false);
+    }
+
+    @Test
+    public void testLegacyBookieServiceInfo() throws Exception {
+        testBookieServiceInfo(false, true);
     }
 }

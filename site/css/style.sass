@@ -81,9 +81,9 @@ footer.footer
 .toc
   overflow-y: scroll
   bottom: 0
-  top: $navbar-height + 5rem
+  top: $navbar-height
   $toc-base-font-size: 1.2rem
-  position: fixed
+  position: sticky
   max-width: 20rem
   padding: 0 0 5% 0
 
@@ -156,16 +156,17 @@ h2.bk-subtitle
   .bk-main-content
     min-height: 70vh
 
+  .container
+    top: $navbar-height
+    position: sticky
+
 .bk-community-container
   width: 60%
 
 aside.sidebar
   width: 15rem
-  position: fixed
   overflow-y: scroll
   bottom: 0
-  top: $navbar-height + 5rem
-  padding: 0 0 5% 0
 
   p + ul.sidebar-items
     margin-top: .2rem

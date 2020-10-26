@@ -138,8 +138,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
             final LogSegmentMetadata newSegment =
                     FutureUtils.result(metadataUpdater.changeSequenceNumber(inprogressSegment,
                             newLogSegmentSequenceNumber));
-            LOG.info("Fixed {} : {} -> {} ",
-                     new Object[] { streamName, inprogressSegment, newSegment });
+            LOG.info("Fixed {} : {} -> {} ", streamName, inprogressSegment, newSegment);
             if (verbose) {
                 System.out.println("Fixed " + streamName + " : " + inprogressSegment.getZNodeName()
                                    + " -> " + newSegment.getZNodeName());
@@ -460,7 +459,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
             boolean force = cmdline.hasOption("f");
             URI uri = URI.create(args[0]);
             // resolving the uri to see if there is another bindings in this uri.
-            ZooKeeperClient zkc = ZooKeeperClientBuilder.newBuilder().uri(uri)
+            ZooKeeperClient zkc = ZooKeeperClientBuilder.newBuilder().uri(uri).zkAclId(null)
                     .sessionTimeoutMs(10000).build();
             BKDLConfig bkdlConfig;
             try {

@@ -83,6 +83,7 @@ public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequ
                     ListenableFuture<Boolean> issueNextRequest = requestExecutor.issueSpeculativeRequest();
                     Futures.addCallback(issueNextRequest, new FutureCallback<Boolean>() {
                         // we want this handler to run immediately after we push the big red button!
+                        @Override
                         public void onSuccess(Boolean issueNextRequest) {
                             if (issueNextRequest) {
                                 scheduleSpeculativeRead(scheduler, requestExecutor,
@@ -96,6 +97,7 @@ public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequ
                             }
                         }
 
+                        @Override
                         public void onFailure(Throwable thrown) {
                             LOG.warn("Failed to issue speculative request for {}, speculativeReadTimeout = {} : ",
                                     requestExecutor, speculativeRequestTimeout, thrown);

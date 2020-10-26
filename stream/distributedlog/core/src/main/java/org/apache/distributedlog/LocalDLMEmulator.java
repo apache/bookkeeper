@@ -17,13 +17,13 @@
  */
 package org.apache.distributedlog;
 
-import com.google.common.base.Optional;
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -78,7 +78,7 @@ public class LocalDLMEmulator {
         private int zkPort = DEFAULT_ZK_PORT;
         private int initialBookiePort = DEFAULT_BOOKIE_INITIAL_PORT;
         private boolean shouldStartZK = true;
-        private Optional<ServerConfiguration> serverConf = Optional.absent();
+        private Optional<ServerConfiguration> serverConf = Optional.empty();
 
         public Builder numBookies(int numBookies) {
             this.numBookies = numBookies;
@@ -145,7 +145,7 @@ public class LocalDLMEmulator {
                     LOG.info("Starting {} bookies : allowLoopback = {}", numBookies, serverConf.getAllowLoopback());
                     LocalBookKeeper.startLocalBookies(zkHost, zkPort,
                             numBookies, shouldStartZK, initialBookiePort, serverConf);
-                    LOG.info("{} bookies are started.");
+                    LOG.info("{} bookies are started.", numBookies);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     // go away quietly
@@ -308,13 +308,22 @@ public class LocalDLMEmulator {
     public static void main(String[] args) throws Exception {
         try {
             if (args.length < 1) {
-                System.out.println("Usage: LocalDLEmulator <zk_port>");
+                System.out.println("Usage: LocalDLEmulator [<zk_host>] <zk_port>");
                 System.exit(-1);
             }
 
-            final int zkPort = Integer.parseInt(args[0]);
+            String zkHost = DEFAULT_ZK_HOST;
+            int zkPort = DEFAULT_ZK_PORT;
+            if (args.length == 1) {
+                zkPort = Integer.parseInt(args[0]);
+            } else {
+                zkHost = args[0];
+                zkPort = Integer.parseInt(args[1]);
+            }
+
             final File zkDir = IOUtils.createTempDir("distrlog", "zookeeper");
             final LocalDLMEmulator localDlm = LocalDLMEmulator.newBuilder()
+                .zkHost(zkHost)
                 .zkPort(zkPort)
                 .build();
 
@@ -334,7 +343,7 @@ public class LocalDLMEmulator {
 
             System.out.println(String.format(
                 "DistributedLog Sandbox is running now. You could access distributedlog://%s:%s",
-                DEFAULT_ZK_HOST,
+                zkHost,
                 zkPort));
         } catch (Exception ex) {
             System.out.println("Exception occurred running emulator " + ex);

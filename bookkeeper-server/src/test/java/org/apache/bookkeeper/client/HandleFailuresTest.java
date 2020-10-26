@@ -36,6 +36,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.versioning.Versioned;
 
@@ -51,11 +52,11 @@ import org.slf4j.LoggerFactory;
 public class HandleFailuresTest {
     private static final Logger log = LoggerFactory.getLogger(LedgerRecovery2Test.class);
 
-    private static final BookieSocketAddress b1 = new BookieSocketAddress("b1", 3181);
-    private static final BookieSocketAddress b2 = new BookieSocketAddress("b2", 3181);
-    private static final BookieSocketAddress b3 = new BookieSocketAddress("b3", 3181);
-    private static final BookieSocketAddress b4 = new BookieSocketAddress("b4", 3181);
-    private static final BookieSocketAddress b5 = new BookieSocketAddress("b5", 3181);
+    private static final BookieId b1 = new BookieSocketAddress("b1", 3181).toBookieId();
+    private static final BookieId b2 = new BookieSocketAddress("b2", 3181).toBookieId();
+    private static final BookieId b3 = new BookieSocketAddress("b3", 3181).toBookieId();
+    private static final BookieId b4 = new BookieSocketAddress("b4", 3181).toBookieId();
+    private static final BookieId b5 = new BookieSocketAddress("b5", 3181).toBookieId();
 
     @Test
     public void testChangeTriggeredOneTimeForOneFailure() throws Exception {

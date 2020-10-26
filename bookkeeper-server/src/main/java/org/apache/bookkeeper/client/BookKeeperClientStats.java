@@ -64,6 +64,7 @@ public interface BookKeeperClientStats {
     String GET_BOOKIE_INFO_OP = "GET_BOOKIE_INFO";
     String SPECULATIVE_READ_COUNT = "SPECULATIVE_READ_COUNT";
     String READ_REQUESTS_REORDERED = "READ_REQUESTS_REORDERED";
+    String GET_LIST_OF_ENTRIES_OF_LEDGER_OP = "GET_LIST_OF_ENTRIES_OF_LEDGER";
 
     // per channel stats
     String CHANNEL_SCOPE = "per_channel_bookie_client";
@@ -81,6 +82,7 @@ public interface BookKeeperClientStats {
     String TIMEOUT_GET_BOOKIE_INFO = "TIMEOUT_GET_BOOKIE_INFO";
     String CHANNEL_START_TLS_OP = "START_TLS";
     String CHANNEL_TIMEOUT_START_TLS_OP = "TIMEOUT_START_TLS";
+    String TIMEOUT_GET_LIST_OF_ENTRIES_OF_LEDGER = "TIMEOUT_GET_LIST_OF_ENTRIES_OF_LEDGER";
 
     String NETTY_EXCEPTION_CNT = "NETTY_EXCEPTION_CNT";
     String CLIENT_CHANNEL_WRITE_WAIT = "CLIENT_CHANNEL_WRITE_WAIT";
@@ -92,6 +94,14 @@ public interface BookKeeperClientStats {
     String ACTIVE_TLS_CHANNEL_COUNTER = "ACTIVE_TLS_CHANNEL_COUNTER";
     String FAILED_CONNECTION_COUNTER = "FAILED_CONNECTION_COUNTER";
     String FAILED_TLS_HANDSHAKE_COUNTER = "FAILED_TLS_HANDSHAKE_COUNTER";
+
+    // placementpolicy stats
+    String NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK = "NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK";
+    String WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS = "WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS";
+    String WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY =
+            "WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS_LATENCY";
+    String WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS = "WRITE_TIME_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS";
+    String NUM_WRITABLE_BOOKIES_IN_DEFAULT_FAULTDOMAIN = "NUM_WRITABLE_BOOKIES_IN_DEFAULT_FAULTDOMAIN";
 
     OpStatsLogger getCreateOpLogger();
     OpStatsLogger getOpenOpLogger();
@@ -114,6 +124,9 @@ public interface BookKeeperClientStats {
     Counter getLacUpdateHitsCounter();
     Counter getLacUpdateMissesCounter();
     OpStatsLogger getClientChannelWriteWaitLogger();
+    OpStatsLogger getWriteDelayedDueToNotEnoughFaultDomainsLatency();
+    Counter getWriteDelayedDueToNotEnoughFaultDomains();
+    Counter getWriteTimedOutDueToNotEnoughFaultDomains();
     void registerPendingAddsGauge(Gauge<Integer> gauge);
 
     static BookKeeperClientStats newInstance(StatsLogger stats) {

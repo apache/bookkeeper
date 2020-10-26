@@ -24,6 +24,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.BodyHandler;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -66,10 +67,14 @@ public class VertxHttpServer implements HttpServer {
         CompletableFuture<AsyncResult<io.vertx.core.http.HttpServer>> future = new CompletableFuture<>();
         VertxHttpHandlerFactory handlerFactory = new VertxHttpHandlerFactory(httpServiceProvider);
         Router router = Router.router(vertx);
+        router.route().handler(BodyHandler.create());
         HttpRouter<VertxAbstractHandler> requestRouter = new HttpRouter<VertxAbstractHandler>(handlerFactory) {
             @Override
             public void bindHandler(String endpoint, VertxAbstractHandler handler) {
                 router.get(endpoint).handler(handler);
+                router.put(endpoint).handler(handler);
+                router.post(endpoint).handler(handler);
+                router.delete(endpoint).handler(handler);
             }
         };
         requestRouter.bindAll();

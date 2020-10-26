@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.bookie.Cookie.Builder;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand.Flags;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -99,7 +100,7 @@ public class GenerateCookieCommand extends CookieCommand<Flags> {
 
     @Override
     protected void apply(RegistrationManager rm, Flags cmdFlags) throws Exception {
-        String bookieId = getBookieId(cmdFlags);
+        BookieId bookieId = getBookieId(cmdFlags);
 
         String instanceId;
         if (null == cmdFlags.instanceId) {
@@ -109,14 +110,14 @@ public class GenerateCookieCommand extends CookieCommand<Flags> {
         }
 
         Builder builder = Cookie.newBuilder();
-        builder.setBookieHost(bookieId);
+        builder.setBookieId(bookieId.toString());
         if (StringUtils.isEmpty(instanceId)) {
             builder.setInstanceId(null);
         } else {
             builder.setInstanceId(instanceId);
         }
         builder.setJournalDirs(cmdFlags.journalDirs);
-        builder.setLedgerDirs(cmdFlags.ledgerDirs);
+        builder.setLedgerDirs(Cookie.encodeDirPaths(cmdFlags.ledgerDirs.split(",")));
 
         Cookie cookie = builder.build();
         cookie.writeToFile(new File(cmdFlags.outputFile));

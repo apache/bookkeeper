@@ -180,8 +180,8 @@ while (entries.hasNextElement()) {
 ### Reading entries after the LastAddConfirmed range
 
 `readUnconfirmedEntries` allowing to read after the LastAddConfirmed range.
-It lets the client read without checking the local value of LastAddConfirmed, so that it is possible to read entries for which the writer has not received the acknowledge yet
-For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully received the acknowledge.
+It lets the client read without checking the local value of LastAddConfirmed, so that it is possible to read entries for which the writer has not received the acknowledge yet.
+For entries which are within the range 0..LastAddConfirmed, BookKeeper guarantees that the writer has successfully received the acknowledge.
 For entries outside that range it is possible that the writer never received the acknowledge and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency issue in some cases.
 With this method you can even read entries before the LastAddConfirmed and entries after it with one call, the expected consistency will be as described above.
 
@@ -197,7 +197,7 @@ while (entries.hasNextElement()) {
 
 ## Deleting ledgers
 
-{% pop Ledgers %} can also be deleted synchronously or asynchronously.
+{% pop Ledgers %} can be deleted synchronously which may throw exception:
 
 ```java
 long ledgerId = 1234;
@@ -211,9 +211,7 @@ try {
 
 ### Delete entries asynchronously
 
-Exceptions thrown:
-
-*
+{% pop Ledgers %} can also be deleted asynchronously:
 
 ```java
 class DeleteEntryCallback implements AsyncCallback.DeleteCallback {
@@ -221,6 +219,7 @@ class DeleteEntryCallback implements AsyncCallback.DeleteCallback {
         System.out.println("Delete completed");
     }
 }
+bkClient.asyncDeleteLedger(ledgerID, new DeleteEntryCallback(), null);
 ```
 
 ## Simple example
@@ -302,7 +301,7 @@ Before you start, you will need to have a BookKeeper cluster running locally on 
 To start up a cluster consisting of six {% pop bookies %} locally:
 
 ```shell
-$ bookkeeper-server/bin/bookkeeper localbookie 6
+$ bin/bookkeeper localbookie 6
 ```
 
 You can specify a different number of bookies if you'd like.
@@ -811,7 +810,7 @@ writing the entry to SO buffers without waiting for an fsync.
 In this case the LastAddConfirmed pointer is not advanced to the writer side neither is updated on the reader's side, this is because **there is some chance to lose the entry**.
 Such entries will be still readable using readUnconfirmed() API, but they won't be readable using Long Poll reads or regular read() API.
 
-In order to get guarantees of durability the writer must use explicitly the [force()](../javadoc/org/apache/bookkeeper/client/api/ForceableHandle) API which will return only after all the bookies in the ensemble ackknowledge the call after
+In order to get guarantees of durability the writer must use explicitly the [force()](../javadoc/org/apache/bookkeeper/client/api/ForceableHandle) API which will return only after all the bookies in the ensemble acknowledge the call after
 performing an fsync to the disk which is storing the journal.
 This way the LastAddConfirmed pointer is advanced on the writer side and it will be eventually available to the readers.
 

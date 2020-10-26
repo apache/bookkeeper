@@ -27,6 +27,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
+import java.util.PrimitiveIterator.OfLong;
+
 import org.apache.bookkeeper.common.util.Watcher;
 
 /**
@@ -59,7 +61,7 @@ public abstract class LedgerDescriptor {
         return bb;
     }
 
-    abstract void checkAccess(byte masterKey[]) throws BookieException, IOException;
+    abstract void checkAccess(byte[] masterKey) throws BookieException, IOException;
 
     abstract long getLedgerId();
 
@@ -80,8 +82,12 @@ public abstract class LedgerDescriptor {
     abstract boolean waitForLastAddConfirmedUpdate(long previousLAC,
                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
         throws IOException;
+    abstract void cancelWaitForLastAddConfirmedUpdate(Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException;
 
     abstract void setExplicitLac(ByteBuf entry) throws IOException;
 
     abstract  ByteBuf getExplicitLac();
+
+    abstract OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException;
 }

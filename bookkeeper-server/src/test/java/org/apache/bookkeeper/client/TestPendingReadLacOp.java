@@ -36,8 +36,8 @@ import org.slf4j.LoggerFactory;
  */
 public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(TestPendingReadLacOp.class);
-    byte pwd[] = "asdf".getBytes();
-    byte data[] = "foo".getBytes();
+    byte[] pwd = "asdf".getBytes();
+    byte[] data = "foo".getBytes();
 
     public TestPendingReadLacOp() {
         super(3);

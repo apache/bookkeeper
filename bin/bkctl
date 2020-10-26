@@ -22,6 +22,7 @@
 
 BINDIR=`dirname "$0"`
 BK_HOME=`cd ${BINDIR}/..;pwd`
+mkdir -p $BK_HOME/logs
 
 source ${BK_HOME}/bin/common.sh
 source ${BK_HOME}/conf/bk_cli_env.sh
@@ -47,7 +48,7 @@ if [ -z "${CLI_LOG_CONF}" ]; then
 fi
 CLI_LOG_DIR=${CLI_LOG_DIR:-"$BK_HOME/logs"}
 CLI_LOG_FILE=${CLI_LOG_FILE:-"bkctl.log"}
-CLI_ROOT_LOGGER=${CLI_ROOT_LOGGER:-"INFO,ROLLINGFILE"}
+CLI_ROOT_LOGGER=${CLI_ROOT_LOGGER:-"INFO,CONSOLE"}
 
 # Configure the classpath
 CLI_CLASSPATH="$CLI_JAR:$CLI_CLASSPATH:$CLI_EXTRA_CLASSPATH"

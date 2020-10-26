@@ -74,7 +74,7 @@ public class EntryLogMetadata {
         return remainingSize;
     }
 
-    ConcurrentLongLongHashMap getLedgersMap() {
+    public ConcurrentLongLongHashMap getLedgersMap() {
         return ledgersMap;
     }
 

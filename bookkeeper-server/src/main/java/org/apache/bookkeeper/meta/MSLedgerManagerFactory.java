@@ -263,7 +263,8 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                                 }
                             });
                     }
-                } else if (BKException.getExceptionCode(exception) == BKException.Code.NoSuchLedgerExistsException) {
+                } else if (BKException.getExceptionCode(exception)
+                        == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                     // the ledger is removed, do nothing
                     Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
                     if (null != listenerSet) {
@@ -395,8 +396,15 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                 }
             };
 
-            ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, serDe.serialize(metadata)),
-                    Version.NEW, msCallback, null);
+            final byte[] bytes;
+            try {
+                bytes = serDe.serialize(metadata);
+            } catch (IOException ioe) {
+                promise.completeExceptionally(new BKException.BKMetadataSerializationException(ioe));
+                return promise;
+            }
+            ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, bytes),
+                            Version.NEW, msCallback, null);
             return promise;
         }
 
@@ -409,11 +417,11 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     int bkRc;
                     if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.warn("Ledger entry does not exist in meta table: ledgerId={}", ledgerId);
-                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                     } else if (MSException.Code.OK.getCode() == rc) {
                         FutureUtils.complete(promise, null);
                     } else {
-                        promise.completeExceptionally(new BKException.MetaStoreException());
+                        promise.completeExceptionally(new BKException.BKMetadataSerializationException());
                     }
                 }
             };
@@ -431,7 +439,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.error("No ledger metadata found for ledger " + ledgerId + " : ",
                                 MSException.create(MSException.Code.get(rc), "No key " + key + " found."));
-                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                         return;
                     }
                     if (MSException.Code.OK.getCode() != rc) {
@@ -457,13 +465,22 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         @Override
         public CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
                                                                                 Version currentVersion) {
-            Value data = new Value().setField(META_FIELD, serDe.serialize(metadata));
+
+            CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
+            final byte[] bytes;
+            try {
+                bytes = serDe.serialize(metadata);
+            } catch (IOException ioe) {
+                promise.completeExceptionally(new BKException.MetaStoreException(ioe));
+                return promise;
+            }
+
+            Value data = new Value().setField(META_FIELD, bytes);
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, currentVersion });
             }
 
-            CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
             final String key = ledgerId2Key(ledgerId);
             MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
                 @Override
@@ -473,7 +490,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         promise.completeExceptionally(new BKException.BKMetadataVersionException());
                     } else if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.warn("Ledger {} doesn't exist when writing its ledger metadata.", ledgerId);
-                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                     } else if (MSException.Code.OK.getCode() == rc) {
                         promise.complete(new Versioned<>(metadata, version));
                     } else {
@@ -625,7 +642,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         }
 
         @Override
-        public LedgerRangeIterator getLedgerRanges() {
+        public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
             return new MSLedgerRangeIterator();
         }
 
@@ -636,16 +653,13 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
          *          Znode Name
          * @return true  if the znode is a special znode otherwise false
          */
-         public static boolean isSpecialZnode(String znode) {
-            if (BookKeeperConstants.AVAILABLE_NODE.equals(znode)
-                    || BookKeeperConstants.COOKIE_NODE.equals(znode)
-                    || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
-                    || BookKeeperConstants.INSTANCEID.equals(znode)
-                    || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)
-                    || MsLedgerManager.IDGEN_ZNODE.equals(znode)) {
-                return true;
-            }
-            return false;
+        public static boolean isSpecialZnode(String znode) {
+            return BookKeeperConstants.AVAILABLE_NODE.equals(znode)
+                || BookKeeperConstants.COOKIE_NODE.equals(znode)
+                || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
+                || BookKeeperConstants.INSTANCEID.equals(znode)
+                || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)
+                || MsLedgerManager.IDGEN_ZNODE.equals(znode);
         }
     }
 

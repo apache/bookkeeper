@@ -35,6 +35,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.util.PortManager;
 import org.junit.Test;
 
 /**
@@ -126,7 +127,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
             // Expected
         }
 
-        bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(1)))
+        bkc.waitForReadOnlyBookie(Bookie.getBookieId(bsConfs.get(1)))
             .get(30, TimeUnit.SECONDS);
 
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
@@ -144,7 +145,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         // Now add the current ledger dir back to writable dirs list
         ledgerDirsManager.addToWritableDirs(testDir, true);
 
-        bkc.waitForWritableBookie(Bookie.getBookieAddress(bsConfs.get(1)))
+        bkc.waitForWritableBookie(Bookie.getBookieId(bsConfs.get(1)))
             .get(30, TimeUnit.SECONDS);
 
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
@@ -245,7 +246,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         }
 
         ServerConfiguration newConf = newServerConfiguration(
-                conf.getBookiePort() + 1,
+                PortManager.nextFreePort(),
                 ledgerDirs[0], ledgerDirs);
         bsConfs.add(newConf);
         bs.add(startBookie(newConf));
@@ -261,7 +262,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         startNewBookie();
         bs.get(1).getBookie().getStateManager().doTransitionToReadOnlyMode();
         try {
-            bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(1)))
+            bkc.waitForReadOnlyBookie(Bookie.getBookieId(bsConfs.get(1)))
                 .get(30, TimeUnit.SECONDS);
 
             bkc.createLedger(2, 2, DigestType.CRC32, "".getBytes());

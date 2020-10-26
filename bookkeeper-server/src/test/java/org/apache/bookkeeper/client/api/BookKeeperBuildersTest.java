@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.bookkeeper.client.BKException.BKClientClosedException;
 import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
-import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
+import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
@@ -307,12 +307,12 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         fail("shoud not be able to create a ledger with such specs");
     }
 
-    @Test(expected = BKNoSuchLedgerExistsException.class)
+    @Test(expected = BKNoSuchLedgerExistsOnMetadataServerException.class)
     public void testOpenLedgerNoId() throws Exception {
         result(newOpenLedgerOp().execute());
     }
 
-    @Test(expected = BKNoSuchLedgerExistsException.class)
+    @Test(expected = BKNoSuchLedgerExistsOnMetadataServerException.class)
     public void testOpenLedgerBadId() throws Exception {
         result(newOpenLedgerOp()
             .withPassword(password)

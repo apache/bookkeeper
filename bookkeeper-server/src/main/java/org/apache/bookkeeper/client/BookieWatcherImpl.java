@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NEW_ENSEMBLE_TIME;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.REPLACE_BOOKIE_TIME;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
@@ -35,14 +36,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.client.BKException.BKInterruptedException;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BKException.MetaStoreException;
+import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdherence;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
@@ -88,39 +94,51 @@ class BookieWatcherImpl implements BookieWatcher {
         help = "operation stats of replacing bookie in an ensemble"
     )
     private final OpStatsLogger replaceBookieTimer;
+    @StatsDoc(
+            name = ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER,
+            help = "total number of newEnsemble/replaceBookie operations failed to adhere"
+            + " EnsemblePlacementPolicy"
+    )
+    private final Counter ensembleNotAdheringToPlacementPolicy;
 
     // Bookies that will not be preferred to be chosen in a new ensemble
-    final Cache<BookieSocketAddress, Boolean> quarantinedBookies;
+    final Cache<BookieId, Boolean> quarantinedBookies;
 
-    private volatile Set<BookieSocketAddress> writableBookies = Collections.emptySet();
-    private volatile Set<BookieSocketAddress> readOnlyBookies = Collections.emptySet();
+    private volatile Set<BookieId> writableBookies = Collections.emptySet();
+    private volatile Set<BookieId> readOnlyBookies = Collections.emptySet();
 
     private CompletableFuture<?> initialWritableBookiesFuture = null;
     private CompletableFuture<?> initialReadonlyBookiesFuture = null;
 
+    private final BookieAddressResolver bookieAddressResolver;
+
     public BookieWatcherImpl(ClientConfiguration conf,
                              EnsemblePlacementPolicy placementPolicy,
                              RegistrationClient registrationClient,
+                             BookieAddressResolver bookieAddressResolver,
                              StatsLogger statsLogger)  {
         this.conf = conf;
+        this.bookieAddressResolver = bookieAddressResolver;
         this.placementPolicy = placementPolicy;
         this.registrationClient = registrationClient;
         this.quarantinedBookies = CacheBuilder.newBuilder()
                 .expireAfterWrite(conf.getBookieQuarantineTimeSeconds(), TimeUnit.SECONDS)
-                .removalListener(new RemovalListener<BookieSocketAddress, Boolean>() {
+                .removalListener(new RemovalListener<BookieId, Boolean>() {
 
                     @Override
-                    public void onRemoval(RemovalNotification<BookieSocketAddress, Boolean> bookie) {
+                    public void onRemoval(RemovalNotification<BookieId, Boolean> bookie) {
                         log.info("Bookie {} is no longer quarantined", bookie.getKey());
                     }
 
                 }).build();
         this.newEnsembleTimer = statsLogger.getOpStatsLogger(NEW_ENSEMBLE_TIME);
         this.replaceBookieTimer = statsLogger.getOpStatsLogger(REPLACE_BOOKIE_TIME);
+        this.ensembleNotAdheringToPlacementPolicy = statsLogger
+                .getCounter(BookKeeperServerStats.ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
     }
 
     @Override
-    public Set<BookieSocketAddress> getBookies() throws BKException {
+    public Set<BookieId> getBookies() throws BKException {
         try {
             return FutureUtils.result(registrationClient.getWritableBookies(), EXCEPTION_FUNC).getValue();
         } catch (BKInterruptedException ie) {
@@ -130,7 +148,22 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     @Override
-    public Set<BookieSocketAddress> getReadOnlyBookies()
+    public Set<BookieId> getAllBookies() throws BKException {
+        try {
+            return FutureUtils.result(registrationClient.getAllBookies(), EXCEPTION_FUNC).getValue();
+        } catch (BKInterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw ie;
+        }
+    }
+
+    @Override
+    public BookieAddressResolver getBookieAddressResolver() {
+        return this.bookieAddressResolver;
+    }
+
+    @Override
+    public Set<BookieId> getReadOnlyBookies()
             throws BKException {
         try {
             return FutureUtils.result(registrationClient.getReadOnlyBookies(), EXCEPTION_FUNC).getValue();
@@ -141,7 +174,7 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     // this callback is already not executed in zookeeper thread
-    private synchronized void processWritableBookiesChanged(Set<BookieSocketAddress> newBookieAddrs) {
+    private synchronized void processWritableBookiesChanged(Set<BookieId> newBookieAddrs) {
         // Update watcher outside ZK callback thread, to avoid deadlock in case some other
         // component is trying to do a blocking ZK operation
         this.writableBookies = newBookieAddrs;
@@ -162,7 +195,7 @@ class BookieWatcherImpl implements BookieWatcher {
         // }
     }
 
-    private synchronized void processReadOnlyBookiesChanged(Set<BookieSocketAddress> readOnlyBookies) {
+    private synchronized void processReadOnlyBookiesChanged(Set<BookieId> readOnlyBookies) {
         this.readOnlyBookies = readOnlyBookies;
         placementPolicy.onClusterChanged(writableBookies, readOnlyBookies);
     }
@@ -173,6 +206,7 @@ class BookieWatcherImpl implements BookieWatcher {
      * @throws BKException when failed to read bookies
      */
     public void initialBlockingBookieRead() throws BKException {
+
         CompletableFuture<?> writable;
         CompletableFuture<?> readonly;
         synchronized (this) {
@@ -191,7 +225,6 @@ class BookieWatcherImpl implements BookieWatcher {
                 readonly = initialReadonlyBookiesFuture;
             }
         }
-
         try {
             FutureUtils.result(writable, EXCEPTION_FUNC);
         } catch (BKInterruptedException ie) {
@@ -209,52 +242,90 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     @Override
-    public List<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
+    public List<BookieId> newEnsemble(int ensembleSize, int writeQuorumSize,
         int ackQuorumSize, Map<String, byte[]> customMetadata)
             throws BKNotEnoughBookiesException {
         long startTime = MathUtils.nowInNano();
-        List<BookieSocketAddress> socketAddresses;
+        EnsemblePlacementPolicy.PlacementResult<List<BookieId>> newEnsembleResponse;
+        List<BookieId> socketAddresses;
+        PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy;
         try {
-            socketAddresses = placementPolicy.newEnsemble(ensembleSize,
-                    writeQuorumSize, ackQuorumSize, customMetadata, new HashSet<BookieSocketAddress>(
-                            quarantinedBookies.asMap().keySet()));
+            Set<BookieId> quarantinedBookiesSet = quarantinedBookies.asMap().keySet();
+            newEnsembleResponse = placementPolicy.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize,
+                    customMetadata, new HashSet<BookieId>(quarantinedBookiesSet));
+            socketAddresses = newEnsembleResponse.getResult();
+            isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.isAdheringToPolicy();
+            if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
+                ensembleNotAdheringToPlacementPolicy.inc();
+                if (ensembleSize > 1) {
+                    log.warn("New ensemble: {} is not adhering to Placement Policy. quarantinedBookies: {}",
+                            socketAddresses, quarantinedBookiesSet);
+                }
+            }
             // we try to only get from the healthy bookies first
             newEnsembleTimer.registerSuccessfulEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         } catch (BKNotEnoughBookiesException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Not enough healthy bookies available, using quarantined bookies");
             }
-            socketAddresses = placementPolicy.newEnsemble(
+            newEnsembleResponse = placementPolicy.newEnsemble(
                     ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, new HashSet<>());
+            socketAddresses = newEnsembleResponse.getResult();
+            isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.isAdheringToPolicy();
+            if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
+                ensembleNotAdheringToPlacementPolicy.inc();
+                log.warn("New ensemble: {} is not adhering to Placement Policy", socketAddresses);
+            }
             newEnsembleTimer.registerFailedEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         }
         return socketAddresses;
     }
 
     @Override
-    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+    public BookieId replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
                                              Map<String, byte[]> customMetadata,
-                                             List<BookieSocketAddress> existingBookies, int bookieIdx,
-                                             Set<BookieSocketAddress> excludeBookies)
+                                             List<BookieId> existingBookies, int bookieIdx,
+                                             Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
         long startTime = MathUtils.nowInNano();
-        BookieSocketAddress addr = existingBookies.get(bookieIdx);
-        BookieSocketAddress socketAddress;
+        BookieId addr = existingBookies.get(bookieIdx);
+        EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse;
+        BookieId socketAddress;
+        PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = PlacementPolicyAdherence.FAIL;
         try {
             // we exclude the quarantined bookies also first
-            Set<BookieSocketAddress> existingAndQuarantinedBookies = new HashSet<BookieSocketAddress>(existingBookies);
-            existingAndQuarantinedBookies.addAll(quarantinedBookies.asMap().keySet());
-            socketAddress = placementPolicy.replaceBookie(
+            Set<BookieId> excludedBookiesAndQuarantinedBookies = new HashSet<BookieId>(
+                    excludeBookies);
+            Set<BookieId> quarantinedBookiesSet = quarantinedBookies.asMap().keySet();
+            excludedBookiesAndQuarantinedBookies.addAll(quarantinedBookiesSet);
+            replaceBookieResponse = placementPolicy.replaceBookie(
                     ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
-                    existingAndQuarantinedBookies, addr, excludeBookies);
+                    existingBookies, addr, excludedBookiesAndQuarantinedBookies);
+            socketAddress = replaceBookieResponse.getResult();
+            isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
+            if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
+                ensembleNotAdheringToPlacementPolicy.inc();
+                log.warn(
+                        "replaceBookie for bookie: {} in ensemble: {} is not adhering to placement policy and"
+                                + " chose {}. excludedBookies {} and quarantinedBookies {}",
+                        addr, existingBookies, socketAddress, excludeBookies, quarantinedBookiesSet);
+            }
             replaceBookieTimer.registerSuccessfulEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         } catch (BKNotEnoughBookiesException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Not enough healthy bookies available, using quarantined bookies");
             }
-            socketAddress = placementPolicy.replaceBookie(
-                    ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
-                    new HashSet<BookieSocketAddress>(existingBookies), addr, excludeBookies);
+            replaceBookieResponse = placementPolicy.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize,
+                    customMetadata, existingBookies, addr, excludeBookies);
+            socketAddress = replaceBookieResponse.getResult();
+            isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
+            if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
+                ensembleNotAdheringToPlacementPolicy.inc();
+                log.warn(
+                        "replaceBookie for bookie: {} in ensemble: {} is not adhering to placement policy and"
+                                + " chose {}. excludedBookies {}",
+                        addr, existingBookies, socketAddress, excludeBookies);
+            }
             replaceBookieTimer.registerFailedEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         }
         return socketAddress;
@@ -265,11 +336,12 @@ class BookieWatcherImpl implements BookieWatcher {
      * @param bookie
      */
     @Override
-    public void quarantineBookie(BookieSocketAddress bookie) {
+    public void quarantineBookie(BookieId bookie) {
         if (quarantinedBookies.getIfPresent(bookie) == null) {
             quarantinedBookies.put(bookie, Boolean.TRUE);
             log.warn("Bookie {} has been quarantined because of read/write errors.", bookie);
         }
     }
+
 
 }

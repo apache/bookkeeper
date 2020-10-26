@@ -51,10 +51,12 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
+import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -114,13 +116,13 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             withSettings()
                 .useConstructor(conf, mockZk)
                 .defaultAnswer(CALLS_REAL_METHODS));
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new BookieSocketAddress("192.0.2.1", 3181),
-                new BookieSocketAddress("192.0.2.2", 3181),
-                new BookieSocketAddress("192.0.2.3", 3181),
-                new BookieSocketAddress("192.0.2.4", 3181),
-                new BookieSocketAddress("192.0.2.5", 3181));
+        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 3181).toBookieId(),
+                new BookieSocketAddress("192.0.2.2", 3181).toBookieId(),
+                new BookieSocketAddress("192.0.2.3", 3181).toBookieId(),
+                new BookieSocketAddress("192.0.2.4", 3181).toBookieId(),
+                new BookieSocketAddress("192.0.2.5", 3181).toBookieId());
         this.metadata = LedgerMetadataBuilder.create()
+            .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
             .withEnsembleSize(5)
             .withWriteQuorumSize(3)
             .withAckQuorumSize(3)
@@ -177,7 +179,18 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         mockZkUtilsAsyncCreateFullPathOptimistic(
             ledgerStr, CreateMode.PERSISTENT,
             KeeperException.Code.NODEEXISTS.intValue(), null);
-
+        Stat stat = mock(Stat.class);
+        when(stat.getVersion()).thenReturn(1234);
+        when(stat.getCtime()).thenReturn(metadata.getCtime());
+        /*
+         * this is needed because in AbstractZkLedgerManager.readLedgerMetadata
+         * if MetadataFormatVersion is >2, then for createLedgerMetadata if we
+         * get NODEEXISTS exception then it will try to read to make sure ledger
+         * creation is robust to ZK connection loss. Please check Issue #1967.
+         */
+        mockZkGetData(
+                ledgerStr, false,
+                KeeperException.Code.OK.intValue(), serDe.serialize(metadata), stat);
         try {
             result(ledgerManager.createLedgerMetadata(ledgerId, metadata));
             fail("Should fail to create ledger metadata if the ledger already exists");
@@ -203,6 +216,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             assertTrue(e instanceof BKException);
             BKException bke = (BKException) e;
             assertEquals(Code.ZKException, bke.getCode());
+            assertTrue(bke.getCause() instanceof KeeperException);
         }
     }
 
@@ -271,9 +285,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         try {
             result(ledgerManager.removeLedgerMetadata(ledgerId, version));
-            fail("Should fail to remove metadata if no such ledger exists");
         } catch (BKException bke) {
-            assertEquals(Code.NoSuchLedgerExistsException, bke.getCode());
+            fail("Should succeed");
         }
 
         verify(mockZk, times(1))
@@ -292,7 +305,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         try {
             result(ledgerManager.removeLedgerMetadata(ledgerId, version));
-            fail("Should fail to remove metadata if no such ledger exists");
+            fail("Should fail to remove metadata upon ZKException");
         } catch (BKException bke) {
             assertEquals(Code.ZKException, bke.getCode());
         }
@@ -364,7 +377,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             result(ledgerManager.readLedgerMetadata(ledgerId));
             fail("Should fail on reading ledger metadata if a ledger doesn't exist");
         } catch (BKException bke) {
-            assertEquals(Code.NoSuchLedgerExistsException, bke.getCode());
+            assertEquals(Code.NoSuchLedgerExistsOnMetadataServerException, bke.getCode());
         }
 
         verify(mockZk, times(1))

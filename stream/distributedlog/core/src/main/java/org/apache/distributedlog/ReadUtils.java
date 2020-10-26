@@ -17,10 +17,10 @@
  */
 package org.apache.distributedlog;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -251,7 +251,7 @@ public class ReadUtils {
         final long endEntryId = context.curEndEntryId.get();
         if (LOG.isDebugEnabled()) {
             LOG.debug("{} reading entries [{} - {}] from {}.",
-                    new Object[] { streamName, startEntryId, endEntryId, metadata});
+                streamName, startEntryId, endEntryId, metadata);
         }
         FutureEventListener<List<Entry.Reader>> readEntriesListener =
             new FutureEventListener<List<Entry.Reader>>() {
@@ -259,7 +259,7 @@ public class ReadUtils {
                 public void onSuccess(final List<Entry.Reader> entries) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} finished reading entries [{} - {}] from {}",
-                                new Object[]{ streamName, startEntryId, endEntryId, metadata});
+                            streamName, startEntryId, endEntryId, metadata);
                     }
                     for (Entry.Reader entry : entries) {
                         try {
@@ -275,8 +275,7 @@ public class ReadUtils {
                     LogRecordWithDLSN record = selector.result();
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} got record from entries [{} - {}] of {} : {}",
-                                new Object[]{streamName, startEntryId, endEntryId,
-                                        metadata, record});
+                            streamName, startEntryId, endEntryId, metadata, record);
                     }
                     promise.complete(record);
                 }
@@ -348,8 +347,8 @@ public class ReadUtils {
                 public void onSuccess(LogRecordWithDLSN value) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} read record from [{} - {}] of {} : {}",
-                                new Object[]{streamName, context.curStartEntryId.get(), context.curEndEntryId.get(),
-                                        metadata, value});
+                            streamName, context.curStartEntryId.get(), context.curEndEntryId.get(),
+                            metadata, value);
                     }
                     if (null != value) {
                         promise.complete(value);
@@ -431,13 +430,11 @@ public class ReadUtils {
                 @Override
                 public void onSuccess(final LogSegmentRandomAccessEntryReader reader) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} Opened log segment {} for reading record",
-                                streamName, l);
+                        LOG.debug("{} Opened log segment {} for reading record", streamName, l);
                     }
                     promise.whenComplete((value, cause) -> reader.asyncClose());
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} {} scanning {}.", new Object[]{
-                                (backward ? "backward" : "forward"), streamName, l});
+                        LOG.debug("{} {} scanning {}.", (backward ? "backward" : "forward"), streamName, l);
                     }
                     asyncReadRecordFromLogSegment(
                             streamName, reader, l, executorService,
@@ -500,7 +497,7 @@ public class ReadUtils {
             if (segment.getLastTxId() < transactionId) {
                 // all log records whose transaction id is less than provided transactionId
                 // then return none
-                Optional<LogRecordWithDLSN> noneRecord = Optional.absent();
+                Optional<LogRecordWithDLSN> noneRecord = Optional.empty();
                 return FutureUtils.value(noneRecord);
             }
         }
@@ -516,7 +513,7 @@ public class ReadUtils {
                     if (lastEntryId < 0) {
                         // it means that the log segment is created but not written yet or an empty log segment.
                         //it is equivalent to 'all log records whose transaction id is less than provided transactionId'
-                        Optional<LogRecordWithDLSN> nonRecord = Optional.absent();
+                        Optional<LogRecordWithDLSN> nonRecord = Optional.empty();
                         promise.complete(nonRecord);
                         return;
                     }
@@ -553,7 +550,7 @@ public class ReadUtils {
                             reader,
                             Lists.newArrayList(0L, lastEntryId),
                             nWays,
-                            Optional.<LogRecordWithDLSN>absent(),
+                            Optional.<LogRecordWithDLSN>empty(),
                             promise);
                 }
 

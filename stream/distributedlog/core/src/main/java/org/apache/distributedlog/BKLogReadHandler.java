@@ -18,11 +18,11 @@
 package org.apache.distributedlog;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -205,8 +205,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
 
             @Override
             public void onFailure(Throwable cause) {
-                LOG.info("failed to acquire readlock {} at {}",
-                        new Object[]{ getLockClientId(), getReadLockPath(), cause });
+                LOG.info("failed to acquire readlock {} at {}", getLockClientId(), getReadLockPath(), cause);
                 threadAcquirePromise.completeExceptionally(cause);
             }
         });

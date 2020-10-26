@@ -10,7 +10,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mmh3
+try:
+    # Try with C based implemenation if available
+    import mmh3
+except ImportError:
+    # Fallback to pure python
+    import pymmh3 as mmh3
 
 __SEED__ = 383242705
 
@@ -22,4 +27,4 @@ class BytesHashRouter(object):
         return
 
     def getRoutingKey(self, key):
-        return mmh3.hash64(key, seed=__SEED__, signed=True)[0]
+        return mmh3.hash64(key, seed=__SEED__)[0]

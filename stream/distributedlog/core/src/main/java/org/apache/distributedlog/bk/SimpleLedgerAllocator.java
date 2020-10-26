@@ -103,6 +103,8 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     // Allocated Ledger
     LedgerHandle allocatedLh = null;
 
+    LedgerMetadata ledgerMetadata;
+
     CompletableFuture<Void> closeFuture = null;
     final LinkedList<CompletableFuture<Void>> ledgerDeletions =
             new LinkedList<CompletableFuture<Void>>();
@@ -159,14 +161,23 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                                                    final QuorumConfigProvider quorumConfigProvider,
                                                    final ZooKeeperClient zkc,
                                                    final BookKeeperClient bkc) {
+        return SimpleLedgerAllocator.of(allocatePath, allocationData, quorumConfigProvider, zkc, bkc, null);
+    }
+
+    public static CompletableFuture<SimpleLedgerAllocator> of(final String allocatePath,
+                                                   final Versioned<byte[]> allocationData,
+                                                   final QuorumConfigProvider quorumConfigProvider,
+                                                   final ZooKeeperClient zkc,
+                                                   final BookKeeperClient bkc,
+                                                   final LedgerMetadata ledgerMetadata) {
         if (null != allocationData && null != allocationData.getValue()
                 && null != allocationData.getVersion()) {
             return FutureUtils.value(new SimpleLedgerAllocator(allocatePath, allocationData,
-                    quorumConfigProvider, zkc, bkc));
+                    quorumConfigProvider, zkc, bkc, ledgerMetadata));
         }
         return getAndCreateAllocationData(allocatePath, zkc)
             .thenApply(allocationData1 -> new SimpleLedgerAllocator(allocatePath, allocationData1,
-                        quorumConfigProvider, zkc, bkc));
+                        quorumConfigProvider, zkc, bkc, ledgerMetadata));
     }
 
     /**
@@ -188,10 +199,36 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                                  QuorumConfigProvider quorumConfigProvider,
                                  ZooKeeperClient zkc,
                                  BookKeeperClient bkc) {
+        this(allocatePath, allocationData, quorumConfigProvider, zkc, bkc, null);
+    }
+
+    /**
+     * Construct a ledger allocator.
+     *
+     * @param allocatePath
+     *          znode path to store the allocated ledger.
+     * @param allocationData
+     *          allocation data.
+     * @param quorumConfigProvider
+     *          Quorum configuration provider.
+     * @param zkc
+     *          zookeeper client.
+     * @param bkc
+     *          bookkeeper client.
+     * @param ledgerMetadata
+     *          metadata to attach to allocated ledgers
+     */
+    public SimpleLedgerAllocator(String allocatePath,
+                                 Versioned<byte[]> allocationData,
+                                 QuorumConfigProvider quorumConfigProvider,
+                                 ZooKeeperClient zkc,
+                                 BookKeeperClient bkc,
+                                 LedgerMetadata ledgerMetadata) {
         this.zkc = zkc;
         this.bkc = bkc;
         this.allocatePath = allocatePath;
         this.quorumConfigProvider = quorumConfigProvider;
+        this.ledgerMetadata = ledgerMetadata;
         initialize(allocationData);
     }
 
@@ -231,7 +268,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         }
         if (Phase.HANDED_OVER == phase) {
             // issue an allocate request when ledger is already handed over.
-            allocateLedger();
+            allocateLedger(ledgerMetadata);
         }
     }
 
@@ -314,10 +351,14 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     private synchronized void setPhase(Phase phase) {
         this.phase = phase;
         LOG.info("Ledger allocator {} moved to phase {} : version = {}.",
-                new Object[] { allocatePath, phase, version });
+            allocatePath, phase, version);
     }
 
     private synchronized void allocateLedger() {
+        allocateLedger(null);
+    }
+
+    private synchronized void allocateLedger(LedgerMetadata ledgerMetadata) {
         // make sure previous allocation is already handed over.
         if (Phase.HANDED_OVER != phase) {
             LOG.error("Trying allocate ledger for {} in phase {}, giving up.", allocatePath, phase);
@@ -329,7 +370,8 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         bkc.createLedger(
                 quorumConfig.getEnsembleSize(),
                 quorumConfig.getWriteQuorumSize(),
-                quorumConfig.getAckQuorumSize()
+                quorumConfig.getAckQuorumSize(),
+                ledgerMetadata
         ).whenComplete(this);
     }
 
@@ -371,11 +413,11 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         Version.Occurred occurred = newVersion.compare(version);
         if (occurred == Version.Occurred.AFTER) {
             LOG.info("Ledger allocator for {} moved version from {} to {}.",
-                    new Object[] { allocatePath, version, newVersion });
+                allocatePath, version, newVersion);
             version = newVersion;
         } else {
             LOG.warn("Ledger allocator for {} received an old version {}, current version is {}.",
-                    new Object[] { allocatePath, newVersion , version });
+                allocatePath, newVersion, version);
         }
     }
 
@@ -399,7 +441,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                     setPhase(Phase.ERROR);
                     deleteLedger(lh.getId());
                     LOG.error("Fail mark ledger {} as allocated under {} : ",
-                            new Object[] { lh.getId(), allocatePath, cause });
+                        lh.getId(), allocatePath, cause);
                     // fail the allocation since failed to mark it as allocated
                     failAllocation(cause);
                 }
@@ -414,7 +456,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         deleteFuture.whenComplete((value, cause) -> {
             if (null != cause) {
                 LOG.error("Error deleting ledger {} for ledger allocator {}, retrying : ",
-                        new Object[] { ledgerId, allocatePath, cause });
+                    ledgerId, allocatePath, cause);
                 if (!isClosing()) {
                     deleteLedger(ledgerId);
                 }

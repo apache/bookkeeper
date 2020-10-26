@@ -29,33 +29,33 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.bookkeeper.client.api.LedgerMetadata;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 
+import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class EnsembleUtils {
     private static final Logger LOG = LoggerFactory.getLogger(EnsembleUtils.class);
 
-    static List<BookieSocketAddress> replaceBookiesInEnsemble(BookieWatcher bookieWatcher,
+    static List<BookieId> replaceBookiesInEnsemble(BookieWatcher bookieWatcher,
                                                               LedgerMetadata metadata,
-                                                              List<BookieSocketAddress> oldEnsemble,
-                                                              Map<Integer, BookieSocketAddress> failedBookies,
+                                                              List<BookieId> oldEnsemble,
+                                                              Map<Integer, BookieId> failedBookies,
                                                               String logContext)
             throws BKException.BKNotEnoughBookiesException {
-        List<BookieSocketAddress> newEnsemble = new ArrayList<>(oldEnsemble);
+        List<BookieId> newEnsemble = new ArrayList<>(oldEnsemble);
 
         int ensembleSize = metadata.getEnsembleSize();
         int writeQ = metadata.getWriteQuorumSize();
         int ackQ = metadata.getAckQuorumSize();
         Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
 
-        Set<BookieSocketAddress> exclude = new HashSet<>(failedBookies.values());
+        Set<BookieId> exclude = new HashSet<>(failedBookies.values());
 
         int replaced = 0;
-        for (Map.Entry<Integer, BookieSocketAddress> entry : failedBookies.entrySet()) {
+        for (Map.Entry<Integer, BookieId> entry : failedBookies.entrySet()) {
             int idx = entry.getKey();
-            BookieSocketAddress addr = entry.getValue();
+            BookieId addr = entry.getValue();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("{} replacing bookie: {} index: {}", logContext, addr, idx);
             }
@@ -68,7 +68,7 @@ class EnsembleUtils {
                 continue;
             }
             try {
-                BookieSocketAddress newBookie = bookieWatcher.replaceBookie(
+                BookieId newBookie = bookieWatcher.replaceBookie(
                         ensembleSize, writeQ, ackQ, customMetadata, newEnsemble, idx, exclude);
                 newEnsemble.set(idx, newBookie);
 
@@ -85,8 +85,8 @@ class EnsembleUtils {
         return newEnsemble;
     }
 
-    static Set<Integer> diffEnsemble(List<BookieSocketAddress> e1,
-                                     List<BookieSocketAddress> e2) {
+    static Set<Integer> diffEnsemble(List<BookieId> e1,
+                                     List<BookieId> e2) {
         checkArgument(e1.size() == e2.size(), "Ensembles must be of same size");
         Set<Integer> diff = new HashSet<>();
         for (int i = 0; i < e1.size(); i++) {

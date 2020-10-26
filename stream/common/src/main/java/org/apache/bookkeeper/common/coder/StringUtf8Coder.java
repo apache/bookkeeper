@@ -20,10 +20,10 @@ package org.apache.bookkeeper.common.coder;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Utf8;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
+import java.nio.charset.StandardCharsets;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -56,7 +56,7 @@ public final class StringUtf8Coder implements Coder<String> {
 
     @Override
     public String decode(byte[] data) {
-        return new String(data, Charsets.UTF_8);
+        return new String(data, StandardCharsets.UTF_8);
     }
 
     @Override

@@ -39,5 +39,5 @@ mavenJob('bookkeeper_postcommit_validation_master') {
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project.
-  goals('clean apache-rat:check checkstyle:check package -Ddistributedlog -Dstream -DskipTests')
+  goals('clean apache-rat:check checkstyle:check package -Ddistributedlog  -DskipTests')
 }

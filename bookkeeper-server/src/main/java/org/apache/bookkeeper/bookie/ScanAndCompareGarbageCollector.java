@@ -32,16 +32,22 @@ import java.util.SortedMap;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -73,7 +79,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
     private final LedgerManager ledgerManager;
     private final CompactableLedgerStorage ledgerStorage;
     private final ServerConfiguration conf;
-    private final BookieSocketAddress selfBookieAddress;
+    private final BookieId selfBookieAddress;
     private ZooKeeper zk = null;
     private boolean enableGcOverReplicatedLedger;
     private final long gcOverReplicatedLedgerIntervalMillis;
@@ -88,7 +94,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         this.ledgerManager = ledgerManager;
         this.ledgerStorage = ledgerStorage;
         this.conf = conf;
-        this.selfBookieAddress = Bookie.getBookieAddress(conf);
+        this.selfBookieAddress = Bookie.getBookieId(conf);
         this.gcOverReplicatedLedgerIntervalMillis = conf.getGcOverreplicatedLedgerWaitTimeMillis();
         this.lastOverReplicatedLedgerGcTimeMillis = System.currentTimeMillis();
         if (gcOverReplicatedLedgerIntervalMillis > 0) {
@@ -139,11 +145,15 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             }
 
             // Iterate over all the ledger on the metadata store
-            LedgerRangeIterator ledgerRangeIterator = ledgerManager.getLedgerRanges();
+            long zkOpTimeoutMs = this.conf.getZkTimeout() * 2;
+            LedgerRangeIterator ledgerRangeIterator = ledgerManager
+                    .getLedgerRanges(zkOpTimeoutMs);
             Set<Long> ledgersInMetadata = null;
             long start;
             long end = -1;
             boolean done = false;
+            AtomicBoolean isBookieInEnsembles = new AtomicBoolean(false);
+            Versioned<LedgerMetadata> metadata = null;
             while (!done) {
                 start = end + 1;
                 if (ledgerRangeIterator.hasNext()) {
@@ -164,15 +174,37 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                 for (Long bkLid : subBkActiveLedgers) {
                     if (!ledgersInMetadata.contains(bkLid)) {
                         if (verifyMetadataOnGc) {
+                            isBookieInEnsembles.set(false);
+                            metadata = null;
                             int rc = BKException.Code.OK;
                             try {
-                                result(ledgerManager.readLedgerMetadata(bkLid));
-                            } catch (BKException e) {
-                                rc = e.getCode();
+                                metadata = result(ledgerManager.readLedgerMetadata(bkLid), zkOpTimeoutMs,
+                                        TimeUnit.MILLISECONDS);
+                            } catch (BKException | TimeoutException e) {
+                                if (e instanceof BKException) {
+                                    rc = ((BKException) e).getCode();
+                                } else {
+                                    LOG.warn("Time-out while fetching metadata for Ledger {} : {}.", bkLid,
+                                            e.getMessage());
+
+                                    continue;
+                                }
                             }
-                            if (rc != BKException.Code.NoSuchLedgerExistsException) {
+                            // check bookie should be part of ensembles in one
+                            // of the segment else ledger should be deleted from
+                            // local storage
+                            if (metadata != null && metadata.getValue() != null) {
+                                metadata.getValue().getAllEnsembles().forEach((entryId, ensembles) -> {
+                                    if (ensembles != null && ensembles.contains(selfBookieAddress)) {
+                                        isBookieInEnsembles.set(true);
+                                    }
+                                });
+                                if (isBookieInEnsembles.get()) {
+                                    continue;
+                                }
+                            } else if (rc != BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                                 LOG.warn("Ledger {} Missing in metadata list, but ledgerManager returned rc: {}.",
-                                         bkLid, rc);
+                                        bkLid, rc);
                                 continue;
                             }
                         }
@@ -182,7 +214,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             }
         } catch (Throwable t) {
             // ignore exception, collecting garbage next time
-            LOG.warn("Exception when iterating over the metadata {}", t);
+            LOG.warn("Exception when iterating over the metadata", t);
         } finally {
             if (zk != null) {
                 try {
@@ -224,9 +256,9 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                                     if (!metadata.getValue().isClosed()) {
                                         return;
                                     }
-                                    SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles =
+                                    SortedMap<Long, ? extends List<BookieId>> ensembles =
                                         metadata.getValue().getAllEnsembles();
-                                    for (List<BookieSocketAddress> ensemble : ensembles.values()) {
+                                    for (List<BookieId> ensemble : ensembles.values()) {
                                         // check if this bookie is supposed to have this ledger
                                         if (ensemble.contains(selfBookieAddress)) {
                                             return;

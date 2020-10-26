@@ -20,34 +20,40 @@
 FROM centos:7
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG BK_VERSION=4.8.1
+ARG BK_VERSION=4.11.0
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
-ARG GPG_KEY=A615D22C
+ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
 
 ENV BOOKIE_PORT=3181
 EXPOSE $BOOKIE_PORT
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
-
+ENV JAVA_HOME=/usr/lib/jvm/java-11
 
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-1.8.0-openjdk-headless wget bash python sudo \
+    && yum install -y java-11-openjdk-devel wget bash python sudo\
     && mkdir -pv /opt \
     && cd /opt \
-    && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz" \
-    && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz.asc" \
-    && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz.sha512" \
+    && wget -q "${DISTRO_URL}" \
+    && wget -q "${DISTRO_URL}.asc" \
+    && wget -q "${DISTRO_URL}.sha512" \
     && sha512sum -c ${DISTRO_NAME}.tar.gz.sha512 \
-    && gpg --keyserver ha.pool.sks-keyservers.net --recv-key "$GPG_KEY" \
+    && wget https://dist.apache.org/repos/dist/release/bookkeeper/KEYS \
+    && gpg --import KEYS \
     && gpg --batch --verify "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz" \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
+    # install zookeeper shell
+    && wget -q https://bootstrap.pypa.io/get-pip.py \
+    && python get-pip.py \
+    && pip install zk-shell \
+    && rm -rf get-pip.py \
     && yum remove -y wget \
-    && yum clean all
+    && yum clean all \
+    && ls /usr/lib/jvm
 
 WORKDIR /opt/bookkeeper
 

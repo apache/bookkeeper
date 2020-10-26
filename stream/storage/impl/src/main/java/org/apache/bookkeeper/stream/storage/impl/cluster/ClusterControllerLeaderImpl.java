@@ -27,7 +27,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeader;
@@ -55,7 +55,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
     private final RegistrationClient regClient;
 
     // keep a reference to a set of available servers
-    private volatile Set<BookieSocketAddress> availableServers;
+    private volatile Set<BookieId> availableServers;
 
     // variables for suspending controller
     @Getter(AccessLevel.PACKAGE)
@@ -172,7 +172,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
         // now, the controller has permits and meet the time requirement for assigning containers.
         performServerChangesPermits.drainPermits();
 
-        Set<BookieSocketAddress> availableServersSnapshot = availableServers;
+        Set<BookieId> availableServersSnapshot = availableServers;
         if (null == availableServersSnapshot || availableServersSnapshot.isEmpty()) {
             // haven't received any servers from registration service, wait for 200ms and retry.
             if (lastSuccessfulAssigmentAt < 0) {
@@ -210,7 +210,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
     }
 
     @Override
-    public void onBookiesChanged(Versioned<Set<BookieSocketAddress>> bookies) {
+    public void onBookiesChanged(Versioned<Set<BookieId>> bookies) {
         log.info("Cluster topology is changed - new cluster : {}", bookies);
         // when bookies are changed, notify the leader to take actions
         this.availableServers = bookies.getValue();

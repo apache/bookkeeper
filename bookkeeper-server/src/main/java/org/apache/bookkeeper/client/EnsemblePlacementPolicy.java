@@ -30,10 +30,12 @@ import org.apache.bookkeeper.client.DistributionSchedule.WriteSet;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
@@ -215,7 +217,8 @@ public interface EnsemblePlacementPolicy {
                                        Optional<DNSToSwitchMapping> optionalDnsResolver,
                                        HashedWheelTimer hashedWheelTimer,
                                        FeatureProvider featureProvider,
-                                       StatsLogger statsLogger);
+                                       StatsLogger statsLogger,
+                                       BookieAddressResolver bookieAddressResolver);
 
     /**
      * Uninitialize the policy.
@@ -238,8 +241,8 @@ public interface EnsemblePlacementPolicy {
      *          All the bookies in the cluster available for readonly.
      * @return the dead bookies during this cluster change.
      */
-    Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
-                                              Set<BookieSocketAddress> readOnlyBookies);
+    Set<BookieId> onClusterChanged(Set<BookieId> writableBookies,
+                                              Set<BookieId> readOnlyBookies);
 
     /**
      * Choose <i>numBookies</i> bookies for ensemble. If the count is more than the number of available
@@ -251,6 +254,9 @@ public interface EnsemblePlacementPolicy {
      * <p>{@code customMetadata} is the same user defined data that user provides
      * when {@link BookKeeper#createLedger(int, int, int, BookKeeper.DigestType, byte[], Map)}.
      *
+     * <p>If 'enforceMinNumRacksPerWriteQuorum' config is enabled then the bookies belonging to default
+     * faultzone (rack) will be excluded while selecting bookies.
+     *
      * @param ensembleSize
      *          Ensemble Size
      * @param writeQuorumSize
@@ -261,18 +267,21 @@ public interface EnsemblePlacementPolicy {
      *                       provides in {@link BookKeeper#createLedger(int, int, int, BookKeeper.DigestType, byte[])}
      * @param excludeBookies Bookies that should not be considered as targets.
      * @throws BKNotEnoughBookiesException if not enough bookies available.
-     * @return the List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;
+     * @return a placement result containing list of bookie addresses for the ensemble.
      */
-    List<BookieSocketAddress> newEnsemble(int ensembleSize,
-                                               int writeQuorumSize,
-                                               int ackQuorumSize,
-                                               Map<String, byte[]> customMetadata,
-                                               Set<BookieSocketAddress> excludeBookies)
-        throws BKNotEnoughBookiesException;
+    PlacementResult<List<BookieId>> newEnsemble(int ensembleSize,
+                                                           int writeQuorumSize,
+                                                           int ackQuorumSize,
+                                                           Map<String, byte[]> customMetadata,
+                                                           Set<BookieId> excludeBookies)
+            throws BKNotEnoughBookiesException;
 
     /**
      * Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
      * {@link BKNotEnoughBookiesException} is thrown.
+     *
+     * <p>If 'enforceMinNumRacksPerWriteQuorum' config is enabled then the bookies belonging to default
+     * faultzone (rack) will be excluded while selecting bookies.
      *
      * @param ensembleSize
      *          the value of ensembleSize
@@ -285,16 +294,16 @@ public interface EnsemblePlacementPolicy {
      * @param bookieToReplace bookie to replace
      * @param excludeBookies bookies that should not be considered as candidate.
      * @throws BKNotEnoughBookiesException
-     * @return the org.apache.bookkeeper.net.BookieSocketAddress
+     * @return a placement result containing the new bookie address.
      */
-    BookieSocketAddress replaceBookie(int ensembleSize,
-                                      int writeQuorumSize,
-                                      int ackQuorumSize,
-                                      Map<String, byte[]> customMetadata,
-                                      Set<BookieSocketAddress> currentEnsemble,
-                                      BookieSocketAddress bookieToReplace,
-                                      Set<BookieSocketAddress> excludeBookies)
-        throws BKNotEnoughBookiesException;
+    PlacementResult<BookieId> replaceBookie(int ensembleSize,
+                                                       int writeQuorumSize,
+                                                       int ackQuorumSize,
+                                                       Map<String, byte[]> customMetadata,
+                                                       List<BookieId> currentEnsemble,
+                                                       BookieId bookieToReplace,
+                                                       Set<BookieId> excludeBookies)
+            throws BKNotEnoughBookiesException;
 
     /**
      * Register a bookie as slow so that it is tried after available and read-only bookies.
@@ -304,7 +313,7 @@ public interface EnsemblePlacementPolicy {
      * @param entryId
      *          Entry ID that caused a speculative timeout on the bookie.
      */
-    void registerSlowBookie(BookieSocketAddress bookieSocketAddress, long entryId);
+    void registerSlowBookie(BookieId bookieSocketAddress, long entryId);
 
     /**
      * Reorder the read sequence of a given write quorum <i>writeSet</i>.
@@ -321,7 +330,7 @@ public interface EnsemblePlacementPolicy {
      * @since 4.5
      */
     DistributionSchedule.WriteSet reorderReadSequence(
-            List<BookieSocketAddress> ensemble,
+            List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet);
 
@@ -341,7 +350,7 @@ public interface EnsemblePlacementPolicy {
      * @since 4.5
      */
     DistributionSchedule.WriteSet reorderReadLACSequence(
-            List<BookieSocketAddress> ensemble,
+            List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet);
 
@@ -352,7 +361,7 @@ public interface EnsemblePlacementPolicy {
      *          A map that has the bookie to BookieInfo
      * @since 4.5
      */
-    default void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieInfoMap) {
+    default void updateBookieInfo(Map<BookieId, BookieInfo> bookieInfoMap) {
     }
 
     /**
@@ -378,12 +387,103 @@ public interface EnsemblePlacementPolicy {
         if (!currentStickyBookieIndex.isPresent()) {
             // Pick one bookie randomly from the current ensemble as the initial
             // "sticky bookie"
-            return ThreadLocalRandom.current().nextInt() % metadata.getEnsembleSize();
+            return ThreadLocalRandom.current().nextInt(metadata.getEnsembleSize());
         } else {
             // When choosing a new sticky bookie index (eg: after the current
             // one has read failures), by default we pick the next one in the
             // ensemble, to avoid picking up the same one again.
-            return (currentStickyBookieIndex.get() + 1) % metadata.getEnsembleSize();
+            return MathUtils.signSafeMod(currentStickyBookieIndex.get() + 1, metadata.getEnsembleSize());
+        }
+    }
+
+    /**
+     * returns AdherenceLevel if the Ensemble is strictly/softly/fails adhering
+     * to placement policy, like in the case of
+     * RackawareEnsemblePlacementPolicy, bookies in the writeset are from
+     * 'minNumRacksPerWriteQuorum' number of racks. And in the case of
+     * RegionawareEnsemblePlacementPolicy, check for
+     * minimumRegionsForDurability, reppRegionsToWrite, rack distribution within
+     * a region and other parameters of RegionAwareEnsemblePlacementPolicy. In
+     * ZoneAwareEnsemblePlacementPolicy if bookies in the writeset are from
+     * 'desiredNumOfZones' then it is considered as MEETS_STRICT if they are
+     * from 'minNumOfZones' then it is considered as MEETS_SOFT otherwise
+     * considered as FAIL.
+     *
+     * @param ensembleList
+     *            list of BookieId of bookies in the ensemble
+     * @param writeQuorumSize
+     *            writeQuorumSize of the ensemble
+     * @param ackQuorumSize
+     *            ackQuorumSize of the ensemble
+     * @return
+     */
+    default PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieId> ensembleList,
+            int writeQuorumSize, int ackQuorumSize) {
+        return PlacementPolicyAdherence.FAIL;
+    }
+
+    /**
+     * Returns true if the bookies that have acknowledged a write adhere to the minimum fault domains as defined in the
+     * placement policy in use. Ex: In the case of RackawareEnsemblePlacementPolicy, bookies belong to at least
+     * 'minNumRacksPerWriteQuorum' number of racks.
+     *
+     * @param ackedBookies
+     *            list of BookieId of bookies that have acknowledged a write.
+     * @param writeQuorumSize
+     *            writeQuorumSize of the ensemble
+     * @param ackQuorumSize
+     *            ackQuorumSize of the ensemble
+     * @return
+     */
+    default boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieId> ackedBookies,
+                                                             int writeQuorumSize,
+                                                             int ackQuorumSize) {
+        return true;
+    }
+
+    /**
+     * enum for PlacementPolicyAdherence. Currently we are supporting tri-value
+     * enum for PlacementPolicyAdherence. If placement policy is met strictly
+     * then it is MEETS_STRICT, if it doesn't adhere to placement policy then it
+     * is FAIL. But there are certain placement policies, like
+     * ZoneAwareEnsemblePlacementPolicy which has definition of soft adherence
+     * level to support zone down scenarios.
+     */
+    enum PlacementPolicyAdherence {
+        FAIL(1), MEETS_SOFT(3), MEETS_STRICT(5);
+        private int numVal;
+
+        private PlacementPolicyAdherence(int numVal) {
+            this.numVal = numVal;
+        }
+
+        public int getNumVal() {
+            return numVal;
+        }
+    }
+
+    /**
+     * Result of a placement calculation against a placement policy.
+     */
+    final class PlacementResult<T> {
+        private final T result;
+        private final PlacementPolicyAdherence policyAdherence;
+
+        public static <T> PlacementResult<T> of(T result, PlacementPolicyAdherence policyAdherence) {
+            return new PlacementResult<>(result, policyAdherence);
+        }
+
+        private PlacementResult(T result, PlacementPolicyAdherence policyAdherence) {
+            this.result = result;
+            this.policyAdherence = policyAdherence;
+        }
+
+        public T getResult() {
+            return result;
+        }
+
+        public PlacementPolicyAdherence isAdheringToPolicy() {
+            return policyAdherence;
         }
     }
 }

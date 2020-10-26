@@ -117,6 +117,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final Class<? extends LedgerIdFormatter> DEFAULT_LEDGERID_FORMATTER =
             LedgerIdFormatter.LongLedgerIdFormatter.class;
 
+    protected static final String TLS_CERT_FILES_REFRESH_DURATION_SECONDS = "tlsCertFilesRefreshDurationSeconds";
     /**
      * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
      * Please refer to official JDK JavaDocs
@@ -158,6 +159,23 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
 
     // enforce minimum number of racks per write quorum
     public static final String ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM = "enforceMinNumRacksPerWriteQuorum";
+
+    // enforce minimum number of fault domains for write
+    public static final String ENFORCE_MIN_NUM_FAULT_DOMAINS_FOR_WRITE = "enforceMinNumFaultDomainsForWrite";
+
+    // ignore usage of local node in the internal logic of placement policy
+    public static final String IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY = "ignoreLocalNodeInPlacementPolicy";
+
+    // minimum number of zones per write quorum in ZoneAwarePlacementPolicy
+    public static final String MIN_NUM_ZONES_PER_WRITE_QUORUM = "minNumZonesPerWriteQuorum";
+
+    // desired number of zones per write quorum in ZoneAwarePlacementPolicy
+    public static final String DESIRED_NUM_ZONES_PER_WRITE_QUORUM = "desiredNumZonesPerWriteQuorum";
+
+    // in ZoneawareEnsemblePlacementPolicy if strict placement is enabled then
+    // minZones/desiredZones in writeQuorum would be maintained otherwise it
+    // will pick nodes randomly.
+    public static final String ENFORCE_STRICT_ZONEAWARE_PLACEMENT = "enforceStrictZoneawarePlacement";
 
     // Allocator configuration
     protected static final String ALLOCATOR_POOLING_POLICY = "allocatorPoolingPolicy";
@@ -766,6 +784,30 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     }
 
     /**
+     * Set tls certificate files refresh duration in seconds.
+     *
+     * @param certFilesRefreshSec
+     *            tls certificate files refresh duration in seconds (set 0 to
+     *            disable auto refresh)
+     * @return current configuration
+     */
+    public T setTLSCertFilesRefreshDurationSeconds(long certFilesRefreshSec) {
+        setProperty(TLS_CERT_FILES_REFRESH_DURATION_SECONDS, certFilesRefreshSec);
+        return getThis();
+    }
+
+    /**
+     * Get tls certificate files refresh duration in seconds.
+     *
+     * @return tls certificate files refresh duration in seconds. Default 0
+     *         to disable auto refresh.
+     *
+     */
+    public long getTLSCertFilesRefreshDurationSeconds() {
+        return getLong(TLS_CERT_FILES_REFRESH_DURATION_SECONDS, 0);
+    }
+
+    /**
      * Set the list of enabled TLS cipher suites. Leave null not to override default JDK list. This list will be passed
      * to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }. Please refer to official JDK JavaDocs
      *
@@ -830,6 +872,60 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     }
 
     /**
+     * Set the minimum number of zones per write quorum in
+     * ZoneAwarePlacementPolicy.
+     */
+    public void setMinNumZonesPerWriteQuorum(int minNumZonesPerWriteQuorum) {
+        setProperty(MIN_NUM_ZONES_PER_WRITE_QUORUM, minNumZonesPerWriteQuorum);
+    }
+
+    /**
+     * Get the minimum number of zones per write quorum in
+     * ZoneAwarePlacementPolicy.
+     */
+    public int getMinNumZonesPerWriteQuorum() {
+        return getInteger(MIN_NUM_ZONES_PER_WRITE_QUORUM, 2);
+    }
+
+    /**
+     * Set the desired number of zones per write quorum in
+     * ZoneAwarePlacementPolicy.
+     */
+    public void setDesiredNumZonesPerWriteQuorum(int desiredNumZonesPerWriteQuorum) {
+        setProperty(DESIRED_NUM_ZONES_PER_WRITE_QUORUM, desiredNumZonesPerWriteQuorum);
+    }
+
+    /**
+     * Get the desired number of zones per write quorum in
+     * ZoneAwarePlacementPolicy.
+     */
+    public int getDesiredNumZonesPerWriteQuorum() {
+        return getInteger(DESIRED_NUM_ZONES_PER_WRITE_QUORUM, 3);
+    }
+
+    /**
+     * Set the flag to enforce strict zoneaware placement.
+     *
+     * <p>in ZoneawareEnsemblePlacementPolicy if strict placement is enabled then
+     * minZones/desiredZones in writeQuorum would be maintained otherwise it
+     * will pick nodes randomly.
+     */
+    public void setEnforceStrictZoneawarePlacement(boolean enforceStrictZoneawarePlacement) {
+        setProperty(ENFORCE_STRICT_ZONEAWARE_PLACEMENT, enforceStrictZoneawarePlacement);
+    }
+
+    /**
+     * Get the flag to enforce strict zoneaware placement.
+     *
+     * <p>in ZoneawareEnsemblePlacementPolicy if strict placement is enabled then
+     * minZones/desiredZones in writeQuorum would be maintained otherwise it
+     * will pick nodes randomly.
+     */
+    public boolean getEnforceStrictZoneawarePlacement() {
+        return getBoolean(ENFORCE_STRICT_ZONEAWARE_PLACEMENT, true);
+    }
+
+    /**
      * Set the flag to enforce minimum number of racks per write quorum.
      */
     public void setEnforceMinNumRacksPerWriteQuorum(boolean enforceMinNumRacksPerWriteQuorum) {
@@ -841,6 +937,34 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public boolean getEnforceMinNumRacksPerWriteQuorum() {
         return getBoolean(ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM, false);
+    }
+
+    /**
+     * Set the flag to enforce minimum number of fault domains for write.
+     */
+    public void setEnforceMinNumFaultDomainsForWrite(boolean enforceMinNumFaultDomainsForWrite) {
+        setProperty(ENFORCE_MIN_NUM_FAULT_DOMAINS_FOR_WRITE, enforceMinNumFaultDomainsForWrite);
+    }
+
+    /**
+     * Get the flag to enforce minimum number of fault domains for write.
+     */
+    public boolean getEnforceMinNumFaultDomainsForWrite() {
+        return getBoolean(ENFORCE_MIN_NUM_FAULT_DOMAINS_FOR_WRITE, false);
+    }
+
+    /**
+     * Sets the flag to ignore usage of localnode in placement policy.
+     */
+    public void setIgnoreLocalNodeInPlacementPolicy(boolean ignoreLocalNodeInPlacementPolicy) {
+        setProperty(IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY, ignoreLocalNodeInPlacementPolicy);
+    }
+
+    /**
+     * Whether to ignore localnode in placementpolicy.
+     */
+    public boolean getIgnoreLocalNodeInPlacementPolicy() {
+        return getBoolean(IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY, false);
     }
 
     /**

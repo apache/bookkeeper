@@ -23,7 +23,7 @@
   <parent>
     <artifactId>bookkeeper-dist</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.9.0-SNAPSHOT</version>
+    <version>4.12.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
@@ -60,6 +60,13 @@
       <groupId>org.apache.bookkeeper.http</groupId>
       <artifactId>vertx-http-server</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <!-- stream.storage -->
+    <dependency>
+       <groupId>org.apache.bookkeeper</groupId>
+       <artifactId>stream-storage-server</artifactId>
+       <version>${project.version}</version>
     </dependency>
 
     <!-- bookkeeper.tools (new CLI) -->
@@ -123,22 +130,4 @@
 
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>stream</id>
-      <activation>
-        <property>
-          <name>stream</name>
-        </property>
-      </activation>
-      <dependencies>
-        <!-- stream.storage -->
-        <dependency>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>stream-storage-server</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
 </project>

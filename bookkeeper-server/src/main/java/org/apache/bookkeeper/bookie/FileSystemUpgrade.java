@@ -21,7 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import com.google.common.collect.Lists;
@@ -86,15 +86,13 @@ public class FileSystemUpgrade {
                 return false;
             }
 
+            @Override
             public boolean accept(File dir, String name) {
                 if (name.endsWith(".txn") || name.endsWith(".log")
                     || name.equals("lastId") || name.startsWith("lastMark")) {
                     return true;
                 }
-                if (containsIndexFiles(dir, name)) {
-                    return true;
-                }
-                return false;
+                return containsIndexFiles(dir, name);
             }
         };
 
@@ -198,6 +196,7 @@ public class FileSystemUpgrade {
                     c.writeToDirectory(tmpDir);
 
                     String[] files = d.list(new FilenameFilter() {
+                            @Override
                             public boolean accept(File dir, String name) {
                                 return bookieFilesFilter.accept(dir, name)
                                     && !(new File(dir, name).isDirectory());

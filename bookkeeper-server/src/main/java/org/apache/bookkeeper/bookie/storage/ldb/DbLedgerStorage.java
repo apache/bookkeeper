@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -62,6 +63,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -80,7 +82,8 @@ public class DbLedgerStorage implements LedgerStorage {
 
     private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory())
             / MB;
-    private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory()) / MB;
+    private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory())
+            / MB;
     private int numberOfDirs;
     private List<SingleDirectoryDbLedgerStorage> ledgerStorageList;
 
@@ -94,8 +97,10 @@ public class DbLedgerStorage implements LedgerStorage {
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
             LedgerDirsManager indexDirsManager, StateManager stateManager, CheckpointSource checkpointSource,
             Checkpointer checkpointer, StatsLogger statsLogger, ByteBufAllocator allocator) throws IOException {
-        long writeCacheMaxSize = conf.getLong(WRITE_CACHE_MAX_SIZE_MB, DEFAULT_WRITE_CACHE_MAX_SIZE_MB) * MB;
-        long readCacheMaxSize = conf.getLong(READ_AHEAD_CACHE_MAX_SIZE_MB, DEFAULT_READ_CACHE_MAX_SIZE_MB) * MB;
+        long writeCacheMaxSize = getLongVariableOrDefault(conf, WRITE_CACHE_MAX_SIZE_MB,
+                DEFAULT_WRITE_CACHE_MAX_SIZE_MB) * MB;
+        long readCacheMaxSize = getLongVariableOrDefault(conf, READ_AHEAD_CACHE_MAX_SIZE_MB,
+                DEFAULT_READ_CACHE_MAX_SIZE_MB) * MB;
 
         this.allocator = allocator;
         this.numberOfDirs = ledgerDirsManager.getAllLedgerDirs().size();
@@ -203,6 +208,13 @@ public class DbLedgerStorage implements LedgerStorage {
     public boolean waitForLastAddConfirmedUpdate(long ledgerId, long previousLAC,
             Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
         return getLedgerSorage(ledgerId).waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
+    }
+
+    @Override
+    public void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException {
+        getLedgerSorage(ledgerId).cancelWaitForLastAddConfirmedUpdate(ledgerId, watcher);
     }
 
     @Override
@@ -334,5 +346,25 @@ public class DbLedgerStorage implements LedgerStorage {
     public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
         return ledgerStorageList.stream()
             .map(single -> single.getGarbageCollectionStatus().get(0)).collect(Collectors.toList());
+    }
+
+    static long getLongVariableOrDefault(ServerConfiguration conf, String keyName, long defaultValue) {
+        Object obj = conf.getProperty(keyName);
+        if (obj instanceof Number) {
+            return ((Number) obj).longValue();
+        } else if (obj == null) {
+            return defaultValue;
+        } else if (StringUtils.isEmpty(conf.getString(keyName))) {
+            return defaultValue;
+        } else {
+            return conf.getLong(keyName);
+        }
+    }
+
+    @Override
+    public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
+        // check Issue #2078
+        throw new UnsupportedOperationException(
+                "getListOfEntriesOfLedger method is currently unsupported for DbLedgerStorage");
     }
 }

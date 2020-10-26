@@ -73,7 +73,7 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     }
 
     @Override
-    protected String getLedgerPath(long ledgerId) {
+    public String getLedgerPath(long ledgerId) {
         return ledgerRootPath + StringUtils.getHybridHierarchicalLedgerPath(ledgerId);
     }
 
@@ -87,9 +87,9 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     }
 
     @Override
-    public LedgerRangeIterator getLedgerRanges() {
-        LedgerRangeIterator legacyLedgerRangeIterator = legacyLM.getLedgerRanges();
-        LedgerRangeIterator longLedgerRangeIterator = longLM.getLedgerRanges();
+    public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
+        LedgerRangeIterator legacyLedgerRangeIterator = legacyLM.getLedgerRanges(zkOpTimeoutMs);
+        LedgerRangeIterator longLedgerRangeIterator = longLM.getLedgerRanges(zkOpTimeoutMs);
         return new HierarchicalLedgerRangeIterator(legacyLedgerRangeIterator, longLedgerRangeIterator);
     }
 

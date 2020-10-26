@@ -1,5 +1,5 @@
 description: Manages bookies.
-root_path: bookkeeper-server/bin
+root_path: bin
 commands:
 - name: bookie
   description: Runs the bookie server.

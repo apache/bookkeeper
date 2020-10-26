@@ -28,9 +28,9 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 public interface PerChannelBookieClientPool {
 
     /**
-     * intialize the pool. the implementation should not be blocked.
+     * initialize the pool. the implementation should not be blocked.
      */
-    void intialize();
+    void initialize();
 
     /**
      * Obtain a channel from channel pool to execute operations.
@@ -39,6 +39,16 @@ public interface PerChannelBookieClientPool {
      *          callback to return channel from channel pool.
      */
     void obtain(GenericCallback<PerChannelBookieClient> callback, long key);
+
+    /**
+     * Obtain a channel from channel pool by version to execute operations.
+     *
+     * @param callback
+     *          callback to return channel from channel pool
+     * @param forceUseV3
+     *          whether or not use v3 protocol for connection
+     */
+    void obtain(GenericCallback<PerChannelBookieClient> callback, long key, boolean forceUseV3);
 
     /**
      * Returns status of a client.

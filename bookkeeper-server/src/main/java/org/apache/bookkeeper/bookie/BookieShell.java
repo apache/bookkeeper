@@ -18,119 +18,75 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
-import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
-import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
-import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
-
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.UncheckedExecutionException;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.math.RoundingMode;
-import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.Formatter;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
-import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
-import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
-import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
-import org.apache.bookkeeper.bookie.Journal.JournalScanner;
-import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
-import org.apache.bookkeeper.bookie.storage.ldb.LocationsIndexRebuildOp;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BKException.MetaStoreException;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.LedgerEntry;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.UpdateLedgerOp;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
-import org.apache.bookkeeper.common.util.OrderedExecutor;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
-import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.UnderreplicatedLedger;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.proto.BookieClientImpl;
-import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
-import org.apache.bookkeeper.replication.AuditorElector;
-import org.apache.bookkeeper.replication.ReplicationException;
-import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
-import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.TriggerAuditCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.WhoIsAuditorCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.FlipBookieIdCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.FormatCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.InitCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.LedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ListActiveLedgersCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ListFilesOnDiscCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.LocalConsistencyCheckCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ReadJournalCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgerLocationsIndexCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStorageIndexFileCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.UpdateBookieInLedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.DecommissionCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.EndpointInfoCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.InstanceIdCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand.NukeExistingClusterFlags;
+import org.apache.bookkeeper.tools.cli.commands.bookies.RecoverCommand;
+import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.client.LedgerMetaDataCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.AdminCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.GetCookieCommand;
 import org.apache.bookkeeper.tools.cli.commands.cookie.UpdateCookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
-import org.apache.bookkeeper.util.BookKeeperConstants;
-import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.EntryFormatter;
-import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.Tool;
-import org.apache.bookkeeper.versioning.Version;
-import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -143,13 +99,6 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.mutable.MutableBoolean;
-import org.apache.commons.lang.mutable.MutableLong;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.AsyncCallback.VoidCallback;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,9 +137,12 @@ public class BookieShell implements Tool {
     static final String CMD_LISTFILESONDISC = "listfilesondisc";
     static final String CMD_UPDATECOOKIE = "updatecookie";
     static final String CMD_UPDATELEDGER = "updateledgers";
+    static final String CMD_UPDATE_BOOKIE_IN_LEDGER = "updateBookieInLedger";
     static final String CMD_DELETELEDGER = "deleteledger";
     static final String CMD_BOOKIEINFO = "bookieinfo";
+    static final String CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE = "activeledgers";
     static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
+    static final String CMD_ENDPOINTINFO = "endpointinfo";
     static final String CMD_LOSTBOOKIERECOVERYDELAY = "lostbookierecoverydelay";
     static final String CMD_TRIGGERAUDIT = "triggeraudit";
     static final String CMD_CONVERT_TO_DB_STORAGE = "convert-to-db-storage";
@@ -264,6 +216,7 @@ public class BookieShell implements Tool {
             this.cmdName = cmdName;
         }
 
+        @Override
         public String description() {
             // we used the string returned by `getUsage` as description in showing the list of commands
             return getUsage();
@@ -325,8 +278,11 @@ public class BookieShell implements Tool {
             boolean interactive = (!cmdLine.hasOption("n"));
             boolean force = cmdLine.hasOption("f");
 
-            boolean result = BookKeeperAdmin.format(bkConf, interactive, force);
-            return (result) ? 0 : 1;
+            MetaFormatCommand cmd = new MetaFormatCommand();
+            MetaFormatCommand.MetaFormatFlags flags = new MetaFormatCommand.MetaFormatFlags()
+                .interactive(interactive).force(force);
+            boolean result = cmd.apply(bkConf, flags);
+            return result ? 0 : 1;
         }
     }
 
@@ -365,7 +321,9 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            boolean result = BookKeeperAdmin.initNewCluster(bkConf);
+            org.apache.bookkeeper.tools.cli.commands.bookies.InitCommand initCommand =
+                new org.apache.bookkeeper.tools.cli.commands.bookies.InitCommand();
+            boolean result = initCommand.apply(bkConf, new CliFlags());
             return (result) ? 0 : 1;
         }
     }
@@ -406,19 +364,11 @@ public class BookieShell implements Tool {
             String zkledgersrootpath = cmdLine.getOptionValue("zkledgersrootpath");
             String instanceid = cmdLine.getOptionValue("instanceid");
 
-            /*
-             * for NukeExistingCluster command 'zkledgersrootpath' should be provided and either force option or
-             * instanceid should be provided.
-             */
-            if ((zkledgersrootpath == null) || (force == (instanceid != null))) {
-                LOG.error(
-                        "zkledgersrootpath should be specified and either force option "
-                        + "or instanceid should be specified (but not both)");
-                printUsage();
-                return -1;
-            }
-
-            boolean result = BookKeeperAdmin.nukeExistingCluster(bkConf, zkledgersrootpath, instanceid, force);
+            NukeExistingClusterCommand cmd = new NukeExistingClusterCommand();
+            NukeExistingClusterFlags flags = new NukeExistingClusterFlags().force(force)
+                                                                           .zkLedgersRootPath(zkledgersrootpath)
+                                                                           .instandId(instanceid);
+            boolean result = cmd.apply(bkConf, flags);
             return (result) ? 0 : 1;
         }
     }
@@ -458,23 +408,14 @@ public class BookieShell implements Tool {
         int runCmd(CommandLine cmdLine) throws Exception {
             boolean interactive = (!cmdLine.hasOption("n"));
             boolean force = cmdLine.hasOption("f");
+            boolean deletecookie = cmdLine.hasOption("d");
 
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-            boolean result = Bookie.format(conf, interactive, force);
-            // delete cookie
-            if (cmdLine.hasOption("d")) {
-                runFunctionWithRegistrationManager(bkConf, rm -> {
-                    try {
-                        Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, conf);
-                        cookie.getValue().deleteFromRegistrationManager(rm, conf, cookie.getVersion());
-                    } catch (CookieNotFoundException nne) {
-                        LOG.warn("No cookie to remove : ", nne);
-                    } catch (BookieException be) {
-                        throw new UncheckedExecutionException(be.getMessage(), be);
-                    }
-                    return null;
-                });
-            }
+            FormatCommand.Flags flags = new FormatCommand.Flags()
+                .nonInteractive(interactive)
+                .force(force)
+                .deleteCookie(deletecookie);
+            FormatCommand command = new FormatCommand(flags);
+            boolean result = command.apply(bkConf, flags);
             return (result) ? 0 : 1;
         }
     }
@@ -508,7 +449,8 @@ public class BookieShell implements Tool {
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
             ServerConfiguration conf = new ServerConfiguration(bkConf);
-            boolean result = BookKeeperAdmin.initBookie(conf);
+            InitCommand initCommand = new InitCommand();
+            boolean result = initCommand.apply(conf, new CliFlags());
             return (result) ? 0 : 1;
         }
     }
@@ -562,154 +504,18 @@ public class BookieShell implements Tool {
 
             Long ledgerId = getOptionLedgerIdValue(cmdLine, "ledger", -1);
 
-            // Get bookies list
-            final String[] bookieStrs = args[0].split(",");
-            final Set<BookieSocketAddress> bookieAddrs = new HashSet<>();
-            for (String bookieStr : bookieStrs) {
-                final String bookieStrParts[] = bookieStr.split(":");
-                if (bookieStrParts.length != 2) {
-                    System.err.println("BookieSrcs has invalid bookie address format (host:port expected) : "
-                            + bookieStr);
-                    return -1;
-                }
-                bookieAddrs.add(new BookieSocketAddress(bookieStrParts[0],
-                        Integer.parseInt(bookieStrParts[1])));
-            }
-
-            if (!force) {
-                System.err.println("Bookies : " + bookieAddrs);
-                if (!IOUtils.confirmPrompt("Are you sure to recover them : (Y/N)")) {
-                    System.err.println("Give up!");
-                    return -1;
-                }
-            }
-
-            LOG.info("Constructing admin");
-            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-            LOG.info("Construct admin : {}", admin);
-            try {
-                if (query) {
-                    return bkQuery(admin, bookieAddrs);
-                }
-                if (-1 != ledgerId) {
-                    return bkRecoveryLedger(admin, ledgerId, bookieAddrs, dryrun, skipOpenLedgers, removeCookies);
-                }
-                return bkRecovery(admin, bookieAddrs, dryrun, skipOpenLedgers, removeCookies);
-            } finally {
-                admin.close();
-            }
+            RecoverCommand cmd = new RecoverCommand();
+            RecoverCommand.RecoverFlags flags = new RecoverCommand.RecoverFlags();
+            flags.bookieAddress(args[0]);
+            flags.deleteCookie(removeCookies);
+            flags.dryRun(dryrun);
+            flags.force(force);
+            flags.ledger(ledgerId);
+            flags.skipOpenLedgers(skipOpenLedgers);
+            flags.query(query);
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
-
-        private int bkQuery(BookKeeperAdmin bkAdmin, Set<BookieSocketAddress> bookieAddrs)
-                throws InterruptedException, BKException {
-            SortedMap<Long, LedgerMetadata> ledgersContainBookies =
-                    bkAdmin.getLedgersContainBookies(bookieAddrs);
-            System.err.println("NOTE: Bookies in inspection list are marked with '*'.");
-            for (Map.Entry<Long, LedgerMetadata> ledger : ledgersContainBookies.entrySet()) {
-                System.out.println("ledger " + ledger.getKey() + " : " + ledger.getValue().getState());
-                Map<Long, Integer> numBookiesToReplacePerEnsemble =
-                        inspectLedger(ledger.getValue(), bookieAddrs);
-                System.out.print("summary: [");
-                for (Map.Entry<Long, Integer> entry : numBookiesToReplacePerEnsemble.entrySet()) {
-                    System.out.print(entry.getKey() + "=" + entry.getValue() + ", ");
-                }
-                System.out.println("]");
-                System.out.println();
-            }
-            System.err.println("Done");
-            return 0;
-        }
-
-        private Map<Long, Integer> inspectLedger(LedgerMetadata metadata, Set<BookieSocketAddress> bookiesToInspect) {
-            Map<Long, Integer> numBookiesToReplacePerEnsemble = new TreeMap<Long, Integer>();
-            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble :
-                     metadata.getAllEnsembles().entrySet()) {
-                List<BookieSocketAddress> bookieList = ensemble.getValue();
-                System.out.print(ensemble.getKey() + ":\t");
-                int numBookiesToReplace = 0;
-                for (BookieSocketAddress bookie : bookieList) {
-                    System.out.print(bookie);
-                    if (bookiesToInspect.contains(bookie)) {
-                        System.out.print("*");
-                        ++numBookiesToReplace;
-                    } else {
-                        System.out.print(" ");
-                    }
-                    System.out.print(" ");
-                }
-                System.out.println();
-                numBookiesToReplacePerEnsemble.put(ensemble.getKey(), numBookiesToReplace);
-            }
-            return numBookiesToReplacePerEnsemble;
-        }
-
-        private int bkRecoveryLedger(BookKeeperAdmin bkAdmin,
-                                     long lid,
-                                     Set<BookieSocketAddress> bookieAddrs,
-                                     boolean dryrun,
-                                     boolean skipOpenLedgers,
-                                     boolean removeCookies)
-                throws InterruptedException, BKException, KeeperException {
-            bkAdmin.recoverBookieData(lid, bookieAddrs, dryrun, skipOpenLedgers);
-            if (removeCookies) {
-                deleteCookies(bkAdmin.getConf(), bookieAddrs);
-            }
-            return 0;
-        }
-
-        private int bkRecovery(BookKeeperAdmin bkAdmin,
-                               Set<BookieSocketAddress> bookieAddrs,
-                               boolean dryrun,
-                               boolean skipOpenLedgers,
-                               boolean removeCookies)
-                throws InterruptedException, BKException, KeeperException {
-            bkAdmin.recoverBookieData(bookieAddrs, dryrun, skipOpenLedgers);
-            if (removeCookies) {
-                deleteCookies(bkAdmin.getConf(), bookieAddrs);
-            }
-            return 0;
-        }
-
-        private void deleteCookies(ClientConfiguration conf,
-                                   Set<BookieSocketAddress> bookieAddrs) throws BKException {
-            ServerConfiguration serverConf = new ServerConfiguration(conf);
-            try {
-                runFunctionWithRegistrationManager(serverConf, rm -> {
-                    try {
-                        for (BookieSocketAddress addr : bookieAddrs) {
-                            deleteCookie(rm, addr);
-                        }
-                    } catch (Exception e) {
-                        throw new UncheckedExecutionException(e);
-                    }
-                    return null;
-                });
-            } catch (Exception e) {
-                Throwable cause = e;
-                if (e instanceof UncheckedExecutionException) {
-                    cause = e.getCause();
-                }
-                if (cause instanceof BKException) {
-                    throw (BKException) cause;
-                } else {
-                    BKException bke = new MetaStoreException();
-                    bke.initCause(bke);
-                    throw bke;
-                }
-            }
-        }
-
-        private void deleteCookie(RegistrationManager rm,
-                                  BookieSocketAddress bookieSrc) throws BookieException {
-            try {
-                Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
-                cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc, cookie.getVersion());
-            } catch (CookieNotFoundException nne) {
-                LOG.warn("No cookie to remove for {} : ", bookieSrc, nne);
-            }
-        }
-
     }
 
     /**
@@ -725,96 +531,15 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            String[] leftArgs = cmdLine.getArgs();
-            if (leftArgs.length <= 0) {
-                printErrorLine("ERROR: missing ledger id");
-                printUsage();
-                return -1;
-            }
-
-            boolean printMeta = false;
+            LedgerCommand cmd = new LedgerCommand(ledgerIdFormatter);
+            cmd.setPrint(BookieShell.this::printInfoLine);
+            LedgerCommand.LedgerFlags flags = new LedgerCommand.LedgerFlags();
             if (cmdLine.hasOption("m")) {
-                printMeta = true;
+                flags.meta(true);
             }
-            long ledgerId;
-            try {
-                ledgerId = ledgerIdFormatter.readLedgerId(leftArgs[0]);
-            } catch (IllegalArgumentException iae) {
-                printErrorLine("ERROR: invalid ledger id " + leftArgs[0]);
-                printUsage();
-                return -1;
-            }
-
-            if (bkConf.getLedgerStorageClass().equals(DbLedgerStorage.class.getName())) {
-                // dump ledger info
-                try {
-                    DbLedgerStorage.readLedgerIndexEntries(ledgerId, bkConf,
-                            (currentEntry, entryLogId, position) -> printInfoLine(
-                                    "entry " + currentEntry + "\t:\t(log: " + entryLogId + ", pos: " + position + ")"));
-                } catch (IOException e) {
-                    System.err.printf("ERROR: initializing dbLedgerStorage %s", e.getMessage());
-                    return -1;
-                }
-            } else if ((bkConf.getLedgerStorageClass().equals(SortedLedgerStorage.class.getName())
-                    || bkConf.getLedgerStorageClass().equals(InterleavedLedgerStorage.class.getName()))) {
-                ServerConfiguration conf = new ServerConfiguration(bkConf);
-                InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
-                Bookie.mountLedgerStorageOffline(conf, interleavedStorage);
-
-                if (printMeta) {
-                    // print meta
-                    printInfoLine("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
-                    LedgerCache.LedgerIndexMetadata meta = interleavedStorage.readLedgerIndexMetadata(ledgerId);
-                    printInfoLine("master key  : " + meta.getMasterKeyHex());
-
-                    long size = meta.size;
-                    if (size % 8 == 0) {
-                        printInfoLine("size        : " + size);
-                    } else {
-                        printInfoLine("size : " + size
-                                + " (not aligned with 8, may be corrupted or under flushing now)");
-                    }
-
-                    printInfoLine("entries     : " + (size / 8));
-                    printInfoLine("isFenced    : " + meta.fenced);
-                }
-
-                try {
-                    // dump ledger info
-                    printInfoLine("===== LEDGER: " + ledgerIdFormatter.formatLedgerId(ledgerId) + " =====");
-                    for (LedgerCache.PageEntries page : interleavedStorage.getIndexEntries(ledgerId)) {
-                        final MutableLong curEntry = new MutableLong(page.getFirstEntry());
-                        try (LedgerEntryPage lep = page.getLEP()){
-                            lep.getEntries((entry, offset) -> {
-                                while (curEntry.longValue() < entry) {
-                                    printInfoLine("entry " + curEntry + "\t:\tN/A");
-                                    curEntry.increment();
-                                }
-                                long entryLogId = offset >> 32L;
-                                long pos = offset & 0xffffffffL;
-                                printInfoLine("entry " + curEntry + "\t:\t(log:" + entryLogId + ", pos: " + pos + ")");
-                                curEntry.increment();
-                                return true;
-                            });
-                        } catch (IOException ie) {
-                            printInfoLine("Failed to read index page @ " + page.getFirstEntry()
-                                    + ", the index file may be corrupted : "
-                                    + ie.getMessage());
-                            return 1;
-                        }
-
-                        while (curEntry.longValue() < page.getLastEntry()) {
-                            printInfoLine("entry " + curEntry + "\t:\tN/A");
-                            curEntry.increment();
-                        }
-                    }
-                } catch (IOException ie) {
-                    LOG.error("Failed to read index page");
-                    return 1;
-                }
-            }
-
-            return 0;
+            flags.ledgerId(Long.parseLong(cmdLine.getArgs()[0]));
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : 1;
         }
 
         @Override
@@ -870,91 +595,29 @@ public class BookieShell implements Tool {
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
             final long ledgerId = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
-            if (ledgerId == -1) {
-                System.err.println("Must specify a ledger id");
-                return -1;
-            }
-
             final long firstEntry = getOptionLongValue(cmdLine, "firstentryid", 0);
             long lastEntry = getOptionLongValue(cmdLine, "lastentryid", -1);
 
             boolean printMsg = cmdLine.hasOption("m");
             boolean forceRecovery = cmdLine.hasOption("r");
-            final BookieSocketAddress bookie;
+            final BookieId bookie;
+            String bookieAddress;
             if (cmdLine.hasOption("b")) {
                 // A particular bookie was specified
-                bookie = new BookieSocketAddress(cmdLine.getOptionValue("b"));
+                bookieAddress = cmdLine.getOptionValue("b");
             } else {
-                bookie = null;
+                bookieAddress = null;
             }
 
-            ClientConfiguration conf = new ClientConfiguration();
-            conf.addConfiguration(bkConf);
-
-            try (BookKeeperAdmin bk = new BookKeeperAdmin(conf)) {
-                if (forceRecovery) {
-                    // Force the opening of the ledger to trigger recovery
-                    try (LedgerHandle lh = bk.openLedger(ledgerId)) {
-                        if (lastEntry == -1 || lastEntry > lh.getLastAddConfirmed()) {
-                            lastEntry = lh.getLastAddConfirmed();
-                        }
-                    }
-                }
-
-                if (bookie == null) {
-                    // No bookie was specified, use normal bk client
-                    Iterator<LedgerEntry> entries = bk.readEntries(ledgerId, firstEntry, lastEntry).iterator();
-                    while (entries.hasNext()) {
-                        LedgerEntry entry = entries.next();
-                        formatEntry(entry, printMsg);
-                    }
-                } else {
-                    // Use BookieClient to target a specific bookie
-                    EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-                    OrderedExecutor executor = OrderedExecutor.newBuilder()
-                        .numThreads(1)
-                        .name("BookieClientScheduler")
-                        .build();
-
-                    ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
-                        new DefaultThreadFactory("BookKeeperClientSchedulerPool"));
-
-                    BookieClient bookieClient = new BookieClientImpl(conf, eventLoopGroup,
-                            UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE);
-
-                    LongStream.range(firstEntry, lastEntry).forEach(entryId -> {
-                        CompletableFuture<Void> future = new CompletableFuture<>();
-
-                        bookieClient.readEntry(bookie, ledgerId, entryId,
-                            (rc, ledgerId1, entryId1, buffer, ctx) -> {
-                                if (rc != BKException.Code.OK) {
-                                    LOG.error("Failed to read entry {} -- {}", entryId1, BKException.getMessage(rc));
-                                    future.completeExceptionally(BKException.create(rc));
-                                    return;
-                                }
-
-                                System.out.println("--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId)
-                                    + ", Eid=" + entryId + " ---------");
-                                if (printMsg) {
-                                    System.out.println("Data: " + ByteBufUtil.prettyHexDump(buffer));
-                                }
-
-                                future.complete(null);
-                                }, null, BookieProtocol.FLAG_NONE);
-
-                        try {
-                            future.get();
-                        } catch (Exception e) {
-                            LOG.error("Error future.get while reading entries from ledger {}", ledgerId, e);
-                        }
-                    });
-
-                    eventLoopGroup.shutdownGracefully();
-                    executor.shutdown();
-                    bookieClient.close();
-                }
-            }
-
+            ReadLedgerCommand cmd = new ReadLedgerCommand(entryFormatter, ledgerIdFormatter);
+            ReadLedgerCommand.ReadLedgerFlags flags = new ReadLedgerCommand.ReadLedgerFlags();
+            flags.bookieAddresss(bookieAddress);
+            flags.firstEntryId(firstEntry);
+            flags.forceRecovery(forceRecovery);
+            flags.lastEntryId(lastEntry);
+            flags.ledgerId(ledgerId);
+            flags.msg(printMsg);
+            cmd.apply(bkConf, flags);
             return 0;
         }
 
@@ -999,58 +662,13 @@ public class BookieShell implements Tool {
             final boolean printMissingReplica = cmdLine.hasOption("printmissingreplica");
             final boolean printReplicationWorkerId = cmdLine.hasOption("printreplicationworkerid");
 
-            final Predicate<List<String>> predicate;
-            if (!StringUtils.isBlank(includingBookieId) && !StringUtils.isBlank(excludingBookieId)) {
-                predicate = replicasList -> (replicasList.contains(includingBookieId)
-                        && !replicasList.contains(excludingBookieId));
-            } else if (!StringUtils.isBlank(includingBookieId)) {
-                predicate = replicasList -> replicasList.contains(includingBookieId);
-            } else if (!StringUtils.isBlank(excludingBookieId)) {
-                predicate = replicasList -> !replicasList.contains(excludingBookieId);
-            } else {
-                predicate = null;
-            }
-
-            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                LedgerUnderreplicationManager underreplicationManager;
-                try {
-                    underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-                } catch (KeeperException | CompatibilityException e) {
-                    throw new UncheckedExecutionException("Failed to new ledger underreplicated manager", e);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new UncheckedExecutionException("Interrupted on newing ledger underreplicated manager", e);
-                }
-                Iterator<UnderreplicatedLedger> iter = underreplicationManager.listLedgersToRereplicate(predicate);
-                while (iter.hasNext()) {
-                    UnderreplicatedLedger underreplicatedLedger = iter.next();
-                    long urLedgerId = underreplicatedLedger.getLedgerId();
-                    System.out.println(ledgerIdFormatter.formatLedgerId(urLedgerId));
-                    long ctime = underreplicatedLedger.getCtime();
-                    if (ctime != UnderreplicatedLedger.UNASSIGNED_CTIME) {
-                        System.out.println("\tCtime : " + ctime);
-                    }
-                    if (printMissingReplica) {
-                        underreplicatedLedger.getReplicaList().forEach((missingReplica) -> {
-                            System.out.println("\tMissingReplica : " + missingReplica);
-                        });
-                    }
-                    if (printReplicationWorkerId) {
-                        try {
-                            String replicationWorkerId = underreplicationManager
-                                    .getReplicationWorkerIdRereplicatingLedger(urLedgerId);
-                            if (replicationWorkerId != null) {
-                                System.out.println("\tReplicationWorkerId : " + replicationWorkerId);
-                            }
-                        } catch (UnavailableException e) {
-                            LOG.error("Failed to get ReplicationWorkerId rereplicating ledger {} -- {}", urLedgerId,
-                                    e.getMessage());
-                        }
-                    }
-                }
-                return null;
-            });
-
+            ListUnderReplicatedCommand.LURFlags flags = new ListUnderReplicatedCommand.LURFlags()
+                                                            .missingReplica(includingBookieId)
+                                                            .excludingMissingReplica(excludingBookieId)
+                                                            .printMissingReplica(printMissingReplica)
+                                                            .printReplicationWorkerId(printReplicationWorkerId);
+            ListUnderReplicatedCommand cmd = new ListUnderReplicatedCommand(ledgerIdFormatter);
+            cmd.apply(bkConf, flags);
             return 0;
         }
     }
@@ -1073,76 +691,11 @@ public class BookieShell implements Tool {
         public int runCmd(CommandLine cmdLine) throws Exception {
             final boolean printMeta = cmdLine.hasOption("m");
             final String bookieidToBePartOfEnsemble = cmdLine.getOptionValue("bookieid");
-            final BookieSocketAddress bookieAddress = StringUtils.isBlank(bookieidToBePartOfEnsemble) ? null
-                    : new BookieSocketAddress(bookieidToBePartOfEnsemble);
 
-            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
-
-                    final AtomicInteger returnCode = new AtomicInteger(BKException.Code.OK);
-                    final CountDownLatch processDone = new CountDownLatch(1);
-
-                    Processor<Long> ledgerProcessor = new Processor<Long>() {
-                            @Override
-                            public void process(Long ledgerId, VoidCallback cb) {
-                                if (!printMeta && (bookieAddress == null)) {
-                                    printLedgerMetadata(ledgerId, null, false);
-                                    cb.processResult(BKException.Code.OK, null, null);
-                                } else {
-                                    ledgerManager.readLedgerMetadata(ledgerId).whenComplete(
-                                            (metadata, exception) -> {
-                                                if (exception == null) {
-                                                    if ((bookieAddress == null)
-                                                        || BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(
-                                                                ledgerId, bookieAddress, metadata.getValue())) {
-                                                        /*
-                                                         * the print method has to be in
-                                                         * synchronized scope, otherwise
-                                                         * output of printLedgerMetadata
-                                                         * could interleave since this
-                                                         * callback for different
-                                                         * ledgers can happen in
-                                                         * different threads.
-                                                         */
-                                                        synchronized (BookieShell.this) {
-                                                            printLedgerMetadata(ledgerId, metadata.getValue(),
-                                                                                printMeta);
-                                                        }
-                                                    }
-                                                    cb.processResult(BKException.Code.OK, null, null);
-                                                } else if (BKException.getExceptionCode(exception)
-                                                           == BKException.Code.NoSuchLedgerExistsException) {
-                                                    cb.processResult(BKException.Code.OK, null, null);
-                                                } else {
-                                                    LOG.error("Unable to read the ledger: {} information", ledgerId);
-                                                    cb.processResult(BKException.getExceptionCode(exception),
-                                                                     null, null);
-                                                }
-                                            });
-                                }
-                            }
-                        };
-
-                    ledgerManager.asyncProcessLedgers(ledgerProcessor, new AsyncCallback.VoidCallback() {
-                        @Override
-                        public void processResult(int rc, String s, Object obj) {
-                            returnCode.set(rc);
-                            processDone.countDown();
-                        }
-                    }, null, BKException.Code.OK, BKException.Code.ReadException);
-
-                    processDone.await();
-                    if (returnCode.get() != BKException.Code.OK) {
-                        LOG.error("Received error return value while processing ledgers: {}", returnCode.get());
-                        throw BKException.create(returnCode.get());
-                    }
-
-                } catch (Exception ioe) {
-                    LOG.error("Received Exception while processing ledgers", ioe);
-                    throw new UncheckedExecutionException(ioe);
-                }
-                return null;
-            });
+            ListLedgersCommand.ListLedgersFlags flags = new ListLedgersCommand.ListLedgersFlags()
+                                                            .bookieId(bookieidToBePartOfEnsemble).meta(printMeta);
+            ListLedgersCommand cmd = new ListLedgersCommand(ledgerIdFormatter);
+            cmd.apply(bkConf, flags);
 
             return 0;
         }
@@ -1163,10 +716,57 @@ public class BookieShell implements Tool {
         }
     }
 
+    /**
+     * List active ledgers on entry log file.
+     **/
+    class ListActiveLedgersCmd extends MyCommand {
+        Options lOpts = new Options();
+
+        ListActiveLedgersCmd() {
+            super(CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE);
+            lOpts.addOption("l", "logId", true, "Entry log file id");
+            lOpts.addOption("t", "timeout", true, "Read timeout(ms)");
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            final boolean hasTimeout = cmdLine.hasOption("t");
+            final boolean hasLogId = cmdLine.hasOption("l");
+            if (!hasLogId){
+                printUsage();
+                return -1;
+            }
+            final long logId = Long.parseLong(cmdLine.getOptionValue("l"));
+            ListActiveLedgersCommand.ActiveLedgerFlags flags = new ListActiveLedgersCommand.ActiveLedgerFlags();
+            flags.logId(logId);
+            if (hasTimeout){
+                flags.timeout(Long.parseLong(cmdLine.getOptionValue("t")));
+            }
+            ListActiveLedgersCommand cmd = new ListActiveLedgersCommand(ledgerIdFormatter);
+            cmd.apply(bkConf, flags);
+            return 0;
+        }
+
+        @Override
+        String getDescription() {
+            return "List all active ledgers on the entry log file.";
+        }
+
+        @Override
+        String getUsage() {
+            return "activeledgers  [-logId <entry log id>] [-timeout <timeout>] [-formatter <ledger id formatter>]";
+        }
+
+        @Override
+        Options getOptions() {
+            return lOpts;
+        }
+    }
+
     void printLedgerMetadata(long ledgerId, LedgerMetadata md, boolean printMeta) {
         System.out.println("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
         if (printMeta) {
-            System.out.println(new String(new LedgerMetadataSerDe().serialize(md), UTF_8));
+            System.out.println(md.toString());
         }
     }
 
@@ -1175,7 +775,6 @@ public class BookieShell implements Tool {
      */
     class LedgerMetadataCmd extends MyCommand {
         Options lOpts = new Options();
-        LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
 
         LedgerMetadataCmd() {
             super(CMD_LEDGERMETADATA);
@@ -1186,36 +785,27 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            final long lid = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
-            if (lid == -1) {
+            final long ledgerId = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
+            if (ledgerId == -1) {
                 System.err.println("Must specify a ledger id");
                 return -1;
             }
-
-            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromfile")) {
+            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromefile")) {
                 System.err.println("Only one of --dumptofile and --restorefromfile can be specified");
                 return -2;
             }
-            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                try (LedgerManager m = mFactory.newLedgerManager()) {
-                    if (cmdLine.hasOption("dumptofile")) {
-                        Versioned<LedgerMetadata> md = m.readLedgerMetadata(lid).join();
-                        Files.write(FileSystems.getDefault().getPath(cmdLine.getOptionValue("dumptofile")),
-                                    serDe.serialize(md.getValue()));
-                    } else if (cmdLine.hasOption("restorefromfile")) {
-                        byte[] serialized = Files.readAllBytes(
-                                FileSystems.getDefault().getPath(cmdLine.getOptionValue("restorefromfile")));
-                        LedgerMetadata md = serDe.parseConfig(serialized, Optional.empty());
-                        m.createLedgerMetadata(lid, md).join();
-                    } else {
-                        printLedgerMetadata(lid, m.readLedgerMetadata(lid).get().getValue(), true);
-                    }
-                } catch (Exception e) {
-                    throw new UncheckedExecutionException(e);
-                }
-                return null;
-            });
 
+            LedgerMetaDataCommand.LedgerMetadataFlag flag = new LedgerMetaDataCommand.LedgerMetadataFlag();
+            flag.ledgerId(ledgerId);
+            if (cmdLine.hasOption("dumptofile")) {
+                flag.dumpToFile(cmdLine.getOptionValue("dumptofile"));
+            }
+            if (cmdLine.hasOption("restorefromfile")) {
+                flag.restoreFromFile(cmdLine.getOptionValue("restorefromfile"));
+            }
+
+            LedgerMetaDataCommand cmd = new LedgerMetaDataCommand(ledgerIdFormatter);
+            cmd.apply(bkConf, flag);
             return 0;
         }
 
@@ -1247,21 +837,9 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            LOG.info("=== Performing local consistency check ===");
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-            LedgerStorage ledgerStorage = Bookie.mountLedgerStorageOffline(conf, null);
-            List <LedgerStorage.DetectedInconsistency> errors = ledgerStorage.localConsistencyCheck(
-                    java.util.Optional.empty());
-            if (errors.size() > 0) {
-                LOG.info("=== Check returned errors: ===");
-                for (LedgerStorage.DetectedInconsistency error : errors) {
-                    LOG.error("Ledger {}, entry {}: ", error.getLedgerId(), error.getEntryId(), error.getException());
-                }
-                return 1;
-            } else {
-                LOG.info("=== Check passed ===");
-                return 0;
-            }
+            LocalConsistencyCheckCommand cmd = new LocalConsistencyCheckCommand();
+            boolean result = cmd.apply(bkConf, new CliFlags());
+            return (result) ? 0 : 1;
         }
 
         @Override
@@ -1358,62 +936,10 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            int numberOfEntries = getOptionIntValue(cmdLine, "entries", 10);
-            int timeoutSecs = getOptionIntValue(cmdLine, "timeout", 1);
-
-            ClientConfiguration conf = new ClientConfiguration();
-            conf.addConfiguration(bkConf);
-            conf.setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class);
-            conf.setAddEntryTimeout(timeoutSecs);
-            conf.setReadEntryTimeout(timeoutSecs);
-
-            BookKeeper bk = new BookKeeper(conf);
-            LedgerHandle lh = null;
-            try {
-                lh = bk.createLedger(1, 1, DigestType.MAC, new byte[0]);
-                LOG.info("Created ledger {}", lh.getId());
-
-                for (int i = 0; i < numberOfEntries; i++) {
-                    String content = "entry-" + i;
-                    lh.addEntry(content.getBytes(UTF_8));
-                }
-
-                LOG.info("Written {} entries in ledger {}", numberOfEntries, lh.getId());
-
-                // Reopen the ledger and read entries
-                lh = bk.openLedger(lh.getId(), DigestType.MAC, new byte[0]);
-                if (lh.getLastAddConfirmed() != (numberOfEntries - 1)) {
-                    throw new Exception("Invalid last entry found on ledger. expecting: " + (numberOfEntries - 1)
-                            + " -- found: " + lh.getLastAddConfirmed());
-                }
-
-                Enumeration<LedgerEntry> entries = lh.readEntries(0, numberOfEntries - 1);
-                int i = 0;
-                while (entries.hasMoreElements()) {
-                    LedgerEntry entry = entries.nextElement();
-                    String actualMsg = new String(entry.getEntry(), UTF_8);
-                    String expectedMsg = "entry-" + (i++);
-                    if (!expectedMsg.equals(actualMsg)) {
-                        throw new Exception("Failed validation of received message - Expected: " + expectedMsg
-                                + ", Actual: " + actualMsg);
-                    }
-                }
-
-                LOG.info("Read {} entries from ledger {}", entries, lh.getId());
-            } catch (Exception e) {
-                LOG.warn("Error in bookie sanity test", e);
-                return -1;
-            } finally {
-                if (lh != null) {
-                    bk.deleteLedger(lh.getId());
-                    LOG.info("Deleted ledger {}", lh.getId());
-                }
-
-                bk.close();
-            }
-
-            LOG.info("Bookie sanity test succeeded");
-            return 0;
+            SanityTestCommand command = new SanityTestCommand();
+            SanityTestCommand.SanityFlags flags = new SanityTestCommand.SanityFlags();
+            boolean result = command.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
     }
 
@@ -1440,6 +966,8 @@ public class BookieShell implements Tool {
                 printUsage();
                 return -1;
             }
+            ReadLogCommand cmd = new ReadLogCommand(ledgerIdFormatter, entryFormatter);
+            ReadLogCommand.ReadLogFlags flags = new ReadLogCommand.ReadLogFlags();
 
             boolean printMsg = false;
             if (cmdLine.hasOption("m")) {
@@ -1448,40 +976,22 @@ public class BookieShell implements Tool {
             long logId;
             try {
                 logId = Long.parseLong(leftArgs[0]);
+                flags.entryLogId(logId);
             } catch (NumberFormatException nfe) {
                 // not a entry log id
-                File f = new File(leftArgs[0]);
-                String name = f.getName();
-                if (!name.endsWith(".log")) {
-                    // not a log file
-                    System.err.println("ERROR: invalid entry log file name " + leftArgs[0]);
-                    printUsage();
-                    return -1;
-                }
-                String idString = name.split("\\.")[0];
-                logId = Long.parseLong(idString, 16);
+                flags.filename(leftArgs[0]);
             }
-
             final long lId = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
             final long eId = getOptionLongValue(cmdLine, "entryid", -1);
             final long startpos = getOptionLongValue(cmdLine, "startpos", -1);
             final long endpos = getOptionLongValue(cmdLine, "endpos", -1);
-
-            // scan entry log
-            if (startpos != -1) {
-                if ((endpos != -1) && (endpos < startpos)) {
-                    System.err
-                            .println("ERROR: StartPosition of the range should be lesser than or equal to EndPosition");
-                    return -1;
-                }
-                scanEntryLogForPositionRange(logId, startpos, endpos, printMsg);
-            } else if (lId != -1) {
-                scanEntryLogForSpecificEntry(logId, lId, eId, printMsg);
-            } else {
-                scanEntryLog(logId, printMsg);
-            }
-
-            return 0;
+            flags.endPos(endpos);
+            flags.startPos(startpos);
+            flags.entryId(eId);
+            flags.ledgerId(lId);
+            flags.msg(printMsg);
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
 
         @Override
@@ -1513,6 +1023,8 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
+            ReadLogMetadataCommand cmd = new ReadLogMetadataCommand(ledgerIdFormatter);
+            ReadLogMetadataCommand.ReadLogMetadataFlags flags = new ReadLogMetadataCommand.ReadLogMetadataFlags();
             String[] leftArgs = cmdLine.getArgs();
             if (leftArgs.length <= 0) {
                 LOG.error("ERROR: missing entry log id or entry log file name");
@@ -1523,22 +1035,11 @@ public class BookieShell implements Tool {
             long logId;
             try {
                 logId = Long.parseLong(leftArgs[0]);
+                flags.logId(logId);
             } catch (NumberFormatException nfe) {
-                // not a entry log id
-                File f = new File(leftArgs[0]);
-                String name = f.getName();
-                if (!name.endsWith(".log")) {
-                    // not a log file
-                    LOG.error("ERROR: invalid entry log file name " + leftArgs[0]);
-                    printUsage();
-                    return -1;
-                }
-                String idString = name.split("\\.")[0];
-                logId = Long.parseLong(idString, 16);
+                flags.logFilename(leftArgs[0]);
             }
-
-            printEntryLogMetadata(logId);
-
+            cmd.apply(bkConf, flags);
             return 0;
         }
 
@@ -1566,7 +1067,7 @@ public class BookieShell implements Tool {
 
         ReadJournalCmd() {
             super(CMD_READJOURNAL);
-            rjOpts.addOption("dir", false, "Journal directory (needed if more than one journal configured)");
+            rjOpts.addOption("dir", true, "Journal directory (needed if more than one journal configured)");
             rjOpts.addOption("m", "msg", false, "Print message body");
         }
 
@@ -1579,55 +1080,25 @@ public class BookieShell implements Tool {
                 return -1;
             }
 
+            long journalId = -1L;
+            String filename = "";
+            try {
+                journalId = Long.parseLong(leftArgs[0]);
+            } catch (NumberFormatException nfe) {
+                filename = leftArgs[0];
+            }
+
             boolean printMsg = false;
             if (cmdLine.hasOption("m")) {
                 printMsg = true;
             }
 
-            Journal journal = null;
-            if (getJournals().size() > 1) {
-                if (!cmdLine.hasOption("dir")) {
-                    System.err.println("ERROR: invalid or missing journal directory");
-                    printUsage();
-                    return -1;
-                }
-
-                File journalDirectory = new File(cmdLine.getOptionValue("dir"));
-                for (Journal j : getJournals()) {
-                    if (j.getJournalDirectory().equals(journalDirectory)) {
-                        journal = j;
-                        break;
-                    }
-                }
-
-                if (journal == null) {
-                    System.err.println("ERROR: journal directory not found");
-                    printUsage();
-                    return -1;
-                }
-            } else {
-                journal = getJournals().get(0);
-            }
-
-            long journalId;
-            try {
-                journalId = Long.parseLong(leftArgs[0]);
-            } catch (NumberFormatException nfe) {
-                // not a journal id
-                File f = new File(leftArgs[0]);
-                String name = f.getName();
-                if (!name.endsWith(".txn")) {
-                    // not a journal file
-                    System.err.println("ERROR: invalid journal file name " + leftArgs[0]);
-                    printUsage();
-                    return -1;
-                }
-                String idString = name.split("\\.")[0];
-                journalId = Long.parseLong(idString, 16);
-            }
-            // scan journal
-            scanJournal(journal, journalId, printMsg);
-            return 0;
+            ReadJournalCommand.ReadJournalFlags flags = new ReadJournalCommand.ReadJournalFlags().msg(printMsg)
+                                                            .fileName(filename).journalId(journalId)
+                                                            .dir(cmdLine.getOptionValue("dir"));
+            ReadJournalCommand cmd = new ReadJournalCommand(ledgerIdFormatter, entryFormatter);
+            boolean result = cmd.apply(bkConf, flags);
+            return result ? 0 : -1;
         }
 
         @Override
@@ -1687,24 +1158,38 @@ public class BookieShell implements Tool {
             super(CMD_LISTBOOKIES);
             opts.addOption("rw", "readwrite", false, "Print readwrite bookies");
             opts.addOption("ro", "readonly", false, "Print readonly bookies");
+            opts.addOption("a", "all", false, "Print all bookies");
             // @deprecated 'rw'/'ro' option print both hostname and ip, so this option is not needed anymore
             opts.addOption("h", "hostnames", false, "Also print hostname of the bookie");
         }
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            boolean readwrite = cmdLine.hasOption("rw");
-            boolean readonly = cmdLine.hasOption("ro");
+            int passedCommands = 0;
 
-            if ((!readwrite && !readonly) || (readwrite && readonly)) {
-                LOG.error("One and only one of -readwrite and -readonly must be specified");
+            boolean readwrite = cmdLine.hasOption("rw");
+            if (readwrite) {
+                passedCommands++;
+            }
+            boolean readonly = cmdLine.hasOption("ro");
+            if (readonly) {
+                passedCommands++;
+            }
+            boolean all = cmdLine.hasOption("a");
+            if (all) {
+                passedCommands++;
+            }
+
+            if (passedCommands != 1) {
+                LOG.error("One and only one of -readwrite, -readonly and -all must be specified");
                 printUsage();
                 return 1;
             }
 
             ListBookiesCommand.Flags flags = new ListBookiesCommand.Flags()
                 .readwrite(readwrite)
-                .readonly(readonly);
+                .readonly(readonly)
+                .all(all);
 
             ListBookiesCommand command = new ListBookiesCommand(flags);
 
@@ -1719,7 +1204,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "listbookies  [-readwrite|-readonly] [-hostnames]";
+            return "listbookies  [-readwrite|-readonly|-all] [-hostnames]";
         }
 
         @Override
@@ -1744,38 +1229,11 @@ public class BookieShell implements Tool {
             boolean journal = cmdLine.hasOption("txn");
             boolean entrylog = cmdLine.hasOption("log");
             boolean index = cmdLine.hasOption("idx");
-            boolean all = false;
 
-            if (!journal && !entrylog && !index && !all) {
-                all = true;
-            }
-
-            if (all || journal) {
-                File[] journalDirs = bkConf.getJournalDirs();
-                List<File> journalFiles = listFilesAndSort(journalDirs, "txn");
-                System.out.println("--------- Printing the list of Journal Files ---------");
-                for (File journalFile : journalFiles) {
-                    System.out.println(journalFile.getCanonicalPath());
-                }
-                System.out.println();
-            }
-            if (all || entrylog) {
-                File[] ledgerDirs = bkConf.getLedgerDirs();
-                List<File> ledgerFiles = listFilesAndSort(ledgerDirs, "log");
-                System.out.println("--------- Printing the list of EntryLog/Ledger Files ---------");
-                for (File ledgerFile : ledgerFiles) {
-                    System.out.println(ledgerFile.getCanonicalPath());
-                }
-                System.out.println();
-            }
-            if (all || index) {
-                File[] indexDirs = (bkConf.getIndexDirs() == null) ? bkConf.getLedgerDirs() : bkConf.getIndexDirs();
-                List<File> indexFiles = listFilesAndSort(indexDirs, "idx");
-                System.out.println("--------- Printing the list of Index Files ---------");
-                for (File indexFile : indexFiles) {
-                    System.out.println(indexFile.getCanonicalPath());
-                }
-            }
+            ListFilesOnDiscCommand.LFODFlags flags = new ListFilesOnDiscCommand.LFODFlags().journal(journal)
+                                                         .entrylog(entrylog).index(index);
+            ListFilesOnDiscCommand cmd = new ListFilesOnDiscCommand(flags);
+            cmd.apply(bkConf, flags);
             return 0;
         }
 
@@ -1794,7 +1252,6 @@ public class BookieShell implements Tool {
             return opts;
         }
     }
-
 
     /**
      * Command to print help message.
@@ -1872,43 +1329,10 @@ public class BookieShell implements Tool {
             boolean disable = cmdLine.hasOption("d");
             boolean enable = cmdLine.hasOption("e");
 
-            if (enable && disable) {
-                LOG.error("Only one of -enable and -disable can be specified");
-                printUsage();
-                return 1;
-            }
-
-            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                try {
-                    try (LedgerUnderreplicationManager underreplicationManager =
-                             mFactory.newLedgerUnderreplicationManager()) {
-                        if (!enable && !disable) {
-                            boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
-                            System.out.println("Autorecovery is " + (enabled ? "enabled." : "disabled."));
-                        } else if (enable) {
-                            if (underreplicationManager.isLedgerReplicationEnabled()) {
-                                LOG.warn("Autorecovery already enabled. Doing nothing");
-                            } else {
-                                LOG.info("Enabling autorecovery");
-                                underreplicationManager.enableLedgerReplication();
-                            }
-                        } else {
-                            if (!underreplicationManager.isLedgerReplicationEnabled()) {
-                                LOG.warn("Autorecovery already disabled. Doing nothing");
-                            } else {
-                                LOG.info("Disabling autorecovery");
-                                underreplicationManager.disableLedgerReplication();
-                            }
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new UncheckedExecutionException(e);
-                } catch (KeeperException | ReplicationException e) {
-                    throw new UncheckedExecutionException(e);
-                }
-                return null;
-            });
+            ToggleCommand.AutoRecoveryFlags flags = new ToggleCommand.AutoRecoveryFlags()
+                .enable(enable).status(!disable && !enable);
+            ToggleCommand cmd = new ToggleCommand();
+            cmd.apply(bkConf, flags);
 
             return 0;
         }
@@ -1945,33 +1369,18 @@ public class BookieShell implements Tool {
         int runCmd(CommandLine cmdLine) throws Exception {
             boolean getter = cmdLine.hasOption("g");
             boolean setter = cmdLine.hasOption("s");
+            int set = 0;
+            if (setter) {
+                set = Integer.parseInt(cmdLine.getOptionValue("set"));
+            }
 
-            if ((!getter && !setter) || (getter && setter)) {
-                LOG.error("One and only one of -get and -set must be specified");
-                printUsage();
-                return 1;
-            }
-            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-            try {
-                if (getter) {
-                    int lostBookieRecoveryDelay = admin.getLostBookieRecoveryDelay();
-                    LOG.info("LostBookieRecoveryDelay value in ZK: {}", String.valueOf(lostBookieRecoveryDelay));
-                } else {
-                    int lostBookieRecoveryDelay = Integer.parseInt(cmdLine.getOptionValue("set"));
-                    admin.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
-                    LOG.info("Successfully set LostBookieRecoveryDelay value in ZK: {}",
-                            String.valueOf(lostBookieRecoveryDelay));
-                }
-            } finally {
-                if (admin != null) {
-                    admin.close();
-                }
-            }
-            return 0;
+            LostBookieRecoveryDelayCommand.LBRDFlags flags = new LostBookieRecoveryDelayCommand.LBRDFlags()
+                .get(getter).set(set);
+            LostBookieRecoveryDelayCommand cmd = new LostBookieRecoveryDelayCommand();
+            boolean result = cmd.apply(bkConf, flags);
+            return result ? 0 : 1;
         }
     }
-
 
     /**
      * Print which node has the auditor lock.
@@ -2000,27 +1409,10 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            ZooKeeper zk = null;
-            try {
-                String metadataServiceUri = bkConf.getMetadataServiceUri();
-                String zkServers = ZKMetadataDriverBase.getZKServersFromServiceUri(URI.create(metadataServiceUri));
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(zkServers)
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                BookieSocketAddress bookieId = AuditorElector.getCurrentAuditor(bkConf, zk);
-                if (bookieId == null) {
-                    LOG.info("No auditor elected");
-                    return -1;
-                }
-                LOG.info("Auditor: " + getBookieSocketAddrStringRepresentation(bookieId));
-            } finally {
-                if (zk != null) {
-                    zk.close();
-                }
-            }
-
-            return 0;
+            CliFlags flags = new CliFlags();
+            WhoIsAuditorCommand cmd = new WhoIsAuditorCommand();
+            boolean result = cmd.apply(bkConf, flags);
+            return result ? 0 : -1;
         }
     }
 
@@ -2051,17 +1443,8 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            runFunctionWithRegistrationManager(bkConf, rm -> {
-                String readInstanceId = null;
-                try {
-                    readInstanceId = rm.getClusterInstanceId();
-                } catch (BookieException e) {
-                    throw new UncheckedExecutionException(e);
-                }
-                LOG.info("Metadata Service Uri: {} InstanceId: {}",
-                    bkConf.getMetadataServiceUriUnchecked(), readInstanceId);
-                return null;
-            });
+            InstanceIdCommand cmd = new InstanceIdCommand();
+            cmd.apply(bkConf, new CliFlags());
             return 0;
         }
     }
@@ -2112,7 +1495,8 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            int retValue = -1;
+            AdminCommand cmd = new AdminCommand();
+            AdminCommand.AdminFlags flags = new AdminCommand.AdminFlags();
             Option[] options = cmdLine.getOptions();
             if (options.length != 1) {
                 LOG.error("Invalid command!");
@@ -2133,214 +1517,22 @@ public class BookieShell implements Tool {
                     return -1;
                 }
                 boolean useHostName = getOptionalValue(bookieId, HOSTNAME);
-                if (!bkConf.getUseHostNameAsBookieID() && useHostName) {
-                    LOG.error(
-                            "Expects config useHostNameAsBookieID=true as the option value passed is 'hostname'");
-                    return -1;
-                } else if (bkConf.getUseHostNameAsBookieID() && !useHostName) {
-                    LOG.error("Expects configuration useHostNameAsBookieID=false as the option value passed is 'ip'");
-                    return -1;
-                }
-                retValue = updateBookieIdInCookie(bookieId, useHostName);
-            } else if (thisCommandOption.getLongOpt().equals(EXPANDSTORAGE)) {
-                bkConf.setAllowStorageExpansion(true);
-                return expandStorage();
-            } else if (thisCommandOption.getLongOpt().equals(LIST)) {
-                return listOrDeleteCookies(false, false);
-            } else if (thisCommandOption.getLongOpt().equals(DELETE)) {
+                flags.hostname(useHostName);
+                flags.ip(!useHostName);
+            }
+            flags.expandstorage(thisCommandOption.getLongOpt().equals(EXPANDSTORAGE));
+            flags.list(thisCommandOption.getLongOpt().equals(LIST));
+            flags.delete(thisCommandOption.getLongOpt().equals(DELETE));
+            if (thisCommandOption.getLongOpt().equals(DELETE)) {
                 boolean force = false;
                 String optionValue = thisCommandOption.getValue();
                 if (!StringUtils.isEmpty(optionValue) && optionValue.equals(FORCE)) {
                     force = true;
                 }
-                return listOrDeleteCookies(true, force);
-            } else {
-                LOG.error("Invalid command!");
-                this.printUsage();
-                return -1;
+                flags.force(force);
             }
-            return retValue;
-        }
-
-        private int updateBookieIdInCookie(final String bookieId, final boolean useHostname)
-                throws Exception {
-            return runFunctionWithRegistrationManager(bkConf, rm -> {
-                try {
-                    ServerConfiguration conf = new ServerConfiguration(bkConf);
-                    String newBookieId = Bookie.getBookieAddress(conf).toString();
-                    // read oldcookie
-                    Versioned<Cookie> oldCookie = null;
-                    try {
-                        conf.setUseHostNameAsBookieID(!useHostname);
-                        oldCookie = Cookie.readFromRegistrationManager(rm, conf);
-                    } catch (CookieNotFoundException nne) {
-                        LOG.error("Either cookie already updated with UseHostNameAsBookieID={} or no cookie exists!",
-                            useHostname, nne);
-                        return -1;
-                    }
-                    Cookie newCookie = Cookie.newBuilder(oldCookie.getValue()).setBookieHost(newBookieId).build();
-                    boolean hasCookieUpdatedInDirs = verifyCookie(newCookie, journalDirectories[0]);
-                    for (File dir : ledgerDirectories) {
-                        hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
-                    }
-                    if (indexDirectories != ledgerDirectories) {
-                        for (File dir : indexDirectories) {
-                            hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
-                        }
-                    }
-
-                    if (hasCookieUpdatedInDirs) {
-                        try {
-                            conf.setUseHostNameAsBookieID(useHostname);
-                            Cookie.readFromRegistrationManager(rm, conf);
-                            // since newcookie exists, just do cleanup of oldcookie and return
-                            conf.setUseHostNameAsBookieID(!useHostname);
-                            oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
-                            return 0;
-                        } catch (CookieNotFoundException nne) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Ignoring, cookie will be written to zookeeper");
-                            }
-                        }
-                    } else {
-                        // writes newcookie to local dirs
-                        for (File journalDirectory : journalDirectories) {
-                            newCookie.writeToDirectory(journalDirectory);
-                            LOG.info("Updated cookie file present in journalDirectory {}", journalDirectory);
-                        }
-                        for (File dir : ledgerDirectories) {
-                            newCookie.writeToDirectory(dir);
-                        }
-                        LOG.info("Updated cookie file present in ledgerDirectories {}", ledgerDirectories);
-                        if (ledgerDirectories != indexDirectories) {
-                            for (File dir : indexDirectories) {
-                                newCookie.writeToDirectory(dir);
-                            }
-                            LOG.info("Updated cookie file present in indexDirectories {}", indexDirectories);
-                        }
-                    }
-                    // writes newcookie to zookeeper
-                    conf.setUseHostNameAsBookieID(useHostname);
-                    newCookie.writeToRegistrationManager(rm, conf, Version.NEW);
-
-                    // delete oldcookie
-                    conf.setUseHostNameAsBookieID(!useHostname);
-                    oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
-                    return 0;
-                } catch (IOException | BookieException ioe) {
-                    LOG.error("IOException during cookie updation!", ioe);
-                    return -1;
-                }
-            });
-        }
-
-        private int expandStorage() throws Exception {
-            return runFunctionWithMetadataBookieDriver(bkConf, driver -> {
-                List<File> allLedgerDirs = Lists.newArrayList();
-                allLedgerDirs.addAll(Arrays.asList(ledgerDirectories));
-                if (indexDirectories != ledgerDirectories) {
-                    allLedgerDirs.addAll(Arrays.asList(indexDirectories));
-                }
-
-                try {
-                    Bookie.checkEnvironmentWithStorageExpansion(
-                        bkConf, driver, Arrays.asList(journalDirectories), allLedgerDirs);
-                    return 0;
-                } catch (BookieException e) {
-                    LOG.error("Exception while updating cookie for storage expansion", e);
-                    return -1;
-                }
-            });
-        }
-
-        private boolean verifyCookie(Cookie oldCookie, File dir) throws IOException {
-            try {
-                Cookie cookie = Cookie.readFromDirectory(dir);
-                cookie.verify(oldCookie);
-            } catch (InvalidCookieException e) {
-                return false;
-            }
-            return true;
-        }
-
-        private int listOrDeleteCookies(boolean delete, boolean force) throws Exception {
-            BookieSocketAddress bookieAddress = Bookie.getBookieAddress(bkConf);
-            File[] journalDirs = bkConf.getJournalDirs();
-            File[] ledgerDirs = bkConf.getLedgerDirs();
-            File[] indexDirs = bkConf.getIndexDirs();
-            File[] allDirs = ArrayUtils.addAll(journalDirs, ledgerDirs);
-            if (indexDirs != null) {
-                allDirs = ArrayUtils.addAll(allDirs, indexDirs);
-            }
-
-            File[] allCurDirs = Bookie.getCurrentDirectories(allDirs);
-            List<File> allVersionFiles = new LinkedList<File>();
-            File versionFile;
-            for (File curDir : allCurDirs) {
-                versionFile = new File(curDir, BookKeeperConstants.VERSION_FILENAME);
-                if (versionFile.exists()) {
-                    allVersionFiles.add(versionFile);
-                }
-            }
-
-            if (!allVersionFiles.isEmpty()) {
-                if (delete) {
-                    boolean confirm = force;
-                    if (!confirm) {
-                        confirm = IOUtils.confirmPrompt("Are you sure you want to delete Cookies locally?");
-                    }
-                    if (confirm) {
-                        for (File verFile : allVersionFiles) {
-                            if (!verFile.delete()) {
-                                LOG.error(
-                                        "Failed to delete Local cookie file {}. So aborting deletecookie of Bookie: {}",
-                                        verFile, bookieAddress);
-                                return -1;
-                            }
-                        }
-                        LOG.info("Deleted Local Cookies of Bookie: {}", bookieAddress);
-                    } else {
-                        LOG.info("Skipping deleting local Cookies of Bookie: {}", bookieAddress);
-                    }
-                } else {
-                    LOG.info("Listing local Cookie Files of Bookie: {}", bookieAddress);
-                    for (File verFile : allVersionFiles) {
-                        LOG.info(verFile.getCanonicalPath());
-                    }
-                }
-            } else {
-                LOG.info("No local cookies for Bookie: {}", bookieAddress);
-            }
-
-            return runFunctionWithRegistrationManager(bkConf, rm -> {
-                try {
-                    Versioned<Cookie> cookie = null;
-                    try {
-                        cookie = Cookie.readFromRegistrationManager(rm, bookieAddress);
-                    } catch (CookieNotFoundException nne) {
-                        LOG.info("No cookie for {} in metadata store", bookieAddress);
-                        return 0;
-                    }
-
-                    if (delete) {
-                        boolean confirm = force;
-                        if (!confirm) {
-                            confirm = IOUtils.confirmPrompt(
-                                "Are you sure you want to delete Cookies from metadata store?");
-                        }
-
-                        if (confirm) {
-                            cookie.getValue().deleteFromRegistrationManager(rm, bkConf, cookie.getVersion());
-                            LOG.info("Deleted Cookie from metadata store for Bookie: {}", bookieAddress);
-                        } else {
-                            LOG.info("Skipping deleting cookie from metadata store for Bookie: {}", bookieAddress);
-                        }
-                    }
-                } catch (BookieException | IOException e) {
-                    return -1;
-                }
-                return 0;
-            });
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
     }
 
@@ -2354,6 +1546,7 @@ public class BookieShell implements Tool {
             super(CMD_UPDATELEDGER);
             opts.addOption("b", "bookieId", true, "Bookie Id");
             opts.addOption("s", "updatespersec", true, "Number of ledgers updating per second (default: 5 per sec)");
+            opts.addOption("r", "maxOutstandingReads", true, "Max outstanding reads (default: 5 * updatespersec)");
             opts.addOption("l", "limit", true, "Maximum number of ledgers to update (default: no limit)");
             opts.addOption("v", "verbose", true, "Print status of the ledger updation (default: false)");
             opts.addOption("p", "printprogress", true,
@@ -2372,12 +1565,15 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "updateledgers -bookieId <hostname|ip> [-updatespersec N] [-limit N] [-verbose true/false] "
-                    + "[-printprogress N]";
+            return "updateledgers -bookieId <hostname|ip> [-updatespersec N] [-maxOutstandingReads N] [-limit N] "
+                    + "[-verbose true/false] [-printprogress N]";
         }
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
+            FlipBookieIdCommand cmd = new FlipBookieIdCommand();
+            FlipBookieIdCommand.FlipBookieIdFlags flags = new FlipBookieIdCommand.FlipBookieIdFlags();
+
             final String bookieId = cmdLine.getOptionValue("bookieId");
             if (StringUtils.isBlank(bookieId)) {
                 LOG.error("Invalid argument list!");
@@ -2390,23 +1586,9 @@ public class BookieShell implements Tool {
                 return -1;
             }
             boolean useHostName = getOptionalValue(bookieId, "hostname");
-            if (!bkConf.getUseHostNameAsBookieID() && useHostName) {
-                LOG.error("Expects configuration useHostNameAsBookieID=true as the option value passed is 'hostname'");
-                return -1;
-            } else if (bkConf.getUseHostNameAsBookieID() && !useHostName) {
-                LOG.error("Expects configuration useHostNameAsBookieID=false as the option value passed is 'ip'");
-                return -1;
-            }
             final int rate = getOptionIntValue(cmdLine, "updatespersec", 5);
-            if (rate <= 0) {
-                LOG.error("Invalid updatespersec {}, should be > 0", rate);
-                return -1;
-            }
+            final int maxOutstandingReads = getOptionIntValue(cmdLine, "maxOutstandingReads", (rate * 5));
             final int limit = getOptionIntValue(cmdLine, "limit", Integer.MIN_VALUE);
-            if (limit <= 0 && limit != Integer.MIN_VALUE) {
-                LOG.error("Invalid limit {}, should be > 0", limit);
-                return -1;
-            }
             final boolean verbose = getOptionBooleanValue(cmdLine, "verbose", false);
             final long printprogress;
             if (!verbose) {
@@ -2418,37 +1600,94 @@ public class BookieShell implements Tool {
                 // defaulting to 10 seconds
                 printprogress = getOptionLongValue(cmdLine, "printprogress", 10);
             }
-            final ClientConfiguration conf = new ClientConfiguration();
-            conf.addConfiguration(bkConf);
-            final BookKeeper bk = new BookKeeper(conf);
-            final BookKeeperAdmin admin = new BookKeeperAdmin(conf);
-            final UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, admin);
-            final ServerConfiguration serverConf = new ServerConfiguration(bkConf);
-            final BookieSocketAddress newBookieId = Bookie.getBookieAddress(serverConf);
-            serverConf.setUseHostNameAsBookieID(!useHostName);
-            final BookieSocketAddress oldBookieId = Bookie.getBookieAddress(serverConf);
+            flags.hostname(useHostName);
+            flags.printProgress(printprogress);
+            flags.limit(limit);
+            flags.updatePerSec(rate);
+            flags.maxOutstandingReads(maxOutstandingReads);
+            flags.verbose(verbose);
 
-            UpdateLedgerNotifier progressable = new UpdateLedgerNotifier() {
-                long lastReport = System.nanoTime();
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
+        }
+    }
 
-                @Override
-                public void progress(long updated, long issued) {
-                    if (printprogress <= 0) {
-                        return; // disabled
-                    }
-                    if (TimeUnit.MILLISECONDS.toSeconds(MathUtils.elapsedMSec(lastReport)) >= printprogress) {
-                        LOG.info("Number of ledgers issued={}, updated={}", issued, updated);
-                        lastReport = MathUtils.nowInNano();
-                    }
-                }
-            };
-            try {
-                updateLedgerOp.updateBookieIdInLedgers(oldBookieId, newBookieId, rate, limit, progressable);
-            } catch (IOException e) {
-                LOG.error("Failed to update ledger metadata", e);
+    /**
+     * Update bookie into ledger command.
+     */
+    class UpdateBookieInLedgerCmd extends MyCommand {
+        private final Options opts = new Options();
+
+        UpdateBookieInLedgerCmd() {
+            super(CMD_UPDATE_BOOKIE_IN_LEDGER);
+            opts.addOption("sb", "srcBookie", true, "Source bookie which needs to be replaced by destination bookie.");
+            opts.addOption("db", "destBookie", true, "Destination bookie which replaces source bookie.");
+            opts.addOption("s", "updatespersec", true, "Number of ledgers updating per second (default: 5 per sec)");
+            opts.addOption("r", "maxOutstandingReads", true, "Max outstanding reads (default: 5 * updatespersec)");
+            opts.addOption("l", "limit", true, "Maximum number of ledgers to update (default: no limit)");
+            opts.addOption("v", "verbose", true, "Print status of the ledger updation (default: false)");
+            opts.addOption("p", "printprogress", true,
+                    "Print messages on every configured seconds if verbose turned on (default: 10 secs)");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Replace bookie in ledger metadata. (useful when re-ip of host) "
+                    + "replace srcBookie with destBookie. (this may take a long time).";
+        }
+
+        @Override
+        String getUsage() {
+            return "updateBookieInLedger -srcBookie <source bookie> -destBookie <destination bookie> "
+                    + "[-updatespersec N] [-maxOutstandingReads N] [-limit N] [-verbose true/false] [-printprogress N]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            UpdateBookieInLedgerCommand cmd = new UpdateBookieInLedgerCommand();
+            UpdateBookieInLedgerCommand.UpdateBookieInLedgerFlags flags =
+                    new UpdateBookieInLedgerCommand.UpdateBookieInLedgerFlags();
+
+            final String srcBookie = cmdLine.getOptionValue("srcBookie");
+            final String destBookie = cmdLine.getOptionValue("destBookie");
+            if (StringUtils.isBlank(srcBookie) || StringUtils.isBlank(destBookie)) {
+                LOG.error("Invalid argument list (srcBookie and destBookie must be provided)!");
+                this.printUsage();
                 return -1;
             }
-            return 0;
+            if (StringUtils.equals(srcBookie, destBookie)) {
+                LOG.error("srcBookie and destBookie can't be the same.");
+                return -1;
+            }
+            final int rate = getOptionIntValue(cmdLine, "updatespersec", 5);
+            final int maxOutstandingReads = getOptionIntValue(cmdLine, "maxOutstandingReads", (rate * 5));
+            final int limit = getOptionIntValue(cmdLine, "limit", Integer.MIN_VALUE);
+            final boolean verbose = getOptionBooleanValue(cmdLine, "verbose", false);
+            final long printprogress;
+            if (!verbose) {
+                if (cmdLine.hasOption("printprogress")) {
+                    LOG.warn("Ignoring option 'printprogress', this is applicable when 'verbose' is true");
+                }
+                printprogress = Integer.MIN_VALUE;
+            } else {
+                // defaulting to 10 seconds
+                printprogress = getOptionLongValue(cmdLine, "printprogress", 10);
+            }
+            flags.srcBookie(srcBookie);
+            flags.destBookie(destBookie);
+            flags.printProgress(printprogress);
+            flags.limit(limit);
+            flags.updatePerSec(rate);
+            flags.maxOutstandingReads(maxOutstandingReads);
+            flags.verbose(verbose);
+
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
     }
 
@@ -2467,31 +1706,12 @@ public class BookieShell implements Tool {
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
             final long lid = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
-            if (lid == -1) {
-                System.err.println("Must specify a ledger id");
-                return -1;
-            }
 
             boolean force = cmdLine.hasOption("f");
-            boolean confirm = false;
-            if (!force) {
-                confirm = IOUtils.confirmPrompt(
-                        "Are you sure to delete Ledger : " + ledgerIdFormatter.formatLedgerId(lid) + "?");
-            }
-
-            BookKeeper bk = null;
-            try {
-                if (force || confirm) {
-                    ClientConfiguration conf = new ClientConfiguration();
-                    conf.addConfiguration(bkConf);
-                    bk = new BookKeeper(conf);
-                    bk.deleteLedger(lid);
-                }
-            } finally {
-                if (bk != null) {
-                    bk.close();
-                }
-            }
+            DeleteLedgerCommand cmd = new DeleteLedgerCommand(ledgerIdFormatter);
+            DeleteLedgerCommand.DeleteLedgerFlags flags = new DeleteLedgerCommand.DeleteLedgerFlags()
+                .ledgerId(lid).force(force);
+            cmd.apply(bkConf, flags);
 
             return 0;
         }
@@ -2538,46 +1758,10 @@ public class BookieShell implements Tool {
             return lOpts;
         }
 
-        String getReadable(long val) {
-            String unit[] = {"", "KB", "MB", "GB", "TB"};
-            int cnt = 0;
-            double d = val;
-            while (d >= 1000 && cnt < unit.length - 1) {
-                d = d / 1000;
-                cnt++;
-            }
-            DecimalFormat df = new DecimalFormat("#.###");
-            df.setRoundingMode(RoundingMode.DOWN);
-            return cnt > 0 ? "(" + df.format(d) + unit[cnt] + ")" : unit[cnt];
-        }
-
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            ClientConfiguration clientConf = new ClientConfiguration(bkConf);
-            clientConf.setDiskWeightBasedPlacementEnabled(true);
-            BookKeeper bk = new BookKeeper(clientConf);
-
-            Map<BookieSocketAddress, BookieInfo> map = bk.getBookieInfo();
-            if (map.size() == 0) {
-                System.out.println("Failed to retrieve bookie information from any of the bookies");
-                bk.close();
-                return 0;
-            }
-
-            System.out.println("Free disk space info:");
-            long totalFree = 0, total = 0;
-            for (Map.Entry<BookieSocketAddress, BookieInfo> e : map.entrySet()) {
-                BookieInfo bInfo = e.getValue();
-                BookieSocketAddress bookieId = e.getKey();
-                System.out.println(getBookieSocketAddrStringRepresentation(bookieId) + ":\tFree: "
-                        + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace()) + "\tTotal: "
-                        + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
-                totalFree += bInfo.getFreeDiskSpace();
-                total += bInfo.getTotalDiskSpace();
-            }
-            System.out.println("Total free disk space in the cluster:\t" + totalFree + getReadable(totalFree));
-            System.out.println("Total disk capacity in the cluster:\t" + total + getReadable(total));
-            bk.close();
+            InfoCommand cmd = new InfoCommand();
+            cmd.apply(bkConf, new CliFlags());
             return 0;
         }
     }
@@ -2609,15 +1793,8 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-            try {
-                admin.triggerAudit();
-            } finally {
-                if (admin != null) {
-                    admin.close();
-                }
-            }
+            TriggerAuditCommand cmd = new TriggerAuditCommand();
+            cmd.apply(bkConf, new CliFlags());
             return 0;
         }
     }
@@ -2654,40 +1831,55 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-            try {
-                final String remoteBookieidToDecommission = cmdLine.getOptionValue("bookieid");
-                final BookieSocketAddress bookieAddressToDecommission = (StringUtils
-                        .isBlank(remoteBookieidToDecommission) ? Bookie.getBookieAddress(bkConf)
-                                : new BookieSocketAddress(remoteBookieidToDecommission));
-                admin.decommissionBookie(bookieAddressToDecommission);
-                LOG.info("The ledgers stored in the given decommissioning bookie: {} are properly replicated",
-                        bookieAddressToDecommission);
-                runFunctionWithRegistrationManager(bkConf, rm -> {
-                    try {
-                        Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieAddressToDecommission);
-                        cookie.getValue().deleteFromRegistrationManager(rm, bookieAddressToDecommission,
-                                cookie.getVersion());
-                    } catch (CookieNotFoundException nne) {
-                        LOG.warn("No cookie to remove for the decommissioning bookie: {}, it could be deleted already",
-                                bookieAddressToDecommission, nne);
-                    } catch (BookieException be) {
-                        throw new UncheckedExecutionException(be.getMessage(), be);
-                    }
-                    return 0;
-                });
-                LOG.info("Cookie of the decommissioned bookie: {} is deleted successfully",
-                        bookieAddressToDecommission);
-                return 0;
-            } catch (Exception e) {
-                LOG.error("Received exception in DecommissionBookieCmd ", e);
+            DecommissionCommand cmd = new DecommissionCommand();
+            DecommissionCommand.DecommissionFlags flags = new DecommissionCommand.DecommissionFlags();
+            final String remoteBookieidToDecommission = cmdLine.getOptionValue("bookieid");
+            flags.remoteBookieIdToDecommission(remoteBookieidToDecommission);
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
+        }
+    }
+
+    /**
+     * Command to retrieve remote bookie endpoint information.
+     */
+    class EndpointInfoCmd extends MyCommand {
+        Options lOpts = new Options();
+
+        EndpointInfoCmd() {
+            super(CMD_ENDPOINTINFO);
+            lOpts.addOption("b", "bookieid", true, "Bookie Id");
+        }
+
+        @Override
+        String getDescription() {
+            return "Get info about a remote bookie with a specific bookie address (bookieid)";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_ENDPOINTINFO + " [-bookieid <bookieaddress>]";
+        }
+
+        @Override
+        Options getOptions() {
+            return lOpts;
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            EndpointInfoCommand cmd = new EndpointInfoCommand();
+            EndpointInfoCommand.EndpointInfoFlags flags = new EndpointInfoCommand.EndpointInfoFlags();
+            final String bookieId = cmdLine.getOptionValue("bookieid");
+            flags.bookie(bookieId);
+            if (StringUtils.isBlank(bookieId)) {
+                LOG.error("Invalid argument list!");
+                this.printUsage();
                 return -1;
-            } finally {
-                if (admin != null) {
-                    admin.close();
-                }
             }
+
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
         }
     }
 
@@ -2697,7 +1889,6 @@ public class BookieShell implements Tool {
     public interface UpdateLedgerNotifier {
         void progress(long updated, long issued);
     }
-
 
     /**
      * Convert bookie indexes from InterleavedStorage to DbLedgerStorage format.
@@ -2726,42 +1917,10 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            LOG.info("=== Converting to DbLedgerStorage ===");
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-
-            InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
-            Bookie.mountLedgerStorageOffline(conf, interleavedStorage);
-
-            DbLedgerStorage dbStorage = new DbLedgerStorage();
-            Bookie.mountLedgerStorageOffline(conf, dbStorage);
-
-            int convertedLedgers = 0;
-            for (long ledgerId : interleavedStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Converting ledger {}", ledgerIdFormatter.formatLedgerId(ledgerId));
-                }
-
-                LedgerCache.LedgerIndexMetadata fi = interleavedStorage.readLedgerIndexMetadata(ledgerId);
-
-                LedgerCache.PageEntriesIterable pages = interleavedStorage.getIndexEntries(ledgerId);
-
-                long numberOfEntries = dbStorage.addLedgerToIndex(ledgerId, fi.fenced, fi.masterKey, pages);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("   -- done. fenced={} entries={}", fi.fenced, numberOfEntries);
-                }
-
-                // Remove index from old storage
-                interleavedStorage.deleteLedger(ledgerId);
-
-                if (++convertedLedgers % 1000 == 0) {
-                    LOG.info("Converted {} ledgers", convertedLedgers);
-                }
-            }
-
-            dbStorage.shutdown();
-            interleavedStorage.shutdown();
-
-            LOG.info("---- Done Converting ----");
+            ConvertToDBStorageCommand cmd = new ConvertToDBStorageCommand();
+            ConvertToDBStorageCommand.CTDBFlags flags = new ConvertToDBStorageCommand.CTDBFlags();
+            cmd.setLedgerIdFormatter(ledgerIdFormatter);
+            cmd.apply(bkConf, flags);
             return 0;
         }
     }
@@ -2793,89 +1952,9 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            LOG.info("=== Converting DbLedgerStorage ===");
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-            LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
-                    new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()));
-            LedgerDirsManager ledgerIndexManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
-                    new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()));
-
-            DbLedgerStorage dbStorage = new DbLedgerStorage();
-            InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
-
-            CheckpointSource checkpointSource = new CheckpointSource() {
-                    @Override
-                    public Checkpoint newCheckpoint() {
-                        return Checkpoint.MAX;
-                    }
-
-                    @Override
-                    public void checkpointComplete(Checkpoint checkpoint, boolean compact)
-                            throws IOException {
-                    }
-                };
-            Checkpointer checkpointer = new Checkpointer() {
-                @Override
-                public void startCheckpoint(Checkpoint checkpoint) {
-                    // No-op
-                }
-
-                @Override
-                public void start() {
-                    // no-op
-                }
-            };
-
-            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager, null,
-                        checkpointSource, checkpointer, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
-            interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
-                    null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
-            LedgerCache interleavedLedgerCache = interleavedStorage.ledgerCache;
-
-            int convertedLedgers = 0;
-            for (long ledgerId : dbStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Converting ledger {}", ledgerIdFormatter.formatLedgerId(ledgerId));
-                }
-
-                interleavedStorage.setMasterKey(ledgerId, dbStorage.readMasterKey(ledgerId));
-                if (dbStorage.isFenced(ledgerId)) {
-                    interleavedStorage.setFenced(ledgerId);
-                }
-
-                long lastEntryInLedger = dbStorage.getLastEntryInLedger(ledgerId);
-                for (long entryId = 0; entryId <= lastEntryInLedger; entryId++) {
-                    try {
-                        long location = dbStorage.getLocation(ledgerId, entryId);
-                        if (location != 0L) {
-                            interleavedLedgerCache.putEntryOffset(ledgerId, entryId, location);
-                        }
-                    } catch (Bookie.NoEntryException e) {
-                        // Ignore entry
-                    }
-                }
-
-                if (++convertedLedgers % 1000 == 0) {
-                    LOG.info("Converted {} ledgers", convertedLedgers);
-                }
-            }
-
-            dbStorage.shutdown();
-
-            interleavedLedgerCache.flushLedger(true);
-            interleavedStorage.flush();
-            interleavedStorage.shutdown();
-
-            String baseDir = ledgerDirsManager.getAllLedgerDirs().get(0).toString();
-
-            // Rename databases and keep backup
-            Files.move(FileSystems.getDefault().getPath(baseDir, "ledgers"),
-                    FileSystems.getDefault().getPath(baseDir, "ledgers.backup"));
-
-            Files.move(FileSystems.getDefault().getPath(baseDir, "locations"),
-                    FileSystems.getDefault().getPath(baseDir, "locations.backup"));
-
-            LOG.info("---- Done Converting {} ledgers ----", convertedLedgers);
+            ConvertToInterleavedStorageCommand cmd = new ConvertToInterleavedStorageCommand();
+            ConvertToInterleavedStorageCommand.CTISFlags flags = new ConvertToInterleavedStorageCommand.CTISFlags();
+            cmd.apply(bkConf, flags);
             return 0;
         }
     }
@@ -2907,10 +1986,8 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            LOG.info("=== Rebuilding bookie index ===");
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-            new LocationsIndexRebuildOp(conf).initiate();
-            LOG.info("-- Done rebuilding bookie index --");
+            RebuildDBLedgerLocationsIndexCommand cmd = new RebuildDBLedgerLocationsIndexCommand();
+            cmd.apply(bkConf, new CliFlags());
             return 0;
         }
     }
@@ -2957,23 +2034,20 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            byte[] password;
-            if (cmdLine.hasOption("password")) {
-                password = cmdLine.getOptionValue("password").getBytes(UTF_8);
-            } else if (cmdLine.hasOption("b64password")) {
-                password = Base64.getDecoder().decode(cmdLine.getOptionValue("b64password"));
-            } else {
-                LOG.error("The password must be specified to regenerate the index file.");
-                return 1;
-            }
-            Set<Long> ledgerIds = Arrays.stream(cmdLine.getOptionValues("ledgerIds"))
-                .map((id) -> Long.parseLong(id)).collect(Collectors.toSet());
+            RegenerateInterleavedStorageIndexFileCommand cmd = new RegenerateInterleavedStorageIndexFileCommand();
+            RegenerateInterleavedStorageIndexFileCommand.RISIFFlags
+                flags = new RegenerateInterleavedStorageIndexFileCommand.RISIFFlags();
+            List<Long> ledgerIds = Arrays.stream(cmdLine.getOptionValues("ledgerIds")).map((id) -> Long.parseLong(id))
+                                         .collect(Collectors.toList());
             boolean dryRun = cmdLine.hasOption("dryRun");
-
-            LOG.info("=== Rebuilding index file for {} ===", ledgerIds);
-            ServerConfiguration conf = new ServerConfiguration(bkConf);
-            new InterleavedStorageRegenerateIndexOp(conf, ledgerIds, password).initiate(dryRun);
-            LOG.info("-- Done rebuilding index file for {} --", ledgerIds);
+            flags.ledgerIds(ledgerIds);
+            if (cmdLine.hasOption("password")) {
+                flags.password(cmdLine.getOptionValue("password"));
+            } else if (cmdLine.hasOption("b64password")) {
+                flags.b64Password(cmdLine.getOptionValue("b64password"));
+            }
+            flags.dryRun(dryRun);
+            cmd.apply(bkConf, flags);
             return 0;
         }
     }
@@ -2990,6 +2064,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_LEDGER, new LedgerCmd());
         commands.put(CMD_READ_LEDGER_ENTRIES, new ReadLedgerEntriesCmd());
         commands.put(CMD_LISTLEDGERS, new ListLedgersCmd());
+        commands.put(CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE, new ListActiveLedgersCmd());
         commands.put(CMD_LISTUNDERREPLICATED, new ListUnderreplicatedCmd());
         commands.put(CMD_WHOISAUDITOR, new WhoIsAuditorCmd());
         commands.put(CMD_WHATISINSTANCEID, new WhatIsInstanceId());
@@ -3006,9 +2081,11 @@ public class BookieShell implements Tool {
         commands.put(CMD_LISTFILESONDISC, new ListDiskFilesCmd());
         commands.put(CMD_UPDATECOOKIE, new UpdateCookieCmd());
         commands.put(CMD_UPDATELEDGER, new UpdateLedgerCmd());
+        commands.put(CMD_UPDATE_BOOKIE_IN_LEDGER, new UpdateBookieInLedgerCmd());
         commands.put(CMD_DELETELEDGER, new DeleteLedgerCmd());
         commands.put(CMD_BOOKIEINFO, new BookieInfoCmd());
         commands.put(CMD_DECOMMISSIONBOOKIE, new DecommissionBookieCmd());
+        commands.put(CMD_ENDPOINTINFO, new EndpointInfoCmd());
         commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());
         commands.put(CMD_CONVERT_TO_INTERLEAVED_STORAGE, new ConvertToInterleavedStorageCmd());
         commands.put(CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX, new RebuildDbLedgerLocationsIndexCmd());
@@ -3131,7 +2208,7 @@ public class BookieShell implements Tool {
         }
     }
 
-    public static void main(String argv[]) throws Exception {
+    public static void main(String[] argv) throws Exception {
         BookieShell shell = new BookieShell();
 
         // handle some common options for multiple cmds
@@ -3173,69 +2250,11 @@ public class BookieShell implements Tool {
         System.exit(res);
     }
 
-    ///
-    /// Bookie File Operations
-    ///
-
-    /**
-     * Get the ledger file of a specified ledger.
-     *
-     * @param ledgerId Ledger Id
-     *
-     * @return file object.
-     */
-    private File getLedgerFile(long ledgerId) {
-        String ledgerName = IndexPersistenceMgr.getLedgerName(ledgerId);
-        File lf = null;
-        for (File d : indexDirectories) {
-            lf = new File(d, ledgerName);
-            if (lf.exists()) {
-                break;
-            }
-            lf = null;
-        }
-        return lf;
-    }
-
     private synchronized void initEntryLogger() throws IOException {
         if (null == entryLogger) {
             // provide read only entry logger
             entryLogger = new ReadOnlyEntryLogger(bkConf);
         }
-    }
-
-    /**
-     * Scan over entry log.
-     *
-     * @param logId Entry Log Id
-     * @param scanner Entry Log Scanner
-     */
-    protected void scanEntryLog(long logId, EntryLogScanner scanner) throws IOException {
-        initEntryLogger();
-        entryLogger.scanEntryLog(logId, scanner);
-    }
-
-    private synchronized List<Journal> getJournals() throws IOException {
-        if (null == journals) {
-            journals = Lists.newArrayListWithCapacity(bkConf.getJournalDirs().length);
-            int idx = 0;
-            for (File journalDir : bkConf.getJournalDirs()) {
-                journals.add(new Journal(idx++, new File(journalDir, BookKeeperConstants.CURRENT_DIR), bkConf,
-                    new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
-                        new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()))));
-            }
-        }
-        return journals;
-    }
-
-    /**
-     * Scan journal file.
-     *
-     * @param journalId Journal File Id
-     * @param scanner Journal File Scanner
-     */
-    protected void scanJournal(Journal journal, long journalId, JournalScanner scanner) throws IOException {
-        journal.scanJournal(journalId, 0L, scanner);
     }
 
     ///
@@ -3252,153 +2271,6 @@ public class BookieShell implements Tool {
         });
     }
 
-    /**
-     * Scan over an entry log file.
-     *
-     * @param logId
-     *          Entry Log File id.
-     * @param printMsg
-     *          Whether printing the entry data.
-     */
-    protected void scanEntryLog(long logId, final boolean printMsg) throws Exception {
-        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)");
-        scanEntryLog(logId, new EntryLogScanner() {
-            @Override
-            public boolean accept(long ledgerId) {
-                return true;
-            }
-
-            @Override
-            public void process(long ledgerId, long startPos, ByteBuf entry) {
-                formatEntry(startPos, entry, printMsg);
-            }
-        });
-    }
-
-    /**
-     * Scan over an entry log file for a particular entry.
-     *
-     * @param logId Entry Log File id.
-     * @param ledgerId id of the ledger
-     * @param entryId entryId of the ledger we are looking for (-1 for all of the entries of the ledger)
-     * @param printMsg Whether printing the entry data.
-     * @throws Exception
-     */
-    protected void scanEntryLogForSpecificEntry(long logId, final long ledgerId, final long entryId,
-                                                final boolean printMsg) throws Exception {
-        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for LedgerId "
-                + ledgerId + ((entryId == -1) ? "" : " for EntryId " + entryId));
-        final MutableBoolean entryFound = new MutableBoolean(false);
-        scanEntryLog(logId, new EntryLogScanner() {
-            @Override
-            public boolean accept(long candidateLedgerId) {
-                return ((candidateLedgerId == ledgerId) && ((!entryFound.booleanValue()) || (entryId == -1)));
-            }
-
-            @Override
-            public void process(long candidateLedgerId, long startPos, ByteBuf entry) {
-                long entrysLedgerId = entry.getLong(entry.readerIndex());
-                long entrysEntryId = entry.getLong(entry.readerIndex() + 8);
-                if ((candidateLedgerId == entrysLedgerId) && (candidateLedgerId == ledgerId)
-                        && ((entrysEntryId == entryId) || (entryId == -1))) {
-                    entryFound.setValue(true);
-                    formatEntry(startPos, entry, printMsg);
-                }
-            }
-        });
-        if (!entryFound.booleanValue()) {
-            System.out.println("LedgerId " + ledgerId + ((entryId == -1) ? "" : " EntryId " + entryId)
-                    + " is not available in the entry log " + logId + " (" + Long.toHexString(logId) + ".log)");
-        }
-    }
-
-    /**
-     * Scan over an entry log file for entries in the given position range.
-     *
-     * @param logId Entry Log File id.
-     * @param rangeStartPos Start position of the entry we are looking for
-     * @param rangeEndPos End position of the entry we are looking for (-1 for till the end of the entrylog)
-     * @param printMsg Whether printing the entry data.
-     * @throws Exception
-     */
-    protected void scanEntryLogForPositionRange(long logId, final long rangeStartPos, final long rangeEndPos,
-                                                final boolean printMsg) throws Exception {
-        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for PositionRange: "
-                + rangeStartPos + " - " + rangeEndPos);
-        final MutableBoolean entryFound = new MutableBoolean(false);
-        scanEntryLog(logId, new EntryLogScanner() {
-            private MutableBoolean stopScanning = new MutableBoolean(false);
-
-            @Override
-            public boolean accept(long ledgerId) {
-                return !stopScanning.booleanValue();
-            }
-
-            @Override
-            public void process(long ledgerId, long entryStartPos, ByteBuf entry) {
-                if (!stopScanning.booleanValue()) {
-                    if ((rangeEndPos != -1) && (entryStartPos > rangeEndPos)) {
-                        stopScanning.setValue(true);
-                    } else {
-                        int entrySize = entry.readableBytes();
-                        /**
-                         * entrySize of an entry (inclusive of payload and
-                         * header) value is stored as int value in log file, but
-                         * it is not counted in the entrySize, hence for calculating
-                         * the end position of the entry we need to add additional
-                         * 4 (intsize of entrySize). Please check
-                         * EntryLogger.scanEntryLog.
-                         */
-                        long entryEndPos = entryStartPos + entrySize + 4 - 1;
-                        if (((rangeEndPos == -1) || (entryStartPos <= rangeEndPos)) && (rangeStartPos <= entryEndPos)) {
-                            formatEntry(entryStartPos, entry, printMsg);
-                            entryFound.setValue(true);
-                        }
-                    }
-                }
-            }
-        });
-        if (!entryFound.booleanValue()) {
-            System.out.println("Entry log " + logId + " (" + Long.toHexString(logId)
-                    + ".log) doesn't has any entry in the range " + rangeStartPos + " - " + rangeEndPos
-                    + ". Probably the position range, you have provided is lesser than the LOGFILE_HEADER_SIZE (1024) "
-                    + "or greater than the current log filesize.");
-        }
-    }
-
-    /**
-     * Scan a journal file.
-     *
-     * @param journalId Journal File Id
-     * @param printMsg Whether printing the entry data.
-     */
-    protected void scanJournal(Journal journal, long journalId, final boolean printMsg) throws Exception {
-        System.out.println("Scan journal " + journalId + " (" + Long.toHexString(journalId) + ".txn)");
-        scanJournal(journal, journalId, new JournalScanner() {
-            boolean printJournalVersion = false;
-
-            @Override
-            public void process(int journalVersion, long offset, ByteBuffer entry) throws IOException {
-                if (!printJournalVersion) {
-                    System.out.println("Journal Version : " + journalVersion);
-                    printJournalVersion = true;
-                }
-                formatEntry(offset, Unpooled.wrappedBuffer(entry), printMsg);
-            }
-        });
-    }
-
-    /**
-     * Print last log mark.
-     */
-    protected void printLastLogMark() throws IOException {
-        for (Journal journal : getJournals()) {
-            LogMark lastLogMark = journal.getLastLogMark().getCurMark();
-            System.out.println("LastLogMark: Journal Id - " + lastLogMark.getLogFileId() + "("
-                    + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
-                    + lastLogMark.getLogFileOffset());
-        }
-    }
 
     /**
      * Format the entry into a readable format.
@@ -3417,70 +2289,6 @@ public class BookieShell implements Tool {
         if (printMsg) {
             entryFormatter.formatEntry(entry.getEntry());
         }
-    }
-
-    /**
-     * Format the message into a readable format.
-     *
-     * @param pos
-     *          File offset of the message stored in entry log file
-     * @param recBuff
-     *          Entry Data
-     * @param printMsg
-     *          Whether printing the message body
-     */
-    private void formatEntry(long pos, ByteBuf recBuff, boolean printMsg) {
-        int entrySize = recBuff.readableBytes();
-        long ledgerId = recBuff.readLong();
-        long entryId = recBuff.readLong();
-
-        System.out.println("--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId) + ", Eid=" + entryId
-                + ", ByteOffset=" + pos + ", EntrySize=" + entrySize + " ---------");
-        if (entryId == Bookie.METAENTRY_ID_LEDGER_KEY) {
-            int masterKeyLen = recBuff.readInt();
-            byte[] masterKey = new byte[masterKeyLen];
-            recBuff.readBytes(masterKey);
-            System.out.println("Type:           META");
-            System.out.println("MasterKey:      " + bytes2Hex(masterKey));
-            System.out.println();
-            return;
-        }
-        if (entryId == Bookie.METAENTRY_ID_FENCE_KEY) {
-            System.out.println("Type:           META");
-            System.out.println("Fenced");
-            System.out.println();
-            return;
-        }
-        // process a data entry
-        long lastAddConfirmed = recBuff.readLong();
-        System.out.println("Type:           DATA");
-        System.out.println("LastConfirmed:  " + lastAddConfirmed);
-        if (!printMsg) {
-            System.out.println();
-            return;
-        }
-        // skip digest checking
-        recBuff.skipBytes(8);
-        System.out.println("Data:");
-        System.out.println();
-        try {
-            byte[] ret = new byte[recBuff.readableBytes()];
-            recBuff.readBytes(ret);
-            entryFormatter.formatEntry(ret);
-        } catch (Exception e) {
-            System.out.println("N/A. Corrupted.");
-        }
-        System.out.println();
-    }
-
-    static String bytes2Hex(byte[] data) {
-        StringBuilder sb = new StringBuilder(data.length * 2);
-        Formatter formatter = new Formatter(sb);
-        for (byte b : data) {
-            formatter.format("%02x", b);
-        }
-        formatter.close();
-        return sb.toString();
     }
 
     private static int getOptionIntValue(CommandLine cmdLine, String option, int defaultVal) {
@@ -3531,9 +2339,6 @@ public class BookieShell implements Tool {
     }
 
     private static boolean getOptionalValue(String optValue, String optName) {
-        if (StringUtils.equals(optValue, optName)) {
-            return true;
-        }
-        return false;
+        return StringUtils.equals(optValue, optName);
     }
 }

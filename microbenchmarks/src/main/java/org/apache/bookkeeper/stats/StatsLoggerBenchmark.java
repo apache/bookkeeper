@@ -23,15 +23,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider;
 import org.apache.bookkeeper.stats.codahale.FastCodahaleMetricsProvider;
 import org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider;
-import org.apache.bookkeeper.stats.twitter.ostrich.OstrichProvider;
-import org.apache.bookkeeper.stats.twitter.science.TwitterStatsProvider;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
@@ -60,8 +54,6 @@ public class StatsLoggerBenchmark {
         providers.put("Prometheus", PrometheusMetricsProvider::new);
         providers.put("Codahale", CodahaleMetricsProvider::new);
         providers.put("FastCodahale", FastCodahaleMetricsProvider::new);
-        providers.put("Twitter", TwitterStatsProvider::new);
-        providers.put("Ostrich", OstrichProvider::new);
     }
 
     @State(Scope.Benchmark)

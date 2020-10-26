@@ -65,7 +65,7 @@ public interface LedgerManager extends Closeable {
      * @return Future which, when completed, denotes that the ledger metadata has been removed.
      *         Completed with an exception:<ul>
      *          <li>{@link BKException.BKMetadataVersionException} if version doesn't match</li>
-     *          <li>{@link BKException.BKNoSuchLedgerExistsException} if ledger not exist</li>
+     *          <li>{@link BKException.BKNoSuchLedgerExistsOnMetadataServerException} if ledger not exist</li>
      *          <li>{@link BKException.ZKException} for other issues</li>
      *          </ul>
      */
@@ -78,7 +78,7 @@ public interface LedgerManager extends Closeable {
      *          Ledger Id
      * @return Future which, when completed, contains the requested versioned metadata.
      *         Completed with an exception::<ul>
-     *          <li>{@link BKException.BKNoSuchLedgerExistsException} if ledger not exist</li>
+     *          <li>{@link BKException.BKNoSuchLedgerExistsOnMetadataServerException} if ledger not exist</li>
      *          <li>{@link BKException.ZKException} for other issues</li>
      *          </ul>
      */
@@ -149,9 +149,12 @@ public interface LedgerManager extends Closeable {
     /**
      * Loop to scan a range of metadata from metadata storage.
      *
+     * @param zkOpTimeOutMs
+     *            Iterator considers timeout while fetching ledger-range from
+     *            zk.
      * @return will return a iterator of the Ranges
      */
-    LedgerRangeIterator getLedgerRanges();
+    LedgerRangeIterator getLedgerRanges(long zkOpTimeOutMs);
 
     /**
      * Used to represent the Ledgers range returned from the

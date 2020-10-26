@@ -18,6 +18,8 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -34,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @ToString
 public class LedgerLayout {
 
-    // version of compability layout version
+    // version of compatibility layout version
     public static final int LAYOUT_MIN_COMPAT_VERSION = 1;
     // version of ledger layout metadata
     public static final int LAYOUT_FORMAT_VERSION = 2;
@@ -82,7 +84,7 @@ public class LedgerLayout {
         if (log.isDebugEnabled()) {
             log.debug("Serialized layout info: {}", s);
         }
-        return s.getBytes("UTF-8");
+        return s.getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -95,12 +97,12 @@ public class LedgerLayout {
      *             if the given byte[] cannot be parsed
      */
     public static LedgerLayout parseLayout(byte[] bytes) throws IOException {
-        String layout = new String(bytes, "UTF-8");
+        String layout = new String(bytes, StandardCharsets.UTF_8);
         if (log.isDebugEnabled()) {
             log.debug("Parsing Layout: {}", layout);
         }
 
-        String lines[] = layout.split(lSplitter);
+        String[] lines = layout.split(lSplitter);
 
         try {
             int layoutFormatVersion = Integer.parseInt(lines[0]);

@@ -21,15 +21,15 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>tests-parent</artifactId>
-    <version>4.9.0-SNAPSHOT</version>
-    <relativePath>..</relativePath>
+    <version>4.12.0-SNAPSHOT</version>
   </parent>
-  <groupId>org.apache.bookkeeper.tests.integration</groupId>
-  <artifactId>tests-parent</artifactId>
+  <groupId>org.apache.bookkeeper.tests</groupId>
+  <artifactId>integration</artifactId>
   <name>Apache BookKeeper :: Tests :: Integration</name>
   <modules>
     <module>smoke</module>
     <module>standalone</module>
+    <module>cluster</module>
   </modules>
 
   <build>
@@ -68,20 +68,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-
-    <!-- enable building table service related tests only when -Dstream is provided -->
-    <profile>
-      <id>stream</id>
-      <activation>
-        <property>
-          <name>stream</name>
-        </property>
-      </activation>
-      <modules>
-        <!-- enable cluster testing -->
-        <module>cluster</module>
-      </modules>
     </profile>
   </profiles>
 </project>

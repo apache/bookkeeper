@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.BKException.Code;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -72,6 +72,7 @@ public class LedgerChecker {
             this.cb = cb;
         }
 
+        @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                 ByteBuf buffer, Object ctx) {
             if (rc == BKException.Code.OK) {
@@ -185,7 +186,7 @@ public class LedgerChecker {
         long firstStored = fragment.getFirstStoredEntryId(bookieIndex);
         long lastStored = fragment.getLastStoredEntryId(bookieIndex);
 
-        BookieSocketAddress bookie = fragment.getAddress(bookieIndex);
+        BookieId bookie = fragment.getAddress(bookieIndex);
         if (null == bookie) {
             throw new InvalidFragmentException();
         }
@@ -262,9 +263,11 @@ public class LedgerChecker {
             this.cb = cb;
         }
 
+        @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                                       ByteBuf buffer, Object ctx) {
-            if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc) {
+            if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc
+                    && BKException.Code.NoSuchLedgerExistsOnMetadataServerException != rc) {
                 entryMayExist.set(true);
             }
 
@@ -292,6 +295,7 @@ public class LedgerChecker {
             this.cb = cb;
         }
 
+        @Override
         public void operationComplete(int rc, LedgerFragment result) {
             if (rc == BKException.Code.ClientClosedException) {
                 cb.operationComplete(BKException.Code.ClientClosedException, badFragments);
@@ -321,8 +325,8 @@ public class LedgerChecker {
         final Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
 
         Long curEntryId = null;
-        List<BookieSocketAddress> curEnsemble = null;
-        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : lh
+        List<BookieId> curEnsemble = null;
+        for (Map.Entry<Long, ? extends List<BookieId>> e : lh
                 .getLedgerMetadata().getAllEnsembles().entrySet()) {
             if (curEntryId != null) {
                 Set<Integer> bookieIndexes = new HashSet<Integer>();
@@ -370,6 +374,7 @@ public class LedgerChecker {
 
                 final EntryExistsCallback eecb = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
                                               new GenericCallback<Boolean>() {
+                                                  @Override
                                                   public void operationComplete(int rc, Boolean result) {
                                                       if (result) {
                                                           fragments.add(lastLedgerFragment);
@@ -381,7 +386,7 @@ public class LedgerChecker {
 
                 DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(entryToRead);
                 for (int i = 0; i < writeSet.size(); i++) {
-                    BookieSocketAddress addr = curEnsemble.get(writeSet.get(i));
+                    BookieId addr = curEnsemble.get(writeSet.get(i));
                     bookieClient.readEntry(addr, lh.getId(), entryToRead,
                                            eecb, null, BookieProtocol.FLAG_NONE);
                 }

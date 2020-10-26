@@ -19,13 +19,13 @@ package org.apache.distributedlog;
 
 import static org.junit.Assert.assertTrue;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Ticker;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -95,12 +95,12 @@ public class TestDistributedLogBase {
     protected static String zkServers;
     protected static int zkPort;
     protected static int numBookies = 3;
-    private static final List<File> tmpDirs = new ArrayList<File>();
+    protected static final List<File> TMP_DIRS = new ArrayList<File>();
 
     @BeforeClass
     public static void setupCluster() throws Exception {
         File zkTmpDir = IOUtils.createTempDir("zookeeper", "distrlog");
-        tmpDirs.add(zkTmpDir);
+        TMP_DIRS.add(zkTmpDir);
         Pair<ZooKeeperServerShim, Integer> serverAndPort = LocalDLMEmulator.runZookeeperOnAnyPort(zkTmpDir);
         zks = serverAndPort.getLeft();
         zkPort = serverAndPort.getRight();
@@ -125,7 +125,7 @@ public class TestDistributedLogBase {
     public static void teardownCluster() throws Exception {
         bkutil.teardown();
         zks.stop();
-        for (File dir : tmpDirs) {
+        for (File dir : TMP_DIRS) {
             FileUtils.forceDeleteOnExit(dir);
         }
     }
@@ -135,7 +135,7 @@ public class TestDistributedLogBase {
         try {
             zkc = LocalDLMEmulator.connectZooKeeper("127.0.0.1", zkPort);
         } catch (Exception ex) {
-            LOG.error("hit exception connecting to zookeeper at {}:{}", new Object[] { "127.0.0.1", zkPort, ex });
+            LOG.error("hit exception connecting to zookeeper at {}:{}", "127.0.0.1", zkPort, ex);
             throw ex;
         }
     }

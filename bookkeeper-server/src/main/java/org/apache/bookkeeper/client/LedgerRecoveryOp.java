@@ -93,8 +93,14 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     }
 
     public CompletableFuture<LedgerHandle> initiate() {
-        ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh, clientCtx.getBookieClient(), lh.getCurrentEnsemble(),
+        ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(clientCtx.getBookieClient(),
+                                                            lh.distributionSchedule,
+                                                            lh.macManager,
+                                                            lh.ledgerId,
+                                                            lh.getCurrentEnsemble(),
+                                                            lh.ledgerKey,
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+                    @Override
                     public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
                         if (rc == BKException.Code.OK) {
                             synchronized (lh) {

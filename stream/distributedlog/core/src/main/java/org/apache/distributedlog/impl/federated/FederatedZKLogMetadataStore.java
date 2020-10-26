@@ -17,11 +17,10 @@
  */
 package org.apache.distributedlog.impl.federated;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
-import com.google.common.base.Optional;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -31,6 +30,7 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -150,7 +150,7 @@ public class FederatedZKLogMetadataStore
                     URI oldURI = log2Locations.putIfAbsent(logName, uri);
                     if (null != oldURI && !Objects.equal(uri, oldURI)) {
                         logger.error("Log {} is found duplicated in multiple locations : old location = {},"
-                                + " new location = {}", new Object[] { logName, oldURI, uri });
+                                + " new location = {}", logName, oldURI, uri);
                         duplicatedLogFound.set(true);
                     }
                 }
@@ -232,7 +232,7 @@ public class FederatedZKLogMetadataStore
         try {
             scheduler.schedule(r, ms, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException ree) {
-            logger.error("Task {} scheduled in {} ms is rejected : ", new Object[]{r, ms, ree});
+            logger.error("Task {} scheduled in {} ms is rejected : ", r, ms, ree);
         }
     }
 
@@ -504,7 +504,7 @@ public class FederatedZKLogMetadataStore
     }
 
     private String getNamespaceFromZkPath(String zkPath) throws UnexpectedException {
-        String parts[] = zkPath.split(SUB_NAMESPACE_PREFIX);
+        String[] parts = zkPath.split(SUB_NAMESPACE_PREFIX);
         if (parts.length <= 0) {
             throw new UnexpectedException("Invalid namespace @ " + zkPath);
         }
@@ -641,7 +641,7 @@ public class FederatedZKLogMetadataStore
             return postStateCheck(FutureUtils.value(Optional.of(location)));
         }
         if (!forceCheckLogExistence) {
-            Optional<URI> result = Optional.absent();
+            Optional<URI> result = Optional.empty();
             return FutureUtils.value(result);
         }
         return postStateCheck(fetchLogLocation(logName).thenApply((uriOptional) -> {
@@ -663,12 +663,12 @@ public class FederatedZKLogMetadataStore
         FutureUtils.collect(fetchFutures).whenComplete(new FutureEventListener<List<Optional<URI>>>() {
             @Override
             public void onSuccess(List<Optional<URI>> fetchResults) {
-                Optional<URI> result = Optional.absent();
+                Optional<URI> result = Optional.empty();
                 for (Optional<URI> fetchResult : fetchResults) {
                     if (result.isPresent()) {
                         if (fetchResult.isPresent()) {
                             logger.error("Log {} is found in multiple sub namespaces : {} & {}.",
-                                    new Object[] { logName, result.get(), fetchResult.get() });
+                                logName, result.get(), fetchResult.get());
                             duplicatedLogName.compareAndSet(null, logName);
                             duplicatedLogFound.set(true);
                             fetchPromise.completeExceptionally(new UnexpectedException("Log " + logName
@@ -701,7 +701,7 @@ public class FederatedZKLogMetadataStore
                     if (Code.OK.intValue() == rc) {
                         fetchPromise.complete(Optional.of(uri));
                     } else if (Code.NONODE.intValue() == rc) {
-                        fetchPromise.complete(Optional.<URI>absent());
+                        fetchPromise.complete(Optional.<URI>empty());
                     } else {
                         fetchPromise.completeExceptionally(KeeperException.create(Code.get(rc)));
                     }

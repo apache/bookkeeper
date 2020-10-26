@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.benchmark;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -103,6 +103,7 @@ public class TestClient {
             final long timeout = Long.parseLong(cmd.getOptionValue("timeout", "360")) * 1000;
 
             timeouter.schedule(new TimerTask() {
+                    @Override
                     public void run() {
                         System.err.println("Timing out benchmark after " + timeout + "ms");
                         System.exit(-1);
@@ -209,6 +210,7 @@ public class TestClient {
             this.r = new Random(System.identityHashCode(this));
         }
 
+        @Override
         public Long call() {
             try {
                 long count = 0;
@@ -253,6 +255,7 @@ public class TestClient {
             this.sync = sync;
         }
 
+        @Override
         public Long call() {
             try {
                 long start = System.currentTimeMillis();

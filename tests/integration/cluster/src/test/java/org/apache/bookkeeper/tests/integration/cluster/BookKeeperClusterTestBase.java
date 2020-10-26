@@ -27,11 +27,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.client.DefaultBookieAddressResolver;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tests.integration.topologies.BKCluster;
 import org.apache.bookkeeper.tests.integration.topologies.BKClusterSpec;
@@ -97,10 +98,13 @@ public abstract class BookKeeperClusterTestBase {
     }
 
     private static boolean findIfBookieRegistered(String bookieName) throws Exception {
-        Set<BookieSocketAddress> bookies =
-            FutureUtils.result(metadataClientDriver.getRegistrationClient().getWritableBookies()).getValue();
-        Optional<BookieSocketAddress> registered =
-            bookies.stream().filter(addr -> addr.getHostName().equals(bookieName)).findFirst();
+        DefaultBookieAddressResolver resolver =
+                new DefaultBookieAddressResolver(metadataClientDriver.getRegistrationClient());
+        Set<BookieId> bookies =
+            FutureUtils.result(metadataClientDriver
+                    .getRegistrationClient().getWritableBookies()).getValue();
+        Optional<BookieId> registered =
+            bookies.stream().filter(addr -> resolver.resolve(addr).getHostName().equals(bookieName)).findFirst();
         return registered.isPresent();
     }
 

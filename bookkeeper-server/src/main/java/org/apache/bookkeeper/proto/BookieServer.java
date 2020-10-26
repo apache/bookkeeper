@@ -33,16 +33,19 @@ import java.net.UnknownHostException;
 import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.discover.BookieServiceInfoUtils;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -83,12 +86,23 @@ public class BookieServer {
     public BookieServer(ServerConfiguration conf) throws IOException,
             KeeperException, InterruptedException, BookieException,
             UnavailableException, CompatibilityException, SecurityException {
-        this(conf, NullStatsLogger.INSTANCE);
+        this(conf, NullStatsLogger.INSTANCE, null);
     }
 
-    public BookieServer(ServerConfiguration conf, StatsLogger statsLogger)
+    public BookieServer(ServerConfiguration conf, StatsLogger statsLogger,
+            Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws IOException, KeeperException, InterruptedException,
             BookieException, UnavailableException, CompatibilityException, SecurityException {
+        if (bookieServiceInfoProvider == null) {
+            bookieServiceInfoProvider = () -> {
+                try {
+                    return BookieServiceInfoUtils
+                            .buildLegacyBookieServiceInfo(this.getLocalAddress().toBookieId().toString());
+                } catch (IOException err) {
+                    throw new RuntimeException(err);
+                }
+            };
+        }
         this.conf = conf;
         validateUser(conf);
         String configAsString;
@@ -103,7 +117,7 @@ public class BookieServer {
         this.statsLogger = statsLogger;
         this.nettyServer = new BookieNettyServer(this.conf, null, allocator);
         try {
-            this.bookie = newBookie(conf, allocator);
+            this.bookie = newBookie(conf, allocator, bookieServiceInfoProvider);
         } catch (IOException | KeeperException | InterruptedException | BookieException e) {
             // interrupted on constructing a bookie
             this.nettyServer.shutdown();
@@ -130,14 +144,15 @@ public class BookieServer {
         this.uncaughtExceptionHandler = exceptionHandler;
     }
 
-    protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator)
+    protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator,
+            Supplier<BookieServiceInfo> bookieServiceInfoProvider)
         throws IOException, KeeperException, InterruptedException, BookieException {
         return conf.isForceReadOnlyBookie()
-            ? new ReadOnlyBookie(conf, statsLogger.scope(BOOKIE_SCOPE), allocator)
-            : new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE), allocator);
+            ? new ReadOnlyBookie(conf, statsLogger.scope(BOOKIE_SCOPE), allocator, bookieServiceInfoProvider)
+            : new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE), allocator, bookieServiceInfoProvider);
     }
 
-    public void start() throws IOException, UnavailableException, InterruptedException, BKException {
+    public void start() throws InterruptedException {
         this.bookie.start();
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {
@@ -162,6 +177,11 @@ public class BookieServer {
     @VisibleForTesting
     public BookieSocketAddress getLocalAddress() throws UnknownHostException {
         return Bookie.getBookieAddress(conf);
+    }
+
+    @VisibleForTesting
+    public BookieId getBookieId() throws UnknownHostException {
+        return Bookie.getBookieId(conf);
     }
 
     @VisibleForTesting
@@ -316,13 +336,14 @@ public class BookieServer {
 
     @Override
     public  String toString() {
-        String id = "UNKNOWN";
-
+        String addr = "UNKNOWN";
+        String id = "?";
         try {
-            id = Bookie.getBookieAddress(conf).toString();
+            addr = Bookie.getBookieAddress(conf).toString();
+            id = getBookieId().toString();
         } catch (UnknownHostException e) {
             //Ignored...
         }
-        return "Bookie Server listening on " + id;
+        return "Bookie Server listening on " + addr + " with id " + id;
     }
 }

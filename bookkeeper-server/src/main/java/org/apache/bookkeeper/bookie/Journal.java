@@ -78,7 +78,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     /**
      * Filter to pickup journals.
      */
-    private interface JournalIdFilter {
+    public interface JournalIdFilter {
         boolean accept(long journalId);
     }
 
@@ -103,7 +103,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * @return list of filtered ids
      */
     static List<Long> listJournalIds(File journalDir, JournalIdFilter filter) {
-        File logFiles[] = journalDir.listFiles();
+        File[] logFiles = journalDir.listFiles();
         if (logFiles == null || logFiles.length == 0) {
             return Collections.emptyList();
         }
@@ -190,17 +190,19 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
 
         void rollLog(LastLogMark lastMark) throws NoWritableLedgerDirException {
-            byte buff[] = new byte[16];
+            byte[] buff = new byte[16];
             ByteBuffer bb = ByteBuffer.wrap(buff);
             // we should record <logId, logPosition> marked in markLog
             // which is safe since records before lastMark have been
             // persisted to disk (both index & entry logger)
             lastMark.getCurMark().writeLogMark(bb);
+
             if (LOG.isDebugEnabled()) {
                 LOG.debug("RollLog to persist last marked log : {}", lastMark.getCurMark());
             }
+
             List<File> writableLedgerDirs = ledgerDirsManager
-                    .getWritableLedgerDirs();
+                    .getWritableLedgerDirsForNewLog();
             for (File dir : writableLedgerDirs) {
                 File file = new File(dir, lastMarkFileName);
                 FileOutputStream fos = null;
@@ -227,7 +229,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
          * and then max log position in max journal log.
          */
         void readLog() {
-            byte buff[] = new byte[16];
+            byte[] buff = new byte[16];
             ByteBuffer bb = ByteBuffer.wrap(buff);
             LogMark mark = new LogMark();
             for (File dir: ledgerDirsManager.getAllLedgerDirs()) {
@@ -271,11 +273,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         @Override
         public boolean accept(long journalId) {
-            if (journalId < lastMark.getCurMark().getLogFileId()) {
-                return true;
-            } else {
-                return false;
-            }
+            return journalId < lastMark.getCurMark().getLogFileId();
         }
     }
 
@@ -344,6 +342,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
 
         private static final Recycler<QueueEntry> RECYCLER = new Recycler<QueueEntry>() {
+            @Override
             protected QueueEntry newObject(Recycler.Handle<QueueEntry> handle) {
                 return new QueueEntry(handle);
             }
@@ -450,6 +449,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     private final Recycler<ForceWriteRequest> forceWriteRequestsRecycler = new Recycler<ForceWriteRequest>() {
+                @Override
                 protected ForceWriteRequest newObject(
                         Recycler.Handle<ForceWriteRequest> handle) {
                     return new ForceWriteRequest(handle);
@@ -608,6 +608,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private final boolean removePagesFromCache;
     private final int journalFormatVersionToWrite;
     private final int journalAlignmentSize;
+    // control PageCache flush interval when syncData disabled to reduce disk io util
+    private final long journalPageCacheFlushIntervalMSec;
 
     // Should data be fsynced on disk before triggering the callback
     private final boolean syncData;
@@ -668,6 +670,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.bufferedEntriesThreshold = conf.getJournalBufferedEntriesThreshold();
         this.journalFormatVersionToWrite = conf.getJournalFormatVersionToWrite();
         this.journalAlignmentSize = conf.getJournalAlignmentSize();
+        this.journalPageCacheFlushIntervalMSec = conf.getJournalPageCacheFlushIntervalMSec();
         if (conf.getNumJournalCallbackThreads() > 0) {
             this.cbThreadPool = Executors.newFixedThreadPool(conf.getNumJournalCallbackThreads(),
                                                          new DefaultThreadFactory("bookie-journal-callback"));
@@ -705,6 +708,16 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     public LastLogMark getLastLogMark() {
         return lastLogMark;
+    }
+
+    /**
+     * Update lastLogMark of the journal
+     * Indicates that the file has been processed.
+     * @param id
+     * @param scanOffset
+     */
+    void setLastLogMark(Long id, long scanOffset) {
+        lastLogMark.setCurLogMark(id, scanOffset);
     }
 
     /**
@@ -758,9 +771,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * @param journalId Journal Log Id
      * @param journalPos Offset to start scanning
      * @param scanner Scanner to handle entries
+     * @return scanOffset - represents the byte till which journal was read
      * @throws IOException
      */
-    public void scanJournal(long journalId, long journalPos, JournalScanner scanner)
+    public long scanJournal(long journalId, long journalPos, JournalScanner scanner)
         throws IOException {
         JournalChannel recLog;
         if (journalPos <= 0) {
@@ -788,8 +802,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     break;
                 }
                 boolean isPaddingRecord = false;
-                if (len == PADDING_MASK) {
-                    if (journalVersion >= JournalChannel.V5) {
+                if (len < 0) {
+                    if (len == PADDING_MASK && journalVersion >= JournalChannel.V5) {
                         // skip padding bytes
                         lenBuff.clear();
                         fullRead(recLog, lenBuff);
@@ -803,7 +817,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                         }
                         isPaddingRecord = true;
                     } else {
-                        throw new IOException("Invalid record found with negative length : " + len);
+                        LOG.error("Invalid record found with negative length: {}", len);
+                        throw new IOException("Invalid record found with negative length " + len);
                     }
                 }
                 recBuff.clear();
@@ -821,49 +836,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     scanner.process(journalVersion, offset, recBuff);
                 }
             }
+            return recLog.fc.position();
         } finally {
             recLog.close();
-        }
-    }
-
-    /**
-     * Replay journal files.
-     *
-     * @param scanner Scanner to process replayed entries.
-     * @throws IOException
-     */
-    public void replay(JournalScanner scanner) throws IOException {
-        final LogMark markedLog = lastLogMark.getCurMark();
-        List<Long> logs = listJournalIds(journalDirectory, new JournalIdFilter() {
-            @Override
-            public boolean accept(long journalId) {
-                if (journalId < markedLog.getLogFileId()) {
-                    return false;
-                }
-                return true;
-            }
-        });
-        // last log mark may be missed due to no sync up before
-        // validate filtered log ids only when we have markedLogId
-        if (markedLog.getLogFileId() > 0) {
-            if (logs.size() == 0 || logs.get(0) != markedLog.getLogFileId()) {
-                throw new IOException("Recovery log " + markedLog.getLogFileId() + " is missing");
-            }
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Try to relay journal logs : {}", logs);
-        }
-        // TODO: When reading in the journal logs that need to be synced, we
-        // should use BufferedChannels instead to minimize the amount of
-        // system calls done.
-        for (Long id: logs) {
-            long logPosition = 0L;
-            if (id == markedLog.getLogFileId()) {
-                logPosition = markedLog.getLogFileOffset();
-            }
-            LOG.info("Replaying journal {} from position {}", id, logPosition);
-            scanJournal(id, logPosition, scanner);
         }
     }
 
@@ -883,7 +858,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     @VisibleForTesting
-    void logAddEntry(long ledgerId, long entryId, ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx)
+    public void logAddEntry(long ledgerId, long entryId, ByteBuf entry,
+                            boolean ackBeforeSync, WriteCallback cb, Object ctx)
             throws InterruptedException {
         //Retain entry until it gets written to journal
         entry.retain();
@@ -962,6 +938,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             boolean groupWhenTimeout = false;
 
             long dequeueStartTime = 0L;
+            long lastFlushTimeMs = System.currentTimeMillis();
 
             QueueEntry qe = null;
             while (true) {
@@ -1014,8 +991,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                         if (maxGroupWaitInNanos > 0 && !groupWhenTimeout && (MathUtils
                                 .elapsedNanos(toFlush.get(0).enqueueTime) > maxGroupWaitInNanos)) {
                             groupWhenTimeout = true;
-                        } else if (maxGroupWaitInNanos > 0 && groupWhenTimeout && qe != null
-                                && MathUtils.elapsedNanos(qe.enqueueTime) < maxGroupWaitInNanos) {
+                        } else if (maxGroupWaitInNanos > 0 && groupWhenTimeout
+                            && (qe == null // no entry to group
+                                || MathUtils.elapsedNanos(qe.enqueueTime) < maxGroupWaitInNanos)) {
                             // when group timeout, it would be better to look forward, as there might be lots of
                             // entries already timeout
                             // due to a previous slow write (writing to filesystem which impacted by force write).
@@ -1029,13 +1007,15 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 && ((bufferedEntriesThreshold > 0 && toFlush.size() > bufferedEntriesThreshold)
                                 || (bc.position() > lastFlushPosition + bufferedWritesThreshold))) {
                             // 2. If we have buffered more than the buffWriteThreshold or bufferedEntriesThreshold
+                            groupWhenTimeout = false;
                             shouldFlush = true;
                             journalStats.getFlushMaxOutstandingBytesCounter().inc();
-                        } else if (qe == null) {
+                        } else if (qe == null && flushWhenQueueEmpty) {
                             // We should get here only if we flushWhenQueueEmpty is true else we would wait
                             // for timeout that would put is past the maxWait threshold
                             // 3. If the queue is empty i.e. no benefit of grouping. This happens when we have one
                             // publish at a time - common case in tests.
+                            groupWhenTimeout = false;
                             shouldFlush = true;
                             journalStats.getFlushEmptyQueueCounter().inc();
                         }
@@ -1077,25 +1057,25 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 .registerSuccessfulValue(batchSize);
 
                             boolean shouldRolloverJournal = (lastFlushPosition > maxJournalSize);
-                            if (syncData) {
-                                // Trigger data sync to disk in the "Force-Write" thread.
-                                // Callback will be triggered after data is committed to disk
+                            // Trigger data sync to disk in the "Force-Write" thread.
+                            // Trigger data sync to disk has three situations:
+                            // 1. journalSyncData enabled, usually for SSD used as journal storage
+                            // 2. shouldRolloverJournal is true, that is the journal file reaches maxJournalSize
+                            // 3. if journalSyncData disabled and shouldRolloverJournal is false, we can use
+                            //   journalPageCacheFlushIntervalMSec to control sync frequency, preventing disk
+                            //   synchronize frequently, which will increase disk io util.
+                            //   when flush interval reaches journalPageCacheFlushIntervalMSec (default: 1s),
+                            //   it will trigger data sync to disk
+                            if (syncData
+                                    || shouldRolloverJournal
+                                    || (System.currentTimeMillis() - lastFlushTimeMs
+                                    >= journalPageCacheFlushIntervalMSec)) {
                                 forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
-                                                                               toFlush, shouldRolloverJournal, false));
-                                toFlush = entryListRecycler.newInstance();
-                                numEntriesToFlush = 0;
-                            } else {
-                                // Data is already written on the file (though it might still be in the OS page-cache)
-                                lastLogMark.setCurLogMark(logId, lastFlushPosition);
-                                toFlush.clear();
-                                numEntriesToFlush = 0;
-                                if (shouldRolloverJournal) {
-                                    forceWriteRequests.put(
-                                            createForceWriteRequest(
-                                                    logFile, logId, lastFlushPosition,
-                                                    EMPTY_ARRAY_LIST, shouldRolloverJournal, false));
-                                }
+                                        toFlush, shouldRolloverJournal, false));
+                                lastFlushTimeMs = System.currentTimeMillis();
                             }
+                            toFlush = entryListRecycler.newInstance();
+                            numEntriesToFlush = 0;
 
                             batchSize = 0L;
                             // check whether journal file is over file limit
@@ -1130,7 +1110,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 } else if (qe.entryId != Bookie.METAENTRY_ID_FORCE_LEDGER) {
                     int entrySize = qe.entry.readableBytes();
                     journalStats.getJournalWriteBytes().add(entrySize);
-                    journalStats.getJournalQueueSize().dec();
 
                     batchSize += (4 + entrySize);
 

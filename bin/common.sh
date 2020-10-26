@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#
 #/**
 # * Licensed to the Apache Software Foundation (ASF) under one
 # * or more contributor license agreements.  See the NOTICE file
@@ -19,7 +18,7 @@
 # */
 
 # Check net.ipv6.bindv6only
-if [ -f /sbin/sysctl ]; then
+if [ -f /sbin/sysctl ] && [ -f /proc/sys/net/ipv6/bindv6only ]; then
   # check if net.ipv6.bindv6only is set to 1
   bindv6only=$(/sbin/sysctl -n net.ipv6.bindv6only 2> /dev/null)
   if [ -n "$bindv6only" ] && [ "$bindv6only" -eq "1" ]
@@ -71,13 +70,31 @@ source ${BK_CONFDIR}/nettyenv.sh
 source ${BK_CONFDIR}/bkenv.sh
 source ${BK_CONFDIR}/bk_cli_env.sh
 
+detect_jdk8() {
+
+  if [ -f "$JAVA_HOME/lib/modules" ]; then
+     echo "0"
+  else
+     echo "1"
+  fi
+  return
+}
+
 # default netty settings
 NETTY_LEAK_DETECTION_LEVEL=${NETTY_LEAK_DETECTION_LEVEL:-"disabled"}
 NETTY_RECYCLER_MAXCAPACITY=${NETTY_RECYCLER_MAXCAPACITY:-"1000"}
 NETTY_RECYCLER_LINKCAPACITY=${NETTY_RECYCLER_LINKCAPACITY:-"1024"}
 
-# default bookie JVM settings
-DEFAULT_BOOKIE_GC_OPTS="-XX:+UseG1GC \
+USING_JDK8=$(detect_jdk8)
+
+if [ "$USING_JDK8" -ne "1" ]; then
+   DEFAULT_BOOKIE_GC_OPTS="-XX:+UseG1GC \
+    -XX:MaxGCPauseMillis=10 \
+    -XX:+ParallelRefProcEnabled \
+    -XX:+DisableExplicitGC"
+   DEFAULT_BOOKIE_GC_LOGGING_OPTS=""
+else
+  DEFAULT_BOOKIE_GC_OPTS="-XX:+UseG1GC \
     -XX:MaxGCPauseMillis=10 \
     -XX:+ParallelRefProcEnabled \
     -XX:+UnlockExperimentalVMOptions \
@@ -88,11 +105,13 @@ DEFAULT_BOOKIE_GC_OPTS="-XX:+UseG1GC \
     -XX:G1NewSizePercent=50 \
     -XX:+DisableExplicitGC \
     -XX:-ResizePLAB"
-DEFAULT_BOOKIE_GC_LOGGING_OPTS="-XX:+PrintGCDetails \
+  DEFAULT_BOOKIE_GC_LOGGING_OPTS="-XX:+PrintGCDetails \
     -XX:+PrintGCApplicationStoppedTime  \
     -XX:+UseGCLogFileRotation \
     -XX:NumberOfGCLogFiles=5 \
     -XX:GCLogFileSize=64m"
+fi
+
 BOOKIE_MAX_HEAP_MEMORY=${BOOKIE_MAX_HEAP_MEMORY:-"1g"}
 BOOKIE_MIN_HEAP_MEMORY=${BOOKIE_MIN_HEAP_MEMORY:-"1g"}
 BOOKIE_MAX_DIRECT_MEMORY=${BOOKIE_MAX_DIRECT_MEMORY:-"2g"}
@@ -103,11 +122,16 @@ BOOKIE_GC_LOGGING_OPTS=${BOOKIE_GC_LOGGING_OPTS:-"${DEFAULT_BOOKIE_GC_LOGGING_OP
 # default CLI JVM settings
 DEFAULT_CLI_GC_OPTS="-XX:+UseG1GC \
     -XX:MaxGCPauseMillis=10"
-DEFAULT_CLI_GC_LOGGING_OPTS="-XX:+PrintGCDetails \
+if [ "$USING_JDK8" -ne "1" ]; then
+  DEFAULT_CLI_GC_LOGGING_OPTS=""
+else
+  DEFAULT_CLI_GC_LOGGING_OPTS="-XX:+PrintGCDetails \
     -XX:+PrintGCApplicationStoppedTime  \
     -XX:+UseGCLogFileRotation \
     -XX:NumberOfGCLogFiles=5 \
     -XX:GCLogFileSize=64m"
+fi
+
 CLI_MAX_HEAP_MEMORY=${CLI_MAX_HEAP_MEMORY:-"512M"}
 CLI_MIN_HEAP_MEMORY=${CLI_MIN_HEAP_MEMORY:-"256M"}
 CLI_MEM_OPTS=${CLI_MEM_OPTS:-"-Xms${CLI_MIN_HEAP_MEMORY} -Xmx${CLI_MAX_HEAP_MEMORY}"}
@@ -175,13 +199,13 @@ find_module_jar() {
     BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
     if [ -z "${BUILT_JAR}" ]; then
       echo "Couldn't find module '${MODULE_NAME}' jar." >&2
-      read -p "Do you want me to run \`mvn package -DskipTests -Dstream\` for you ? (y|n) " answer
+      read -p "Do you want me to run \`mvn package -DskipTests\` for you ? (y|n) " answer
       case "${answer:0:1}" in
         y|Y )
           mkdir -p ${BK_HOME}/logs
           output="${BK_HOME}/logs/build.out"
           echo "see output at ${output} for the progress ..." >&2
-          mvn package -DskipTests -Dstream &> ${output} 
+          mvn package -DskipTests &> ${output}
           ;;
         * )
           exit 1
@@ -218,7 +242,7 @@ add_maven_deps_to_classpath() {
   if [ ! -f ${f} ]; then
     echo "the classpath of module '${MODULE_PATH}' is not found, generating it ..." >&2
     echo "see output at ${output} for the progress ..." >&2
-    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" -Dstream dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> ${output}
+    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> ${output}
     echo "the classpath of module '${MODULE_PATH}' is generated at '${f}'." >&2
   fi
 }
@@ -241,15 +265,23 @@ set_module_classpath() {
 build_bookie_jvm_opts() {
   LOG_DIR=$1
   GC_LOG_FILENAME=$2
-
-  echo "$BOOKIE_MEM_OPTS $BOOKIE_GC_OPTS $BOOKIE_GC_LOGGING_OPTS $BOOKIE_PERF_OPTS -Xloggc:${LOG_DIR}/${GC_LOG_FILENAME}"
+  if [ "$USING_JDK8" -eq "1" ]; then
+    echo "$BOOKIE_MEM_OPTS $BOOKIE_GC_OPTS $BOOKIE_GC_LOGGING_OPTS $BOOKIE_PERF_OPTS -Xloggc:${LOG_DIR}/${GC_LOG_FILENAME}"
+  else
+    echo "$BOOKIE_MEM_OPTS $BOOKIE_GC_OPTS $BOOKIE_GC_LOGGING_OPTS $BOOKIE_PERF_OPTS -Xlog:gc=info:file=${LOG_DIR}/${GC_LOG_FILENAME}::filecount=5,filesize=64m"
+  fi
+  return
 }
 
 build_cli_jvm_opts() {
   LOG_DIR=$1
   GC_LOG_FILENAME=$2
-
-  echo "$CLI_MEM_OPTS $CLI_GC_OPTS $CLI_GC_LOGGING_OPTS -Xloggc:${LOG_DIR}/${GC_LOG_FILENAME}"
+  if [ "$USING_JDK8" -eq "1" ]; then
+    echo "$CLI_MEM_OPTS $CLI_GC_OPTS $CLI_GC_LOGGING_OPTS -Xloggc:${LOG_DIR}/${GC_LOG_FILENAME}"
+  else
+    echo "$CLI_MEM_OPTS $CLI_GC_OPTS $CLI_GC_LOGGING_OPTS -Xlog:gc=info:file=${LOG_DIR}/${GC_LOG_FILENAME}::filecount=5,filesize=64m"
+  fi
+  return
 }
 
 build_netty_opts() {

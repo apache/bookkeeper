@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.proto;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
@@ -25,7 +25,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.proto.BookieProtoEncoding.EnDecoder;

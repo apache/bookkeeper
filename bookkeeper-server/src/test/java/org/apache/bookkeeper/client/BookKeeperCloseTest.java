@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -44,7 +45,7 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKClientClosedException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -65,6 +66,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
             .getLogger(BookKeeperCloseTest.class);
     private DigestType digestType = DigestType.CRC32;
     private static final String PASSWORD = "testPasswd";
+    private static final BiConsumer<Long, Long> NOOP_BICONSUMER = (l, e) -> { };
 
     public BookKeeperCloseTest() {
         super(3);
@@ -478,7 +480,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
             LedgerHandle lh3 = createLedgerWithEntries(bk, 100);
             lh3.close();
 
-            BookieSocketAddress bookieToKill = getBookie(0);
+            BookieId bookieToKill = getBookie(0);
             killBookie(bookieToKill);
             startNewBookie();
 
@@ -519,7 +521,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
             try {
                 bkadmin.replicateLedgerFragment(lh3,
-                        checkercb.getResult(10, TimeUnit.SECONDS).iterator().next());
+                        checkercb.getResult(10, TimeUnit.SECONDS).iterator().next(), NOOP_BICONSUMER);
                 fail("Shouldn't be able to replicate with a closed client");
             } catch (BKException.BKClientClosedException cce) {
                 // correct behaviour

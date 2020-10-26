@@ -194,7 +194,7 @@ public class DNS {
             allAddrs.removeAll(getSubinterfaceInetAddrs(netIf));
         }
 
-        String ips[] = new String[allAddrs.size()];
+        String[] ips = new String[allAddrs.size()];
         int i = 0;
         for (InetAddress addr : allAddrs) {
             ips[i++] = addr.getHostAddress();

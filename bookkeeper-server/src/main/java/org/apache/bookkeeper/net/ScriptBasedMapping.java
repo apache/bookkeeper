@@ -25,8 +25,9 @@ import java.util.StringTokenizer;
 
 import org.apache.bookkeeper.util.Shell.ShellCommandExecutor;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class implements the {@link DNSToSwitchMapping} interface using a
@@ -129,25 +130,54 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
     private static final class RawScriptBasedMapping extends AbstractDNSToSwitchMapping {
         private String scriptName;
         private int maxArgs; //max hostnames per call of the script
-        private static final Log LOG = LogFactory.getLog(ScriptBasedMapping.class);
+        private static final Logger LOG = LoggerFactory.getLogger(RawScriptBasedMapping.class);
 
-        /**
-         * Set the configuration and extract the configuration parameters of interest.
-         * @param conf the new configuration
+        /*
+         * extract 'scriptName' and 'maxArgs' parameters from the conf and throw
+         * RuntimeException if 'scriptName' is null. Also for sanity check
+         * purpose try executing the script with no arguments. Here it is
+         * expected that running script with no arguments would do sanity check
+         * of the script and the env, and return successfully if script and env.
+         * are valid. If sanity check of the script with no argument fails then
+         * throw RuntimeException.
+         *
          */
         @Override
-        public void setConf(Configuration conf) {
-            super.setConf(conf);
+        protected void validateConf() {
+            Configuration conf = getConf();
             if (conf != null) {
-                scriptName = conf.getString(SCRIPT_FILENAME_KEY);
-                maxArgs = conf.getInt(SCRIPT_ARG_COUNT_KEY, DEFAULT_ARG_COUNT);
+                String scriptNameConfValue = conf.getString(SCRIPT_FILENAME_KEY);
+                if (StringUtils.isNotBlank(scriptNameConfValue)) {
+                    scriptName = scriptNameConfValue;
+                    maxArgs = conf.getInt(SCRIPT_ARG_COUNT_KEY, DEFAULT_ARG_COUNT);
+                } else {
+                    scriptName = null;
+                    maxArgs = 0;
+                }
             } else {
                 scriptName = null;
                 maxArgs = 0;
             }
 
             if (null == scriptName) {
-                throw new RuntimeException("No network topology script is found when using script based DNS resolver.");
+                throw new RuntimeException("No network topology script is found when using script"
+                        + " based DNS resolver.");
+            } else {
+                File dir = null;
+                String userDir;
+                if ((userDir = System.getProperty("user.dir")) != null) {
+                    dir = new File(userDir);
+                }
+                String[] execString = { this.scriptName };
+                ShellCommandExecutor s = new ShellCommandExecutor(execString, dir);
+                try {
+                    s.execute();
+                } catch (Exception e) {
+                    LOG.error("Conf validation failed. Got exception for sanity check of script: " + this.scriptName,
+                            e);
+                    throw new RuntimeException(
+                            "Conf validation failed. Got exception for sanity check of script: " + this.scriptName, e);
+                }
             }
         }
 
@@ -233,7 +263,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
                     s.execute();
                     allOutput.append(s.getOutput()).append(" ");
                 } catch (Exception e) {
-                    LOG.warn("Exception running " + s, e);
+                    LOG.warn("Exception running: {} Exception message: {}", s, e.getMessage());
                     return null;
                 }
                 loopCount++;

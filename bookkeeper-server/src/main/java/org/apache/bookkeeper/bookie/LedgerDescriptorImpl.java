@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.common.util.Watcher;
@@ -36,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * to write entries to a ledger and read entries from a ledger.
  */
 public class LedgerDescriptorImpl extends LedgerDescriptor {
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerDescriptorImpl.class);
     final LedgerStorage ledgerStorage;
     private long ledgerId;
     final byte[] masterKey;
@@ -53,7 +54,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     }
 
     @Override
-    void checkAccess(byte masterKey[]) throws BookieException, IOException {
+    void checkAccess(byte[] masterKey) throws BookieException, IOException {
         if (!Arrays.equals(this.masterKey, masterKey)) {
             LOG.error("[{}] Requested master key {} does not match the cached master key {}",
                     this.ledgerId, Arrays.toString(masterKey), Arrays.toString(this.masterKey));
@@ -86,6 +87,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
         return ledgerStorage.getExplicitLac(ledgerId);
     }
 
+    @Override
     synchronized SettableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException {
         boolean success = this.setFenced();
         if (success) {
@@ -167,5 +169,15 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     boolean waitForLastAddConfirmedUpdate(long previousLAC,
                                           Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
         return ledgerStorage.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
+    }
+
+    @Override
+    void cancelWaitForLastAddConfirmedUpdate(Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
+        ledgerStorage.cancelWaitForLastAddConfirmedUpdate(ledgerId, watcher);
+    }
+
+    @Override
+    OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
+        return ledgerStorage.getListOfEntriesOfLedger(ledgerId);
     }
 }

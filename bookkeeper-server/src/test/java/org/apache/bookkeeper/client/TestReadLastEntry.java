@@ -87,7 +87,7 @@ public class TestReadLastEntry extends BookKeeperClusterTestCase {
     @Test
     public void testTryReadLastEntryAsync() throws Exception {
         final LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "".getBytes());
-        byte data[] = new byte[1024];
+        byte[] data = new byte[1024];
         Arrays.fill(data, (byte) 'x');
         for (int j = 0; j < 100; j++) {
             data[1023] = Integer.valueOf(j).byteValue();
@@ -122,7 +122,7 @@ public class TestReadLastEntry extends BookKeeperClusterTestCase {
     @Test
     public void testTryReadLastEntrySync() throws Exception {
         final LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "".getBytes());
-        byte data[] = new byte[1024];
+        byte[] data = new byte[1024];
         Arrays.fill(data, (byte) 'x');
         for (int j = 0; j < 100; j++) {
             data[1023] = Integer.valueOf(j).byteValue();

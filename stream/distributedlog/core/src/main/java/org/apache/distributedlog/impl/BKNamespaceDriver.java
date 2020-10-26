@@ -21,7 +21,6 @@ import static org.apache.distributedlog.util.DLUtils.isReservedStreamName;
 import static org.apache.distributedlog.util.DLUtils.validateAndNormalizeName;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -32,6 +31,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -217,7 +217,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
         initialized = true;
 
         LOG.info("Initialized BK namespace driver: clientId = {}, regionId = {}, federated = {}.",
-                new Object[]{clientId, regionId, bkdlConfig.isFederatedNamespace()});
+            clientId, regionId, bkdlConfig.isFederatedNamespace());
         return this;
     }
 
@@ -293,7 +293,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
                     bkdlConfig.getBkLedgersPath(),
                     eventLoopGroup,
                     requestTimer,
-                    Optional.<FeatureProvider>absent(),
+                    Optional.<FeatureProvider>empty(),
                     statsLogger);
         }
         this.readerBKC = this.sharedReaderBKCBuilder.build();
@@ -587,9 +587,10 @@ public class BKNamespaceDriver implements NamespaceDriver {
             .statsLogger(statsLogger)
             .zkAclId(conf.getZkAclId());
         LOG.info("Created shared zooKeeper client builder {}: zkServers = {}, numRetries = {}, sessionTimeout = {},"
-                + " retryBackoff = {}, maxRetryBackoff = {}, zkAclId = {}.", new Object[] {
-                zkcName, zkServers, conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
-                conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(), conf.getZkAclId() });
+                + " retryBackoff = {}, maxRetryBackoff = {}, zkAclId = {}.", zkcName, zkServers,
+            conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
+            conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(),
+            conf.getZkAclId());
         return builder;
     }
 
@@ -611,7 +612,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
                 .featureProvider(featureProviderOptional)
                 .statsLogger(statsLogger);
         LOG.info("Created shared client builder {} : zkServers = {}, ledgersPath = {}, numIOThreads = {}",
-                new Object[] { bkcName, zkServers, ledgersPath, conf.getBKClientNumberIOThreads() });
+            bkcName, zkServers, ledgersPath, conf.getBKClientNumberIOThreads());
         return builder;
     }
 

@@ -102,7 +102,7 @@ public class PerStreamLogSegmentCache {
                         >= LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value
                         && prevSegment.getLogSegmentSequenceNumber() + 1 != segment.getLogSegmentSequenceNumber()) {
                     LOG.error("{} found ledger sequence number gap between log segment {} and {}",
-                            new Object[] { streamName, prevSegment, segment });
+                        streamName, prevSegment, segment);
                     throw new UnexpectedException(streamName + " found ledger sequence number gap between log segment "
                             + prevSegment.getLogSegmentSequenceNumber()
                             + " and " + segment.getLogSegmentSequenceNumber());
@@ -122,7 +122,7 @@ public class PerStreamLogSegmentCache {
                     if (null != prevSegment && prevSegment.supportsSequenceId()
                             && prevSegment.getStartSequenceId() > segment.getStartSequenceId()) {
                         LOG.warn("{} found decreasing start sequence id in log segment {}, previous is {}",
-                                new Object[] { streamName, segment, prevSegment });
+                            streamName, segment, prevSegment);
                     }
                 } else {
                     startSequenceId = DistributedLogConstants.UNASSIGNED_SEQUENCE_ID;
@@ -159,7 +159,7 @@ public class PerStreamLogSegmentCache {
             if (!logSegments.containsKey(name)) {
                 logSegments.put(name, metadata);
                 LOG.info("{} added log segment ({} : {}) to cache.",
-                        new Object[]{ streamName, name, metadata });
+                    streamName, name, metadata);
             }
             LogSegmentMetadata oldMetadata = lid2LogSegments.remove(metadata.getLogSegmentId());
             if (null == oldMetadata) {

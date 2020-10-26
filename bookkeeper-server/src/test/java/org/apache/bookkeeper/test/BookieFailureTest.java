@@ -301,24 +301,6 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
         LedgerHandle afterlh = bkc.openLedgerNoRecovery(beforelh.getId(), digestType, "".getBytes());
 
         assertEquals(numEntries - 2, afterlh.getLastAddConfirmed());
-
-        startNewBookie();
-        LedgerHandle beforelh2 = bkc.createLedger(numBookies, 1, digestType, "".getBytes());
-
-        for (int i = 0; i < numEntries; i++) {
-            beforelh2.addEntry(tmp.getBytes());
-        }
-
-        // shutdown first bookie server
-        killBookie(0);
-
-        // try to open ledger no recovery
-        try {
-            bkc.openLedgerNoRecovery(beforelh2.getId(), digestType, "".getBytes());
-            fail("Should have thrown exception");
-        } catch (BKException.BKReadException e) {
-            // correct behaviour
-        }
     }
 
     @Test
@@ -336,27 +318,22 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
         killBookie(0);
         startNewBookie();
 
-        // try to open ledger no recovery
+        // try to open ledger with recovery
         LedgerHandle afterlh = bkc.openLedger(beforelh.getId(), digestType, "".getBytes());
-
         assertEquals(beforelh.getLastAddPushed(), afterlh.getLastAddConfirmed());
 
-        LedgerHandle beforelh2 = bkc.createLedger(numBookies, 1, digestType, "".getBytes());
-
+        // try to open ledger no recovery
+        // bookies: 4, ensSize: 3, ackQuorumSize: 2
+        LedgerHandle beforelhWithNoRecovery = bkc.createLedger(numBookies - 1 , 2, digestType, "".getBytes());
         for (int i = 0; i < numEntries; i++) {
-            beforelh2.addEntry(tmp.getBytes());
+            beforelhWithNoRecovery.addEntry(tmp.getBytes());
         }
 
         // shutdown first bookie server
         killBookie(0);
 
-        // try to open ledger no recovery
-        try {
-            bkc.openLedger(beforelh2.getId(), digestType, "".getBytes());
-            fail("Should have thrown exception");
-        } catch (BKException.BKLedgerRecoveryException e) {
-            // correct behaviour
-        }
+        // try to open ledger no recovery, should be able to open ledger
+        bkc.openLedger(beforelhWithNoRecovery.getId(), digestType, "".getBytes());
     }
 
     /**

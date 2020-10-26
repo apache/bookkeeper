@@ -134,6 +134,17 @@ Configure access to the [Apache Nexus repository](http://repository.apache.org/)
           </servers>
         </settings>
 
+#### Create an account on PyPi
+
+Since 4.9.0 we are releasing a python client for table service during release process. In order to publishing
+a python package to PyPi, you need to [create an account](https://pypi.org/account/register/) there. After
+you create the account successfully, you also need to add the account as a maintainer
+for [bookkeeper-client](https://pypi.org/project/apache-bookkeeper-client/) project. You can checkout who
+are the maintainers at the project page and ask them for adding your account as the maintainer.
+
+You can also read the instructions on [how to upload packages to PyPi](https://twine.readthedocs.io/en/latest/)
+if you are interested in learning more details.
+
 ### Create a new version in Github
 
 When contributors resolve an issue in GitHub, they are tagging it with a release that will contain their changes. With the release currently underway, new issues should be resolved against a subsequent future release. Therefore, you should create a release item for this subsequent release, as follows:
@@ -152,6 +163,13 @@ The list of release-blocking issues is available at the [milestones page](https:
 * If the issue has been resolved and was not updated, close it accordingly.
 * If the issue has not been resolved and it is acceptable to defer this until the next release, update the `Milestone` field to the new milestone you just created. Please consider discussing this with stakeholders and the dev@ mailing list, as appropriate.
 * If the issue has not been resolved and it is not acceptable to release until it is fixed, the release cannot proceed. Instead, work with the BookKeeper community to resolve the issue.
+
+### Change Python Client Version
+
+Before cutting a release, you need to update the python client version in
+[setup.py](https://github.com/apache/bookkeeper/blob/master/stream/clients/python/setup.py#L22)
+from `SNAPSHOT` version to a release version and get the change merge to master. For example,
+in release 4.10.0, you need to change the version from `4.10.0-alpha-0` to `4.10.0`.
 
 ### Review Release Notes in Github
 
@@ -454,14 +472,25 @@ Copy the source release from the `dev` repository to the `release` repository at
 
 2. Merge the Release Notes pull request and make sure the Release Notes is updated.
 
-### Update Dockerfile
+### Git tag
 
-> NOTE: The dockerfile PR should only be merged after the release package is showed up under https://archive.apache.org/dist/bookkeeper/
+> NOTE: Only create the release tag after the release package is showed up under https://archive.apache.org/dist/bookkeeper/ as creating the tag triggers a docker autobuild which needs the package to exist. If you forget to do so, the build will fail. In this case you can delete the tag from github and push it again.
 
-1. Update the `BK_VERSION` and `GPG_KEY` in `docker/Dockerfile` (e.g. [Pull Request 436](https://github.com/apache/bookkeeper/pull/436) ),
-    send a pull request for review and get an approval from the community.
+Create and push a new signed for the released version by copying the tag for the final release tag, as follows
 
-2. Once the pull request is approved, merge this pull request into master and make sure it is cherry-picked into corresponding branch.
+```shell
+git tag -s "${TAG}" "${RC_TAG}"
+git push apache "${TAG}"
+```
+
+Remove rc tags:
+
+```shell
+for num in $(seq 0 ${RC_NUM}); do
+    git tag -d "v${VERSION}-rc${num}"
+    git push apache :"v${VERSION}-rc${num}"
+done
+```
 
 ### Update DC/OS BookKeeper package
 
@@ -530,24 +559,6 @@ It is easy if only version need be bump.
     $ git commit -m "new bookkeeper version"
     ```
 
-### Git tag
-
-Create and push a new signed for the released version by copying the tag for the final release tag, as follows
-
-```shell
-git tag -s "${TAG}" "${RC_TAG}"
-git push apache "${TAG}"
-```
-
-Remove rc tags:
-
-```shell
-for num in $(seq 0 ${RC_NUM}); do
-    git tag -d "v${VERSION}-rc${num}"
-    git push apache :"v${VERSION}-rc${num}"
-done
-```
-
 ### Verify Docker Image
 
 > After release tag is created, it will automatically trigger docker auto build. 
@@ -555,6 +566,36 @@ done
 1. Verify the [docker hub](https://hub.docker.com/r/apache/bookkeeper/) to see if a new build for the given tag is build.
 
 2. Once the new docker image is built, update BC tests to include new docker image. Example: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1352)
+
+### Release Python Client
+
+Make sure you have installed [`pip`](https://pypi.org/project/pip/) and
+[`twine`](https://twine.readthedocs.io/en/latest/).
+
+- Install Pip
+  ```bash
+  brew install pip
+  ```
+
+- Install Twine
+  ```bash
+  pip install twine
+  ```
+
+After install `twine`, make sure `twine` exist in your PATH before releasing python client.
+
+```bash
+twine --version
+```
+
+Now, you are ready to publish the python client.
+
+```bash
+cd stream/clients/python
+./publish.sh
+```
+
+Check the PyPi project package to make sure the python client is uploaded to  https://pypi.org/project/apache-bookkeeper-client/ .
 
 ### Advance version on release branch
 
@@ -573,6 +614,15 @@ Then you have to create a PR and submit it for review.
 
 Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1350)
 
+### Advance python client version
+
+If you are doing a major release, you need to update the python client version to next major development version in master
+and next minor development version in the branch. For example, if you are doing 4.9.0 release, you need to bump the version
+in master to `4.10.0-alpha-0` (NOTE: we are using `alpha-0` as `SNAPSHOT`, otherwise pypi doesn't work), and the version in
+`branch-4.9` to `4.9.1-alpha-0`.
+
+If you are only doing a minor release, you just need to update the version in release branch. For example, if you are doing
+4.9.1 release, you need to bump the version in `branch-4.9` to `4.9.2-alpha-0`.
 
 ### Mark the version as released in Github
 

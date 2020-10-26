@@ -96,7 +96,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
     public boolean compact(EntryLogMetadata metadata) {
         if (metadata != null) {
             LOG.info("Compacting entry log {} with usage {}.",
-                new Object[]{metadata.getEntryLogId(), metadata.getUsage()});
+                metadata.getEntryLogId(), metadata.getUsage());
             CompactionPhase scanEntryLog = new ScanEntryLogPhase(metadata);
             if (!scanEntryLog.run()) {
                 LOG.info("Compaction for entry log {} end in ScanEntryLogPhase.", metadata.getEntryLogId());

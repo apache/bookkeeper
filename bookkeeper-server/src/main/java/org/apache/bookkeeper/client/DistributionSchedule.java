@@ -17,9 +17,10 @@
  */
 package org.apache.bookkeeper.client;
 
+import java.util.BitSet;
 import java.util.Map;
 
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 
 /**
  * This interface determins how entries are distributed among bookies.
@@ -171,14 +172,14 @@ public interface DistributionSchedule {
          *          bookie address
          * @return true if ack quorum is broken, false otherwise.
          */
-        boolean failBookieAndCheck(int bookieIndexHeardFrom, BookieSocketAddress address);
+        boolean failBookieAndCheck(int bookieIndexHeardFrom, BookieId address);
 
         /**
          * Return the list of bookies that already failed.
          *
          * @return the list of bookies that already failed.
          */
-        Map<Integer, BookieSocketAddress> getFailedBookies();
+        Map<Integer, BookieId> getFailedBookies();
 
         /**
          * Invalidate a previous bookie response.
@@ -236,4 +237,21 @@ public interface DistributionSchedule {
      * @return true if it has entry otherwise false.
      */
     boolean hasEntry(long entryId, int bookieIndex);
+
+    /**
+     * Get the bitset representing the entries from entry 'startEntryId' to
+     * 'lastEntryId', that would be striped to the bookie with index -
+     * bookieIndex. Value of the bit with the 'bitIndex+n', indicate whether
+     * entry with entryid 'startEntryId+n' is striped to this bookie or not.
+     *
+     * @param bookieIndex
+     *            index of the bookie in the ensemble starting with 0
+     * @param startEntryId
+     *            starting entryid
+     * @param lastEntryId
+     *            last entryid
+     * @return the bitset representing the entries that would be striped to the
+     *         bookie
+     */
+    BitSet getEntriesStripedToTheBookie(int bookieIndex, long startEntryId, long lastEntryId);
 }

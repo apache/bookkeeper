@@ -36,7 +36,8 @@ public class BKPerf {
             .withFlags(new BKFlags())
             .withConsole(System.out)
             .addCommand(new DlogPerfCommandGroup())
-            .addCommand(new TablePerfCommandGroup());
+            .addCommand(new TablePerfCommandGroup())
+            .addCommand(new JournalPerfCommandGroup());
 
         CliSpec<BKFlags> spec = specBuilder.build();
 

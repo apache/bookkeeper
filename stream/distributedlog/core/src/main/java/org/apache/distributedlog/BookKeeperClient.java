@@ -17,16 +17,17 @@
  */
 package org.apache.distributedlog;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Optional;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy;
@@ -40,6 +41,7 @@ import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.distributedlog.ZooKeeperClient.Credentials;
 import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
+import org.apache.distributedlog.bk.LedgerMetadata;
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.net.NetUtils;
@@ -115,7 +117,7 @@ public class BookKeeperClient {
                 .setStatsLogger(statsLogger)
                 .dnsResolver(dnsResolver)
                 .requestTimer(requestTimer)
-                .featureProvider(featureProvider.orNull())
+                .featureProvider(featureProvider.orElse(null))
                 .build();
         } catch (BKException bke) {
             throw new IOException(bke);
@@ -176,17 +178,17 @@ public class BookKeeperClient {
         if (ownZK) {
             LOG.info("BookKeeper Client created {} with its own ZK Client : ledgersPath = {}, numRetries = {}, "
                             + "sessionTimeout = {}, backoff = {}, maxBackoff = {}, dnsResolver = {}",
-                    new Object[] { name, ledgersPath,
-                    conf.getBKClientZKNumRetries(), conf.getBKClientZKSessionTimeoutMilliSeconds(),
-                    conf.getBKClientZKRetryBackoffStartMillis(), conf.getBKClientZKRetryBackoffMaxMillis(),
-                    conf.getBkDNSResolverOverrides() });
+                name, ledgersPath,
+                conf.getBKClientZKNumRetries(), conf.getBKClientZKSessionTimeoutMilliSeconds(),
+                conf.getBKClientZKRetryBackoffStartMillis(), conf.getBKClientZKRetryBackoffMaxMillis(),
+                conf.getBkDNSResolverOverrides());
         } else {
             LOG.info("BookKeeper Client created {} with shared zookeeper client : ledgersPath = {}, numRetries = {}, "
                             + "sessionTimeout = {}, backoff = {}, maxBackoff = {}, dnsResolver = {}",
-                    new Object[] { name, ledgersPath,
-                    conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
-                    conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(),
-                    conf.getBkDNSResolverOverrides() });
+                name, ledgersPath,
+                conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
+                conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(),
+                conf.getBkDNSResolverOverrides());
         }
     }
 
@@ -202,7 +204,8 @@ public class BookKeeperClient {
     // Util functions
     public CompletableFuture<LedgerHandle> createLedger(int ensembleSize,
                                                         int writeQuorumSize,
-                                                        int ackQuorumSize) {
+                                                        int ackQuorumSize,
+                                                        LedgerMetadata ledgerMetadata) {
         BookKeeper bk;
         try {
             bk = get();
@@ -220,7 +223,7 @@ public class BookKeeperClient {
                             promise.completeExceptionally(BKException.create(rc));
                         }
                     }
-                }, null, Collections.emptyMap());
+                }, null, ledgerMetadata == null ? Collections.emptyMap() : ledgerMetadata.getMetadata());
         return promise;
     }
 
@@ -238,7 +241,7 @@ public class BookKeeperClient {
             public void deleteComplete(int rc, Object ctx) {
                 if (BKException.Code.OK == rc) {
                     promise.complete(null);
-                } else if (BKException.Code.NoSuchLedgerExistsException == rc) {
+                } else if (Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
                     if (ignoreNonExistentLedger) {
                         promise.complete(null);
                     } else {

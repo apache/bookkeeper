@@ -20,9 +20,16 @@ package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
-import org.apache.bookkeeper.client.BKException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
+import org.apache.bookkeeper.common.component.ComponentInfoPublisher.EndpointInfo;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -30,6 +37,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 /**
  * A {@link ServerLifecycleComponent} that starts the core bookie server.
  */
+@Slf4j
 public class BookieService extends ServerLifecycleComponent {
 
     public static final String NAME = "bookie-server";
@@ -37,14 +45,16 @@ public class BookieService extends ServerLifecycleComponent {
     private final BookieServer server;
 
     public BookieService(BookieConfiguration conf,
-                         StatsLogger statsLogger)
+                         StatsLogger statsLogger,
+                         Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws Exception {
         super(NAME, conf, statsLogger);
-        this.server = new BookieServer(conf.getServerConf(), statsLogger);
+        this.server = new BookieServer(conf.getServerConf(), statsLogger, bookieServiceInfoProvider);
     }
 
     @Override
     public void setExceptionHandler(UncaughtExceptionHandler handler) {
+        super.setExceptionHandler(handler);
         server.setExceptionHandler(handler);
     }
 
@@ -56,8 +66,8 @@ public class BookieService extends ServerLifecycleComponent {
     protected void doStart() {
         try {
             this.server.start();
-        } catch (IOException | UnavailableException | InterruptedException | BKException e) {
-            throw new RuntimeException("Failed to start bookie server", e);
+        } catch (InterruptedException exc) {
+            throw new RuntimeException("Failed to start bookie server", exc);
         }
     }
 
@@ -70,4 +80,24 @@ public class BookieService extends ServerLifecycleComponent {
     protected void doClose() throws IOException {
         this.server.shutdown();
     }
+
+    @Override
+    public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
+        try {
+            BookieSocketAddress localAddress = getServer().getLocalAddress();
+            List<String> extensions = new ArrayList<>();
+            if (conf.getServerConf().getTLSProviderFactoryClass() != null) {
+                extensions.add("tls");
+            }
+            EndpointInfo endpoint = new EndpointInfo("bookie",
+                    localAddress.getPort(),
+                    localAddress.getHostName(),
+                    "bookie-rpc", null, extensions);
+            componentInfoPublisher.publishEndpoint(endpoint);
+
+        } catch (UnknownHostException err) {
+            log.error("Cannot compute local address", err);
+        }
+    }
+
 }

@@ -33,6 +33,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -337,25 +338,25 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private void triggerFlushAndAddEntry(long ledgerId, long entryId, ByteBuf entry)
             throws IOException, BookieException {
-        // Write cache is full, we need to trigger a flush so that it gets rotated
-        // If the flush has already been triggered or flush has already switched the
-        // cache, we don't need to trigger another flush
-        if (!isFlushOngoing.get() && hasFlushBeenTriggered.compareAndSet(false, true)) {
-            // Trigger an early flush in background
-            log.info("Write cache is full, triggering flush");
-            executor.execute(() -> {
-                try {
-                    flush();
-                } catch (IOException e) {
-                    log.error("Error during flush", e);
-                }
-            });
-        }
-
         dbLedgerStorageStats.getThrottledWriteRequests().inc();
         long absoluteTimeoutNanos = System.nanoTime() + maxThrottleTimeNanos;
 
         while (System.nanoTime() < absoluteTimeoutNanos) {
+            // Write cache is full, we need to trigger a flush so that it gets rotated
+            // If the flush has already been triggered or flush has already switched the
+            // cache, we don't need to trigger another flush
+            if (!isFlushOngoing.get() && hasFlushBeenTriggered.compareAndSet(false, true)) {
+                // Trigger an early flush in background
+                log.info("Write cache is full, triggering flush");
+                executor.execute(() -> {
+                        try {
+                            flush();
+                        } catch (IOException e) {
+                            log.error("Error during flush", e);
+                        }
+                    });
+            }
+
             long stamp = writeCacheRotationLock.readLock();
             try {
                 if (writeCache.put(ledgerId, entryId, entry)) {
@@ -465,7 +466,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             long size = 0;
 
             while (count < readAheadCacheBatchSize && currentEntryLogId == firstEntryLogId) {
-                ByteBuf entry = entryLogger.internalReadEntry(orginalLedgerId, -1, currentEntryLocation);
+                ByteBuf entry = entryLogger.internalReadEntry(orginalLedgerId, firstEntryId, currentEntryLocation,
+                        false /* validateEntry */);
 
                 try {
                     long currentEntryLedgerId = entry.getLong(0);
@@ -473,13 +475,14 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
                     if (currentEntryLedgerId != orginalLedgerId) {
                         // Found an entry belonging to a different ledger, stopping read-ahead
-                        return;
+                        break;
                     }
 
                     // Insert entry in read cache
                     readCache.put(orginalLedgerId, currentEntryId, entry);
 
                     count++;
+                    firstEntryId++;
                     size += entry.readableBytes();
 
                     currentEntryLocation += 4 + entry.readableBytes();
@@ -757,6 +760,13 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
+    public void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException {
+        getOrAddLedgerInfo(ledgerId).cancelWaitForLastAddConfirmedUpdate(watcher);
+    }
+
+    @Override
     public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
         getOrAddLedgerInfo(ledgerId).setExplicitLac(lac);
     }
@@ -880,5 +890,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         void process(long entryId, long entryLogId, long position);
     }
 
-    private static final Logger log = LoggerFactory.getLogger(DbLedgerStorage.class);
+    private static final Logger log = LoggerFactory.getLogger(SingleDirectoryDbLedgerStorage.class);
+
+    @Override
+    public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
+        throw new UnsupportedOperationException(
+                "getListOfEntriesOfLedger method is currently unsupported for SingleDirectoryDbLedgerStorage");
+    }
 }

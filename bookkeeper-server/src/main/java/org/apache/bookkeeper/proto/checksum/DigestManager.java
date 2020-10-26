@@ -20,7 +20,6 @@ package org.apache.bookkeeper.proto.checksum;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.util.ReferenceCountUtil;
 
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -99,41 +98,22 @@ public abstract class DigestManager {
      */
     public ByteBufList computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length,
             ByteBuf data) {
+        ByteBuf headersBuffer;
         if (this.useV2Protocol) {
-            /*
-             * For V2 protocol, use pooled direct ByteBuf's to avoid object allocation in DigestManager.
-             */
-            ByteBuf headersBuffer = allocator.buffer(METADATA_LENGTH + macCodeLength);
-            headersBuffer.writeLong(ledgerId);
-            headersBuffer.writeLong(entryId);
-            headersBuffer.writeLong(lastAddConfirmed);
-            headersBuffer.writeLong(length);
-
-            update(headersBuffer);
-            update(data);
-            populateValueAndReset(headersBuffer);
-
-            return ByteBufList.get(headersBuffer, data);
+            headersBuffer = allocator.buffer(METADATA_LENGTH + macCodeLength);
         } else {
-            /*
-             * For V3 protocol, use unpooled heap ByteBuf's (backed by accessible array): The one object
-             * allocation here saves us later allocations when converting to protobuf ByteString.
-             */
-            ByteBuf sendBuffer = Unpooled.buffer(METADATA_LENGTH + macCodeLength + data.readableBytes());
-            sendBuffer.writeLong(ledgerId);
-            sendBuffer.writeLong(entryId);
-            sendBuffer.writeLong(lastAddConfirmed);
-            sendBuffer.writeLong(length);
-
-            update(sendBuffer);
-            update(data);
-            populateValueAndReset(sendBuffer);
-
-            sendBuffer.writeBytes(data, data.readerIndex(), data.readableBytes());
-            ReferenceCountUtil.release(data);
-
-            return ByteBufList.get(sendBuffer);
+            headersBuffer = Unpooled.buffer(METADATA_LENGTH + macCodeLength);
         }
+        headersBuffer.writeLong(ledgerId);
+        headersBuffer.writeLong(entryId);
+        headersBuffer.writeLong(lastAddConfirmed);
+        headersBuffer.writeLong(length);
+
+        update(headersBuffer);
+        update(data);
+        populateValueAndReset(headersBuffer);
+
+        return ByteBufList.get(headersBuffer, data);
     }
 
     /**

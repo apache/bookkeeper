@@ -19,7 +19,7 @@
  */
 package org.apache.bookkeeper.benchmark;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 
 import java.io.BufferedOutputStream;
@@ -64,13 +64,13 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     static final Logger LOG = LoggerFactory.getLogger(BenchThroughputLatency.class);
 
     BookKeeper bk;
-    LedgerHandle lh[];
+    LedgerHandle[] lh;
     AtomicLong counter;
 
     Semaphore sem;
     int numberOfLedgers = 1;
     final int sendLimit;
-    final long latencies[];
+    final long[] latencies;
 
     static class Context {
         long localStartTime;
@@ -115,9 +115,9 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     }
 
     long previous = 0;
-    byte bytes[];
+    byte[] bytes;
 
-    void setEntryData(byte data[]) {
+    void setEntryData(byte[] data) {
         bytes = data;
     }
 
@@ -134,6 +134,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         return duration;
     }
 
+    @Override
     public void run() {
         LOG.info("Running...");
         long start = previous = System.currentTimeMillis();
@@ -141,6 +142,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         int sent = 0;
 
         Thread reporter = new Thread() {
+                @Override
                 public void run() {
                     try {
                         while (true) {
@@ -290,6 +292,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
             final long timeout = Long.parseLong(cmd.getOptionValue("timeout", "360")) * 1000;
 
             timeouter.schedule(new TimerTask() {
+                    @Override
                     public void run() {
                         System.err.println("Timing out benchmark after " + timeout + "ms");
                         System.exit(-1);
@@ -310,7 +313,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         // Do a warmup run
         Thread thread;
 
-        byte data[] = new byte[entrysize];
+        byte[] data = new byte[entrysize];
         Arrays.fill(data, (byte) 'x');
 
         ClientConfiguration conf = new ClientConfiguration();
@@ -416,7 +419,8 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
 
     private static double percentile(long[] latency, int percentile) {
         int size = latency.length;
-        int sampleSize = (size * percentile) / 100;
+        double percent = (double) percentile / 100;
+        int sampleSize = (int) (size * percent);
         long total = 0;
         int count = 0;
         for (int i = 0; i < sampleSize; i++) {

@@ -33,10 +33,14 @@ public interface LifecycleComponent extends AutoCloseable {
 
     void removeLifecycleListener(LifecycleListener listener);
 
+    default void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
+    }
+
     void start();
 
     void stop();
 
+    @Override
     void close();
 
     /**

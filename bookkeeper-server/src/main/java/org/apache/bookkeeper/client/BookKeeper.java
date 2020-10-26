@@ -37,6 +37,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -44,6 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
@@ -74,8 +76,9 @@ import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.DataFormats;
@@ -111,6 +114,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     // The stats logger for this client.
     private final StatsLogger statsLogger;
     private final BookKeeperClientStats clientStats;
+    private final double bookieQuarantineRatio;
 
     // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
@@ -444,7 +448,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 conf,
                 scheduler,
                 rootStatsLogger,
-                java.util.Optional.ofNullable(zkc));
+                Optional.ofNullable(zkc));
         } catch (ConfigurationException ce) {
             LOG.error("Failed to initialize metadata client driver using invalid metadata service uri", ce);
             throw new IOException("Failed to initialize metadata client driver", ce);
@@ -474,9 +478,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     .build();
         }
 
-        // initialize bookie client
-        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
-                scheduler, rootStatsLogger);
 
         if (null == requestTimer) {
             this.requestTimer = new HashedWheelTimer(
@@ -489,14 +490,21 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.ownTimer = false;
         }
 
+        BookieAddressResolver bookieAddressResolver =
+                new DefaultBookieAddressResolver(metadataDriver.getRegistrationClient());
+
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
-                dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger);
-
+                dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger, bookieAddressResolver);
 
         this.bookieWatcher = new BookieWatcherImpl(
-                conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
+                conf, this.placementPolicy, metadataDriver.getRegistrationClient(), bookieAddressResolver,
                 this.statsLogger.scope(WATCHER_SCOPE));
+
+        // initialize bookie client
+        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
+                scheduler, rootStatsLogger, this.bookieWatcher.getBookieAddressResolver());
+
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
             ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
@@ -522,6 +530,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
 
+        this.bookieQuarantineRatio = conf.getBookieQuarantineRatio();
         scheduleBookieHealthCheckIfEnabled(conf);
     }
 
@@ -549,18 +558,20 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         bookieInfoScheduler = null;
         bookieClient = null;
         allocator = UnpooledByteBufAllocator.DEFAULT;
+        bookieQuarantineRatio = 1.0;
     }
 
     private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
                                                                       DNSToSwitchMapping dnsResolver,
                                                                       HashedWheelTimer timer,
                                                                       FeatureProvider featureProvider,
-                                                                      StatsLogger statsLogger)
+                                                                      StatsLogger statsLogger,
+                                                                      BookieAddressResolver bookieAddressResolver)
         throws IOException {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
-            return ReflectionUtils.newInstance(policyCls).initialize(conf, java.util.Optional.ofNullable(dnsResolver),
-                    timer, featureProvider, statsLogger);
+            return ReflectionUtils.newInstance(policyCls).initialize(conf, Optional.ofNullable(dnsResolver),
+                    timer, featureProvider, statsLogger, bookieAddressResolver);
         } catch (ConfigurationException e) {
             throw new IOException("Failed to initialize ensemble placement policy : ", e);
         }
@@ -596,9 +607,14 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     void checkForFaultyBookies() {
-        List<BookieSocketAddress> faultyBookies = bookieClient.getFaultyBookies();
-        for (BookieSocketAddress faultyBookie : faultyBookies) {
-            bookieWatcher.quarantineBookie(faultyBookie);
+        List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
+        for (BookieId faultyBookie : faultyBookies) {
+            if (Math.random() <= bookieQuarantineRatio) {
+                bookieWatcher.quarantineBookie(faultyBookie);
+                statsLogger.getCounter(BookKeeperServerStats.BOOKIE_QUARANTINE).inc();
+            } else {
+                statsLogger.getCounter(BookKeeperServerStats.BOOKIE_QUARANTINE_SKIP).inc();
+            }
         }
     }
 
@@ -633,6 +649,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     @VisibleForTesting
     BookieWatcher getBookieWatcher() {
         return bookieWatcher;
+    }
+
+    public BookieAddressResolver getBookieAddressResolver() {
+        return bookieWatcher.getBookieAddressResolver();
     }
 
     public OrderedExecutor getMainWorkerPool() {
@@ -745,7 +765,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      * @throws InterruptedException
      */
-    public Map<BookieSocketAddress, BookieInfo> getBookieInfo() throws BKException, InterruptedException {
+    public Map<BookieId, BookieInfo> getBookieInfo() throws BKException, InterruptedException {
         return bookieInfoReader.getBookieInfo();
     }
 
@@ -846,7 +866,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    public LedgerHandle createLedger(DigestType digestType, byte passwd[])
+    public LedgerHandle createLedger(DigestType digestType, byte[] passwd)
             throws BKException, InterruptedException {
         return createLedger(3, 2, digestType, passwd);
     }
@@ -865,7 +885,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedger(int ensSize, int qSize,
-                                     DigestType digestType, byte passwd[])
+                                     DigestType digestType, byte[] passwd)
             throws InterruptedException, BKException {
         return createLedger(ensSize, qSize, qSize, digestType, passwd, Collections.emptyMap());
     }
@@ -885,7 +905,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
-            DigestType digestType, byte passwd[])
+            DigestType digestType, byte[] passwd)
             throws InterruptedException, BKException {
         return createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, Collections.emptyMap());
     }
@@ -904,7 +924,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
-                                     DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
+                                     DigestType digestType, byte[] passwd, final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncCreateCallback result = new SyncCreateCallback(future);
@@ -939,7 +959,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
-                                        DigestType digestType, byte passwd[])
+                                        DigestType digestType, byte[] passwd)
             throws InterruptedException, BKException {
         return createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
                                digestType, passwd, Collections.emptyMap());
@@ -961,7 +981,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
-                                        DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
+                                        DigestType digestType, byte[] passwd, final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
         CompletableFuture<LedgerHandleAdv> future = new CompletableFuture<>();
         SyncCreateAdvCallback result = new SyncCreateAdvCallback(future);
@@ -1053,7 +1073,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                         int writeQuorumSize,
                                         int ackQuorumSize,
                                         DigestType digestType,
-                                        byte passwd[],
+                                        byte[] passwd,
                                         final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
         CompletableFuture<LedgerHandleAdv> future = new CompletableFuture<>();
@@ -1166,7 +1186,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @param ctx
      *          optional control object
      */
-    public void asyncOpenLedger(final long lId, final DigestType digestType, final byte passwd[],
+    public void asyncOpenLedger(final long lId, final DigestType digestType, final byte[] passwd,
                                 final OpenCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
@@ -1211,7 +1231,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @param ctx
      *          optional control object
      */
-    public void asyncOpenLedgerNoRecovery(final long lId, final DigestType digestType, final byte passwd[],
+    public void asyncOpenLedgerNoRecovery(final long lId, final DigestType digestType, final byte[] passwd,
                                           final OpenCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
@@ -1241,7 +1261,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    public LedgerHandle openLedger(long lId, DigestType digestType, byte passwd[])
+    public LedgerHandle openLedger(long lId, DigestType digestType, byte[] passwd)
             throws BKException, InterruptedException {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncOpenCallback result = new SyncOpenCallback(future);
@@ -1268,7 +1288,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    public LedgerHandle openLedgerNoRecovery(long lId, DigestType digestType, byte passwd[])
+    public LedgerHandle openLedgerNoRecovery(long lId, DigestType digestType, byte[] passwd)
             throws BKException, InterruptedException {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncOpenCallback result = new SyncOpenCallback(future);

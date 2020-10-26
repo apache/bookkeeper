@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.meta;
 
 import com.google.common.collect.Lists;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -61,6 +62,18 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
             throws ReplicationException.UnavailableException;
 
     /**
+     * Get the UnderreplicatedLedger info if this ledger is marked
+     * underreplicated otherwise it returns null.
+     *
+     * @param ledgerId
+     *            ledger id
+     * @return the UnderreplicatedLedger info instance if this ledger is marked
+     *         underreplicated otherwise it returns null.
+     * @throws ReplicationException.UnavailableException
+     */
+    UnderreplicatedLedger getLedgerUnreplicationInfo(long ledgerId) throws ReplicationException.UnavailableException;
+
+    /**
      * Get a list of all the underreplicated ledgers which have been
      * marked for rereplication, filtered by the predicate on the missing replicas list.
      *
@@ -102,6 +115,7 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
     /**
      * Release all resources held by the ledger underreplication manager.
      */
+    @Override
     void close()
             throws ReplicationException.UnavailableException;
 
@@ -183,6 +197,38 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      * @throws ReplicationException.UnavailableException
      */
     long getCheckAllLedgersCTime() throws ReplicationException.UnavailableException;
+
+    /**
+     * Setter for the PlacementPolicyCheck last executed ctime.
+     *
+     * @param placementPolicyCheckCTime
+     * @throws ReplicationException.UnavailableException
+     */
+    void setPlacementPolicyCheckCTime(long placementPolicyCheckCTime) throws ReplicationException.UnavailableException;
+
+    /**
+     * Getter for the PlacementPolicyCheck last executed ctime.
+     *
+     * @return the long value of placementPolicyCheckCTime
+     * @throws ReplicationException.UnavailableException
+     */
+    long getPlacementPolicyCheckCTime() throws ReplicationException.UnavailableException;
+
+    /**
+     * Setter for the ReplicasCheck last executed ctime.
+     *
+     * @param replicasCheckCTime
+     * @throws ReplicationException.UnavailableException
+     */
+    void setReplicasCheckCTime(long replicasCheckCTime) throws ReplicationException.UnavailableException;
+
+    /**
+     * Getter for the ReplicasCheck last executed ctime.
+     *
+     * @return the long value of replicasCheckCTime
+     * @throws ReplicationException.UnavailableException
+     */
+    long getReplicasCheckCTime() throws ReplicationException.UnavailableException;
 
     /**
      * Receive notification asynchronously when the lostBookieRecoveryDelay value is Changed.

@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -107,5 +108,36 @@ public class EntryLocationIndexTest {
         assertEquals(0, idx.getLocation(40313, 12));
 
         idx.close();
+    }
+
+    // test non exist entry
+    @Test
+    public void testDeleteSpecialEntry() throws IOException {
+        File tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        tmpDir.deleteOnExit();
+
+        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+                                                        tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
+
+        // Add some dummy indexes
+        idx.addLocation(40312, -1, 1);
+        idx.addLocation(40313, 10, 2);
+        idx.addLocation(40320, 0, 3);
+
+        // Add more indexes in a different batch
+        idx.addLocation(40313, 11, 5);
+        idx.addLocation(40313, 12, 6);
+        idx.addLocation(40320, 1, 7);
+
+        // delete a non exist entry
+        idx.delete(40312);
+        idx.removeOffsetFromDeletedLedgers();
+
+        // another delete entry operation shouldn't effected
+        idx.delete(40313);
+        idx.removeOffsetFromDeletedLedgers();
+        assertEquals(0, idx.getLocation(40312, 10));
     }
 }

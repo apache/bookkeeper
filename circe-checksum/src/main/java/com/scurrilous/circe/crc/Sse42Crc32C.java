@@ -54,7 +54,7 @@ public final class Sse42Crc32C extends AbstractIncrementalIntHash implements Inc
         config = 0;
     }
 
-    public Sse42Crc32C(int chunkWords[]) {
+    public Sse42Crc32C(int[] chunkWords) {
         if (chunkWords.length == 0) {
             config = 0;
         } else {

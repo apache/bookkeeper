@@ -33,9 +33,11 @@ public interface HttpServer {
     enum StatusCode {
         OK(200),
         REDIRECT(302),
+        BAD_REQUEST(400),
         FORBIDDEN(403),
         NOT_FOUND(404),
-        INTERNAL_ERROR(500);
+        INTERNAL_ERROR(500),
+        SERVICE_UNAVAILABLE(503);
 
         private int value;
 
@@ -79,8 +81,12 @@ public interface HttpServer {
         EXPAND_STORAGE,
         GC,
         GC_DETAILS,
+        BOOKIE_STATE,
+        BOOKIE_IS_READY,
+        BOOKIE_INFO,
 
         // autorecovery
+        AUTORECOVERY_STATUS,
         RECOVERY_BOOKIE,
         LIST_UNDER_REPLICATED_LEDGER,
         WHO_IS_AUDITOR,

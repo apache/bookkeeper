@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.distributedlog.DLMTestUtil.validateFutureFailed;
 import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
 import static org.junit.Assert.assertArrayEquals;
@@ -681,7 +681,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         @Override
         public void onFailure(Throwable cause) {
             LOG.error("Encountered failures on writing record as (lid = {}, eid = {}) :",
-                    new Object[]{currentLogSegmentSeqNo, currentEntryId, cause});
+                currentLogSegmentSeqNo, currentEntryId, cause);
             errorsFound.set(true);
             syncLatch.countDown();
         }

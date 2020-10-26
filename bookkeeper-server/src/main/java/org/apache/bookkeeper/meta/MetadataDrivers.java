@@ -25,6 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,27 +91,18 @@ public final class MetadataDrivers {
     private static final ConcurrentMap<String, MetadataClientDriverInfo> clientDrivers;
     @Getter(AccessLevel.PACKAGE)
     private static final ConcurrentMap<String, MetadataBookieDriverInfo> bookieDrivers;
-    private static boolean initialized = false;
 
     static {
         clientDrivers = new ConcurrentHashMap<>();
         bookieDrivers = new ConcurrentHashMap<>();
-        initialize();
-    }
-
-    static void initialize() {
-        if (initialized) {
-            return;
-        }
         loadInitialDrivers();
-        initialized = true;
-        log.info("BookKeeper metadata driver manager initialized");
     }
 
     @VisibleForTesting
     static void loadInitialDrivers() {
         loadInitialClientDrivers();
         loadInitialBookieDrivers();
+        log.info("BookKeeper metadata driver manager initialized");
     }
 
     private static void loadInitialClientDrivers() {
@@ -123,9 +115,7 @@ public final class MetadataDrivers {
         String driversStr = System.getProperty(BK_METADATA_CLIENT_DRIVERS_PROPERTY);
         if (null != driversStr) {
             String[] driversArray = StringUtils.split(driversStr, ':');
-            for (String driver : driversArray) {
-                driverList.add(driver);
-            }
+            Collections.addAll(driverList, driversArray);
         }
 
         // initialize the drivers
@@ -152,9 +142,7 @@ public final class MetadataDrivers {
         String driversStr = System.getProperty(BK_METADATA_BOOKIE_DRIVERS_PROPERTY);
         if (null != driversStr) {
             String[] driversArray = StringUtils.split(driversStr, ':');
-            for (String driver : driversArray) {
-                driverList.add(driver);
-            }
+            Collections.addAll(driverList, driversArray);
         }
 
         // initialize the drivers
@@ -186,10 +174,6 @@ public final class MetadataDrivers {
     public static void registerClientDriver(String metadataBackendScheme,
                                             Class<? extends MetadataClientDriver> driver,
                                             boolean allowOverride) {
-        if (!initialized) {
-            initialize();
-        }
-
         String scheme = metadataBackendScheme.toLowerCase();
         MetadataClientDriverInfo oldDriverInfo = clientDrivers.get(scheme);
         if (null != oldDriverInfo && !allowOverride) {
@@ -221,10 +205,6 @@ public final class MetadataDrivers {
     public static void registerBookieDriver(String metadataBackendScheme,
                                             Class<? extends MetadataBookieDriver> driver,
                                             boolean allowOverride) {
-        if (!initialized) {
-            initialize();
-        }
-
         String scheme = metadataBackendScheme.toLowerCase();
         MetadataBookieDriverInfo oldDriverInfo = bookieDrivers.get(scheme);
         if (null != oldDriverInfo && !allowOverride) {
@@ -250,9 +230,6 @@ public final class MetadataDrivers {
      */
     public static MetadataClientDriver getClientDriver(String scheme) {
         checkNotNull(scheme, "Client Driver Scheme is null");
-        if (!initialized) {
-            initialize();
-        }
         MetadataClientDriverInfo driverInfo = clientDrivers.get(scheme.toLowerCase());
         if (null == driverInfo) {
             throw new IllegalArgumentException("Unknown backend " + scheme);
@@ -290,9 +267,6 @@ public final class MetadataDrivers {
      */
     public static MetadataBookieDriver getBookieDriver(String scheme) {
         checkNotNull(scheme, "Bookie Driver Scheme is null");
-        if (!initialized) {
-            initialize();
-        }
         MetadataBookieDriverInfo driverInfo = bookieDrivers.get(scheme.toLowerCase());
         if (null == driverInfo) {
             throw new IllegalArgumentException("Unknown backend " + scheme);

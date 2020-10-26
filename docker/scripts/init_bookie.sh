@@ -19,65 +19,57 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 # */
-
 source ${SCRIPTS_DIR}/common.sh
 
 function wait_for_zookeeper() {
     echo "wait for zookeeper"
-    until /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} ls /; do sleep 5; done
+    until zk-shell --run-once "ls /" ${BK_zkServers}; do sleep 5; done
 }
 
 function create_zk_root() {
     if [ "x${BK_CLUSTER_ROOT_PATH}" != "x" ]; then
         echo "create the zk root dir for bookkeeper at '${BK_CLUSTER_ROOT_PATH}'"
-        /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} create ${BK_CLUSTER_ROOT_PATH}
+        zk-shell --run-once "create ${BK_CLUSTER_ROOT_PATH} '' false false true" ${BK_zkServers}
     fi
 }
 
-# Init the cluster if required znodes not exist in Zookeeper.
-# Use ephemeral zk node as lock to keep initialize atomic.
 function init_cluster() {
-    if [ "x${BK_STREAM_STORAGE_ROOT_PATH}" == "x" ]; then
-        echo "BK_STREAM_STORAGE_ROOT_PATH is not set. fail fast."
-        exit -1
-    fi
-
-    /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} stat ${BK_STREAM_STORAGE_ROOT_PATH}
+    zk-shell --run-once "ls ${BK_zkLedgersRootPath}/available/readonly" ${BK_zkServers}
     if [ $? -eq 0 ]; then
-        echo "Metadata of cluster already exists, no need to init"
+        echo "Cluster metadata already exists"
     else
-        # create ephemeral zk node bkInitLock, initiator who this node, then do init; other initiators will wait.
-        /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} create -e ${BK_CLUSTER_ROOT_PATH}/bkInitLock
-        if [ $? -eq 0 ]; then
-            # bkInitLock created success, this is the successor to do znode init
-            echo "Initializing bookkeeper cluster at service uri ${BK_metadataServiceUri}."
-            /opt/bookkeeper/bin/bkctl --service-uri ${BK_metadataServiceUri} cluster init
+        # Create an ephemeral zk node `bkInitLock` for use as a lock.
+        lock=`zk-shell --run-once "create ${BK_CLUSTER_ROOT_PATH}/bkInitLock '' true false false" ${BK_zkServers}`
+        if [ -z "$lock" ]; then
+            echo "znodes do not exist in Zookeeper for Bookkeeper. Initializing a new Bookkeekeper cluster in Zookeeper."
+            /opt/bookkeeper/bin/bookkeeper shell initnewcluster
             if [ $? -eq 0 ]; then
-                echo "Successfully initialized bookkeeper cluster at service uri ${BK_metadataServiceUri}."
+                echo "initnewcluster operation succeeded"
             else
-                echo "Failed to initialize bookkeeper cluster at service uri ${BK_metadataServiceUri}. please check the reason."
+                echo "initnewcluster operation failed. Please check the reason."
+                echo "Exit status of initnewcluster"
+                echo $?
                 exit
             fi
         else
-            echo "Other docker instance is doing initialize at the same time, will wait in this instance."
+            echo "Others may be initializing the cluster at the same time."
             tenSeconds=1
-            while [ ${tenSeconds} -lt 10 ]
+            while [ ${tenSeconds} -lt 100 ]
             do
                 sleep 10
-                echo "run '/opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} stat ${BK_STREAM_STORAGE_ROOT_PATH}'"
-                /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} stat ${BK_STREAM_STORAGE_ROOT_PATH}
+                zk-shell --run-once "ls ${BK_zkLedgersRootPath}/available/readonly" ${BK_zkServers}
                 if [ $? -eq 0 ]; then
-                    echo "Waited $tenSeconds * 10 seconds, bookkeeper inited"
+                    echo "Waited $tenSeconds * 10 seconds. Successfully listed ''${BK_zkLedgersRootPath}/available/readonly'"
                     break
                 else
-                    echo "Waited $tenSeconds * 10 seconds, still not init"
+                    echo "Waited $tenSeconds * 10 seconds. Continue waiting."
                     (( tenSeconds++ ))
                     continue
                 fi
             done
 
-            if [ ${tenSeconds} -eq 10 ]; then
-                echo "Waited 100 seconds for bookkeeper cluster init, something wrong, please check"
+            if [ ${tenSeconds} -eq 100 ]; then
+                echo "Waited 100 seconds for bookkeeper cluster to initialize, but to no avail. Something is wrong, please check."
                 exit
             fi
         fi
@@ -97,5 +89,4 @@ function init_bookie() {
 
     # init the cluster
     init_cluster
-
 }

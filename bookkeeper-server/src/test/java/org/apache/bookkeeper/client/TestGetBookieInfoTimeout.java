@@ -37,7 +37,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
@@ -101,16 +101,14 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         ClientConfiguration cConf = new ClientConfiguration();
         cConf.setGetBookieInfoTimeout(2);
 
-        final BookieSocketAddress bookieToSleep = writelh.getLedgerMetadata().getEnsembleAt(0).get(0);
+        final BookieId bookieToSleep = writelh.getLedgerMetadata().getEnsembleAt(0).get(0);
         int sleeptime = cConf.getBookieInfoTimeout() * 3;
         CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
         latch.await();
 
         // try to get bookie info from the sleeping bookie. It should fail with timeout error
-        BookieSocketAddress addr = new BookieSocketAddress(bookieToSleep.getSocketAddress().getHostString(),
-                bookieToSleep.getPort());
         BookieClient bc = new BookieClientImpl(cConf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, executor,
-                scheduler, NullStatsLogger.INSTANCE);
+                scheduler, NullStatsLogger.INSTANCE, bkc.getBookieAddressResolver());
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
                 | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 
@@ -128,7 +126,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
             }
         }
         CallbackObj obj = new CallbackObj(flags);
-        bc.getBookieInfo(addr, flags, new GetBookieInfoCallback() {
+        bc.getBookieInfo(bookieToSleep, flags, new GetBookieInfoCallback() {
             @Override
             public void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
                 CallbackObj obj = (CallbackObj) ctx;

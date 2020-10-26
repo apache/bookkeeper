@@ -20,22 +20,29 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.BookKeeperClientStats.WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.netty.util.IllegalReferenceCountException;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
@@ -45,9 +52,26 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
+import org.apache.zookeeper.AsyncCallback.StringCallback;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.ACL;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +81,7 @@ import org.slf4j.LoggerFactory;
  */
 public class BookKeeperTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
-
+    private static final long INVALID_LEDGERID = -1L;
     private final DigestType digestType;
 
     public BookKeeperTest() {
@@ -786,7 +810,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     public void testCannotUseWriteFlagsOnV2Protocol() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         conf.setUseV2WireProtocol(true);
-        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf);) {
+        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf)) {
             try (WriteHandle wh = result(bkc.newCreateLedgerOp()
                     .withEnsembleSize(3)
                     .withWriteQuorumSize(3)
@@ -803,7 +827,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     public void testCannotUseForceOnV2Protocol() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         conf.setUseV2WireProtocol(true);
-        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf);) {
+        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf)) {
             try (WriteHandle wh = result(bkc.newCreateLedgerOp()
                     .withEnsembleSize(3)
                     .withWriteQuorumSize(3)
@@ -814,6 +838,278 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                result(wh.appendAsync("".getBytes()));
                result(wh.force());
             }
+        }
+    }
+
+    class MockZooKeeperClient extends ZooKeeperClient {
+        class MockZooKeeper extends ZooKeeper {
+            public MockZooKeeper(String connectString, int sessionTimeout, Watcher watcher, boolean canBeReadOnly)
+                    throws IOException {
+                super(connectString, sessionTimeout, watcher, canBeReadOnly);
+            }
+
+            @Override
+            public void create(final String path, byte[] data, List<ACL> acl, CreateMode createMode, StringCallback cb,
+                    Object ctx) {
+                StringCallback injectedCallback = new StringCallback() {
+                    @Override
+                    public void processResult(int rc, String path, Object ctx, String name) {
+                        /**
+                         * if ledgerIdToInjectFailure matches with the path of
+                         * the node, then throw CONNECTIONLOSS error and then
+                         * reset it to INVALID_LEDGERID.
+                         */
+                        if (path.contains(ledgerIdToInjectFailure.toString())) {
+                            ledgerIdToInjectFailure.set(INVALID_LEDGERID);
+                            cb.processResult(KeeperException.Code.CONNECTIONLOSS.intValue(), path, ctx, name);
+                        } else {
+                            cb.processResult(rc, path, ctx, name);
+                        }
+                    }
+                };
+                super.create(path, data, acl, createMode, injectedCallback, ctx);
+            }
+        }
+
+        private final String connectString;
+        private final int sessionTimeoutMs;
+        private final ZooKeeperWatcherBase watcherManager;
+        private final AtomicLong ledgerIdToInjectFailure;
+
+        MockZooKeeperClient(String connectString, int sessionTimeoutMs, ZooKeeperWatcherBase watcher,
+                AtomicLong ledgerIdToInjectFailure) throws IOException {
+            /*
+             * in OperationalRetryPolicy maxRetries is > 0. So in case of any
+             * RecoverableException scenario, it will retry.
+             */
+            super(connectString, sessionTimeoutMs, watcher,
+                    new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, Integer.MAX_VALUE),
+                    new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, 3),
+                    NullStatsLogger.INSTANCE, 1, 0, false);
+            this.connectString = connectString;
+            this.sessionTimeoutMs = sessionTimeoutMs;
+            this.watcherManager = watcher;
+            this.ledgerIdToInjectFailure = ledgerIdToInjectFailure;
+        }
+
+        @Override
+        protected ZooKeeper createZooKeeper() throws IOException {
+            return new MockZooKeeper(this.connectString, this.sessionTimeoutMs, this.watcherManager, false);
+        }
+    }
+
+    @Test
+    public void testZKConnectionLossForLedgerCreation() throws Exception {
+        int zkSessionTimeOut = 10000;
+        AtomicLong ledgerIdToInjectFailure = new AtomicLong(INVALID_LEDGERID);
+        ZooKeeperWatcherBase zooKeeperWatcherBase = new ZooKeeperWatcherBase(zkSessionTimeOut,
+                NullStatsLogger.INSTANCE);
+        MockZooKeeperClient zkFaultInjectionWrapper = new MockZooKeeperClient(zkUtil.getZooKeeperConnectString(),
+                zkSessionTimeOut, zooKeeperWatcherBase, ledgerIdToInjectFailure);
+        zkFaultInjectionWrapper.waitForConnection();
+        assertEquals("zkFaultInjectionWrapper should be in connected state", States.CONNECTED,
+                zkFaultInjectionWrapper.getState());
+        BookKeeper bk = new BookKeeper(baseClientConf, zkFaultInjectionWrapper);
+        long oldZkInstanceSessionId = zkFaultInjectionWrapper.getSessionId();
+        long ledgerId = 567L;
+        LedgerHandle lh = bk.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "".getBytes(), null);
+        lh.close();
+
+        /*
+         * trigger Expired event so that MockZooKeeperClient would run
+         * 'clientCreator' and create new zk handle. In this case it would
+         * create MockZooKeeper.
+         */
+        zooKeeperWatcherBase.process(new WatchedEvent(EventType.None, KeeperState.Expired, ""));
+        zkFaultInjectionWrapper.waitForConnection();
+        for (int i = 0; i < 10; i++) {
+            if (zkFaultInjectionWrapper.getState() == States.CONNECTED) {
+                break;
+            }
+            Thread.sleep(200);
+        }
+        assertEquals("zkFaultInjectionWrapper should be in connected state", States.CONNECTED,
+                zkFaultInjectionWrapper.getState());
+        assertNotEquals("Session Id of old and new ZK instance should be different", oldZkInstanceSessionId,
+                zkFaultInjectionWrapper.getSessionId());
+        ledgerId++;
+        ledgerIdToInjectFailure.set(ledgerId);
+        /**
+         * ledgerIdToInjectFailure is set to 'ledgerId', so zookeeper.create
+         * would return CONNECTIONLOSS error for the first time and when it is
+         * retried, as expected it would return NODEEXISTS error.
+         *
+         * AbstractZkLedgerManager.createLedgerMetadata should deal with this
+         * scenario appropriately.
+         */
+        lh = bk.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "".getBytes(), null);
+        lh.close();
+        assertEquals("injectZnodeCreationNoNodeFailure should have been reset it to INVALID_LEDGERID", INVALID_LEDGERID,
+                ledgerIdToInjectFailure.get());
+        lh = bk.openLedger(ledgerId, DigestType.CRC32, "".getBytes());
+        lh.close();
+        ledgerId++;
+        lh = bk.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "".getBytes(), null);
+        lh.close();
+        bk.close();
+    }
+
+    @Test
+    public void testLedgerDeletionIdempotency() throws Exception {
+        BookKeeper bk = new BookKeeper(baseClientConf);
+        long ledgerId = 789L;
+        LedgerHandle lh = bk.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "".getBytes(), null);
+        lh.close();
+        bk.deleteLedger(ledgerId);
+        bk.deleteLedger(ledgerId);
+        bk.close();
+    }
+
+    /**
+     * Mock of RackawareEnsemblePlacementPolicy. Overrides areAckedBookiesAdheringToPlacementPolicy to only return true
+     * when ackedBookies consists of writeQuorumSizeToUseForTesting bookies.
+     */
+    public static class MockRackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicy {
+        private int writeQuorumSizeToUseForTesting;
+        private CountDownLatch conditionFirstInvocationLatch;
+
+        void setWriteQuorumSizeToUseForTesting(int writeQuorumSizeToUseForTesting) {
+            this.writeQuorumSizeToUseForTesting = writeQuorumSizeToUseForTesting;
+        }
+
+        void setConditionFirstInvocationLatch(CountDownLatch conditionFirstInvocationLatch) {
+            this.conditionFirstInvocationLatch = conditionFirstInvocationLatch;
+        }
+
+        @Override
+        public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieId> ackedBookies,
+                                                                int writeQuorumSize,
+                                                                int ackQuorumSize) {
+            conditionFirstInvocationLatch.countDown();
+            return ackedBookies.size() == writeQuorumSizeToUseForTesting;
+        }
+    }
+
+    /**
+     * Test to verify that PendingAddOp waits for success condition from areAckedBookiesAdheringToPlacementPolicy
+     * before returning success to client. Also tests working of WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS and
+     * WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS counters.
+     */
+    @Test
+    public void testEnforceMinNumFaultDomainsForWrite() throws Exception {
+        byte[] data = "foobar".getBytes();
+        byte[] password = "testPasswd".getBytes();
+
+        startNewBookie();
+        startNewBookie();
+
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        conf.setEnsemblePlacementPolicy(MockRackawareEnsemblePlacementPolicy.class);
+
+        conf.setAddEntryTimeout(2);
+        conf.setAddEntryQuorumTimeout(4);
+        conf.setEnforceMinNumFaultDomainsForWrite(true);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+
+        // Abnormal values for testing to prevent timeouts
+        BookKeeperTestClient bk = new BookKeeperTestClient(conf, statsProvider);
+        StatsLogger statsLogger = bk.getStatsLogger();
+
+        int ensembleSize = 3;
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 2;
+
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        MockRackawareEnsemblePlacementPolicy currPlacementPolicy =
+                (MockRackawareEnsemblePlacementPolicy) bk.getPlacementPolicy();
+        currPlacementPolicy.setConditionFirstInvocationLatch(countDownLatch);
+        currPlacementPolicy.setWriteQuorumSizeToUseForTesting(writeQuorumSize);
+
+        BookieId bookieToSleep;
+
+        try (LedgerHandle lh = bk.createLedger(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password)) {
+            CountDownLatch sleepLatchCase1 = new CountDownLatch(1);
+            CountDownLatch sleepLatchCase2 = new CountDownLatch(1);
+
+            // Put all non ensemble bookies to sleep
+            LOG.info("Putting all non ensemble bookies to sleep.");
+            for (BookieServer bookieServer : bs) {
+                try {
+                    if (!lh.getCurrentEnsemble().contains(bookieServer.getBookieId())) {
+                        sleepBookie(bookieServer.getBookieId(), sleepLatchCase2);
+                    }
+                } catch (UnknownHostException ignored) {}
+            }
+
+            Thread writeToLedger = new Thread(() -> {
+                try {
+                    LOG.info("Initiating write for entry");
+                    long entryId = lh.addEntry(data);
+                    LOG.info("Wrote entry with entryId = {}", entryId);
+                } catch (InterruptedException | BKException ignored) {
+                }
+            });
+
+            bookieToSleep = lh.getCurrentEnsemble().get(0);
+
+            LOG.info("Putting picked bookie to sleep");
+            sleepBookie(bookieToSleep, sleepLatchCase1);
+
+            assertEquals(statsLogger
+                           .getCounter(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS)
+                           .get()
+                           .longValue(), 0);
+
+            // Trying to write entry
+            writeToLedger.start();
+
+            // Waiting and checking to make sure that write has not succeeded
+            countDownLatch.await(conf.getAddEntryTimeout(), TimeUnit.SECONDS);
+            assertEquals("Write succeeded but should not have", -1, lh.lastAddConfirmed);
+
+            // Wake the bookie
+            sleepLatchCase1.countDown();
+
+            // Waiting and checking to make sure that write has succeeded
+            writeToLedger.join(conf.getAddEntryTimeout() * 1000);
+            assertEquals("Write did not succeed but should have", 0, lh.lastAddConfirmed);
+
+            assertEquals(statsLogger
+                           .getCounter(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS)
+                           .get()
+                           .longValue(), 1);
+
+            // AddEntry thread for second scenario
+            Thread writeToLedger2 = new Thread(() -> {
+                try {
+                    LOG.info("Initiating write for entry");
+                    long entryId = lh.addEntry(data);
+                    LOG.info("Wrote entry with entryId = {}", entryId);
+                } catch (InterruptedException | BKException ignored) {
+                }
+            });
+
+            bookieToSleep = lh.getCurrentEnsemble().get(1);
+
+            LOG.info("Putting picked bookie to sleep");
+            sleepBookie(bookieToSleep, sleepLatchCase2);
+
+            // Trying to write entry
+            writeToLedger2.start();
+
+            // Waiting and checking to make sure that write has failed
+            writeToLedger2.join((conf.getAddEntryQuorumTimeout() + 2) * 1000);
+            assertEquals("Write succeeded but should not have", 0, lh.lastAddConfirmed);
+
+            sleepLatchCase2.countDown();
+
+            assertEquals(statsLogger.getCounter(WRITE_DELAYED_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS).get().longValue(),
+                         2);
+
+            assertEquals(statsLogger.getCounter(WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS).get().longValue(),
+                         1);
         }
     }
 }

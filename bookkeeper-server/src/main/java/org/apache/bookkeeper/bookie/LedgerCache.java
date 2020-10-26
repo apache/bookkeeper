@@ -21,11 +21,13 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.BookieShell.bytes2Hex;
+import static org.apache.bookkeeper.tools.cli.commands.bookie.FormatUtil.bytes2Hex;
 
 import io.netty.buffer.ByteBuf;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.PrimitiveIterator.OfLong;
+
 import org.apache.bookkeeper.common.util.Watcher;
 
 /**
@@ -53,6 +55,8 @@ public interface LedgerCache extends Closeable {
     boolean waitForLastAddConfirmedUpdate(long ledgerId,
                                           long previousLAC,
                                           Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
+    void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                             Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
 
     void deleteLedger(long ledgerId) throws IOException;
 
@@ -62,8 +66,8 @@ public interface LedgerCache extends Closeable {
     /**
      * Specific exception to encode the case where the index is not present.
      */
-    class NoIndexForLedger extends IOException {
-        NoIndexForLedger(String reason, Exception cause) {
+    class NoIndexForLedgerException extends IOException {
+        NoIndexForLedgerException(String reason, Exception cause) {
             super(reason, cause);
         }
     }
@@ -84,6 +88,8 @@ public interface LedgerCache extends Closeable {
     interface PageEntriesIterable extends AutoCloseable, Iterable<PageEntries> {}
 
     PageEntriesIterable listEntries(long ledgerId) throws IOException;
+
+    OfLong getEntriesIterator(long ledgerId) throws IOException;
 
     /**
      * Represents summary of ledger metadata.

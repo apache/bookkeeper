@@ -40,6 +40,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -51,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -65,11 +67,13 @@ import org.apache.bookkeeper.bookie.ScanAndCompareGarbageCollector;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
+import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -91,12 +95,18 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         super(lmFactoryCls);
     }
 
+    private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
+        BookieId selfBookie = Bookie.getBookieId(baseConf);
+        createLedgers(numLedgers, createdLedgers, selfBookie);
+    }
+
     /**
      * Create ledgers.
      */
-    private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
+    private void createLedgers(int numLedgers, final Set<Long> createdLedgers, BookieId selfBookie)
+            throws IOException {
         final AtomicInteger expected = new AtomicInteger(numLedgers);
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234));
+        List<BookieId> ensemble = Lists.newArrayList(selfBookie);
 
         for (int i = 0; i < numLedgers; i++) {
             getLedgerIdGenerator().generateLedgerId(new GenericCallback<Long>() {
@@ -113,6 +123,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                     }
 
                     LedgerMetadata md = LedgerMetadataBuilder.create()
+                        .withDigestType(DigestType.CRC32C)
+                        .withPassword(new byte[0])
                         .withEnsembleSize(1).withWriteQuorumSize(1).withAckQuorumSize(1)
                         .newEnsembleEntry(0L, ensemble).build();
 
@@ -313,7 +325,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
             };
 
         SortedSet<Long> scannedLedgers = new TreeSet<Long>();
-        LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges();
+        LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges(0);
         while (iterator.hasNext()) {
             LedgerRange ledgerRange = iterator.next();
             scannedLedgers.addAll(ledgerRange.getLedgers());
@@ -403,7 +415,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
      *
      * ScanAndCompareGarbageCollector/GC should clean data of ledger only if both the LedgerManager.getLedgerRanges says
      * that ledger is not existing and also ledgerManager.readLedgerMetadata fails with error
-     * NoSuchLedgerExistsException.
+     * NoSuchLedgerExistsOnMetadataServerException.
      *
      */
     @Test
@@ -419,7 +431,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
             @Override
-            public LedgerRangeIterator getLedgerRanges() {
+            public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
                 return new LedgerRangeIterator() {
                     @Override
                     public LedgerRange next() throws IOException {
@@ -461,7 +473,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
      *
      * ScanAndCompareGarbageCollector/GC should clean data of ledger only if both the LedgerManager.getLedgerRanges says
      * that ledger is not existing and also ledgerManager.readLedgerMetadata fails with error
-     * NoSuchLedgerExistsException.
+     * NoSuchLedgerExistsOnMetadataServerException.
      *
      */
     @Test
@@ -505,7 +517,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
      *
      * ScanAndCompareGarbageCollector/GC should clean data of ledger only if both the LedgerManager.getLedgerRanges says
      * that ledger is not existing and also ledgerManager.readLedgerMetadata fails with error
-     * NoSuchLedgerExistsException, but is shouldn't delete if the readLedgerMetadata fails with any other error.
+     * NoSuchLedgerExistsOnMetadataServerException, but is shouldn't delete if the readLedgerMetadata fails with any
+     * other error.
      */
     @Test
     public void testGcLedgersIfReadLedgerMetadataFailsForDeletedLedgers() throws Exception {
@@ -549,7 +562,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
     public void validateLedgerRangeIterator(SortedSet<Long> createdLedgers) throws IOException {
         SortedSet<Long> scannedLedgers = new TreeSet<Long>();
-        LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges();
+        LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges(0);
         while (iterator.hasNext()) {
             LedgerRange ledgerRange = iterator.next();
             scannedLedgers.addAll(ledgerRange.getLedgers());
@@ -675,5 +688,67 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                 throws IOException {
             return false;
         }
+
+        @Override
+        public void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                        Watcher<LastAddConfirmedUpdateNotification> watcher)
+                throws IOException {
+        }
+
+        @Override
+        public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
+            return null;
+        }
+    }
+
+    /**
+     * Verifies that gc should cleaned up overreplicatd ledgers which is not
+     * owned by the bookie anymore.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGcLedgersForOverreplicated() throws Exception {
+        baseConf.setVerifyMetadataOnGc(true);
+        final SortedSet<Long> createdLedgers = Collections.synchronizedSortedSet(new TreeSet<Long>());
+        final SortedSet<Long> cleaned = Collections.synchronizedSortedSet(new TreeSet<Long>());
+
+        // Create few ledgers
+        final int numLedgers = 5;
+
+        BookieId bookieAddress = new BookieSocketAddress("192.0.0.1", 1234).toBookieId();
+        createLedgers(numLedgers, createdLedgers, bookieAddress);
+
+        LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
+            @Override
+            public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
+                return new LedgerRangeIterator() {
+                    @Override
+                    public LedgerRange next() throws IOException {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean hasNext() throws IOException {
+                        return false;
+                    }
+                };
+            }
+        };
+
+        final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
+        GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
+            @Override
+            public void clean(long ledgerId) {
+                LOG.info("Cleaned {}", ledgerId);
+                cleaned.add(ledgerId);
+            }
+        };
+
+        validateLedgerRangeIterator(createdLedgers);
+
+        garbageCollector.gc(cleaner);
+        assertEquals("Should have cleaned all ledgers", cleaned.size(), numLedgers);
     }
 }

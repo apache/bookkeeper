@@ -22,10 +22,9 @@ package org.apache.bookkeeper.common.util.affinity.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Charsets;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -40,7 +39,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 class ProcessorsInfo {
 
-    private static final Charset ENCODING = Charsets.US_ASCII;
+    private static final Charset ENCODING = StandardCharsets.US_ASCII;
 
     /**
      * Given one cpu id, return all CPUs that are sharing the same core.

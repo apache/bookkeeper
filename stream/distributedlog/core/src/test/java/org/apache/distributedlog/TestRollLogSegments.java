@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -279,7 +279,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
                 }
                 @Override
                 public void onFailure(Throwable cause) {
-                    logger.error("Failed to write entries : {}", cause);
+                    logger.error("Failed to write entries", cause);
                 }
             });
             if (i == 1) {

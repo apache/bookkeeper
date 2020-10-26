@@ -436,7 +436,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         logsToCompact.sort(Comparator.comparing(EntryLogMetadata::getUsage));
 
         final int numBuckets = 10;
-        int entryLogUsageBuckets[] = new int[numBuckets];
+        int[] entryLogUsageBuckets = new int[numBuckets];
 
         for (EntryLogMetadata meta : logsToCompact) {
             int bucketIndex = Math.min(
@@ -512,10 +512,16 @@ public class GarbageCollectorThread extends SafeRunnable {
             // indicates that compaction is in progress for this EntryLogId.
             return;
         }
-        // Do the actual compaction
-        compactor.compact(entryLogMeta);
-        // Mark compaction done
-        compacting.set(false);
+
+        try {
+            // Do the actual compaction
+            compactor.compact(entryLogMeta);
+        } catch (Exception e) {
+            LOG.error("Failed to compact entry log {} due to unexpected error", entryLogMeta.getEntryLogId(), e);
+        } finally {
+            // Mark compaction done
+            compacting.set(false);
+        }
     }
 
     /**

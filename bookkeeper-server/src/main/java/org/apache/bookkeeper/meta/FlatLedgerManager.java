@@ -73,7 +73,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     public long getLedgerId(String nodeName) throws IOException {
         long ledgerId;
         try {
-            String parts[] = nodeName.split(ledgerPrefix);
+            String[] parts = nodeName.split(ledgerPrefix);
             ledgerId = Long.parseLong(parts[parts.length - 1]);
         } catch (NumberFormatException e) {
             throw new IOException(e);
@@ -89,7 +89,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     }
 
     @Override
-    public LedgerRangeIterator getLedgerRanges() {
+    public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
         return new LedgerRangeIterator() {
             // single iterator, can visit only one time
             boolean nextCalled = false;
@@ -103,7 +103,8 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
 
                 try {
                     zkActiveLedgers = ledgerListToSet(
-                            ZkUtils.getChildrenInSingleNode(zk, ledgerRootPath), ledgerRootPath);
+                            ZkUtils.getChildrenInSingleNode(zk, ledgerRootPath, zkOpTimeoutMs),
+                            ledgerRootPath);
                     nextRange = new LedgerRange(zkActiveLedgers);
                 } catch (KeeperException.NoNodeException e) {
                     throw new IOException("Path does not exist: " + ledgerRootPath, e);

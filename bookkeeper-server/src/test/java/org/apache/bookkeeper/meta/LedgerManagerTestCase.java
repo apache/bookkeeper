@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.PrimitiveIterator.OfLong;
 
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
@@ -275,11 +276,22 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
+        public void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                        Watcher<LastAddConfirmedUpdateNotification> watcher)
+                throws IOException {
+        }
+
+        @Override
         public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
         }
 
         @Override
         public ByteBuf getExplicitLac(long ledgerId) {
+            return null;
+        }
+
+        @Override
+        public OfLong getListOfEntriesOfLedger(long ledgerId) {
             return null;
         }
     }

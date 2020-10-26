@@ -64,6 +64,59 @@ Client Guide | API docs
 
 ## News
 
+### 20 October, 2020 Release 4.11.1 available
+
+This is the 22th release of Apache BookKeeper !
+
+See [BookKeeper 4.11.1 Release Notes](../docs/4.11.1/overview/releaseNotes) for details.
+
+### 10 July, 2020  Release 4.11.0 available
+
+This is the 21th release of Apache BookKeeper !
+
+See [BookKeeper 4.11.0 Release Notes](../docs/4.11.0/overview/releaseNotes) for details.
+
+### 6 November, 2019 Release 4.10.0 available
+
+This is the 20th release of Apache BookKeeper!
+
+The 4.10.0 release incorporates hundreds of bug fixes, improvements, and features since previous major release, 4.9.0.
+
+See [BookKeeper 4.10.0 Release Notes](../docs/4.10.0/overview/releaseNotes) for details.
+
+### 16 May, 2019 Release 4.9.2 available
+
+This is the 19th release of Apache BookKeeper !
+
+The 4.9.2 release is a bugfix release which fixes a couple of issues reported from users of 4.9.1.
+
+See [BookKeeper 4.9.2 Release Notes](../docs/4.9.2/overview/releaseNotes) for details.
+
+### 7 April, 2019 Release 4.9.1 available
+
+This is the 18th release of Apache BookKeeper !
+
+The 4.9.1 release is a bugfix release which fixes a couple of issues reported from users of 4.9.0.
+
+See [BookKeeper 4.9.1 Release Notes](../docs/4.9.1/overview/releaseNotes) for details.
+
+### 19 March, 2019 Release 4.8.2 available
+
+This is the 17th release of Apache BookKeeper!
+
+The 4.8.2 release is a bugfix release which fixes a couple of issues reported from users of 4.8.1.
+
+See [BookKeeper 4.8.2 Release Notes](../docs/4.8.2/overview/releaseNotes) for details.
+
+### 31 January, 2019 Release 4.9.0 available
+
+This is the 16th release of Apache BookKeeper!
+
+The 4.9.0 release incorporates hundreds of bug fixes, improvements, and features since previous major release, 4.8.0,
+which was released four months ago. It is a new milestone in Apache BookKeeper community.
+
+See [BookKeeper 4.9.0 Release Notes](../docs/4.9.0/overview/releaseNotes) for details.
+
 ### 04 December, 2018 Release 4.7.3 available
 
 This is the 15th release of Apache BookKeeper!
@@ -86,6 +139,8 @@ This is the 13th release of Apache BookKeeper !
 
 The 4.8.0 release incorporates hundreds of bug fixes, improvements, and features since previous major release, 4.7.0.
 It is a new big milestone in Apache BookKeeper community, this release include great new features, like Relaxed Durability, Stream Storage service and Multiple Active Entrylogs.
+
+See [BookKeeper 4.8.0 Release Notes](../docs/4.8.0/overview/releaseNotes) for details.
 
 ### 29 August, 2018: Release 4.7.2 available
 

@@ -23,10 +23,10 @@ import java.util.Set;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble;
 import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate;
-import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.BookieNode;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.Node;
 
 /**
@@ -66,7 +66,7 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
         /**
          * @return list of addresses representing the ensemble
          */
-        List<BookieSocketAddress> toList();
+        List<BookieId> toList();
 
         /**
          * Validates if an ensemble is valid.
@@ -93,11 +93,11 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
      * @return list of bookies forming the ensemble
      * @throws BKException.BKNotEnoughBookiesException
      */
-    List<BookieSocketAddress> newEnsemble(
+    PlacementResult<List<BookieId>> newEnsemble(
             int ensembleSize,
             int writeQuorumSize,
             int ackQuorumSize,
-            Set<BookieSocketAddress> excludeBookies,
+            Set<BookieId> excludeBookies,
             Ensemble<T> parentEnsemble,
             Predicate<T> parentPredicate)
             throws BKException.BKNotEnoughBookiesException;
@@ -176,7 +176,7 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
      * @param leftBookies
      *          bookies that left
      */
-    void handleBookiesThatLeft(Set<BookieSocketAddress> leftBookies);
+    void handleBookiesThatLeft(Set<BookieId> leftBookies);
 
     /**
      * Handle bookies that joined.
@@ -184,5 +184,12 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
      * @param joinedBookies
      *          bookies that joined.
      */
-    void handleBookiesThatJoined(Set<BookieSocketAddress> joinedBookies);
+    void handleBookiesThatJoined(Set<BookieId> joinedBookies);
+
+    /**
+     * Handle rack change for the bookies.
+     *
+     * @param bookieAddressList
+     */
+    void onBookieRackChange(List<BookieId> bookieAddressList);
 }

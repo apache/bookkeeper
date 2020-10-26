@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.conf;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
 import io.netty.buffer.ByteBuf;
@@ -137,6 +137,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String BOOKIE_HEALTH_CHECK_INTERVAL_SECONDS = "bookieHealthCheckIntervalSeconds";
     protected static final String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
     protected static final String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
+    protected static final String BOOKIE_QUARANTINE_RATIO = "bookieQuarantineRatio";
 
     // Bookie info poll interval
     protected static final String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
@@ -146,13 +147,14 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
         "bookieMaxMultipleForWeightBasedPlacement";
     protected static final String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
     protected static final String START_TLS_TIMEOUT_SECS = "startTLSTimeoutSecs";
+    protected static final String TLS_HOSTNAME_VERIFICATION_ENABLED = "tlsHostnameVerificationEnabled";
 
     // Number of Threads
     protected static final String NUM_WORKER_THREADS = "numWorkerThreads";
     protected static final String NUM_IO_THREADS = "numIOThreads";
 
     // Ensemble Placement Policy
-    protected static final String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
+    public static final String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
     protected static final String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
     protected static final String READ_REORDER_THRESHOLD_PENDING_REQUESTS = "readReorderThresholdPendingRequests";
     protected static final String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES =
@@ -165,6 +167,9 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Failure History Settings
     protected static final String ENABLE_BOOKIE_FAILURE_TRACKING = "enableBookieFailureTracking";
     protected static final String BOOKIE_FAILURE_HISTORY_EXPIRATION_MS = "bookieFailureHistoryExpirationMSec";
+
+    // Discovery
+    protected static final String FOLLOW_BOOKIE_ADDRESS_TRACKING = "enableBookieAddressTracking";
 
     // Names of dynamic features
     protected static final String DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME = "disableEnsembleChangeFeatureName";
@@ -187,6 +192,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     // Registration Client
     protected static final String REGISTRATION_CLIENT_CLASS = "registrationClientClass";
+
+    // Logs
+    protected static final String CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING =
+            "clientConnectBookieUnavailableLogThrottling";
 
     /**
      * Construct a default client-side configuration.
@@ -1400,6 +1409,26 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
+     * Get the bookie quarantine ratio.
+     *
+     * @return
+     */
+    public double getBookieQuarantineRatio() {
+        return getDouble(BOOKIE_QUARANTINE_RATIO, 1.0);
+    }
+
+    /**
+     * set the bookie quarantine ratio. default is 1.0.
+     *
+     * @param ratio
+     * @return client configuration
+     */
+    public ClientConfiguration setBookieQuarantineRatio(double ratio) {
+        setProperty(BOOKIE_QUARANTINE_RATIO, ratio);
+        return this;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -1523,6 +1552,27 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setStartTLSTimeout(int timeoutSecs) {
         setProperty(START_TLS_TIMEOUT_SECS, timeoutSecs);
+        return this;
+    }
+
+    /**
+     * Whether hostname verification enabled?
+     *
+     * @return true if hostname verification enabled, otherwise false.
+     */
+    public boolean getHostnameVerificationEnabled() {
+        return getBoolean(TLS_HOSTNAME_VERIFICATION_ENABLED, false);
+    }
+
+    /**
+     * Enable/Disable hostname verification for tls connection.
+     *
+     * @param enabled
+     *            flag to enable/disable tls hostname verification.
+     * @return client configuration.
+     */
+    public ClientConfiguration setHostnameVerificationEnabled(boolean enabled) {
+        setProperty(TLS_HOSTNAME_VERIFICATION_ENABLED, enabled);
         return this;
     }
 
@@ -1718,6 +1768,27 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
+     * Whether to enable bookie address changes tracking.
+     *
+     * @return flag to enable/disable bookie address changes tracking
+     */
+    public boolean getEnableBookieAddressTracking() {
+        return getBoolean(FOLLOW_BOOKIE_ADDRESS_TRACKING, true);
+    }
+
+    /**
+     * Enable/Disable bookie address changes tracking.
+     *
+     * @param value
+     *          flag to enable/disable bookie address changes tracking
+     * @return client configuration.
+     */
+    public ClientConfiguration setEnableBookieAddressTracking(boolean value) {
+        setProperty(FOLLOW_BOOKIE_ADDRESS_TRACKING, value);
+        return this;
+    }
+
+    /**
      * Whether to enable bookie failure tracking.
      *
      * @return flag to enable/disable bookie failure tracking
@@ -1882,6 +1953,28 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public boolean getStoreSystemtimeAsLedgerCreationTime() {
         return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME, false);
+    }
+
+    /**
+     * Set the log frequency when a bookie is unavailable, in order to limit log filesize.
+     *
+     * @param throttleValue
+     * @param unit
+     * @return client configuration.
+     */
+    public ClientConfiguration setClientConnectBookieUnavailableLogThrottling(
+            int throttleValue, TimeUnit unit) {
+        setProperty(CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING, unit.toMillis(throttleValue));
+        return this;
+    }
+
+    /**
+     * Get the log frequency when a bookie is unavailable, in milliseconds.
+     *
+     * @return log frequency when a bookie is unavailable, in milliseconds.
+     */
+    public long getClientConnectBookieUnavailableLogThrottlingMs() {
+        return getLong(CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING, 5_000L);
     }
 
     @Override

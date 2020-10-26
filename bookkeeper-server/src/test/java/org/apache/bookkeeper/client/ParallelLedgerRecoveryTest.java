@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -55,7 +55,7 @@ import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
@@ -66,6 +66,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
@@ -112,8 +113,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public LedgerRangeIterator getLedgerRanges() {
-            return lm.getLedgerRanges();
+        public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
+            return lm.getLedgerRanges(zkOpTimeoutMs);
         }
 
         @Override
@@ -439,7 +440,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                                        new WriteCallback() {
                                            @Override
                                            public void writeComplete(int rc, long ledgerId, long entryId,
-                                                                     BookieSocketAddress addr, Object ctx) {
+                                                                     BookieId addr, Object ctx) {
                                                addSuccess.set(BKException.Code.OK == rc);
                                                addLatch.countDown();
                                            }
@@ -493,12 +494,12 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
             private final int rc;
             private final long ledgerId;
             private final long entryId;
-            private final BookieSocketAddress addr;
+            private final BookieId addr;
             private final Object ctx;
 
             WriteCallbackEntry(WriteCallback cb,
                                int rc, long ledgerId, long entryId,
-                               BookieSocketAddress addr, Object ctx) {
+                               BookieId addr, Object ctx) {
                 this.cb = cb;
                 this.rc = rc;
                 this.ledgerId = ledgerId;
@@ -530,7 +531,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
             super.addEntry(entry, ackBeforeSync, new WriteCallback() {
                 @Override
                 public void writeComplete(int rc, long ledgerId, long entryId,
-                                          BookieSocketAddress addr, Object ctx) {
+                                          BookieId addr, Object ctx) {
                     if (delayAddResponse.get()) {
                         delayQueue.add(new WriteCallbackEntry(cb, rc, ledgerId, entryId, addr, ctx));
                     } else {
@@ -593,7 +594,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         LOG.info("Create ledger {}", lh0.getId());
 
         // 0) place the bookie with a fake bookie
-        BookieSocketAddress address = lh0.getCurrentEnsemble().get(0);
+        BookieId address = lh0.getCurrentEnsemble().get(0);
         ServerConfiguration conf = killBookie(address);
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         DelayResponseBookie fakeBookie = new DelayResponseBookie(conf);
@@ -674,8 +675,12 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicInteger rcHolder = new AtomicInteger(-1234);
         final CountDownLatch doneLatch = new CountDownLatch(1);
 
-        new ReadLastConfirmedOp(readLh, bkc.getBookieClient(),
+        new ReadLastConfirmedOp(bkc.getBookieClient(),
+                                readLh.distributionSchedule,
+                                readLh.macManager,
+                                readLh.ledgerId,
                                 readLh.getLedgerMetadata().getAllEnsembles().lastEntry().getValue(),
+                                readLh.ledgerKey,
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     @Override
                     public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
@@ -693,4 +698,98 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         readBk.close();
     }
 
+    /**
+     * Validate ledger can recover with response: (Qw - Qa)+1.
+     * @throws Exception
+     */
+    @Test
+    public void testRecoveryWithUnavailableBookie() throws Exception {
+
+        byte[] passwd = "".getBytes(UTF_8);
+        ClientConfiguration newConf = new ClientConfiguration();
+        newConf.addConfiguration(baseClientConf);
+        final BookKeeper readBk = new BookKeeper(newConf);
+        final BookKeeper newBk0 = new BookKeeper(newConf);
+
+        /**
+         * Test Group-1 : Expected Response for recovery: Qr = (Qw - Qa)+1 = (3
+         * -2) + 1 = 2
+         */
+        int ensembleSize = 3;
+        int writeQuorumSize = 3;
+        int ackQuormSize = 2;
+        LedgerHandle lh0 = newBk0.createLedger(ensembleSize, writeQuorumSize, ackQuormSize, DigestType.DUMMY, passwd);
+        LedgerHandle readLh = readBk.openLedgerNoRecovery(lh0.getId(), DigestType.DUMMY, passwd);
+        // Test 1: bookie response: OK, NO_SUCH_LEDGER_EXISTS, NOT_AVAILABLE
+        // Expected: Recovery successful Q(response) = 2
+        int responseCode = readLACFromQuorum(readLh, BKException.Code.BookieHandleNotAvailableException,
+                BKException.Code.OK, BKException.Code.NoSuchLedgerExistsException);
+        assertEquals(responseCode, BKException.Code.OK);
+        // Test 2: bookie response: OK, NOT_AVAILABLE, NOT_AVAILABLE
+        // Expected: Recovery fail Q(response) = 1
+        responseCode = readLACFromQuorum(readLh, BKException.Code.BookieHandleNotAvailableException,
+                BKException.Code.OK, BKException.Code.BookieHandleNotAvailableException);
+        assertEquals(responseCode, BKException.Code.BookieHandleNotAvailableException);
+
+        /**
+         * Test Group-2 : Expected Response for recovery: Qr = (Qw - Qa)+1 = (2
+         * -2) + 1 = 1
+         */
+        ensembleSize = 2;
+        writeQuorumSize = 2;
+        ackQuormSize = 2;
+        lh0 = newBk0.createLedger(ensembleSize, writeQuorumSize, ackQuormSize, DigestType.DUMMY, passwd);
+        readLh = readBk.openLedgerNoRecovery(lh0.getId(), DigestType.DUMMY, passwd);
+        // Test 1: bookie response: OK, NOT_AVAILABLE
+        // Expected: Recovery successful Q(response) = 1
+        responseCode = readLACFromQuorum(readLh, BKException.Code.BookieHandleNotAvailableException,
+                BKException.Code.OK);
+        assertEquals(responseCode, BKException.Code.OK);
+
+        // Test 1: bookie response: OK, NO_SUCH_LEDGER_EXISTS
+        // Expected: Recovery successful Q(response) = 2
+        responseCode = readLACFromQuorum(readLh, BKException.Code.NoSuchLedgerExistsException, BKException.Code.OK);
+        assertEquals(responseCode, BKException.Code.OK);
+
+        // Test 3: bookie response: NOT_AVAILABLE, NOT_AVAILABLE
+        // Expected: Recovery fail Q(response) = 0
+        responseCode = readLACFromQuorum(readLh, BKException.Code.BookieHandleNotAvailableException,
+                BKException.Code.BookieHandleNotAvailableException);
+        assertEquals(responseCode, BKException.Code.BookieHandleNotAvailableException);
+
+        newBk0.close();
+        readBk.close();
+    }
+
+    private int readLACFromQuorum(LedgerHandle ledger, int... bookieLACResponse) throws Exception {
+        MutableInt responseCode = new MutableInt(100);
+        CountDownLatch responseLatch = new CountDownLatch(1);
+        ReadLastConfirmedOp readLCOp = new ReadLastConfirmedOp(
+                bkc.getBookieClient(),
+                ledger.getDistributionSchedule(),
+                ledger.getDigestManager(),
+                ledger.getId(),
+                ledger.getLedgerMetadata().getAllEnsembles().lastEntry().getValue(),
+                ledger.getLedgerKey(),
+                new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+                    @Override
+                    public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
+                        System.out.println("response = " + rc);
+                        responseCode.setValue(rc);
+                        responseLatch.countDown();
+                    }
+                });
+        byte[] lac = new byte[Long.SIZE * 3];
+        ByteBuf data = Unpooled.wrappedBuffer(lac, 0, lac.length);
+        int writerIndex = data.writerIndex();
+        data.resetWriterIndex();
+        data.writeLong(ledger.getId());
+        data.writeLong(0L);
+        data.writerIndex(writerIndex);
+        for (int i = 0; i < bookieLACResponse.length; i++) {
+            readLCOp.readEntryComplete(bookieLACResponse[i], 0, 0, data, i);
+        }
+        responseLatch.await();
+        return responseCode.intValue();
+    }
 }

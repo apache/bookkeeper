@@ -50,6 +50,7 @@ import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -87,10 +88,9 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
      * @throws InterruptedException
      */
     void createLedger(LedgerManager lm, Long ledgerId) throws Exception {
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(
-                new BookieSocketAddress("192.0.2.1", 1234),
-                new BookieSocketAddress("192.0.2.2", 1234),
-                new BookieSocketAddress("192.0.2.3", 1234));
+        List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
+                new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
         LedgerMetadata meta = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
             .withPassword("passwd".getBytes())
@@ -134,7 +134,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     @Test
     public void testIterateNoLedgers() throws Exception {
         LedgerManager lm = getLedgerManager();
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         if (lri.hasNext()) {
             lri.next();
@@ -150,7 +150,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         long id = 2020202;
         createLedger(lm, id);
 
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         Set<Long> lids = ledgerRangeToSet(lri);
         assertEquals(lids.size(), 1);
@@ -169,7 +169,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
             createLedger(lm, id);
         }
 
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         Set<Long> returnedIds = ledgerRangeToSet(lri);
         assertEquals(ids, returnedIds);
@@ -188,7 +188,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
             ids.add(i);
         }
 
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         Set<Long> returnedIds = ledgerRangeToSet(lri);
         assertEquals(ids, returnedIds);
@@ -232,7 +232,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
 
         Set<Long> found = new TreeSet<>();
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         while (lri.hasNext()) {
             LedgerManager.LedgerRange lr = lri.next();
             found.addAll(lr.getLedgers());
@@ -268,7 +268,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
             createLedger(lm, id);
         }
 
-        String paths[] = {
+        String[] paths = {
                 "/ledgers/633/4994/3938/4948", // Empty L4 path, must be skipped
 
         };
@@ -279,7 +279,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                     path, "data".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
 
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         Set<Long> returnedIds = ledgerRangeToSet(lri);
         assertEquals(ids, returnedIds);
@@ -287,7 +287,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         Set<Long> ledgersReadAsync = getLedgerIdsByUsingAsyncProcessLedgers(lm);
         assertEquals("Comparing LedgersIds read asynchronously", ids, ledgersReadAsync);
 
-        lri = lm.getLedgerRanges();
+        lri = lm.getLedgerRanges(0);
         int emptyRanges = 0;
         while (lri.hasNext()) {
             if (lri.next().getLedgers().isEmpty()) {
@@ -315,7 +315,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
             createLedger(lm, id);
         }
 
-        String paths[] = {
+        String[] paths = {
                 "/ledgers/000/0000/0000", // top level, W-4292762
                 "/ledgers/234/5678/9999", // shares two path segments with the first one, comes after
                 "/ledgers/339/0000/0000", // shares one path segment with the second one, comes first
@@ -329,7 +329,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                     path, "data".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
 
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
         assertNotNull(lri);
         Set<Long> returnedIds = ledgerRangeToSet(lri);
         assertEquals(ids, returnedIds);
@@ -394,7 +394,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                     latch.await();
 
                     while (MathUtils.elapsedNanos(start) < runtime) {
-                        LedgerRangeIterator lri = checkerLM.getLedgerRanges();
+                        LedgerRangeIterator lri = checkerLM.getLedgerRanges(0);
                         Set<Long> returnedIds = ledgerRangeToSet(lri);
                         for (long id: mustExist) {
                             assertTrue(returnedIds.contains(id));
@@ -505,7 +505,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     public void hierarchicalLedgerManagerAsyncProcessLedgersTest() throws Throwable {
         Assume.assumeTrue(baseConf.getLedgerManagerFactoryClass().equals(HierarchicalLedgerManagerFactory.class));
         LedgerManager lm = getLedgerManager();
-        LedgerRangeIterator lri = lm.getLedgerRanges();
+        LedgerRangeIterator lri = lm.getLedgerRanges(0);
 
         Set<Long> ledgerIds = new TreeSet<>(Arrays.asList(1234L, 123456789123456789L));
         for (Long ledgerId : ledgerIds) {

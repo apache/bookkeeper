@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.PrimitiveIterator;
+
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -135,6 +137,16 @@ public interface LedgerStorage {
     boolean waitForLastAddConfirmedUpdate(long ledgerId,
                                           long previousLAC,
                                           Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
+
+    /**
+     * Cancel a previous wait for last add confirmed update.
+     *
+     * @param ledgerId The ledger being watched.
+     * @param watcher The watcher to cancel.
+     * @throws IOException
+     */
+    void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
 
     /**
      * Flushes all data in the storage. Once this is called,
@@ -248,4 +260,19 @@ public interface LedgerStorage {
     default List<GarbageCollectionStatus> getGarbageCollectionStatus() {
         return Collections.emptyList();
     }
+
+    /**
+     * Returns the primitive long iterator for entries of the ledger, stored in
+     * this LedgerStorage. The returned iterator provide weakly consistent state
+     * of the ledger. It is guaranteed that entries of the ledger added to this
+     * LedgerStorage by the time this method is called will be available but
+     * modifications made after method invocation may not be available.
+     *
+     * @param ledgerId
+     *            - id of the ledger
+     * @return the list of entries of the ledger available in this
+     *         ledgerstorage.
+     * @throws Exception
+     */
+    PrimitiveIterator.OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException;
 }

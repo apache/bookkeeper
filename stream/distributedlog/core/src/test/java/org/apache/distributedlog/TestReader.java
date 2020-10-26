@@ -134,7 +134,7 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
                 } catch (IOException exc) {
                     int nextMs = nextDelayMs();
                     LOG.info("Encountered exception {} on opening reader {} at {}, retrying in {} ms",
-                            new Object[] { exc, readerName, dlsn, nextMs });
+                        exc, readerName, dlsn, nextMs);
                     positionReader(dlsn);
                 }
             }
@@ -152,13 +152,13 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
         try {
             assertTrue(value.getDlsn().compareTo(nextDLSN) >= 0);
             LOG.info("Received record {} from log {} for reader {}",
-                    new Object[] { value.getDlsn(), dlm.getStreamName(), readerName });
+                value.getDlsn(), dlm.getStreamName(), readerName);
             assertFalse(value.isControl());
             assertEquals(0, value.getDlsn().getSlotId());
             DLMTestUtil.verifyLargeLogRecord(value);
         } catch (Exception exc) {
             LOG.error("Exception encountered when verifying received log record {} for reader {} :",
-                    new Object[] { value.getDlsn(), exc, readerName });
+                value.getDlsn(), exc, readerName);
             errorsFound.set(true);
             completionLatch.countDown();
             return;
@@ -171,7 +171,7 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
             completionLatch.countDown();
         } else {
             LOG.info("Reader {} : read count becomes {}, latch = {}",
-                    new Object[] { readerName, readCount.get(), countLatch.getCount() });
+                readerName, readCount.get(), countLatch.getCount());
             nextDLSN = value.getDlsn().getNextDLSN();
             readNext();
         }

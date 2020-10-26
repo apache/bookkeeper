@@ -47,7 +47,11 @@ public abstract class HttpRouter<Handler> {
     public static final String EXPAND_STORAGE               = "/api/v1/bookie/expand_storage";
     public static final String GC                           = "/api/v1/bookie/gc";
     public static final String GC_DETAILS                   = "/api/v1/bookie/gc_details";
+    public static final String BOOKIE_STATE                 = "/api/v1/bookie/state";
+    public static final String BOOKIE_IS_READY              = "/api/v1/bookie/is_ready";
+    public static final String BOOKIE_INFO                  = "/api/v1/bookie/info";
     // autorecovery
+    public static final String AUTORECOVERY_STATUS          = "/api/v1/autorecovery/status";
     public static final String RECOVERY_BOOKIE              = "/api/v1/autorecovery/bookie";
     public static final String LIST_UNDER_REPLICATED_LEDGER = "/api/v1/autorecovery/list_under_replicated_ledger";
     public static final String WHO_IS_AUDITOR               = "/api/v1/autorecovery/who_is_auditor";
@@ -77,8 +81,13 @@ public abstract class HttpRouter<Handler> {
         this.endpointHandlers.put(EXPAND_STORAGE, handlerFactory.newHandler(HttpServer.ApiType.EXPAND_STORAGE));
         this.endpointHandlers.put(GC, handlerFactory.newHandler(HttpServer.ApiType.GC));
         this.endpointHandlers.put(GC_DETAILS, handlerFactory.newHandler(HttpServer.ApiType.GC_DETAILS));
+        this.endpointHandlers.put(BOOKIE_STATE, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_STATE));
+        this.endpointHandlers.put(BOOKIE_IS_READY, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_IS_READY));
+        this.endpointHandlers.put(BOOKIE_INFO, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_INFO));
 
         // autorecovery
+        this.endpointHandlers.put(AUTORECOVERY_STATUS, handlerFactory
+                .newHandler(HttpServer.ApiType.AUTORECOVERY_STATUS));
         this.endpointHandlers.put(RECOVERY_BOOKIE, handlerFactory.newHandler(HttpServer.ApiType.RECOVERY_BOOKIE));
         this.endpointHandlers.put(LIST_UNDER_REPLICATED_LEDGER,
             handlerFactory.newHandler(HttpServer.ApiType.LIST_UNDER_REPLICATED_LEDGER));

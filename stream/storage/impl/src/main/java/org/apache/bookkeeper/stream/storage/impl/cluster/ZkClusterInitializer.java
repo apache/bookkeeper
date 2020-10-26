@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.stream.storage.impl.cluster;
 
 import static org.apache.bookkeeper.stream.storage.StorageConstants.ZK_METADATA_ROOT_PATH;
+import static org.apache.bookkeeper.stream.storage.StorageConstants.getSegmentsRootPath;
 
 import com.google.common.base.Strings;
 import java.net.URI;
@@ -73,8 +74,6 @@ public class ZkClusterInitializer implements ClusterInitializer  {
                 return false;
             } catch (StorageRuntimeException sre) {
                 if (sre.getCause() instanceof KeeperException.NoNodeException) {
-                    log.info("Initializing the stream cluster with {} storage containers with segment store path {}.",
-                        numStorageContainers);
 
                     String ledgersPath = metadataServiceUri.getPath();
                     Optional<String> segmentStorePath;
@@ -83,6 +82,9 @@ public class ZkClusterInitializer implements ClusterInitializer  {
                     } else {
                         segmentStorePath = Optional.of(ledgersPath);
                     }
+
+                    log.info("Initializing the stream cluster with {} storage containers with segment store path {}.",
+                            numStorageContainers, segmentStorePath.orElse(getSegmentsRootPath(ZK_METADATA_ROOT_PATH)));
 
                     boolean initialized = store.initializeCluster(numStorageContainers, segmentStorePath);
                     log.info("Successfully initialized the stream cluster : \n{}", store.getClusterMetadata());

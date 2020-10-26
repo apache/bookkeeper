@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.impl.metadata;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
@@ -60,9 +60,9 @@ public class BKDLConfig implements DLConfig {
         }
         LOG.info("Propagate BKDLConfig to DLConfig : encodeRegionID = {},"
                         + " firstLogSegmentSequenceNumber = {}, createStreamIfNotExists = {}, isFederated = {}.",
-                new Object[] { dlConf.getEncodeRegionIDInLogSegmentMetadata(),
-                        dlConf.getFirstLogSegmentSequenceNumber(), dlConf.getCreateStreamIfNotExists(),
-                        bkdlConfig.isFederatedNamespace() });
+            dlConf.getEncodeRegionIDInLogSegmentMetadata(),
+            dlConf.getFirstLogSegmentSequenceNumber(), dlConf.getCreateStreamIfNotExists(),
+            bkdlConfig.isFederatedNamespace());
     }
 
     public static BKDLConfig resolveDLConfig(ZooKeeperClient zkc, URI uri) throws IOException {

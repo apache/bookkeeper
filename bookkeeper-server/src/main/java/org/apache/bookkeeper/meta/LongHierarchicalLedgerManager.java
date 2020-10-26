@@ -139,8 +139,8 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     }
 
     @Override
-    public LedgerRangeIterator getLedgerRanges() {
-        return new LongHierarchicalLedgerRangeIterator();
+    public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
+        return new LongHierarchicalLedgerRangeIterator(zkOpTimeoutMs);
     }
 
 
@@ -149,6 +149,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
      */
     private class LongHierarchicalLedgerRangeIterator implements LedgerRangeIterator {
         LedgerRangeIterator rootIterator;
+        final long zkOpTimeoutMs;
 
         /**
          * Returns all children with path as a parent.  If path is non-existent,
@@ -162,7 +163,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
          */
         List<String> getChildrenAt(String path) throws IOException {
             try {
-                List<String> children = ZkUtils.getChildrenInSingleNode(zk, path);
+                List<String> children = ZkUtils.getChildrenInSingleNode(zk, path, zkOpTimeoutMs);
                 Collections.sort(children);
                 return children;
             } catch (KeeperException.NoNodeException e) {
@@ -284,7 +285,9 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
             }
         }
 
-        private LongHierarchicalLedgerRangeIterator() {}
+        private LongHierarchicalLedgerRangeIterator(long zkOpTimeoutMs) {
+            this.zkOpTimeoutMs = zkOpTimeoutMs;
+        }
 
         private void bootstrap() throws IOException {
             if (rootIterator == null) {

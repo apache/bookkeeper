@@ -124,7 +124,7 @@ groups:
     description: The Recv ByteBuf allocator max buf size.
     default: 1048576
   - param: nettyMaxFrameSizeBytes
-    description: The maximum netty frame size in bytes. Any message received larger than this will be rejected.
+    description: The maximum netty frame size in bytes. Any message received larger than this will be rejected, so when the client-side attempt to send more than the default size bytes, it should set up the corresponding parameter `setNettyMaxFrameSizeBytes(int maxSize)`, pay attention to the parameter should be less than the value of server-side.
     default: 5242880
 
 - name: Http server settings
@@ -155,7 +155,7 @@ groups:
     default: OpenSSL
   - param: tlsProviderFactoryClass
     description: The path to the class that provides security.
-    default: org.apache.bookkeeper.security.SSLContextFactory
+    default: org.apache.bookkeeper.tls.TLSContextFactory
   - param: tlsClientAuthentication
     description: Type of security used by server.
     default: 'true'
@@ -640,6 +640,25 @@ groups:
   - param: enforceMinNumRacksPerWriteQuorum
     description: |
       'enforceMinNumRacksPerWriteQuorum' enforces RackawareEnsemblePlacementPolicy to pick bookies from 'minNumRacksPerWriteQuorum' racks for a writeQuorum. If it cann't find bookie then it would throw BKNotEnoughBookiesException instead of picking random one.
+  - param: ignoreLocalNodeInPlacementPolicy
+    description: |
+      'ignoreLocalNodeInPlacementPolicy' specifies whether to ignore localnode in the internal logic of placement policy. If it is not possible or useful to use Bookkeeper client node's (or AutoReplicator) rack/region info. for placement policy then it is better to ignore localnode instead of false alarming with log lines and metrics.
+    default: false
+  - param: enforceMinNumFaultDomainsForWrite
+    description: |
+      'enforceMinNumFaultDomainsForWrite' enforces EnsemblePlacementPolicy to check if a write has made it to bookies in 'minNumRacksPerWriteQuorum' number of fault domains, before acknowledging the write back.
+  - param: minNumZonesPerWriteQuorum
+    description: |
+      minimum number of zones per write quorum in ZoneawareEnsemblePlacementPolicy. ZoneawareEnsemblePlacementPolicy would get bookies from atleast 'minNumZonesPerWriteQuorum' racks for a writeQuorum.
+    default: 2
+  - param: desiredNumZonesPerWriteQuorum
+    description: |
+      desired number of zones per write quorum in ZoneawareEnsemblePlacementPolicy. ZoneawareEnsemblePlacementPolicy will try to get bookies from 'desiredNumZonesPerWriteQuorum' zones for a writeQuorum.
+    default: 3
+  - param: enforceStrictZoneawarePlacement
+    description: |
+      in ZoneawareEnsemblePlacementPolicy if strict placement is enabled then minZones/desiredZones in writeQuorum would be maintained otherwise it will pick nodes randomly.
+    default: true
 
 - name: AutoRecovery auditor settings
   params:
@@ -652,6 +671,9 @@ groups:
 
       Set this to 0 to disable the periodic check completely. Note that periodic checking will put extra load on the cluster, so it should not be run more frequently than once a day.
     default: 604800
+  - param: auditorPeriodicPlacementPolicyCheckInterval
+    description: The time interval between auditor placement policy checks, in seconds. The auditor placement policy check validates if the ensemble of segments of all the closed ledgers is adhering to the placement policy. It is just monitoring scrutiny but doesn't take any corrective measure other than logging error and reporting metrics. By default it is disabled.
+    default: 0
   - param: auditorLedgerVerificationPercentage
     description: |
       The percentage of a ledger (fragment)'s entries will be verified before claiming a fragment as missing. If it is 0, it only verifies the first and last entries of a given fragment.
@@ -662,6 +684,12 @@ groups:
   - param: storeSystemTimeAsLedgerUnderreplicatedMarkTime
     description: Enable the Auditor to use system time as underreplicated ledger mark time. If this is enabled, Auditor will write a ctime field into the underreplicated ledger znode.
     default: true
+  - param: underreplicatedLedgerRecoveryGracePeriod
+    description: The grace period (in seconds) for underreplicated ledgers recovery. If ledger is marked underreplicated for more than this period then it will be reported by placementPolicyCheck in Auditor. Setting this to 0 will disable this check.
+    default: 0
+  - param: auditorReplicasCheckInterval
+    description: Sets the regularity/interval at which the auditor will run a replicas check of all ledgers, which are closed. This should not be run very often since it validates availability of replicas of all ledgers by querying bookies. Setting this to 0 will completely disable the periodic replicas check. By default it is disabled.
+    default: 0
 
 - name: AutoRecovery replication worker settings
   params:
@@ -669,11 +697,11 @@ groups:
     description: The number of entries that a replication will rereplicate in parallel.
     default: 10
   - param: openLedgerRereplicationGracePeriod
-    description: The grace period, in seconds, that the replication worker waits before fencing and replicating a ledger fragment that's still being written to upon bookie failure.
-    default: 30
+    description: The grace period, in milliseconds, that the replication worker waits before fencing and replicating a ledger fragment that's still being written to upon bookie failure.
+    default: 30000
   - param: lockReleaseOfFailedLedgerGracePeriod
-    description: the grace period so that if the replication worker fails to replicate a underreplicatedledger for more than ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING number of times, then instead of releasing the lock immediately after failed attempt, it will hold under replicated ledger lock for this grace period and then it will release the lock.
-    default: 60
+    description: Set the grace period, in milliseconds, which the replication worker has to wait before releasing the lock after it failed to replicate a ledger. For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS failures it will do exponential backoff then it will bound at lockReleaseOfFailedLedgerGracePeriod.
+    default: 300000
   - param: rwRereplicateBackoffMs
     description: The time to backoff when replication worker encounters exceptions on replicating a ledger, in milliseconds.
     default: 5000

@@ -225,11 +225,7 @@ public class DLSN implements Comparable<DLSN> {
         if (logSegmentSequenceNo != dlsn.logSegmentSequenceNo) {
             return false;
         }
-        if (slotId != dlsn.slotId) {
-            return false;
-        }
-
-        return true;
+        return slotId == dlsn.slotId;
     }
 
     @Override

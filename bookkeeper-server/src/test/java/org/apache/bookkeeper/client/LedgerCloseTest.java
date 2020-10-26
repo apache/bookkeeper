@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -39,7 +39,7 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -145,7 +145,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         final CountDownLatch recoverDoneLatch = new CountDownLatch(1);
         final CountDownLatch failedLatch = new CountDownLatch(1);
         // kill first bookie to replace with a unauthorize bookie
-        BookieSocketAddress bookie = lh.getCurrentEnsemble().get(0);
+        BookieId bookie = lh.getCurrentEnsemble().get(0);
         ServerConfiguration conf = killBookie(bookie);
         // replace a unauthorize bookie
         startUnauthorizedBookie(conf, addDoneLatch);

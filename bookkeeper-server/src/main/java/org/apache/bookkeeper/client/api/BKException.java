@@ -116,7 +116,9 @@ public class BKException extends Exception {
         case Code.NotEnoughBookiesException:
             return "Not enough non-faulty bookies available";
         case Code.NoSuchLedgerExistsException:
-            return "No such ledger exists";
+            return "No such ledger exists on Bookies";
+        case Code.NoSuchLedgerExistsOnMetadataServerException:
+            return "No such ledger exists on Metadata Server";
         case Code.BookieHandleNotAvailableException:
             return "Bookie handle is not available";
         case Code.ZKException:
@@ -167,6 +169,8 @@ public class BKException extends Exception {
             return "Bookie operation timeout";
         case Code.SecurityException:
             return "Failed to establish a secure connection";
+        case Code.MetadataSerializationException:
+            return "Failed to serialize metadata";
         default:
             return "Unexpected condition";
         }
@@ -240,6 +244,9 @@ public class BKException extends Exception {
         int TimeoutException = -23;
         int SecurityException = -24;
 
+        /** No such ledger exists one metadata server. */
+        int NoSuchLedgerExistsOnMetadataServerException = -25;
+
         /**
          * Operation is illegal.
          */
@@ -270,6 +277,13 @@ public class BKException extends Exception {
          * @since 4.5
          */
         int LedgerIdOverflowException = -106;
+
+        /**
+         * Failure to serialize metadata.
+         *
+         * @since 4.9
+         */
+        int MetadataSerializationException = -107;
 
         /**
          * Generic exception code used to propagate in replication pipeline.

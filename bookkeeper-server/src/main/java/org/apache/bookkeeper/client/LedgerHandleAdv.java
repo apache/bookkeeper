@@ -52,6 +52,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     static final Logger LOG = LoggerFactory.getLogger(LedgerHandleAdv.class);
 
     static class PendingOpsComparator implements Comparator<PendingAddOp>, Serializable {
+        @Override
         public int compare(PendingAddOp o1, PendingAddOp o2) {
             return Long.compare(o1.entryId, o2.entryId);
         }
@@ -73,6 +74,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written to the ledger
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @return
      *            entryId that is just created.
      */
@@ -90,6 +92,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written to the ledger
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *            offset from which to take bytes from data
      * @param length
@@ -120,6 +123,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param cb
      *            object implementing callbackinterface
      * @param ctx
@@ -137,6 +141,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *            offset from which to take bytes from data
      * @param length
@@ -162,6 +167,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add
      * @param data
      *            array of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param offset
      *            offset from which to take bytes from data
      * @param length
@@ -189,6 +195,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *            entryId of the entry to add.
      * @param data
      *            io.netty.buffer.ByteBuf of bytes to be written
+     *            do not reuse the buffer, bk-client will release it appropriately
      * @param cb
      *            object implementing callbackinterface
      * @param ctx

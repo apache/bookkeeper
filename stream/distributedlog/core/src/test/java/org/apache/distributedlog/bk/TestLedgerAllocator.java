@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.bk;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -25,6 +25,7 @@ import static org.junit.Assert.fail;
 import java.net.URI;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.BKException;
@@ -121,7 +122,14 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
 
     private SimpleLedgerAllocator createAllocator(String allocationPath,
                                                   DistributedLogConfiguration conf) throws Exception {
-        return Utils.ioResult(SimpleLedgerAllocator.of(allocationPath, null, newQuorumConfigProvider(conf), zkc, bkc));
+        return createAllocator(allocationPath, conf, null);
+    }
+
+    private SimpleLedgerAllocator createAllocator(String allocationPath,
+                                                  DistributedLogConfiguration conf,
+                                                  LedgerMetadata ledgerMetadata) throws Exception {
+        return Utils.ioResult(SimpleLedgerAllocator.of(allocationPath, null,
+                newQuorumConfigProvider(conf), zkc, bkc, ledgerMetadata));
     }
 
     @FlakyTest("https://issues.apache.org/jira/browse/DL-43")
@@ -271,7 +279,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         try {
             bkc.get().openLedger(lh1.getId(), BookKeeper.DigestType.CRC32, dlConf.getBKDigestPW().getBytes());
             fail("LedgerHandle allocated by allocator1 should be deleted.");
-        } catch (BKException.BKNoSuchLedgerExistsException nslee) {
+        } catch (BKException.BKNoSuchLedgerExistsOnMetadataServerException nslee) {
             // as expected
         }
         long eid = lh2.addEntry("hello world".getBytes());
@@ -377,5 +385,28 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
             allocatedLedgers.add(lh);
         }
         assertEquals(numLedgers, allocatedLedgers.size());
+    }
+
+    @Test(timeout = 60000)
+    public void testAllocationWithMetadata() throws Exception {
+        String allocationPath = "/" + runtime.getMethodName();
+
+        String application = "testApplicationMetadata";
+        String component = "testComponentMetadata";
+        String custom = "customMetadata";
+        LedgerMetadata ledgerMetadata = new LedgerMetadata();
+        ledgerMetadata.setApplication(application);
+        ledgerMetadata.setComponent(component);
+        ledgerMetadata.addCustomMetadata("custom", custom);
+
+        SimpleLedgerAllocator allocator = createAllocator(allocationPath, dlConf, ledgerMetadata);
+        allocator.allocate();
+
+        ZKTransaction txn = newTxn();
+        LedgerHandle lh = Utils.ioResult(allocator.tryObtain(txn, NULL_LISTENER));
+        Map<String, byte[]> customMeta = lh.getCustomMetadata();
+        assertEquals(application, new String(customMeta.get("application"), UTF_8));
+        assertEquals(component, new String(customMeta.get("component"), UTF_8));
+        assertEquals(custom, new String(customMeta.get("custom"), UTF_8));
     }
 }

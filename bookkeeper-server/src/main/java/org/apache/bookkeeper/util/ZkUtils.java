@@ -133,8 +133,17 @@ public class ZkUtils {
             public void processResult(int rc, String path, Object ctx) {
                 if (rc == Code.OK.intValue()) {
                     String parent = new File(originalPath).getParent().replace("\\", "/");
-                    asyncDeleteFullPathOptimistic(zk, parent, -1, callback, leafNodePath);
+                    zk.getData(parent, false, (dRc, dPath, dCtx, data, stat) -> {
+                        if (Code.OK.intValue() == dRc && (stat != null && stat.getNumChildren() == 0)) {
+                            asyncDeleteFullPathOptimistic(zk, parent, -1, callback, leafNodePath);
+                        } else {
+                            // parent node is not empty so, complete the
+                            // callback
+                            callback.processResult(Code.OK.intValue(), path, leafNodePath);
+                        }
+                    }, null);
                 } else {
+                    // parent node deletion fails.. so, complete the callback
                     if (path.equals(leafNodePath)) {
                         callback.processResult(rc, path, leafNodePath);
                     } else {
@@ -221,7 +230,7 @@ public class ZkUtils {
      * @throws InterruptedException
      * @throws IOException
      */
-    public static List<String> getChildrenInSingleNode(final ZooKeeper zk, final String node)
+    public static List<String> getChildrenInSingleNode(final ZooKeeper zk, final String node, long zkOpTimeoutMs)
             throws InterruptedException, IOException, KeeperException.NoNodeException {
         final GetChildrenCtx ctx = new GetChildrenCtx();
         getChildrenInSingleNode(zk, node, new GenericCallback<List<String>>() {
@@ -239,8 +248,20 @@ public class ZkUtils {
         });
 
         synchronized (ctx) {
+            long startTime = System.currentTimeMillis();
             while (!ctx.done) {
-                ctx.wait();
+                try {
+                    ctx.wait(zkOpTimeoutMs > 0 ? zkOpTimeoutMs : 0);
+                } catch (InterruptedException e) {
+                    ctx.rc = Code.OPERATIONTIMEOUT.intValue();
+                    ctx.done = true;
+                }
+                // timeout the process if get-children response not received
+                // zkOpTimeoutMs.
+                if (zkOpTimeoutMs > 0 && (System.currentTimeMillis() - startTime) >= zkOpTimeoutMs) {
+                    ctx.rc = Code.OPERATIONTIMEOUT.intValue();
+                    ctx.done = true;
+                }
             }
         }
         if (Code.NONODE.intValue() == ctx.rc) {

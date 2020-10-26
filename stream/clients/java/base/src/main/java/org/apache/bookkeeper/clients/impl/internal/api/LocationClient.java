@@ -37,6 +37,7 @@ public interface LocationClient extends AutoCloseable {
     CompletableFuture<List<OneStorageContainerEndpointResponse>> locateStorageContainers(
         List<Revisioned<Long>> storageContainerIds);
 
+    @Override
     void close();
 
 }

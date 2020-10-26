@@ -35,6 +35,7 @@ import org.apache.bookkeeper.bookie.BookieShell;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.KeeperException;
@@ -53,6 +54,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
 
     public UpdateLedgerCmdTest() {
         super(3);
+        useUUIDasBookieId = false;
         baseConf.setGcWaitTime(100000);
     }
 
@@ -74,13 +76,39 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         final ServerConfiguration conf = bsConfs.get(0);
         conf.setUseHostNameAsBookieID(true);
         BookieSocketAddress toBookieId = Bookie.getBookieAddress(conf);
-        BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
-                + conf.getBookiePort());
+        BookieId toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
+                + conf.getBookiePort()).toBookieId();
 
         updateLedgerCmd(argv, 0, conf);
 
         int updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, toBookieAddr);
         assertEquals("Failed to update the ledger metadata to use bookie host name", 40, updatedLedgersCount);
+    }
+
+    /**
+     * replace bookie address in ledger.
+     */
+    @Test
+    public void testUpdateBookieInLedger() throws Exception {
+        BookKeeper bk = new BookKeeper(baseClientConf, zkc);
+        LOG.info("Create ledger and add entries to it");
+        List<LedgerHandle> ledgers = new ArrayList<LedgerHandle>();
+        LedgerHandle lh1 = createLedgerWithEntries(bk, 0);
+        ledgers.add(lh1);
+        for (int i = 1; i < 40; i++) {
+            ledgers.add(createLedgerWithEntries(bk, 0));
+        }
+        BookieId srcBookie = bs.get(0).getBookieId();
+        BookieId destBookie = new BookieSocketAddress("1.1.1.1", 2181).toBookieId();
+        String[] argv = new String[] { "updateBookieInLedger", "-sb", srcBookie.toString(), "-db",
+                destBookie.toString(), "-v", "true", "-p", "2" };
+        final ServerConfiguration conf = bsConfs.get(0);
+        bs.get(0).shutdown();
+        updateLedgerCmd(argv, 0, conf);
+        int updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, srcBookie);
+        assertEquals("Failed to update the ledger metadata with new bookie-address", 0, updatedLedgersCount);
+        updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, destBookie);
+        assertEquals("Failed to update the ledger metadata with new bookie-address", 40, updatedLedgersCount);
     }
 
     private void updateLedgerCmd(String[] argv, int exitCode, ServerConfiguration conf) throws KeeperException,
@@ -92,9 +120,9 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         assertEquals("Failed to return exit code!", exitCode, bkShell.run(argv));
     }
 
-    private int getUpdatedLedgersCount(BookKeeper bk, List<LedgerHandle> ledgers, BookieSocketAddress toBookieAddr)
+    private int getUpdatedLedgersCount(BookKeeper bk, List<LedgerHandle> ledgers, BookieId toBookieAddr)
             throws InterruptedException, BKException {
-        List<BookieSocketAddress> ensemble;
+        List<BookieId> ensemble;
         int updatedLedgersCount = 0;
         for (LedgerHandle lh : ledgers) {
             lh.close();

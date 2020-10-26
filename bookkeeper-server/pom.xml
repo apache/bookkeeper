@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.9.0-SNAPSHOT</version>
+    <version>4.12.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-server</artifactId>
   <name>Apache BookKeeper :: Server</name>
@@ -62,9 +62,10 @@
       <artifactId>netty-handler</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-transport-native-epoll</artifactId>
-    </dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport-native-epoll</artifactId>
+        <classifier>linux-x86_64</classifier>
+      </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-tcnative-boringssl-static</artifactId>
@@ -100,12 +101,24 @@
       <artifactId>commons-collections4</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-ext-jdk15on</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.beust</groupId>
       <artifactId>jcommander</artifactId>
     </dependency>
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
     </dependency>
     <!-- testing dependencies -->
     <dependency>
@@ -206,6 +219,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
+          <trimStackTrace>false</trimStackTrace>
           <properties>
             <property>
               <name>listener</name>
@@ -220,7 +234,7 @@
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
-          <additionalparam>-Xdoclint:none</additionalparam>
+          <doclint>none</doclint>
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature</subpackages>
           <groups>
             <group>
@@ -241,36 +255,6 @@
     </plugins>
   </build>
   <profiles>
-    <profile>
-      <id>twitter-science-provider</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.bookkeeper.stats</groupId>
-          <artifactId>twitter-science-provider</artifactId>
-          <version>${project.parent.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>codahale-metrics-provider</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.bookkeeper.stats</groupId>
-          <artifactId>codahale-metrics-provider</artifactId>
-          <version>${project.parent.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>twitter-http-server</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.bookkeeper.http</groupId>
-          <artifactId>twitter-http-server</artifactId>
-          <version>${project.parent.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
     <profile>
       <id>vertx-http-server</id>
       <dependencies>

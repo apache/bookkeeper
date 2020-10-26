@@ -23,6 +23,11 @@ package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator.OfLong;
+
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -92,6 +97,13 @@ public class LedgerCacheImpl implements LedgerCache {
     }
 
     @Override
+    public void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
+                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException {
+        indexPersistenceManager.cancelWaitForLastAddConfirmedUpdate(ledgerId, watcher);
+    }
+
+    @Override
     public void putEntryOffset(long ledger, long entry, long offset) throws IOException {
         indexPageManager.putEntryOffset(ledger, entry, offset);
     }
@@ -147,10 +159,12 @@ public class LedgerCacheImpl implements LedgerCache {
         return indexPersistenceManager.isFenced(ledgerId);
     }
 
+    @Override
     public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         indexPersistenceManager.setExplicitLac(ledgerId, lac);
     }
 
+    @Override
     public ByteBuf getExplicitLac(long ledgerId) {
         return indexPersistenceManager.getExplicitLac(ledgerId);
     }
@@ -178,5 +192,49 @@ public class LedgerCacheImpl implements LedgerCache {
     @Override
     public LedgerIndexMetadata readLedgerIndexMetadata(long ledgerId) throws IOException {
         return indexPersistenceManager.readLedgerIndexMetadata(ledgerId);
+    }
+
+    @Override
+    public OfLong getEntriesIterator(long ledgerId) throws IOException {
+        Iterator<LedgerCache.PageEntries> pageEntriesIteratorNonFinal = null;
+        try {
+            pageEntriesIteratorNonFinal = listEntries(ledgerId).iterator();
+        } catch (Bookie.NoLedgerException noLedgerException) {
+            pageEntriesIteratorNonFinal = Collections.emptyIterator();
+        }
+        final Iterator<LedgerCache.PageEntries> pageEntriesIterator = pageEntriesIteratorNonFinal;
+        return new OfLong() {
+            private OfLong entriesInCurrentLEPIterator = null;
+            {
+                if (pageEntriesIterator.hasNext()) {
+                    entriesInCurrentLEPIterator = pageEntriesIterator.next().getLEP().getEntriesIterator();
+                }
+            }
+
+            @Override
+            public boolean hasNext() {
+                try {
+                    while ((entriesInCurrentLEPIterator != null) && (!entriesInCurrentLEPIterator.hasNext())) {
+                        if (pageEntriesIterator.hasNext()) {
+                            entriesInCurrentLEPIterator = pageEntriesIterator.next().getLEP().getEntriesIterator();
+                        } else {
+                            entriesInCurrentLEPIterator = null;
+                        }
+                    }
+                    return (entriesInCurrentLEPIterator != null);
+                } catch (Exception exc) {
+                    throw new RuntimeException(
+                            "Received exception in InterleavedLedgerStorage getEntriesOfLedger hasNext call", exc);
+                }
+            }
+
+            @Override
+            public long nextLong() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return entriesInCurrentLEPIterator.nextLong();
+            }
+        };
     }
 }

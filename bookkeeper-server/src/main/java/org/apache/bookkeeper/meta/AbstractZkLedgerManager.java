@@ -33,9 +33,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -127,7 +129,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                             }
                         });
                 }
-            } else if (BKException.getExceptionCode(exception) == BKException.Code.NoSuchLedgerExistsException) {
+            } else if (BKException.getExceptionCode(exception)
+                    == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                 // the ledger is removed, do nothing
                 Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
                 if (null != listenerSet) {
@@ -178,7 +181,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
      *          Ledger ID
      * @return ledger node path
      */
-    protected abstract String getLedgerPath(long ledgerId);
+    public abstract String getLedgerPath(long ledgerId);
 
     /**
      * Get ledger id from its znode ledger path.
@@ -247,8 +250,19 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
     }
 
     @Override
-    public CompletableFuture<Versioned<LedgerMetadata>> createLedgerMetadata(long ledgerId, LedgerMetadata metadata) {
+    public CompletableFuture<Versioned<LedgerMetadata>> createLedgerMetadata(long ledgerId,
+                                                                             LedgerMetadata inputMetadata) {
         CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
+        /*
+         * Create a random number and use it as creator token.
+         */
+        final long cToken = ThreadLocalRandom.current().nextLong(Long.MAX_VALUE);
+        final LedgerMetadata metadata;
+        if (inputMetadata.getMetadataFormatVersion() > LedgerMetadataSerDe.METADATA_FORMAT_VERSION_2) {
+            metadata = LedgerMetadataBuilder.from(inputMetadata).withCToken(cToken).build();
+        } else {
+            metadata = inputMetadata;
+        }
         String ledgerPath = getLedgerPath(ledgerId);
         StringCallback scb = new StringCallback() {
             @Override
@@ -256,18 +270,58 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 if (rc == Code.OK.intValue()) {
                     promise.complete(new Versioned<>(metadata, new LongVersion(0)));
                 } else if (rc == Code.NODEEXISTS.intValue()) {
-                    LOG.warn("Failed to create ledger metadata for {} which already exist", ledgerId);
-                    promise.completeExceptionally(new BKException.BKLedgerExistException());
+                    LOG.info("Ledger metadata for {} appears to already exist, checking cToken",
+                            ledgerId);
+                    if (metadata.getMetadataFormatVersion() > 2) {
+                        CompletableFuture<Versioned<LedgerMetadata>> readFuture = readLedgerMetadata(ledgerId);
+                        readFuture.handle((readMetadata, exception) -> {
+                            if (exception == null) {
+                                if (readMetadata.getValue().getCToken() == cToken) {
+                                    FutureUtils.complete(promise, new Versioned<>(metadata, new LongVersion(0)));
+                                } else {
+                                    LOG.warn("Failed to create ledger metadata for {} which already exists", ledgerId);
+                                    promise.completeExceptionally(new BKException.BKLedgerExistException());
+                                }
+                            } else if (exception instanceof KeeperException.NoNodeException) {
+                                // This is a pretty strange case.  We tried to create the node, found that it
+                                // already exists, but failed to find it when we reread it.  It's possible that
+                                // we successfully created it, got an erroneous NODEEXISTS due to a resend,
+                                // and then it got removed.  It's also possible that we actually lost the race
+                                // and then it got removed.  I'd argue that returning an error here is the right
+                                // path since recreating it is likely to cause problems.
+                                LOG.warn("Ledger {} appears to have already existed and then been removed, failing"
+                                        + " with LedgerExistException", ledgerId);
+                                promise.completeExceptionally(new BKException.BKLedgerExistException());
+                            } else {
+                                LOG.error("Could not validate node for ledger {} after LedgerExistsException", ledgerId,
+                                        exception);
+                                promise.completeExceptionally(new BKException.ZKException(exception));
+                            }
+                            return null;
+                        });
+                    } else {
+                        LOG.warn("Failed to create ledger metadata for {} which already exists", ledgerId);
+                        promise.completeExceptionally(new BKException.BKLedgerExistException());
+                    }
                 } else {
                     LOG.error("Could not create node for ledger {}", ledgerId,
                             KeeperException.create(Code.get(rc), path));
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(
+                            new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                 }
             }
         };
+        final byte[] data;
+        try {
+            data = serDe.serialize(metadata);
+        } catch (IOException ioe) {
+            promise.completeExceptionally(new BKException.BKMetadataSerializationException(ioe));
+            return promise;
+        }
+
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
-        ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPath, serDe.serialize(metadata), zkAcls,
-                CreateMode.PERSISTENT, scb, null);
+        ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPath, data, zkAcls,
+                                              CreateMode.PERSISTENT, scb, null);
         return promise;
     }
 
@@ -293,8 +347,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (rc == KeeperException.Code.NONODE.intValue()) {
-                    LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", ledgerId);
-                    promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                    LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}.  Returning success.", ledgerId);
+                    FutureUtils.complete(promise, null);
                 } else if (rc == KeeperException.Code.OK.intValue()) {
                     // removed listener on ledgerId
                     Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
@@ -302,7 +356,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                         if (LOG.isDebugEnabled()) {
                             LOG.debug(
                                     "Remove registered ledger metadata listeners on ledger {} after ledger is deleted.",
-                                    ledgerId, listenerSet);
+                                    ledgerId);
                         }
                     } else {
                         if (LOG.isDebugEnabled()) {
@@ -312,7 +366,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     }
                     FutureUtils.complete(promise, null);
                 } else {
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(
+                            new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                 }
             }
         };
@@ -385,18 +440,21 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                         LOG.debug("No such ledger: " + ledgerId,
                                   KeeperException.create(KeeperException.Code.get(rc), path));
                     }
-                    promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                    promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                     return;
                 }
                 if (rc != KeeperException.Code.OK.intValue()) {
                     LOG.error("Could not read metadata for ledger: " + ledgerId,
                               KeeperException.create(KeeperException.Code.get(rc), path));
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(
+                            new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                     return;
                 }
                 if (stat == null) {
                     LOG.error("Could not parse ledger metadata for ledger: {}. Stat object is null", ledgerId);
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(new BKException.ZKException(
+                            new Exception("Could not parse ledger metadata for ledger: "
+                                    + ledgerId + " . Stat object is null").fillInStackTrace()));
                     return;
                 }
 
@@ -406,7 +464,9 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     promise.complete(new Versioned<>(metadata, version));
                 } catch (Throwable t) {
                     LOG.error("Could not parse ledger metadata for ledger: {}", ledgerId, t);
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(new BKException.ZKException(
+                            new Exception("Could not parse ledger metadata for ledger: "
+                                    + ledgerId, t).fillInStackTrace()));
                 }
             }
         }, null);
@@ -422,8 +482,16 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
             return promise;
         }
         final LongVersion zv = (LongVersion) currentVersion;
+
+        final byte[] data;
+        try {
+            data = serDe.serialize(metadata);
+        } catch (IOException ioe) {
+            promise.completeExceptionally(new BKException.BKMetadataSerializationException(ioe));
+            return promise;
+        }
         zk.setData(getLedgerPath(ledgerId),
-                   serDe.serialize(metadata), (int) zv.getLongVersion(),
+                   data, (int) zv.getLongVersion(),
                    new StatCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, Stat stat) {
@@ -434,10 +502,11 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     promise.complete(new Versioned<>(metadata, new LongVersion(stat.getVersion())));
                 } else if (KeeperException.Code.NONODE.intValue() == rc) {
                     LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", ledgerId);
-                    promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                    promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                 } else {
                     LOG.warn("Conditional update ledger metadata failed: {}", KeeperException.Code.get(rc));
-                    promise.completeExceptionally(new BKException.ZKException());
+                    promise.completeExceptionally(
+                            new BKException.ZKException(KeeperException.create(Code.get(rc), path)));
                 }
             }
         }, null);
@@ -513,18 +582,19 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
      *          Znode Name
      * @return true  if the znode is a special znode otherwise false
      */
-     public static boolean isSpecialZnode(String znode) {
-        if (BookKeeperConstants.AVAILABLE_NODE.equals(znode)
-                || BookKeeperConstants.COOKIE_NODE.equals(znode)
-                || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
-                || BookKeeperConstants.INSTANCEID.equals(znode)
-                || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)
-                || LegacyHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
-                || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
-                || znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX)) {
-            return true;
-        }
-        return false;
+    public static boolean isSpecialZnode(String znode) {
+        return BookKeeperConstants.AVAILABLE_NODE.equals(znode)
+            || BookKeeperConstants.COOKIE_NODE.equals(znode)
+            || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
+            || BookKeeperConstants.INSTANCEID.equals(znode)
+            || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)
+            || isLeadgerIdGeneratorZnode(znode);
+    }
+
+    public static boolean isLeadgerIdGeneratorZnode(String znode) {
+        return LegacyHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
+            || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
+            || znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX);
     }
 
     /**

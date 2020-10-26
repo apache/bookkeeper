@@ -282,6 +282,7 @@ public interface BookieProtocol {
         }
 
         private static final Recycler<AddRequest> RECYCLER = new Recycler<AddRequest>() {
+            @Override
             protected AddRequest newObject(Handle<AddRequest> handle) {
                 return new AddRequest(handle);
             }
@@ -336,6 +337,7 @@ public interface BookieProtocol {
         }
 
         private static final Recycler<ParsedAddRequest> RECYCLER = new Recycler<ParsedAddRequest>() {
+            @Override
             protected ParsedAddRequest newObject(Handle<ParsedAddRequest> handle) {
                 return new ParsedAddRequest(handle);
             }
@@ -486,6 +488,7 @@ public interface BookieProtocol {
         }
 
         private static final Recycler<AddResponse> RECYCLER = new Recycler<AddResponse>() {
+            @Override
             protected AddResponse newObject(Handle<AddResponse> handle) {
                 return new AddResponse(handle);
             }

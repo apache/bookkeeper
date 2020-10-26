@@ -29,7 +29,7 @@ import java.util.concurrent.CyclicBarrier;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -182,7 +182,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
 
 
         CyclicBarrier barrier = new CyclicBarrier(numRecovery + 1);
-        LedgerOpenThread threads[] = new LedgerOpenThread[numRecovery];
+        LedgerOpenThread[] threads = new LedgerOpenThread[numRecovery];
         for (int i = 0; i < numRecovery; i++) {
             threads[i] = new LedgerOpenThread(i, digestType, writelh.getId(), barrier);
             threads[i].start();
@@ -266,7 +266,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
             writelh.addEntry(tmp.getBytes());
         }
 
-        BookieSocketAddress bookieToKill = writelh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
+        BookieId bookieToKill = writelh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
         killBookie(bookieToKill);
 
         // write entries to change ensemble
@@ -318,7 +318,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
         LedgerHandle readlh = bkc.openLedger(writelh.getId(),
                                              digestType, "testPasswd".getBytes());
         // should be fenced by now
-        BookieSocketAddress bookieToKill = writelh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
+        BookieId bookieToKill = writelh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
         killBookie(bookieToKill);
         admin.recoverBookieData(bookieToKill);
 

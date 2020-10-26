@@ -109,11 +109,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
             }
 
             Node firstChild = children.get(0);
-            if (firstChild instanceof InnerNode) {
-                return false;
-            }
-
-            return true;
+            return !(firstChild instanceof InnerNode);
         }
 
         /**
@@ -403,6 +399,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
      * @exception IllegalArgumentException if add a node to a leave
                                            or node to be added is not a leaf
      */
+    @Override
     public void add(Node node) {
         if (node == null) {
             return;
@@ -789,15 +786,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
         }
     }
 
-    /**
-     * Return the number of leaves in <i>scope</i> but not in <i>excludedNodes</i>.
-     *
-     * <p>If scope starts with ~, return the number of nodes that are not
-     * in <i>scope</i> and <i>excludedNodes</i>;
-     * @param scope a path string that may start with ~
-     * @param excludedNodes a list of nodes
-     * @return number of available nodes
-     */
+    @Override
     public int countNumOfAvailableNodes(String scope, Collection<Node> excludedNodes) {
         boolean isExcluded = false;
         if (scope.startsWith("~")) {
@@ -815,7 +804,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                 }
             }
             Node n = getNode(scope);
-            int scopeNodeCount = 1;
+            int scopeNodeCount = 0;
             if (n instanceof InnerNode) {
                 scopeNodeCount = ((InnerNode) n).getNumOfLeaves();
             }

@@ -339,6 +339,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                     case START_TLS:
                         processStartTLSRequestV3(r, c);
                         break;
+                    case GET_LIST_OF_ENTRIES_OF_LEDGER:
+                        processGetListOfEntriesOfLedgerProcessorV3(r, c);
+                        break;
                     default:
                         LOG.info("Unknown operation type {}", header.getOperation());
                         BookkeeperProtocol.Response.Builder response =
@@ -561,10 +564,19 @@ public class BookieRequestProcessor implements RequestProcessor {
                     AuthHandler.ServerSideHandler authHandler = c.pipeline()
                             .get(AuthHandler.ServerSideHandler.class);
                     authHandler.authProvider.onProtocolUpgrade();
-                    if (future.isSuccess()) {
+
+                    /*
+                     * Success of the future doesn't guarantee success in authentication
+                     * future.isSuccess() only checks if the result field is not null
+                     */
+                    if (future.isSuccess() && authHandler.isAuthenticated()) {
                         LOG.info("Session is protected by: {}", sslHandler.engine().getSession().getCipherSuite());
                     } else {
-                        LOG.error("TLS Handshake failure: {}", future.cause());
+                        if (future.isSuccess()) {
+                            LOG.error("TLS Handshake failed: Could not authenticate.");
+                        } else {
+                            LOG.error("TLS Handshake failure: {} ", future.cause());
+                        }
                         BookkeeperProtocol.Response.Builder errResponse = BookkeeperProtocol.Response.newBuilder()
                                 .setHeader(r.getHeader()).setStatus(BookkeeperProtocol.StatusCode.EIO);
                         c.writeAndFlush(errResponse.build());
@@ -584,6 +596,16 @@ public class BookieRequestProcessor implements RequestProcessor {
             getBookieInfo.run();
         } else {
             readThreadPool.submit(getBookieInfo);
+        }
+    }
+
+    private void processGetListOfEntriesOfLedgerProcessorV3(final BookkeeperProtocol.Request r, final Channel c) {
+        GetListOfEntriesOfLedgerProcessorV3 getListOfEntriesOfLedger = new GetListOfEntriesOfLedgerProcessorV3(r, c,
+                this);
+        if (null == readThreadPool) {
+            getListOfEntriesOfLedger.run();
+        } else {
+            readThreadPool.submit(getListOfEntriesOfLedger);
         }
     }
 
@@ -619,7 +641,9 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequest(final BookieProtocol.ReadRequest r, final Channel c) {
-        ReadEntryProcessor read = ReadEntryProcessor.create(r, c, this);
+        ExecutorService fenceThreadPool =
+                null == highPriorityThreadPool ? null : highPriorityThreadPool.chooseThread(c);
+        ReadEntryProcessor read = ReadEntryProcessor.create(r, c, this, fenceThreadPool);
 
         // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
         // gets executed as fast as possible, so bypass the normal readThreadPool

@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -61,10 +61,10 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
             writelh.addEntry(tmp.getBytes());
         }
 
-        Set<BookieSocketAddress> beforeSet = new HashSet<BookieSocketAddress>();
+        Set<BookieId> beforeSet = new HashSet<BookieId>();
         beforeSet.addAll(writelh.getLedgerMetadata().getEnsembleAt(numEntries));
 
-        final BookieSocketAddress bookieToSleep = writelh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
+        final BookieId bookieToSleep = writelh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
         int sleeptime = baseClientConf.getReadTimeout() * 3;
         CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
         latch.await();
@@ -79,7 +79,7 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
         Thread.sleep((baseClientConf.getReadTimeout() * 3) * 1000);
         Assert.assertTrue("Write request did not finish", completed.get());
 
-        Set<BookieSocketAddress> afterSet = new HashSet<BookieSocketAddress>();
+        Set<BookieId> afterSet = new HashSet<BookieId>();
         afterSet.addAll(writelh.getLedgerMetadata().getEnsembleAt(numEntries + 1));
         beforeSet.removeAll(afterSet);
         Assert.assertTrue("Bookie set should not match", beforeSet.size() != 0);

@@ -38,9 +38,11 @@ import org.apache.bookkeeper.common.conf.validators.RangeValidator;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Configuration manages server-side settings.
@@ -135,6 +137,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
     protected static final String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
     protected static final String JOURNAL_QUEUE_SIZE = "journalQueueSize";
+    protected static final String JOURNAL_PAGECACHE_FLUSH_INTERVAL_MSEC = "journalPageCacheFlushIntervalMSec";
     // backpressure control
     protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
     protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
@@ -146,6 +149,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String LISTENING_INTERFACE = "listeningInterface";
     protected static final String ALLOW_LOOPBACK = "allowLoopback";
     protected static final String ADVERTISED_ADDRESS = "advertisedAddress";
+    protected static final String BOOKIE_ID = "bookieId";
     protected static final String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
 
     protected static final String JOURNAL_DIR = "journalDirectory";
@@ -181,10 +185,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Replication parameters
     protected static final String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
+    protected static final String AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL =
+                                                                "auditorPeriodicPlacementPolicyCheckInterval";
     protected static final String AUDITOR_LEDGER_VERIFICATION_PERCENTAGE = "auditorLedgerVerificationPercentage";
     protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
     protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
     protected static final String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
+    protected static final String UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD =
+            "underreplicatedLedgerRecoveryGracePeriod";
+    protected static final String AUDITOR_REPLICAS_CHECK_INTERVAL = "auditorReplicasCheckInterval";
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -280,6 +289,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Perform local consistency check on bookie startup
     protected static final String LOCAL_CONSISTENCY_CHECK_ON_STARTUP = "localConsistencyCheckOnStartup";
+
+    // Certificate role based authorization
+    protected static final String AUTHORIZED_ROLES = "authorizedRoles";
 
     /**
      * Construct a default configuration object.
@@ -708,6 +720,17 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Set the size of the write buffers used for the journal.
+     *
+     * @param bufferSizeKB the size of the write buffer used for the journal, in KB.
+     * @return server configuration
+     */
+    public ServerConfiguration setJournalWriteBufferSizeKB(int bufferSizeKB) {
+        setProperty(JOURNAL_WRITE_BUFFER_SIZE, bufferSizeKB);
+        return this;
+    }
+
+    /**
      * Max number of older journal files kept.
      *
      * @return max number of older journal files to kept
@@ -790,6 +813,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public int getJournalQueueSize() {
         return this.getInt(JOURNAL_QUEUE_SIZE, 10_000);
+    }
+
+    /**
+     * Set PageCache flush interval in second.
+     *
+     * @Param journalPageCacheFlushInterval
+     *          journal pageCache flush interval when journalSyncData closed
+     * @return server configuration.
+     */
+    public ServerConfiguration setJournalPageCacheFlushIntervalMSec(long journalPageCacheFlushIntervalMSec) {
+        this.setProperty(JOURNAL_PAGECACHE_FLUSH_INTERVAL_MSEC, journalPageCacheFlushIntervalMSec);
+        return this;
+    }
+
+    /**
+     * Get journal pageCache flush interval.
+     *
+     * @return journal pageCache flush interval.
+     */
+    public long getJournalPageCacheFlushIntervalMSec() {
+        return this.getLong(JOURNAL_PAGECACHE_FLUSH_INTERVAL_MSEC, 1000);
     }
 
     /**
@@ -967,6 +1011,38 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
+     /**
+     * Get the configured BookieId for the bookie.
+     *
+     * <p>If present, this setting will take precedence over the
+     * automatic BookieId generation, based on Network Addresses.
+     *
+     * @see #setBookieId(java.lang.String)
+     * @see #getAdvertisedAddress()
+     * @return the configure address to be advertised
+     */
+    public String getBookieId() {
+        return this.getString(BOOKIE_ID, null);
+    }
+
+    /**
+     * Configure the bookie to advertise a specific BookieId.
+     *
+     * <p>By default, a bookie will advertise a BookieId computed
+     * from the primary network endpoint addresss.
+     *
+     * @see #getBookieId()
+     * @see #setAdvertisedAddress(java.lang.String)
+     * @param bookieId the bookie id
+     *
+     * @return server configuration
+     */
+    public ServerConfiguration setBookieId(String bookieId) {
+        BookieId.parse(bookieId);
+        this.setProperty(BOOKIE_ID, bookieId);
+        return this;
+    }
+
     /**
      * Get the configured advertised address for the bookie.
      *
@@ -1058,8 +1134,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public String[] getJournalDirNames() {
         String[] journalDirs = this.getStringArray(JOURNAL_DIRS);
-        if (journalDirs == null || journalDirs.length == 0) {
-            return new String[] {getJournalDirName()};
+        if (journalDirs == null || journalDirs.length == 0
+                || (journalDirs.length == 1 && StringUtils.isEmpty(journalDirs[0]))) {
+            return new String[] { getJournalDirName() };
         }
         return journalDirs;
     }
@@ -1536,12 +1613,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the grace period so that if the replication worker fails to replicate
-     * a underreplicatedledger for more than
-     * ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
-     * number of times, then instead of releasing the lock immediately after
-     * failed attempt, it will hold under replicated ledger lock for this grace
-     * period and then it will release the lock.
+     * Set the grace period, in milliseconds, which the replication worker has
+     * to wait before releasing the lock after it failed to replicate a ledger.
+     * For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS
+     * failures it will do exponential backoff then it will bound at
+     * LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD.
+     *
+     * <p>On replication failure, instead of releasing the lock immediately
+     * after failed attempt, it will hold under replicated ledger lock for the
+     * grace period and then it will release the lock.
      *
      * @param waitTime
      */
@@ -1550,16 +1630,16 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the grace period which the replication worker to wait before
-     * releasing the lock after replication worker failing to replicate for more
-     * than
-     * ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
-     * number of times.
+     * Get the grace period, in milliseconds, which the replication worker has
+     * to wait before releasing the lock after it failed to replicate a ledger.
+     * For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS
+     * failures it will do exponential backoff then it will bound at
+     * LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD.
      *
      * @return
      */
     public long getLockReleaseOfFailedLedgerGracePeriod() {
-        return getLong(LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD, 60000);
+        return getLong(LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD, 300000);
     }
 
     /**
@@ -1967,6 +2047,17 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Set maximum bytes to buffer to impose on a journal write to achieve grouping.
+     *
+     * @param maxBytes maximum bytes to buffer to impose on a journal write
+     * @return max bytes to buffer
+     */
+    public ServerConfiguration setJournalBufferedWritesThreshold(long maxBytes) {
+        setProperty(JOURNAL_BUFFERED_WRITES_THRESHOLD, maxBytes);
+        return this;
+    }
+
+    /**
      * Maximum entries to buffer to impose on a journal write to achieve grouping.
      * Use {@link #getJournalBufferedWritesThreshold()} if this is set to zero or
      * less than zero.
@@ -2186,6 +2277,76 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getAuditorPeriodicBookieCheckInterval() {
         return getLong(AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL, 86400);
+    }
+
+    /**
+     * Sets the regularity/interval at which the auditor will run a placement
+     * policy check of all ledgers, which are closed. This should not be run
+     * very often, and should be run at most once a day. Setting this to 0 will
+     * completely disable the periodic metadata check.
+     *
+     * @param interval
+     *            The interval in seconds. e.g. 86400 = 1 day, 604800 = 1 week
+     */
+    public void setAuditorPeriodicPlacementPolicyCheckInterval(long interval) {
+        setProperty(AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL, interval);
+    }
+
+    /**
+     * Get the regularity at which the auditor does placement policy check of
+     * all ledgers, which are closed.
+     *
+     * @return The interval in seconds. By default it is disabled.
+     */
+    public long getAuditorPeriodicPlacementPolicyCheckInterval() {
+        return getLong(AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL, 0);
+    }
+
+    /**
+     * Sets the grace period (in seconds) for underreplicated ledgers recovery.
+     * If ledger is marked underreplicated for more than this period then it
+     * will be reported by placementPolicyCheck in Auditor. Setting this to 0
+     * will disable this check.
+     *
+     * @param gracePeriod
+     *            The interval in seconds. e.g. 3600 = 1 hour
+     */
+    public void setUnderreplicatedLedgerRecoveryGracePeriod(long gracePeriod) {
+        setProperty(UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD, gracePeriod);
+    }
+
+    /**
+     * Gets the grace period (in seconds) for underreplicated ledgers recovery.
+     * If ledger is marked underreplicated for more than this period then it
+     * will be reported by placementPolicyCheck in Auditor. Setting this to 0
+     * will disable this check.
+     *
+     * @return The interval in seconds. By default it is disabled.
+     */
+    public long getUnderreplicatedLedgerRecoveryGracePeriod() {
+        return getLong(UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD, 0);
+    }
+
+    /**
+     * Sets the interval at which the auditor will run a replicas check of all
+     * ledgers. This should not be run very often since it validates
+     * availability of replicas of all ledgers by querying bookies. Setting this
+     * to 0 will disable the periodic replicas check.
+     *
+     * @param interval
+     *            The interval in seconds. e.g. 86400 = 1 day, 604800 = 1 week
+     */
+    public void setAuditorPeriodicReplicasCheckInterval(long interval) {
+        setProperty(AUDITOR_REPLICAS_CHECK_INTERVAL, interval);
+    }
+
+    /**
+     * Get the interval at which the auditor does replicas check of all ledgers.
+     *
+     * @return The interval in seconds. By default it is disabled.
+     */
+    public long getAuditorPeriodicReplicasCheckInterval() {
+        return getLong(AUDITOR_REPLICAS_CHECK_INTERVAL, 0);
     }
 
     /**
@@ -3223,5 +3384,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public boolean isLocalConsistencyCheckOnStartup() {
         return this.getBoolean(LOCAL_CONSISTENCY_CHECK_ON_STARTUP, false);
+    }
+
+    /**
+     * Get the authorized roles.
+     *
+     * @return String array of configured auth roles.
+     */
+    public String[] getAuthorizedRoles() {
+        return getStringArray(AUTHORIZED_ROLES);
+    }
+
+    /**
+     * Set authorized roles.
+     *
+     * @return Configuration Object with roles set
+     */
+    public ServerConfiguration setAuthorizedRoles(String roles) {
+        this.setProperty(AUTHORIZED_ROLES, roles);
+        return this;
     }
 }

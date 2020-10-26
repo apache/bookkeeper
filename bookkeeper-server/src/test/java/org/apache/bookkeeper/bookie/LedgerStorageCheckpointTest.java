@@ -53,9 +53,9 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.PortManager;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -168,7 +168,7 @@ public class LedgerStorageCheckpointTest {
     }
 
     private LogMark readLastMarkFile(File lastMarkFile) throws IOException {
-        byte buff[] = new byte[16];
+        byte[] buff = new byte[16];
         ByteBuffer bb = ByteBuffer.wrap(buff);
         LogMark rolledLogMark = new LogMark();
         FileInputStream fis = new FileInputStream(lastMarkFile);

@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -37,7 +38,7 @@ import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.BookieShell.UpdateLedgerNotifier;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,8 +75,9 @@ public class UpdateLedgerOp {
      *             if there is an error when updating bookie id in ledger
      *             metadata
      */
-    public void updateBookieIdInLedgers(final BookieSocketAddress oldBookieId, final BookieSocketAddress newBookieId,
-                                        final int rate, final int limit, final UpdateLedgerNotifier progressable)
+    public void updateBookieIdInLedgers(final BookieId oldBookieId, final BookieId newBookieId,
+                                        final int rate, int maxOutstandingReads, final int limit,
+                                        final UpdateLedgerNotifier progressable)
             throws IOException, InterruptedException {
 
         final AtomicInteger issuedLedgerCnt = new AtomicInteger();
@@ -84,13 +86,14 @@ public class UpdateLedgerOp {
         final Set<CompletableFuture<?>> outstanding =
             Collections.newSetFromMap(new ConcurrentHashMap<CompletableFuture<?>, Boolean>());
         final RateLimiter throttler = RateLimiter.create(rate);
+        final Semaphore outstandingReads = new Semaphore(maxOutstandingReads);
         final Iterator<Long> ledgerItr = admin.listLedgers().iterator();
 
         // iterate through all the ledgers
         while (ledgerItr.hasNext() && !finalPromise.isDone()
                && (limit == Integer.MIN_VALUE || issuedLedgerCnt.get() < limit)) {
-            // throttler to control updates per second
-            throttler.acquire();
+            // semaphore to control reads according to update throttling
+            outstandingReads.acquire();
 
             final long ledgerId = ledgerItr.next();
             issuedLedgerCnt.incrementAndGet();
@@ -104,19 +107,18 @@ public class UpdateLedgerOp {
                             (metadata) -> {
                                 return metadata.getAllEnsembles().values().stream()
                                     .flatMap(Collection::stream)
-                                    .filter(b -> b.equals(oldBookieId))
-                                    .count() > 0;
+                                    .anyMatch(b -> b.equals(oldBookieId));
                             },
                             (metadata) -> {
                                 return replaceBookieInEnsembles(metadata, oldBookieId, newBookieId);
                             },
-                            ref::compareAndSet).run();
+                            ref::compareAndSet, throttler).run();
                 });
 
             outstanding.add(writePromise);
             writePromise.whenComplete((metadata, ex) -> {
                         if (ex != null
-                            && !(ex instanceof BKException.BKNoSuchLedgerExistsException)) {
+                            && !(ex instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
                             String error = String.format("Failed to update ledger metadata %s, replacing %s with %s",
                                                          ledgerId, oldBookieId, newBookieId);
                             LOG.error(error, ex);
@@ -128,6 +130,7 @@ public class UpdateLedgerOp {
                             updatedLedgerCnt.incrementAndGet();
                             progressable.progress(updatedLedgerCnt.get(), issuedLedgerCnt.get());
                         }
+                        outstandingReads.release();
                         outstanding.remove(writePromise);
                     });
         }
@@ -158,11 +161,11 @@ public class UpdateLedgerOp {
     }
 
     private static LedgerMetadata replaceBookieInEnsembles(LedgerMetadata metadata,
-                                                           BookieSocketAddress oldBookieId,
-                                                           BookieSocketAddress newBookieId) {
+                                                           BookieId oldBookieId,
+                                                           BookieId newBookieId) {
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);
-        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : metadata.getAllEnsembles().entrySet()) {
-            List<BookieSocketAddress> newEnsemble = e.getValue().stream()
+        for (Map.Entry<Long, ? extends List<BookieId>> e : metadata.getAllEnsembles().entrySet()) {
+            List<BookieId> newEnsemble = e.getValue().stream()
                 .map(b -> b.equals(oldBookieId) ? newBookieId : b)
                 .collect(Collectors.toList());
             builder.replaceEnsembleEntry(e.getKey(), newEnsemble);

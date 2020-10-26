@@ -22,16 +22,21 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.internal.StorageServerClientManagerImpl;
+import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.dlog.DLCheckpointStore;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -182,9 +187,14 @@ public class StorageServer {
                                                         boolean startBookieAndStartProvider,
                                                         StatsLogger externalStatsLogger)
         throws ConfigurationException, UnknownHostException {
+        final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
+
+        final Supplier<BookieServiceInfo> bookieServiceInfoProvider =
+                () -> buildBookieServiceInfo(componentInfoPublisher);
 
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder()
-            .withName("storage-server");
+            .withName("storage-server")
+            .withComponentInfoPublisher(componentInfoPublisher);
 
         BookieConfiguration bkConf = BookieConfiguration.of(conf);
         bkConf.validate();
@@ -224,7 +234,7 @@ public class StorageServer {
         // Create the bookie service
         ServerConfiguration bkServerConf;
         if (startBookieAndStartProvider) {
-            BookieService bookieService = new BookieService(bkConf, rootStatsLogger);
+            BookieService bookieService = new BookieService(bkConf, rootStatsLogger, bookieServiceInfoProvider);
             serverBuilder.addComponent(bookieService);
             bkServerConf = bookieService.serverConf();
         } else {
@@ -358,4 +368,25 @@ public class StorageServer {
             .build();
     }
 
+    /**
+     * Create the {@link BookieServiceInfo} starting from the published endpoints.
+     *
+     * @see ComponentInfoPublisher
+     * @param componentInfoPublisher the endpoint publisher
+     * @return the created bookie service info
+     */
+    private static BookieServiceInfo buildBookieServiceInfo(ComponentInfoPublisher componentInfoPublisher) {
+        List<BookieServiceInfo.Endpoint> endpoints = componentInfoPublisher.getEndpoints().values()
+                .stream().map(e -> {
+                    return new BookieServiceInfo.Endpoint(
+                            e.getId(),
+                            e.getPort(),
+                            e.getHost(),
+                            e.getProtocol(),
+                            e.getAuth(),
+                            e.getExtensions()
+                    );
+                }).collect(Collectors.toList());
+        return new BookieServiceInfo(componentInfoPublisher.getProperties(), endpoints);
+    }
 }

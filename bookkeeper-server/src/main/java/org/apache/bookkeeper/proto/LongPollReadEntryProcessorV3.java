@@ -17,12 +17,12 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
 import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -44,7 +44,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
     private static final Logger logger = LoggerFactory.getLogger(LongPollReadEntryProcessorV3.class);
 
     private final Long previousLAC;
-    private Optional<Long> lastAddConfirmedUpdateTime = Optional.absent();
+    private Optional<Long> lastAddConfirmedUpdateTime = Optional.empty();
 
     // long poll execution state
     private final ExecutorService longPollThreadPool;
@@ -142,7 +142,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
 
             final boolean watched;
             try {
-                watched = requestProcessor.bookie.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, this);
+                watched = requestProcessor.getBookie().waitForLastAddConfirmedUpdate(ledgerId, previousLAC, this);
             } catch (Bookie.NoLedgerException e) {
                 logger.info("No ledger found while longpoll reading ledger {}, previous lac = {}.",
                         ledgerId, previousLAC);
@@ -163,9 +163,10 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
                 }
                 synchronized (this) {
                     expirationTimerTask = requestTimer.newTimeout(timeout -> {
-                        // When the timeout expires just get whatever is the current
-                        // readLastConfirmed
-                        LongPollReadEntryProcessorV3.this.scheduleDeferredRead(true);
+                            requestProcessor.getBookie().cancelWaitForLastAddConfirmedUpdate(ledgerId, this);
+                            // When the timeout expires just get whatever is the current
+                            // readLastConfirmed
+                            LongPollReadEntryProcessorV3.this.scheduleDeferredRead(true);
                     }, readRequest.getTimeOut(), TimeUnit.MILLISECONDS);
                 }
                 return null;

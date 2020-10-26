@@ -50,25 +50,24 @@ class LedgerDirsMonitor {
 
     private final int interval;
     private final ServerConfiguration conf;
-    private final ConcurrentMap<File, Float> diskUsages;
     private final DiskChecker diskChecker;
-    private final LedgerDirsManager ldm;
+    private final List<LedgerDirsManager> dirsManagers;
     private long minUsableSizeForHighPriorityWrites;
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> checkTask;
 
     public LedgerDirsMonitor(final ServerConfiguration conf,
                              final DiskChecker diskChecker,
-                             final LedgerDirsManager ldm) {
+                             final List<LedgerDirsManager> dirsManagers) {
         this.interval = conf.getDiskCheckInterval();
         this.minUsableSizeForHighPriorityWrites = conf.getMinUsableSizeForHighPriorityWrites();
         this.conf = conf;
         this.diskChecker = diskChecker;
-        this.diskUsages = ldm.getDiskUsages();
-        this.ldm = ldm;
+        this.dirsManagers = dirsManagers;
     }
 
-    private void check() {
+    private void check(final LedgerDirsManager ldm) {
+        final ConcurrentMap<File, Float> diskUsages = ldm.getDiskUsages();
         try {
             List<File> writableDirs = ldm.getWritableLedgerDirs();
             // Check all writable dirs disk space usage.
@@ -171,6 +170,10 @@ class LedgerDirsMonitor {
         }
     }
 
+    private void check() {
+        dirsManagers.forEach(this::check);
+    }
+
     /**
      * Sweep through all the directories to check disk errors or disk full.
      *
@@ -181,7 +184,7 @@ class LedgerDirsMonitor {
      *             less space than threshold
      */
     public void init() throws DiskErrorException, NoWritableLedgerDirException {
-        checkDirs(ldm.getWritableLedgerDirs());
+        checkDirs();
     }
 
     // start the daemon for disk monitoring
@@ -191,7 +194,7 @@ class LedgerDirsMonitor {
                 .setNameFormat("LedgerDirsMonitorThread")
                 .setDaemon(true)
                 .build());
-        this.checkTask = this.executor.scheduleAtFixedRate(() -> check(), interval, interval, TimeUnit.MILLISECONDS);
+        this.checkTask = this.executor.scheduleAtFixedRate(this::check, interval, interval, TimeUnit.MILLISECONDS);
     }
 
     // shutdown disk monitoring daemon
@@ -207,9 +210,15 @@ class LedgerDirsMonitor {
         }
     }
 
-    public void checkDirs(List<File> writableDirs)
+    private void checkDirs() throws NoWritableLedgerDirException, DiskErrorException {
+        for (LedgerDirsManager dirsManager : dirsManagers) {
+            checkDirs(dirsManager);
+        }
+    }
+
+    private void checkDirs(final LedgerDirsManager ldm)
             throws DiskErrorException, NoWritableLedgerDirException {
-        for (File dir : writableDirs) {
+        for (File dir : ldm.getWritableLedgerDirs()) {
             try {
                 diskChecker.checkDir(dir);
             } catch (DiskWarnThresholdException e) {

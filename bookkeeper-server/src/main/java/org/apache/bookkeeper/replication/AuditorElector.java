@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.replication;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.ELECTION_ATTEMPTS;
 
@@ -43,7 +43,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.Counter;
@@ -252,6 +252,7 @@ public class AuditorElector {
      */
     private void submitShutdownTask() {
         executor.submit(new Runnable() {
+                @Override
                 public void run() {
                     if (!running.compareAndSet(true, false)) {
                         return;
@@ -281,6 +282,7 @@ public class AuditorElector {
     Future<?> submitElectionTask() {
 
         Runnable r = new Runnable() {
+                @Override
                 public void run() {
                     if (!running.get()) {
                         return;
@@ -350,7 +352,7 @@ public class AuditorElector {
      * Query zookeeper for the currently elected auditor.
      * @return the bookie id of the current auditor
      */
-    public static BookieSocketAddress getCurrentAuditor(ServerConfiguration conf, ZooKeeper zk)
+    public static BookieId getCurrentAuditor(ServerConfiguration conf, ZooKeeper zk)
             throws KeeperException, InterruptedException, IOException {
         String electionRoot = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf) + '/'
             + BookKeeperConstants.UNDER_REPLICATION_NODE + '/' + ELECTION_ZNODE;
@@ -366,9 +368,7 @@ public class AuditorElector {
         AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder();
         TextFormat.merge(new String(data, UTF_8), builder);
         AuditorVoteFormat v = builder.build();
-        String[] parts = v.getBookieId().split(":");
-        return new BookieSocketAddress(parts[0],
-                                       Integer.parseInt(parts[1]));
+        return BookieId.parse(v.getBookieId());
     }
 
     /**
@@ -425,6 +425,7 @@ public class AuditorElector {
          * Return -1 if the first vote is less than second. Return 1 if the
          * first vote is greater than second. Return 0 if the votes are equal.
          */
+        @Override
         public int compare(String vote1, String vote2) {
             long voteSeqId1 = getVoteSequenceId(vote1);
             long voteSeqId2 = getVoteSequenceId(vote2);

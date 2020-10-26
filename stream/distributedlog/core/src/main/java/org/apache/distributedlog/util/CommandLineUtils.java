@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.util;
 
-import com.google.common.base.Optional;
+import java.util.Optional;
 import org.apache.commons.cli.CommandLine;
 
 /**
@@ -29,7 +29,7 @@ public class CommandLineUtils {
         if (cmdline.hasOption(arg)) {
             return Optional.of(cmdline.getOptionValue(arg));
         } else {
-            return Optional.absent();
+            return Optional.empty();
         }
     }
 
@@ -37,7 +37,7 @@ public class CommandLineUtils {
         if (cmdline.hasOption(arg)) {
             return Optional.of(true);
         } else {
-            return Optional.absent();
+            return Optional.empty();
         }
     }
 
@@ -47,7 +47,7 @@ public class CommandLineUtils {
             if (cmdline.hasOption(arg)) {
                 return Optional.of(Integer.parseInt(cmdline.getOptionValue(arg)));
             } else {
-                return Optional.absent();
+                return Optional.empty();
             }
         } catch (NumberFormatException ex) {
             throw new IllegalArgumentException(arg + " is not a number");
