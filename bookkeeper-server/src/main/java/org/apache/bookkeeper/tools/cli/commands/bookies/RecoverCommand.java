@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
  */
 public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
 
-    static final Logger LOG = LoggerFactory.getLogger(RecoverCommand.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RecoverCommand.class);
 
     private static final String NAME = "recover";
     private static final String DESC = "Recover the ledger data for failed bookie";
@@ -128,16 +128,16 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
             try {
                 bookieAddrs.add(BookieId.parse(bookieStr));
             } catch (IllegalArgumentException err) {
-                System.err.println("BookieSrcs has invalid bookie id format: "
+                LOG.error("BookieSrcs has invalid bookie id format: "
                                    + bookieStr);
                 return false;
             }
         }
 
         if (!force) {
-            System.err.println("Bookies : " + bookieAddrs);
+            LOG.error("Bookies : " + bookieAddrs);
             if (!IOUtils.confirmPrompt("Are you sure to recover them : (Y/N)")) {
-                System.err.println("Give up!");
+                LOG.error("Give up!");
                 return false;
             }
         }
@@ -163,19 +163,19 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
         throws InterruptedException, BKException {
         SortedMap<Long, LedgerMetadata> ledgersContainBookies =
             bkAdmin.getLedgersContainBookies(bookieAddrs);
-        System.err.println("NOTE: Bookies in inspection list are marked with '*'.");
+        LOG.error("NOTE: Bookies in inspection list are marked with '*'.");
         for (Map.Entry<Long, LedgerMetadata> ledger : ledgersContainBookies.entrySet()) {
-            System.out.println("ledger " + ledger.getKey() + " : " + ledger.getValue().getState());
+            LOG.info("ledger " + ledger.getKey() + " : " + ledger.getValue().getState());
             Map<Long, Integer> numBookiesToReplacePerEnsemble =
                 inspectLedger(ledger.getValue(), bookieAddrs);
-            System.out.print("summary: [");
+            LOG.info("summary: [");
             for (Map.Entry<Long, Integer> entry : numBookiesToReplacePerEnsemble.entrySet()) {
-                System.out.print(entry.getKey() + "=" + entry.getValue() + ", ");
+                LOG.info(entry.getKey() + "=" + entry.getValue() + ", ");
             }
-            System.out.println("]");
-            System.out.println();
+            LOG.info("]");
+            LOG.info("");
         }
-        System.err.println("Done");
+        LOG.error("Done");
         return true;
     }
 
@@ -184,19 +184,19 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
         for (Map.Entry<Long, ? extends List<BookieId>> ensemble :
             metadata.getAllEnsembles().entrySet()) {
             List<BookieId> bookieList = ensemble.getValue();
-            System.out.print(ensemble.getKey() + ":\t");
+            LOG.info(ensemble.getKey() + ":\t");
             int numBookiesToReplace = 0;
             for (BookieId bookie : bookieList) {
-                System.out.print(bookie);
+                LOG.info(bookie.toString());
                 if (bookiesToInspect.contains(bookie)) {
-                    System.out.print("*");
+                    LOG.info("*");
                     ++numBookiesToReplace;
                 } else {
-                    System.out.print(" ");
+                    LOG.info(" ");
                 }
-                System.out.print(" ");
+                LOG.info(" ");
             }
-            System.out.println();
+            LOG.info("");
             numBookiesToReplacePerEnsemble.put(ensemble.getKey(), numBookiesToReplace);
         }
         return numBookiesToReplacePerEnsemble;
