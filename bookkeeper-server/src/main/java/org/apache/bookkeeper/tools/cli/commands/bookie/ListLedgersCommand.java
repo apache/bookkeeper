@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
 
-    static final Logger LOG = LoggerFactory.getLogger(ListLedgersCommand.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ListLedgersCommand.class);
 
     private static final String NAME = "listledgers";
     private static final String DESC = "List all ledgers on the cluster (this may take a long time).";
@@ -98,7 +98,7 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
         try {
             handler(conf, cmdFlags);
         } catch (UnknownHostException e) {
-            System.err.println("Bookie id error");
+            LOG.error("Bookie id error");
             return false;
         } catch (MetadataException | ExecutionException e) {
             throw new UncheckedExecutionException(e.getMessage(), e);
@@ -187,9 +187,9 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
     }
 
     private void printLedgerMetadata(long ledgerId, LedgerMetadata md, boolean printMeta) {
-        System.out.println("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
+        LOG.info("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
         if (printMeta) {
-            System.out.println(md.toString());
+            LOG.info(md.toString());
         }
     }
 }

@@ -30,6 +30,8 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Command to list the files in JournalDirectory/LedgerDirectories/IndexDirectories.
@@ -38,6 +40,7 @@ public class ListFilesOnDiscCommand extends BookieCommand<ListFilesOnDiscCommand
 
     private static final String NAME = "listfilesondisc";
     private static final String DESC = "List the files in JournalDirectory/LedgerDirectories/IndexDirectories.";
+    private static final Logger LOG = LoggerFactory.getLogger(ListFilesOnDiscCommand.class);
 
     public ListFilesOnDiscCommand() {
         this(new LFODFlags());
@@ -76,27 +79,27 @@ public class ListFilesOnDiscCommand extends BookieCommand<ListFilesOnDiscCommand
         if (cmd.journal) {
             File[] journalDirs = conf.getJournalDirs();
             List<File> journalFiles = BookieShell.listFilesAndSort(journalDirs, "txn");
-            System.out.println("--------- Printing the list of Journal Files ---------");
+            LOG.info("--------- Printing the list of Journal Files ---------");
             for (File journalFile : journalFiles) {
-                System.out.println(journalFile.getCanonicalPath());
+                LOG.info(journalFile.getCanonicalPath());
             }
-            System.out.println();
+            LOG.info("");
         }
         if (cmd.entrylog) {
             File[] ledgerDirs = conf.getLedgerDirs();
             List<File> ledgerFiles = BookieShell.listFilesAndSort(ledgerDirs, "log");
-            System.out.println("--------- Printing the list of EntryLog/Ledger Files ---------");
+            LOG.info("--------- Printing the list of EntryLog/Ledger Files ---------");
             for (File ledgerFile : ledgerFiles) {
-                System.out.println(ledgerFile.getCanonicalPath());
+                LOG.info(ledgerFile.getCanonicalPath());
             }
-            System.out.println();
+            LOG.info("");
         }
         if (cmd.index) {
             File[] indexDirs = (conf.getIndexDirs() == null) ? conf.getLedgerDirs() : conf.getIndexDirs();
             List<File> indexFiles = BookieShell.listFilesAndSort(indexDirs, "idx");
-            System.out.println("--------- Printing the list of Index Files ---------");
+            LOG.info("--------- Printing the list of Index Files ---------");
             for (File indexFile : indexFiles) {
-                System.out.println(indexFile.getCanonicalPath());
+                LOG.info(indexFile.getCanonicalPath());
             }
         }
         return true;

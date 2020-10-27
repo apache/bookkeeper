@@ -23,11 +23,15 @@ import java.util.Formatter;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * .Provide to format message.
  */
 public class FormatUtil {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FormatUtil.class);
 
     /**
      * Format the message into a readable format.
@@ -46,44 +50,44 @@ public class FormatUtil {
         long ledgerId = recBuff.readLong();
         long entryId = recBuff.readLong();
 
-        System.out.println(
+        LOG.info(
             "--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId) + ", Eid=" + entryId + ", ByteOffset=" + pos
                 + ", EntrySize=" + entrySize + " ---------");
         if (entryId == Bookie.METAENTRY_ID_LEDGER_KEY) {
             int masterKeyLen = recBuff.readInt();
             byte[] masterKey = new byte[masterKeyLen];
             recBuff.readBytes(masterKey);
-            System.out.println("Type:           META");
-            System.out.println("MasterKey:      " + bytes2Hex(masterKey));
-            System.out.println();
+            LOG.info("Type:           META");
+            LOG.info("MasterKey:      " + bytes2Hex(masterKey));
+            LOG.info("");
             return;
         }
         if (entryId == Bookie.METAENTRY_ID_FENCE_KEY) {
-            System.out.println("Type:           META");
-            System.out.println("Fenced");
-            System.out.println();
+            LOG.info("Type:           META");
+            LOG.info("Fenced");
+            LOG.info("");
             return;
         }
         // process a data entry
         long lastAddConfirmed = recBuff.readLong();
-        System.out.println("Type:           DATA");
-        System.out.println("LastConfirmed:  " + lastAddConfirmed);
+        LOG.info("Type:           DATA");
+        LOG.info("LastConfirmed:  " + lastAddConfirmed);
         if (!printMsg) {
-            System.out.println();
+            LOG.info("");
             return;
         }
         // skip digest checking
         recBuff.skipBytes(8);
-        System.out.println("Data:");
-        System.out.println();
+        LOG.info("Data:");
+        LOG.info("");
         try {
             byte[] ret = new byte[recBuff.readableBytes()];
             recBuff.readBytes(ret);
             entryFormatter.formatEntry(ret);
         } catch (Exception e) {
-            System.out.println("N/A. Corrupted.");
+            LOG.info("N/A. Corrupted.");
         }
-        System.out.println();
+        LOG.info("");
     }
 
     public static String bytes2Hex(byte[] data) {

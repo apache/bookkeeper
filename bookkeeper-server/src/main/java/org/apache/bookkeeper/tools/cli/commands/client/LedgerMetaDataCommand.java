@@ -38,6 +38,8 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Print the metadata for a ledger.
@@ -48,6 +50,7 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
     private static final String DESC = "Print the metadata for a ledger, or optionally dump to a file.";
     private static final String DEFAULT = "";
     private static final long DEFAULT_ID = -1L;
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerMetaDataCommand.class);
 
     private LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
     private LedgerIdFormatter ledgerIdFormatter;
@@ -106,7 +109,7 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
     private boolean handler(ServerConfiguration conf, LedgerMetadataFlag flag)
         throws MetadataException, ExecutionException {
         if (flag.ledgerId == DEFAULT_ID) {
-            System.err.println("Must specific a ledger id");
+            LOG.error("Must specific a ledger id");
             return false;
         }
         runFunctionWithLedgerManagerFactory(conf, mFactory -> {
@@ -132,9 +135,9 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
     }
 
     private void printLedgerMetadata(long ledgerId, LedgerMetadata md, boolean printMeta) {
-        System.out.println("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
+        LOG.info("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
         if (printMeta) {
-            System.out.println(md.toString());
+            LOG.info(md.toString());
         }
     }
 }

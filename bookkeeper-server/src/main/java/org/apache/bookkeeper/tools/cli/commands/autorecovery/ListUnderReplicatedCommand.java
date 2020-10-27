@@ -144,14 +144,14 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
             while (iter.hasNext()) {
                 UnderreplicatedLedger underreplicatedLedger = iter.next();
                 long urLedgerId = underreplicatedLedger.getLedgerId();
-                System.out.println(ledgerIdFormatter.formatLedgerId(urLedgerId));
+                LOG.info(ledgerIdFormatter.formatLedgerId(urLedgerId));
                 long ctime = underreplicatedLedger.getCtime();
                 if (ctime != UnderreplicatedLedger.UNASSIGNED_CTIME) {
-                    System.out.println("\tCtime : " + ctime);
+                    LOG.info("\tCtime : " + ctime);
                 }
                 if (printMissingReplica) {
                     underreplicatedLedger.getReplicaList().forEach((missingReplica) -> {
-                        System.out.println("\tMissingReplica : " + missingReplica);
+                        LOG.info("\tMissingReplica : " + missingReplica);
                     });
                 }
                 if (printReplicationWorkerId) {
@@ -159,7 +159,7 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
                         String replicationWorkerId = underreplicationManager
                                                          .getReplicationWorkerIdRereplicatingLedger(urLedgerId);
                         if (replicationWorkerId != null) {
-                            System.out.println("\tReplicationWorkerId : " + replicationWorkerId);
+                            LOG.info("\tReplicationWorkerId : " + replicationWorkerId);
                         }
                     } catch (ReplicationException.UnavailableException e) {
                         LOG.error("Failed to get ReplicationWorkerId rereplicating ledger {} -- {}", urLedgerId,

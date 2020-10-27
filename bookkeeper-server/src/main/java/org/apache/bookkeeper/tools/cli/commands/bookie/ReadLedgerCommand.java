@@ -58,7 +58,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedgerFlags> {
 
-    static final Logger LOG = LoggerFactory.getLogger(ReadLedgerCommand.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReadLedgerCommand.class);
 
     private static final String NAME = "readledger";
     private static final String DESC = "Read a range of entries from a ledger.";
@@ -199,11 +199,11 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                                                    return;
                                                }
 
-                                               System.out.println(
+                                               LOG.info(
                                                    "--------- Lid=" + ledgerIdFormatter.formatLedgerId(flags.ledgerId)
                                                    + ", Eid=" + entryId + " ---------");
                                                if (flags.msg) {
-                                                   System.out.println("Data: " + ByteBufUtil.prettyHexDump(buffer));
+                                                   LOG.info("Data: " + ByteBufUtil.prettyHexDump(buffer));
                                                }
 
                                                future.complete(null);
@@ -236,7 +236,7 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
         long ledgerId = entry.getLedgerId();
         long entryId = entry.getEntryId();
         long entrySize = entry.getLength();
-        System.out.println("--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId) + ", Eid=" + entryId
+        LOG.info("--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId) + ", Eid=" + entryId
                            + ", EntrySize=" + entrySize + " ---------");
         if (printMsg) {
             entryFormatter.formatEntry(entry.getEntry());

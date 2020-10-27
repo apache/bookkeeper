@@ -88,7 +88,7 @@ public class ToggleCommand extends BookieCommand<ToggleCommand.AutoRecoveryFlags
                 try (LedgerUnderreplicationManager underreplicationManager = mFactory
                          .newLedgerUnderreplicationManager()) {
                     if (flags.status) {
-                        System.out.println("Autorecovery is " + (underreplicationManager.isLedgerReplicationEnabled()
+                        LOG.info("Autorecovery is " + (underreplicationManager.isLedgerReplicationEnabled()
                                                                      ? "enabled." : "disabled."));
                         return null;
                     }
