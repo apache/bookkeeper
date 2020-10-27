@@ -40,9 +40,9 @@ public final class CommandHelpers {
      * When using hostname as bookie id, it's possible that the host is no longer valid and
      * can't get a ip from the hostname, so using UNKNOWN to indicate ip is unknown for the hostname
      */
-    public static String getBookieSocketAddrStringRepresentation(BookieId bookidId,
+    public static String getBookieSocketAddrStringRepresentation(BookieId bookieId,
                                                                  BookieAddressResolver bookieAddressResolver) {
-        BookieSocketAddress networkAddress = bookieAddressResolver.resolve(bookidId);
+        BookieSocketAddress networkAddress = bookieAddressResolver.resolve(bookieId);
         String hostname = networkAddress.getHostName();
         String realHostname;
         String ip;
@@ -58,7 +58,7 @@ public final class CommandHelpers {
            }
            realHostname = hostname;
         }
-        return formatBookieSocketAddress(bookidId, ip, networkAddress.getPort(), realHostname);
+        return formatBookieSocketAddress(bookieId, ip, networkAddress.getPort(), realHostname);
     }
 
     /**
