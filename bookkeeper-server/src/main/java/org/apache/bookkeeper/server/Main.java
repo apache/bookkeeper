@@ -254,23 +254,14 @@ public class Main {
             printUsage();
             throw iae;
         }
-
-        StringBuilder sb = new StringBuilder();
-        String[] ledgerDirNames = conf.getLedgerDirNames();
-        for (int i = 0; i < ledgerDirNames.length; i++) {
-            if (i != 0) {
-                sb.append(',');
-            }
-            sb.append(ledgerDirNames[i]);
-        }
-
         String hello = String.format(
-            "Hello, I'm your bookie, listening on port %1$s. Metadata service uri is %2$s."
-                + " Journals are in %3$s. Ledgers are stored in %4$s.",
+            "Hello, I'm your bookie, bookieId is %1$s, listening on port %2$s. Metadata service uri is %3$s."
+                + " Journals are in %4$s. Ledgers are stored in %5$s.",
+            conf.getBookieId() != null ? conf.getBookieId() : "<not-set>",
             conf.getBookiePort(),
             conf.getMetadataServiceUriUnchecked(),
             Arrays.asList(conf.getJournalDirNames()),
-            sb);
+            Arrays.asList(conf.getLedgerDirNames()));
         log.info(hello);
 
         return conf;

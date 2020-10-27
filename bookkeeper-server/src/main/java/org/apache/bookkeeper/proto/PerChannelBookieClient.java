@@ -2441,15 +2441,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
             synchronized (PerChannelBookieClient.this) {
                 if (future.isSuccess() && state == ConnectionState.CONNECTING && future.channel().isActive()) {
-                    LOG.info("Successfully connected to bookie: {}", future.channel());
                     rc = BKException.Code.OK;
                     channel = future.channel();
                     if (shFactory != null) {
+                        LOG.info("Successfully connected to bookie: {} {} initiate TLS", bookieId, future.channel());
                         makeWritable();
                         initiateTLS();
                         return;
                     } else {
-                        LOG.info("Successfully connected to bookie: " + bookieId);
+                        LOG.info("Successfully connected to bookie: {} {}", bookieId, future.channel());
                         state = ConnectionState.CONNECTED;
                         activeNonTlsChannelCounter.inc();
                     }
