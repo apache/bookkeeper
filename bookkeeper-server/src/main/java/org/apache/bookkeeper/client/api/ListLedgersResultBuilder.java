@@ -25,7 +25,6 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 
 /**
  * Builder-style interface to list exiting ledgers.
- *
  */
 @Public
 @Unstable
