@@ -240,7 +240,7 @@ public class MetadataUpdateLoopTest {
             BookieId b2 = BookieId.parse("0.0.0.2:3181");
             BookieId b3 = BookieId.parse("0.0.0.3:3181");
 
-            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
+            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2).withId(ledgerId)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .withWriteQuorumSize(2).newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
