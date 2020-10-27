@@ -58,7 +58,7 @@ public class ExplicitLACWithWriteHandleAPITest extends BookKeeperClusterTestCase
                 writer.append("foo".getBytes("utf-8"));
                 long expectedLastAddConfirmed = writer.append("foo".getBytes("utf-8"));
 
-                // since BK 4.12.0 the reader automaticallly leverages ExplicitLAC
+                // since BK 4.12.0 the reader automatically uses ExplicitLAC
                 try (ReadHandle r = bkc.newOpenLedgerOp()
                         .withRecovery(false)
                         .withPassword(new byte[0])
