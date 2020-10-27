@@ -537,7 +537,8 @@ public abstract class MockBookKeeperTestCase {
             long entryId = BookieProtocol.LAST_ADD_CONFIRMED;
             // simply use "readEntry" with LAST_ADD_CONFIRMED to get current LAC
             // there is nothing that writes ExplicitLAC within MockBookKeeperTestCase
-            bookieClient.readEntry(bookieSocketAddress, ledgerId, entryId, new BookkeeperInternalCallbacks.ReadEntryCallback() {
+            bookieClient.readEntry(bookieSocketAddress, ledgerId, entryId,
+                    new BookkeeperInternalCallbacks.ReadEntryCallback() {
                 @Override
                 public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
                     callback.readLacComplete(rc, ledgerId, null, buffer, ctx);
