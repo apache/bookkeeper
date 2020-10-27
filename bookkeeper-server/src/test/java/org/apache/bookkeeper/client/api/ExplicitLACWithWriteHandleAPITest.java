@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.TestUtils;
@@ -44,10 +43,10 @@ public class ExplicitLACWithWriteHandleAPITest extends BookKeeperClusterTestCase
     public void testUseExplicitLAC() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         conf.setExplictLacInterval(1000);
-        try ( BookKeeper bkc = BookKeeper
+        try (BookKeeper bkc = BookKeeper
                 .newBuilder(conf)
                 .build();) {
-            try ( WriteHandle writer = bkc.newCreateLedgerOp()
+            try (WriteHandle writer = bkc.newCreateLedgerOp()
                     .withAckQuorumSize(1)
                     .withEnsembleSize(1)
                     .withPassword(new byte[0])
@@ -69,7 +68,7 @@ public class ExplicitLACWithWriteHandleAPITest extends BookKeeperClusterTestCase
                     TestUtils.assertEventuallyTrue("ExplicitLAC did not ork", () -> {
                         try {
                             long value = r.readLastAddConfirmed();
-                            LOG.info("current value "+value+" vs "+expectedLastAddConfirmed);
+                            LOG.info("current value " + value + " vs " + expectedLastAddConfirmed);
                             return value == expectedLastAddConfirmed;
                         } catch (Exception ex) {
                             throw new RuntimeException(ex);
