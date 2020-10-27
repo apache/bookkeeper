@@ -1542,7 +1542,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             checkClosed();
             initLedgersIterator();
             return ledgersIterator;
-
         }
 
         @Override
