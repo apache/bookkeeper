@@ -24,8 +24,6 @@
 
 set -x -e -u
 
-export JAVA_HOME=/usr/lib/jvm/jre-1.8.0
-
 # Sanity check that creates a ledger, writes a few entries, reads them and deletes the ledger.
 DEFAULT_HEALTH_CHECK_CMD="/opt/bookkeeper/bin/bookkeeper shell bookiesanity"
 
