@@ -45,7 +45,9 @@ import org.slf4j.LoggerFactory;
  *
  * <p>It provides parsing and serialization methods of such metadata.
  */
-@EqualsAndHashCode
+@EqualsAndHashCode(exclude =
+        "ledgerId" // ledgerId is not serialized inside ZK node data
+)
 class LedgerMetadataImpl implements LedgerMetadata {
     static final Logger LOG = LoggerFactory.getLogger(LedgerMetadataImpl.class);
 
