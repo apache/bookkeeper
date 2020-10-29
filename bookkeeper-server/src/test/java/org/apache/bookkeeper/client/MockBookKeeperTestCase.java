@@ -238,6 +238,7 @@ public abstract class MockBookKeeperTestCase {
         setupBookieWatcherForNewEnsemble();
         setupBookieWatcherForEnsembleChange();
         setupBookieClientReadEntry();
+        setupBookieClientReadLac();
         setupBookieClientAddEntry();
         setupBookieClientForceLedger();
     }
@@ -522,6 +523,33 @@ public abstract class MockBookKeeperTestCase {
         stub.when(bookieClient).readEntry(any(), anyLong(), anyLong(),
                 any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
                 any(), anyInt(), any(), anyBoolean());
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void setupBookieClientReadLac() {
+        final Stubber stub = doAnswer(invokation -> {
+            Object[] args = invokation.getArguments();
+            BookieId bookieSocketAddress = (BookieId) args[0];
+            long ledgerId = (Long) args[1];
+            final BookkeeperInternalCallbacks.ReadLacCallback callback =
+                (BookkeeperInternalCallbacks.ReadLacCallback) args[2];
+            Object ctx = args[3];
+            long entryId = BookieProtocol.LAST_ADD_CONFIRMED;
+            // simply use "readEntry" with LAST_ADD_CONFIRMED to get current LAC
+            // there is nothing that writes ExplicitLAC within MockBookKeeperTestCase
+            bookieClient.readEntry(bookieSocketAddress, ledgerId, entryId,
+                    new BookkeeperInternalCallbacks.ReadEntryCallback() {
+                @Override
+                public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
+                    callback.readLacComplete(rc, ledgerId, null, buffer, ctx);
+                }
+            }, ctx, BookieProtocol.FLAG_NONE);
+            return null;
+        });
+
+        stub.when(bookieClient).readLac(any(BookieId.class), anyLong(),
+                any(BookkeeperInternalCallbacks.ReadLacCallback.class),
+                any());
     }
 
     private byte[] extractEntryPayload(long ledgerId, long entryId, ByteBufList toSend)

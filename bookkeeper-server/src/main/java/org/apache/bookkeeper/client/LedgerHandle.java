@@ -1383,6 +1383,15 @@ public class LedgerHandle implements WriteHandle {
      */
 
     public void asyncReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        if (clientCtx.getConf().useV2WireProtocol) {
+            // in v2 protocol we don't support readLAC RPC
+            asyncReadPiggybackLastConfirmed(cb, ctx);
+        } else {
+            asyncReadExplicitLastConfirmed(cb, ctx);
+        }
+    }
+
+    private void asyncReadPiggybackLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
         boolean isClosed;
         long lastEntryId;
         synchronized (this) {
