@@ -33,6 +33,7 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.conf.UncheckedConfigurationException;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LayoutManager;
@@ -60,8 +61,12 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
     protected static final String SCHEME = "zk";
 
-    public static String getZKServersFromServiceUri(URI uri) {
-        return uri.getAuthority().replace(";", ",");
+    public static String getZKServersFromServiceUri(URI uri) throws IllegalArgumentException {
+        String authority = uri.getAuthority();
+        if (authority == null) {
+            throw new IllegalArgumentException("Invalid metadata service URI format: " + uri);
+        } 
+        return authority.replace(";", ",");
     }
 
     @SuppressWarnings("deprecation")
