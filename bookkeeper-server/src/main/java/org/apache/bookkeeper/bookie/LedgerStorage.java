@@ -186,7 +186,7 @@ public interface LedgerStorage {
      */
     void registerLedgerDeletionListener(LedgerDeletionListener listener);
 
-    void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException;
+    void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException;
 
     ByteBuf getExplicitLac(long ledgerId);
 

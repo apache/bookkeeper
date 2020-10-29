@@ -340,7 +340,7 @@ public class SyncThreadTest {
         }
 
         @Override
-        public void setExplicitlac(long ledgerId, ByteBuf lac) {
+        public void setExplicitLac(long ledgerId, ByteBuf lac) {
         }
 
         @Override

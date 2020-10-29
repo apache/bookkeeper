@@ -282,7 +282,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
+        public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         }
 
         @Override

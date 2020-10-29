@@ -140,7 +140,7 @@ public class DiskChecker {
      *            Directory to check for the disk space
      * @throws DiskOutOfSpaceException
      *             Throws {@link DiskOutOfSpaceException} if available space is
-     *             less than threshhold.
+     *             less than threshold.
      */
     @VisibleForTesting
     float checkDiskFull(File dir) throws DiskOutOfSpaceException, DiskWarnThresholdException {
@@ -239,7 +239,7 @@ public class DiskChecker {
      * @throws DiskWarnThresholdException
      *             If disk has less than configured amount of free space.
      * @throws DiskOutOfSpaceException
-     *             If disk is full or having less space than threshhold
+     *             If disk is full or having less space than threshold
      */
     public float checkDir(File dir) throws DiskErrorException,
             DiskOutOfSpaceException, DiskWarnThresholdException {

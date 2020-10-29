@@ -79,7 +79,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
 
     @Override
     void setExplicitLac(ByteBuf lac) throws IOException {
-        ledgerStorage.setExplicitlac(ledgerId, lac);
+        ledgerStorage.setExplicitLac(ledgerId, lac);
     }
 
     @Override

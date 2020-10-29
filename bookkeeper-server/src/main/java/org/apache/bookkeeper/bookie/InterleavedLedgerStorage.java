@@ -307,7 +307,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
+    public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         ledgerCache.setExplicitLac(ledgerId, lac);
     }
 

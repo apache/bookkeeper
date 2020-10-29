@@ -47,7 +47,7 @@ public class DbLedgerStorageBookieTest extends BookKeeperClusterTestCase {
         // Leave it empty to pickup default
         baseConf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, "");
 
-        // Configure explicitely with a int object
+        // Configure explicitly with a int object
         baseConf.setProperty(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB, 16);
     }
 
