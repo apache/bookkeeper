@@ -121,7 +121,7 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
                 } else if (!flag.restoreFromFile.equals(DEFAULT)) {
                     byte[] serialized = Files.readAllBytes(
                         FileSystems.getDefault().getPath(flag.restoreFromFile));
-                    LedgerMetadata md = serDe.parseConfig(serialized, Optional.empty());
+                    LedgerMetadata md = serDe.parseConfig(serialized, flag.ledgerId, Optional.empty());
                     m.createLedgerMetadata(flag.ledgerId, md).join();
                 } else {
                     printLedgerMetadata(flag.ledgerId, m.readLedgerMetadata(flag.ledgerId).get().getValue(), true);
