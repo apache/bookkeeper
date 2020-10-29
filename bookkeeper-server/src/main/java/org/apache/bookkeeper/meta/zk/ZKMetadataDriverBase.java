@@ -33,7 +33,6 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.bookkeeper.conf.UncheckedConfigurationException;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LayoutManager;
@@ -65,7 +64,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         String authority = uri.getAuthority();
         if (authority == null) {
             throw new IllegalArgumentException("Invalid metadata service URI format: " + uri);
-        } 
+        }
         return authority.replace(";", ",");
     }
 
