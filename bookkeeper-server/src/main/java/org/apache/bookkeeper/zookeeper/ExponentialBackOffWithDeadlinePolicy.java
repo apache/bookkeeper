@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExponentialBackOffWithDeadlinePolicy implements RetryPolicy {
 
-    public static final int [] RETRY_BACKOFF = {0, 1, 2, 3, 5, 5, 5, 10, 10, 10, 20, 40, 100};
+    static final int [] RETRY_BACKOFF = {0, 1, 2, 3, 5, 5, 5, 10, 10, 10, 20, 40, 100};
     public static final int JITTER_PERCENT = 10;
     private final Random random;
 
