@@ -259,7 +259,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         final long cToken = ThreadLocalRandom.current().nextLong(Long.MAX_VALUE);
         final LedgerMetadata metadata;
         if (inputMetadata.getMetadataFormatVersion() > LedgerMetadataSerDe.METADATA_FORMAT_VERSION_2) {
-            metadata = LedgerMetadataBuilder.from(inputMetadata).withCToken(cToken).build();
+            metadata = LedgerMetadataBuilder.from(inputMetadata).withId(ledgerId).withCToken(cToken).build();
         } else {
             metadata = inputMetadata;
         }
@@ -430,7 +430,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         return readLedgerMetadata(ledgerId, null);
     }
 
-    protected CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId, Watcher watcher) {
+    protected CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(final long ledgerId, Watcher watcher) {
         CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
         zk.getData(getLedgerPath(ledgerId), watcher, new DataCallback() {
             @Override
@@ -460,7 +460,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
 
                 try {
                     LongVersion version = new LongVersion(stat.getVersion());
-                    LedgerMetadata metadata = serDe.parseConfig(data, Optional.of(stat.getCtime()));
+                    LedgerMetadata metadata = serDe.parseConfig(data, ledgerId, Optional.of(stat.getCtime()));
                     promise.complete(new Versioned<>(metadata, version));
                 } catch (Throwable t) {
                     LOG.error("Could not parse ledger metadata for ledger: {}", ledgerId, t);

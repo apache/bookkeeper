@@ -612,7 +612,8 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         ensembleOfSegment2.add(bookie2);
 
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create();
-        builder.withEnsembleSize(3)
+        builder.withId(ledgerId)
+                .withEnsembleSize(3)
                 .withWriteQuorumSize(3)
                 .withAckQuorumSize(2)
                 .withDigestType(digestType.toApiDigestType())

@@ -122,6 +122,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
                 new BookieSocketAddress("192.0.2.4", 3181).toBookieId(),
                 new BookieSocketAddress("192.0.2.5", 3181).toBookieId());
         this.metadata = LedgerMetadataBuilder.create()
+            .withId(123L)
             .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
             .withEnsembleSize(5)
             .withWriteQuorumSize(3)

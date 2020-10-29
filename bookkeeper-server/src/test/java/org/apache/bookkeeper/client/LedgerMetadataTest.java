@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.bookkeeper.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -47,11 +46,13 @@ public class LedgerMetadataTest {
                 new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
                 new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
         org.apache.bookkeeper.client.api.LedgerMetadata metadata = LedgerMetadataBuilder.create()
-            .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
-            .withDigestType(DigestType.CRC32.toApiDigestType()).withPassword(passwd)
-            .newEnsembleEntry(0L, ensemble)
-            .build();
+                .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
+                .withDigestType(DigestType.CRC32.toApiDigestType()).withPassword(passwd)
+                .newEnsembleEntry(0L, ensemble)
+                .withId(100L)
+                .build();
 
+        assertEquals(100L, metadata.getLedgerId());
         assertEquals(3, metadata.getEnsembleSize());
         assertEquals(2, metadata.getWriteQuorumSize());
         assertEquals(1, metadata.getAckQuorumSize());
@@ -73,13 +74,14 @@ public class LedgerMetadataTest {
                 new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
 
         LedgerMetadata lm1 = LedgerMetadataBuilder.create()
-            .withDigestType(DigestType.CRC32.toApiDigestType())
-            .withPassword(passwd)
-            .newEnsembleEntry(0L, ensemble)
-            .build();
+                .withDigestType(DigestType.CRC32.toApiDigestType())
+                .withPassword(passwd)
+                .newEnsembleEntry(0L, ensemble)
+                .withId(100L)
+                .build();
 
         assertTrue("toString should contain password value",
-                   lm1.toString().contains(Base64.getEncoder().encodeToString(passwd)));
+                lm1.toString().contains(Base64.getEncoder().encodeToString(passwd)));
         assertTrue("toSafeString should not contain password value", lm1.toSafeString().contains("OMITTED"));
     }
 }

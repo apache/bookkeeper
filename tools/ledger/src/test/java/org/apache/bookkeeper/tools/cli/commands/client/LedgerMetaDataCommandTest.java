@@ -100,7 +100,7 @@ public class LedgerMetaDataCommandTest extends BookieCommandTestBase {
         serDe = mock(LedgerMetadataSerDe.class);
         whenNew(LedgerMetadataSerDe.class).withNoArguments().thenReturn(serDe);
         when(serDe.serialize(eq(ledgerMetadata))).thenReturn(new byte[0]);
-        when(serDe.parseConfig(eq(new byte[0]), eq(Optional.empty()))).thenReturn(ledgerMetadata);
+        when(serDe.parseConfig(eq(new byte[0]), anyLong(), eq(Optional.empty()))).thenReturn(ledgerMetadata);
         when(ledgerManager.createLedgerMetadata(anyLong(), eq(ledgerMetadata))).thenReturn(future);
     }
 
@@ -120,7 +120,7 @@ public class LedgerMetaDataCommandTest extends BookieCommandTestBase {
         LedgerMetaDataCommand cmd = new LedgerMetaDataCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1", "-r", file.getAbsolutePath() }));
 
-        verify(serDe, times(1)).parseConfig(eq(new byte[0]), eq(Optional.empty()));
+        verify(serDe, times(1)).parseConfig(eq(new byte[0]), anyLong(), eq(Optional.empty()));
         verify(ledgerManager, times(1)).createLedgerMetadata(anyLong(), any(LedgerMetadata.class));
     }
 

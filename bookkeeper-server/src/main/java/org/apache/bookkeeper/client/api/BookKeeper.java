@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.impl.BookKeeperBuilderImpl;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
@@ -64,6 +65,21 @@ public interface BookKeeper extends AutoCloseable {
      * @return a builder useful to delete an existing ledger
      */
     DeleteBuilder newDeleteLedgerOp();
+
+    /**
+     * List ledgers.
+     *
+     * @return a builder useful to list ledgers.
+     */
+    ListLedgersResultBuilder newListLedgersOp();
+
+    /**
+     * Get ledger metadata of a given ledger id.
+     *
+     * @param ledgerId id of the ledger.
+     * @return a <code>CompletableFuture</code> instance containing ledger metadata.
+     */
+    CompletableFuture<LedgerMetadata> getLedgerMetadata(long ledgerId);
 
     /**
      * Close the client and release every resource.

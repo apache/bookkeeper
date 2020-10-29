@@ -84,7 +84,7 @@ public class MockLedgerManager implements LedgerManager {
         if (pair == null) {
             return null;
         } else {
-            return new Versioned<>(serDe.parseConfig(pair.getRight(), Optional.empty()), pair.getLeft());
+            return new Versioned<>(serDe.parseConfig(pair.getRight(), ledgerId, Optional.empty()), pair.getLeft());
         }
     }
 

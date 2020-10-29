@@ -196,7 +196,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
             int ackQuorumSize, Map<Long, List<BookieId>> segmentEnsembles, long lastEntryId, int length,
             DigestType digestType, byte[] password) throws InterruptedException, ExecutionException {
         LedgerMetadataBuilder ledgerMetadataBuilder = LedgerMetadataBuilder.create();
-        ledgerMetadataBuilder.withEnsembleSize(ensembleSize).withWriteQuorumSize(writeQuorumSize)
+        ledgerMetadataBuilder.withId(ledgerId).withEnsembleSize(ensembleSize).withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize).withClosedState().withLastEntryId(lastEntryId).withLength(length)
                 .withDigestType(digestType).withPassword(password);
         for (Map.Entry<Long, List<BookieId>> mapEntry : segmentEnsembles.entrySet()) {
@@ -210,7 +210,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
             int ackQuorumSize, Map<Long, List<BookieId>> segmentEnsembles, DigestType digestType,
             byte[] password) throws InterruptedException, ExecutionException {
         LedgerMetadataBuilder ledgerMetadataBuilder = LedgerMetadataBuilder.create();
-        ledgerMetadataBuilder.withEnsembleSize(ensembleSize).withWriteQuorumSize(writeQuorumSize)
+        ledgerMetadataBuilder.withId(ledgerId).withEnsembleSize(ensembleSize).withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize).withDigestType(digestType).withPassword(password);
         for (Map.Entry<Long, List<BookieId>> mapEntry : segmentEnsembles.entrySet()) {
             ledgerMetadataBuilder.newEnsembleEntry(mapEntry.getKey(), mapEntry.getValue());

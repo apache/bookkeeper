@@ -274,7 +274,7 @@ public class MockLedgerHandle extends LedgerHandle {
                 new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
                 new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
         return LedgerMetadataBuilder.create()
-            .withDigestType(digest.toApiDigestType())
+            .withId(124L).withDigestType(digest.toApiDigestType())
             .withPassword(passwd)
             .newEnsembleEntry(0L, ensemble)
             .build();

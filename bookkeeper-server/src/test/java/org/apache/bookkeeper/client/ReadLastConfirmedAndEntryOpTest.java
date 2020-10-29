@@ -108,7 +108,7 @@ public class ReadLastConfirmedAndEntryOpTest {
             ensemble.add(new BookieSocketAddress("127.0.0.1", 3181 + i).toBookieId());
         }
         this.ledgerMetadata = LedgerMetadataBuilder.create()
-            .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
+            .withId(124L).withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
             .withPassword(new byte[0])
             .withDigestType(DigestType.CRC32.toApiDigestType())
             .newEnsembleEntry(0L, ensemble).build();

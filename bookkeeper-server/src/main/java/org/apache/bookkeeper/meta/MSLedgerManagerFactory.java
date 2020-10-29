@@ -430,7 +430,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         }
 
         @Override
-        public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+        public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(final long ledgerId) {
             final String key = ledgerId2Key(ledgerId);
             CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
             MetastoreCallback<Versioned<Value>> msCallback = new MetastoreCallback<Versioned<Value>>() {
@@ -450,7 +450,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     }
                     try {
                         LedgerMetadata metadata = serDe.parseConfig(
-                                value.getValue().getField(META_FIELD), Optional.empty());
+                                value.getValue().getField(META_FIELD), ledgerId, Optional.empty());
                         promise.complete(new Versioned<>(metadata, value.getVersion()));
                     } catch (IOException e) {
                         LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);

@@ -406,6 +406,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         int writeQuorumSize, int ackQuorumSize, byte[] password,
         Map<String, byte[]> customMetadata) {
         return LedgerMetadataBuilder.create()
+            .withId(12L)
             .withEnsembleSize(ensembleSize)
             .withWriteQuorumSize(writeQuorumSize)
             .withAckQuorumSize(ackQuorumSize)

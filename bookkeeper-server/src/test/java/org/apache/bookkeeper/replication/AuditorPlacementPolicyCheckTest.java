@@ -123,6 +123,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
 
         // closed ledger
         LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(1L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -139,6 +140,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         ensembleSize = 4;
         // closed ledger with multiple segments
         initMeta = LedgerMetadataBuilder.create()
+                .withId(2L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -156,6 +158,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         Collections.shuffle(bookieAddresses);
         // non-closed ledger
         initMeta = LedgerMetadataBuilder.create()
+                .withId(3L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -168,6 +171,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         Collections.shuffle(bookieAddresses);
         // non-closed ledger with multiple segments
         initMeta = LedgerMetadataBuilder.create()
+                .withId(4L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -241,6 +245,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * 3 racks, and the ensembleSize is 5.
          */
         LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(1L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -259,6 +264,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * adhering to placement policy
          */
         initMeta = LedgerMetadataBuilder.create()
+                .withId(2L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -326,6 +332,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
 
         long ledgerId1 = 1L;
         LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(ledgerId1)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -349,6 +356,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         ensembleSize = 3;
         long ledgerId2 = 21234561L;
         initMeta = LedgerMetadataBuilder.create()
+                .withId(ledgerId2)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -370,6 +378,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          */
         long ledgerId3 = 31234561L;
         initMeta = LedgerMetadataBuilder.create()
+                .withId(ledgerId3)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -455,6 +464,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * counted as ledgers not adhering to placement policy.
          */
         LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(1L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -481,6 +491,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * policy, it should be counted as single ledger.
          */
         initMeta = LedgerMetadataBuilder.create()
+                .withId(2L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -556,6 +567,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * ensemble is spread across 3 zones and 2 UDs
          */
         LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(1L)
                 .withEnsembleSize(6)
                 .withWriteQuorumSize(6)
                 .withAckQuorumSize(2)
@@ -574,6 +586,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * this shouldn't be reported
          */
         initMeta = LedgerMetadataBuilder.create()
+                .withId(2L)
                 .withEnsembleSize(6)
                 .withWriteQuorumSize(5)
                 .withAckQuorumSize(2)
@@ -588,6 +601,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * this ledger is not adhering to placement policy.
          */
         initMeta = LedgerMetadataBuilder.create()
+                .withId(3L)
                 .withEnsembleSize(6)
                 .withWriteQuorumSize(5)
                 .withAckQuorumSize(2)
@@ -612,6 +626,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         newEnsemble.add(bookieAddresses.get(3));
         newEnsemble.add(bookieAddresses.get(4));
         initMeta = LedgerMetadataBuilder.create()
+                .withId(4L)
                 .withEnsembleSize(4)
                 .withWriteQuorumSize(4)
                 .withAckQuorumSize(2)
