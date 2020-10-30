@@ -243,12 +243,12 @@ Apache Software License, Version 2.
 - lib/org.apache.commons-commons-lang3-3.6.jar [19]
 - lib/org.apache.zookeeper-zookeeper-3.5.7.jar [20]
 - lib/org.apache.zookeeper-zookeeper-jute-3.5.7.jar [20]
-- lib/org.eclipse.jetty-jetty-http-9.4.5.v20170502.jar [21]
-- lib/org.eclipse.jetty-jetty-io-9.4.5.v20170502.jar [21]
-- lib/org.eclipse.jetty-jetty-security-9.4.5.v20170502.jar [21]
-- lib/org.eclipse.jetty-jetty-server-9.4.5.v20170502.jar [21]
-- lib/org.eclipse.jetty-jetty-servlet-9.4.5.v20170502.jar [21]
-- lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar [21]
+- lib/org.eclipse.jetty-jetty-http-9.4.33.v20201020.jar [21]
+- lib/org.eclipse.jetty-jetty-io-9.4.33.v20201020.jar [21]
+- lib/org.eclipse.jetty-jetty-security-9.4.33.v20201020.jar [21]
+- lib/org.eclipse.jetty-jetty-server-9.4.33.v20201020.jar [21]
+- lib/org.eclipse.jetty-jetty-servlet-9.4.33.v20201020.jar [21]
+- lib/org.eclipse.jetty-jetty-util-9.4.33.v20201020.jar [21]
 - lib/org.rocksdb-rocksdbjni-5.13.1.jar [22]
 - lib/com.beust-jcommander-1.48.jar [23]
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [24]
@@ -304,7 +304,7 @@ Apache Software License, Version 2.
 [18] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
 [19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
 [20] Source available at https://github.com/apache/zookeeper/tree/release-3.5.7
-[21] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
+[21] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.33.v20201020
 [22] Source available at https://github.com/facebook/rocksdb/tree/v5.13.1
 [23] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
 [24] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
