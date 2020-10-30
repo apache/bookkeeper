@@ -69,7 +69,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     }
 
     @SuppressWarnings("deprecation")
-    public static String resolveZkServers(AbstractConfiguration<?> conf) {
+    public static String resolveZkServers(AbstractConfiguration<?> conf) throws IllegalArgumentException {
         String metadataServiceUriStr = conf.getMetadataServiceUriUnchecked();
         if (null == metadataServiceUriStr) {
             return conf.getZkServers();
@@ -187,7 +187,13 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             final String bookieReadonlyRegistrationPath = bookieRegistrationPath + "/" + READONLY;
 
             // construct the zookeeper
-            final String zkServers = getZKServersFromServiceUri(metadataServiceUri);
+            final String zkServers;
+            try {
+                zkServers = getZKServersFromServiceUri(metadataServiceUri);
+            } catch (IllegalArgumentException ex) {
+                throw new MetadataException(
+                        Code.INVALID_METADATA_SERVICE_URI, ex);
+            }
             log.info("Initialize zookeeper metadata driver at metadata service uri {} :"
                 + " zkServers = {}, ledgersRootPath = {}.", metadataServiceUriStr, zkServers, ledgersRootPath);
 

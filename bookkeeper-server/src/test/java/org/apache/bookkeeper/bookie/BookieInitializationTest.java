@@ -1576,4 +1576,17 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             LOG.info("As expected Bookie fails to come up without a cookie in metadata store.");
         }
     }
+
+    @Test
+    public void testInvalidServiceMetadataURI() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setMetadataServiceUri("zk+flat:///ledgers"); // default value in docker image
+        try {
+            new BookieServer(conf);
+            Assert.fail("Bookie metadata initialization must fail with an invalid metadata service uri");
+        } catch (MetadataStoreException e) {
+            MetadataException cause = (MetadataException) e.getCause();
+            assertEquals(cause.getCode(), org.apache.bookkeeper.meta.exceptions.Code.INVALID_METADATA_SERVICE_URI);
+        }
+    }
 }

@@ -64,7 +64,7 @@ public class WhoIsAuditorCommand extends BookieCommand<CliFlags> {
     }
 
     private boolean getAuditor(ServerConfiguration conf)
-        throws ConfigurationException, InterruptedException, IOException, KeeperException {
+        throws ConfigurationException, InterruptedException, IOException, KeeperException, IllegalArgumentException {
         ZooKeeper zk = null;
         try {
             String metadataServiceUri = conf.getMetadataServiceUri();
