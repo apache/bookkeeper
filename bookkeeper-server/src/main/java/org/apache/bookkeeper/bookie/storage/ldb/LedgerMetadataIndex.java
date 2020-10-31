@@ -24,7 +24,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 
 import java.io.Closeable;
 import java.io.IOException;

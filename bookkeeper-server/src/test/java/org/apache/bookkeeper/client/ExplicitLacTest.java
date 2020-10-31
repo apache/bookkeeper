@@ -63,13 +63,13 @@ public class ExplicitLacTest extends BookKeeperClusterTestCase {
     @Parameters
     public static Collection<Object[]> configs() {
         return Arrays.asList(new Object[][] {
-//            { InterleavedLedgerStorage.class },
-//            { SortedLedgerStorage.class },
+            { InterleavedLedgerStorage.class },
+            { SortedLedgerStorage.class },
             { DbLedgerStorage.class },
         });
-    } 
+    }
 
-//    @Test
+    @Test
     public void testReadHandleWithNoExplicitLAC() throws Exception {
         ClientConfiguration confWithNoExplicitLAC = new ClientConfiguration();
         confWithNoExplicitLAC.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -183,7 +183,7 @@ public class ExplicitLacTest extends BookKeeperClusterTestCase {
         bkcWithExplicitLAC.close();
     }
 
-//    @Test
+    @Test
     public void testReadHandleWithExplicitLAC() throws Exception {
         ClientConfiguration confWithExplicitLAC = new ClientConfiguration();
         confWithExplicitLAC.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
