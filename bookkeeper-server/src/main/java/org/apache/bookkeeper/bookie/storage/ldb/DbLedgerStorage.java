@@ -247,7 +247,7 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
-    public ByteBuf getExplicitLac(long ledgerId) {
+    public ByteBuf getExplicitLac(long ledgerId) throws IOException {
         return getLedgerSorage(ledgerId).getExplicitLac(ledgerId);
     }
 
