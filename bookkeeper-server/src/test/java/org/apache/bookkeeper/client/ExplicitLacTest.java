@@ -250,7 +250,7 @@ public class ExplicitLacTest extends BookKeeperClusterTestCase {
         bkcWithExplicitLAC.close();
     }
 
-//    @Test
+    @Test
     public void testReadHandleWithExplicitLACAndDeferredSync() throws Exception {
         ClientConfiguration confWithExplicitLAC = new ClientConfiguration();
         confWithExplicitLAC.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -330,7 +330,7 @@ public class ExplicitLacTest extends BookKeeperClusterTestCase {
         bkcWithExplicitLAC.close();
     }
 
-//    @Test
+    @Test
     public void fallbackV3() throws Exception {
         ClientConfiguration v2Conf = new ClientConfiguration();
         v2Conf.setUseV2WireProtocol(true);
