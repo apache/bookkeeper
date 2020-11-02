@@ -28,6 +28,7 @@ import com.google.protobuf.ByteString;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
@@ -768,33 +769,45 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
-        getOrAddLedgerInfo(ledgerId).setExplicitLac(lac);
+        TransientLedgerInfo ledgerInfo = getOrAddLedgerInfo(ledgerId);
+        ledgerInfo.setExplicitLac(lac);
+        ledgerIndex.setExplicitLac(ledgerId, lac);
+        ledgerInfo.notifyWatchers(Long.MAX_VALUE);
     }
 
     @Override
-    public ByteBuf getExplicitLac(long ledgerId) {
-        TransientLedgerInfo ledgerInfo = transientLedgerInfoCache.get(ledgerId);
-        if (null == ledgerInfo) {
-            return null;
-        } else {
+    public ByteBuf getExplicitLac(long ledgerId) throws IOException {
+        if (log.isDebugEnabled()) {
+            log.debug("getExplicitLac ledger {}", ledgerId);
+        }
+        TransientLedgerInfo ledgerInfo = getOrAddLedgerInfo(ledgerId);
+        if (ledgerInfo.getExplicitLac() != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("getExplicitLac ledger {} returned from TransientLedgerInfo", ledgerId);
+            }
             return ledgerInfo.getExplicitLac();
         }
+        LedgerData ledgerData = ledgerIndex.get(ledgerId);
+        if (!ledgerData.hasExplicitLac()) {
+            if (log.isDebugEnabled()) {
+                log.debug("getExplicitLac ledger {} missing from LedgerData", ledgerId);
+            }
+            return null;
+        }
+        if (ledgerData.hasExplicitLac()) {
+            if (log.isDebugEnabled()) {
+                log.debug("getExplicitLac ledger {} returned from LedgerData", ledgerId);
+            }
+            ByteString persistedLac = ledgerData.getExplicitLac();
+            ledgerInfo.setExplicitLac(Unpooled.wrappedBuffer(persistedLac.toByteArray()));
+        }
+        return ledgerInfo.getExplicitLac();
     }
 
     private TransientLedgerInfo getOrAddLedgerInfo(long ledgerId) {
-        TransientLedgerInfo tli = transientLedgerInfoCache.get(ledgerId);
-        if (tli != null) {
-            return tli;
-        } else {
-            TransientLedgerInfo newTli = new TransientLedgerInfo(ledgerId, ledgerIndex);
-            tli = transientLedgerInfoCache.putIfAbsent(ledgerId, newTli);
-            if (tli != null) {
-                newTli.close();
-                return tli;
-            } else {
-                return newTli;
-            }
-        }
+        return transientLedgerInfoCache.computeIfAbsent(ledgerId, l -> {
+            return new TransientLedgerInfo(l, ledgerIndex);
+        });
     }
 
     private void updateCachedLacIfNeeded(long ledgerId, long lac) {
