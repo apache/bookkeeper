@@ -589,13 +589,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             Watcher w = new Watcher() {
                 @Override
                 public void process(WatchedEvent e) {
-                    if (e.getType() == Watcher.Event.EventType.NodeChildrenChanged
-                            || e.getType() == Watcher.Event.EventType.NodeDeleted
-                            || e.getType() == Watcher.Event.EventType.NodeCreated
-                            || e.getState() == Watcher.Event.KeeperState.Expired
-                            || e.getState() == Watcher.Event.KeeperState.Disconnected) {
-                        changedLatch.countDown();
-                    }
+                    LOG.info("Latch countdown due to ZK event: " + e);
+                    changedLatch.countDown();
                 }
             };
             try (SubTreeCache.WatchGuard wg = subTreeCache.registerWatcherWithGuard(w)) {
