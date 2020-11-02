@@ -83,7 +83,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     }
 
     @Override
-    ByteBuf getExplicitLac() {
+    ByteBuf getExplicitLac() throws IOException {
         return ledgerStorage.getExplicitLac(ledgerId);
     }
 

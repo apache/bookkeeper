@@ -188,7 +188,7 @@ public interface LedgerStorage {
 
     void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException;
 
-    ByteBuf getExplicitLac(long ledgerId);
+    ByteBuf getExplicitLac(long ledgerId) throws IOException;
 
     // for testability
     default LedgerStorage getUnderlyingLedgerStorage() {

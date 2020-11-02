@@ -124,7 +124,9 @@ class TransientLedgerInfo extends Watchable<LastAddConfirmedUpdateNotification> 
             if (explicitLac == null) {
                 explicitLac = ByteBuffer.allocate(lac.capacity());
             }
+            int readerIndex = lac.readerIndex();
             lac.readBytes(explicitLac);
+            lac.readerIndex(readerIndex);
             explicitLac.rewind();
 
             // skip the ledger id
