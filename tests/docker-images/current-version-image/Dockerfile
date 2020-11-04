@@ -30,7 +30,7 @@ ENV BOOKIE_GRPC_PORT=4181
 EXPOSE ${BOOKIE_PORT} ${BOOKIE_HTTP_PORT} ${BOOKIE_GRPC_PORT}
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME=/usr/lib/jvm/jdk-11
+ENV JAVA_HOME=/usr/lib/jvm/java-11
 
 # prepare utils
 RUN set -x \
