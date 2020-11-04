@@ -64,10 +64,10 @@ class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (cause instanceof ClosedChannelException) {
-            LOG.info("Client died before request could be completed", cause);
+            LOG.info("Client died before request could be completed on {}", ctx.channel(), cause);
             return;
         }
-        LOG.error("Unhandled exception occurred in I/O thread or handler", cause);
+        LOG.error("Unhandled exception occurred in I/O thread or handler on {}", ctx.channel(), cause);
         ctx.close();
     }
 
