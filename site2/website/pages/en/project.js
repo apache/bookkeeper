@@ -36,6 +36,10 @@ function Help(props) {
       content: `Read through our [bylaws.](${docUrl('bylaws')})`,
       title: 'Bylaws',
     },
+    {
+      content: `Read through our [Privacy policy.](${docUrl('privacy')})`,
+      title: 'Privacy policy',
+    }
   ];
 
   return (
