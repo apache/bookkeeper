@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1848,15 +1849,15 @@ public class BookieShell implements Tool {
                             // Arbitrary value of 21 days chosen since current freq of all checks is less than 21 days
                             long time = System.currentTimeMillis() - (21 * 24 * 60 * 60 * 1000);
                             if (checkAllLedgersCheck) {
-                                LOG.info("Resetting CheckAllLedgersCTime to : " + time);
+                                LOG.info("Resetting CheckAllLedgersCTime to : " + new Timestamp(time));
                                 underreplicationManager.setCheckAllLedgersCTime(time);
                             }
                             if (placementPolicyCheck) {
-                                LOG.info("Resetting PlacementPolicyCheckCTime to : " + time);
+                                LOG.info("Resetting PlacementPolicyCheckCTime to : " + new Timestamp(time));
                                 underreplicationManager.setPlacementPolicyCheckCTime(time);
                             }
                             if (replicasCheck) {
-                                LOG.info("Resetting ReplicasCheckCTime to : " + time);
+                                LOG.info("Resetting ReplicasCheckCTime to : " + new Timestamp(time));
                                 underreplicationManager.setReplicasCheckCTime(time);
                             }
                         }
