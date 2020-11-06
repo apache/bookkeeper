@@ -511,7 +511,7 @@ public class IndexPersistenceMgr {
     private void moveLedgerIndexFile(Long l, FileInfo fi) throws NoWritableLedgerDirException, IOException {
         File newLedgerIndexFile = getNewLedgerIndexFile(l, getLedgerDirForLedger(fi));
         try {
-            fi.moveToNewLocation(newLedgerIndexFile, fi.getSizeSinceLastwrite());
+            fi.moveToNewLocation(newLedgerIndexFile, fi.getSizeSinceLastWrite());
         } catch (FileInfo.FileInfoDeletedException fileInfoDeleted) {
             // File concurrently deleted
             throw new Bookie.NoLedgerException(l);
