@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -102,7 +103,7 @@ public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequ
                             LOG.warn("Failed to issue speculative request for {}, speculativeReadTimeout = {} : ",
                                     requestExecutor, speculativeRequestTimeout, thrown);
                         }
-                    });
+                    }, directExecutor());
                 }
             }, speculativeRequestTimeout, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException re) {

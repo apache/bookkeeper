@@ -78,7 +78,7 @@ public class CodahaleMetricsProvider implements StatsProvider {
             LOG.info("Configuring stats with graphite");
             HostAndPort addr = HostAndPort.fromString(graphiteHost);
             final Graphite graphite = new Graphite(
-                    new InetSocketAddress(addr.getHostText(), addr.getPort()));
+                    new InetSocketAddress(addr.getHost(), addr.getPort()));
             reporters.add(GraphiteReporter.forRegistry(getMetrics())
                           .prefixedWith(prefix)
                           .convertRatesTo(TimeUnit.SECONDS)

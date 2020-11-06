@@ -23,9 +23,9 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
 
-import com.google.common.io.Files;
 import java.io.File;
 import java.net.URI;
+import java.nio.file.Files;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
@@ -80,7 +80,7 @@ public class TestRocksdbKVAsyncStore extends TestDistributedLogBase {
         super.setup();
         ensureURICreated(uri);
 
-        tempDir = Files.createTempDir();
+        tempDir = Files.createTempDirectory("test").toFile();
 
         store = new RocksdbKVAsyncStore<>(
             () -> new RocksdbKVStore<>(),

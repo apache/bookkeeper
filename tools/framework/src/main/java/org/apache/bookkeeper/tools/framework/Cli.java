@@ -152,7 +152,7 @@ public class Cli<CliFlagsT extends CliFlags> {
     }
 
     void usage() {
-        usage(null);
+        usage("");
     }
 
     void usage(String errorMsg) {

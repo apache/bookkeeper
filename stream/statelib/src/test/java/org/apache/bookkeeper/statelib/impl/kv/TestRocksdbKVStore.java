@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import com.google.common.io.Files;
 import java.io.File;
 import org.apache.bookkeeper.common.coder.StringUtf8Coder;
 import org.apache.bookkeeper.common.kv.KV;
@@ -51,8 +50,8 @@ public class TestRocksdbKVStore {
     private RocksdbKVStore<String, String> store;
 
     @Before
-    public void setUp() {
-        tempDir = Files.createTempDir();
+    public void setUp() throws Exception {
+        tempDir = java.nio.file.Files.createTempDirectory("test").toFile();
         spec = StateStoreSpec.builder()
             .name(runtime.getMethodName())
             .keyCoder(StringUtf8Coder.of())
