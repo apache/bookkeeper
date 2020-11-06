@@ -29,5 +29,6 @@
   <modules>
     <module>http-server</module>
     <module>vertx-http-server</module>
+    <module>servlet-http-server</module>
   </modules>
 </project>
