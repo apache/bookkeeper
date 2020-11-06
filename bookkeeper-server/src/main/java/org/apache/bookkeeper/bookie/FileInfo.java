@@ -86,7 +86,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     static final long START_OF_DATA = 1024;
     private long size;
     private boolean isClosed;
-    private long sizeSinceLastwrite;
+    private long sizeSinceLastWrite;
 
     // bit map for states of the ledger.
     private int stateBits;
@@ -162,8 +162,8 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
         return lf;
     }
 
-    public long getSizeSinceLastwrite() {
-        return sizeSinceLastwrite;
+    public long getSizeSinceLastWrite() {
+        return sizeSinceLastWrite;
     }
 
     public ByteBuf getExplicitLac() {
@@ -212,7 +212,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
 
             fc = new RandomAccessFile(lf, mode).getChannel();
             size = fc.size();
-            sizeSinceLastwrite = size;
+            sizeSinceLastWrite = size;
 
             // avoid hang on reading partial index
             ByteBuffer bb = ByteBuffer.allocate((int) (Math.min(size, START_OF_DATA)));
@@ -363,9 +363,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
                 // not fenced yet
                 stateBits |= STATE_FENCED_BIT;
                 needFlushHeader = true;
-                synchronized (this) {
-                    changed = true;
-                }
+                changed = true;
                 returnVal = true;
             }
         }
@@ -494,7 +492,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
                 size = newsize;
             }
         }
-        sizeSinceLastwrite = fc.size();
+        sizeSinceLastWrite = fc.size();
         return total;
     }
 
@@ -569,7 +567,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
             return;
         }
         if (!parent.mkdirs()) {
-            throw new IOException("Counldn't mkdirs for " + parent);
+            throw new IOException("Couldn't mkdirs for " + parent);
         }
     }
 
