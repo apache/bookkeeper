@@ -34,6 +34,8 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -43,6 +45,7 @@ public class InfoCommand extends BookieCommand<CliFlags> {
 
     private static final String NAME = "info";
     private static final String DESC = "Retrieve bookie info such as free and total disk space.";
+    private static final Logger LOG = LoggerFactory.getLogger(InfoCommand.class);
 
     public InfoCommand() {
         super(CliSpec.newBuilder()
@@ -74,17 +77,17 @@ public class InfoCommand extends BookieCommand<CliFlags> {
         try (BookKeeper bk = new BookKeeper(clientConf)) {
             Map<BookieId, BookieInfo> map = bk.getBookieInfo();
             if (map.size() == 0) {
-                System.out.println("Failed to retrieve bookie information from any of the bookies");
+                LOG.info("Failed to retrieve bookie information from any of the bookies");
                 bk.close();
                 return true;
             }
 
-            System.out.println("Free disk space info:");
+            LOG.info("Free disk space info:");
             long totalFree = 0, total = 0;
             for (Map.Entry<BookieId, BookieInfo> e : map.entrySet()) {
                 BookieInfo bInfo = e.getValue();
                 BookieId bookieId = e.getKey();
-                System.out.println(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId,
+                LOG.info(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId,
                         bk.getBookieAddressResolver())
                     + ":\tFree: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace())
                     + "\tTotal: " + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
@@ -103,8 +106,8 @@ public class InfoCommand extends BookieCommand<CliFlags> {
                 total += bookieInfo.getTotalDiskSpace();
             }
 
-            System.out.println("Total free disk space in the cluster:\t" + totalFree + getReadable(totalFree));
-            System.out.println("Total disk capacity in the cluster:\t" + total + getReadable(total));
+            LOG.info("Total free disk space in the cluster:\t" + totalFree + getReadable(totalFree));
+            LOG.info("Total disk capacity in the cluster:\t" + total + getReadable(total));
             bk.close();
 
             return true;

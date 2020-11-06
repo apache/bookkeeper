@@ -57,6 +57,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
 
     public UpdateLedgerOpTest() {
         super(3);
+        useUUIDasBookieId = false;
         baseConf.setGcWaitTime(100000);
     }
 

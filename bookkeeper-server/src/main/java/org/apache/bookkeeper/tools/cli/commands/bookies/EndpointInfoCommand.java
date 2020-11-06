@@ -87,28 +87,28 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
             BookieId address = BookieId.parse(bookieId);
             Collection<BookieId> allBookies = admin.getAllBookies();
             if (!allBookies.contains(address)) {
-                System.out.println("Bookie " + bookieId + " does not exist, only " + allBookies);
+                LOG.info("Bookie " + bookieId + " does not exist, only " + allBookies);
                 return false;
             }
             BookieServiceInfo bookieServiceInfo = admin.getBookieServiceInfo(bookieId);
 
-            System.out.println("BookiedId: " + bookieId);
+            LOG.info("BookiedId: " + bookieId);
             if (!bookieServiceInfo.getProperties().isEmpty()) {
-                System.out.println("Properties");
+                LOG.info("Properties");
                 bookieServiceInfo.getProperties().forEach((k, v) -> {
-                    System.out.println(k + ":" + v);
+                    LOG.info(k + ":" + v);
                 });
             }
             if (!bookieServiceInfo.getEndpoints().isEmpty()) {
                 bookieServiceInfo.getEndpoints().forEach(e -> {
-                    System.out.println("Endpoint: " + e.getId());
-                    System.out.println("Protocol: " + e.getProtocol());
-                    System.out.println("Address: " + e.getHost() + ":" + e.getPort());
-                    System.out.println("Auth: " + e.getAuth());
-                    System.out.println("Extensions: " + e.getExtensions());
+                    LOG.info("Endpoint: " + e.getId());
+                    LOG.info("Protocol: " + e.getProtocol());
+                    LOG.info("Address: " + e.getHost() + ":" + e.getPort());
+                    LOG.info("Auth: " + e.getAuth());
+                    LOG.info("Extensions: " + e.getExtensions());
                 });
             } else {
-                System.out.println("Bookie did not publish any endpoint info. Maybe it is down");
+                LOG.info("Bookie did not publish any endpoint info. Maybe it is down");
                 return false;
             }
 

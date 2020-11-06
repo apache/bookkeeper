@@ -26,12 +26,20 @@ on:
     paths-ignore:
       - 'site/**'
 
+env:
+  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
+
 jobs:
   check:
 
     runs-on: ubuntu-latest
 
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ github.token }}
+
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -42,4 +50,4 @@ jobs:
         with:
           java-version: 1.8
       - name: Build with Maven
-        run: mvn clean package -B -nsu spotbugs:check -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=ERROR
+        run: mvn clean package -B -nsu spotbugs:check -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO

@@ -38,6 +38,8 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Command to scan a journal file and format the entries into readable format.
@@ -50,6 +52,7 @@ public class ReadJournalCommand extends BookieCommand<ReadJournalCommand.ReadJou
     private static final String DEFAULT = "";
     private LedgerIdFormatter ledgerIdFormatter;
     private EntryFormatter entryFormatter;
+    private static final Logger LOG = LoggerFactory.getLogger(ReadJournalCommand.class);
 
     List<Journal> journals = null;
 
@@ -125,7 +128,7 @@ public class ReadJournalCommand extends BookieCommand<ReadJournalCommand.ReadJou
         Journal journal = null;
         if (getJournals(conf).size() > 1) {
             if (cmd.dir.equals(DEFAULT)) {
-                System.err.println("ERROR: invalid or missing journal directory");
+                LOG.error("ERROR: invalid or missing journal directory");
                 usage();
                 return false;
             }
@@ -138,7 +141,7 @@ public class ReadJournalCommand extends BookieCommand<ReadJournalCommand.ReadJou
             }
 
             if (journal == null) {
-                System.err.println("ERROR: journal directory not found");
+                LOG.error("ERROR: journal directory not found");
                 usage();
                 return false;
             }
@@ -151,7 +154,7 @@ public class ReadJournalCommand extends BookieCommand<ReadJournalCommand.ReadJou
             File f = new File(cmd.fileName);
             String name = f.getName();
             if (!name.endsWith(".txn")) {
-                System.err.println("ERROR: invalid journal file name " + cmd.fileName);
+                LOG.error("ERROR: invalid journal file name " + cmd.fileName);
                 usage();
                 return false;
             }
@@ -164,7 +167,7 @@ public class ReadJournalCommand extends BookieCommand<ReadJournalCommand.ReadJou
 
     private boolean checkArgs(ReadJournalFlags flags) {
         if ((flags.fileName.equals(DEFAULT) && flags.journalId == DEFAULT_JOURNALID)) {
-            System.out.println("ERROR: You should figure jounalId or journal filename");
+            LOG.info("ERROR: You should figure jounalId or journal filename");
             return false;
         }
 
@@ -191,14 +194,14 @@ public class ReadJournalCommand extends BookieCommand<ReadJournalCommand.ReadJou
       * @param printMsg Whether printing the entry data.
       */
     private void scanJournal(Journal journal, long journalId, final boolean printMsg) throws IOException {
-        System.out.println("Scan journal " + journalId + " (" + Long.toHexString(journalId) + ".txn)");
+        LOG.info("Scan journal " + journalId + " (" + Long.toHexString(journalId) + ".txn)");
         scanJournal(journal, journalId, new Journal.JournalScanner() {
             boolean printJournalVersion = false;
 
             @Override
             public void process(int journalVersion, long offset, ByteBuffer entry) throws IOException {
                 if (!printJournalVersion) {
-                    System.out.println("Journal Version : " + journalVersion);
+                    LOG.info("Journal Version : " + journalVersion);
                     printJournalVersion = true;
                 }
                 FormatUtil

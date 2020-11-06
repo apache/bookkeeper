@@ -256,8 +256,8 @@ public class SortedLedgerStorage
     }
 
     @Override
-    public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
-        interleavedLedgerStorage.setExplicitlac(ledgerId, lac);
+    public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
+        interleavedLedgerStorage.setExplicitLac(ledgerId, lac);
     }
 
     @Override

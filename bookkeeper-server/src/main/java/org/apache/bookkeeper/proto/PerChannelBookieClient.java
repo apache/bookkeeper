@@ -46,6 +46,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
+import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.channel.unix.Errors.NativeIoException;
@@ -344,6 +345,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final ExtensionRegistry extRegistry;
     private final SecurityHandlerFactory shFactory;
     private volatile boolean isWritable = true;
+    private long lastBookieUnavailableLogTimestamp = 0;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieId addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
@@ -599,7 +601,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         SocketAddress bookieAddr = addr.getSocketAddress();
         if (eventLoopGroup instanceof DefaultEventLoopGroup) {
-            bookieAddr = addr.getLocalAddress();
+            bookieAddr = new LocalAddress(bookieId.toString());
         }
 
         ChannelFuture future = bootstrap.connect(bookieAddr);
@@ -2439,15 +2441,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
             synchronized (PerChannelBookieClient.this) {
                 if (future.isSuccess() && state == ConnectionState.CONNECTING && future.channel().isActive()) {
-                    LOG.info("Successfully connected to bookie: {}", future.channel());
                     rc = BKException.Code.OK;
                     channel = future.channel();
                     if (shFactory != null) {
+                        LOG.info("Successfully connected to bookie: {} {} initiate TLS", bookieId, future.channel());
                         makeWritable();
                         initiateTLS();
                         return;
                     } else {
-                        LOG.info("Successfully connected to bookie: " + bookieId);
+                        LOG.info("Successfully connected to bookie: {} {}", bookieId, future.channel());
                         state = ConnectionState.CONNECTED;
                         activeNonTlsChannelCounter.inc();
                     }
@@ -2482,12 +2484,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     Throwable cause = future.cause();
                     if (cause instanceof UnknownHostException || cause instanceof NativeIoException) {
                         // Don't log stack trace for common errors
-                        LOG.warn("Could not connect to bookie: {}/{}, current state {} : {}",
-                                future.channel(), bookieId, state, future.cause().getMessage());
+                        logBookieUnavailable(() -> LOG.warn("Could not connect to bookie: {}/{}, current state {} : {}",
+                                future.channel(), bookieId, state, future.cause().getMessage()));
                     } else {
                         // Regular exceptions, include stack trace
-                        LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
-                                future.channel(), bookieId, state, future.cause());
+                        logBookieUnavailable(() -> LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
+                                future.channel(), bookieId, state, future.cause()));
                     }
 
                     rc = BKException.Code.BookieHandleNotAvailableException;
@@ -2515,6 +2517,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
 
             makeWritable();
+        }
+
+        private void logBookieUnavailable(Runnable logger) {
+            final long now = System.currentTimeMillis();
+            if ((now - lastBookieUnavailableLogTimestamp) > conf.getClientConnectBookieUnavailableLogThrottlingMs()) {
+                logger.run();
+                lastBookieUnavailableLogTimestamp = now;
+            }
         }
     }
 

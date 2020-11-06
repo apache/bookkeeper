@@ -147,17 +147,17 @@ class LedgerCreateOp {
         }
 
 
-        this.metadata = metadataBuilder.build();
         if (this.generateLedgerId) {
-            generateLedgerIdAndCreateLedger();
+            generateLedgerIdAndCreateLedger(metadataBuilder);
         } else {
+            this.metadata = metadataBuilder.withId(ledgerId).build();
             // Create ledger with supplied ledgerId
             bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata)
-                .whenComplete((written, exception) -> metadataCallback(written, exception));
+                .whenComplete((written, exception) -> metadataCallback(written, exception, metadataBuilder));
         }
     }
 
-    void generateLedgerIdAndCreateLedger() {
+    void generateLedgerIdAndCreateLedger(LedgerMetadataBuilder metadataBuilder) {
         // generate a ledgerId
         final LedgerIdGenerator ledgerIdGenerator = bk.getLedgerIdGenerator();
         ledgerIdGenerator.generateLedgerId(new GenericCallback<Long>() {
@@ -168,9 +168,10 @@ class LedgerCreateOp {
                     return;
                 }
                 LedgerCreateOp.this.ledgerId = ledgerId;
+                LedgerCreateOp.this.metadata = metadataBuilder.withId(ledgerId).build();
                 // create a ledger with metadata
                 bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata)
-                    .whenComplete((written, exception) -> metadataCallback(written, exception));
+                    .whenComplete((written, exception) -> metadataCallback(written, exception, metadataBuilder));
             }
         });
     }
@@ -190,12 +191,13 @@ class LedgerCreateOp {
     /**
      * Callback when metadata store has responded.
      */
-    private void metadataCallback(Versioned<LedgerMetadata> writtenMetadata, Throwable exception) {
+    private void metadataCallback(Versioned<LedgerMetadata> writtenMetadata,
+                                  Throwable exception, LedgerMetadataBuilder metadataBuilder) {
         if (exception != null) {
             if (this.generateLedgerId
                 && (BKException.getExceptionCode(exception) == BKException.Code.LedgerExistException)) {
                 // retry to generate a new ledger id
-                generateLedgerIdAndCreateLedger();
+                generateLedgerIdAndCreateLedger(metadataBuilder);
             } else {
                 createComplete(BKException.getExceptionCode(exception), null);
             }

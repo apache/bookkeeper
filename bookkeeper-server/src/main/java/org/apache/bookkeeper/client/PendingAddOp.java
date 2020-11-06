@@ -267,7 +267,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         payload = null;
 
         // We are about to send. Check if we need to make an ensemble change
-        // becasue of delayed write errors
+        // because of delayed write errors
         lh.maybeHandleDelayedWriteBookieFailure();
 
         // Iterate over set and trigger the sendWriteRequests

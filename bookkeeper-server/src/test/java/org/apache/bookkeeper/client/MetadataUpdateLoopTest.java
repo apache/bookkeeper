@@ -70,14 +70,17 @@ public class MetadataUpdateLoopTest {
     @Test
     public void testBasicUpdate() throws Exception {
         try (LedgerManager lm = new MockLedgerManager()) {
-            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(5)
+            long ledgerId = 1234L;
+            LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(ledgerId)
+                .withEnsembleSize(5)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .newEnsembleEntry(0L, Lists.newArrayList(BookieId.parse("0.0.0.0:3181"),
                                           BookieId.parse("0.0.0.1:3181"),
                                           BookieId.parse("0.0.0.2:3181"),
                                           BookieId.parse("0.0.0.3:3181"),
                                           BookieId.parse("0.0.0.4:3181"))).build();
-            long ledgerId = 1234L;
+
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
 
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
@@ -116,7 +119,7 @@ public class MetadataUpdateLoopTest {
             BookieId b2 = BookieId.parse("0.0.0.2:3181");
             BookieId b3 = BookieId.parse("0.0.0.3:3181");
 
-            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
+            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2).withId(ledgerId)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .withWriteQuorumSize(2).newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             Versioned<LedgerMetadata> writtenMetadata =
@@ -183,7 +186,7 @@ public class MetadataUpdateLoopTest {
             BookieId b1 = BookieId.parse("0.0.0.1:3181");
             BookieId b2 = BookieId.parse("0.0.0.2:3181");
 
-            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
+            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2).withId(ledgerId)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .withWriteQuorumSize(2).newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
@@ -237,7 +240,7 @@ public class MetadataUpdateLoopTest {
             BookieId b2 = BookieId.parse("0.0.0.2:3181");
             BookieId b3 = BookieId.parse("0.0.0.3:3181");
 
-            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
+            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2).withId(ledgerId)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .withWriteQuorumSize(2).newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
@@ -303,7 +306,7 @@ public class MetadataUpdateLoopTest {
                 .mapToObj((i) -> address(String.format("0.0.0.%d:3181", i)))
                 .collect(Collectors.toList());
 
-            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(ensembleSize)
+            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(ensembleSize).withId(ledgerId)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .newEnsembleEntry(0L, initialEnsemble).build();
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
@@ -347,7 +350,7 @@ public class MetadataUpdateLoopTest {
             BookieId b0 = new BookieSocketAddress("0.0.0.0:3181").toBookieId();
             BookieId b1 = new BookieSocketAddress("0.0.0.1:3181").toBookieId();
 
-            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(1)
+            LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(1).withId(ledgerId)
                 .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .withWriteQuorumSize(1).withAckQuorumSize(1)
                 .newEnsembleEntry(0L, Lists.newArrayList(b0)).build();

@@ -60,6 +60,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.ClientConnectionPeer;
+import org.apache.bookkeeper.proto.PerChannelBookieClient;
 import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
@@ -638,6 +639,28 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
+     * Verify that given role in client certificate is checked when BookieAuthZFactory is set.
+     * Positive test case where all given roles are present.
+     * If authorization fails unexpectedly, we catch the UnauthorizedAccessException and fail.
+     * Otherwise we exit the test and mark it as success
+     */
+    @Test
+    public void testRoleBasedAuthZInCertificate() throws Exception {
+        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
+        serverConf.setBookieAuthProviderFactoryClass(BookieAuthZFactory.class.getCanonicalName());
+        serverConf.setAuthorizedRoles("testRole,testRole1");
+        restartBookies(serverConf);
+
+        ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
+
+        try {
+            testClient(clientConf, numBookies);
+        } catch (BKException.BKUnauthorizedAccessException bke) {
+            fail("Could not verify given role.");
+        }
+    }
+
+    /**
      * Verify that a bookie-side Auth plugin can access server certificates.
      */
     @Test
@@ -656,6 +679,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
             testClient(clientConf, numBookies);
             fail("Shouldn't be able to connect");
         } catch (BKException.BKUnauthorizedAccessException authFailed) {
+        } catch (BKException.BKNotEnoughBookiesException notEnoughBookiesException) {
+            if (!useV2Protocol) {
+                fail("Unexpected exception occurred.");
+            }
         }
 
         assertTrue(secureBookieSideChannel);
@@ -684,6 +711,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
             testClient(clientConf, numBookies);
             fail("Shouldn't be able to connect");
         } catch (BKException.BKUnauthorizedAccessException authFailed) {
+        } catch (BKException.BKNotEnoughBookiesException notEnoughBookiesException) {
+            if (!useV2Protocol) {
+                fail("Unexpected exception occurred.");
+            }
         }
 
         assertTrue(secureBookieSideChannel);
@@ -856,11 +887,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
             InetSocketAddress addr = bookie.getLocalAddress().getSocketAddress();
             StringBuilder nameBuilder = new StringBuilder(BookKeeperClientStats.CHANNEL_SCOPE)
                     .append(".")
-                    .append(addr.getAddress().getHostAddress()
-                    .replace('.', '_')
-                    .replace('-', '_'))
-                    .append("_")
-                    .append(addr.getPort())
+                    .append(PerChannelBookieClient.buildStatsLoggerScopeName(bookie.getBookieId()))
                     .append(".");
 
             // check stats on TLS enabled client
@@ -959,11 +986,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
         InetSocketAddress addr = bookie.getLocalAddress().getSocketAddress();
         StringBuilder nameBuilder = new StringBuilder(BookKeeperClientStats.CHANNEL_SCOPE)
                 .append(".")
-                .append(addr.getAddress().getHostAddress()
-                        .replace('.', '_')
-                        .replace('-', '_'))
-                .append("_")
-                .append(addr.getPort())
+                .append(PerChannelBookieClient.buildStatsLoggerScopeName(bookie.getBookieId()))
                 .append(".");
 
         assertEquals("TLS handshake failure expected", 1,

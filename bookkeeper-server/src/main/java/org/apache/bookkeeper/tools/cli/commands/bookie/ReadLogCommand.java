@@ -34,6 +34,8 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.commons.lang.mutable.MutableBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Command to read entry log files.
@@ -42,6 +44,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
 
     private static final String NAME = "readlog";
     private static final String DESC = "Scan an entry file and format the entries into readable format.";
+    private static final Logger LOG = LoggerFactory.getLogger(ReadLogCommand.class);
 
     private EntryLogger entryLogger;
     private EntryFormatter entryFormatter;
@@ -111,7 +114,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
         }
 
         if (cmdFlags.entryLogId == -1 && cmdFlags.filename == null) {
-            System.err.println("Missing entry log id or entry log file name");
+            LOG.error("Missing entry log id or entry log file name");
             usage();
             return false;
         }
@@ -128,7 +131,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
             File f = new File(flags.filename);
             String name = f.getName();
             if (!name.endsWith(".log")) {
-                System.err.println("Invalid entry log file name " + flags.filename);
+                LOG.error("Invalid entry log file name " + flags.filename);
                 usage();
                 return false;
             }
@@ -169,7 +172,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
     private void scanEntryLogForPositionRange(ServerConfiguration conf, long logId, final long rangeStartPos,
                                               final long rangeEndPos,
                                                 final boolean printMsg) throws Exception {
-        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for PositionRange: "
+        LOG.info("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for PositionRange: "
                            + rangeStartPos + " - " + rangeEndPos);
         final MutableBoolean entryFound = new MutableBoolean(false);
         scanEntryLog(conf, logId, new EntryLogger.EntryLogScanner() {
@@ -205,7 +208,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
             }
         });
         if (!entryFound.booleanValue()) {
-            System.out.println(
+            LOG.info(
                 "Entry log " + logId + " (" + Long.toHexString(logId) + ".log) doesn't has any entry in the range "
                 + rangeStartPos + " - " + rangeEndPos
                 + ". Probably the position range, you have provided is lesser than the LOGFILE_HEADER_SIZE (1024) "
@@ -244,7 +247,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
     private void scanEntryLogForSpecificEntry(ServerConfiguration conf, long logId, final long ledgerId,
                                                 final long entryId,
                                                 final boolean printMsg) throws Exception {
-        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for LedgerId "
+        LOG.info("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for LedgerId "
                            + ledgerId + ((entryId == -1) ? "" : " for EntryId " + entryId));
         final MutableBoolean entryFound = new MutableBoolean(false);
         scanEntryLog(conf, logId, new EntryLogger.EntryLogScanner() {
@@ -265,7 +268,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
             }
         });
         if (!entryFound.booleanValue()) {
-            System.out.println("LedgerId " + ledgerId + ((entryId == -1) ? "" : " EntryId " + entryId)
+            LOG.info("LedgerId " + ledgerId + ((entryId == -1) ? "" : " EntryId " + entryId)
                                + " is not available in the entry log " + logId + " (" + Long.toHexString(logId)
                                + ".log)");
         }
@@ -280,7 +283,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
      *          Whether printing the entry data.
      */
     private void scanEntryLog(ServerConfiguration conf, long logId, final boolean printMsg) throws Exception {
-        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)");
+        LOG.info("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)");
         scanEntryLog(conf, logId, new EntryLogger.EntryLogScanner() {
             @Override
             public boolean accept(long ledgerId) {

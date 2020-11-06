@@ -22,8 +22,6 @@ package org.apache.bookkeeper.zookeeper;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -60,7 +58,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +65,7 @@ import org.slf4j.LoggerFactory;
  * Test the wrapper of {@link org.apache.zookeeper.ZooKeeper} client.
  */
 @RunWith(Parameterized.class)
-public class TestZooKeeperClient extends TestCase {
+public abstract class TestZooKeeperClient extends TestCase {
 
     static {
         ZooKeeperClusterUtil.enableZookeeperTestEnvVariables();
@@ -78,18 +75,22 @@ public class TestZooKeeperClient extends TestCase {
 
     // ZooKeeper related variables
     protected ZooKeeperCluster zkUtil;
+    private RetryPolicy retryPolicy;
 
-    @Parameters
-    public static Collection<Object[]> zooKeeperUtilClass() {
-        return Arrays.asList(new Object[][] { { ZooKeeperUtil.class }, { ZooKeeperClusterUtil.class } });
-    }
-
-    public TestZooKeeperClient(Class<? extends ZooKeeperCluster> zooKeeperUtilClass)
+    public TestZooKeeperClient(Class<? extends ZooKeeperCluster> zooKeeperUtilClass,
+                               Class<? extends RetryPolicy> retryPolicyClass)
             throws IOException, KeeperException, InterruptedException {
         if (zooKeeperUtilClass.equals(ZooKeeperUtil.class)) {
             zkUtil = new ZooKeeperUtil();
         } else {
             zkUtil = new ZooKeeperClusterUtil(3);
+        }
+        if (retryPolicyClass.equals(BoundExponentialBackoffRetryPolicy.class)) {
+            retryPolicy = new BoundExponentialBackoffRetryPolicy(2000,
+                    2000, Integer.MAX_VALUE);
+        } else {
+            retryPolicy = new ExponentialBackOffWithDeadlinePolicy(100,
+                    20 * 1000, Integer.MAX_VALUE);
         }
     }
 
@@ -177,8 +178,9 @@ public class TestZooKeeperClient extends TestCase {
         watchers.add(testWatcher);
         ZooKeeperClient client = new ShutdownZkServerClient(
                 zkUtil.getZooKeeperConnectString(), timeout, watcherManager,
-                new BoundExponentialBackoffRetryPolicy(timeout, timeout, 0)
-                );
+                ((retryPolicy instanceof BoundExponentialBackoffRetryPolicy)
+                        ? new BoundExponentialBackoffRetryPolicy(timeout, timeout, 0) :
+                        new ExponentialBackOffWithDeadlinePolicy(100, 20 * 1000, 0)));
         client.waitForConnection();
         Assert.assertTrue("Client failed to connect an alive ZooKeeper.",
                 client.getState().isConnected());
@@ -220,9 +222,7 @@ public class TestZooKeeperClient extends TestCase {
     public void testRetrySyncOperations() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(
-                zkUtil.getZooKeeperConnectString(), timeout, new HashSet<Watcher>(),
-                new BoundExponentialBackoffRetryPolicy(timeout, timeout, Integer.MAX_VALUE)
-                );
+                zkUtil.getZooKeeperConnectString(), timeout, new HashSet<Watcher>(), retryPolicy);
         Assert.assertTrue("Client failed to connect an alive ZooKeeper.",
                 client.getState().isConnected());
 
@@ -269,8 +269,7 @@ public class TestZooKeeperClient extends TestCase {
     public void testSyncAfterSessionExpiry() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(zkUtil.getZooKeeperConnectString(),
-                timeout, new HashSet<Watcher>(),
-                new BoundExponentialBackoffRetryPolicy(timeout, timeout, Integer.MAX_VALUE));
+                timeout, new HashSet<Watcher>(), retryPolicy);
         Assert.assertTrue("Client failed to connect an alive ZooKeeper.", client.getState().isConnected());
 
         String path = "/testSyncAfterSessionExpiry";
@@ -313,8 +312,7 @@ public class TestZooKeeperClient extends TestCase {
     public void testACLSetAndGet() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(zkUtil.getZooKeeperConnectString(),
-                timeout, new HashSet<Watcher>(),
-                new BoundExponentialBackoffRetryPolicy(timeout, timeout, Integer.MAX_VALUE));
+                timeout, new HashSet<Watcher>(), retryPolicy);
         Assert.assertTrue("Client failed to connect an alive ZooKeeper.", client.getState().isConnected());
 
         String path = "/testACLSetAndGet";
@@ -388,8 +386,7 @@ public class TestZooKeeperClient extends TestCase {
     public void testACLSetAndGetAfterSessionExpiry() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(zkUtil.getZooKeeperConnectString(),
-                timeout, new HashSet<Watcher>(),
-                new BoundExponentialBackoffRetryPolicy(timeout, timeout, Integer.MAX_VALUE));
+                timeout, new HashSet<Watcher>(), retryPolicy);
         Assert.assertTrue("Client failed to connect an alive ZooKeeper.", client.getState().isConnected());
 
         String path = "/testACLSetAndGetAfterSessionExpiry";
@@ -478,8 +475,7 @@ public class TestZooKeeperClient extends TestCase {
     public void testZnodeExists() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(zkUtil.getZooKeeperConnectString(),
-                timeout, new HashSet<Watcher>(),
-                new BoundExponentialBackoffRetryPolicy(timeout, timeout, Integer.MAX_VALUE));
+                timeout, new HashSet<Watcher>(), retryPolicy);
         Assert.assertTrue("Client failed to connect an alive ZooKeeper.", client.getState().isConnected());
 
         String path = "/testZnodeExists";
@@ -535,8 +531,7 @@ public class TestZooKeeperClient extends TestCase {
     public void testGetSetData() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(zkUtil.getZooKeeperConnectString(),
-                timeout, new HashSet<Watcher>(),
-                new BoundExponentialBackoffRetryPolicy(timeout, timeout, Integer.MAX_VALUE));
+                timeout, new HashSet<Watcher>(), retryPolicy);
         Assert.assertTrue("Client failed to connect an alive ZooKeeper.", client.getState().isConnected());
 
         String path = "/testGetSetData";
@@ -618,8 +613,7 @@ public class TestZooKeeperClient extends TestCase {
     public void testGetChildren() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(zkUtil.getZooKeeperConnectString(),
-                timeout, new HashSet<Watcher>(),
-                new BoundExponentialBackoffRetryPolicy(timeout, timeout, Integer.MAX_VALUE));
+                timeout, new HashSet<Watcher>(), retryPolicy);
         Assert.assertTrue("Client failed to connect an alive ZooKeeper.", client.getState().isConnected());
 
         // create a root node
@@ -764,9 +758,7 @@ public class TestZooKeeperClient extends TestCase {
     public void testRetryOnCreatingEphemeralZnode() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(
-                zkUtil.getZooKeeperConnectString(), timeout, new HashSet<Watcher>(),
-                new BoundExponentialBackoffRetryPolicy(timeout, timeout, Integer.MAX_VALUE)
-                );
+                zkUtil.getZooKeeperConnectString(), timeout, new HashSet<Watcher>(), retryPolicy);
         Assert.assertTrue("Client failed to connect an alive ZooKeeper.",
                 client.getState().isConnected());
 
@@ -787,9 +779,7 @@ public class TestZooKeeperClient extends TestCase {
     public void testRetryAsyncOperations() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(
-                zkUtil.getZooKeeperConnectString(), timeout, new HashSet<Watcher>(),
-                new BoundExponentialBackoffRetryPolicy(timeout, timeout, Integer.MAX_VALUE)
-                );
+                zkUtil.getZooKeeperConnectString(), timeout, new HashSet<Watcher>(), retryPolicy);
         Assert.assertTrue("Client failed to connect an alive ZooKeeper.",
                 client.getState().isConnected());
 

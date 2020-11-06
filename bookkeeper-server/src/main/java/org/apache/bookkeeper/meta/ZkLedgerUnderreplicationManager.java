@@ -588,13 +588,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             Watcher w = new Watcher() {
                 @Override
                 public void process(WatchedEvent e) {
-                    if (e.getType() == Watcher.Event.EventType.NodeChildrenChanged
-                            || e.getType() == Watcher.Event.EventType.NodeDeleted
-                            || e.getType() == Watcher.Event.EventType.NodeCreated
-                            || e.getState() == Watcher.Event.KeeperState.Expired
-                            || e.getState() == Watcher.Event.KeeperState.Disconnected) {
-                        changedLatch.countDown();
-                    }
+                    LOG.info("Latch countdown due to ZK event: " + e);
+                    changedLatch.countDown();
                 }
             };
             try (SubTreeCache.WatchGuard wg = subTreeCache.registerWatcherWithGuard(w)) {
@@ -810,6 +805,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         } catch (KeeperException.NodeExistsException ke) {
             LOG.info("lostBookieRecoveryDelay Znode is already present, so using "
                     + "existing lostBookieRecoveryDelay Znode value");
+            return false;
+        } catch (KeeperException.NoNodeException nne) {
+            LOG.error("lostBookieRecoveryDelay Znode not found. Please verify if Auditor has been initialized.", nne);
             return false;
         } catch (KeeperException ke) {
             LOG.error("Error while initializing LostBookieRecoveryDelay", ke);

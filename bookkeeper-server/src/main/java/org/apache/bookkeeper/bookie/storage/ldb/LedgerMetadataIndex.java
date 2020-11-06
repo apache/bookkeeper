@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.protobuf.ByteString;
+import io.netty.buffer.ByteBuf;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -245,4 +246,25 @@ public class LedgerMetadataIndex implements Closeable {
     }
 
     private static final Logger log = LoggerFactory.getLogger(LedgerMetadataIndex.class);
+
+    void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
+        LedgerData ledgerData = ledgers.get(ledgerId);
+        if (ledgerData != null) {
+            LedgerData newLedgerData = LedgerData.newBuilder(ledgerData)
+                    .setExplicitLac(ByteString.copyFrom(lac.nioBuffer())).build();
+
+            if (ledgers.put(ledgerId, newLedgerData) == null) {
+                // Ledger had been deleted
+                return;
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Set explicitLac on ledger {}", ledgerId);
+                }
+            }
+            pendingLedgersUpdates.add(new SimpleEntry<Long, LedgerData>(ledgerId, newLedgerData));
+        } else {
+            // unknown ledger here
+        }
+    }
+
 }

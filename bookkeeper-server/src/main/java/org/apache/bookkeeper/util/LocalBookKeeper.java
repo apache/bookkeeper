@@ -168,7 +168,7 @@ public class LocalBookKeeper {
 
     private List<File> runBookies(String dirSuffix)
             throws Exception {
-        List<File> tempDirs = new ArrayList<File>();
+        List<File> tempDirs = new ArrayList<>();
         try {
             runBookies(tempDirs, dirSuffix);
             return tempDirs;
@@ -254,7 +254,7 @@ public class LocalBookKeeper {
             bsConfs[i].setLedgerDirNames(ledgerDirs);
 
             // write config into file before start so we can know what's wrong if start failed
-            String fileName = Bookie.getBookieAddress(bsConfs[i]).toString() + ".conf";
+            String fileName = Bookie.getBookieId(bsConfs[i]).toString() + ".conf";
             serializeLocalBookieConfig(bsConfs[i], fileName);
 
             // Mimic BookKeeper Main
@@ -391,7 +391,9 @@ public class LocalBookKeeper {
             throw e;
         } finally {
             if (stopOnExit) {
-                cleanupDirectories(bkTmpDirs);
+                if (null != bkTmpDirs) {
+                    cleanupDirectories(bkTmpDirs);
+                }
                 if (null != zkTmpDir) {
                     FileUtils.deleteDirectory(zkTmpDir);
                 }

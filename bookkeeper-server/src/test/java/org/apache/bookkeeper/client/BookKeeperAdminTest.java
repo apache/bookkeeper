@@ -210,7 +210,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         }
         Assert.assertFalse("initBookie shouldn't have succeeded, since cookie in ZK is not deleted yet",
                 BookKeeperAdmin.initBookie(confOfExistingBookie));
-        String bookieId = Bookie.getBookieAddress(confOfExistingBookie).toString();
+        String bookieId = Bookie.getBookieId(confOfExistingBookie).toString();
         String bookieCookiePath =
             ZKMetadataDriverBase.resolveZkLedgersRootPath(confOfExistingBookie)
                 + "/" + BookKeeperConstants.COOKIE_NODE
@@ -612,7 +612,8 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         ensembleOfSegment2.add(bookie2);
 
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create();
-        builder.withEnsembleSize(3)
+        builder.withId(ledgerId)
+                .withEnsembleSize(3)
                 .withWriteQuorumSize(3)
                 .withAckQuorumSize(2)
                 .withDigestType(digestType.toApiDigestType())

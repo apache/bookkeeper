@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @ToString
 public class LedgerLayout {
 
-    // version of compability layout version
+    // version of compatibility layout version
     public static final int LAYOUT_MIN_COMPAT_VERSION = 1;
     // version of ledger layout metadata
     public static final int LAYOUT_FORMAT_VERSION = 2;

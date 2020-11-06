@@ -87,7 +87,7 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     }
 
     @Override
-    public void intialize() {
+    public void initialize() {
         for (PerChannelBookieClient pcbc : this.clients) {
             pcbc.connectIfNeededAndDoOp(this);
         }

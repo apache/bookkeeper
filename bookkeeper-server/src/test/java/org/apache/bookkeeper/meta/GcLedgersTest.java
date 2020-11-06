@@ -123,6 +123,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                     }
 
                     LedgerMetadata md = LedgerMetadataBuilder.create()
+                        .withId(ledgerId)
                         .withDigestType(DigestType.CRC32C)
                         .withPassword(new byte[0])
                         .withEnsembleSize(1).withWriteQuorumSize(1).withAckQuorumSize(1)
@@ -600,7 +601,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
+        public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         }
 
         @Override
