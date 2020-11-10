@@ -426,4 +426,25 @@ public class BookieShellTest {
         verify(mockListBookiesFlags, times(1)).all(true);
     }
 
+    @Test
+    public void testForceAuditChecksWithNoArgs() throws Exception {
+        assertEquals(-1, shell.run(new String[] {
+                "forceauditchecks"
+        }));
+    }
+
+    @Test
+    public void testForceAuditChecksWithSomeArgs() throws Exception {
+        assertEquals(0, shell.run(new String[] {
+                "forceauditchecks", "-calc"
+        }));
+    }
+
+    @Test
+    public void testForceAuditChecksWithAllArgs() throws Exception {
+        assertEquals(0, shell.run(new String[] {
+                "forceauditchecks", "-calc", "-rc", "-ppc"
+        }));
+    }
+
 }
