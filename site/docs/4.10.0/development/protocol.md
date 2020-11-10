@@ -53,7 +53,7 @@ First entry | Bookies
 
 Each entry in the log is written to **Q<sub>w</sub>** nodes. This is considered the write quorum for that entry. The write quorum is the subsequence of the ensemble, **Q<sub>w</sub>** in length, and starting at the bookie at index (entryid % **E**).
 
-For example, in a ledger of **E** = 4, **Q<sub>w</sub>**, and **Q<sub>a</sub>** = 2, with an ensemble consisting of B1, B2, B3, and B4, the write quorums for the first 6 entries will be:
+For example, in a ledger of **E** = 4, **Q<sub>w</sub> = 3**, and **Q<sub>a</sub>** = 2, with an ensemble consisting of B1, B2, B3, and B4, the write quorums for the first 6 entries will be:
 
 Entry | Write quorum
 :-----|:------------
