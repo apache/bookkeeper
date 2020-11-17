@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper 4.12.0-SNAPSHOT Release Notes
+title: Apache BookKeeper 4.13.0-SNAPSHOT Release Notes
 ---
 
 Apache BookKeeper {{ site.latest_version }} is still under developement.
@@ -13,6 +13,6 @@ If you want to learn the progress of `{{ site.latest_version }}`, you can do:
 
 ### Dependencies Changes
 
-Here is a list of dependencies changed in 4.12.0-SNAPSHOT:
+Here is a list of dependencies changed in 4.13.0-SNAPSHOT:
 
 ### Existing API changes
