@@ -13,8 +13,8 @@ versions:
 - "4.11.1"
 - "4.11.0"
 - "4.10.0"
-- "4.9.2"
 archived_versions:
+- "4.9.2"
 - "4.9.1"
 - "4.9.0"
 - "4.8.2"
@@ -42,8 +42,11 @@ archived_versions:
 - "4.0.0"
 latest_version: "4.13.0-SNAPSHOT"
 latest_release: "4.12.0"
-stable_release: "4.10.0"
+stable_release: "4.11.1"
 eol_releases:
+- "4.9.2"
+- "4.9.1"
+- "4.9.0"
 - "4.8.2"
 - "4.8.1"
 - "4.8.0"
@@ -67,7 +70,7 @@ eol_releases:
 - "4.2.0"
 - "4.1.0"
 - "4.0.0"
-distributedlog_version: "4.11.1"
+distributedlog_version: "4.12.0"
 
 defaults:
 - scope:
