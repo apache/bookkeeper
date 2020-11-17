@@ -44,7 +44,7 @@
         <a class="navbar-link">Documentation</a>
         <div class="navbar-dropdown is-boxed">
           <a class="navbar-item" href="/docs/latest/overview/overview">
-            Version 4.12.0-SNAPSHOT
+            Version 4.13.0-SNAPSHOT
             <span class="tag is-warning">Development</span>
           </a>
           <a class="navbar-item" href="/docs/latest/api/javadoc">
@@ -54,6 +54,11 @@
             Javadoc
           </a>
           <hr class="dropdown-divider">
+          
+          <a class="navbar-item" href="/docs/4.12.0/overview/overview">
+            Release 4.12.0
+            
+          </a>
           
           <a class="navbar-item" href="/docs/4.11.1/overview/overview">
             Release 4.11.1
@@ -816,25 +821,13 @@
 
 <p>A <em>ledger manager</em> handles ledgers’ metadata (which is stored in ZooKeeper). BookKeeper offers two types of ledger managers: the <a href="#flat-ledger-manager">flat ledger manager</a> and the <a href="#hierarchical-ledger-manager">hierarchical ledger manager</a>. Both ledger managers extend the <a href="../../api/javadoc/org/apache/bookkeeper/meta/AbstractZkLedgerManager"><code class="highlighter-rouge">AbstractZkLedgerManager</code></a> abstract class.</p>
 
-<blockquote>
-  <h4 id="use-the-flat-ledger-manager-in-most-cases">Use the flat ledger manager in most cases</h4>
-  <p>The flat ledger manager is the default and is recommended for nearly all use cases. The hierarchical ledger manager is better suited only for managing very large numbers of BookKeeper ledgers (&gt; 50,000).</p>
-</blockquote>
-
-<h3 id="flat-ledger-manager">Flat ledger manager</h3>
-
-<p>The <em>flat ledger manager</em>, implemented in the <a href="../../api/javadoc/org/apache/bookkeeper/meta/FlatLedgerManager.html"><code class="highlighter-rouge">FlatLedgerManager</code></a> class, stores all ledgers’ metadata in child nodes of a single ZooKeeper path. The flat ledger manager creates <a href="https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming">sequential nodes</a> to ensure the uniqueness of the ledger ID and prefixes all nodes with <code class="highlighter-rouge">L</code>. Bookie servers manage their own active ledgers in a hash map so that it’s easy to find which ledgers have been deleted from ZooKeeper and then garbage collect them.</p>
-
-<p>The flat ledger manager’s garbage collection follow proceeds as follows:</p>
-
-<ul>
-  <li>All existing ledgers are fetched from ZooKeeper (<code class="highlighter-rouge">zkActiveLedgers</code>)</li>
-  <li>All ledgers currently active within the bookie are fetched (<code class="highlighter-rouge">bkActiveLedgers</code>)</li>
-  <li>The currently actively ledgers are looped through to determine which ledgers don’t currently exist in ZooKeeper. Those are then garbage collected.</li>
-  <li>The <em>hierarchical ledger manager</em> stores ledgers’ metadata in two-level <a href="https://zookeeper.apache.org/doc/current/zookeeperOver.html#Nodes+and+ephemeral+nodes">znodes</a>.</li>
-</ul>
-
 <h3 id="hierarchical-ledger-manager">Hierarchical ledger manager</h3>
+
+<blockquote>
+  <p>default ledger manager.</p>
+
+  <p>The hierarchical ledger manager is able to manage very large numbers of BookKeeper ledgers (&gt; 50,000).</p>
+</blockquote>
 
 <p>The <em>hierarchical ledger manager</em>, implemented in the <a href="../../api/javadoc/org/apache/bookkeeper/meta/HierarchicalLedgerManager"><code class="highlighter-rouge">HierarchicalLedgerManager</code></a> class, first obtains a global unique ID from ZooKeeper using an <a href="https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/CreateMode.html#EPHEMERAL_SEQUENTIAL"><code class="highlighter-rouge">EPHEMERAL_SEQUENTIAL</code></a> znode. Since ZooKeeper’s sequence counter has a format of <code class="highlighter-rouge">%10d</code> (10 digits with 0 padding, for example <code class="highlighter-rouge">&lt;path&gt;0000000001</code>), the hierarchical ledger manager splits the generated ID into 3 parts:</p>
 
@@ -847,6 +840,23 @@
 </code></pre></div></div>
 
 <p>For example, ledger 0000000001 is split into three parts, 00, 0000, and 00001, and stored in znode <code class="highlighter-rouge">/{ledgers_root_path}/00/0000/L0001</code>. Each znode could have as many 10,000 ledgers, which avoids the problem of the child list being larger than the maximum ZooKeeper packet size (which is the <a href="https://issues.apache.org/jira/browse/BOOKKEEPER-39">limitation</a> that initially prompted the creation of the hierarchical ledger manager).</p>
+
+<h3 id="flat-ledger-manager">Flat ledger manager</h3>
+
+<blockquote>
+  <p>deprecated since 4.7.0, not recommand now.</p>
+</blockquote>
+
+<p>The <em>flat ledger manager</em>, implemented in the <a href="../../api/javadoc/org/apache/bookkeeper/meta/FlatLedgerManager.html"><code class="highlighter-rouge">FlatLedgerManager</code></a> class, stores all ledgers’ metadata in child nodes of a single ZooKeeper path. The flat ledger manager creates <a href="https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming">sequential nodes</a> to ensure the uniqueness of the ledger ID and prefixes all nodes with <code class="highlighter-rouge">L</code>. Bookie servers manage their own active ledgers in a hash map so that it’s easy to find which ledgers have been deleted from ZooKeeper and then garbage collect them.</p>
+
+<p>The flat ledger manager’s garbage collection follow proceeds as follows:</p>
+
+<ul>
+  <li>All existing ledgers are fetched from ZooKeeper (<code class="highlighter-rouge">zkActiveLedgers</code>)</li>
+  <li>All ledgers currently active within the bookie are fetched (<code class="highlighter-rouge">bkActiveLedgers</code>)</li>
+  <li>The currently actively ledgers are looped through to determine which ledgers don’t currently exist in ZooKeeper. Those are then garbage collected.</li>
+  <li>The <em>hierarchical ledger manager</em> stores ledgers’ metadata in two-level <a href="https://zookeeper.apache.org/doc/current/zookeeperOver.html#Nodes+and+ephemeral+nodes">znodes</a>.</li>
+</ul>
 
         </section>
 
@@ -892,9 +902,8 @@
 <li class="toc-entry toc-h2"><a href="#zookeeper-metadata">ZooKeeper metadata</a></li>
 <li class="toc-entry toc-h2"><a href="#ledger-manager">Ledger manager</a>
 <ul>
-<li class="toc-entry toc-h4"><a href="#use-the-flat-ledger-manager-in-most-cases">Use the flat ledger manager in most cases</a></li>
-<li class="toc-entry toc-h3"><a href="#flat-ledger-manager">Flat ledger manager</a></li>
 <li class="toc-entry toc-h3"><a href="#hierarchical-ledger-manager">Hierarchical ledger manager</a></li>
+<li class="toc-entry toc-h3"><a href="#flat-ledger-manager">Flat ledger manager</a></li>
 </ul>
 </li>
 </ul>

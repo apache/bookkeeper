@@ -44,7 +44,7 @@
         <a class="navbar-link">Documentation</a>
         <div class="navbar-dropdown is-boxed">
           <a class="navbar-item" href="/docs/latest/overview/overview">
-            Version 4.12.0-SNAPSHOT
+            Version 4.13.0-SNAPSHOT
             <span class="tag is-warning">Development</span>
           </a>
           <a class="navbar-item" href="/docs/latest/api/javadoc">
@@ -54,6 +54,11 @@
             Javadoc
           </a>
           <hr class="dropdown-divider">
+          
+          <a class="navbar-item" href="/docs/4.12.0/overview/overview">
+            Release 4.12.0
+            
+          </a>
           
           <a class="navbar-item" href="/docs/4.11.1/overview/overview">
             Release 4.11.1
@@ -682,7 +687,7 @@
 
 <p>Each entry in the log is written to <strong>Q<sub>w</sub></strong> nodes. This is considered the write quorum for that entry. The write quorum is the subsequence of the ensemble, <strong>Q<sub>w</sub></strong> in length, and starting at the bookie at index (entryid % <strong>E</strong>).</p>
 
-<p>For example, in a ledger of <strong>E</strong> = 4, <strong>Q<sub>w</sub></strong>, and <strong>Q<sub>a</sub></strong> = 2, with an ensemble consisting of B1, B2, B3, and B4, the write quorums for the first 6 entries will be:</p>
+<p>For example, in a ledger of <strong>E</strong> = 4, <strong>Q<sub>w</sub></strong> = 3, and <strong>Q<sub>a</sub></strong> = 2, with an ensemble consisting of B1, B2, B3, and B4, the write quorums for the first 6 entries will be:</p>
 
 <table>
   <thead>
