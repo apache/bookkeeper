@@ -1135,16 +1135,4 @@
       </build>
     </profile>
   </profiles>
-
-   <repositories>
-
-        <repository>
-            <id>curator-50-rc0</id>
-            <name>Curator Vote repository</name>
-            <url>https://repository.apache.org/content/repositories/orgapachecurator-1049/</url>
-        </repository>
-
-    </repositories>
-
-  
 </project>
