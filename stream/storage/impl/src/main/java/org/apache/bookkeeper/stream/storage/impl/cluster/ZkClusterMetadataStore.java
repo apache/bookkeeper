@@ -38,7 +38,6 @@ import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
 import org.apache.bookkeeper.stream.storage.exceptions.StorageRuntimeException;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.metadata.DLMetadata;
@@ -48,6 +47,7 @@ import org.apache.zookeeper.KeeperException;
  * A zookeeper based implementation of cluster metadata store.
  */
 @Slf4j
+@SuppressWarnings("deprecation")
 public class ZkClusterMetadataStore implements ClusterMetadataStore {
 
     private final CuratorFramework client;
@@ -58,7 +58,7 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
     private final String zkClusterAssignmentPath;
 
     private final Map<Consumer<Void>, NodeCacheListener> assignmentDataConsumers;
-    private NodeCache assignmentDataCache;
+    private org.apache.curator.framework.recipes.cache.NodeCache assignmentDataCache;
 
     private volatile boolean closed = false;
 
@@ -155,7 +155,8 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
     public void watchClusterAssignmentData(Consumer<Void> watcher, Executor executor) {
         synchronized (this) {
             if (assignmentDataCache == null) {
-                assignmentDataCache = new NodeCache(client, zkClusterAssignmentPath);
+                assignmentDataCache = new org.apache.curator.framework.recipes.cache.NodeCache(client,
+                                                                                               zkClusterAssignmentPath);
                 try {
                     assignmentDataCache.start();
                 } catch (Exception e) {
