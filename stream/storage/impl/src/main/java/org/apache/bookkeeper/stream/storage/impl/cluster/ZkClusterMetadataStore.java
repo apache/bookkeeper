@@ -156,7 +156,7 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
         synchronized (this) {
             if (assignmentDataCache == null) {
                 assignmentDataCache = new org.apache.curator.framework.recipes.cache.NodeCache(client,
-							zkClusterAssignmentPath);
+                                                                                               zkClusterAssignmentPath);
                 try {
                     assignmentDataCache.start();
                 } catch (Exception e) {
