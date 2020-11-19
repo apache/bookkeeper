@@ -139,7 +139,8 @@ class LedgerCreateOp {
                     lastError = null;
                     break;
                 } catch (BKNotEnoughBookiesException e) {
-                    LOG.error("Not enough bookies to create ledger with " + actualEnsembleSize + "/" + writeQuorumSize + "/" + ackQuorumSize);
+                    LOG.error("Not enough bookies to create ledger with {}/{}/{}",
+                            actualEnsembleSize, writeQuorumSize, ackQuorumSize);
                     lastError = e;
                     actualEnsembleSize--;
                 }
@@ -153,7 +154,8 @@ class LedgerCreateOp {
                 ensemble = bk.getBookieWatcher()
                         .newEnsemble(actualEnsembleSize, writeQuorumSize, ackQuorumSize, customMetadata);
             } catch (BKNotEnoughBookiesException e) {
-                LOG.error("Not enough bookies to create ledger with " + actualEnsembleSize + "/" + writeQuorumSize + "/" + ackQuorumSize);
+                LOG.error("Not enough bookies to create ledger with {}/{}/{}",
+                        actualEnsembleSize, writeQuorumSize, ackQuorumSize);
                 createComplete(e.getCode(), null);
                 return;
             }
