@@ -34,7 +34,7 @@ public class StreamStorageLifecycleComponent extends ServerLifecycleComponent {
     private final LifecycleComponent streamStorage;
 
     public StreamStorageLifecycleComponent(BookieConfiguration conf, StatsLogger statsLogger)
-            throws UnknownHostException, ConfigurationException {
+            throws Exception {
         super("stream-storage", conf, statsLogger);
 
         StorageServerConfiguration ssConf = StorageServerConfiguration.of(conf.getUnderlyingConf());
