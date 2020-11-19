@@ -28,6 +28,7 @@ import static org.junit.Assert.fail;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKClientClosedException;
 import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException;
@@ -404,7 +405,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
     protected LedgerMetadata generateLedgerMetadata(int ensembleSize,
         int writeQuorumSize, int ackQuorumSize, byte[] password,
-        Map<String, byte[]> customMetadata) {
+        Map<String, byte[]> customMetadata) throws BKException.BKNotEnoughBookiesException {
         return LedgerMetadataBuilder.create()
             .withId(12L)
             .withEnsembleSize(ensembleSize)
@@ -415,6 +416,53 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withCustomMetadata(customMetadata)
             .withCreationTime(System.currentTimeMillis())
             .newEnsembleEntry(0, generateNewEnsemble(ensembleSize)).build();
+    }
+
+    @Test
+    public void testCreateLedgerWithOpportunisticStriping() throws Exception {
+
+        maxNumberOfAvailableBookies =  4;
+        int bigEnsembleSize = 15;
+        int expectedWriteQuorumSize = 4;
+
+        ClientConfiguration config = new ClientConfiguration();
+        config.setOpportunisticStriping(true);
+        setBookKeeperConfig(config);
+
+        setNewGeneratedLedgerId(ledgerId);
+        WriteHandle writer = newCreateLedgerOp()
+            .withAckQuorumSize(expectedWriteQuorumSize)
+            .withEnsembleSize(bigEnsembleSize)
+            .withWriteQuorumSize(expectedWriteQuorumSize)
+            .withCustomMetadata(customMetadata)
+            .withPassword(password)
+            .execute()
+            .get();
+        assertEquals(ledgerId, writer.getId());
+        LedgerMetadata metadata = getLedgerMetadata(ledgerId);
+        assertEquals(expectedWriteQuorumSize, metadata.getEnsembleSize());
+        assertEquals(expectedWriteQuorumSize, metadata.getAckQuorumSize());
+        assertEquals(expectedWriteQuorumSize, metadata.getWriteQuorumSize());
+        assertArrayEquals(password, metadata.getPassword());
+
+    }
+
+    @Test(expected = BKException.BKNotEnoughBookiesException.class)
+    public void testNotEnoughBookies() throws Exception {
+
+        maxNumberOfAvailableBookies =  1;
+        ClientConfiguration config = new ClientConfiguration();
+        config.setOpportunisticStriping(false);
+        setBookKeeperConfig(config);
+
+        setNewGeneratedLedgerId(ledgerId);
+        result(newCreateLedgerOp()
+            .withAckQuorumSize(ackQuorumSize)
+            .withEnsembleSize(ensembleSize)
+            .withWriteQuorumSize(writeQuorumSize)
+            .withCustomMetadata(customMetadata)
+            .withPassword(password)
+            .execute());
     }
 
 }

@@ -116,6 +116,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     protected static final String STICKY_READS_ENABLED = "stickyReadSEnabled";
     // Add Parameters
+    protected static final String OPPORTUNISTIC_STRIPING = "opportunisticStriping";
     protected static final String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
     protected static final String MAX_ALLOWED_ENSEMBLE_CHANGES = "maxNumEnsembleChanges";
     // Timeout Setting
@@ -1738,6 +1739,36 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setTLSCertificatePath(String arg) {
         setProperty(TLS_CERTIFICATE_PATH, arg);
+        return this;
+    }
+
+    /**
+     * Whether to allow opportunistic striping.
+     *
+     * @return true if opportunistic striping is enabled
+     */
+    public boolean getOpportunisticStriping() {
+        return getBoolean(OPPORTUNISTIC_STRIPING, false);
+    }
+
+    /**
+     * Enable/Disable opportunistic striping.
+     * <p>
+     * If set to true, when you are creating a ledger with a given
+     * ensemble size, the system will automatically handle the
+     * lack of enough bookies, reducing ensemble size up to
+     * the write quorum size. This way in little clusters
+     * you can try to use striping (ensemble size > write quorum size)
+     * in case that you have enough bookies up and running,
+     * and degrade automatically to the minimum requested replication count.
+     * </p>
+     *
+     * @param enabled
+     *          flag to enable/disable opportunistic striping.
+     * @return client configuration.
+     */
+    public ClientConfiguration setOpportunisticStriping(boolean enabled) {
+        setProperty(OPPORTUNISTIC_STRIPING, enabled);
         return this;
     }
 
