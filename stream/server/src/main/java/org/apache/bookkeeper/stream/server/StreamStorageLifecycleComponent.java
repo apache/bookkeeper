@@ -18,13 +18,11 @@
 
 package org.apache.bookkeeper.stream.server;
 
-import java.net.UnknownHostException;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
 
 /**
  * This is a {@link ServerLifecycleComponent} to allow run stream storage component as part of bookie server.
