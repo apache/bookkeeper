@@ -109,6 +109,7 @@ public abstract class MockBookKeeperTestCase {
     List<BookieId> failedBookies;
     Set<BookieId> availableBookies;
     private int lastIndexForBK;
+    protected int maxNumberOfAvailableBookies = Integer.MAX_VALUE;
 
     private Map<BookieId, Map<Long, MockEntry>> getMockLedgerContents(long ledgerId) {
         return mockLedgerData.computeIfAbsent(ledgerId, (id) -> new ConcurrentHashMap<>());
@@ -140,6 +141,7 @@ public abstract class MockBookKeeperTestCase {
 
     @Before
     public void setup() throws Exception {
+        maxNumberOfAvailableBookies = Integer.MAX_VALUE;
         deferredBookieForceLedgerResponses = new ConcurrentHashMap<>();
         suspendedBookiesForForceLedgerAcks = Collections.synchronizedSet(new HashSet<>());
         mockLedgerMetadataRegistry = new ConcurrentHashMap<>();
@@ -314,7 +316,11 @@ public abstract class MockBookKeeperTestCase {
         return new BookieSocketAddress("localhost", 1111 + index).toBookieId();
     }
 
-    protected ArrayList<BookieId> generateNewEnsemble(int ensembleSize) {
+    protected ArrayList<BookieId> generateNewEnsemble(int ensembleSize) throws BKException.BKNotEnoughBookiesException {
+        LOG.info("generateNewEnsemble {}", ensembleSize);
+        if (ensembleSize > maxNumberOfAvailableBookies) {
+            throw new BKException.BKNotEnoughBookiesException();
+        }
         ArrayList<BookieId> ensemble = new ArrayList<>(ensembleSize);
         for (int i = 0; i < ensembleSize; i++) {
             ensemble.add(generateBookieSocketAddress(i));

@@ -125,27 +125,58 @@ class LedgerCreateOp {
      * Initiates the operation.
      */
     public void initiate() {
+        int actualEnsembleSize = ensembleSize;
+        List<BookieId> ensemble = null;
+        // select bookies for first ensemble
+        if (bk.getConf().getOpportunisticStriping()) {
+            BKNotEnoughBookiesException lastError = null;
+            // we would like to select ensembleSize bookies, but
+            // we can settle to writeQuorumSize
+            while (actualEnsembleSize >= writeQuorumSize) {
+                try {
+                    ensemble = bk.getBookieWatcher()
+                        .newEnsemble(actualEnsembleSize, writeQuorumSize, ackQuorumSize, customMetadata);
+                    lastError = null;
+                    break;
+                } catch (BKNotEnoughBookiesException e) {
+                    if (actualEnsembleSize >= writeQuorumSize + 1) {
+                        LOG.info("Not enough bookies to create ledger with ensembleSize={},"
+                                + " writeQuorumSize={} and ackQuorumSize={}, opportusticStriping enabled, try again",
+                                    actualEnsembleSize, writeQuorumSize, ackQuorumSize);
+                    }
+                    lastError = e;
+                    actualEnsembleSize--;
+                }
+            }
+            if (lastError != null) {
+                LOG.error("Not enough bookies to create ledger with ensembleSize={},"
+                        + " writeQuorumSize={} and ackQuorumSize={}",
+                        actualEnsembleSize, writeQuorumSize, ackQuorumSize);
+                createComplete(lastError.getCode(), null);
+                return;
+            }
+        } else {
+            try {
+                ensemble = bk.getBookieWatcher()
+                        .newEnsemble(actualEnsembleSize, writeQuorumSize, ackQuorumSize, customMetadata);
+            } catch (BKNotEnoughBookiesException e) {
+                LOG.error("Not enough bookies to create ledger with ensembleSize={},"
+                        + " writeQuorumSize={} and ackQuorumSize={}",
+                            actualEnsembleSize, writeQuorumSize, ackQuorumSize);
+                createComplete(e.getCode(), null);
+                return;
+            }
+        }
         LedgerMetadataBuilder metadataBuilder = LedgerMetadataBuilder.create()
-            .withEnsembleSize(ensembleSize).withWriteQuorumSize(writeQuorumSize).withAckQuorumSize(ackQuorumSize)
+            .withEnsembleSize(actualEnsembleSize).withWriteQuorumSize(writeQuorumSize).withAckQuorumSize(ackQuorumSize)
             .withDigestType(digestType.toApiDigestType()).withPassword(passwd);
+        metadataBuilder.newEnsembleEntry(0L, ensemble);
         if (customMetadata != null) {
             metadataBuilder.withCustomMetadata(customMetadata);
         }
         if (bk.getConf().getStoreSystemtimeAsLedgerCreationTime()) {
             metadataBuilder.withCreationTime(System.currentTimeMillis()).storingCreationTime(true);
         }
-
-        // select bookies for first ensemble
-        try {
-            List<BookieId> ensemble = bk.getBookieWatcher()
-                .newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata);
-            metadataBuilder.newEnsembleEntry(0L, ensemble);
-        } catch (BKNotEnoughBookiesException e) {
-            LOG.error("Not enough bookies to create ledger");
-            createComplete(e.getCode(), null);
-            return;
-        }
-
 
         if (this.generateLedgerId) {
             generateLedgerIdAndCreateLedger(metadataBuilder);
