@@ -34,9 +34,12 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -50,9 +53,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import io.netty.util.ReferenceCountUtil;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
@@ -73,6 +80,7 @@ import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -87,6 +95,7 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -185,7 +194,7 @@ public class LedgerHandle implements WriteHandle {
     int numOutstandingEntries = 0;
 
     // Number of read ahead entries in cache
-    int numReadAheadEntriesInCache = 0;
+    //int numCachedEntries = 0;
 
     // Number of entry to read in each read ahead operation.
     int numEntryEachRead = 0;
@@ -193,8 +202,14 @@ public class LedgerHandle implements WriteHandle {
     // Id of next entry to read into read ahead cache.
     long nextEntryId = 0;
 
+    // Next entry id where ensemble is different.
+    long nextEnsembleChange = nextEntryId;
+
+    List<BookieId> currentEnsembles;
+
     // Queue holding read ahead entries.
     private final LinkedBlockingQueue<ReadAheadEntry> readAheadEntries;
+    Map<Long, ReadAheadEntry> cache = new PassiveExpiringMap(1000);
 
     LedgerHandle(ClientContext clientCtx,
                  long ledgerId, Versioned<LedgerMetadata> versionedMetadata,
@@ -590,6 +605,7 @@ public class LedgerHandle implements WriteHandle {
                     // taking the length must occur after draining, as draining changes the length
                     lastEntry = lastAddPushed = LedgerHandle.this.lastAddConfirmed;
                     finalLength = LedgerHandle.this.length;
+                    releaseAllCachedEntries();
                     handleState = HandleState.CLOSED;
                 }
 
@@ -820,6 +836,7 @@ public class LedgerHandle implements WriteHandle {
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb,
                                   Object ctx, boolean isRecoveryRead) {
+
         if (!clientCtx.isClientClosed()) {
             readEntriesInternalAsync(firstEntry, lastEntry, isRecoveryRead)
                 .whenCompleteAsync(new FutureEventListener<LedgerEntries>() {
@@ -2098,84 +2115,198 @@ public class LedgerHandle implements WriteHandle {
     private class ReadAheadEntry implements org.apache.bookkeeper.common.util.SafeRunnable,
             BookkeeperInternalCallbacks.ReadEntryCallback {
 
-        protected final long entryId;
+        LedgerEntryImpl entry;
+        final long entryId;
+        boolean completed;
+
+        private int rc;
 
         private ReadAheadEntry(long entryId) {
             this.entryId = entryId;
-            this.entry = null;
             this.rc = BKException.Code.UnexpectedConditionException;
-            this.done = false;
+            this.completed = false;
+            this.entry = LedgerEntryImpl.create(ledgerId, entryId);
         }
 
-//                content = lh.macManager.verifyDigestAndReturnData(eId, buffer);
         @Override
         public void safeRun() {
-
+            readEntryFromBookie(this);
         }
 
         @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
+            ByteBuf content;
+            try {
+                content = macManager.verifyDigestAndReturnData(entryId, buffer);
+                this.entry.setLength(buffer.getLong(DigestManager.METADATA_LENGTH - 8));
+                this.entry.setEntryBuf(content);
+                completeReadAhead(Code.OK, true);
+            } catch (BKException.BKDigestMatchException e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.warn("");
+                }
+                completeReadAhead(Code.DigestMatchException, false);
+            }
+        }
 
+        private void readEntryFromBookie(ReadAheadEntry entry) {
+            if (!clientCtx.isClientClosed()) {
+                List<BookieId> ensemble = null;
+                WriteSet writeSet = null;
+                if (entry.entryId == nextEnsembleChange) {
+                    currentEnsembles = getLedgerMetadata().getEnsembleAt(entry.entryId);
+                    nextEnsembleChange = LedgerMetadataUtils.getNextEnsembleChange(getLedgerMetadata(), entry.entryId);
+                    if (clientCtx.getConf().enableReorderReadSequence) {
+                        writeSet = clientCtx.getPlacementPolicy()
+                                .reorderReadSequence(
+                                        ensemble,
+                                        getBookiesHealthInfo(),
+                                        getWriteSetForReadOperation(entry.entryId));
+                    } else {
+                        writeSet = getWriteSetForReadOperation(entry.entryId);
+                    }
+                    clientCtx.getBookieClient().readEntry(
+                            currentEnsembles.get(writeSet.get(ThreadLocalRandom.current().nextInt(writeSet.size()))),
+                            ledgerId,
+                            entry.entryId,
+                            entry,
+                            null,
+                            BookieProtocol.FLAG_NONE);
+
+                    writeSet.recycle();
+                }
+            } else {
+                entry.readEntryComplete(Code.ClientClosedException, ledgerId, entry.entryId, null, null);
+            }
+        }
+
+        void completeReadAhead(int rc, boolean success) {
+            synchronized (this) {
+                this.rc = rc;
+                this.completed = true;
+            }
+            readAheadComplete(success);
+        }
+
+        synchronized void release() {
+            if (null != this.entry) {
+                this.entry.getEntryBuffer().release();
+                this.entry = null;
+            }
         }
     }
 
-    private void performReadAhead() {
+    private void doReadAhead() {
         List<ReadAheadEntry> entriesToRead;
         synchronized (this) {
-            if (numReadAheadEntriesInCache >= maxNumReadAheadEntries) {
+            if (cache.size() >= maxNumReadAheadEntries) {
                 return;
             }
             // If outstanding entries exceed entry to read each time, do nothing.
-            int numEntriesToRead = Math.min(maxNumReadAheadEntries - numReadAheadEntriesInCache,
+            int numEntriesToRead = Math.min(maxNumReadAheadEntries - cache.size(),
                     numEntryEachRead - numOutstandingEntries);
             if (numEntriesToRead <= 0) {
                 return;
             }
             entriesToRead = new ArrayList<ReadAheadEntry>(numEntriesToRead);
             for (int i = 0; i < numEntriesToRead; i++) {
-                ReadAheadEntry entry = new numReadAheadEntriesInCache(nextEntryId);
-                entriesToFetch.add(entry);
-                readAheadEntries.add(entry);
+                ReadAheadEntry entry = new ReadAheadEntry(nextEntryId);
+                entriesToRead.add(entry);
+                readAheadEntries.offer(entry);
+                cache.put(entry.entryId, entry);
                 ++numOutstandingEntries;
-                ++cachedEntries;
                 ++nextEntryId;
             }
         }
-        for (CacheEntry entry : entriesToFetch) {
-            issueRead(entry);
+        for (ReadAheadEntry entry : entriesToRead) {
+            if (isHandleWritable()) {
+                // Ledger handle in read/write mode: submit to OSE for ordered execution.
+                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, entry);
+            } else {
+                // Read-only ledger handle: bypass OSE and execute read directly in client thread.
+                // This avoids a context-switch to OSE thread and thus reduces latency.
+                entry.run();
+            }
         }
     }
 
-    private void readEntryFromBookie() {
-        if (!clientCtx.isClientClosed()) {
-//            readEntriesInternalAsync(firstEntry, lastEntry, isRecoveryRead)
-//                    .whenCompleteAsync(new FutureEventListener<LedgerEntries>() {
-//                        @Override
-//                        public void onSuccess(LedgerEntries entries) {
-//                            cb.readComplete(
-//                                    Code.OK,
-//                                    LedgerHandle.this,
-//                                    IteratorUtils.asEnumeration(
-//                                            Iterators.transform(entries.iterator(), le -> {
-//                                                LedgerEntry entry = new LedgerEntry((LedgerEntryImpl) le);
-//                                                le.close();
-//                                                return entry;
-//                                            })),
-//                                    ctx);
-//                        }
-//
-//                        @Override
-//                        public void onFailure(Throwable cause) {
-//                            if (cause instanceof BKException) {
-//                                BKException bke = (BKException) cause;
-//                                cb.readComplete(bke.getCode(), LedgerHandle.this, null, ctx);
-//                            } else {
-//                                cb.readComplete(Code.UnexpectedConditionException, LedgerHandle.this, null, ctx);
-//                            }
-//                        }
-//                    }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
-        } else {
-//            cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
+    private void readAheadComplete(boolean success) {
+        // We successfully complete read ahead en entry.
+        synchronized (this) {
+            --numOutstandingEntries;
+        }
+        // Stop read ahead if we encountered exception
+        if (success) {
+            doReadAhead();
+        }
+    }
+
+    // Try to fulfil read request first from read ahead cache then file read to bookie if entry id if cache miss.
+    private CompletableFuture<LedgerEntries> readEntriesFromReadAheadCache(long firstEntry, long lastEntry,
+                                                                                             boolean isRecoveryRead) {
+        List<CompletableFuture<? extends Iterable<org.apache.bookkeeper.client.api.LedgerEntry>>> entries = new ArrayList<>();
+        long index = firstEntry;
+        long firstMissingEntry = -1;
+        List<org.apache.bookkeeper.client.api.LedgerEntry> cachedEntries = new ArrayList<>();
+        while (index <= lastEntry) {
+            if (cache.containsKey(index)) {
+                // if previously has cache miss, file read request
+                if (firstMissingEntry != -1) {
+                    entries.add(readEntriesInternalAsync(firstMissingEntry, index - 1, isRecoveryRead));
+                    firstMissingEntry = -1;
+                }
+                // try use cached entry
+                ReadAheadEntry cachedEntry = cache.get(index);
+                if (cachedEntry.completed && cachedEntry.rc == Code.OK) {
+                    cachedEntries.add(cachedEntry.entry);
+                    //entriesInCache.set((int) (firstEntry - index));
+                } else {
+                    // need to file read, and put previous entry from cache to result
+                    if (firstMissingEntry == -1) {
+                        firstMissingEntry = index;
+                        entries.add(CompletableFuture.completedFuture(cachedEntries));
+                        cachedEntries = new ArrayList<>();
+                    }
+                }
+            } else {
+                // need to file read, and put previous entry from cache to result
+                if (firstMissingEntry == -1) {
+                    firstMissingEntry = index;
+                    entries.add(CompletableFuture.completedFuture(cachedEntries));
+                    cachedEntries = new ArrayList<>();
+                }
+            }
+        }
+        if (firstMissingEntry == firstEntry) {
+            entries.add(readEntriesInternalAsync(firstMissingEntry, lastEntry, isRecoveryRead));
+        }
+        CompletableFuture<? extends List<? extends Iterable<org.apache.bookkeeper.client.api.LedgerEntry>>>
+        completedEntries = CompletableFuture.allOf(entries.toArray(new CompletableFuture[entries.size()]))
+                .thenApply(result ->
+                        entries
+                        .stream()
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toList()))
+                .exceptionally(e -> {
+                    // Handle exception, fail the read request.
+                    return null;
+                });
+        return completedEntries.thenApply(allEntries -> {
+            List<org.apache.bookkeeper.client.api.LedgerEntry> readEntries = new ArrayList<>();
+            allEntries.forEach(e -> {
+                e.forEach(entry -> readEntries.add(entry));
+            });
+            return LedgerEntriesImpl.create(readEntries);
+        });
+    }
+
+    private void releaseAllCachedEntries() {
+        synchronized (this) {
+            ReadAheadEntry entry = readAheadEntries.poll();
+            while (null != entry) {
+                entry.release();
+                entry = readAheadEntries.poll();
+            }
         }
     }
 
