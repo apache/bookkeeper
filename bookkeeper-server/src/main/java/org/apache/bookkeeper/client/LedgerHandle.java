@@ -47,6 +47,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -78,6 +79,7 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
@@ -173,6 +175,27 @@ public class LedgerHandle implements WriteHandle {
     final Counter lacUpdateMissesCounter;
     private final OpStatsLogger clientChannelWriteWaitStats;
 
+    /**
+     * Read ahead related parameters
+     */
+    // Number of read ahead entries allowed in cache.
+    private final int maxNumReadAheadEntries = 0;
+
+    // Number of read ahead entries that has been issued but not yet completed.
+    int numOutstandingEntries = 0;
+
+    // Number of read ahead entries in cache
+    int numReadAheadEntriesInCache = 0;
+
+    // Number of entry to read in each read ahead operation.
+    int numEntryEachRead = 0;
+
+    // Id of next entry to read into read ahead cache.
+    long nextEntryId = 0;
+
+    // Queue holding read ahead entries.
+    private final LinkedBlockingQueue<ReadAheadEntry> readAheadEntries;
+
     LedgerHandle(ClientContext clientCtx,
                  long ledgerId, Versioned<LedgerMetadata> versionedMetadata,
                  BookKeeper.DigestType digestType, byte[] password,
@@ -183,6 +206,7 @@ public class LedgerHandle implements WriteHandle {
         this.versionedMetadata = versionedMetadata;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.writeFlags = writeFlags;
+        this.readAheadEntries = new LinkedBlockingQueue<>();
 
         LedgerMetadata metadata = versionedMetadata.getValue();
         if (metadata.isClosed()) {
@@ -2070,4 +2094,89 @@ public class LedgerHandle implements WriteHandle {
             return distributionSchedule.getWriteSet(entryId);
         }
     }
+
+    private class ReadAheadEntry implements org.apache.bookkeeper.common.util.SafeRunnable,
+            BookkeeperInternalCallbacks.ReadEntryCallback {
+
+        protected final long entryId;
+
+        private ReadAheadEntry(long entryId) {
+            this.entryId = entryId;
+            this.entry = null;
+            this.rc = BKException.Code.UnexpectedConditionException;
+            this.done = false;
+        }
+
+//                content = lh.macManager.verifyDigestAndReturnData(eId, buffer);
+        @Override
+        public void safeRun() {
+
+        }
+
+        @Override
+        public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
+
+        }
+    }
+
+    private void performReadAhead() {
+        List<ReadAheadEntry> entriesToRead;
+        synchronized (this) {
+            if (numReadAheadEntriesInCache >= maxNumReadAheadEntries) {
+                return;
+            }
+            // If outstanding entries exceed entry to read each time, do nothing.
+            int numEntriesToRead = Math.min(maxNumReadAheadEntries - numReadAheadEntriesInCache,
+                    numEntryEachRead - numOutstandingEntries);
+            if (numEntriesToRead <= 0) {
+                return;
+            }
+            entriesToRead = new ArrayList<ReadAheadEntry>(numEntriesToRead);
+            for (int i = 0; i < numEntriesToRead; i++) {
+                ReadAheadEntry entry = new numReadAheadEntriesInCache(nextEntryId);
+                entriesToFetch.add(entry);
+                readAheadEntries.add(entry);
+                ++numOutstandingEntries;
+                ++cachedEntries;
+                ++nextEntryId;
+            }
+        }
+        for (CacheEntry entry : entriesToFetch) {
+            issueRead(entry);
+        }
+    }
+
+    private void readEntryFromBookie() {
+        if (!clientCtx.isClientClosed()) {
+//            readEntriesInternalAsync(firstEntry, lastEntry, isRecoveryRead)
+//                    .whenCompleteAsync(new FutureEventListener<LedgerEntries>() {
+//                        @Override
+//                        public void onSuccess(LedgerEntries entries) {
+//                            cb.readComplete(
+//                                    Code.OK,
+//                                    LedgerHandle.this,
+//                                    IteratorUtils.asEnumeration(
+//                                            Iterators.transform(entries.iterator(), le -> {
+//                                                LedgerEntry entry = new LedgerEntry((LedgerEntryImpl) le);
+//                                                le.close();
+//                                                return entry;
+//                                            })),
+//                                    ctx);
+//                        }
+//
+//                        @Override
+//                        public void onFailure(Throwable cause) {
+//                            if (cause instanceof BKException) {
+//                                BKException bke = (BKException) cause;
+//                                cb.readComplete(bke.getCode(), LedgerHandle.this, null, ctx);
+//                            } else {
+//                                cb.readComplete(Code.UnexpectedConditionException, LedgerHandle.this, null, ctx);
+//                            }
+//                        }
+//                    }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
+        } else {
+//            cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
+        }
+    }
+
 }
