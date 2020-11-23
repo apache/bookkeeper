@@ -1579,14 +1579,40 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testInvalidServiceMetadataURI() throws Exception {
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setMetadataServiceUri("zk+flat:///ledgers"); // default value in docker image
-        try {
-            new BookieServer(conf);
-            Assert.fail("Bookie metadata initialization must fail with an invalid metadata service uri");
-        } catch (MetadataStoreException e) {
-            MetadataException cause = (MetadataException) e.getCause();
-            assertEquals(cause.getCode(), org.apache.bookkeeper.meta.exceptions.Code.INVALID_METADATA_SERVICE_URI);
+       testInvalidServiceMetadataURICase("zk+null:///ledgers"); // no hostname
+       testInvalidServiceMetadataURICase("zk+null://ledgers");
+       testInvalidServiceMetadataURICase("zk+null:ledgers");
+        {
+            ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+            conf.setMetadataServiceUri("//ledgers");
+            try {
+                new BookieServer(conf);
+                Assert.fail("Bookie metadata initialization must fail with metadata service uri: //ledgers");
+            } catch (NullPointerException e) {
+                assertTrue(e.getMessage().contains("Invalid metadata service uri : //ledgers"));
+            }
+        }
+
+        {
+            ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+            conf.setMetadataServiceUri("");
+            try {
+                new BookieServer(conf);
+                Assert.fail("Bookie metadata initialization must fail with empty metadata service uri");
+            } catch (NullPointerException e) {
+                assertTrue(e.getMessage().contains("Invalid metadata service uri :"));
+            }
         }
     }
+    
+    private void testInvalidServiceMetadataURICase(String uri) throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setMetadataServiceUri(uri);
+        try {
+            new BookieServer(conf);
+            Assert.fail("Bookie metadata initialization must fail with an invalid metadata service uri: " + uri);
+        } catch (MetadataStoreException e) {
+            // ok
+        }
+    } 
 }

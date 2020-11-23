@@ -60,7 +60,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
     protected static final String SCHEME = "zk";
 
-    public static String getZKServersFromServiceUri(URI uri) throws IllegalArgumentException {
+    public static String getZKServersFromServiceUri(URI uri) {
         String authority = uri.getAuthority();
         if (authority == null) {
             throw new IllegalArgumentException("Invalid metadata service URI format: " + uri);
@@ -69,7 +69,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     }
 
     @SuppressWarnings("deprecation")
-    public static String resolveZkServers(AbstractConfiguration<?> conf) throws IllegalArgumentException {
+    public static String resolveZkServers(AbstractConfiguration<?> conf) {
         String metadataServiceUriStr = conf.getMetadataServiceUriUnchecked();
         if (null == metadataServiceUriStr) {
             return conf.getZkServers();
