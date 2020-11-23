@@ -1604,7 +1604,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             }
         }
     }
-    
+
     private void testInvalidServiceMetadataURICase(String uri) throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setMetadataServiceUri(uri);
@@ -1614,5 +1614,5 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         } catch (MetadataStoreException e) {
             // ok
         }
-    } 
+    }
 }
