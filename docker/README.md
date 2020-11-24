@@ -217,7 +217,7 @@ This variable allows you to specify where to store data in docker instance.
 
 This could be override by env vars "BK_journalDirectory", "BK_ledgerDirectories", "BK_indexDirectories"  and also `journalDirectory`, `ledgerDirectories`, `indexDirectories` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
 
-Default value is "/data/bookkeeper", which contains volumes `/data/bookkeeper/journal`, `/data/bookkeeper/ledger` and `/data/bookkeeper/index` to hold Bookkeeper data in docker.
+Default value is "/data/bookkeeper", which contains volumes `/data/bookkeeper/journal`, `/data/bookkeeper/ledgers` and `/data/bookkeeper/index` to hold Bookkeeper data in docker.
 
 
 ### Configure files under /opt/bookkeeper/conf
