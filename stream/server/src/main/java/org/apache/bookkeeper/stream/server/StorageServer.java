@@ -246,7 +246,9 @@ public class StorageServer {
                         .setStatsProvider(statsProviderService.getStatsProvider())
                         .build();
                 HttpService httpService =
-                        new HttpService(provider, new org.apache.bookkeeper.server.conf.BookieConfiguration(bkServerConf), rootStatsLogger);
+                        new HttpService(provider,
+                                new org.apache.bookkeeper.server.conf.BookieConfiguration(bkServerConf),
+                                rootStatsLogger);
                 serverBuilder.addComponent(httpService);
                 log.info("Load lifecycle component : {}", HttpService.class.getName());
             }
