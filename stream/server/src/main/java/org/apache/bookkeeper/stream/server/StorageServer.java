@@ -154,12 +154,9 @@ public class StorageServer {
             storageServer = buildStorageServer(
                 conf,
                 grpcPort);
-        } catch (ConfigurationException e) {
+        } catch (Exception e) {
             log.error("Invalid storage configuration", e);
             return ExitCode.INVALID_CONF.code();
-        } catch (UnknownHostException e) {
-            log.error("Unknonw host name", e);
-            return ExitCode.UNKNOWN_HOSTNAME.code();
         }
 
         CompletableFuture<Void> liveFuture =
@@ -178,7 +175,7 @@ public class StorageServer {
 
     public static LifecycleComponent buildStorageServer(CompositeConfiguration conf,
                                                         int grpcPort)
-            throws UnknownHostException, ConfigurationException {
+            throws Exception {
         return buildStorageServer(conf, grpcPort, true, NullStatsLogger.INSTANCE);
     }
 
@@ -186,7 +183,7 @@ public class StorageServer {
                                                         int grpcPort,
                                                         boolean startBookieAndStartProvider,
                                                         StatsLogger externalStatsLogger)
-        throws ConfigurationException, UnknownHostException {
+        throws Exception {
         final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
 
         final Supplier<BookieServiceInfo> bookieServiceInfoProvider =
