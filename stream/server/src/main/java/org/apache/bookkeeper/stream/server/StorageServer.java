@@ -238,7 +238,7 @@ public class StorageServer {
             serverBuilder.addComponent(bookieService);
             bkServerConf = bookieService.serverConf();
 
-            // 4. build http service
+            // Build http service
             if (bkServerConf.isHttpServerEnabled()) {
                 BKHttpServiceProvider provider = new BKHttpServiceProvider.Builder()
                         .setBookieServer(bookieService.getServer())
