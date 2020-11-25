@@ -35,6 +35,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -409,7 +410,9 @@ public class BookieInfoReader {
         Collection<BookieId> bookies;
         bookies = bk.bookieWatcher.getBookies();
         bookies.addAll(bk.bookieWatcher.getReadOnlyBookies());
-
+        if (bookies.isEmpty()) {
+            return map;
+        }
         totalSent.set(bookies.size());
         for (BookieId b : bookies) {
             bkc.getBookieInfo(b, requested, new GetBookieInfoCallback() {
