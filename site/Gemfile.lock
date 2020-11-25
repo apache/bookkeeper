@@ -40,7 +40,7 @@ GEM
       rb-inotify (~> 0.9, >= 0.9.10)
     mercenary (0.3.6)
     mini_portile2 (2.4.0)
-    nokogiri (1.10.7)
+    nokogiri (1.10.8)
       mini_portile2 (~> 2.4.0)
     pathutil (0.16.2)
       forwardable-extended (~> 2.6)
@@ -62,7 +62,7 @@ PLATFORMS
 DEPENDENCIES
   jekyll (= 3.8.6)
   jekyll-toc (= 0.12.2)
-  nokogiri (= 1.10.7)
+  nokogiri (= 1.10.8)
 
 RUBY VERSION
    ruby 2.4.0p0
