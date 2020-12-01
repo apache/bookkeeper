@@ -450,8 +450,8 @@ groups:
 - name: DB Ledger Storage Settings
   params:
   - param: dbStorage_writeCacheMaxSizeMb
-    description: Size of write cache. Memory is allocated from JVM direct memory. Write cache is used for buffer entries before flushing into the entry log. For good performance, it should be big enough to hold a sub.
-    default: 512
+    description: Size of write cache. Memory is allocated from JVM direct memory. Write cache is used for buffer entries before flushing into the entry log. For good performance, it should be big enough to hold a substantial amount of entries in the flush interval.
+    default: 25% of the available direct memory
   - param: dbStorage_readAheadCacheMaxSizeMb
     description: Size of read cache. Memory is allocated from JVM direct memory. The read cache is pre-filled doing read-ahead whenever a cache miss happens.
     default: 256
