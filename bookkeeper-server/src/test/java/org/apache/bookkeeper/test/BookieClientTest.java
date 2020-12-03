@@ -338,7 +338,7 @@ public class BookieClientTest {
 
         TestOpStatsLogger perChannelBookieClientScopeOfThisAddr = (TestOpStatsLogger) statsLogger
                 .scope(BookKeeperClientStats.CHANNEL_SCOPE)
-                .scope(PerChannelBookieClient.buildStatsLoggerScopeName(addr.toBookieId()))
+                .scopeLabel(BookKeeperClientStats.BOOKIE_LABEL, addr.toBookieId().toString())
                 .getOpStatsLogger(BookKeeperClientStats.GET_BOOKIE_INFO_OP);
         int expectedBookieInfoSuccessCount = (limitStatsLogging) ? 0 : 1;
         assertEquals("BookieInfoSuccessCount", expectedBookieInfoSuccessCount,

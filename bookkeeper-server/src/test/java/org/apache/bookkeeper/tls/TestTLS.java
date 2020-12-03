@@ -884,10 +884,12 @@ public class TestTLS extends BookKeeperClusterTestCase {
         // verify stats
         for (int i = 0; i < numBookies; i++) {
             BookieServer bookie = bs.get(i);
-            InetSocketAddress addr = bookie.getLocalAddress().getSocketAddress();
             StringBuilder nameBuilder = new StringBuilder(BookKeeperClientStats.CHANNEL_SCOPE)
                     .append(".")
-                    .append(PerChannelBookieClient.buildStatsLoggerScopeName(bookie.getBookieId()))
+                    .append("bookie_")
+                    .append(bookie.getBookieId().toString()
+                    .replace('.', '_')
+                    .replace('-', '_'))
                     .append(".");
 
             // check stats on TLS enabled client
@@ -983,10 +985,12 @@ public class TestTLS extends BookKeeperClusterTestCase {
         }
 
         // check failed handshake counter
-        InetSocketAddress addr = bookie.getLocalAddress().getSocketAddress();
         StringBuilder nameBuilder = new StringBuilder(BookKeeperClientStats.CHANNEL_SCOPE)
                 .append(".")
-                .append(PerChannelBookieClient.buildStatsLoggerScopeName(bookie.getBookieId()))
+                .append("bookie_")
+                .append(bookie.getBookieId().toString()
+                        .replace('.', '_')
+                        .replace('-', '_'))
                 .append(".");
 
         assertEquals("TLS handshake failure expected", 1,

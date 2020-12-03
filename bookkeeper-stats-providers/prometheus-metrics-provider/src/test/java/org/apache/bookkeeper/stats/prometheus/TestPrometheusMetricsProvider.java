@@ -28,6 +28,8 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.junit.Test;
 
+import java.util.Collections;
+
 /**
  * Unit test of {@link PrometheusMetricsProvider}.
  */
@@ -106,7 +108,7 @@ public class TestPrometheusMetricsProvider {
 
     @Test
     public void testCounter() {
-        LongAdderCounter counter = new LongAdderCounter();
+        LongAdderCounter counter = new LongAdderCounter(Collections.emptyMap());
         long value = counter.get();
         assertEquals(0L, value);
         counter.inc();

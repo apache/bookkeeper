@@ -18,23 +18,26 @@ package org.apache.bookkeeper.stats.prometheus;
 
 import org.apache.bookkeeper.stats.Gauge;
 
+import java.util.Map;
+
 /**
  * A {@link Gauge} implementation that forwards on the value supplier.
  */
 public class SimpleGauge<T extends Number> {
 
-    // public SimpleGauge(CollectorRegistry registry, String name) {
-    // this.gauge = PrometheusUtil.safeRegister(registry,
-    // Gauge.build().name(Collector.sanitizeMetricName(name)).help("-").create());
-    // }
-
+    private final Map<String, String> labels;
     private final Gauge<T> gauge;
 
-    public SimpleGauge(final Gauge<T> gauge) {
+    public SimpleGauge(final Gauge<T> gauge, Map<String, String> labels) {
         this.gauge = gauge;
+        this.labels = labels;
     }
 
     Number getSample() {
         return gauge.getSample();
+    }
+
+    public Map<String, String> getLabels() {
+        return labels;
     }
 }

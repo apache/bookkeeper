@@ -65,6 +65,27 @@ public interface StatsLogger {
     StatsLogger scope(String name);
 
     /**
+     * Provide the stats logger with an attached label.
+     *
+     * @param labelName
+     *          the name of the label.
+     * @param labelValue
+     *          the value of the label.
+     *
+     * @return stats logger under scope <i>name</i>.
+     */
+    default StatsLogger scopeLabel(String labelName, String labelValue) {
+        // Provide default implementation for backward compatibility
+        return scope(new StringBuilder()
+                .append(labelName)
+                .append('_')
+                .append(labelValue.replace('.', '_')
+                        .replace('-', '_')
+                        .replace(':', '_'))
+                .toString());
+    }
+
+    /**
      * Remove the given <i>statsLogger</i> for scope <i>name</i>.
      * It can be no-op if the underlying stats provider doesn't have the ability to remove scope.
      *
