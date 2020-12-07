@@ -82,6 +82,10 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
         // no-op
     }
 
+    public BookieServer getServer() {
+        return bs;
+    }
+
     @Override
     public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
         try {
