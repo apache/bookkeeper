@@ -320,12 +320,16 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     protected void stopAllBookies() throws Exception {
+        stopAllBookies(true);
+    }
+
+    protected void stopAllBookies(boolean shutdownClient) throws Exception {
         for (BookieServer server : bs) {
             server.shutdown();
         }
         bsConfs.clear();
         bs.clear();
-        if (bkc != null) {
+        if (shutdownClient && bkc != null) {
             bkc.close();
             bkc = null;
         }
