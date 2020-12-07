@@ -409,7 +409,9 @@ public class BookieInfoReader {
         Collection<BookieId> bookies;
         bookies = bk.bookieWatcher.getBookies();
         bookies.addAll(bk.bookieWatcher.getReadOnlyBookies());
-
+        if (bookies.isEmpty()) {
+            return map;
+        }
         totalSent.set(bookies.size());
         for (BookieId b : bookies) {
             bkc.getBookieInfo(b, requested, new GetBookieInfoCallback() {

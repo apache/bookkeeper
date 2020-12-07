@@ -180,7 +180,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     final long addEntryTimeoutNanos;
     final long readEntryTimeoutNanos;
     final int maxFrameSize;
-    final int getBookieInfoTimeout;
+    final long getBookieInfoTimeoutNanos;
     final int startTLSTimeout;
 
     private final ConcurrentOpenHashMap<CompletionKey, CompletionValue> completionObjects =
@@ -396,7 +396,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         this.state = ConnectionState.DISCONNECTED;
         this.addEntryTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryTimeout());
         this.readEntryTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getReadEntryTimeout());
-        this.getBookieInfoTimeout = conf.getBookieInfoTimeout();
+        this.getBookieInfoTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getBookieInfoTimeout());
         this.startTLSTimeout = conf.getStartTLSTimeout();
         this.useV2WireProtocol = conf.getUseV2WireProtocol();
         this.preserveMdcForTaskExecution = conf.getPreserveMdcForTaskExecution();
@@ -2013,6 +2013,16 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     key.release();
                 }
             };
+        }
+
+        @Override
+        boolean maybeTimeout() {
+            if (MathUtils.elapsedNanos(startTime) >= getBookieInfoTimeoutNanos) {
+                timeout();
+                return true;
+            } else {
+                return false;
+            }
         }
 
         @Override
