@@ -63,7 +63,7 @@ public class WhoIsAuditorCommand extends BookieCommand<CliFlags> {
         }
     }
 
-    public boolean getAuditor(ServerConfiguration conf)
+    private boolean getAuditor(ServerConfiguration conf)
         throws ConfigurationException, InterruptedException, IOException, KeeperException {
         ZooKeeper zk = null;
         try {
