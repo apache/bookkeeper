@@ -61,7 +61,11 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     protected static final String SCHEME = "zk";
 
     public static String getZKServersFromServiceUri(URI uri) {
-        return uri.getAuthority().replace(";", ",");
+        String authority = uri.getAuthority();
+        if (authority == null) {
+            throw new IllegalArgumentException("Invalid metadata service URI format: " + uri);
+        }
+        return authority.replace(";", ",");
     }
 
     @SuppressWarnings("deprecation")
@@ -183,7 +187,13 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             final String bookieReadonlyRegistrationPath = bookieRegistrationPath + "/" + READONLY;
 
             // construct the zookeeper
-            final String zkServers = getZKServersFromServiceUri(metadataServiceUri);
+            final String zkServers;
+            try {
+                zkServers = getZKServersFromServiceUri(metadataServiceUri);
+            } catch (IllegalArgumentException ex) {
+                throw new MetadataException(
+                        Code.INVALID_METADATA_SERVICE_URI, ex);
+            }
             log.info("Initialize zookeeper metadata driver at metadata service uri {} :"
                 + " zkServers = {}, ledgersRootPath = {}.", metadataServiceUriStr, zkServers, ledgersRootPath);
 

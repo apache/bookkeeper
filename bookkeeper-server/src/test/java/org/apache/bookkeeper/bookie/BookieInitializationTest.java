@@ -1576,4 +1576,43 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             LOG.info("As expected Bookie fails to come up without a cookie in metadata store.");
         }
     }
+
+    @Test
+    public void testInvalidServiceMetadataURI() throws Exception {
+       testInvalidServiceMetadataURICase("zk+null:///ledgers"); // no hostname
+       testInvalidServiceMetadataURICase("zk+null://ledgers");
+       testInvalidServiceMetadataURICase("zk+null:ledgers");
+        {
+            ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+            conf.setMetadataServiceUri("//ledgers");
+            try {
+                new BookieServer(conf);
+                Assert.fail("Bookie metadata initialization must fail with metadata service uri: //ledgers");
+            } catch (NullPointerException e) {
+                assertTrue(e.getMessage().contains("Invalid metadata service uri : //ledgers"));
+            }
+        }
+
+        {
+            ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+            conf.setMetadataServiceUri("");
+            try {
+                new BookieServer(conf);
+                Assert.fail("Bookie metadata initialization must fail with empty metadata service uri");
+            } catch (NullPointerException e) {
+                assertTrue(e.getMessage().contains("Invalid metadata service uri :"));
+            }
+        }
+    }
+
+    private void testInvalidServiceMetadataURICase(String uri) throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setMetadataServiceUri(uri);
+        try {
+            new BookieServer(conf);
+            Assert.fail("Bookie metadata initialization must fail with an invalid metadata service uri: " + uri);
+        } catch (MetadataStoreException e) {
+            // ok
+        }
+    }
 }
