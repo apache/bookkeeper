@@ -119,7 +119,7 @@
     <commons-collections4.version>4.1</commons-collections4.version>
     <commons-codec.version>1.6</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
-    <commons-compress.version>1.15</commons-compress.version>
+    <commons-compress.version>1.19</commons-compress.version>
     <commons-lang.version>2.6</commons-lang.version>
     <commons-lang3.version>3.6</commons-lang3.version>
     <commons-io.version>2.4</commons-io.version>
@@ -133,11 +133,11 @@
     <grpc.version>1.18.0</grpc.version>
     <guava.version>30.0-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
-    <hadoop.version>2.7.3</hadoop.version>
+    <hadoop.version>2.10.0</hadoop.version>
     <hamcrest.version>1.3</hamcrest.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.11.0</jackson.version>
-    <jackson-mapper-asl.version>1.9.11</jackson-mapper-asl.version>
+    <jackson-mapper-asl.version>2.6.7.4</jackson-mapper-asl.version>
     <jcommander.version>1.48</jcommander.version>
     <jetty.version>9.4.33.v20201020</jetty.version>
     <jline.version>2.11</jline.version>
@@ -146,7 +146,7 @@
     <jna.version>3.2.7</jna.version>
     <junit.version>4.12</junit.version>
     <libthrift5.version>0.5.0-1</libthrift5.version>
-    <libthrift9.version>0.12.0</libthrift9.version>
+    <libthrift9.version>0.13.0-hotfix.1</libthrift9.version>
     <lombok.version>1.18.10</lombok.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>3.0.0</mockito.version>
@@ -168,7 +168,7 @@
     <spotbugs-annotations.version>3.1.8</spotbugs-annotations.version>
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.8.3</testcontainers.version>
-    <vertx.version>3.5.3</vertx.version>
+    <vertx.version>3.9.4</vertx.version>
     <zookeeper.version>3.6.2</zookeeper.version>
     <snappy.version>1.1.7</snappy.version>
     <jctools.version>2.1.2</jctools.version>
