@@ -27,6 +27,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -52,12 +53,14 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.AbstractDNSToSwitchMapping;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
+import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -85,7 +88,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     private final DigestType digestType;
 
     public BookKeeperTest() {
-        super(4);
+        super(3);
         this.digestType = DigestType.CRC32;
     }
 
@@ -1112,4 +1115,20 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                          1);
         }
     }
+
+    @Test
+    public void testBookieAddressResolverPassedToDNSToSwitchMapping() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        StaticDNSResolver tested = new StaticDNSResolver();
+        try (BookKeeper bkc = BookKeeper
+                        .forConfig(conf)
+                        .dnsResolver(tested)
+                        .build()) {
+            bkc.createLedger(digestType, "testPasswd".getBytes()).close();
+            assertSame(bkc.getBookieAddressResolver(), tested.getBookieAddressResolver());
+        }
+    }
+
 }
