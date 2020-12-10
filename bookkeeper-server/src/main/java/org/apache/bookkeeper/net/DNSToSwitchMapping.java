@@ -68,9 +68,9 @@ public interface DNSToSwitchMapping {
     default boolean useHostName() {
         return true;
     }
-    
+
     /**
-     * Receives the current BookieAddressResolver
+     * Receives the current BookieAddressResolver.
      * @param bookieAddressResolver
      */
     default void setBookieAddressResolver(BookieAddressResolver bookieAddressResolver) {

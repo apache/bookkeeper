@@ -237,7 +237,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 ((Configurable) actualDNSResolver).setConf(conf);
             }
         }
-        
+
         this.dnsResolver = new DNSResolverDecorator(actualDNSResolver, () -> this.getDefaultFaultDomain(),
                 failedToResolveNetworkLocationCounter);
         dnsResolver.setBookieAddressResolver(bookieAddressResolver);
