@@ -46,6 +46,18 @@
       <version>${project.parent.version}</version>
       <scope>runtime</scope>
     </dependency>
+  <dependency>
+       <!-- needed by ZooKeeper server -->
+       <groupId>org.xerial.snappy</groupId>
+       <artifactId>snappy-java</artifactId>
+       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <!-- needed by ZooKeeper server -->
+       <groupId>io.dropwizard.metrics</groupId>
+       <artifactId>metrics-core</artifactId>
+       <scope>runtime</scope>
+    </dependency>
   </dependencies>
 
   <build>
