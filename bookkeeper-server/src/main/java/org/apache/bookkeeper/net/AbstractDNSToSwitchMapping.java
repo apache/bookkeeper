@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.bookkeeper.conf.Configurable;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 
@@ -42,6 +43,7 @@ import org.apache.commons.lang.StringUtils;
 public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, Configurable {
 
     private Configuration conf;
+    private BookieAddressResolver bookieAddressResolver;
 
     /**
      * Create an unconfigured instance.
@@ -57,6 +59,15 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
      */
     protected AbstractDNSToSwitchMapping(Configuration conf) {
         this.conf = conf;
+    }
+
+    public BookieAddressResolver getBookieAddressResolver() {
+        return bookieAddressResolver;
+    }
+
+    @Override
+    public void setBookieAddressResolver(BookieAddressResolver bookieAddressResolver) {
+        this.bookieAddressResolver = bookieAddressResolver;
     }
 
     @Override
