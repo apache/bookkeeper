@@ -546,6 +546,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
 
         @Override
+        public void setBookieAddressResolver(BookieAddressResolver bookieAddressResolver) {
+            this.resolver.setBookieAddressResolver(bookieAddressResolver);
+        }
+
+        @Override
         public List<String> resolve(List<String> names) {
             if (names == null) {
                 return Collections.emptyList();

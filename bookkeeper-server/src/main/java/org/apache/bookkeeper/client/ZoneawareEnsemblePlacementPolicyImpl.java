@@ -240,6 +240,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
         this.dnsResolver = new DNSResolverDecorator(actualDNSResolver, () -> this.getDefaultFaultDomain(),
                 failedToResolveNetworkLocationCounter);
+        dnsResolver.setBookieAddressResolver(bookieAddressResolver);
         this.stabilizePeriodSeconds = conf.getNetworkTopologyStabilizePeriodSeconds();
         // create the network topology
         if (stabilizePeriodSeconds > 0) {

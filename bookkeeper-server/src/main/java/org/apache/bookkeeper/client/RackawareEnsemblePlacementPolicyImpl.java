@@ -282,6 +282,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
             }
         }
+        if (dnsResolver != null) {
+            dnsResolver.setBookieAddressResolver(bookieAddressResolver);
+        }
         slowBookies = CacheBuilder.newBuilder()
             .expireAfterWrite(conf.getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
             .build(new CacheLoader<BookieId, Long>() {

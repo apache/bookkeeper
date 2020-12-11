@@ -20,6 +20,7 @@ package org.apache.bookkeeper.net;
 import com.google.common.annotations.Beta;
 
 import java.util.List;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 
 /**
  * An interface that must be implemented to allow pluggable
@@ -66,5 +67,12 @@ public interface DNSToSwitchMapping {
       */
     default boolean useHostName() {
         return true;
+    }
+
+    /**
+     * Receives the current BookieAddressResolver.
+     * @param bookieAddressResolver
+     */
+    default void setBookieAddressResolver(BookieAddressResolver bookieAddressResolver) {
     }
 }
