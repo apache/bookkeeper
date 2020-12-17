@@ -86,7 +86,7 @@ public class LedgerRecovery2Test {
 
         Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
 
-        clientCtx.getMockBookieClient().seedEntries(b1, 1L, 0L, -1L);
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b1, 1L, 0L, -1L);
         clientCtx.getMockBookieClient().setPreWriteHook(
                 (bookie, ledgerId, entryId) -> FutureUtils.exception(new BKException.BKWriteException()));
 
@@ -110,7 +110,7 @@ public class LedgerRecovery2Test {
 
         CompletableFuture<Void> writingBack = new CompletableFuture<>();
         CompletableFuture<Void> blocker = new CompletableFuture<>();
-        clientCtx.getMockBookieClient().seedEntries(b1, 1L, 0L, -1L);
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b1, 1L, 0L, -1L);
         // will block recovery at the writeback phase
         clientCtx.getMockBookieClient().setPreWriteHook(
                 (bookie, ledgerId, entryId) -> {
@@ -149,7 +149,7 @@ public class LedgerRecovery2Test {
         CompletableFuture<Void> writingBack = new CompletableFuture<>();
         CompletableFuture<Void> blocker = new CompletableFuture<>();
         CompletableFuture<Void> failing = new CompletableFuture<>();
-        clientCtx.getMockBookieClient().seedEntries(b1, 1L, 0L, -1L);
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b1, 1L, 0L, -1L);
         // will block recovery at the writeback phase
         clientCtx.getMockBookieClient().setPreWriteHook(
                 (bookie, ledgerId, entryId) -> {
@@ -195,7 +195,7 @@ public class LedgerRecovery2Test {
         CompletableFuture<Void> writingBack = new CompletableFuture<>();
         CompletableFuture<Void> blocker = new CompletableFuture<>();
         CompletableFuture<Void> failing = new CompletableFuture<>();
-        clientCtx.getMockBookieClient().seedEntries(b1, 1L, 0L, -1L);
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b1, 1L, 0L, -1L);
         clientCtx.getMockBookieClient().errorBookies(b2);
 
         ReadOnlyLedgerHandle lh = new ReadOnlyLedgerHandle(
@@ -216,8 +216,8 @@ public class LedgerRecovery2Test {
         clientCtx.getMockRegistrationClient().addBookies(b4).get();
 
         Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
-        clientCtx.getMockBookieClient().seedEntries(b1, 1L, 0L, -1L);
-        clientCtx.getMockBookieClient().seedEntries(b3, 1L, 1L, -1L);
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b1, 1L, 0L, -1L);
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b3, 1L, 1L, -1L);
         clientCtx.getMockBookieClient().setPreWriteHook(
                 (bookie, ledgerId, entryId) -> {
                     if (bookie.equals(b2) && entryId == 1L) {
@@ -248,7 +248,7 @@ public class LedgerRecovery2Test {
         clientCtx.getMockRegistrationClient().addBookies(b4, b5).get();
 
         Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
-        clientCtx.getMockBookieClient().seedEntries(b1, 1L, 0L, -1L);
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b1, 1L, 0L, -1L);
         clientCtx.getMockBookieClient().setPreWriteHook(
                 (bookie, ledgerId, entryId) -> {
                     if (bookie.equals(b1) || bookie.equals(b2)) {
