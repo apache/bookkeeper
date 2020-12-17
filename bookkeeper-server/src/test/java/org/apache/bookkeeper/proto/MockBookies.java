@@ -1,8 +1,31 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiPredicate;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.DistributionSchedule;
 import org.apache.bookkeeper.client.RoundRobinDistributionSchedule;
@@ -13,21 +36,21 @@ import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiPredicate;
-
+/**
+ * Mocks an ensemble of bookies and can be shared between more than one MockBookieClient
+ * so that it can be used to check two writers accessing the same ledger.
+ */
 public class MockBookies {
     static final Logger LOG = LoggerFactory.getLogger(MockBookies.class);
     final ConcurrentHashMap<BookieId, ConcurrentHashMap<Long, MockLedgerData>> data = new ConcurrentHashMap<>();
 
     public void seedLedgerForBookie(BookieId bookieId, long ledgerId,
                                     LedgerMetadata metadata) throws Exception {
-        seedLedgerBase(ledgerId, metadata, (_bookie, entry) -> _bookie.equals(bookieId));
+        seedLedgerBase(ledgerId, metadata, (bookie, entry) -> bookie.equals(bookieId));
     }
 
     public void seedLedger(long ledgerId, LedgerMetadata metadata) throws Exception {
-        seedLedgerBase(ledgerId, metadata, (_bookie, entry) -> true);
+        seedLedgerBase(ledgerId, metadata, (bookie, entry) -> true);
     }
 
     public void seedLedgerBase(long ledgerId, LedgerMetadata metadata,
@@ -58,7 +81,8 @@ public class MockBookies {
     }
 
     public ByteBuf generateEntry(long ledgerId, long entryId, long lac) throws Exception {
-        DigestManager digestManager = DigestManager.instantiate(ledgerId, new byte[0], DataFormats.LedgerMetadataFormat.DigestType.CRC32C,
+        DigestManager digestManager = DigestManager.instantiate(ledgerId, new byte[0],
+                DataFormats.LedgerMetadataFormat.DigestType.CRC32C,
                 UnpooledByteBufAllocator.DEFAULT, false);
         return ByteBufList.coalesce(digestManager.computeDigestAndPackageForSending(
                 entryId, lac, 0, Unpooled.buffer(10)));
@@ -67,7 +91,7 @@ public class MockBookies {
 
     public void addEntry(BookieId bookieId, long ledgerId, long entryId, ByteBuf entry) throws BKException {
         MockLedgerData ledger = getBookieData(bookieId).computeIfAbsent(ledgerId, MockLedgerData::new);
-        if(ledger.isFenced()) {
+        if (ledger.isFenced()) {
             throw new BKException.BKLedgerFencedException();
         }
         ledger.addEntry(entryId, entry);
@@ -86,7 +110,7 @@ public class MockBookies {
             throw new BKException.BKNoSuchLedgerExistsException();
         }
 
-        if((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING) {
+        if ((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING) {
             ledger.fence();
         }
 

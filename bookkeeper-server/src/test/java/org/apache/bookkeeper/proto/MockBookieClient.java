@@ -171,14 +171,14 @@ public class MockBookieClient implements BookieClient {
                             }
 
                             try {
-                                if((options & FLAG_RECOVERY_ADD) == FLAG_RECOVERY_ADD)
+                                if ((options & FLAG_RECOVERY_ADD) == FLAG_RECOVERY_ADD) {
                                     mockBookies.recoveryAddEntry(addr, ledgerId, entryId, copyData(toSend));
-                                else
+                                } else {
                                     mockBookies.addEntry(addr, ledgerId, entryId, copyData(toSend));
-                            } catch(BKException bke) {
+                                }
+                            } catch (BKException bke) {
                                 return FutureUtils.exception(bke);
-                            }
-                            finally {
+                            } finally {
                                 toSend.release();
                             }
 
