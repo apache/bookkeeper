@@ -119,7 +119,7 @@
     <commons-collections4.version>4.1</commons-collections4.version>
     <commons-codec.version>1.6</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
-    <commons-compress.version>1.15</commons-compress.version>
+    <commons-compress.version>1.19</commons-compress.version>
     <commons-lang.version>2.6</commons-lang.version>
     <commons-lang3.version>3.6</commons-lang3.version>
     <commons-io.version>2.4</commons-io.version>
@@ -133,7 +133,7 @@
     <grpc.version>1.18.0</grpc.version>
     <guava.version>30.0-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
-    <hadoop.version>2.7.3</hadoop.version>
+    <hadoop.version>2.10.0</hadoop.version>
     <hamcrest.version>1.3</hamcrest.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.11.0</jackson.version>
