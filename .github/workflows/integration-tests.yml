@@ -20,9 +20,11 @@
 name: Integration Tests
 
 on:
+  push:
   pull_request:
     branches:
       - master
+      - branch-*
     paths-ignore:
       - 'site/**'
 
