@@ -20,7 +20,7 @@
 name: Compatibility Check Java8
 
 on:
-  push;
+  push:
   pull_request:
     branches:
       - master
