@@ -138,7 +138,7 @@
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.11.0</jackson.version>
     <jackson-mapper-asl.version>1.9.11</jackson-mapper-asl.version>
-    <jcommander.version>1.48</jcommander.version>
+    <jcommander.version>1.78</jcommander.version>
     <jetty.version>9.4.33.v20201020</jetty.version>
     <jline.version>2.11</jline.version>
     <jmh.version>1.19</jmh.version>

@@ -102,7 +102,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
     public void testMissingJournalDir() {
         assertFalse(runCommand(new String[] { "-l", "/path/to/ledgers", "-o", "/path/to/cookie-file", BOOKIE_ID }));
         String consoleOutput = getConsoleOutput();
-        assertOptionMissing(consoleOutput, "-j, --journal-dirs");
+        assertOptionMissing(consoleOutput, "[-j | --journal-dirs]");
     }
 
     /**
@@ -112,7 +112,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
     public void testMissingLedgerDirs() {
         assertFalse(runCommand(new String[] { "-j", "/path/to/journal", "-o", "/path/to/cookie-file", BOOKIE_ID }));
         String consoleOutput = getConsoleOutput();
-        assertOptionMissing(consoleOutput, "-l, --ledger-dirs");
+        assertOptionMissing(consoleOutput, "[-l | --ledger-dirs]");
     }
 
     /**
@@ -122,7 +122,7 @@ public class GenerateCookieCommandTest extends CookieCommandTestBase {
     public void testMissingOutputFile() {
         assertFalse(runCommand(new String[] { "-j", "/path/to/journal", "-l", "/path/to/ledgers", BOOKIE_ID }));
         String consoleOutput = getConsoleOutput();
-        assertOptionMissing(consoleOutput, "-o, --output-file");
+        assertOptionMissing(consoleOutput, "[-o | --output-file]");
     }
 
     /**

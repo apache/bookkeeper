@@ -92,7 +92,7 @@ public class UpdateCookieCommandTest extends CookieCommandTestBase {
     public void testMissingCookieFileOption() {
         assertFalse(runCommand(new String[] { BOOKIE_ID }));
         String consoleOutput = getConsoleOutput();
-        assertOptionMissing(consoleOutput, "-cf, --cookie-file");
+        assertOptionMissing(consoleOutput, "[-cf | --cookie-file]");
         assertPrintUsage(consoleOutput);
     }
 
