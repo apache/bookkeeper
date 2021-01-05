@@ -24,6 +24,10 @@ dependencies {
     implementation depLibs.grpc
 }
 
+jar {
+    archiveBaseName = 'stream-storage-service-api'
+}
+
 publishing {
     publications {
         maven(MavenPublication) {

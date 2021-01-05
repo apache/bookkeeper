@@ -24,9 +24,14 @@ pluginManagement {
 
 rootProject.name = 'bookkeeper'
 
-include 'bookkeeper-benchmark',
+include(':bookkeeper-benchmark',
+        ':bookkeeper-tools-framework',
+        ':bookkeeper-tools-ledger',
+        ':bookkeeper-tools-perf',
+        ':bookkeeper-tools-stream',
         'bookkeeper-common',
         'bookkeeper-common-allocator',
+        'bookkeeper-dist:storage-bench',
         'bookkeeper-http:http-server',
         'bookkeeper-http:vertx-http-server',
         'bookkeeper-proto',
@@ -58,5 +63,12 @@ include 'bookkeeper-benchmark',
         'tests:integration:cluster',
         'tests:integration:smoke',
         'tests:integration:standalone',
-        'tools:framework'
+        'tools:framework')
+
+project(':bookkeeper-tools-framework').projectDir = file('tools/framework')
+project(':bookkeeper-tools-ledger').projectDir = file('tools/ledger')
+project(':bookkeeper-tools-stream').projectDir = file('tools/stream')
+project(':bookkeeper-tools-perf').projectDir = file('tools/perf')
+include 'stream:perf'
+findProject(':stream:perf')?.name = 'perf'
 

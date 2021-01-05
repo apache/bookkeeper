@@ -16,7 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+plugins {
+    id 'application'
+    id 'distribution'
+}
+
 dependencies {
+    implementation project(':bookkeeper-common-allocator')
     implementation project(':bookkeeper-common')
     implementation project(':bookkeeper-server')
     implementation project(':bookkeeper-stats')
@@ -30,17 +36,36 @@ dependencies {
     implementation project(':stream:storage:api')
     implementation project(':stream:storage:impl')
 
+    implementation project(':bookkeeper-stats-providers:prometheus-metrics-provider')
+    runtimeOnly project(':bookkeeper-tools-ledger')
+    runtimeOnly project(':bookkeeper-tools-stream')
+    runtimeOnly project(':bookkeeper-http:vertx-http-server')
     implementation depLibs.commonsConfiguration
-    implementation depLibs.commonsLang2
+    implementation depLibs.commonsLang3
     implementation depLibs.curatorFramework
     implementation depLibs.grpc
     implementation depLibs.guava
     implementation depLibs.jcommander
     implementation depLibs.lombok
-    implementation depLibs.slf4j
+    implementation depLibs.zookeeper
+    runtimeOnly depLibs.metricsCore
+    runtimeOnly depLibs.snappy
+    runtimeOnly depLibs.slf4jLog4j
+    runtimeOnly depLibs.commonsBeanutils
+    runtimeOnly depLibs.vertxCore
+    runtimeOnly depLibs.vertxWeb
     testImplementation depLibs.mockito
 
     annotationProcessor depLibs.lombok
+}
+
+application {
+    mainClassName = "org.apache.bookkeeper.stream.cluster.StandaloneStarter"
+}
+
+task writeClasspath {
+    buildDir.mkdirs()
+    new File(buildDir, "classpath.txt").text = sourceSets.main.runtimeClasspath.collect { it.absolutePath }.join(':') + "\n"
 }
 
 publishing {
