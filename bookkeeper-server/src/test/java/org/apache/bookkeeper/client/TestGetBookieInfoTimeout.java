@@ -21,6 +21,7 @@ package org.apache.bookkeeper.client;
  *
  */
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -28,6 +29,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -62,8 +64,8 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
     private ScheduledExecutorService scheduler;
 
     public TestGetBookieInfoTimeout() {
-        super(10);
-        this.digestType = DigestType.CRC32;
+        super(5);
+        this.digestType = DigestType.CRC32C;
     }
 
     @Before
@@ -100,6 +102,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         // set timeout for getBookieInfo to be 2 secs and cause one of the bookies to go to sleep for 3X that time
         ClientConfiguration cConf = new ClientConfiguration();
         cConf.setGetBookieInfoTimeout(2);
+        cConf.setReadEntryTimeout(100000); // by default we are using readEntryTimeout for timeouts
 
         final BookieId bookieToSleep = writelh.getLedgerMetadata().getEnsembleAt(0).get(0);
         int sleeptime = cConf.getBookieInfoTimeout() * 3;
@@ -147,5 +150,14 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         obj.latch.await();
         LOG.debug("Return code: " + obj.rc);
         assertTrue("GetBookieInfo failed with unexpected error code: " + obj.rc, obj.rc == Code.TimeoutException);
+    }
+
+    @Test
+    public void testGetBookieInfoWithAllStoppedBookies() throws Exception {
+        Map<BookieId, BookieInfo> bookieInfo = bkc.getBookieInfo();
+        assertEquals(5, bookieInfo.size());
+        stopAllBookies(false);
+        bookieInfo = bkc.getBookieInfo();
+        assertEquals(0, bookieInfo.size());
     }
 }

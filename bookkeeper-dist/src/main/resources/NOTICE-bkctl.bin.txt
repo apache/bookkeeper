@@ -1,5 +1,5 @@
 Apache BookKeeper
-Copyright 2011-2018 The Apache Software Foundation
+Copyright 2011-2020 The Apache Software Foundation
 
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
@@ -42,7 +42,7 @@ License for the specific language governing permissions and limitations
 under the License.
 
 ------------------------------------------------------------------------------------
-- lib/com.beust-jcommander-1.48.jar
+- lib/com.beust-jcommander-1.78.jar
 
 Copyright 2010 Cedric Beust cedric@beust.com
 

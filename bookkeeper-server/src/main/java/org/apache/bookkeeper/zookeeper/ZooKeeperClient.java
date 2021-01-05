@@ -228,8 +228,11 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
             checkArgument(retryExecThreadCount > 0);
 
             if (null == connectRetryPolicy) {
+                // Session expiry event is received by client only when zk quorum is well established.
+                // All other connection loss retries happen at zk client library transparently.
+                // Hence, we don't need to wait before retrying.
                 connectRetryPolicy =
-                        new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, Integer.MAX_VALUE);
+                        new BoundExponentialBackoffRetryPolicy(0, 0, Integer.MAX_VALUE);
             }
             if (null == operationRetryPolicy) {
                 operationRetryPolicy =

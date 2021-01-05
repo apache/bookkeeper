@@ -41,7 +41,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -65,18 +64,6 @@ import org.apache.zookeeper.AsyncCallback.VoidCallback;
 class EtcdLedgerManager implements LedgerManager {
 
     private final LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
-    private final Function<ByteSequence, LedgerMetadata> ledgerMetadataFunction = bs -> {
-        try {
-            return serDe.parseConfig(
-                bs.getBytes(),
-                Optional.empty()
-            );
-        } catch (IOException ioe) {
-            log.error("Could not parse ledger metadata : {}", bs.toStringUtf8(), ioe);
-            throw new RuntimeException(
-                "Could not parse ledger metadata : " + bs.toStringUtf8(), ioe);
-        }
-    };
 
     private final String scope;
     private final Client client;
@@ -234,7 +221,7 @@ class EtcdLedgerManager implements LedgerManager {
                     KeyValue kv = getResp.getKvs().get(0);
                     byte[] data = kv.getValue().getBytes();
                     try {
-                        LedgerMetadata metadata = serDe.parseConfig(data, Optional.empty());
+                        LedgerMetadata metadata = serDe.parseConfig(data, ledgerId, Optional.empty());
                         promise.complete(new Versioned<>(metadata, new LongVersion(kv.getModRevision())));
                     } catch (IOException ioe) {
                         log.error("Could not parse ledger metadata for ledger : {}", ledgerId, ioe);
@@ -327,7 +314,19 @@ class EtcdLedgerManager implements LedgerManager {
             ledgerId, (lid) -> new ValueStream<>(
                 client,
                 watchClient,
-                ledgerMetadataFunction,
+                        bs -> {
+                            try {
+                                return serDe.parseConfig(
+                                        bs.getBytes(),
+                                        lid,
+                                        Optional.empty()
+                                );
+                            } catch (IOException ioe) {
+                                log.error("Could not parse ledger metadata : {}", bs.toStringUtf8(), ioe);
+                                throw new RuntimeException(
+                                        "Could not parse ledger metadata : " + bs.toStringUtf8(), ioe);
+                            }
+    },
                 ByteSequence.fromString(EtcdUtils.getLedgerKey(scope, ledgerId)))
         );
         LedgerMetadataConsumer lmConsumer = listenerToConsumer(ledgerId, listener,

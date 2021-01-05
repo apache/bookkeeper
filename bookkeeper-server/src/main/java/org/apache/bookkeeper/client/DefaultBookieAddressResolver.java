@@ -47,7 +47,12 @@ public class DefaultBookieAddressResolver implements BookieAddressResolver {
                 throw new Exception("bookie " + bookieId + " does not publish a bookie-rpc endpoint");
             }
             BookieSocketAddress res = new BookieSocketAddress(endpoint.getHost(), endpoint.getPort());
-            log.info("Resolved {} as {}", bookieId, res);
+            if (!bookieId.toString().equals(res.toString())) {
+                // only print if the information is useful
+                log.info("Resolved {} as {}", bookieId, res);
+            } else {
+                log.debug("Resolved {} as {}", bookieId, res);
+            }
             return res;
         } catch (BKException.BKBookieHandleNotAvailableException ex) {
             if (BookieSocketAddress.isDummyBookieIdForHostname(bookieId)) {

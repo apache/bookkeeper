@@ -23,7 +23,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>4.12.0-SNAPSHOT</version>
+  <version>4.13.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
@@ -119,27 +119,27 @@
     <commons-collections4.version>4.1</commons-collections4.version>
     <commons-codec.version>1.6</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
-    <commons-compress.version>1.15</commons-compress.version>
+    <commons-compress.version>1.19</commons-compress.version>
     <commons-lang.version>2.6</commons-lang.version>
     <commons-lang3.version>3.6</commons-lang3.version>
     <commons-io.version>2.4</commons-io.version>
     <bouncycastle.version>1.60</bouncycastle.version>
-    <curator.version>4.0.1</curator.version>
+    <curator.version>5.1.0</curator.version>
     <dropwizard.version>3.1.0</dropwizard.version>
     <etcd.version>0.0.2</etcd.version>
     <freebuilder.version>1.14.9</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.1.2</google.errorprone.version>
     <grpc.version>1.18.0</grpc.version>
-    <guava.version>21.0</guava.version>
+    <guava.version>30.0-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
-    <hadoop.version>2.7.3</hadoop.version>
+    <hadoop.version>2.10.0</hadoop.version>
     <hamcrest.version>1.3</hamcrest.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.11.0</jackson.version>
     <jackson-mapper-asl.version>1.9.11</jackson-mapper-asl.version>
-    <jcommander.version>1.48</jcommander.version>
-    <jetty.version>9.4.5.v20170502</jetty.version>
+    <jcommander.version>1.78</jcommander.version>
+    <jetty.version>9.4.33.v20201020</jetty.version>
     <jline.version>2.11</jline.version>
     <jmh.version>1.19</jmh.version>
     <jmock.version>2.8.2</jmock.version>
@@ -159,7 +159,7 @@
     <httpclient.version>4.5.5</httpclient.version>
     <protobuf.version>3.5.1</protobuf.version>
     <protoc3.version>3.5.1-1</protoc3.version>
-    <protoc-gen-grpc-java.version>1.12.0</protoc-gen-grpc-java.version>
+    <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
     <rocksdb.version>6.10.2</rocksdb.version>
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
@@ -169,7 +169,8 @@
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.8.3</testcontainers.version>
     <vertx.version>3.5.3</vertx.version>
-    <zookeeper.version>3.5.7</zookeeper.version>
+    <zookeeper.version>3.6.2</zookeeper.version>
+    <snappy.version>1.1.7</snappy.version>
     <jctools.version>2.1.2</jctools.version>
     <!-- plugin dependencies -->
     <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
@@ -198,6 +199,7 @@
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
     <spotbugs-maven-plugin.version>3.1.8</spotbugs-maven-plugin.version>
     <forkCount.variable>1</forkCount.variable>
+    <servlet-api.version>4.0.0</servlet-api.version>
   </properties>
 
   <!-- dependency definitions -->
@@ -357,6 +359,11 @@
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>javax.servlet-api</artifactId>
+        <version>${servlet-api.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.module</groupId>
@@ -529,6 +536,13 @@
         </exclusions>
       </dependency>
 
+      <dependency>
+         <!-- needed by ZooKeeper server -->
+         <groupId>org.xerial.snappy</groupId>
+         <artifactId>snappy-java</artifactId>
+         <version>${snappy.version}</version>
+      </dependency>
+
       <!-- curator dependencies -->
       <dependency>
         <groupId>org.apache.curator</groupId>
@@ -574,6 +588,11 @@
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-webapp</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-servlet</artifactId>
         <version>${jetty.version}</version>
       </dependency>
@@ -585,13 +604,14 @@
         <version>${jctools.version}</version>
       </dependency>
 
-      <!-- stats dependencies -->
-      <!-- dropwizard metrics -->
+      <!-- dropwizard metrics, for stats and for ZooKeeper server -->
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-core</artifactId>
         <version>${dropwizard.version}</version>
       </dependency>
+
+      <!-- stats dependencies -->
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-jvm</artifactId>
@@ -624,7 +644,7 @@
         <artifactId>sketches-core</artifactId>
         <version>${datasketches.version}</version>
       </dependency>
-      
+
       <!-- http-client -->
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
@@ -964,6 +984,7 @@
 
             <!-- Website -->
             <exclude>site/**</exclude>
+            <exclude>site2/**</exclude>
 
             <!-- Thrift generated files -->
             <exclude>**/org/apache/distributedlog/thrift/*</exclude>

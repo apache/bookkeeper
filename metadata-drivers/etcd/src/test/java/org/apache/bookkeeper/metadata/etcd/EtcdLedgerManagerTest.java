@@ -100,7 +100,7 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
                 BookieId.parse("192.0.2.1:1234"),
                 BookieId.parse("192.0.2.2:1234"),
                 BookieId.parse("192.0.2.3:1234"));
-        LedgerMetadata metadata = LedgerMetadataBuilder.create()
+        LedgerMetadata metadata = LedgerMetadataBuilder.create().withId(ledgerId)
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
             .withPassword("test-password".getBytes(UTF_8))
             .withDigestType(DigestType.CRC32C.toApiDigestType())
@@ -239,7 +239,7 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
     private void createNumLedgers(int numLedgers) throws Exception {
         List<CompletableFuture<Versioned<LedgerMetadata>>> createFutures = new ArrayList<>(numLedgers);
         for (int i = 0; i < numLedgers; i++) {
-            LedgerMetadata metadata = LedgerMetadataBuilder.create()
+            LedgerMetadata metadata = LedgerMetadataBuilder.create().withId(i)
                 .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
                 .withPassword("test-password".getBytes(UTF_8))
                 .withDigestType(DigestType.CRC32C.toApiDigestType())
@@ -254,7 +254,7 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         long ledgerId = System.currentTimeMillis();
 
         // create a ledger metadata
-        LedgerMetadata metadata = LedgerMetadataBuilder.create()
+        LedgerMetadata metadata = LedgerMetadataBuilder.create().withId(ledgerId)
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
             .withPassword("test-password".getBytes(UTF_8))
             .withDigestType(DigestType.CRC32C.toApiDigestType())

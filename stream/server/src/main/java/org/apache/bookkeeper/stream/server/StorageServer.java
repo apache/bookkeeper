@@ -38,6 +38,8 @@ import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
+import org.apache.bookkeeper.server.service.HttpService;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.dlog.DLCheckpointStore;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -154,12 +156,9 @@ public class StorageServer {
             storageServer = buildStorageServer(
                 conf,
                 grpcPort);
-        } catch (ConfigurationException e) {
+        } catch (Exception e) {
             log.error("Invalid storage configuration", e);
             return ExitCode.INVALID_CONF.code();
-        } catch (UnknownHostException e) {
-            log.error("Unknonw host name", e);
-            return ExitCode.UNKNOWN_HOSTNAME.code();
         }
 
         CompletableFuture<Void> liveFuture =
@@ -178,7 +177,7 @@ public class StorageServer {
 
     public static LifecycleComponent buildStorageServer(CompositeConfiguration conf,
                                                         int grpcPort)
-            throws UnknownHostException, ConfigurationException {
+            throws Exception {
         return buildStorageServer(conf, grpcPort, true, NullStatsLogger.INSTANCE);
     }
 
@@ -186,7 +185,7 @@ public class StorageServer {
                                                         int grpcPort,
                                                         boolean startBookieAndStartProvider,
                                                         StatsLogger externalStatsLogger)
-        throws ConfigurationException, UnknownHostException {
+        throws Exception {
         final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
 
         final Supplier<BookieServiceInfo> bookieServiceInfoProvider =
@@ -216,8 +215,9 @@ public class StorageServer {
 
         // Create the stats provider
         StatsLogger rootStatsLogger;
+        StatsProviderService statsProviderService = null;
         if (startBookieAndStartProvider) {
-            StatsProviderService statsProviderService = new StatsProviderService(bkConf);
+            statsProviderService = new StatsProviderService(bkConf);
             rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
             serverBuilder.addComponent(statsProviderService);
             log.info("Bookie configuration : {}", bkConf.asJson());
@@ -237,6 +237,22 @@ public class StorageServer {
             BookieService bookieService = new BookieService(bkConf, rootStatsLogger, bookieServiceInfoProvider);
             serverBuilder.addComponent(bookieService);
             bkServerConf = bookieService.serverConf();
+
+            // Build http service
+            if (bkServerConf.isHttpServerEnabled()) {
+                BKHttpServiceProvider provider = new BKHttpServiceProvider.Builder()
+                        .setBookieServer(bookieService.getServer())
+                        .setServerConfiguration(bkServerConf)
+                        .setStatsProvider(statsProviderService.getStatsProvider())
+                        .build();
+                HttpService httpService =
+                        new HttpService(provider,
+                                new org.apache.bookkeeper.server.conf.BookieConfiguration(bkServerConf),
+                                rootStatsLogger);
+                serverBuilder.addComponent(httpService);
+                log.info("Load lifecycle component : {}", HttpService.class.getName());
+            }
+
         } else {
             bkServerConf = new ServerConfiguration();
             bkServerConf.loadConf(bkConf.getUnderlyingConf());

@@ -180,7 +180,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     final long addEntryTimeoutNanos;
     final long readEntryTimeoutNanos;
     final int maxFrameSize;
-    final int getBookieInfoTimeout;
+    final long getBookieInfoTimeoutNanos;
     final int startTLSTimeout;
 
     private final ConcurrentOpenHashMap<CompletionKey, CompletionValue> completionObjects =
@@ -396,7 +396,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         this.state = ConnectionState.DISCONNECTED;
         this.addEntryTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryTimeout());
         this.readEntryTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getReadEntryTimeout());
-        this.getBookieInfoTimeout = conf.getBookieInfoTimeout();
+        this.getBookieInfoTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getBookieInfoTimeout());
         this.startTLSTimeout = conf.getStartTLSTimeout();
         this.useV2WireProtocol = conf.getUseV2WireProtocol();
         this.preserveMdcForTaskExecution = conf.getPreserveMdcForTaskExecution();
@@ -2016,6 +2016,16 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         @Override
+        boolean maybeTimeout() {
+            if (MathUtils.elapsedNanos(startTime) >= getBookieInfoTimeoutNanos) {
+                timeout();
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
         public void errorOut() {
             errorOut(BKException.Code.BookieHandleNotAvailableException);
         }
@@ -2441,15 +2451,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
             synchronized (PerChannelBookieClient.this) {
                 if (future.isSuccess() && state == ConnectionState.CONNECTING && future.channel().isActive()) {
-                    LOG.info("Successfully connected to bookie: {}", future.channel());
                     rc = BKException.Code.OK;
                     channel = future.channel();
                     if (shFactory != null) {
+                        LOG.info("Successfully connected to bookie: {} {} initiate TLS", bookieId, future.channel());
                         makeWritable();
                         initiateTLS();
                         return;
                     } else {
-                        LOG.info("Successfully connected to bookie: " + bookieId);
+                        LOG.info("Successfully connected to bookie: {} {}", bookieId, future.channel());
                         state = ConnectionState.CONNECTED;
                         activeNonTlsChannelCounter.inc();
                     }

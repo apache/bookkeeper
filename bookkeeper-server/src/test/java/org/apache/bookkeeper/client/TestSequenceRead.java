@@ -45,7 +45,7 @@ public class TestSequenceRead extends BookKeeperClusterTestCase {
         long ledgerId = 12345L;
         // introduce duplicated bookies in an ensemble.
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create()
-            .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
+            .withId(ledgerId).withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
             .newEnsembleEntry(0L, Lists.newArrayList(getBookie(0), getBookie(0), getBookie(0)));
         ClientUtil.setupLedger(bkc.getLedgerManager(), ledgerId, builder);
 

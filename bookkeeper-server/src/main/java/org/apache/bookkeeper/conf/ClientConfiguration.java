@@ -116,6 +116,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     protected static final String STICKY_READS_ENABLED = "stickyReadSEnabled";
     // Add Parameters
+    protected static final String OPPORTUNISTIC_STRIPING = "opportunisticStriping";
     protected static final String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
     protected static final String MAX_ALLOWED_ENSEMBLE_CHANGES = "maxNumEnsembleChanges";
     // Timeout Setting
@@ -167,6 +168,9 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Failure History Settings
     protected static final String ENABLE_BOOKIE_FAILURE_TRACKING = "enableBookieFailureTracking";
     protected static final String BOOKIE_FAILURE_HISTORY_EXPIRATION_MS = "bookieFailureHistoryExpirationMSec";
+
+    // Discovery
+    protected static final String FOLLOW_BOOKIE_ADDRESS_TRACKING = "enableBookieAddressTracking";
 
     // Names of dynamic features
     protected static final String DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME = "disableEnsembleChangeFeatureName";
@@ -1739,6 +1743,36 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
+     * Whether to allow opportunistic striping.
+     *
+     * @return true if opportunistic striping is enabled
+     */
+    public boolean getOpportunisticStriping() {
+        return getBoolean(OPPORTUNISTIC_STRIPING, false);
+    }
+
+    /**
+     * Enable/Disable opportunistic striping.
+     * <p>
+     * If set to true, when you are creating a ledger with a given
+     * ensemble size, the system will automatically handle the
+     * lack of enough bookies, reducing ensemble size up to
+     * the write quorum size. This way in little clusters
+     * you can try to use striping (ensemble size > write quorum size)
+     * in case that you have enough bookies up and running,
+     * and degrade automatically to the minimum requested replication count.
+     * </p>
+     *
+     * @param enabled
+     *          flag to enable/disable opportunistic striping.
+     * @return client configuration.
+     */
+    public ClientConfiguration setOpportunisticStriping(boolean enabled) {
+        setProperty(OPPORTUNISTIC_STRIPING, enabled);
+        return this;
+    }
+
+    /**
      * Whether to delay ensemble change or not?
      *
      * @return true if to delay ensemble change, otherwise false.
@@ -1761,6 +1795,27 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setDelayEnsembleChange(boolean enabled) {
         setProperty(DELAY_ENSEMBLE_CHANGE, enabled);
+        return this;
+    }
+
+    /**
+     * Whether to enable bookie address changes tracking.
+     *
+     * @return flag to enable/disable bookie address changes tracking
+     */
+    public boolean getEnableBookieAddressTracking() {
+        return getBoolean(FOLLOW_BOOKIE_ADDRESS_TRACKING, true);
+    }
+
+    /**
+     * Enable/Disable bookie address changes tracking.
+     *
+     * @param value
+     *          flag to enable/disable bookie address changes tracking
+     * @return client configuration.
+     */
+    public ClientConfiguration setEnableBookieAddressTracking(boolean value) {
+        setProperty(FOLLOW_BOOKIE_ADDRESS_TRACKING, value);
         return this;
     }
 

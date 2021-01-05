@@ -552,13 +552,14 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
             ensemble.add(new BookieSocketAddress("11.11.11.11:1111").toBookieId());
             ensemble.add(new BookieSocketAddress("88.88.88.88:8888").toBookieId());
 
+            long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
+
             LedgerMetadata metadata = LedgerMetadataBuilder.create()
+                .withId(ledgerId)
                 .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
                 .withPassword("passwd".getBytes())
                 .withDigestType(DigestType.CRC32.toApiDigestType())
                 .newEnsembleEntry(0L, ensemble).build();
-
-            long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
 
             try (LedgerManager lm = driver.getLedgerManagerFactory().newLedgerManager()) {
                 lm.createLedgerMetadata(ledgerId, metadata).get(2000, TimeUnit.MILLISECONDS);

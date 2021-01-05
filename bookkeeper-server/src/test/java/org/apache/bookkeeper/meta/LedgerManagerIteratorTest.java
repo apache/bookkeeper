@@ -92,6 +92,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                 new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
                 new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
         LedgerMetadata meta = LedgerMetadataBuilder.create()
+            .withId(ledgerId)
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
             .withPassword("passwd".getBytes())
             .withDigestType(BookKeeper.DigestType.CRC32.toApiDigestType())

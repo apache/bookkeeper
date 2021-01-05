@@ -25,8 +25,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.google.common.io.Files;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
@@ -68,8 +68,8 @@ public class TestMVCCStoreImpl {
     private MVCCStoreImpl<String, String> store;
 
     @Before
-    public void setUp() {
-        tempDir = Files.createTempDir();
+    public void setUp() throws IOException {
+        tempDir = java.nio.file.Files.createTempDirectory("test").toFile();
         spec = StateStoreSpec.builder()
             .name(runtime.getMethodName())
             .keyCoder(StringUtf8Coder.of())

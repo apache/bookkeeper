@@ -139,7 +139,7 @@ public class Cli<CliFlagsT extends CliFlags> {
         }
         // trigger command to generate help information
         StringBuilder usageBuilder = new StringBuilder();
-        commander.usage(usageBuilder);
+        commander.getUsageFormatter().usage(usageBuilder);
         return commander;
     }
 
@@ -152,7 +152,7 @@ public class Cli<CliFlagsT extends CliFlags> {
     }
 
     void usage() {
-        usage(null);
+        usage("");
     }
 
     void usage(String errorMsg) {

@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,7 +42,9 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
@@ -99,6 +103,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,6 +150,7 @@ public class BookieShell implements Tool {
     static final String CMD_ENDPOINTINFO = "endpointinfo";
     static final String CMD_LOSTBOOKIERECOVERYDELAY = "lostbookierecoverydelay";
     static final String CMD_TRIGGERAUDIT = "triggeraudit";
+    static final String CMD_FORCEAUDITCHECKS = "forceauditchecks";
     static final String CMD_CONVERT_TO_DB_STORAGE = "convert-to-db-storage";
     static final String CMD_CONVERT_TO_INTERLEAVED_STORAGE = "convert-to-interleaved-storage";
     static final String CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX = "rebuild-db-ledger-locations-index";
@@ -1799,6 +1805,76 @@ public class BookieShell implements Tool {
         }
     }
 
+    class ForceAuditorChecksCmd extends MyCommand {
+        Options opts = new Options();
+
+        ForceAuditorChecksCmd() {
+            super(CMD_FORCEAUDITCHECKS);
+            opts.addOption("calc", "checkallledgerscheck", false, "Force checkAllLedgers audit "
+                    + "upon next Auditor startup ");
+            opts.addOption("ppc", "placementpolicycheck", false, "Force placementPolicyCheck audit "
+                    + "upon next Auditor startup ");
+            opts.addOption("rc", "replicascheck", false, "Force replicasCheck audit "
+                    + "upon next Auditor startup ");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Reset the last run time of auditor checks "
+                    + "(checkallledgerscheck, placementpolicycheck, replicascheck) "
+                    + "The current auditor must be REBOOTED after this command is run.";
+        }
+
+        @Override
+        String getUsage() {
+            return "forceauditchecks [-checkallledgerscheck [-placementpolicycheck] [-replicascheck]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            boolean checkAllLedgersCheck = cmdLine.hasOption("calc");
+            boolean placementPolicyCheck = cmdLine.hasOption("ppc");
+            boolean replicasCheck = cmdLine.hasOption("rc");
+
+            if (checkAllLedgersCheck || placementPolicyCheck  || replicasCheck) {
+                runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
+                    try {
+                        try (LedgerUnderreplicationManager underreplicationManager =
+                                     mFactory.newLedgerUnderreplicationManager()) {
+                            // Arbitrary value of 21 days chosen since current freq of all checks is less than 21 days
+                            long time = System.currentTimeMillis() - (21 * 24 * 60 * 60 * 1000);
+                            if (checkAllLedgersCheck) {
+                                LOG.info("Resetting CheckAllLedgersCTime to : " + new Timestamp(time));
+                                underreplicationManager.setCheckAllLedgersCTime(time);
+                            }
+                            if (placementPolicyCheck) {
+                                LOG.info("Resetting PlacementPolicyCheckCTime to : " + new Timestamp(time));
+                                underreplicationManager.setPlacementPolicyCheckCTime(time);
+                            }
+                            if (replicasCheck) {
+                                LOG.info("Resetting ReplicasCheckCTime to : " + new Timestamp(time));
+                                underreplicationManager.setReplicasCheckCTime(time);
+                            }
+                        }
+                    } catch (InterruptedException | KeeperException | ReplicationException e) {
+                        LOG.error("Exception while trying to reset last run time ", e);
+                        return -1;
+                    }
+                    return 0;
+                });
+            } else {
+                LOG.error("Command line args must contain atleast one type of check. This was a no-op.");
+                return -1;
+            }
+            return 0;
+        }
+    }
+
     /**
      * Command to trigger AuditTask by resetting lostBookieRecoveryDelay and
      * then make sure the ledgers stored in the bookie are properly replicated
@@ -2093,6 +2169,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_HELP, new HelpCmd());
         commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());
         commands.put(CMD_TRIGGERAUDIT, new TriggerAuditCmd());
+        commands.put(CMD_FORCEAUDITCHECKS, new ForceAuditorChecksCmd());
         // cookie related commands
         commands.put(CMD_CREATE_COOKIE,
             new CreateCookieCommand().asShellCommand(CMD_CREATE_COOKIE, bkConf));

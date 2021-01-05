@@ -87,7 +87,7 @@ public abstract class LedgerDescriptor {
 
     abstract void setExplicitLac(ByteBuf entry) throws IOException;
 
-    abstract  ByteBuf getExplicitLac();
+    abstract  ByteBuf getExplicitLac() throws IOException;
 
     abstract OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException;
 }

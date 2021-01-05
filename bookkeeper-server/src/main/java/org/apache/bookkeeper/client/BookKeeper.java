@@ -35,8 +35,10 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -57,6 +59,10 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.client.api.LedgersIterator;
+import org.apache.bookkeeper.client.api.ListLedgersResult;
+import org.apache.bookkeeper.client.api.ListLedgersResultBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
@@ -70,6 +76,7 @@ import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
@@ -85,6 +92,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.EventLoopUtil;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -447,7 +455,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 conf,
                 scheduler,
                 rootStatsLogger,
-                java.util.Optional.ofNullable(zkc));
+                Optional.ofNullable(zkc));
         } catch (ConfigurationException ce) {
             LOG.error("Failed to initialize metadata client driver using invalid metadata service uri", ce);
             throw new IOException("Failed to initialize metadata client driver", ce);
@@ -491,7 +499,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         BookieAddressResolver bookieAddressResolver =
                 new DefaultBookieAddressResolver(metadataDriver.getRegistrationClient());
-
+        if (dnsResolver != null) {
+            dnsResolver.setBookieAddressResolver(bookieAddressResolver);
+        }
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
                 dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger, bookieAddressResolver);
@@ -569,7 +579,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         throws IOException {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
-            return ReflectionUtils.newInstance(policyCls).initialize(conf, java.util.Optional.ofNullable(dnsResolver),
+            return ReflectionUtils.newInstance(policyCls).initialize(conf, Optional.ofNullable(dnsResolver),
                     timer, featureProvider, statsLogger, bookieAddressResolver);
         } catch (ConfigurationException e) {
             throw new IOException("Failed to initialize ensemble placement policy : ", e);
@@ -1470,6 +1480,118 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     @Override
     public DeleteBuilder newDeleteLedgerOp() {
         return new LedgerDeleteOp.DeleteBuilderImpl(this);
+    }
+
+    private static final class SyncLedgerIterator implements LedgersIterator {
+
+        private final LedgerRangeIterator iterator;
+        private final ListLedgersResultImpl parent;
+        Iterator<Long> currentRange = null;
+
+        public SyncLedgerIterator(LedgerRangeIterator iterator, ListLedgersResultImpl parent) {
+            this.iterator = iterator;
+            this.parent = parent;
+        }
+
+        @Override
+        public boolean hasNext() throws IOException {
+            parent.checkClosed();
+            if (currentRange != null) {
+                if (currentRange.hasNext()) {
+                    return true;
+                }
+            } else if (iterator.hasNext()) {
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public long next() throws IOException {
+            parent.checkClosed();
+            if (currentRange == null || !currentRange.hasNext()) {
+                currentRange = iterator.next().getLedgers().iterator();
+            }
+            return currentRange.next();
+        }
+    }
+
+    private static final class ListLedgersResultImpl implements ListLedgersResult {
+
+        private final LedgerRangeIterator iterator;
+        private boolean closed = false;
+        private LedgersIterator ledgersIterator;
+
+        public ListLedgersResultImpl(LedgerRangeIterator iterator) {
+            this.iterator = iterator;
+        }
+
+        void checkClosed() {
+            if (closed) {
+                throw new IllegalStateException("ListLedgersResult is closed");
+            }
+        }
+
+        private void initLedgersIterator() {
+            if (ledgersIterator != null) {
+                throw new IllegalStateException("LedgersIterator must be requested once");
+            }
+            ledgersIterator = new SyncLedgerIterator(iterator, this);
+        }
+
+        @Override
+        public LedgersIterator iterator() {
+            checkClosed();
+            initLedgersIterator();
+            return ledgersIterator;
+        }
+
+        @Override
+        public Iterable<Long> toIterable() {
+            checkClosed();
+            initLedgersIterator();
+
+            return () -> new Iterator<Long>() {
+                @Override
+                public boolean hasNext() {
+                    try {
+                        return ledgersIterator.hasNext();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+
+                @Override
+                public Long next() {
+                    try {
+                        return ledgersIterator.next();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            };
+        }
+
+        @Override
+        public void close() throws Exception {
+            closed = true;
+        }
+    }
+
+    @Override
+    public ListLedgersResultBuilder newListLedgersOp() {
+        return () -> {
+            final LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges(0);
+            return CompletableFuture.completedFuture(new ListLedgersResultImpl(iterator));
+        };
+    }
+
+    @Override
+    public CompletableFuture<LedgerMetadata> getLedgerMetadata(long ledgerId) {
+        CompletableFuture<Versioned<LedgerMetadata>> versioned = getLedgerManager().readLedgerMetadata(ledgerId);
+        return versioned.thenApply(versionedLedgerMetadata -> {
+            return versionedLedgerMetadata.getValue();
+        });
     }
 
     private final ClientContext clientCtx = new ClientContext() {

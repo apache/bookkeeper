@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
  *
  **/
 public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
-  static final Logger LOG = LoggerFactory.getLogger(ListActiveLedgersCommand.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ListActiveLedgersCommand.class);
     private static final String NAME = "active ledger";
     private static final String DESC = "Retrieve bookie active ledger info.";
     private static final long  DEFAULT_TIME_OUT = 1000;
@@ -161,13 +161,13 @@ public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
 
     public void printActiveLedgerOnEntryLog(long logId, List<Long> activeLedgers){
       if (activeLedgers.size() == 0){
-        System.out.println("No active ledgers on log file " + logId);
+        LOG.info("No active ledgers on log file " + logId);
       } else {
-        System.out.println("Active ledgers on entry log " + logId + " as follow:");
+        LOG.info("Active ledgers on entry log " + logId + " as follow:");
       }
       Collections.sort(activeLedgers);
       for (long a:activeLedgers){
-        System.out.println(ledgerIdFormatter.formatLedgerId(a) + " ");
+        LOG.info(ledgerIdFormatter.formatLedgerId(a) + " ");
       }
     }
 }

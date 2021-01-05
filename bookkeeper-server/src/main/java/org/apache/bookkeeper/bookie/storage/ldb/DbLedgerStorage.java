@@ -242,12 +242,12 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
-    public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
-        getLedgerSorage(ledgerId).setExplicitlac(ledgerId, lac);
+    public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
+        getLedgerSorage(ledgerId).setExplicitLac(ledgerId, lac);
     }
 
     @Override
-    public ByteBuf getExplicitLac(long ledgerId) {
+    public ByteBuf getExplicitLac(long ledgerId) throws IOException {
         return getLedgerSorage(ledgerId).getExplicitLac(ledgerId);
     }
 
