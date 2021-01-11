@@ -55,6 +55,11 @@
           </a>
           <hr class="dropdown-divider">
           
+          <a class="navbar-item" href="/docs/4.12.1/overview/overview">
+            Release 4.12.1
+            
+          </a>
+          
           <a class="navbar-item" href="/docs/4.12.0/overview/overview">
             Release 4.12.0
             
@@ -1655,9 +1660,9 @@ Available formats are 0-1:
     
     <tr id="dbStorage_writeCacheMaxSizeMb">
       <td><code>dbStorage_writeCacheMaxSizeMb</code></td>
-      <td><p>Size of write cache. Memory is allocated from JVM direct memory. Write cache is used for buffer entries before flushing into the entry log. For good performance, it should be big enough to hold a sub.</p>
+      <td><p>Size of write cache. Memory is allocated from JVM direct memory. Write cache is used for buffer entries before flushing into the entry log. For good performance, it should be big enough to hold a substantial amount of entries in the flush interval.</p>
 </td>
-      <td><code>512</code></td>
+      <td><code>25% of the available direct memory</code></td>
     </tr>
     
     <tr id="dbStorage_readAheadCacheMaxSizeMb">
@@ -2547,7 +2552,7 @@ tippy('#record-popover', {
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        Copyright &copy; 2016 - 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+        Copyright &copy; 2016 - 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
       <p>
         Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.

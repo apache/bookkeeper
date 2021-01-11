@@ -55,6 +55,11 @@
           </a>
           <hr class="dropdown-divider">
           
+          <a class="navbar-item" href="/docs/4.12.1/overview/overview">
+            Release 4.12.1
+            
+          </a>
+          
           <a class="navbar-item" href="/docs/4.12.0/overview/overview">
             Release 4.12.0
             
@@ -640,11 +645,12 @@
   <li>rereplicates all the <span class="pop" id="ledger-popover">ledgers</span> that were stored on that bookie.</li>
 </ul>
 
-<p>AutoRecovery can be run in two ways:</p>
+<p>AutoRecovery can be run in three ways:</p>
 
 <ol>
   <li>On dedicated nodes in your BookKeeper cluster</li>
   <li>On the same machines on which your bookies are running</li>
+  <li>On a combination of autorecovery nodes and bookie nodes</li>
 </ol>
 
 <h2 id="running-autorecovery">Running AutoRecovery</h2>
@@ -662,20 +668,23 @@
 
 <p>You can also start up AutoRecovery on a fresh machine if you’d like to create a dedicated cluster of AutoRecovery nodes.</p>
 
+<p>Note that if you <em>only</em> want the AutoRecovery process to run on your dedicated AutoRecovery nodes, you must set <code class="highlighter-rouge">autoRecoveryDaemonEnabled</code> to <code class="highlighter-rouge">false</code> in the <code class="highlighter-rouge">bookkeeper</code> configuration. Otherwise,
+bookkeeper nodes will also handle rereplication work.</p>
+
 <h2 id="configuration">Configuration</h2>
 
 <p>There are a handful of AutoRecovery-related configs in the <a href="../../reference/config"><code class="highlighter-rouge">bk_server.conf</code></a> configuration file. For a listing of those configs, see <a href="../../reference/config#autorecovery-settings">AutoRecovery settings</a>.</p>
 
 <h2 id="disable-autorecovery">Disable AutoRecovery</h2>
 
-<p>You can disable AutoRecovery at any time, for example during maintenance. Disabling AutoRecovery ensures that bookies’ data isn’t unnecessarily rereplicated when the bookie is only taken down for a short period of time, for example when the bookie is being updated or the configuration if being changed.</p>
+<p>You can disable AutoRecovery for the whole cluster at any time, for example during maintenance. Disabling AutoRecovery ensures that bookies’ data isn’t unnecessarily rereplicated when the bookie is only taken down for a short period of time, for example when the bookie is being updated or the configuration if being changed.</p>
 
-<p>You can disable AutoRecover using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
+<p>You can disable AutoRecover for the whole cluster using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell autorecovery <span class="nt">-disable</span>
 </code></pre></div></div>
 
-<p>Once disabled, you can reenable AutoRecovery using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">enable</code></a> shell command:</p>
+<p>Once disabled, you can reenable AutoRecovery for the whole cluster using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">enable</code></a> shell command:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell autorecovery <span class="nt">-enable</span>
 </code></pre></div></div>
@@ -882,7 +891,7 @@ tippy('#record-popover', {
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        Copyright &copy; 2016 - 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+        Copyright &copy; 2016 - 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
       <p>
         Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.
