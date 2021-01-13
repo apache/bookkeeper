@@ -56,16 +56,16 @@ public class DefaultBookieAddressResolver implements BookieAddressResolver {
             return res;
         } catch (BKException.BKBookieHandleNotAvailableException ex) {
             if (BookieSocketAddress.isDummyBookieIdForHostname(bookieId)) {
-                log.info("Resolving dummy bookie Id {} using legacy bookie resolver", bookieId, ex);
+                log.info("Resolving dummy bookie Id {} using legacy bookie resolver. {}", bookieId, ex.getMessage());
                 return BookieSocketAddress.resolveDummyBookieId(bookieId);
             }
-            log.info("Cannot resolve {}, bookie is unknown", bookieId, ex);
+            log.info("Cannot resolve {}, bookie is unknown. {}", bookieId, ex.getMessage());
             throw new BookieIdNotResolvedException(bookieId, ex);
         } catch (Exception ex) {
             if (ex instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            log.info("Cannot resolve {} ", bookieId, ex);
+            log.info("Cannot resolve {}. {} ", bookieId, ex.getMessage());
             throw new BookieIdNotResolvedException(bookieId, ex);
         }
     }
