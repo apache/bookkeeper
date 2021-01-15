@@ -75,17 +75,16 @@ public interface CompactionEntryLog {
 
     /**
      * Clean up any temporary resources that were used by the compaction process.
-     * At this point, there
      */
-    void cleanup();
+    void finalizeAndCleanup();
 
     /**
      * Get the log ID of the entrylog to which compacted entries are being written.
      */
-    long getLogId();
+    long getDstLogId();
 
     /**
      * Get the log ID of the entrylog which is being compacted.
      */
-    long getCompactedLogId();
+    long getSrcLogId();
 }

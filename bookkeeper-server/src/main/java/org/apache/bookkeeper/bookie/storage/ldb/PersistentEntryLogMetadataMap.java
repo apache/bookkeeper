@@ -197,6 +197,21 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
     }
 
     @Override
+    public void clear() throws EntryLogMetadataMapException {
+        try {
+            try (KeyValueStorage.Batch b = metadataMapDB.newBatch();
+                 CloseableIterator<byte[]> itr = metadataMapDB.keys()) {
+                while (itr.hasNext()) {
+                    b.remove(itr.next());
+                }
+                b.flush();
+            }
+        } catch (IOException e) {
+            throw new EntryLogMetadataMapException(e);
+        }
+    }
+
+    @Override
     public void close() throws IOException {
         if (isClosed.compareAndSet(false, true)) {
             metadataMapDB.close();

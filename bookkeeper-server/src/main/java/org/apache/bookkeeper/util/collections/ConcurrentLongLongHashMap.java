@@ -891,4 +891,20 @@ public class ConcurrentLongLongHashMap {
             throw new IllegalArgumentException("Keys and values must be >= 0");
         }
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("ConcurrentLongLongHashMap{");
+
+        int headerLen = sb.length();
+        forEach((k, v) -> {
+                sb.append(k).append(" => ").append(v).append(", ");
+            });
+        if (sb.length() > headerLen) {
+            sb.setLength(sb.length() - 2);
+        }
+        sb.append("}");
+        return sb.toString();
+    }
 }

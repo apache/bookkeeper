@@ -57,7 +57,6 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
-import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.GarbageCollector;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -670,11 +669,6 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                     .subMap(firstLedgerId, true, lastLedgerId, false);
 
             return subBkActiveLedgers.keySet();
-        }
-
-        @Override
-        public EntryLogger getEntryLogger() {
-            return null;
         }
 
         @Override

@@ -37,7 +37,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
-import org.apache.bookkeeper.bookie.storage.EntryLoggerIface;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -341,8 +340,7 @@ public class SortedLedgerStorage
         return (BookieStateManager) stateManager;
     }
 
-    @Override
-    public EntryLoggerIface getEntryLogger() {
+    public EntryLogger getEntryLogger() {
         return interleavedLedgerStorage.getEntryLogger();
     }
 

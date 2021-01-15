@@ -27,6 +27,8 @@ dependencies {
     implementation project(':bookkeeper-common-allocator')
     implementation project(':bookkeeper-http:http-server')
     implementation project(':bookkeeper-proto')
+    implementation project(':bookkeeper-slogger:api')
+    implementation project(':bookkeeper-slogger:slf4j')
     implementation project(':bookkeeper-stats')
     implementation project(':bookkeeper-tools-framework')
     implementation project(':circe-checksum')

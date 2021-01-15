@@ -47,6 +47,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,6 +69,7 @@ import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -451,38 +453,25 @@ public class EntryLogger implements EntryLoggerIface {
         return logid2Channel.get().get(logId);
     }
 
-    /**
-     * Get the least unflushed log id. Garbage collector thread should not process
-     * unflushed entry log file.
-     *
-     * @return least unflushed log id.
-     */
-    @Override
-    public long getLeastUnflushedLogId() {
+    @VisibleForTesting
+    long getLeastUnflushedLogId() {
         return recentlyCreatedEntryLogsStatus.getLeastUnflushedLogId();
     }
 
-    /**
-     * Get the last log id created so far. If entryLogPerLedger is enabled, the Garbage Collector
-     * process needs to look beyond the least unflushed entry log file, as there may be entry logs
-     * ready to be garbage collected.
-     *
-     * @return last entry log id created.
-     */
     @Override
-    public long getLastLogId() {
-        return recentlyCreatedEntryLogsStatus.getLastLogId();
-    }
-
-    /**
-     * Returns whether the current log id exists and has been rotated already.
-     *
-     * @param entryLogId EntryLog id to check.
-     * @return Whether the given entryLogId exists and has been rotated.
-     */
-    @Override
-    public boolean isFlushedEntryLog(Long entryLogId) {
-        return recentlyCreatedEntryLogsStatus.isFlushedEntryLog(entryLogId);
+    public Set<Long> getFlushedLogIds() {
+        Set<Long> logIds = new HashSet<>();
+        synchronized (recentlyCreatedEntryLogsStatus) {
+            for (File dir : ledgerDirsManager.getAllLedgerDirs()) {
+                for (File f : dir.listFiles(file -> file.getName().endsWith(".log"))) {
+                    long logId = fileName2LogId(f.getName());
+                    if (recentlyCreatedEntryLogsStatus.isFlushedLogId(logId)) {
+                        logIds.add(logId);
+                    }
+                }
+            }
+        }
+        return logIds;
     }
 
     long getPreviousAllocatedEntryLogId() {
@@ -1269,13 +1258,8 @@ public class EntryLogger implements EntryLoggerIface {
             return leastUnflushedLogId;
         }
 
-        synchronized long getLastLogId() {
-            return !entryLogsStatusMap.isEmpty() ? entryLogsStatusMap.lastKey() : 0;
-        }
-
-        synchronized boolean isFlushedEntryLog(Long entryLogId) {
-            return entryLogsStatusMap.containsKey(entryLogId) && entryLogsStatusMap.get(entryLogId)
-                    || entryLogId < leastUnflushedLogId;
+        synchronized boolean isFlushedLogId(long entryLogId) {
+            return entryLogsStatusMap.getOrDefault(entryLogId, Boolean.FALSE) || entryLogId < leastUnflushedLogId;
         }
     }
 
@@ -1351,7 +1335,7 @@ public class EntryLogger implements EntryLoggerIface {
             }
         }
         @Override
-        public void cleanup() {
+        public void finalizeAndCleanup() {
             if (compactedLogFile.exists()) {
                 if (!compactedLogFile.delete()) {
                     LOG.warn("Could not delete file: " + compactedLogFile);
@@ -1365,11 +1349,11 @@ public class EntryLogger implements EntryLoggerIface {
         }
 
         @Override
-        public long getLogId() {
+        public long getDstLogId() {
             return compactionLogId;
         }
         @Override
-        public long getCompactedLogId() {
+        public long getSrcLogId() {
             return logIdToCompact;
         }
 

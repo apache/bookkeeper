@@ -58,6 +58,16 @@ public class InMemoryEntryLogMetadataMap implements EntryLogMetadataMap {
     }
 
     @Override
+    public boolean isEmpty() {
+        return entryLogMetaMap.isEmpty();
+    }
+
+    @Override
+    public void clear() {
+        entryLogMetaMap.clear();
+    }
+
+    @Override
     public void close() throws IOException {
         entryLogMetaMap.clear();
     }
