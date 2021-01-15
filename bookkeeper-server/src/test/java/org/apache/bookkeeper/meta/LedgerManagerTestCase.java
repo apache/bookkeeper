@@ -265,11 +265,6 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public EntryLogger getEntryLogger() {
-            return null;
-        }
-
-        @Override
         public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
         }
 

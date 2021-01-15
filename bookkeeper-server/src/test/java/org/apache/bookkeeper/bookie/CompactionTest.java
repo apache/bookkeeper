@@ -45,10 +45,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,7 +84,6 @@ import org.junit.Test;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * This class tests the entry log compaction functionality.
@@ -723,7 +720,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         bkc.deleteLedger(lhs[2].getId());
 
         // Need to wait until entry log 3 gets flushed before initiating GC to satisfy assertions.
-        while (!getGCThread().entryLogger.isFlushedEntryLog(3L)) {
+        while (!getGCThread().entryLogger.getFlushedLogIds().contains(3L)) {
             TimeUnit.MILLISECONDS.sleep(100);
         }
 
@@ -1509,80 +1506,6 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.gcThread.doCompactEntryLogs(threshold, limit);
     }
 
-    /**
-     * Test extractMetaFromEntryLogs optimized method to avoid excess memory usage.
-     */
-    public void testExtractMetaFromEntryLogs() throws Exception {
-        // restart bookies
-        restartBookies(c -> {
-                // Always run this test with Throttle enabled.
-                c.setIsThrottleByBytes(true);
-                return c;
-            });
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        File tmpDir = tmpDirs.createNew("bkTest", ".dir");
-        File curDir = BookieImpl.getCurrentDirectory(tmpDir);
-        BookieImpl.checkDirectoryStructure(curDir);
-        conf.setLedgerDirNames(new String[] { tmpDir.toString() });
-
-        LedgerDirsManager dirs = new LedgerDirsManager(conf, conf.getLedgerDirs(),
-            new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        final Set<Long> ledgers = Collections
-            .newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
-
-        LedgerManager manager = getLedgerManager(ledgers);
-
-        CheckpointSource checkpointSource = new CheckpointSource() {
-
-            @Override
-            public Checkpoint newCheckpoint() {
-                return null;
-            }
-
-            @Override
-            public void checkpointComplete(Checkpoint checkpoint,
-                                           boolean compact) throws IOException {
-            }
-        };
-        InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
-        storage.initialize(conf, manager, dirs, dirs,
-                           NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
-        storage.setCheckpointSource(checkpointSource);
-        storage.setCheckpointer(Checkpointer.NULL);
-
-
-        for (long ledger = 0; ledger <= 10; ledger++) {
-            ledgers.add(ledger);
-            for (int entry = 1; entry <= 50; entry++) {
-                try {
-                    storage.addEntry(genEntry(ledger, entry, ENTRY_SIZE));
-                } catch (IOException e) {
-                    //ignore exception on failure to add entry.
-                }
-            }
-        }
-
-        storage.flush();
-        storage.shutdown();
-
-        storage = new InterleavedLedgerStorage();
-        storage.initialize(conf, manager, dirs, dirs, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
-        storage.setCheckpointSource(checkpointSource);
-        storage.setCheckpointer(Checkpointer.NULL);
-
-        long startingEntriesCount = storage.gcThread.entryLogger.getLeastUnflushedLogId()
-            - storage.gcThread.scannedLogId;
-        LOG.info("The old Log Entry count is: " + startingEntriesCount);
-
-        Map<Long, EntryLogMetadata> entryLogMetaData = new HashMap<>();
-        long finalEntriesCount = storage.gcThread.entryLogger.getLeastUnflushedLogId()
-            - storage.gcThread.scannedLogId;
-        LOG.info("The latest Log Entry count is: " + finalEntriesCount);
-
-        assertTrue("The GC did not clean up entries...", startingEntriesCount != finalEntriesCount);
-        assertTrue("Entries Count is zero", finalEntriesCount == 0);
-    }
-
     private ByteBuf genEntry(long ledger, long entry, int size) {
         ByteBuf bb = Unpooled.buffer(size);
         bb.writeLong(ledger);
@@ -1885,7 +1808,6 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             super(gcThread.conf,
                   gcThread.entryLogger,
                   gcThread.ledgerStorage,
-                  gcThread.ledgerDirsManager,
                   (long entry) -> {
                       try {
                           gcThread.removeEntryLog(entry);

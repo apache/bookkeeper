@@ -673,11 +673,6 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public EntryLogger getEntryLogger() {
-            return null;
-        }
-
-        @Override
         public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
         }
 

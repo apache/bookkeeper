@@ -48,24 +48,21 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
 
     final EntryLogger entryLogger;
     final CompactableLedgerStorage ledgerStorage;
-    final LedgerDirsManager ledgerDirsManager;
     final List<EntryLocation> offsets = new ArrayList<>();
 
     // compaction log file suffix
-    static final String COMPACTING_SUFFIX = ".log.compacting";
+    public static final String COMPACTING_SUFFIX = ".log.compacting";
     // flushed compaction log file suffix
-    static final String COMPACTED_SUFFIX = ".compacted";
+    public static final String COMPACTED_SUFFIX = ".compacted";
 
     public TransactionalEntryLogCompactor(
             ServerConfiguration conf,
             EntryLogger entryLogger,
             CompactableLedgerStorage ledgerStorage,
-            LedgerDirsManager ledgerDirsManager,
             LogRemovalListener logRemover) {
         super(conf, logRemover);
         this.entryLogger = entryLogger;
         this.ledgerStorage = ledgerStorage;
-        this.ledgerDirsManager = ledgerDirsManager;
     }
 
     /**
@@ -300,8 +297,8 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
             // When index is flushed, and entry log is removed,
             // delete the ".compacted" file to indicate this phase is completed.
             offsets.clear();
-            compactionLog.cleanup();
-            logRemovalListener.removeEntryLog(compactionLog.getCompactedLogId());
+            compactionLog.finalizeAndCleanup();
+            logRemovalListener.removeEntryLog(compactionLog.getSrcLogId());
             return true;
         }
 
@@ -330,11 +327,11 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                                 ledgerId, lid, entryId, offset);
                         throw new IOException("Invalid entry found @ offset " + offset);
                     }
-                    long location = (compactionLog.getLogId() << 32L) | (offset + 4);
+                    long location = (compactionLog.getDstLogId() << 32L) | (offset + 4);
                     offsets.add(new EntryLocation(lid, entryId, location));
                 }
             });
-            LOG.info("Recovered {} entry locations from compacted log {}", offsets.size(), compactionLog.getLogId());
+            LOG.info("Recovered {} entry locations from compacted log {}", offsets.size(), compactionLog.getDstLogId());
         }
     }
 }

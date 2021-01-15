@@ -342,7 +342,6 @@ public class SortedLedgerStorage
         return (BookieStateManager) stateManager;
     }
 
-    @Override
     public EntryLogger getEntryLogger() {
         return interleavedLedgerStorage.getEntryLogger();
     }
