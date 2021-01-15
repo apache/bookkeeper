@@ -542,7 +542,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         try {
             addr = bookieAddressResolver.resolve(bookieId);
         } catch (BookieAddressResolver.BookieIdNotResolvedException err) {
-            LOG.error("Cannot connect to {} as endpopint resolution failed", bookieId, err);
+            LOG.error("Cannot connect to {} as endpopint resolution failed (probably bookie is down)", bookieId, err.toString());
             return processBookieNotResolvedError(startTime, err);
         }
 
