@@ -1,0 +1,3 @@
+files:
+  - source: /site/docs/latest
+    translation: /docs/%three_letters_code%/%original_path%/%original_file_name%
