@@ -554,7 +554,7 @@ groups:
 
 - name: Prometheus Metrics Provider Settings
   params:
-  - param: prometheusStatsHttpAddr
+  - param: prometheusStatsHttpAddress
     description: default bind address for Prometheus metrics exporter
     default: 0.0.0.0
   - param: prometheusStatsHttpPort
