@@ -94,7 +94,7 @@ public class TestPrometheusMetricsProvider {
         PropertiesConfiguration config = new PropertiesConfiguration();
         config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ENABLE, true);
         config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_PORT, 0); // ephemeral
-        config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ADDRESS, "127.0.0.1"); // ephemeral
+        config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ADDRESS, "127.0.0.1");
         PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
         try {
             provider.start(config);
