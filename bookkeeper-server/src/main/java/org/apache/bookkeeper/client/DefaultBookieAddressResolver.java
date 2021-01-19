@@ -65,7 +65,6 @@ public class DefaultBookieAddressResolver implements BookieAddressResolver {
             if (ex instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            log.debug("Cannot resolve {} ", bookieId, ex);
             throw new BookieIdNotResolvedException(bookieId, ex);
         }
     }
