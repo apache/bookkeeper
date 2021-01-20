@@ -96,7 +96,7 @@ public class RegistrationStateService
     @Override
     protected void doStop() {
         if (null == stateManager) {
-            log.warn("State Manager is null, no need to stop it.");
+            log.info("State Manager is null, no need to stop it.");
             return;
         }
         stateManager.forceToShuttingDown();
