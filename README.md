@@ -18,29 +18,14 @@ It is suitable for being used in following scenarios:
 
 ## Get Started
 
-* *Concepts*: Start with the [basic concepts](https://bookkeeper.apache.org/docs/master/bookkeeperOverview.html) of Apache BookKeeper.
+* Checkout the project [website](https://bookkeeper.apache.org/).
+* *Concepts*: Start with the [basic concepts](https://bookkeeper.apache.org/docs/latest/getting-started/concepts/) of Apache BookKeeper.
   This will help you to fully understand the other parts of the documentation.
-* [Getting Started](https://bookkeeper.apache.org/docs/master/bookkeeperStarted.html) to setup BookKeeper to write logs.
+* Follow the [Install](https://bookkeeper.apache.org/docs/latest/getting-started/installation/) guide to setup BookKeeper.
 
 ## Documentation
 
-### Developers
-
-* [Programmer Guide](https://bookkeeper.apache.org/archives/docs/master/bookkeeperProgrammer.html)
-* [Tutorial](https://bookkeeper.apache.org/archives/docs/master/bookkeeperTutorial.html)
-* [Java API](https://bookkeeper.apache.org/archives/docs/master/apidocs/)
-
-You can also read [Turning Ledgers into Logs](https://bookkeeper.apache.org/docs/master/bookkeeperLedgers2Logs.html) to learn how to turn **ledgers** into continuous **log streams**.
-If you are looking for a high level **log stream** API, you can checkout [DistributedLog](http://distributedlog.io).
-
-### Administrators
-
-* [Admin Guide](https://bookkeeper.apache.org/docs/master/bookkeeperConfig.html)
-* [Configuration Parameters](https://bookkeeper.apache.org/docs/master/bookieConfigParams.html)
-
-### Contributors
-
-* [BookKeeper Internals](https://bookkeeper.apache.org/docs/master/bookkeeperInternals.html)
+Please visit the [Documentation](https://bookkeeper.apache.org/docs/latest/overview/overview/) from the project website for more information.
 
 ## Get In Touch
 
