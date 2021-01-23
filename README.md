@@ -18,7 +18,7 @@ It is suitable for being used in following scenarios:
 
 ## Get Started
 
-* *Concepts*: Start with the [basic concepts](https://bookkeeper.apache.org/docs/master/bookkeeperOverview.html) of Apache BookKeeper.
+* *Concepts*: Start with the [basic concepts](https://bookkeeper.apache.org/docs/latest/getting-started/concepts/) of Apache BookKeeper.
   This will help you to fully understand the other parts of the documentation.
 * [Getting Started](https://bookkeeper.apache.org/docs/master/bookkeeperStarted.html) to setup BookKeeper to write logs.
 
