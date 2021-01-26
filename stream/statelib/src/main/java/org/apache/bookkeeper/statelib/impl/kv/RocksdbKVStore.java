@@ -127,6 +127,10 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     // rocksdb checkpointer
     private RocksCheckpointer checkpointer;
 
+    static {
+        RocksDB.loadLibrary();
+    }
+
     public RocksdbKVStore() {
         // initialize the iterators set
         this.kvIters = Collections.synchronizedSet(Sets.newHashSet());
