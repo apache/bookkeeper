@@ -454,10 +454,10 @@ groups:
     default: 25% of the available direct memory
   - param: dbStorage_readAheadCacheMaxSizeMb
     description: Size of read cache. Memory is allocated from JVM direct memory. The read cache is pre-filled doing read-ahead whenever a cache miss happens.
-    default: 256
+    default: 25% of the available direct memroy
   - param: dbStorage_readAheadCacheBatchSize
     description: How many entries to pre-fill in cache after a read cache miss
-    default: 1000
+    default: 100
   - param: dbStorage_rocksDB_blockSize
     description: |
       Size of RocksDB block-cache. RocksDB is used for storing ledger indexes.
