@@ -42,23 +42,27 @@ public final class CommandHelpers {
      */
     public static String getBookieSocketAddrStringRepresentation(BookieId bookieId,
                                                                  BookieAddressResolver bookieAddressResolver) {
-        BookieSocketAddress networkAddress = bookieAddressResolver.resolve(bookieId);
-        String hostname = networkAddress.getHostName();
-        String realHostname;
-        String ip;
-        if (InetAddresses.isInetAddress(hostname)){
-            ip = hostname;
-            realHostname = networkAddress.getSocketAddress().getAddress().getCanonicalHostName();
-        } else {
-           InetAddress ia = networkAddress.getSocketAddress().getAddress();
-           if (null != ia){
-              ip = ia.getHostAddress();
-           } else {
-              ip = UNKNOWN;
-           }
-           realHostname = hostname;
+        try {
+            BookieSocketAddress networkAddress = bookieAddressResolver.resolve(bookieId);
+            String hostname = networkAddress.getHostName();
+            String realHostname;
+            String ip;
+            if (InetAddresses.isInetAddress(hostname)){
+                ip = hostname;
+                realHostname = networkAddress.getSocketAddress().getAddress().getCanonicalHostName();
+            } else {
+               InetAddress ia = networkAddress.getSocketAddress().getAddress();
+               if (null != ia){
+                  ip = ia.getHostAddress();
+               } else {
+                  ip = UNKNOWN;
+               }
+               realHostname = hostname;
+            }
+            return formatBookieSocketAddress(bookieId, ip, networkAddress.getPort(), realHostname);
+        } catch (BookieAddressResolver.BookieIdNotResolvedException bookieNotAvailable) {
+            return formatBookieSocketAddress(bookieId, UNKNOWN, 0, UNKNOWN);
         }
-        return formatBookieSocketAddress(bookieId, ip, networkAddress.getPort(), realHostname);
     }
 
     /**
