@@ -1573,7 +1573,7 @@ public class Bookie extends BookieCriticalThread {
         if (null != indexDirs) {
             for (File dir : indexDirs) {
                 if (!cleanDir(dir)) {
-                    LOG.error("Formatting ledger directory " + dir + " failed");
+                    LOG.error("Formatting index directory " + dir + " failed");
                     return false;
                 }
             }
