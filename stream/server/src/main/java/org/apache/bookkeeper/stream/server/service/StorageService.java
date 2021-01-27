@@ -54,7 +54,9 @@ public class StorageService
 
     @Override
     protected void doClose() throws IOException {
-        store.close();
+        if (null != store) {
+            store.close();
+        }
     }
 
     @Override

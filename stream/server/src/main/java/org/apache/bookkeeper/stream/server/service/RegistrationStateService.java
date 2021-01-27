@@ -95,6 +95,10 @@ public class RegistrationStateService
 
     @Override
     protected void doStop() {
+        if (null == stateManager) {
+            log.info("State Manager is null, no need to stop it.");
+            return;
+        }
         stateManager.forceToShuttingDown();
 
         // turn the server to readonly during shutting down process
@@ -104,7 +108,11 @@ public class RegistrationStateService
 
     @Override
     protected void doClose() throws IOException {
-        stateManager.close();
-        regManager.close();
+        if (null != stateManager) {
+            stateManager.close();
+        }
+        if (null != regManager) {
+            regManager.close();
+        }
     }
 }
