@@ -63,6 +63,9 @@ public class PrometheusMetricsProvider implements StatsProvider {
     public static final String PROMETHEUS_STATS_HTTP_ENABLE = "prometheusStatsHttpEnable";
     public static final boolean DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE = true;
 
+    public static final String PROMETHEUS_STATS_HTTP_ADDRESS = "prometheusStatsHttpAddress";
+    public static final String DEFAULT_PROMETHEUS_STATS_HTTP_ADDR = "0.0.0.0";
+
     public static final String PROMETHEUS_STATS_HTTP_PORT = "prometheusStatsHttpPort";
     public static final int DEFAULT_PROMETHEUS_STATS_HTTP_PORT = 8000;
 
@@ -124,8 +127,9 @@ public class PrometheusMetricsProvider implements StatsProvider {
         boolean bkHttpServerEnabled = conf.getBoolean("httpServerEnabled", false);
         // only start its own http server when prometheus http is enabled and bk http server is not enabled.
         if (httpEnabled && !bkHttpServerEnabled) {
+            String httpAddr = conf.getString(PROMETHEUS_STATS_HTTP_ADDRESS, DEFAULT_PROMETHEUS_STATS_HTTP_ADDR);
             int httpPort = conf.getInt(PROMETHEUS_STATS_HTTP_PORT, DEFAULT_PROMETHEUS_STATS_HTTP_PORT);
-            InetSocketAddress httpEndpoint = InetSocketAddress.createUnresolved("0.0.0.0", httpPort);
+            InetSocketAddress httpEndpoint = InetSocketAddress.createUnresolved(httpAddr, httpPort);
             this.server = new Server(httpEndpoint);
             ServletContextHandler context = new ServletContextHandler();
             context.setContextPath("/");
