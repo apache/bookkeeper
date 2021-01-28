@@ -25,6 +25,8 @@ public class StorageServerConfiguration extends ComponentConfiguration {
     private static final String COMPONENT_PREFIX = "storageserver" + DELIMITER;
 
     private static final String GRPC_PORT = "grpc.port";
+    private static final String GRPC_USE_HOSTNAME = "grpc.useHostname";
+
 
     public static StorageServerConfiguration of(CompositeConfiguration conf) {
         return new StorageServerConfiguration(conf);
@@ -41,5 +43,15 @@ public class StorageServerConfiguration extends ComponentConfiguration {
      */
     public int getGrpcPort() {
         return getInt(GRPC_PORT, 4181);
+    }
+
+    /**
+     * Returns the grpc flag that indicates to use hostname instead of IP address
+     * for the stream storage server.
+     *
+     * @return grpc useHostname flag
+     */
+    public boolean getGrpcUseHostname() {
+        return getBoolean(GRPC_USE_HOSTNAME, false);
     }
 }
