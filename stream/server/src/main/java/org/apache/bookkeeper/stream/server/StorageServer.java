@@ -87,6 +87,9 @@ public class StorageServer {
         @Parameter(names = {"-p", "--port"}, description = "Port to listen on for gPRC server")
         private int port = 4181;
 
+        @Parameter(names = {"-u", "--useHostname"}, description = "Use hostname instead of IP for server ID")
+        private boolean useHostname = false;
+
         @Parameter(names = {"-h", "--help"}, description = "Show this help message")
         private boolean help = false;
 
@@ -110,11 +113,14 @@ public class StorageServer {
 
     public static Endpoint createLocalEndpoint(int port, boolean useHostname) throws UnknownHostException {
         String hostname;
+        log.warn("Determining hostname for stream storage");
         if (useHostname) {
             hostname = InetAddress.getLocalHost().getHostName();
         } else {
             hostname = InetAddress.getLocalHost().getHostAddress();
         }
+
+        log.warn("Decided to use hostname {}", hostname);
         return Endpoint.newBuilder()
             .setHostname(hostname)
             .setPort(port)
@@ -148,12 +154,14 @@ public class StorageServer {
         }
 
         int grpcPort = arguments.port;
+        boolean grpcUseHostname = arguments.useHostname;
 
         LifecycleComponent storageServer;
         try {
             storageServer = buildStorageServer(
                 conf,
-                grpcPort);
+                grpcPort,
+                grpcUseHostname);
         } catch (Exception e) {
             log.error("Invalid storage configuration", e);
             return ExitCode.INVALID_CONF.code();
@@ -176,14 +184,22 @@ public class StorageServer {
     public static LifecycleComponent buildStorageServer(CompositeConfiguration conf,
                                                         int grpcPort)
             throws Exception {
-        return buildStorageServer(conf, grpcPort, true, NullStatsLogger.INSTANCE);
+        return buildStorageServer(conf, grpcPort, false, true, NullStatsLogger.INSTANCE);
+    }
+
+    public static LifecycleComponent buildStorageServer(CompositeConfiguration conf,
+                                                        int grpcPort, boolean useHostname)
+            throws Exception {
+        return buildStorageServer(conf, grpcPort, false, useHostname, NullStatsLogger.INSTANCE);
     }
 
     public static LifecycleComponent buildStorageServer(CompositeConfiguration conf,
                                                         int grpcPort,
+                                                        boolean useHostname,
                                                         boolean startBookieAndStartProvider,
                                                         StatsLogger externalStatsLogger)
-        throws Exception {
+            throws Exception {
+
         final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
 
         final Supplier<BookieServiceInfo> bookieServiceInfoProvider =
@@ -206,7 +222,7 @@ public class StorageServer {
         storageConf.validate();
 
         // Get my local endpoint
-        Endpoint myEndpoint = createLocalEndpoint(grpcPort, false);
+        Endpoint myEndpoint = createLocalEndpoint(grpcPort, useHostname);
 
         // Create shared resources
         StorageResources storageResources = StorageResources.create();
