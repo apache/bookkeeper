@@ -55,6 +55,12 @@ public class DLCheckpointStore implements CheckpointStore {
         this.namespace = namespace;
     }
 
+    private static FileNotFoundException createFileNotFoundException(String filePath, Throwable t) {
+        FileNotFoundException fnfe = new FileNotFoundException(filePath);
+        fnfe.initCause(t);
+        return fnfe;
+    }
+
     @Override
     public List<String> listFiles(String filePath) throws IOException {
         return Lists.newArrayList(namespace.getLogs(filePath));
@@ -70,7 +76,7 @@ public class DLCheckpointStore implements CheckpointStore {
         try (DistributedLogManager dlm = namespace.openLog(filePath)) {
             return dlm.getLastTxId();
         } catch (LogNotFoundException e) {
-            throw new FileNotFoundException(filePath);
+            throw createFileNotFoundException(filePath, e);
         } catch (LogEmptyException e) {
             return 0;
         }
@@ -84,12 +90,12 @@ public class DLCheckpointStore implements CheckpointStore {
             try {
                 reader = dlm.openLogReader(DLSN.InitialDLSN);
             } catch (LogNotFoundException | LogEmptyException e) {
-                throw new FileNotFoundException(filePath);
+                throw createFileNotFoundException(filePath, e);
             }
             return new BufferedInputStream(
                 new DLInputStream(dlm, reader, 0L), 128 * 1024);
         } catch (LogNotFoundException e) {
-            throw new FileNotFoundException(filePath);
+            throw createFileNotFoundException(filePath, e);
         }
     }
 
@@ -102,7 +108,7 @@ public class DLCheckpointStore implements CheckpointStore {
             return new BufferedOutputStream(
                 new DLOutputStream(dlm, writer), 128 * 1024);
         } catch (LogNotFoundException le) {
-            throw new FileNotFoundException(filePath);
+            throw createFileNotFoundException(filePath, le);
         }
     }
 
