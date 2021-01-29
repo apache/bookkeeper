@@ -227,7 +227,8 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                 setLastRevision(revision);
                 batch.put(metaCfHandle, LAST_REVISION, lastRevisionBytes);
             } catch (RocksDBException e) {
-                throw new StateStoreRuntimeException("Error while updating last revision " + revision + " from store " + name, e);
+                throw new StateStoreRuntimeException(
+                        "Error while updating last revision " + revision + " from store " + name, e);
             }
         }
     }
