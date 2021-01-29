@@ -95,7 +95,7 @@ class DLOutputStream extends OutputStream {
         }
 
         writePos += buf.readableBytes();
-        LogRecord record = new LogRecord(writePos, buf);
+        LogRecord record = new LogRecord(writePos, buf.copy());
         writer.write(record).whenComplete(new FutureEventListener<DLSN>() {
             @Override
             public void onSuccess(DLSN value) {
