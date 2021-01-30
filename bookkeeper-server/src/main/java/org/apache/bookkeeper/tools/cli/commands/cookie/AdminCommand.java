@@ -34,6 +34,7 @@ import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.Cookie;
+import org.apache.bookkeeper.bookie.environment.checker.BookieEnvironmentChecker;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
@@ -236,8 +237,9 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
             }
 
             try {
-                Bookie.checkEnvironmentWithStorageExpansion(bkConf, driver, Arrays.asList(journalDirectories),
-                                                            allLedgerDirs);
+                BookieEnvironmentChecker.checkEnvironmentWithStorageExpansion(
+                        bkConf, driver, Arrays.asList(journalDirectories),
+                        allLedgerDirs);
                 return true;
             } catch (BookieException e) {
                 LOG.error("Exception while updating cookie for storage expansion", e);
