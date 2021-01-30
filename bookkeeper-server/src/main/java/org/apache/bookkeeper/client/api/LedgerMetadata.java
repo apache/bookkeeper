@@ -134,9 +134,9 @@ public interface LedgerMetadata {
     List<BookieId> getEnsembleAt(long entryId);
 
     /**
-     * Returns all the ensembles of this entry.
+     * Returns all the ensembles of this ledger.
      *
-     * @return all the ensembles of this entry.
+     * @return all the ensembles of this ledger.
      */
     NavigableMap<Long, ? extends List<BookieId>> getAllEnsembles();
 

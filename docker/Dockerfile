@@ -20,7 +20,7 @@
 FROM centos:7
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG BK_VERSION=4.12.0
+ARG BK_VERSION=4.12.1
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
 ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
 
@@ -47,7 +47,7 @@ RUN set -x \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
     # install zookeeper shell
-    && wget -q https://bootstrap.pypa.io/get-pip.py \
+    && wget -q https://bootstrap.pypa.io/2.7/get-pip.py \
     && python get-pip.py \
     && pip install zk-shell \
     && rm -rf get-pip.py \
