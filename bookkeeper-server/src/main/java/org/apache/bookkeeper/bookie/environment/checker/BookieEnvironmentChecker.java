@@ -18,6 +18,23 @@
 package org.apache.bookkeeper.bookie.environment.checker;
 
 import com.google.common.collect.Lists;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.nio.file.FileStore;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.Cookie;
@@ -34,17 +51,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.net.UnknownHostException;
-import java.nio.file.FileStore;
-import java.nio.file.Files;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-
+/**
+ * A class for check bookie conf, cookie and start environment.
+ */
 public class BookieEnvironmentChecker {
     private static final Logger LOG = LoggerFactory.getLogger(BookieEnvironmentChecker.class);
     private final ServerConfiguration conf;
@@ -365,7 +374,8 @@ public class BookieEnvironmentChecker {
      * @param dirs dirs to validate
      * @throws IOException
      */
-    private void checkIfDirsOnSameDiskPartition(List<File> dirs) throws BookieException.DiskPartitionDuplicationException {
+    private void checkIfDirsOnSameDiskPartition(List<File> dirs)
+            throws BookieException.DiskPartitionDuplicationException {
         boolean allowDiskPartitionDuplication = conf.isAllowMultipleDirsUnderSameDiskPartition();
         final MutableBoolean isDuplicationFoundAndNotAllowed = new MutableBoolean(false);
         Map<FileStore, List<File>> fileStoreDirsMap = new HashMap<FileStore, List<File>>();
