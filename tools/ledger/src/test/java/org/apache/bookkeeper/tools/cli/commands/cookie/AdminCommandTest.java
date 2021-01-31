@@ -36,6 +36,7 @@ import java.util.function.Function;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.Cookie;
+import org.apache.bookkeeper.bookie.environment.checker.BookieEnvironmentChecker;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -58,7 +59,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link AdminCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ AdminCommand.class, MetadataDrivers.class, Cookie.class, Bookie.class, RegistrationManager.class })
+@PrepareForTest({ AdminCommand.class, MetadataDrivers.class, Cookie.class, Bookie.class, BookieEnvironmentChecker.class, RegistrationManager.class })
 public class AdminCommandTest extends BookieCommandTestBase {
 
     @Mock
@@ -98,7 +99,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
         PowerMockito.mockStatic(Cookie.class);
         PowerMockito.mockStatic(MetadataDrivers.class);
         PowerMockito.mockStatic(Bookie.class);
-
+        PowerMockito.mockStatic(BookieEnvironmentChecker.class);
         mockUpdateBookieIdInCookie();
         mockVerifyCookie();
         mockInitDirecotory();

@@ -186,6 +186,15 @@ public class Bookie extends BookieCriticalThread {
         BookieEnvironmentChecker.checkDirectoryStructure(dir);
     }
 
+    public static void checkEnvironmentWithStorageExpansion(
+            ServerConfiguration conf,
+            MetadataBookieDriver metadataDriver,
+            List<File> journalDirectories,
+            List<File> allLedgerDirs) throws BookieException {
+        BookieEnvironmentChecker.checkEnvironmentWithStorageExpansion(conf,
+                metadataDriver, journalDirectories, allLedgerDirs);
+    }
+
     public static BookieId getBookieId(ServerConfiguration conf) throws UnknownHostException {
         String customBookieId = conf.getBookieId();
         if (customBookieId != null) {
