@@ -59,7 +59,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link AdminCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ AdminCommand.class, MetadataDrivers.class, Cookie.class, Bookie.class, BookieEnvironmentChecker.class, RegistrationManager.class })
+@PrepareForTest({ AdminCommand.class, MetadataDrivers.class, Cookie.class,
+        Bookie.class, BookieEnvironmentChecker.class, RegistrationManager.class })
 public class AdminCommandTest extends BookieCommandTestBase {
 
     @Mock
