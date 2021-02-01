@@ -24,11 +24,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -36,6 +38,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
 import lombok.Cleanup;
 import org.apache.bookkeeper.common.coder.StringUtf8Coder;
 import org.apache.bookkeeper.common.kv.KV;
@@ -411,6 +415,76 @@ public class RocksCheckpointerTest {
         store.init(spec);
 
         verifyNumKvs(100);
+    }
+
+    /*
+    Bookie can crash or get killed by an operator/automation at any point for any reason.
+    This test covers the situation when this happens mid-checkpoint.
+     */
+    @Test
+    public void testCheckpointRestoreAfterCrash() throws Exception {
+
+        final int numGoodCheckpoints = 3;
+        createMultipleCheckpoints(numGoodCheckpoints, false, false);
+
+        final int numKvs = 100;
+        final String dbName = runtime.getMethodName();
+        final byte[] txid = runtime.getMethodName().getBytes(UTF_8);
+
+        // first prepare rocksdb with 100 kvs;
+        writeNumKvs(numKvs, 100 * numGoodCheckpoints);
+
+        // create a checkpoint with corrupt metadata
+        Checkpoint checkpoint = Checkpoint.create(store.getDb());
+
+        // checkpoint
+        RocksdbCheckpointTask checkpointTask = new RocksdbCheckpointTask(
+                dbName,
+                checkpoint,
+                localCheckpointsDir,
+                checkpointStore,
+                false,
+                false);
+
+        // let's simulate the crash.
+        // crash happens after the createDirectories() succeeded but before
+        // the finalizeCheckpoint() completes.
+        final AtomicReference<String> idRef = new AtomicReference<>();
+        checkpointTask.setInjectedError((id) -> {
+            idRef.set(id);
+            throw new RuntimeException("test");
+        });
+
+        try {
+            checkpointTask.checkpoint(txid);
+            fail("expected RuntimeException");
+        } catch (RuntimeException se) {
+            // noop
+            // in real life case ths is simply crash,
+            // so "finally" at the checkpoint() won't run either
+        }
+
+        // remove local checkpointed dir
+        File checkpointedDir = new File(localCheckpointsDir, idRef.get());
+        MoreFiles.deleteRecursively(
+                Paths.get(checkpointedDir.getAbsolutePath()),
+                RecursiveDeleteOption.ALLOW_INSECURE);
+        assertFalse(checkpointedDir.exists());
+        store.close();
+
+        // restore the checkpoint
+        RocksCheckpointer.restore(dbName, localCheckpointsDir, checkpointStore);
+
+        // al of the following succeeds if the exception from RocksCheckpointer.restore
+        // is ignored
+
+        // make sure all the kvs are readable
+        store = new RocksdbKVStore<>();
+        store.init(spec);
+
+        verifyNumKvs((numGoodCheckpoints + 1) * numKvs);
+        writeNumKvs(numKvs, (numGoodCheckpoints + 1) * numKvs);
+        verifyNumKvs((numGoodCheckpoints + 2) * numKvs);
     }
 
 }
