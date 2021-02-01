@@ -6,8 +6,6 @@ Welcome to the code for the Apache BookKeeper website! Instructions on building 
 
 The site is built using Jekyll and Sass.
 
-> I'll provide more specific info here later.
-
 ## Prerequisities
 
 In order to run the site locally, you need to have the following installed:
