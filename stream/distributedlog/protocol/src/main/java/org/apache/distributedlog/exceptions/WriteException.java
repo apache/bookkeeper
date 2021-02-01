@@ -28,4 +28,9 @@ public class WriteException extends DLException {
         super(StatusCode.WRITE_EXCEPTION,
             "Write rejected because stream " + stream + " has encountered an error : " + transmitError);
     }
+
+    public WriteException(String stream, String transmitError, Throwable cause) {
+        super(StatusCode.WRITE_EXCEPTION,
+                "Write rejected because stream " + stream + " has encountered an error : " + transmitError, cause);
+    }
 }
