@@ -33,6 +33,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -411,8 +413,12 @@ class ReadAheadEntryReader implements
     }
 
     public void start(final List<LogSegmentMetadata> segmentList) {
-        logger.info("Starting the readahead entry reader for {} : segments = {}",
-                readHandler.getFullyQualifiedName(), segmentList);
+        // Managed to get 5mil character long log line from here.
+        // Will limit the output.
+        logger.info("Starting the readahead entry reader for {} : number of segments: {}, top 10 segments = {}",
+                readHandler.getFullyQualifiedName(), segmentList.size(),
+                segmentList.size() > 10
+                        ? segmentList.stream().limit(10).collect(Collectors.toList()) : segmentList);
         started.set(true);
         processLogSegments(segmentList);
     }
