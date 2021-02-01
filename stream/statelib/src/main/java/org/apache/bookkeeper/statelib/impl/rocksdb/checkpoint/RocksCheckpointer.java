@@ -20,6 +20,7 @@ package org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -123,6 +124,8 @@ public class RocksCheckpointer implements AutoCloseable {
                     latestCheckpointId = checkpointId;
                     latestCheckpoint = ckpt;
                 }
+            } catch (FileNotFoundException fnfe) {
+                log.error("Metadata is corrupt for the checkpoint {}. Skipping it.", checkpointId);
             }
         }
         return Pair.of(latestCheckpointId, latestCheckpoint);

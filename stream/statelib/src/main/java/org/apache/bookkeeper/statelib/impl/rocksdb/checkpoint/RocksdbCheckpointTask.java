@@ -30,6 +30,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
@@ -44,6 +45,15 @@ import org.rocksdb.RocksDBException;
 @Slf4j
 public class RocksdbCheckpointTask {
 
+    /**
+     * Error injection support for testing of the checkpoint.
+     * @param <T>
+     */
+    @FunctionalInterface
+    public interface InjectedError<T> {
+        void accept(T t) throws IOException;
+    }
+
     private final String dbName;
     private final Checkpoint checkpoint;
     private final File checkpointDir;
@@ -51,6 +61,9 @@ public class RocksdbCheckpointTask {
     private final String dbPrefix;
     private final boolean removeLocalCheckpointAfterSuccessfulCheckpoint;
     private final boolean removeRemoteCheckpointsAfterSuccessfulCheckpoint;
+
+    // for testing only
+    private InjectedError<String> injectedError = (String checkpointId) -> {};
 
     public RocksdbCheckpointTask(String dbName,
                                  Checkpoint checkpoint,
@@ -65,6 +78,10 @@ public class RocksdbCheckpointTask {
         this.dbPrefix = String.format("%s", dbName);
         this.removeLocalCheckpointAfterSuccessfulCheckpoint = removeLocalCheckpoint;
         this.removeRemoteCheckpointsAfterSuccessfulCheckpoint = removeRemoteCheckpoints;
+    }
+
+    public void setInjectedError(InjectedError<String> injectedError) {
+        this.injectedError = injectedError;
     }
 
     public String checkpoint(byte[] txid) throws StateStoreException {
@@ -88,6 +105,8 @@ public class RocksdbCheckpointTask {
             if (!checkpointStore.fileExists(sstsPath)) {
                 checkpointStore.createDirectories(sstsPath);
             }
+
+            injectedError.accept(checkpointId);
 
             // get the files to copy
             List<File> filesToCopy = getFilesToCopy(tempDir);
