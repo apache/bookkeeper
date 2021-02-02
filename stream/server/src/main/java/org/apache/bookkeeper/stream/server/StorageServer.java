@@ -111,7 +111,7 @@ public class StorageServer {
     public static Endpoint createLocalEndpoint(int port, boolean useHostname) throws UnknownHostException {
         String hostname;
         if (useHostname) {
-            hostname = InetAddress.getLocalHost().getHostName();
+            hostname = InetAddress.getLocalHost().getCanonicalHostName();
         } else {
             hostname = InetAddress.getLocalHost().getHostAddress();
         }
