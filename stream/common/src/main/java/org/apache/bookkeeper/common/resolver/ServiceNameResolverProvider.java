@@ -71,7 +71,7 @@ public final class ServiceNameResolverProvider extends NameResolverFactoryProvid
 
     @Nullable
     @Override
-    public NameResolver newNameResolver(URI targetUri, Attributes params) {
+    public NameResolver newNameResolver(URI targetUri, NameResolver.Args params) {
         ServiceURI serviceURI;
         try {
             serviceURI = ServiceURI.create(targetUri);

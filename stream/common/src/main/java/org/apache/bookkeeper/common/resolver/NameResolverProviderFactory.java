@@ -39,7 +39,7 @@ public class NameResolverProviderFactory extends NameResolver.Factory {
     }
 
     @Override
-    public NameResolver newNameResolver(URI targetUri, Attributes params) {
+    public NameResolver newNameResolver(URI targetUri, NameResolver.Args params) {
         checkForProviders();
         for (NameResolverProvider provider : providers) {
             NameResolver resolver = provider.newNameResolver(targetUri, params);
