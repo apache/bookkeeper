@@ -117,7 +117,7 @@ public class StorageServer {
         String hostname;
         log.warn("Determining hostname for stream storage");
         if (useHostname) {
-            hostname = InetAddress.getLocalHost().getHostName();
+            hostname = InetAddress.getLocalHost().getCanonicalHostName();
         } else {
             hostname = InetAddress.getLocalHost().getHostAddress();
         }
