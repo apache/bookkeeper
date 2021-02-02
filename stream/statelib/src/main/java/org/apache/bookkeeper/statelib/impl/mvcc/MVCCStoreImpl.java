@@ -365,6 +365,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         IncrementResult<K, V> result = null;
         try {
             result = increment(revision, batch, op);
+            updateLastRevision(batch, revision);
             executeBatch(batch);
             return result;
         } catch (StateStoreRuntimeException e) {
@@ -463,6 +464,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         PutResult<K, V> result = null;
         try {
             result = put(revision, batch, op);
+            updateLastRevision(batch, revision);
             executeBatch(batch);
             return result;
         } catch (StateStoreRuntimeException e) {
@@ -576,6 +578,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         DeleteResult<K, V> result = null;
         try {
             result = delete(revision, batch, op, true);
+            updateLastRevision(batch, revision);
             executeBatch(batch);
             return result;
         } catch (StateStoreRuntimeException e) {
@@ -740,6 +743,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             for (Op<K, V> o : operations) {
                 results.add(executeOp(revision, batch, o));
             }
+            updateLastRevision(batch, revision);
             executeBatch(batch);
 
             // 4. repare the result

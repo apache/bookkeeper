@@ -217,6 +217,22 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         }
     }
 
+    protected void updateLastRevision(WriteBatch batch, long revision) {
+        if (revision >= 0) { // k/v comes from log stream
+            if (getLastRevision() >= revision) { // these k/v pairs are duplicates
+                return;
+            }
+            try {
+                // update revision
+                setLastRevision(revision);
+                batch.put(metaCfHandle, LAST_REVISION, lastRevisionBytes);
+            } catch (RocksDBException e) {
+                throw new StateStoreRuntimeException(
+                        "Error while updating last revision " + revision + " from store " + name, e);
+            }
+        }
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public synchronized void init(StateStoreSpec spec) throws StateStoreException {
