@@ -76,7 +76,7 @@ The NameNode, however, served only as initial inspiration for BookKeeper. The ap
 
 ## Metadata storage
 
-BookKeeper requires a metadata storage service to store information related to [ledgers](#ledgers) and available bookies. BookKeeper currently uses [ZooKeeper](https://zookeeper.apache.org) for this and other tasks.
+The BookKeeper metadata store maintains all the metadata of the BookKeeper cluster, such as [ledger](#ledgers) metadata, available bookies, and so on. Currently, BookKeeper uses [ZooKeeper](https://zookeeper.apache.org) for  metadata storage. You can use one Zookeeper cluster for both BookKeeper metadata store and [Pulsar metadata store](https://pulsar.apache.org/docs/en/next/concepts-architecture-overview/#metadata-store). If you want to deploy Pulsar brokers connected to an existing BookKeeper cluster, you need to deploy separate ZooKeeper clusters for Pulsar metadata store and BookKeeper metadata store respectively.
 
 ## Data management in bookies
 
