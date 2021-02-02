@@ -57,6 +57,7 @@ public abstract class MVCCAsyncStoreTestBase {
         when(namespace.openLog(anyString())).thenReturn(dlm);
         AsyncLogWriter logWriter = mock(AsyncLogWriter.class);
         when(dlm.openAsyncLogWriter()).thenReturn(FutureUtils.value(logWriter));
+        when(dlm.openAsyncLogWriter(any())).thenReturn(FutureUtils.value(logWriter));
         when(logWriter.getLastTxId()).thenReturn(-1L);
         DLSN dlsn = new DLSN(0L, 0L, 0L);
         when(logWriter.write(any(LogRecord.class))).thenReturn(FutureUtils.value(dlsn));
