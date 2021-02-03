@@ -184,7 +184,7 @@ public class AuditorElector {
             AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder()
                 .setBookieId(bookieId);
             myVote = zkc.create(getVotePath(PATH_SEPARATOR + VOTE_PREFIX),
-                    TextFormat.printToString(builder.build()).getBytes(UTF_8), zkAcls,
+                    builder.build().toString().getBytes(UTF_8), zkAcls,
                     CreateMode.EPHEMERAL_SEQUENTIAL);
         }
     }
@@ -310,7 +310,7 @@ public class AuditorElector {
                                 .setBookieId(bookieId);
 
                             zkc.setData(getVotePath(""),
-                                        TextFormat.printToString(builder.build()).getBytes(UTF_8), -1);
+                                        builder.build().toString().getBytes(UTF_8), -1);
                             auditor = new Auditor(bookieId, conf, bkc, false, statsLogger);
                             auditor.start();
                         } else {
