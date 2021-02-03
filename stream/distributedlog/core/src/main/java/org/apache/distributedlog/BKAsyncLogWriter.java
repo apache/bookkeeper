@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -91,6 +92,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         @Override
         public void onFailure(Throwable cause) {
             promise.completeExceptionally(cause);
+            firstEncounteredError.compareAndSet(null, cause);
             encounteredError = true;
         }
     }
@@ -126,6 +128,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
     private final boolean disableRollOnSegmentError;
     private LinkedList<PendingLogRecord> pendingRequests = null;
     private volatile boolean encounteredError = false;
+    private final AtomicReference<Throwable> firstEncounteredError = new AtomicReference<>(null);
     private CompletableFuture<BKLogSegmentWriter> rollingFuture = null;
     private long lastTxId = DistributedLogConstants.INVALID_TXID;
 
@@ -187,7 +190,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
     private BKLogSegmentWriter getCachedLogSegmentWriter() throws WriteException {
         if (encounteredError) {
             throw new WriteException(bkDistributedLogManager.getStreamName(),
-                    "writer has been closed due to error.");
+                    "writer has been closed due to error.", firstEncounteredError.get());
         }
         BKLogSegmentWriter segmentWriter = getCachedLogWriter();
         if (null != segmentWriter
@@ -216,7 +219,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
                                                              final boolean allowMaxTxID) {
         if (encounteredError) {
             return FutureUtils.exception(new WriteException(bkDistributedLogManager.getStreamName(),
-                    "writer has been closed due to error."));
+                    "writer has been closed due to error.", firstEncounteredError.get()));
         }
         CompletableFuture<BKLogSegmentWriter> writerFuture = asyncGetLedgerWriter(!disableRollOnSegmentError);
         if (null == writerFuture) {
@@ -383,6 +386,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         final List<PendingLogRecord> pendingRequestsSnapshot;
         synchronized (this) {
             pendingRequestsSnapshot = pendingRequests;
+            firstEncounteredError.compareAndSet(null, cause);
             encounteredError = errorOutWriter;
             pendingRequests = null;
             if (null != rollingFuture) {
@@ -517,7 +521,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
                 for (PendingLogRecord pendingLogRecord : pendingRequests) {
                     pendingLogRecord.promise
                             .completeExceptionally(new WriteException(bkDistributedLogManager.getStreamName(),
-                            "abort wring: writer has been closed due to error."));
+                            "abort writing: writer has been closed due to error."));
                 }
             }
         }
