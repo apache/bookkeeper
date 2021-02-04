@@ -20,7 +20,6 @@ package org.apache.bookkeeper.common.resolver;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import io.grpc.Attributes;
 import io.grpc.NameResolver;
 import io.grpc.NameResolverProvider;
 import io.grpc.internal.DnsNameResolverProvider;

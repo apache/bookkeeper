@@ -21,7 +21,6 @@ package org.apache.bookkeeper.common.resolver;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import io.grpc.Attributes;
 import io.grpc.NameResolver;
 import io.grpc.NameResolverProvider;
 import java.net.URI;
