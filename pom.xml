@@ -157,8 +157,8 @@
     <prometheus.version>0.8.1</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
     <httpclient.version>4.5.5</httpclient.version>
-    <protobuf.version>3.5.1</protobuf.version>
-    <protoc3.version>3.5.1-1</protoc3.version>
+    <protobuf.version>3.14.0</protobuf.version>
+    <protoc3.version>3.14.0</protoc3.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
     <rocksdb.version>6.10.2</rocksdb.version>
@@ -195,7 +195,7 @@
     <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
     <nar-maven-plugin.version>3.5.2</nar-maven-plugin.version>
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
-    <protobuf-maven-plugin.version>0.5.0</protobuf-maven-plugin.version>
+    <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
     <spotbugs-maven-plugin.version>3.1.8</spotbugs-maven-plugin.version>
     <forkCount.variable>1</forkCount.variable>

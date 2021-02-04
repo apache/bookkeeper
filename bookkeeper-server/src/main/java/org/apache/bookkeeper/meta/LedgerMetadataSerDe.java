@@ -278,7 +278,7 @@ public class LedgerMetadataSerDe {
                     builder.addSegment(segmentBuilder.build());
                 }
 
-                TextFormat.print(builder.build(), writer);
+                TextFormat.printer().print(builder.build(), writer);
                 writer.flush();
             }
             return os.toByteArray();
