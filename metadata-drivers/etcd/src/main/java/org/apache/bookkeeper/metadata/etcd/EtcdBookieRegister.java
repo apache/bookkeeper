@@ -23,10 +23,10 @@ import static org.apache.bookkeeper.metadata.etcd.EtcdUtils.msResult;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.etcd.jetcd.Lease;
-import io.etcd.jetcd.common.exception.EtcdException;
 import io.etcd.jetcd.lease.LeaseKeepAliveResponse;
 import io.etcd.jetcd.support.CloseableClient;
-import io.etcd.jetcd.support.Observers;
+
+import io.grpc.stub.StreamObserver;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -55,6 +55,8 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
     private final ScheduledExecutorService executor;
     private final RegistrationListener regListener;
     private volatile CompletableFuture<Long> leaseFuture = new CompletableFuture<>();
+    private volatile CompletableFuture<Void> keepAliveFuture = new CompletableFuture<>();
+
     @Getter(AccessLevel.PACKAGE)
     private volatile long leaseId = -0xabcd;
     private volatile CloseableClient kaListener = null;
@@ -92,10 +94,33 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
         }
         if (newLeaseNeeded) {
             long leaseId = msResult(leaseClient.grant(ttlSeconds)).getID();
-            this.kaListener = leaseClient.keepAlive(leaseId, Observers.observer(response -> {
-                log.info("KeepAlive response : lease = {}, ttl = {}",
-                        response.getID(), response.getTTL());
-            }));
+            keepAliveFuture = new CompletableFuture<>();
+            if (kaListener != null) {
+                synchronized (this) {
+                    kaListener.close();
+                    kaListener = null;
+                }
+            }
+            this.kaListener = leaseClient.keepAlive(leaseId, new StreamObserver<LeaseKeepAliveResponse>() {
+                @Override
+                public void onNext(LeaseKeepAliveResponse response) {
+                    log.info("KeepAlive response : lease = {}, ttl = {}",
+                            response.getID(), response.getTTL());
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    log.info("KeepAlive renewal failed, leaseId {}", leaseId, t.fillInStackTrace());
+                    keepAliveFuture.completeExceptionally(t);
+                }
+
+                @Override
+                public void onCompleted() {
+                    log.info("{} lease completed! leaseId {}", leaseId);
+                    keepAliveFuture.cancel(true);
+                }
+            });
+
             this.leaseId = leaseId;
             leaseFuture.complete(leaseId);
             log.info("New lease '{}' is granted.", leaseId);
@@ -108,14 +133,14 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
                 newLeaseIfNeeded();
                 nextWaitTimeMs = 100L;
             } catch (MetadataStoreException e) {
-                log.error("Failed to grant a new lease", e);
+                log.error("Failed to grant a new lease for leaseId", leaseId, e);
                 try {
                     TimeUnit.MILLISECONDS.sleep(nextWaitTimeMs);
                     nextWaitTimeMs *= 2;
                     nextWaitTimeMs = Math.min(nextWaitTimeMs, TimeUnit.SECONDS.toMillis(ttlSeconds));
                 } catch (InterruptedException e1) {
                     Thread.currentThread().interrupt();
-                    log.warn("Interrupted at backing off granting a new lease");
+                    log.warn("Interrupted at backing off granting a new lease for leaseId {}", leaseId);
                 }
                 continue;
             }
@@ -129,13 +154,13 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
             // here we get a lease, keep it alive
             try {
                 log.info("Keeping Alive at lease = {}", get());
-                LeaseKeepAliveResponse kaResponse = kaListener.listen();
+                keepAliveFuture.get();
                 continue;
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 log.warn("Interrupted at keeping lease '{}' alive", leaseId);
                 resetLease();
-            } catch (EtcdException ee) {
+            } catch (ExecutionException ee) {
                 log.warn("Failed to keep alive lease '{}'", leaseId, ee);
                 resetLease();
             }
@@ -146,7 +171,6 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
         synchronized (this) {
             leaseFuture = new CompletableFuture<>();
         }
-        kaListener.close();
         if (null != regListener) {
             regListener.onRegistrationExpired();
         }
@@ -164,6 +188,11 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
                 if (runFuture.cancel(true)) {
                     log.info("Successfully interrupted bookie register.");
                 }
+            }
+            keepAliveFuture.cancel(true);
+            if (kaListener != null) {
+                kaListener.close();
+                kaListener = null;
             }
         }
         CompletableFuture<Void> closeFuture = new CompletableFuture<>();

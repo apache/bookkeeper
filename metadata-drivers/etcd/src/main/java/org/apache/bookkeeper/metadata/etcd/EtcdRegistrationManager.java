@@ -57,7 +57,6 @@ import io.etcd.jetcd.options.PutOption;
 import io.etcd.jetcd.options.WatchOption;
 import io.etcd.jetcd.watch.WatchEvent;
 import io.etcd.jetcd.watch.WatchEvent.EventType;
-import io.etcd.jetcd.watch.WatchResponse;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -182,34 +181,33 @@ class EtcdRegistrationManager implements RegistrationManager {
             KeyValue kv = getResp.getKvs().get(0);
             if (kv.getLease() != leaseId) {
                 Watch watchClient = client.getWatchClient();
+                final CompletableFuture<Void> watchFuture = new CompletableFuture<>();
                 Watcher watcher = watchClient.watch(
                     regPathBs,
                     WatchOption.newBuilder()
                         .withRevision(getResp.getHeader().getRevision() + 1)
-                        .build());
-                log.info("Previous bookie registration (lease = {}) still exists at {}, "
-                    + "so new lease '{}' will be waiting previous lease for {} seconds to be expired",
-                    kv.getLease(), regPath, leaseId, bkRegister.getTtlSeconds());
-                CompletableFuture<Void> watchFuture =
-                    CompletableFuture.runAsync(() -> {
-                        try {
-                            while (true) {
-                                log.info("Listening on '{}' until it is expired", regPath);
-                                WatchResponse response = watcher.listen();
-                                for (WatchEvent event : response.getEvents()) {
-                                    log.info("Received watch event on '{}' : EventType = {}",
-                                        regPath, event.getEventType());
-                                    if (EventType.DELETE == event.getEventType()) {
-                                        return;
-                                    }
-                                }
+                        .build(),
+                    response -> {
+                        for (WatchEvent event : response.getEvents()) {
+                            log.info("Received watch event on '{}' : EventType = {}, lease {}",
+                                regPath, event.getEventType(), leaseId);
+                            if (EventType.DELETE == event.getEventType()) {
+                                watchFuture.complete(null);
+                                return;
                             }
-                        } catch (InterruptedException e) {
-                            throw new UncheckedExecutionException(
-                                "Interrupted at waiting previous registration under "
-                                    + regPath + " (lease = " + kv.getLease() + ") to be expired", e);
                         }
-                    });
+                    },
+                    exception -> {
+                        log.warn("Exception in keepAlive for watch event on {}, lease {}",
+                                regPath, leaseId, exception);
+                        watchFuture.completeExceptionally(new UncheckedExecutionException(
+                                    "Interrupted at waiting previous registration under "
+                                    + regPath + " (lease = " + kv.getLease() + ") to be expired", exception));
+                    }
+                );
+                log.info("Previous bookie registration (lease = {}) still exists at {}, "
+                                + "so new lease '{}' will be waiting previous lease for {} seconds to be expired",
+                        kv.getLease(), regPath, leaseId, bkRegister.getTtlSeconds());
 
                 try {
                     msResult(watchFuture, 2 * bkRegister.getTtlSeconds(), TimeUnit.SECONDS);
