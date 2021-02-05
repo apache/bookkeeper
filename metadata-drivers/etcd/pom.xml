@@ -33,7 +33,7 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.coreos</groupId>
+      <groupId>io.etcd</groupId>
       <artifactId>jetcd-core</artifactId>
       <version>${etcd.version}</version>
       <exclusions>

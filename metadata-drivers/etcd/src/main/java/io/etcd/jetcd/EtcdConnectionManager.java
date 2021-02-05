@@ -16,10 +16,11 @@
  * limitations under the License.
  */
 
-package com.coreos.jetcd.internal.impl;
+package io.etcd.jetcd;
 
-import com.coreos.jetcd.Client;
-import com.coreos.jetcd.api.WatchGrpc;
+import io.etcd.jetcd.Client;
+import io.etcd.jetcd.ClientConnectionManager;
+import io.etcd.jetcd.api.WatchGrpc;
 import lombok.extern.slf4j.Slf4j;
 
 /**
