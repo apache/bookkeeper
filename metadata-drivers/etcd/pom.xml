@@ -44,18 +44,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>io.etcd</groupId>
-      <artifactId>jetcd-test</artifactId>
-      <version>${etcd.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>io.grpc</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
 
     <dependency>
       <groupId>io.grpc</groupId>
