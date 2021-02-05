@@ -18,8 +18,6 @@
 
 package io.etcd.jetcd;
 
-import io.etcd.jetcd.Client;
-import io.etcd.jetcd.ClientConnectionManager;
 import io.etcd.jetcd.api.WatchGrpc;
 import lombok.extern.slf4j.Slf4j;
 

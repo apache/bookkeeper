@@ -19,4 +19,4 @@
 /**
  * Etcd client changes for bookkeeper metadata driver.
  */
-package io.etcd.jetcd.internal.impl;
+package io.etcd.jetcd;

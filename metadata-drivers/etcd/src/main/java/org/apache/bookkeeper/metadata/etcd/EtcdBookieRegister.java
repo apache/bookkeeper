@@ -20,11 +20,14 @@ package org.apache.bookkeeper.metadata.etcd;
 
 import static org.apache.bookkeeper.metadata.etcd.EtcdUtils.msResult;
 
-import com.coreos.jetcd.Lease;
-import com.coreos.jetcd.Lease.KeepAliveListener;
-import com.coreos.jetcd.common.exception.EtcdException;
-import com.coreos.jetcd.lease.LeaseKeepAliveResponse;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import io.etcd.jetcd.Lease;
+import io.etcd.jetcd.common.exception.EtcdException;
+import io.etcd.jetcd.lease.LeaseKeepAliveResponse;
+import io.etcd.jetcd.support.CloseableClient;
+import io.etcd.jetcd.support.Observers;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -33,6 +36,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +57,7 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
     private volatile CompletableFuture<Long> leaseFuture = new CompletableFuture<>();
     @Getter(AccessLevel.PACKAGE)
     private volatile long leaseId = -0xabcd;
-    private volatile KeepAliveListener kaListener = null;
+    private volatile CloseableClient kaListener = null;
     private volatile boolean running = true;
     private long nextWaitTimeMs = 200;
     private Future<?> runFuture = null;
@@ -88,7 +92,10 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
         }
         if (newLeaseNeeded) {
             long leaseId = msResult(leaseClient.grant(ttlSeconds)).getID();
-            this.kaListener = leaseClient.keepAlive(leaseId);
+            this.kaListener = leaseClient.keepAlive(leaseId, Observers.observer(response -> {
+                log.info("KeepAlive response : lease = {}, ttl = {}",
+                        response.getID(), response.getTTL());
+            }));
             this.leaseId = leaseId;
             leaseFuture.complete(leaseId);
             log.info("New lease '{}' is granted.", leaseId);
@@ -123,8 +130,6 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
             try {
                 log.info("Keeping Alive at lease = {}", get());
                 LeaseKeepAliveResponse kaResponse = kaListener.listen();
-                log.info("KeepAlive response : lease = {}, ttl = {}",
-                    kaResponse.getID(), kaResponse.getTTL());
                 continue;
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();

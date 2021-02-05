@@ -21,16 +21,18 @@ package org.apache.bookkeeper.metadata.etcd;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.metadata.etcd.EtcdConstants.EMPTY_BS;
 
-import com.coreos.jetcd.KV;
-import com.coreos.jetcd.Txn;
-import com.coreos.jetcd.data.ByteSequence;
-import com.coreos.jetcd.data.KeyValue;
-import com.coreos.jetcd.kv.GetResponse;
-import com.coreos.jetcd.op.Cmp;
-import com.coreos.jetcd.op.Cmp.Op;
-import com.coreos.jetcd.op.CmpTarget;
-import com.coreos.jetcd.options.GetOption;
-import com.coreos.jetcd.options.PutOption;
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.KV;
+import io.etcd.jetcd.KeyValue;
+import io.etcd.jetcd.Txn;
+import io.etcd.jetcd.kv.GetResponse;
+import io.etcd.jetcd.op.Cmp;
+import io.etcd.jetcd.op.Cmp.Op;
+import io.etcd.jetcd.op.CmpTarget;
+import io.etcd.jetcd.options.GetOption;
+import io.etcd.jetcd.options.PutOption;
+
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import lombok.extern.slf4j.Slf4j;
@@ -94,16 +96,16 @@ class Etcd64bitIdGenerator implements LedgerIdGenerator {
         checkArgument(bucketId >= 0 && bucketId < NUM_BUCKETS,
             "Invalid bucket id : " + bucketId);
 
-        ByteSequence bucketKey = ByteSequence.fromString(EtcdUtils.getBucketPath(scope, bucketId));
+        ByteSequence bucketKey = ByteSequence.from(EtcdUtils.getBucketPath(scope, bucketId), StandardCharsets.UTF_8);
         Txn txn = kvClient.txn()
             .If(new Cmp(bucketKey, Op.GREATER, CmpTarget.createRevision(0)))
             .Then(
-                com.coreos.jetcd.op.Op.put(bucketKey, EMPTY_BS, PutOption.DEFAULT),
-                com.coreos.jetcd.op.Op.get(bucketKey, GetOption.DEFAULT)
+                io.etcd.jetcd.op.Op.put(bucketKey, EMPTY_BS, PutOption.DEFAULT),
+                io.etcd.jetcd.op.Op.get(bucketKey, GetOption.DEFAULT)
             )
             .Else(
-                com.coreos.jetcd.op.Op.put(bucketKey, EMPTY_BS, PutOption.DEFAULT),
-                com.coreos.jetcd.op.Op.get(bucketKey, GetOption.DEFAULT)
+                io.etcd.jetcd.op.Op.put(bucketKey, EMPTY_BS, PutOption.DEFAULT),
+                io.etcd.jetcd.op.Op.get(bucketKey, GetOption.DEFAULT)
             );
         txn.commit()
             .thenAccept(txnResponse -> {
@@ -114,7 +116,7 @@ class Etcd64bitIdGenerator implements LedgerIdGenerator {
                     if (resp.getCount() > 0) {
                         KeyValue kv = resp.getKvs().get(0);
                         if (kv.getVersion() > MAX_ID_PER_BUCKET) {
-                            log.warn("Etcd bucket '{}' is overflowed", bucketKey.toStringUtf8());
+                            log.warn("Etcd bucket '{}' is overflowed", bucketKey.toString(StandardCharsets.UTF_8));
                             // the bucket is overflowed, moved to next bucket.
                             generateLedgerId(cb);
                         } else {

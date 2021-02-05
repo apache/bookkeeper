@@ -21,8 +21,8 @@ package org.apache.bookkeeper.metadata.etcd;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.coreos.jetcd.Client;
 import com.google.common.util.concurrent.RateLimiter;
+import io.etcd.jetcd.Client;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
