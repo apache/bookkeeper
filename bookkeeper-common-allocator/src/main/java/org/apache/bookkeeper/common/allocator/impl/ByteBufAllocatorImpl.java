@@ -78,6 +78,7 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
                             poolingConcurrency /* nDirectArena */,
                             PooledByteBufAllocator.defaultPageSize(),
                             PooledByteBufAllocator.defaultMaxOrder(),
+                            PooledByteBufAllocator.defaultTinyCacheSize(),
                             PooledByteBufAllocator.defaultSmallCacheSize(),
                             PooledByteBufAllocator.defaultNormalCacheSize(),
                             PooledByteBufAllocator.defaultUseCacheForAllThreads());
