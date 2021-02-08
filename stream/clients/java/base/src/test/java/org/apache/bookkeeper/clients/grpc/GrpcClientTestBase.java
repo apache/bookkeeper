@@ -63,7 +63,7 @@ public abstract class GrpcClientTestBase {
     public void setUp() throws Exception {
         serverName = "fake-server";
         fakeServer = InProcessServerBuilder
-            .forName(serverName)
+            .forName(serverName + ":4181")
             .fallbackHandlerRegistry(serviceRegistry)
             .directExecutor()
             .build()
