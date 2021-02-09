@@ -46,6 +46,7 @@ class RootRangeClientImplWithRetries implements RootRangeClient {
         cause -> shouldRetryOnException(cause);
 
     private static boolean shouldRetryOnException(Throwable cause) {
+        log.error("Reason for the failure {}", cause);
         if (cause instanceof StatusRuntimeException || cause instanceof StatusException) {
             Status status;
             if (cause instanceof StatusException) {
