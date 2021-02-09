@@ -23,14 +23,18 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.coreos.jetcd.Lease.KeepAliveListener;
-import com.coreos.jetcd.data.ByteSequence;
-import com.coreos.jetcd.options.PutOption;
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.options.PutOption;
+import io.etcd.jetcd.support.CloseableClient;
+import io.etcd.jetcd.support.Observers;
+
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
@@ -47,12 +51,13 @@ import org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtils;
 @Slf4j
 public class KeySetReaderTest extends EtcdTestBase {
 
-    private static final Function<ByteSequence, String> BYTE_SEQUENCE_STRING_FUNCTION = bs -> bs.toStringUtf8();
+    private static final Function<ByteSequence, String> BYTE_SEQUENCE_STRING_FUNCTION =
+            bs -> bs.toString(StandardCharsets.UTF_8);
 
     @Test
     public void testReadSingleKey() throws Exception {
         String key = RandomStringUtils.randomAlphabetic(16);
-        ByteSequence keyBs = ByteSequence.fromString(key);
+        ByteSequence keyBs = ByteSequence.from(key, StandardCharsets.UTF_8);
         try (KeySetReader<String> ksReader = new KeySetReader<>(
             etcdClient,
             BYTE_SEQUENCE_STRING_FUNCTION,
@@ -72,7 +77,7 @@ public class KeySetReaderTest extends EtcdTestBase {
 
             // update a value
             String value = RandomStringUtils.randomAlphabetic(32);
-            ByteSequence valueBs = ByteSequence.fromString(value);
+            ByteSequence valueBs = ByteSequence.from(value, StandardCharsets.UTF_8);
             FutureUtils.result(etcdClient.getKVClient().put(keyBs, valueBs));
 
             // update the value should not change local value
@@ -92,7 +97,7 @@ public class KeySetReaderTest extends EtcdTestBase {
     @Test
     public void testWatchSingleKey() throws Exception {
         String key = RandomStringUtils.randomAlphabetic(16);
-        ByteSequence keyBs = ByteSequence.fromString(key);
+        ByteSequence keyBs = ByteSequence.from(key, StandardCharsets.UTF_8);
         KeySetReader<String> ksReader = null;
         try {
             ksReader = new KeySetReader<>(
@@ -121,7 +126,7 @@ public class KeySetReaderTest extends EtcdTestBase {
 
             // update a value
             String value = RandomStringUtils.randomAlphabetic(32);
-            ByteSequence valueBs = ByteSequence.fromString(value);
+            ByteSequence valueBs = ByteSequence.from(value, StandardCharsets.UTF_8);
             FutureUtils.result(etcdClient.getKVClient().put(keyBs, valueBs));
 
             // we should get notified with updated key set
@@ -154,7 +159,7 @@ public class KeySetReaderTest extends EtcdTestBase {
     @Test
     public void testWatchSingleKeyWithTTL() throws Exception {
         String key = RandomStringUtils.randomAlphabetic(16);
-        ByteSequence keyBs = ByteSequence.fromString(key);
+        ByteSequence keyBs = ByteSequence.from(key, StandardCharsets.UTF_8);
         KeySetReader<String> ksReader = null;
         try {
             ksReader = new KeySetReader<>(
@@ -185,7 +190,7 @@ public class KeySetReaderTest extends EtcdTestBase {
             // create a key with ttl
             long leaseId = FutureUtils.result(etcdClient.getLeaseClient().grant(1)).getID();
             String value = RandomStringUtils.randomAlphabetic(32);
-            ByteSequence valueBs = ByteSequence.fromString(value);
+            ByteSequence valueBs = ByteSequence.from(value, StandardCharsets.UTF_8);
             FutureUtils.result(etcdClient.getKVClient()
                 .put(keyBs, valueBs, PutOption.newBuilder().withLeaseId(leaseId).build()));
 
@@ -218,8 +223,8 @@ public class KeySetReaderTest extends EtcdTestBase {
     @Test
     public void testReadKeySet() throws Exception {
         String prefix = RandomStringUtils.randomAlphabetic(16);
-        ByteSequence beginKeyBs = ByteSequence.fromString(prefix + "-000");
-        ByteSequence endKeyBs = ByteSequence.fromString(prefix + "-999");
+        ByteSequence beginKeyBs = ByteSequence.from(prefix + "-000", StandardCharsets.UTF_8);
+        ByteSequence endKeyBs = ByteSequence.from(prefix + "-999", StandardCharsets.UTF_8);
         try (KeySetReader<String> ksReader = new KeySetReader<>(
             etcdClient,
             BYTE_SEQUENCE_STRING_FUNCTION,
@@ -242,8 +247,8 @@ public class KeySetReaderTest extends EtcdTestBase {
                 // update a value
                 String key = String.format("%s-%03d", prefix, i);
                 String value = RandomStringUtils.randomAlphabetic(32);
-                ByteSequence keyBs = ByteSequence.fromString(key);
-                ByteSequence valueBs = ByteSequence.fromString(value);
+                ByteSequence keyBs = ByteSequence.from(key, StandardCharsets.UTF_8);
+                ByteSequence valueBs = ByteSequence.from(value, StandardCharsets.UTF_8);
                 expectedKeySet.add(key);
                 FutureUtils.result(etcdClient.getKVClient().put(keyBs, valueBs));
 
@@ -265,8 +270,8 @@ public class KeySetReaderTest extends EtcdTestBase {
     @Test
     public void testWatchKeySet() throws Exception {
         String prefix = RandomStringUtils.randomAlphabetic(16);
-        ByteSequence beginKeyBs = ByteSequence.fromString(prefix + "-000");
-        ByteSequence endKeyBs = ByteSequence.fromString(prefix + "-999");
+        ByteSequence beginKeyBs = ByteSequence.from(prefix + "-000", StandardCharsets.UTF_8);
+        ByteSequence endKeyBs = ByteSequence.from(prefix + "-999", StandardCharsets.UTF_8);
         KeySetReader<String> ksReader = null;
         try {
             ksReader = new KeySetReader<>(
@@ -298,8 +303,8 @@ public class KeySetReaderTest extends EtcdTestBase {
                 // update a value
                 String key = String.format("%s-%03d", prefix, i);
                 String value = RandomStringUtils.randomAlphabetic(32);
-                ByteSequence keyBs = ByteSequence.fromString(key);
-                ByteSequence valueBs = ByteSequence.fromString(value);
+                ByteSequence keyBs = ByteSequence.from(key, StandardCharsets.UTF_8);
+                ByteSequence valueBs = ByteSequence.from(value, StandardCharsets.UTF_8);
                 expectedKeySet.add(key);
                 FutureUtils.result(etcdClient.getKVClient().put(keyBs, valueBs));
 
@@ -316,7 +321,7 @@ public class KeySetReaderTest extends EtcdTestBase {
             for (int i = 0; i < 20; i++) {
                 // delete the key
                 String key = String.format("%s-%03d", prefix, i);
-                ByteSequence keyBs = ByteSequence.fromString(key);
+                ByteSequence keyBs = ByteSequence.from(key, StandardCharsets.UTF_8);
                 expectedKeySet.remove(key);
                 FutureUtils.result(etcdClient.getKVClient().delete(keyBs));
 
@@ -341,8 +346,8 @@ public class KeySetReaderTest extends EtcdTestBase {
     @Test
     public void testWatchKeySetWithTTL() throws Exception {
         String prefix = RandomStringUtils.randomAlphabetic(16);
-        ByteSequence beginKeyBs = ByteSequence.fromString(prefix + "-000");
-        ByteSequence endKeyBs = ByteSequence.fromString(prefix + "-999");
+        ByteSequence beginKeyBs = ByteSequence.from(prefix + "-000", StandardCharsets.UTF_8);
+        ByteSequence endKeyBs = ByteSequence.from(prefix + "-999", StandardCharsets.UTF_8);
         KeySetReader<String> ksReader = null;
         try {
             ksReader = new KeySetReader<>(
@@ -372,14 +377,15 @@ public class KeySetReaderTest extends EtcdTestBase {
 
             // create keys with ttl
             long leaseId = FutureUtils.result(etcdClient.getLeaseClient().grant(1)).getID();
-            KeepAliveListener ka = etcdClient.getLeaseClient().keepAlive(leaseId);
+            CloseableClient ka = etcdClient.getLeaseClient().keepAlive(leaseId, Observers.observer(response -> {
+            }));
 
             Set<String> expectedKeySet = new HashSet<>();
             for (int i = 0; i < 20; i++) {
                 String key = String.format("%s-%03d", prefix, i);
                 String value = RandomStringUtils.randomAlphabetic(32);
-                ByteSequence keyBs = ByteSequence.fromString(key);
-                ByteSequence valueBs = ByteSequence.fromString(value);
+                ByteSequence keyBs = ByteSequence.from(key, StandardCharsets.UTF_8);
+                ByteSequence valueBs = ByteSequence.from(value, StandardCharsets.UTF_8);
                 expectedKeySet.add(key);
                 FutureUtils.result(etcdClient.getKVClient()
                     .put(keyBs, valueBs, PutOption.newBuilder().withLeaseId(leaseId).build()));

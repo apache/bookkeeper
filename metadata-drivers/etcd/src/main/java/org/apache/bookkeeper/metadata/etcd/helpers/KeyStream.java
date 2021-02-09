@@ -18,18 +18,21 @@
 
 package org.apache.bookkeeper.metadata.etcd.helpers;
 
-import com.coreos.jetcd.KV;
-import com.coreos.jetcd.data.ByteSequence;
-import com.coreos.jetcd.data.KeyValue;
-import com.coreos.jetcd.options.GetOption;
-import com.coreos.jetcd.options.GetOption.SortOrder;
-import com.coreos.jetcd.options.GetOption.SortTarget;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.primitives.UnsignedBytes;
+
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.KV;
+import io.etcd.jetcd.KeyValue;
+import io.etcd.jetcd.options.GetOption;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
@@ -83,7 +86,7 @@ public class KeyStream<T> {
             }
         }
         if (log.isTraceEnabled()) {
-            log.trace("Read keys between {} and {}", beginKey.toStringUtf8(), endKey.toStringUtf8());
+            log.trace("Read keys between {} and {}", beginKey.toString(UTF_8), endKey.toString(UTF_8));
         }
         return kvClient.get(
             beginKey,
@@ -91,8 +94,8 @@ public class KeyStream<T> {
                 .withRange(endKey)
                 .withKeysOnly(true)
                 .withLimit(batchSize)
-                .withSortField(SortTarget.KEY)
-                .withSortOrder(SortOrder.ASCEND)
+                .withSortField(GetOption.SortTarget.KEY)
+                .withSortOrder(GetOption.SortOrder.ASCEND)
                 .build()
         ).thenApply(getResp -> {
             List<KeyValue> kvs = getResp.getKvs();

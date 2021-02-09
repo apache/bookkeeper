@@ -209,7 +209,7 @@ public class DockerUtils {
             Thread.sleep(200);
             resp = docker.inspectExecCmd(execid).exec();
         }
-        int retCode = resp.getExitCode();
+        long retCode = resp.getExitCodeLong();
         if (retCode != 0) {
             LOG.error("DOCKER.exec({}:{}): failed with {} : {}", containerId, cmdString, retCode, output);
             if (!ignoreError) {

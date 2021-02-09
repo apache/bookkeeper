@@ -18,9 +18,12 @@
  */
 package org.apache.bookkeeper.metadata.etcd;
 
-import com.coreos.jetcd.Client;
-import com.coreos.jetcd.data.ByteSequence;
 import com.google.common.collect.Maps;
+
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.Client;
+
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +45,7 @@ class EtcdRegistrationClient implements RegistrationClient {
 
     private static Function<ByteSequence, BookieId> newBookieSocketAddressFunc(String prefix) {
         return bs -> {
-            String addrStr = bs.toStringUtf8();
+            String addrStr = bs.toString(StandardCharsets.UTF_8);
             return BookieId.parse(addrStr.replace(prefix, ""));
         };
     }
@@ -62,15 +65,15 @@ class EtcdRegistrationClient implements RegistrationClient {
             client,
             watchClient,
             newBookieSocketAddressFunc(EtcdUtils.getWritableBookiesBeginPath(scope)),
-            ByteSequence.fromString(EtcdUtils.getWritableBookiesBeginPath(scope)),
-            ByteSequence.fromString(EtcdUtils.getWritableBookiesEndPath(scope))
+            ByteSequence.from(EtcdUtils.getWritableBookiesBeginPath(scope), StandardCharsets.UTF_8),
+            ByteSequence.from(EtcdUtils.getWritableBookiesEndPath(scope), StandardCharsets.UTF_8)
         );
         this.readonlyBookiesReader = new KeySetReader<>(
             client,
             watchClient,
             newBookieSocketAddressFunc(EtcdUtils.getReadonlyBookiesBeginPath(scope)),
-            ByteSequence.fromString(EtcdUtils.getReadonlyBookiesBeginPath(scope)),
-            ByteSequence.fromString(EtcdUtils.getReadonlyBookiesEndPath(scope))
+            ByteSequence.from(EtcdUtils.getReadonlyBookiesBeginPath(scope), StandardCharsets.UTF_8),
+            ByteSequence.from(EtcdUtils.getReadonlyBookiesEndPath(scope), StandardCharsets.UTF_8)
         );
     }
 

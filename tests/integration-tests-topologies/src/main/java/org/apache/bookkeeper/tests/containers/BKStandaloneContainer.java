@@ -81,7 +81,7 @@ public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> e
         });
 
         super.start();
-        log.info("Start a standalone bookkeeper cluster at container {}", containerName);
+        log.info("Start a standalone bookkeeper cluster at container {}", this.getContainerName());
     }
 
     @Override
@@ -91,7 +91,7 @@ public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> e
         }
 
         BKStandaloneContainer another = (BKStandaloneContainer) o;
-        return containerName.equals(another.containerName)
+        return this.getContainerName().equals(another.getContainerName())
             && numBookies == another.numBookies
             && super.equals(another);
     }
@@ -99,7 +99,7 @@ public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> e
     @Override
     public int hashCode() {
         return 31 * super.hashCode() + Objects.hash(
-            containerName,
+                this.getContainerName(),
             numBookies);
     }
 }

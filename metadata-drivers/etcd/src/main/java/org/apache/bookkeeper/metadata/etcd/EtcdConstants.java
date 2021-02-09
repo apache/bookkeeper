@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.metadata.etcd;
 
-import com.coreos.jetcd.data.ByteSequence;
+import io.etcd.jetcd.ByteSequence;
 
 /**
  * Constants used in the Etcd metadata drivers.
@@ -48,6 +48,6 @@ final class EtcdConstants {
 
     public static final String UR_NODE = "underreplication";
 
-    public static final ByteSequence EMPTY_BS  = ByteSequence.fromBytes(new byte[0]);
+    public static final ByteSequence EMPTY_BS  = ByteSequence.from(new byte[0]);
 
 }

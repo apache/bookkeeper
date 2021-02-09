@@ -46,6 +46,13 @@ public final class GrpcChannels {
      * @param settings client settings
      * @return managed channel builder
      */
+    @SuppressWarnings("deprecation")
+    // One experimental API (ManagedChannelBuilder.nameResolverFactory)
+    // is deprecated in favor of another experimental API (NameResolverRegistry).
+    // https://github.com/grpc/grpc-java/issues/1770
+    // https://github.com/grpc/grpc-java/issues/7133#issuecomment-680981331
+    // Skipping the migration for now, will have to deal with this later when GRPC team
+    // finalizes their API.
     public static ManagedChannelBuilder createChannelBuilder(String serviceUri,
                                                              StorageClientSettings settings) {
         ServiceURI uri = ServiceURI.create(serviceUri);

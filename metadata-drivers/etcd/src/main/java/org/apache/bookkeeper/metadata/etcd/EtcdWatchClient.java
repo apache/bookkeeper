@@ -18,26 +18,28 @@
 
 package org.apache.bookkeeper.metadata.etcd;
 
-import static com.coreos.jetcd.common.exception.EtcdExceptionFactory.newClosedWatchClientException;
-import static com.coreos.jetcd.common.exception.EtcdExceptionFactory.newEtcdException;
-import static com.coreos.jetcd.common.exception.EtcdExceptionFactory.toEtcdException;
+import static io.etcd.jetcd.common.exception.EtcdExceptionFactory.newClosedWatchClientException;
+import static io.etcd.jetcd.common.exception.EtcdExceptionFactory.newEtcdException;
+import static io.etcd.jetcd.common.exception.EtcdExceptionFactory.toEtcdException;
 
-import com.coreos.jetcd.Client;
-import com.coreos.jetcd.api.WatchCancelRequest;
-import com.coreos.jetcd.api.WatchCreateRequest;
-import com.coreos.jetcd.api.WatchGrpc;
-import com.coreos.jetcd.api.WatchRequest;
-import com.coreos.jetcd.api.WatchResponse;
-import com.coreos.jetcd.common.exception.ErrorCode;
-import com.coreos.jetcd.common.exception.EtcdException;
-import com.coreos.jetcd.common.exception.EtcdExceptionFactory;
-import com.coreos.jetcd.data.ByteSequence;
-import com.coreos.jetcd.internal.impl.EtcdConnectionManager;
-import com.coreos.jetcd.options.WatchOption;
-import com.coreos.jetcd.watch.WatchResponseWithError;
 import com.google.common.base.Strings;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
+
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.Client;
+import io.etcd.jetcd.EtcdConnectionManager;
+import io.etcd.jetcd.api.WatchCancelRequest;
+import io.etcd.jetcd.api.WatchCreateRequest;
+import io.etcd.jetcd.api.WatchGrpc;
+import io.etcd.jetcd.api.WatchRequest;
+import io.etcd.jetcd.api.WatchResponse;
+import io.etcd.jetcd.common.exception.ErrorCode;
+import io.etcd.jetcd.common.exception.EtcdException;
+import io.etcd.jetcd.common.exception.EtcdExceptionFactory;
+import io.etcd.jetcd.options.WatchOption;
+import io.etcd.jetcd.watch.WatchResponseWithError;
+
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
@@ -90,13 +92,13 @@ public class EtcdWatchClient implements AutoCloseable {
     }
 
     public CompletableFuture<EtcdWatcher> watch(ByteSequence key,
-                                                BiConsumer<com.coreos.jetcd.watch.WatchResponse, Throwable> consumer) {
+                                                BiConsumer<io.etcd.jetcd.watch.WatchResponse, Throwable> consumer) {
         return watch(key, WatchOption.DEFAULT, consumer);
     }
 
     public CompletableFuture<EtcdWatcher> watch(ByteSequence key,
                                                 WatchOption watchOption,
-                                                BiConsumer<com.coreos.jetcd.watch.WatchResponse, Throwable> consumer) {
+                                                BiConsumer<io.etcd.jetcd.watch.WatchResponse, Throwable> consumer) {
         return CompletableFuture.supplyAsync(() -> {
             if (isClosed()) {
                 throw EtcdExceptionFactory.newClosedWatchClientException();
@@ -319,7 +321,7 @@ public class EtcdWatchClient implements AutoCloseable {
             return;
         }
 
-        watcher.notifyWatchResponse(new WatchResponseWithError(response));
+        watcher.notifyWatchResponse(new WatchResponseWithError(new io.etcd.jetcd.watch.WatchResponse(response)));
         watcher.setRevision(
             response
                 .getEvents(response.getEventsCount() - 1)

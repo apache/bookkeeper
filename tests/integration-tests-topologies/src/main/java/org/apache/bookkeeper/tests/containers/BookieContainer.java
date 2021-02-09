@@ -65,7 +65,7 @@ public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends Chaos
     }
 
     public String getInternalGrpcEndpointStr() {
-        return DockerUtils.getContainerIP(dockerClient, containerId) + ":" + BOOKIE_GRPC_PORT;
+        return DockerUtils.getContainerIP(dockerClient, this.getContainerId()) + ":" + BOOKIE_GRPC_PORT;
     }
 
     @Override
@@ -113,7 +113,7 @@ public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends Chaos
     @Override
     protected void beforeStop() {
         super.beforeStop();
-        if (null != containerId) {
+        if (null != this.getContainerId()) {
             DockerUtils.dumpContainerDirToTargetCompressed(
                 getDockerClient(),
                 getContainerName(),

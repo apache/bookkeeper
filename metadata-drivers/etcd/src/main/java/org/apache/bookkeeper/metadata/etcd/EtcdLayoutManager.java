@@ -20,18 +20,20 @@ package org.apache.bookkeeper.metadata.etcd;
 
 import static org.apache.bookkeeper.metadata.etcd.EtcdUtils.ioResult;
 
-import com.coreos.jetcd.Client;
-import com.coreos.jetcd.KV;
-import com.coreos.jetcd.data.ByteSequence;
-import com.coreos.jetcd.kv.DeleteResponse;
-import com.coreos.jetcd.kv.GetResponse;
-import com.coreos.jetcd.kv.TxnResponse;
-import com.coreos.jetcd.op.Cmp;
-import com.coreos.jetcd.op.Cmp.Op;
-import com.coreos.jetcd.op.CmpTarget;
-import com.coreos.jetcd.options.GetOption;
-import com.coreos.jetcd.options.PutOption;
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.Client;
+import io.etcd.jetcd.KV;
+import io.etcd.jetcd.kv.DeleteResponse;
+import io.etcd.jetcd.kv.GetResponse;
+import io.etcd.jetcd.kv.TxnResponse;
+import io.etcd.jetcd.op.Cmp;
+import io.etcd.jetcd.op.CmpTarget;
+import io.etcd.jetcd.options.GetOption;
+import io.etcd.jetcd.options.PutOption;
+
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +56,7 @@ class EtcdLayoutManager implements LayoutManager {
         this.client = client;
         this.kvClient = client.getKVClient();
         this.scope = scope;
-        this.layoutKey = ByteSequence.fromString(EtcdUtils.getLayoutKey(scope));
+        this.layoutKey = ByteSequence.from(EtcdUtils.getLayoutKey(scope), StandardCharsets.UTF_8);
     }
 
     @Override
@@ -70,11 +72,11 @@ class EtcdLayoutManager implements LayoutManager {
 
     @Override
     public void storeLedgerLayout(LedgerLayout layout) throws IOException {
-        ByteSequence layoutData = ByteSequence.fromBytes(layout.serialize());
+        ByteSequence layoutData = ByteSequence.from(layout.serialize());
         TxnResponse response = ioResult(kvClient.txn()
-            .If(new Cmp(layoutKey, Op.GREATER, CmpTarget.createRevision(0)))
-            .Then(com.coreos.jetcd.op.Op.get(layoutKey, GetOption.DEFAULT))
-            .Else(com.coreos.jetcd.op.Op.put(layoutKey, layoutData, PutOption.DEFAULT))
+            .If(new Cmp(layoutKey, Cmp.Op.GREATER, CmpTarget.createRevision(0)))
+            .Then(io.etcd.jetcd.op.Op.get(layoutKey, GetOption.DEFAULT))
+            .Else(io.etcd.jetcd.op.Op.put(layoutKey, layoutData, PutOption.DEFAULT))
             .commit());
         // key doesn't exist and we created the key
         if (!response.isSucceeded()) {
@@ -84,11 +86,11 @@ class EtcdLayoutManager implements LayoutManager {
             GetResponse resp = response.getGetResponses().get(0);
             if (resp.getCount() <= 0) {
                 // fail to put key/value but key is not found
-                throw new IOException("Creating layout node '" + layoutKey.toStringUtf8()
+                throw new IOException("Creating layout node '" + layoutKey.toString(StandardCharsets.UTF_8)
                     + "' failed due to it already exists but no layout node is found");
             } else {
                 throw new LedgerLayoutExistsException(
-                    "Ledger layout already exists under '" + layoutKey.toStringUtf8() + "'");
+                    "Ledger layout already exists under '" + layoutKey.toString(StandardCharsets.UTF_8) + "'");
             }
         }
     }
@@ -98,11 +100,12 @@ class EtcdLayoutManager implements LayoutManager {
         DeleteResponse response = ioResult(kvClient.delete(layoutKey));
         if (response.getDeleted() > 0) {
             if (log.isDebugEnabled()) {
-                log.debug("Successfully delete layout '{}'", layoutKey.toStringUtf8());
+                log.debug("Successfully delete layout '{}'", layoutKey.toString(StandardCharsets.UTF_8));
             }
             return;
         } else {
-            throw new IOException("No ledger layout is found under '" + layoutKey.toStringUtf8() + "'");
+            throw new IOException("No ledger layout is found under '" + layoutKey.toString(StandardCharsets.UTF_8)
+                    + "'");
         }
     }
 }

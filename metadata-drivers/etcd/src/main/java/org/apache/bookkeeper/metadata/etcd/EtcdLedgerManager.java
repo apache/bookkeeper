@@ -18,21 +18,23 @@
  */
 package org.apache.bookkeeper.metadata.etcd;
 
-import com.coreos.jetcd.Client;
-import com.coreos.jetcd.KV;
-import com.coreos.jetcd.Txn;
-import com.coreos.jetcd.common.exception.ClosedClientException;
-import com.coreos.jetcd.data.ByteSequence;
-import com.coreos.jetcd.data.KeyValue;
-import com.coreos.jetcd.kv.GetResponse;
-import com.coreos.jetcd.op.Cmp;
-import com.coreos.jetcd.op.Cmp.Op;
-import com.coreos.jetcd.op.CmpTarget;
-import com.coreos.jetcd.options.DeleteOption;
-import com.coreos.jetcd.options.GetOption;
-import com.coreos.jetcd.options.PutOption;
 import com.google.common.collect.Sets;
+
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.Client;
+import io.etcd.jetcd.KV;
+import io.etcd.jetcd.KeyValue;
+import io.etcd.jetcd.Txn;
+import io.etcd.jetcd.common.exception.ClosedClientException;
+import io.etcd.jetcd.kv.GetResponse;
+import io.etcd.jetcd.op.Cmp;
+import io.etcd.jetcd.op.CmpTarget;
+import io.etcd.jetcd.options.DeleteOption;
+import io.etcd.jetcd.options.GetOption;
+import io.etcd.jetcd.options.PutOption;
+
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -41,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -99,10 +102,10 @@ class EtcdLedgerManager implements LedgerManager {
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
         log.info("Create ledger metadata under key {}", ledgerKey);
 
-        ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
+        ByteSequence ledgerKeyBs = ByteSequence.from(ledgerKey, StandardCharsets.UTF_8);
         final ByteSequence valueBs;
         try {
-            valueBs = ByteSequence.fromBytes(serDe.serialize(metadata));
+            valueBs = ByteSequence.from(serDe.serialize(metadata));
         } catch (IOException ioe) {
             promise.completeExceptionally(new BKException.BKMetadataSerializationException(ioe));
             return promise;
@@ -110,14 +113,14 @@ class EtcdLedgerManager implements LedgerManager {
         kvClient.txn()
             .If(new Cmp(
                 ledgerKeyBs,
-                Op.GREATER,
+                Cmp.Op.GREATER,
                 CmpTarget.createRevision(0L)))
-            .Then(com.coreos.jetcd.op.Op.get(
+            .Then(io.etcd.jetcd.op.Op.get(
                 ledgerKeyBs,
                 GetOption.newBuilder()
                     .withCountOnly(true)
                     .build()))
-            .Else(com.coreos.jetcd.op.Op.put(
+            .Else(io.etcd.jetcd.op.Op.put(
                 ledgerKeyBs,
                 valueBs,
                 PutOption.DEFAULT))
@@ -163,27 +166,27 @@ class EtcdLedgerManager implements LedgerManager {
         }
 
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
-        ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
+        ByteSequence ledgerKeyBs = ByteSequence.from(ledgerKey, StandardCharsets.UTF_8);
         Txn txn = kvClient.txn();
         if (revision == -0xabcd) {
             txn = txn.If(new Cmp(
                 ledgerKeyBs,
-                Op.GREATER,
+                Cmp.Op.GREATER,
                 CmpTarget.createRevision(0L)
             ));
         } else {
             txn = txn.If(new Cmp(
                 ledgerKeyBs,
-                Op.EQUAL,
+                Cmp.Op.EQUAL,
                 CmpTarget.modRevision(revision)
             ));
         }
         txn
-            .Then(com.coreos.jetcd.op.Op.delete(
+            .Then(io.etcd.jetcd.op.Op.delete(
                 ledgerKeyBs,
                 DeleteOption.DEFAULT
             ))
-            .Else(com.coreos.jetcd.op.Op.get(
+            .Else(io.etcd.jetcd.op.Op.get(
                 ledgerKeyBs,
                 GetOption.DEFAULT
             ))
@@ -213,7 +216,7 @@ class EtcdLedgerManager implements LedgerManager {
     public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
         CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
-        ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
+        ByteSequence ledgerKeyBs = ByteSequence.from(ledgerKey, StandardCharsets.UTF_8);
         log.info("read ledger metadata under key {}", ledgerKey);
         kvClient.get(ledgerKeyBs)
             .thenAccept(getResp -> {
@@ -249,11 +252,11 @@ class EtcdLedgerManager implements LedgerManager {
         }
         final LongVersion lv = (LongVersion) currentVersion;
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
-        ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
+        ByteSequence ledgerKeyBs = ByteSequence.from(ledgerKey, StandardCharsets.UTF_8);
 
         final ByteSequence valueBs;
         try {
-            valueBs = ByteSequence.fromBytes(serDe.serialize(metadata));
+            valueBs = ByteSequence.from(serDe.serialize(metadata));
         } catch (IOException ioe) {
             promise.completeExceptionally(new BKException.BKMetadataSerializationException(ioe));
             return promise;
@@ -262,13 +265,13 @@ class EtcdLedgerManager implements LedgerManager {
         kvClient.txn()
             .If(new Cmp(
                 ledgerKeyBs,
-                Op.EQUAL,
+                Cmp.Op.EQUAL,
                 CmpTarget.modRevision(lv.getLongVersion())))
-            .Then(com.coreos.jetcd.op.Op.put(
+            .Then(io.etcd.jetcd.op.Op.put(
                 ledgerKeyBs,
                 valueBs,
                 PutOption.DEFAULT))
-            .Else(com.coreos.jetcd.op.Op.get(
+            .Else(io.etcd.jetcd.op.Op.get(
                 ledgerKeyBs,
                 GetOption.DEFAULT))
             .commit()
@@ -322,12 +325,14 @@ class EtcdLedgerManager implements LedgerManager {
                                         Optional.empty()
                                 );
                             } catch (IOException ioe) {
-                                log.error("Could not parse ledger metadata : {}", bs.toStringUtf8(), ioe);
+                                log.error("Could not parse ledger metadata : {}",
+                                        bs.toString(StandardCharsets.UTF_8), ioe);
                                 throw new RuntimeException(
-                                        "Could not parse ledger metadata : " + bs.toStringUtf8(), ioe);
+                                        "Could not parse ledger metadata : "
+                                                + bs.toString(StandardCharsets.UTF_8), ioe);
                             }
     },
-                ByteSequence.fromString(EtcdUtils.getLedgerKey(scope, ledgerId)))
+                ByteSequence.from(EtcdUtils.getLedgerKey(scope, ledgerId), StandardCharsets.UTF_8))
         );
         LedgerMetadataConsumer lmConsumer = listenerToConsumer(ledgerId, listener,
             (lid) -> {
@@ -387,10 +392,10 @@ class EtcdLedgerManager implements LedgerManager {
                                     int failureRc) {
         KeyStream<Long> ks = new KeyStream<>(
             kvClient,
-            ByteSequence.fromString(EtcdUtils.getLedgerKey(scope, 0L)),
-            ByteSequence.fromString(EtcdUtils.getLedgerKey(scope, Long.MAX_VALUE)),
+            ByteSequence.from(EtcdUtils.getLedgerKey(scope, 0L), StandardCharsets.UTF_8),
+            ByteSequence.from(EtcdUtils.getLedgerKey(scope, Long.MAX_VALUE), StandardCharsets.UTF_8),
             bs -> {
-                UUID uuid = EtcdUtils.parseLedgerKey(bs.toStringUtf8());
+                UUID uuid = EtcdUtils.parseLedgerKey(bs.toString(StandardCharsets.UTF_8));
                 return uuid.getLeastSignificantBits();
             }
         );
@@ -422,10 +427,10 @@ class EtcdLedgerManager implements LedgerManager {
     public LedgerRangeIterator getLedgerRanges(long opTimeOutMs) {
         KeyStream<Long> ks = new KeyStream<>(
             kvClient,
-            ByteSequence.fromString(EtcdUtils.getLedgerKey(scope, 0L)),
-            ByteSequence.fromString(EtcdUtils.getLedgerKey(scope, Long.MAX_VALUE)),
+            ByteSequence.from(EtcdUtils.getLedgerKey(scope, 0L), StandardCharsets.UTF_8),
+            ByteSequence.from(EtcdUtils.getLedgerKey(scope, Long.MAX_VALUE), StandardCharsets.UTF_8),
             bs -> {
-                UUID uuid = EtcdUtils.parseLedgerKey(bs.toStringUtf8());
+                UUID uuid = EtcdUtils.parseLedgerKey(bs.toString(StandardCharsets.UTF_8));
                 return uuid.getLeastSignificantBits();
             }
         );

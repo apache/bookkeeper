@@ -23,10 +23,12 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.coreos.jetcd.data.ByteSequence;
+import io.etcd.jetcd.ByteSequence;
+
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
 import org.apache.commons.lang.RandomStringUtils;
@@ -40,7 +42,8 @@ import org.junit.Test;
 @Slf4j
 public class HelpersTest extends EtcdTestBase {
 
-    private static final Function<ByteSequence, String> BYTE_SEQUENCE_STRING_FUNCTION = bs -> bs.toStringUtf8();
+    private static final Function<ByteSequence, String> BYTE_SEQUENCE_STRING_FUNCTION =
+            bs -> bs.toString(UTF_8);
 
     private static String getKey(String scope, int i) {
         return String.format("%s-key-%010d", scope, i);
@@ -59,8 +62,8 @@ public class HelpersTest extends EtcdTestBase {
     public void testEmptyKeyStream() throws Exception {
         KeyStream<String> ks = new KeyStream<>(
             etcdClient.getKVClient(),
-            ByteSequence.fromString(getKey(scope, 0)),
-            ByteSequence.fromString(getKey(scope, 100)),
+            ByteSequence.from(getKey(scope, 0), UTF_8),
+            ByteSequence.from(getKey(scope, 100), UTF_8),
             BYTE_SEQUENCE_STRING_FUNCTION
         );
         List<String> values = result(ks.readNext());
@@ -109,7 +112,7 @@ public class HelpersTest extends EtcdTestBase {
     private void testKeyStream(int numKeys, int batchSize) throws Exception {
         for (int i = 0; i < numKeys; i++) {
             String key = getKey(scope, i);
-            ByteSequence keyBs = ByteSequence.fromBytes(key.getBytes(UTF_8));
+            ByteSequence keyBs = ByteSequence.from(key.getBytes(UTF_8));
             result(etcdClient.getKVClient().put(keyBs, keyBs));
         }
 
@@ -131,7 +134,7 @@ public class HelpersTest extends EtcdTestBase {
     private void testKeyIterator(int numKeys, int batchSize) throws Exception {
         for (int i = 0; i < numKeys; i++) {
             String key = getKey(scope, i);
-            ByteSequence keyBs = ByteSequence.fromString(key);
+            ByteSequence keyBs = ByteSequence.from(key, UTF_8);
             result(etcdClient.getKVClient().put(keyBs, keyBs));
         }
 
@@ -190,15 +193,15 @@ public class HelpersTest extends EtcdTestBase {
     private KeyStream<Integer> openKeyStream(int batchSize) {
         KeyStream<Integer> ks = new KeyStream<>(
             etcdClient.getKVClient(),
-            ByteSequence.fromBytes(getKey(scope, 0).getBytes(UTF_8)),
-            ByteSequence.fromBytes(getKey(scope, Integer.MAX_VALUE).getBytes(UTF_8)),
-            bs -> {
+            ByteSequence.from(getKey(scope, 0).getBytes(UTF_8)),
+            ByteSequence.from(getKey(scope, Integer.MAX_VALUE).getBytes(UTF_8)),
+                bs -> {
                 String[] keyParts = StringUtils.split(bs.toString(UTF_8), '-');
                 try {
                     return Integer.parseInt(keyParts[2]);
                 } catch (NumberFormatException nfe) {
                     log.error("Failed to parse key string '{}' : ",
-                        bs.toStringUtf8(), nfe);
+                        bs.toString(UTF_8), nfe);
                     return -0xabcd;
                 }
             },

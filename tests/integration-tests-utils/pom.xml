@@ -52,6 +52,17 @@
     <dependency>
       <groupId>org.arquillian.cube</groupId>
       <artifactId>arquillian-cube-docker</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.docker-java</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
     </dependency>
 
     <dependency>

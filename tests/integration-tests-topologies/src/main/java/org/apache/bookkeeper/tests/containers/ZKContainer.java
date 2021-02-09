@@ -72,7 +72,7 @@ public class ZKContainer<SelfT extends ZKContainer<SelfT>> extends MetadataStore
 
         super.start();
         log.info("Start a zookeeper server at container {} : external service uri = {}, internal service uri = {}",
-            containerName, getExternalServiceUri(), getInternalServiceUri());
+            this.getContainerName(), getExternalServiceUri(), getInternalServiceUri());
     }
 
 }

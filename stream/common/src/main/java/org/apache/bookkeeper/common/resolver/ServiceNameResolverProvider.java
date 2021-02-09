@@ -20,7 +20,6 @@ package org.apache.bookkeeper.common.resolver;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import io.grpc.Attributes;
 import io.grpc.NameResolver;
 import io.grpc.NameResolverProvider;
 import io.grpc.internal.DnsNameResolverProvider;
@@ -71,7 +70,7 @@ public final class ServiceNameResolverProvider extends NameResolverFactoryProvid
 
     @Nullable
     @Override
-    public NameResolver newNameResolver(URI targetUri, Attributes params) {
+    public NameResolver newNameResolver(URI targetUri, NameResolver.Args params) {
         ServiceURI serviceURI;
         try {
             serviceURI = ServiceURI.create(targetUri);

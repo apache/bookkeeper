@@ -20,9 +20,9 @@ package org.apache.bookkeeper.tests.containers;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.model.Frame;
-import com.github.dockerjava.core.command.LogContainerResultCallback;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +37,13 @@ import org.testcontainers.containers.GenericContainer;
 @Slf4j
 public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends GenericContainer<SelfT> {
 
+    static class LogContainerResultCb extends ResultCallback.Adapter<Frame> {
+        @Override
+        public void onNext(Frame frame) {
+            log.info(new String(frame.getPayload(), UTF_8));
+        }
+    }
+
     protected final String clusterName;
 
     protected ChaosContainer(String clusterName, String image) {
@@ -45,7 +52,7 @@ public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends Generic
     }
 
     protected void beforeStop() {
-        if (null == containerId) {
+        if (null == this.getContainerId()) {
             return;
         }
 
@@ -63,7 +70,7 @@ public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends Generic
 
     public void tailContainerLog() {
         CompletableFuture.runAsync(() -> {
-            while (null == containerId) {
+            while (null == this.getContainerId()) {
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
@@ -71,29 +78,19 @@ public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends Generic
                 }
             }
 
-            LogContainerCmd logContainerCmd = this.dockerClient.logContainerCmd(containerId);
+            LogContainerCmd logContainerCmd = this.dockerClient.logContainerCmd(this.getContainerId());
             logContainerCmd.withStdOut(true).withStdErr(true).withFollowStream(true);
-            logContainerCmd.exec(new LogContainerResultCallback() {
-                @Override
-                public void onNext(Frame item) {
-                    log.info(new String(item.getPayload(), UTF_8));
-                }
-            });
+            logContainerCmd.exec(new LogContainerResultCb());
         });
     }
 
     public String getContainerLog() {
         StringBuilder sb = new StringBuilder();
 
-        LogContainerCmd logContainerCmd = this.dockerClient.logContainerCmd(containerId);
+        LogContainerCmd logContainerCmd = this.dockerClient.logContainerCmd(this.getContainerId());
         logContainerCmd.withStdOut(true).withStdErr(true);
         try {
-            logContainerCmd.exec(new LogContainerResultCallback() {
-                @Override
-                public void onNext(Frame item) {
-                    sb.append(new String(item.getPayload(), UTF_8));
-                }
-            }).awaitCompletion();
+            logContainerCmd.exec(new LogContainerResultCb()).awaitCompletion();
         } catch (InterruptedException e) {
 
         }
@@ -103,13 +100,13 @@ public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends Generic
     public ExecResult execCmd(String... cmd) throws Exception {
         String cmdString = StringUtils.join(cmd, " ");
 
-        log.info("DOCKER.exec({}:{}): Executing ...", containerId, cmdString);
+        log.info("DOCKER.exec({}:{}): Executing ...", this.getContainerId(), cmdString);
 
         ExecResult result = execInContainer(cmd);
 
-        log.info("Docker.exec({}:{}): Done", containerId, cmdString);
-        log.info("Docker.exec({}:{}): Stdout -\n{}", containerId, cmdString, result.getStdout());
-        log.info("Docker.exec({}:{}): Stderr -\n{}", containerId, cmdString, result.getStderr());
+        log.info("Docker.exec({}:{}): Done", this.getContainerId(), cmdString);
+        log.info("Docker.exec({}:{}): Stdout -\n{}", this.getContainerId(), cmdString, result.getStdout());
+        log.info("Docker.exec({}:{}): Stderr -\n{}", this.getContainerId(), cmdString, result.getStderr());
 
         return result;
     }
