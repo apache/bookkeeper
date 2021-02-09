@@ -17,7 +17,7 @@
 # under the License.
 #
 
-name: Integration Tests
+name: StreamStorage Tests
 
 on:
   push:
