@@ -20,7 +20,7 @@ package org.apache.bookkeeper.metadata.etcd;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.coreos.jetcd.Client;
+import io.etcd.jetcd.Client;
 import java.io.IOException;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.AbstractConfiguration;

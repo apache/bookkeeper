@@ -126,11 +126,11 @@
     <bouncycastle.version>1.60</bouncycastle.version>
     <curator.version>5.1.0</curator.version>
     <dropwizard.version>3.1.0</dropwizard.version>
-    <etcd.version>0.0.2</etcd.version>
+    <etcd.version>0.5.4</etcd.version>
     <freebuilder.version>1.14.9</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
-    <google.errorprone.version>2.1.2</google.errorprone.version>
-    <grpc.version>1.18.0</grpc.version>
+    <google.errorprone.version>2.4.0</google.errorprone.version>
+    <grpc.version>1.33.0</grpc.version>
     <guava.version>30.0-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
     <hadoop.version>2.10.0</hadoop.version>
@@ -167,7 +167,7 @@
     <snakeyaml.version>1.19</snakeyaml.version>
     <spotbugs-annotations.version>3.1.8</spotbugs-annotations.version>
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
-    <testcontainers.version>1.8.3</testcontainers.version>
+    <testcontainers.version>1.15.1</testcontainers.version>
     <vertx.version>3.5.3</vertx.version>
     <zookeeper.version>3.6.2</zookeeper.version>
     <snappy.version>1.1.7</snappy.version>
@@ -472,8 +472,10 @@
       <!-- grpc dependencies -->
       <dependency>
         <groupId>io.grpc</groupId>
-        <artifactId>grpc-all</artifactId>
+        <artifactId>grpc-bom</artifactId>
         <version>${grpc.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
       <!-- rocksdb dependencies -->
@@ -706,11 +708,23 @@
         <groupId>org.arquillian.cube</groupId>
         <artifactId>arquillian-cube-docker</artifactId>
         <version>${arquillian-cube.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.jboss.arquillian.junit</groupId>
         <artifactId>arquillian-junit-standalone</artifactId>
         <version>${arquillian-junit.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.codehaus.groovy</groupId>

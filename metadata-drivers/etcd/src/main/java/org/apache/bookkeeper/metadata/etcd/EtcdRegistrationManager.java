@@ -35,28 +35,29 @@ import static org.apache.bookkeeper.metadata.etcd.EtcdUtils.getWritableBookiePat
 import static org.apache.bookkeeper.metadata.etcd.EtcdUtils.getWritableBookiesPath;
 import static org.apache.bookkeeper.metadata.etcd.EtcdUtils.msResult;
 
-import com.coreos.jetcd.Client;
-import com.coreos.jetcd.KV;
-import com.coreos.jetcd.Txn;
-import com.coreos.jetcd.Watch;
-import com.coreos.jetcd.Watch.Watcher;
-import com.coreos.jetcd.data.ByteSequence;
-import com.coreos.jetcd.data.KeyValue;
-import com.coreos.jetcd.kv.DeleteResponse;
-import com.coreos.jetcd.kv.GetResponse;
-import com.coreos.jetcd.kv.TxnResponse;
-import com.coreos.jetcd.op.Cmp;
-import com.coreos.jetcd.op.Cmp.Op;
-import com.coreos.jetcd.op.CmpTarget;
-import com.coreos.jetcd.options.DeleteOption;
-import com.coreos.jetcd.options.GetOption;
-import com.coreos.jetcd.options.PutOption;
-import com.coreos.jetcd.options.WatchOption;
-import com.coreos.jetcd.watch.WatchEvent;
-import com.coreos.jetcd.watch.WatchEvent.EventType;
-import com.coreos.jetcd.watch.WatchResponse;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.Client;
+import io.etcd.jetcd.KV;
+import io.etcd.jetcd.KeyValue;
+import io.etcd.jetcd.Txn;
+import io.etcd.jetcd.Watch;
+import io.etcd.jetcd.Watch.Watcher;
+import io.etcd.jetcd.kv.DeleteResponse;
+import io.etcd.jetcd.kv.GetResponse;
+import io.etcd.jetcd.kv.TxnResponse;
+import io.etcd.jetcd.op.Cmp;
+import io.etcd.jetcd.op.Cmp.Op;
+import io.etcd.jetcd.op.CmpTarget;
+import io.etcd.jetcd.options.DeleteOption;
+import io.etcd.jetcd.options.GetOption;
+import io.etcd.jetcd.options.PutOption;
+import io.etcd.jetcd.options.WatchOption;
+import io.etcd.jetcd.watch.WatchEvent;
+import io.etcd.jetcd.watch.WatchEvent.EventType;
+
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -158,7 +159,7 @@ class EtcdRegistrationManager implements RegistrationManager {
 
     private boolean checkRegNodeAndWaitExpired(String regPath, long leaseId)
             throws MetadataStoreException {
-        ByteSequence regPathBs = ByteSequence.fromString(regPath);
+        ByteSequence regPathBs = ByteSequence.from(regPath, UTF_8);
         GetResponse getResp = msResult(kvClient.get(regPathBs));
         if (getResp.getCount() <= 0) {
             // key doesn't exist anymore
@@ -170,7 +171,7 @@ class EtcdRegistrationManager implements RegistrationManager {
 
     private boolean waitUntilRegNodeExpired(String regPath, long leaseId)
             throws MetadataStoreException {
-        ByteSequence regPathBs = ByteSequence.fromString(regPath);
+        ByteSequence regPathBs = ByteSequence.from(regPath, UTF_8);
         // check regPath again
         GetResponse getResp = msResult(kvClient.get(regPathBs));
         if (getResp.getCount() <= 0) {
@@ -180,34 +181,33 @@ class EtcdRegistrationManager implements RegistrationManager {
             KeyValue kv = getResp.getKvs().get(0);
             if (kv.getLease() != leaseId) {
                 Watch watchClient = client.getWatchClient();
+                final CompletableFuture<Void> watchFuture = new CompletableFuture<>();
                 Watcher watcher = watchClient.watch(
                     regPathBs,
                     WatchOption.newBuilder()
                         .withRevision(getResp.getHeader().getRevision() + 1)
-                        .build());
-                log.info("Previous bookie registration (lease = {}) still exists at {}, "
-                    + "so new lease '{}' will be waiting previous lease for {} seconds to be expired",
-                    kv.getLease(), regPath, leaseId, bkRegister.getTtlSeconds());
-                CompletableFuture<Void> watchFuture =
-                    CompletableFuture.runAsync(() -> {
-                        try {
-                            while (true) {
-                                log.info("Listening on '{}' until it is expired", regPath);
-                                WatchResponse response = watcher.listen();
-                                for (WatchEvent event : response.getEvents()) {
-                                    log.info("Received watch event on '{}' : EventType = {}",
-                                        regPath, event.getEventType());
-                                    if (EventType.DELETE == event.getEventType()) {
-                                        return;
-                                    }
-                                }
+                        .build(),
+                    response -> {
+                        for (WatchEvent event : response.getEvents()) {
+                            log.info("Received watch event on '{}' : EventType = {}, lease {}",
+                                regPath, event.getEventType(), leaseId);
+                            if (EventType.DELETE == event.getEventType()) {
+                                watchFuture.complete(null);
+                                return;
                             }
-                        } catch (InterruptedException e) {
-                            throw new UncheckedExecutionException(
-                                "Interrupted at waiting previous registration under "
-                                    + regPath + " (lease = " + kv.getLease() + ") to be expired", e);
                         }
-                    });
+                    },
+                    exception -> {
+                        log.warn("Exception in keepAlive for watch event on {}, lease {}",
+                                regPath, leaseId, exception);
+                        watchFuture.completeExceptionally(new UncheckedExecutionException(
+                                    "Interrupted at waiting previous registration under "
+                                    + regPath + " (lease = " + kv.getLease() + ") to be expired", exception));
+                    }
+                );
+                log.info("Previous bookie registration (lease = {}) still exists at {}, "
+                                + "so new lease '{}' will be waiting previous lease for {} seconds to be expired",
+                        kv.getLease(), regPath, leaseId, bkRegister.getTtlSeconds());
 
                 try {
                     msResult(watchFuture, 2 * bkRegister.getTtlSeconds(), TimeUnit.SECONDS);
@@ -236,16 +236,16 @@ class EtcdRegistrationManager implements RegistrationManager {
             return;
         }
 
-        ByteSequence regPathBs = ByteSequence.fromString(regPath);
+        ByteSequence regPathBs = ByteSequence.from(regPath, UTF_8);
         Txn txn = kvClient.txn()
             .If(new Cmp(
                 regPathBs,
                 Op.GREATER,
                 CmpTarget.createRevision(0)))
-            .Then(com.coreos.jetcd.op.Op.get(regPathBs, GetOption.DEFAULT))
-            .Else(com.coreos.jetcd.op.Op.put(
+            .Then(io.etcd.jetcd.op.Op.get(regPathBs, GetOption.DEFAULT))
+            .Else(io.etcd.jetcd.op.Op.put(
                 regPathBs,
-                ByteSequence.fromBytes(new byte[0]),
+                ByteSequence.from(new byte[0]),
                 PutOption.newBuilder()
                     .withLeaseId(bkRegister.get())
                     .build()
@@ -272,7 +272,7 @@ class EtcdRegistrationManager implements RegistrationManager {
         String readonlyRegPath = getReadonlyBookiePath(scope, bookieId);
         doRegisterBookie(readonlyRegPath, leaseId);
         String writableRegPath = getWritableBookiePath(scope, bookieId);
-        msResult(kvClient.delete(ByteSequence.fromString(writableRegPath)));
+        msResult(kvClient.delete(ByteSequence.from(writableRegPath, UTF_8)));
     }
 
     @Override
@@ -283,7 +283,7 @@ class EtcdRegistrationManager implements RegistrationManager {
         } else {
             regPath = getWritableBookiePath(scope, bookieId);
         }
-        DeleteResponse delResp = msResult(kvClient.delete(ByteSequence.fromString(regPath)));
+        DeleteResponse delResp = msResult(kvClient.delete(ByteSequence.from(regPath, UTF_8)));
         if (delResp.getDeleted() > 0) {
             log.info("Successfully unregistered bookie {} from {}", bookieId, regPath);
         } else {
@@ -294,12 +294,12 @@ class EtcdRegistrationManager implements RegistrationManager {
     @Override
     public boolean isBookieRegistered(BookieId bookieId) throws BookieException {
         CompletableFuture<GetResponse> getWritableFuture = kvClient.get(
-            ByteSequence.fromString(getWritableBookiePath(scope, bookieId)),
+            ByteSequence.from(getWritableBookiePath(scope, bookieId), UTF_8),
             GetOption.newBuilder()
                 .withCountOnly(true)
                 .build());
         CompletableFuture<GetResponse> getReadonlyFuture = kvClient.get(
-            ByteSequence.fromString(getReadonlyBookiePath(scope, bookieId)),
+            ByteSequence.from(getReadonlyBookiePath(scope, bookieId), UTF_8),
             GetOption.newBuilder()
                 .withCountOnly(true)
                 .build());
@@ -310,7 +310,7 @@ class EtcdRegistrationManager implements RegistrationManager {
 
     @Override
     public void writeCookie(BookieId bookieId, Versioned<byte[]> cookieData) throws BookieException {
-        ByteSequence cookiePath = ByteSequence.fromString(getCookiePath(scope, bookieId));
+        ByteSequence cookiePath = ByteSequence.from(getCookiePath(scope, bookieId), UTF_8);
         Txn txn = kvClient.txn();
         if (Version.NEW == cookieData.getVersion()) {
             txn.If(new Cmp(
@@ -319,9 +319,9 @@ class EtcdRegistrationManager implements RegistrationManager {
                 CmpTarget.createRevision(0L))
             )
             // if key not exists, create one.
-            .Else(com.coreos.jetcd.op.Op.put(
+            .Else(io.etcd.jetcd.op.Op.put(
                 cookiePath,
-                ByteSequence.fromBytes(cookieData.getValue()),
+                ByteSequence.from(cookieData.getValue()),
                 PutOption.DEFAULT)
             );
         } else {
@@ -333,9 +333,9 @@ class EtcdRegistrationManager implements RegistrationManager {
                 Op.EQUAL,
                 CmpTarget.modRevision(((LongVersion) cookieData.getVersion()).getLongVersion()))
             )
-            .Then(com.coreos.jetcd.op.Op.put(
+            .Then(io.etcd.jetcd.op.Op.put(
                 cookiePath,
-                ByteSequence.fromBytes(cookieData.getValue()),
+                ByteSequence.from(cookieData.getValue()),
                 PutOption.DEFAULT)
             );
         }
@@ -348,7 +348,7 @@ class EtcdRegistrationManager implements RegistrationManager {
 
     @Override
     public Versioned<byte[]> readCookie(BookieId bookieId) throws BookieException {
-        ByteSequence cookiePath = ByteSequence.fromString(getCookiePath(scope, bookieId));
+        ByteSequence cookiePath = ByteSequence.from(getCookiePath(scope, bookieId), UTF_8);
         GetResponse resp = msResult(kvClient.get(cookiePath));
         if (resp.getCount() <= 0) {
             throw new CookieNotFoundException(bookieId.toString());
@@ -362,18 +362,18 @@ class EtcdRegistrationManager implements RegistrationManager {
 
     @Override
     public void removeCookie(BookieId bookieId, Version version) throws BookieException {
-        ByteSequence cookiePath = ByteSequence.fromString(getCookiePath(scope, bookieId));
+        ByteSequence cookiePath = ByteSequence.from(getCookiePath(scope, bookieId), UTF_8);
         Txn delTxn = kvClient.txn()
             .If(new Cmp(
                 cookiePath,
                 Op.EQUAL,
                 CmpTarget.modRevision(((LongVersion) version).getLongVersion())
             ))
-            .Then(com.coreos.jetcd.op.Op.delete(
+            .Then(io.etcd.jetcd.op.Op.delete(
                 cookiePath,
                 DeleteOption.DEFAULT
             ))
-            .Else(com.coreos.jetcd.op.Op.get(
+            .Else(io.etcd.jetcd.op.Op.get(
                 cookiePath,
                 GetOption.newBuilder().withCountOnly(true).build()
             ));
@@ -382,21 +382,21 @@ class EtcdRegistrationManager implements RegistrationManager {
             GetResponse getResp = txnResp.getGetResponses().get(0);
             if (getResp.getCount() > 0) {
                 throw new MetadataStoreException(
-                    "Failed to remove cookie from " + cookiePath.toStringUtf8()
+                    "Failed to remove cookie from " + cookiePath.toString(UTF_8)
                         + " for bookie " + bookieId + " : bad version '" + version + "'");
             } else {
                 throw new CookieNotFoundException(bookieId.toString());
             }
         } else {
             log.info("Removed cookie from {} for bookie {}",
-                cookiePath.toStringUtf8(), bookieId);
+                cookiePath.toString(UTF_8), bookieId);
         }
     }
 
     @Override
     public String getClusterInstanceId() throws BookieException {
         GetResponse response = msResult(
-            kvClient.get(ByteSequence.fromString(getClusterInstanceIdPath(scope))));
+            kvClient.get(ByteSequence.from(getClusterInstanceIdPath(scope), UTF_8)));
         if (response.getCount() <= 0) {
             log.error("BookKeeper metadata doesn't exist in Etcd. "
                 + "Has the cluster been initialized? "
@@ -410,7 +410,7 @@ class EtcdRegistrationManager implements RegistrationManager {
 
     @Override
     public boolean prepareFormat() throws Exception {
-        ByteSequence rootScopeKey = ByteSequence.fromString(scope);
+        ByteSequence rootScopeKey = ByteSequence.from(scope, UTF_8);
         GetResponse resp = msResult(kvClient.get(rootScopeKey));
         return resp.getCount() > 0;
     }
@@ -421,7 +421,7 @@ class EtcdRegistrationManager implements RegistrationManager {
     }
 
     static boolean initNewCluster(KV kvClient, String scope) throws Exception {
-        ByteSequence rootScopeKey = ByteSequence.fromString(scope);
+        ByteSequence rootScopeKey = ByteSequence.from(scope, UTF_8);
         String instanceId = UUID.randomUUID().toString();
         LedgerLayout layout = new LedgerLayout(
             EtcdLedgerManagerFactory.class.getName(),
@@ -436,62 +436,62 @@ class EtcdRegistrationManager implements RegistrationManager {
             // only put keys when root scope doesn't exist
             .Else(
                 // `${scope}`
-                com.coreos.jetcd.op.Op.put(
+                io.etcd.jetcd.op.Op.put(
                     rootScopeKey,
                     EtcdConstants.EMPTY_BS,
                     PutOption.DEFAULT
                 ),
                 // `${scope}/layout`
-                com.coreos.jetcd.op.Op.put(
-                    ByteSequence.fromString(getLayoutKey(scope)),
-                    ByteSequence.fromBytes(layout.serialize()),
+                io.etcd.jetcd.op.Op.put(
+                    ByteSequence.from(getLayoutKey(scope), UTF_8),
+                    ByteSequence.from(layout.serialize()),
                     PutOption.DEFAULT
                 ),
                 // `${scope}/instanceid`
-                com.coreos.jetcd.op.Op.put(
-                    ByteSequence.fromString(getClusterInstanceIdPath(scope)),
-                    ByteSequence.fromString(instanceId),
+                io.etcd.jetcd.op.Op.put(
+                    ByteSequence.from(getClusterInstanceIdPath(scope), UTF_8),
+                    ByteSequence.from(instanceId, UTF_8),
                     PutOption.DEFAULT
                 ),
                 // `${scope}/cookies`
-                com.coreos.jetcd.op.Op.put(
-                    ByteSequence.fromString(getCookiesPath(scope)),
+                io.etcd.jetcd.op.Op.put(
+                    ByteSequence.from(getCookiesPath(scope), UTF_8),
                     EtcdConstants.EMPTY_BS,
                     PutOption.DEFAULT
                 ),
                 // `${scope}/bookies`
-                com.coreos.jetcd.op.Op.put(
-                    ByteSequence.fromString(getBookiesPath(scope)),
+                io.etcd.jetcd.op.Op.put(
+                    ByteSequence.from(getBookiesPath(scope), UTF_8),
                     EtcdConstants.EMPTY_BS,
                     PutOption.DEFAULT
                 ),
                 // `${scope}/bookies/writable`
-                com.coreos.jetcd.op.Op.put(
-                    ByteSequence.fromString(getWritableBookiesPath(scope)),
+                io.etcd.jetcd.op.Op.put(
+                    ByteSequence.from(getWritableBookiesPath(scope), UTF_8),
                     EtcdConstants.EMPTY_BS,
                     PutOption.DEFAULT
                 ),
                 // `${scope}/bookies/readonly`
-                com.coreos.jetcd.op.Op.put(
-                    ByteSequence.fromString(getReadonlyBookiesPath(scope)),
+                io.etcd.jetcd.op.Op.put(
+                    ByteSequence.from(getReadonlyBookiesPath(scope), UTF_8),
                     EtcdConstants.EMPTY_BS,
                     PutOption.DEFAULT
                 ),
                 // `${scope}/ledgers`
-                com.coreos.jetcd.op.Op.put(
-                    ByteSequence.fromString(getLedgersPath(scope)),
+                io.etcd.jetcd.op.Op.put(
+                    ByteSequence.from(getLedgersPath(scope), UTF_8),
                     EtcdConstants.EMPTY_BS,
                     PutOption.DEFAULT
                 ),
                 // `${scope}/buckets`
-                com.coreos.jetcd.op.Op.put(
-                    ByteSequence.fromString(getBucketsPath(scope)),
+                io.etcd.jetcd.op.Op.put(
+                    ByteSequence.from(getBucketsPath(scope), UTF_8),
                     EtcdConstants.EMPTY_BS,
                     PutOption.DEFAULT
                 ),
                 // `${scope}/underreplication`
-                com.coreos.jetcd.op.Op.put(
-                    ByteSequence.fromString(getUnderreplicationPath(scope)),
+                io.etcd.jetcd.op.Op.put(
+                    ByteSequence.from(getUnderreplicationPath(scope), UTF_8),
                     EtcdConstants.EMPTY_BS,
                     PutOption.DEFAULT
                 )
@@ -506,7 +506,7 @@ class EtcdRegistrationManager implements RegistrationManager {
     }
 
     static boolean format(KV kvClient, String scope) throws Exception {
-        ByteSequence rootScopeKey = ByteSequence.fromString(scope);
+        ByteSequence rootScopeKey = ByteSequence.from(scope, UTF_8);
         GetResponse resp = msResult(kvClient.get(rootScopeKey));
         if (resp.getCount() <= 0) {
             // cluster doesn't exist
@@ -524,7 +524,7 @@ class EtcdRegistrationManager implements RegistrationManager {
     }
 
     static boolean nukeExistingCluster(KV kvClient, String scope) throws Exception {
-        ByteSequence rootScopeKey = ByteSequence.fromString(scope);
+        ByteSequence rootScopeKey = ByteSequence.from(scope, UTF_8);
         GetResponse resp = msResult(kvClient.get(rootScopeKey));
         if (resp.getCount() <= 0) {
             log.info("There is no existing cluster with under scope '{}' in Etcd, "
@@ -535,9 +535,9 @@ class EtcdRegistrationManager implements RegistrationManager {
         String bookiesPath = getBookiesPath(scope);
         String bookiesEndPath = getBookiesEndPath(scope);
         resp = msResult(kvClient.get(
-            ByteSequence.fromString(bookiesPath),
+            ByteSequence.from(bookiesPath, UTF_8),
             GetOption.newBuilder()
-                .withRange(ByteSequence.fromString(bookiesEndPath))
+                .withRange(ByteSequence.from(bookiesEndPath, UTF_8))
                 .withKeysOnly(true)
                 .build()
         ));
@@ -563,7 +563,7 @@ class EtcdRegistrationManager implements RegistrationManager {
         DeleteResponse delResp = msResult(kvClient.delete(
             rootScopeKey,
             DeleteOption.newBuilder()
-                .withRange(ByteSequence.fromString(getScopeEndKey(scope)))
+                .withRange(ByteSequence.from(getScopeEndKey(scope), UTF_8))
                 .build()));
         log.info("Successfully nuked cluster under scope '{}' : {} kv pairs deleted",
             scope, delResp.getDeleted());

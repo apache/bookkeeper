@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -43,6 +44,7 @@ import org.junit.rules.TestName;
 /**
  * Test Etcd based cookie management.
  */
+@Slf4j
 public class EtcdCookieTest extends EtcdTestBase {
 
     @Rule
@@ -53,17 +55,20 @@ public class EtcdCookieTest extends EtcdTestBase {
     @Before
     @Override
     public void setUp() throws Exception {
+        log.info("setup");
         super.setUp();
         String scope = RandomStringUtils.randomAlphabetic(16);
         this.regMgr = new EtcdRegistrationManager(
             newEtcdClient(),
             scope
         );
+        log.info("done setup");
     }
 
     @After
     @Override
     public void tearDown() throws Exception {
+        log.info("tear down");
         this.regMgr.close();
         super.tearDown();
     }
@@ -77,6 +82,7 @@ public class EtcdCookieTest extends EtcdTestBase {
     public void readWriteRemoveCookie() throws Exception {
         BookieId bookieId = BookieId.parse(runtime.getMethodName() + ":3181");
 
+        log.info("read non-existing cookie");
         // read the cookie doesn't exist
         try {
             regMgr.readCookie(bookieId);
@@ -85,6 +91,7 @@ public class EtcdCookieTest extends EtcdTestBase {
             // expected
         }
 
+        log.info("create cookie");
         // create the cookie
         String cookieData = RandomStringUtils.randomAlphanumeric(1024);
         Versioned<byte[]> cookie = new Versioned<>(
@@ -92,10 +99,12 @@ public class EtcdCookieTest extends EtcdTestBase {
         );
         regMgr.writeCookie(bookieId, cookie);
 
+        log.info("read cookie");
         // read the cookie
         Versioned<byte[]> readCookie = regMgr.readCookie(bookieId);
         assertEquals(cookieData, new String(readCookie.getValue(), UTF_8));
 
+        log.info("try to create cookie again");
         // attempt to create the cookie again
         String newCookieData = RandomStringUtils.randomAlphabetic(512);
         Versioned<byte[]> newCookie = new Versioned<>(
@@ -110,6 +119,7 @@ public class EtcdCookieTest extends EtcdTestBase {
         Versioned<byte[]> readCookie2 = regMgr.readCookie(bookieId);
         assertCookieEquals(readCookie, readCookie2);
 
+        log.info("update cookie with wrong version");
         // attempt to update the cookie with a wrong version
         newCookie = new Versioned<>(
             newCookieData.getBytes(UTF_8), new LongVersion(Long.MAX_VALUE)
@@ -122,6 +132,7 @@ public class EtcdCookieTest extends EtcdTestBase {
         readCookie2 = regMgr.readCookie(bookieId);
         assertCookieEquals(readCookie, readCookie2);
 
+        log.info("delete cookie with wrong version");
         // delete the cookie with a wrong version
         LongVersion badVersion = new LongVersion(Long.MAX_VALUE);
         try {
@@ -135,6 +146,7 @@ public class EtcdCookieTest extends EtcdTestBase {
         readCookie2 = regMgr.readCookie(bookieId);
         assertCookieEquals(readCookie, readCookie2);
 
+        log.info("update with right version");
         // update the cookie with right version
         newCookie = new Versioned<>(
             newCookieData.getBytes(UTF_8), readCookie2.getVersion());
@@ -143,6 +155,7 @@ public class EtcdCookieTest extends EtcdTestBase {
         assertEquals(newCookieData, new String(readCookie2.getValue(), UTF_8));
         assertEquals(Occurred.AFTER, readCookie2.getVersion().compare(readCookie.getVersion()));
 
+        log.info("delete with right version");
         // delete the cookie with right version
         regMgr.removeCookie(bookieId, readCookie2.getVersion());
         try {
@@ -152,6 +165,7 @@ public class EtcdCookieTest extends EtcdTestBase {
             // expected
         }
 
+        log.info("remove non-existing cookie");
         // remove a cookie that doesn't exist
         try {
             regMgr.removeCookie(bookieId, readCookie2.getVersion());
