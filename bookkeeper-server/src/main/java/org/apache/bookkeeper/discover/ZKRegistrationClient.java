@@ -23,7 +23,6 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -194,8 +193,6 @@ public class ZKRegistrationClient implements RegistrationClient {
                                 String ledgersRootPath,
                                 ScheduledExecutorService scheduler,
                                 boolean bookieAddressTracking) {
-        Preconditions.checkNotNull(zk, "need zk client");
-        Preconditions.checkNotNull(scheduler, "need scheduler");
         this.zk = zk;
         this.scheduler = scheduler;
         // Following Bookie Network Address Changes is an expensive operation
