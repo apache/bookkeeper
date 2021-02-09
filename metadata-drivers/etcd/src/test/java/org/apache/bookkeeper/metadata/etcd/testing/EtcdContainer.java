@@ -21,9 +21,9 @@ package org.apache.bookkeeper.metadata.etcd.testing;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.model.Frame;
-import com.github.dockerjava.core.command.LogContainerResultCallback;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -40,6 +40,13 @@ import org.testcontainers.utility.LogUtils;
  */
 @Slf4j
 public class EtcdContainer extends GenericContainer<EtcdContainer> {
+
+    static class LogContainerResultCb extends ResultCallback.Adapter<Frame> {
+        @Override
+        public void onNext(Frame frame) {
+            log.info(new String(frame.getPayload(), UTF_8));
+        }
+    }
 
     public static final String NAME = "etcd";
     public static final int CLIENT_PORT = 2379;
@@ -87,7 +94,7 @@ public class EtcdContainer extends GenericContainer<EtcdContainer> {
 
     public void tailContainerLog() {
         CompletableFuture.runAsync(() -> {
-            while (null == containerId) {
+            while (null == this.getContainerId()) {
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
@@ -95,14 +102,9 @@ public class EtcdContainer extends GenericContainer<EtcdContainer> {
                 }
             }
 
-            LogContainerCmd logContainerCmd = this.dockerClient.logContainerCmd(containerId);
+            LogContainerCmd logContainerCmd = this.dockerClient.logContainerCmd(this.getContainerId());
             logContainerCmd.withStdOut(true).withStdErr(true).withFollowStream(true);
-            logContainerCmd.exec(new LogContainerResultCallback() {
-                @Override
-                public void onNext(Frame item) {
-                    log.info(new String(item.getPayload(), UTF_8));
-                }
-            });
+            logContainerCmd.exec(new LogContainerResultCb());
         });
     }
 
