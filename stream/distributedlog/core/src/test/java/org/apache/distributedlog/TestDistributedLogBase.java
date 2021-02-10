@@ -60,6 +60,8 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +71,9 @@ import org.slf4j.LoggerFactory;
  */
 public class TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogBase.class);
+
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(120);
 
     static {
         // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words
