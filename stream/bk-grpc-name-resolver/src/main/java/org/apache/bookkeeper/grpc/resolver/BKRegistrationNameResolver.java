@@ -59,7 +59,6 @@ class BKRegistrationNameResolver extends NameResolver {
                                URI serviceURI) {
         this.clientDriver = clientDriver;
         this.serviceURI = serviceURI;
-        this.bookieAddressResolver = new DefaultBookieAddressResolver(clientDriver.getRegistrationClient());
         this.executor = Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder().setNameFormat("registration-name-resolver").build());
     }
@@ -82,6 +81,7 @@ class BKRegistrationNameResolver extends NameResolver {
         } catch (MetadataException e) {
             throw new RuntimeException("Failed to initialize registration client driver at " + serviceURI, e);
         }
+        this.bookieAddressResolver = new DefaultBookieAddressResolver(clientDriver.getRegistrationClient());
 
         resolve();
     }
