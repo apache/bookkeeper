@@ -1197,6 +1197,8 @@ public class Auditor implements AutoCloseable {
 
             final CompletableFuture<Void> processFuture = new CompletableFuture<>();
 
+            Collection<BookieId> unavailableBookies = localAdmin.getUnavailableBookies();
+
             Processor<Long> checkLedgersProcessor = (ledgerId, callback) -> {
                 try {
                     if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
@@ -1215,6 +1217,7 @@ public class Auditor implements AutoCloseable {
                         checker.checkLedger(lh,
                                 // the ledger handle will be closed after checkLedger is done.
                                 new ProcessLostFragmentsCb(lh, callback),
+                                unavailableBookies,
                                 conf.getAuditorLedgerVerificationPercentage());
                         // we collect the following stats to get a measure of the
                         // distribution of a single ledger within the bk cluster

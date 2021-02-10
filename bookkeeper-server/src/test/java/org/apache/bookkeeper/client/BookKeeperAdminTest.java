@@ -533,6 +533,9 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             Collection<BookieId> availableBookies = bkAdmin.getAvailableBookies();
             Assert.assertEquals(availableBookies.size(), bs.size());
 
+            Collection<BookieId> unavailableBookies1 = bkAdmin.getUnavailableBookies();
+            Assert.assertEquals(0, unavailableBookies1.size());
+
             for (int i = 0; i < bs.size(); i++) {
                 availableBookies.contains(bs.get(i).getBookieId());
             }
@@ -542,6 +545,10 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
 
             Collection<BookieId> remainingBookies = bkAdmin.getAvailableBookies();
             Assert.assertFalse(remainingBookies.contains(killedBookie.getBookieId()));
+
+            Collection<BookieId> unavailableBookies2 = bkAdmin.getUnavailableBookies();
+            Assert.assertTrue(unavailableBookies2.contains(killedBookie.getBookieId()));
+            Assert.assertEquals(1, unavailableBookies2.size());
 
             Collection<BookieId> allBookies = bkAdmin.getAllBookies();
             for (int i = 0; i < bs.size(); i++) {

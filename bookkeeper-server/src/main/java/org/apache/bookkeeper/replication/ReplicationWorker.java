@@ -487,9 +487,9 @@ public class ReplicationWorker implements Runnable {
      * Gets the under replicated fragments.
      */
     private Set<LedgerFragment> getUnderreplicatedFragments(LedgerHandle lh, Long ledgerVerificationPercentage)
-            throws InterruptedException {
+            throws InterruptedException, BKException {
         CheckerCallback checkerCb = new CheckerCallback();
-        ledgerChecker.checkLedger(lh, checkerCb, ledgerVerificationPercentage);
+        ledgerChecker.checkLedger(lh, checkerCb, admin.getUnavailableBookies(), ledgerVerificationPercentage);
         Set<LedgerFragment> fragments = checkerCb.waitAndGetResult();
         return fragments;
     }

@@ -20,6 +20,8 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -146,10 +148,13 @@ public class LedgerChecker {
      *          fragment to verify
      * @param cb
      *          callback
+     * @param unavailableBookies
+     *          bookies known to be unavailable, so skip classify them as bad bookies
      * @throws InvalidFragmentException
      */
     private void verifyLedgerFragment(LedgerFragment fragment,
                                       GenericCallback<LedgerFragment> cb,
+                                      Collection<BookieId> unavailableBookies,
                                       Long percentageOfLedgerFragmentToBeVerified)
             throws InvalidFragmentException, BKException {
         Set<Integer> bookiesToCheck = fragment.getBookiesIndexes();
@@ -163,7 +168,11 @@ public class LedgerChecker {
         for (Integer bookieIndex : bookiesToCheck) {
             LedgerFragmentCallback lfCb = new LedgerFragmentCallback(
                     fragment, bookieIndex, cb, badBookies, numBookies);
-            verifyLedgerFragment(fragment, bookieIndex, lfCb, percentageOfLedgerFragmentToBeVerified);
+            if (unavailableBookies.contains(fragment.getAddress(bookieIndex))) {
+                lfCb.operationComplete(Code.BookieHandleNotAvailableException, fragment);
+            } else {
+                verifyLedgerFragment(fragment, bookieIndex, lfCb, percentageOfLedgerFragmentToBeVerified);
+            }
         }
     }
 
@@ -315,11 +324,12 @@ public class LedgerChecker {
      */
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb) {
-        checkLedger(lh, cb, 0L);
+        checkLedger(lh, cb, Collections.emptyList(), 0L);
     }
 
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb,
+                            Collection<BookieId> unavailableBookies,
                             long percentageOfLedgerFragmentToBeVerified) {
         // build a set of all fragment replicas
         final Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
@@ -379,7 +389,7 @@ public class LedgerChecker {
                                                       if (result) {
                                                           fragments.add(lastLedgerFragment);
                                                       }
-                                                      checkFragments(fragments, cb,
+                                                      checkFragments(fragments, cb, unavailableBookies,
                                                           percentageOfLedgerFragmentToBeVerified);
                                                   }
                                               });
@@ -396,11 +406,12 @@ public class LedgerChecker {
                 fragments.add(lastLedgerFragment);
             }
         }
-        checkFragments(fragments, cb, percentageOfLedgerFragmentToBeVerified);
+        checkFragments(fragments, cb, unavailableBookies, percentageOfLedgerFragmentToBeVerified);
     }
 
     private void checkFragments(Set<LedgerFragment> fragments,
                                 GenericCallback<Set<LedgerFragment>> cb,
+                                Collection<BookieId> unavailableBookies,
                                 long percentageOfLedgerFragmentToBeVerified) {
         if (fragments.size() == 0) { // no fragments to verify
             cb.operationComplete(BKException.Code.OK, fragments);
@@ -413,7 +424,7 @@ public class LedgerChecker {
         for (LedgerFragment r : fragments) {
             LOG.debug("Checking fragment {}", r);
             try {
-                verifyLedgerFragment(r, allFragmentsCb, percentageOfLedgerFragmentToBeVerified);
+                verifyLedgerFragment(r, allFragmentsCb, unavailableBookies, percentageOfLedgerFragmentToBeVerified);
             } catch (InvalidFragmentException ife) {
                 LOG.error("Invalid fragment found : {}", r);
                 allFragmentsCb.operationComplete(
