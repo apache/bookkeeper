@@ -140,7 +140,6 @@
     <jackson-mapper-asl.version>1.9.11</jackson-mapper-asl.version>
     <jcommander.version>1.78</jcommander.version>
     <jetty.version>9.4.33.v20201020</jetty.version>
-    <jline.version>2.11</jline.version>
     <jmh.version>1.19</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <jna.version>3.2.7</jna.version>
@@ -236,12 +235,7 @@
         <artifactId>freebuilder</artifactId>
         <version>${freebuilder.version}</version>
       </dependency>
-      <dependency>
-        <groupId>jline</groupId>
-        <artifactId>jline</artifactId>
-        <version>${jline.version}</version>
-      </dependency>
-
+      
       <!-- logging dependencies -->
       <dependency>
         <groupId>org.slf4j</groupId>
