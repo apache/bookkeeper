@@ -215,9 +215,9 @@ Apache Software License, Version 2.
 - lib/commons-io-commons-io-2.4.jar [11]
 - lib/commons-lang-commons-lang-2.6.jar [12]
 - lib/commons-logging-commons-logging-1.1.1.jar [13]
-- lib/io.dropwizard.metrics-metrics-core-3.1.0.jar [14]
-- lib/io.dropwizard.metrics-metrics-graphite-3.1.0.jar [14]
-- lib/io.dropwizard.metrics-metrics-jvm-3.1.0.jar [14]
+- lib/io.dropwizard.metrics-metrics-core-3.2.5.jar [14]
+- lib/io.dropwizard.metrics-metrics-graphite-3.2.5.jar [14]
+- lib/io.dropwizard.metrics-metrics-jvm-3.2.5.jar [14]
 - lib/io.netty-netty-buffer-4.1.32.Final.jar [16]
 - lib/io.netty-netty-codec-4.1.32.Final.jar [16]
 - lib/io.netty-netty-codec-dns-4.1.32.Final.jar [16]
@@ -298,7 +298,7 @@ Apache Software License, Version 2.
 [11] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-io.git;a=tag;h=603579
 [12] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
 [13] Source available at http://svn.apache.org/viewvc/commons/proper/logging/tags/commons-logging-1.1.1/
-[14] Source available at https://github.com/dropwizard/metrics/tree/v3.1.0
+[14] Source available at https://github.com/dropwizard/metrics/tree/v3.2.5
 [16] Source available at https://github.com/netty/netty/tree/netty-4.1.32.Final
 [17] Source available at https://github.com/prometheus/client_java/tree/parent-0.0.21
 [18] Source available at https://github.com/vert-x3/vertx-auth/tree/3.5.3
