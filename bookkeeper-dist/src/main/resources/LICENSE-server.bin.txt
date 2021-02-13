@@ -291,6 +291,7 @@ Apache Software License, Version 2.
 - lib/org.apache.httpcomponents-httpclient-4.5.5.jar [38]
 - lib/org.apache.httpcomponents-httpcore-4.4.9.jar [39]
 - lib/org.apache.thrift-libthrift-0.9.3.jar [40]
+- lib/io.dropwizard.metrics-metrics-core-3.2.5.jar [41]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
@@ -332,6 +333,7 @@ Apache Software License, Version 2.
 [38] Source available at https://github.com/apache/httpcomponents-client/tree/rel/v4.4.1
 [39] Source available at https://github.com/apache/httpcomponents-core/tree/rel/v4.4.1
 [30] Source available at https://github.com/apache/thrift/tree/0.9.3
+[41] Source available at https://github.com/dropwizard/metrics/tree/v3.2.5
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.50.Final.jar bundles some 3rd party dependencies
