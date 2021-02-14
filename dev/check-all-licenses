@@ -28,6 +28,6 @@ set -e -x
 HERE=$(dirname $0)
 BOOKKEEPER_DIST=$HERE/../bookkeeper-dist
 $HERE/check-binary-license $BOOKKEEPER_DIST/server/target/bookkeeper-server-*-bin.tar.gz
-$HERE/check-binary-license $BOOKKEEPER_DIST/server/all/bookkeeper-all-*-bin.tar.gz
-$HERE/check-binary-license $BOOKKEEPER_DIST/server/bkctl/bkctl-*-bin.tar.gz
+$HERE/check-binary-license $BOOKKEEPER_DIST/all/target/bookkeeper-all-*-bin.tar.gz
+$HERE/check-binary-license $BOOKKEEPER_DIST/bkctl/target/bkctl-*-bin.tar.gz
 
