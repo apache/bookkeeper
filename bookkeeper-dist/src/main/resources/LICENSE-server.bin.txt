@@ -208,7 +208,9 @@ Apache Software License, Version 2.
 - lib/com.fasterxml.jackson.core-jackson-annotations-2.11.0.jar [1]
 - lib/com.fasterxml.jackson.core-jackson-core-2.11.0.jar [2]
 - lib/com.fasterxml.jackson.core-jackson-databind-2.11.0.jar [3]
-- lib/com.google.guava-guava-30.0.jar [4]
+- lib/com.google.guava-guava-30.0-jre.jar [4]
+- lib/com.google.guava-failureaccess-1.0.1.jar [4]
+- lib/com.google.guava-listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar [4]
 - lib/commons-cli-commons-cli-1.2.jar [5]
 - lib/commons-codec-commons-codec-1.6.jar [6]
 - lib/commons-configuration-commons-configuration-1.10.jar [7]
@@ -235,67 +237,75 @@ Apache Software License, Version 2.
 - lib/io.prometheus-simpleclient_hotspot-0.8.1.jar [12]
 - lib/io.prometheus-simpleclient_servlet-0.8.1.jar [12]
 - lib/io.vertx-vertx-auth-common-3.5.3.jar [13]
-- lib/io.vertx-vertx-bridge-common-3.5.3.jar [??]
-- lib/io.vertx-vertx-core-3.5.3.jar [14]
-- lib/io.vertx-vertx-web-3.5.3.jar [15]
-- lib/log4j-log4j-1.2.17.jar [16]
-- lib/net.java.dev.jna-jna-3.2.7.jar [17]
-- lib/org.apache.commons-commons-collections4-4.1.jar [18]
-- lib/org.apache.commons-commons-lang3-3.6.jar [19]
-- lib/org.apache.zookeeper-zookeeper-3.6.2.jar [20]
-- lib/org.apache.zookeeper-zookeeper-jute-3.6.2.jar [20]
-- lib/org.apache.zookeeper-zookeeper-3.6.2-tests.jar [20]
-- lib/org.eclipse.jetty-jetty-http-9.4.33.v20201020.jar [21]
-- lib/org.eclipse.jetty-jetty-io-9.4.33.v20201020.jar [21]
-- lib/org.eclipse.jetty-jetty-security-9.4.33.v20201020.jar [21]
-- lib/org.eclipse.jetty-jetty-server-9.4.33.v20201020.jar [21]
-- lib/org.eclipse.jetty-jetty-servlet-9.4.33.v20201020.jar [21]
-- lib/org.eclipse.jetty-jetty-util-9.4.33.v20201020.jar [21]
-- lib/org.rocksdb-rocksdbjni-5.13.1.jar [22]
-- lib/com.beust-jcommander-1.78.jar [23]
-- lib/com.yahoo.datasketches-memory-0.8.3.jar [24]
-- lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [24]
-- lib/net.jpountz.lz4-lz4-1.3.0.jar [25]
-- lib/org.codehaus.jackson-jackson-core-asl-1.9.11.jar [26]
-- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [26]
-- lib/com.google.api.grpc-proto-google-common-protos-1.17.0.jar [27]
-- lib/com.google.code.gson-gson-2.7.jar [28]
-- lib/io.opencensus-opencensus-api-0.24.0.jar [29]
-- lib/io.opencensus-opencensus-contrib-http-util-0.24.0.jar [29]
-- lib/io.opencensus-opencensus-proto-0.2.0.jar [29]
-- lib/com.squareup.okhttp-okhttp-2.5.0.jar [30]
-- lib/com.squareup.okio-okio-1.13.0.jar [31]
-- lib/io.grpc-grpc-all-1.33.0.jar [32]
-- lib/io.grpc-grpc-alts-1.33.0.jar [32]
-- lib/io.grpc-grpc-api-1.33.0.jar [32]
-- lib/io.grpc-grpc-auth-1.33.0.jar [32]
-- lib/io.grpc-grpc-context-1.33.0.jar [32]
-- lib/io.grpc-grpc-core-1.33.0.jar [32]
-- lib/io.grpc-grpc-grpclb-1.33.0.jar [32]
-- lib/io.grpc-grpc-netty-1.33.0.jar [32]
-- lib/io.grpc-grpc-netty-shaded-1.33.0.jar [32]
-- lib/io.grpc-grpc-okhttp-1.33.0.jar [32]
-- lib/io.grpc-grpc-protobuf-1.33.0.jar [32]
-- lib/io.grpc-grpc-protobuf-lite-1.33.0.jar [32]
-- lib/io.grpc-grpc-services-1.33.0.jar [32]
-- lib/io.grpc-grpc-stub-1.33.0.jar [32]
-- lib/io.grpc-grpc-testing-1.33.0.jar [32]
-- lib/io.grpc-grpc-xds-1.33.0.jar [32]
-- lib/org.apache.curator-curator-client-5.1.0.jar [33]
-- lib/org.apache.curator-curator-framework-5.1.0.jar [33]
-- lib/org.apache.curator-curator-recipes-5.1.0.jar [33]
-- lib/org.inferred-freebuilder-1.14.9.jar [34]
-- lib/com.google.errorprone-error_prone_annotations-2.4.0.jar [35]
-- lib/org.apache.yetus-audience-annotations-0.5.0.jar [36]
-- lib/org.jctools-jctools-core-2.1.2.jar [37]
-- lib/org.apache.httpcomponents-httpclient-4.5.5.jar [38]
-- lib/org.apache.httpcomponents-httpcore-4.4.9.jar [39]
-- lib/org.apache.thrift-libthrift-0.9.3.jar [40]
-- lib/io.dropwizard.metrics-metrics-core-3.2.5.jar [41]
+- lib/io.vertx-vertx-bridge-common-3.5.3.jar [14]
+- lib/io.vertx-vertx-core-3.5.3.jar [15]
+- lib/io.vertx-vertx-web-3.5.3.jar [16]
+- lib/log4j-log4j-1.2.17.jar [17]
+- lib/net.java.dev.jna-jna-3.2.7.jar [18]
+- lib/org.apache.commons-commons-collections4-4.1.jar [19]
+- lib/org.apache.commons-commons-lang3-3.6.jar [20]
+- lib/org.apache.zookeeper-zookeeper-3.6.2.jar [21]
+- lib/org.apache.zookeeper-zookeeper-jute-3.6.2.jar [21]
+- lib/org.apache.zookeeper-zookeeper-3.6.2-tests.jar [21]
+- lib/org.eclipse.jetty-jetty-http-9.4.33.v20201020.jar [22]
+- lib/org.eclipse.jetty-jetty-io-9.4.33.v20201020.jar [22]
+- lib/org.eclipse.jetty-jetty-security-9.4.33.v20201020.jar [22]
+- lib/org.eclipse.jetty-jetty-server-9.4.33.v20201020.jar [22]
+- lib/org.eclipse.jetty-jetty-servlet-9.4.33.v20201020.jar [22]
+- lib/org.eclipse.jetty-jetty-util-9.4.33.v20201020.jar [22]
+- lib/org.rocksdb-rocksdbjni-6.10.2.jar [23]
+- lib/com.beust-jcommander-1.78.jar [24]
+- lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
+- lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [25]
+- lib/net.jpountz.lz4-lz4-1.3.0.jar [26]
+- lib/org.codehaus.jackson-jackson-core-asl-1.9.11.jar [27]
+- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [27]
+- lib/com.google.api.grpc-proto-google-common-protos-1.17.0.jar [28]
+- lib/com.google.code.gson-gson-2.8.6.jar [29]
+- lib/io.opencensus-opencensus-api-0.24.0.jar [30]
+- lib/io.opencensus-opencensus-contrib-http-util-0.24.0.jar [30]
+- lib/io.opencensus-opencensus-proto-0.2.0.jar [30]
+- lib/com.squareup.okhttp-okhttp-2.7.4.jar [31]
+- lib/com.squareup.okio-okio-1.13.0.jar [32]
+- lib/io.grpc-grpc-all-1.33.0.jar [33]
+- lib/io.grpc-grpc-alts-1.33.0.jar [33]
+- lib/io.grpc-grpc-api-1.33.0.jar [33]
+- lib/io.grpc-grpc-auth-1.33.0.jar [33]
+- lib/io.grpc-grpc-context-1.33.0.jar [33]
+- lib/io.grpc-grpc-core-1.33.0.jar [33]
+- lib/io.grpc-grpc-grpclb-1.33.0.jar [33]
+- lib/io.grpc-grpc-netty-1.33.0.jar [33]
+- lib/io.grpc-grpc-okhttp-1.33.0.jar [33]
+- lib/io.grpc-grpc-protobuf-1.33.0.jar [33]
+- lib/io.grpc-grpc-protobuf-lite-1.33.0.jar [33]
+- lib/io.grpc-grpc-services-1.33.0.jar [33]
+- lib/io.grpc-grpc-stub-1.33.0.jar [33]
+- lib/io.grpc-grpc-testing-1.33.0.jar [33]
+- lib/io.grpc-grpc-xds-1.33.0.jar [33]
+- lib/org.apache.curator-curator-client-5.1.0.jar [34]
+- lib/org.apache.curator-curator-framework-5.1.0.jar [34]
+- lib/org.apache.curator-curator-recipes-5.1.0.jar [34]
+- lib/org.inferred-freebuilder-1.14.9.jar [35]
+- lib/com.google.errorprone-error_prone_annotations-2.4.0.jar [36]
+- lib/org.apache.yetus-audience-annotations-0.5.0.jar [37]
+- lib/org.jctools-jctools-core-2.1.2.jar [38]
+- lib/org.apache.httpcomponents-httpclient-4.5.5.jar [39]
+- lib/org.apache.httpcomponents-httpcore-4.4.9.jar [40]
+- lib/org.apache.thrift-libthrift-0.12.0.jar [41]
+- lib/com.google.android-annotations-4.1.1.4.jar [42]
+- lib/com.google.http-client-google-http-client-1.34.0.jar [43]
+- lib/com.google.http-client-google-http-client-jackson2-1.34.0.jar [43]
+- lib/com.google.auto.value-auto-value-annotations-1.7.jar [44]
+- lib/com.google.j2objc-j2objc-annotations-1.3.jar [45]
+- lib/com.google.re2j-re2j-1.2.jar [46]
+- lib/io.dropwizard.metrics-metrics-core-3.2.5.jar [47]
+- lib/io.perfmark-perfmark-api-0.19.0.jar [48]
+- lib/org.conscrypt-conscrypt-openjdk-uber-2.5.1.jar [49]
+- lib/org.xerial.snappy-snappy-java-1.1.7.jar [50]
 
-[1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
-[2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
-[3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.9.7
+[1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.11.0
+[2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.11.0
+[3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.11.0
 [4] Source available at https://github.com/google/guava/tree/v30.0
 [5] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-cli.git;a=tag;h=bc8f0e
 [6] Source available at http://svn.apache.org/viewvc/commons/proper/codec/tags/1_6/
@@ -306,34 +316,43 @@ Apache Software License, Version 2.
 [11] Source available at https://github.com/netty/netty/tree/netty-4.1.50.Final
 [12] Source available at https://github.com/prometheus/client_java/tree/parent-0.8.1
 [13] Source available at https://github.com/vert-x3/vertx-auth/tree/3.5.3
-[14] Source available at https://github.com/eclipse/vert.x/tree/3.5.3
-[15] Source available at https://github.com/vert-x3/vertx-web/tree/3.5.3
-[16] Source available at http://logging.apache.org/log4j/1.2/download.html
-[17] Source available at https://github.com/java-native-access/jna/tree/3.2.7
-[18] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
-[19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
-[20] Source available at https://github.com/apache/zookeeper/tree/release-3.6.2
-[21] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.33.v20201020
-[22] Source available at https://github.com/facebook/rocksdb/tree/v5.13.1
-[23] Source available at https://github.com/cbeust/jcommander/tree/1.78
-[24] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
-[25] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
-[26] Source available at https://github.com/codehaus/jackson/tree/d1c26ec538a8701cff7548009254fd6183b71873
-[27] Source available at https://github.com/googleapis/googleapis
-[28] Source available at https://github.com/google/gson/tree/gson-parent-2.7
-[29] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.24.0
-[30] Source available at https://github.com/square/okhttp/tree/parent-2.5.0
-[31] Source available at https://github.com/square/okio/tree/okio-parent-1.13.0
-[32] Source available at https://github.com/grpc/grpc-java/tree/v1.33.0
-[33] Source available at https://github.com/apache/curator/tree/apache-curator-4.0.1
-[34] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
-[35] Source available at https://github.com/google/error-prone/tree/v2.4.0
-[36] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
-[37] Source available at https://github.com/JCTools/JCTools/tree/v2.1.2
-[38] Source available at https://github.com/apache/httpcomponents-client/tree/rel/v4.4.1
-[39] Source available at https://github.com/apache/httpcomponents-core/tree/rel/v4.4.1
-[30] Source available at https://github.com/apache/thrift/tree/0.9.3
-[41] Source available at https://github.com/dropwizard/metrics/tree/v3.2.5
+[14] Source available at https://github.com/vert-x3/vertx-bridge-common/tree/3.5.3
+[15] Source available at https://github.com/eclipse/vert.x/tree/3.5.3
+[16] Source available at https://github.com/vert-x3/vertx-web/tree/3.5.3
+[17] Source available at http://logging.apache.org/log4j/1.2/download.html
+[18] Source available at https://github.com/java-native-access/jna/tree/3.2.7
+[19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
+[20] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
+[21] Source available at https://github.com/apache/zookeeper/tree/release-3.6.2
+[22] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.33.v20201020
+[23] Source available at https://github.com/facebook/rocksdb/tree/v5.13.1
+[24] Source available at https://github.com/cbeust/jcommander/tree/1.78
+[25] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
+[26] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
+[27] Source available at https://github.com/codehaus/jackson/tree/d1c26ec538a8701cff7548009254fd6183b71873
+[28] Source available at https://github.com/googleapis/googleapis
+[29] Source available at https://github.com/google/gson/tree/gson-parent-2.8.6
+[30] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.24.0
+[31] Source available at https://github.com/square/okhttp/tree/parent-2.7.4
+[32] Source available at https://github.com/square/okio/tree/okio-parent-1.13.0
+[33] Source available at https://github.com/grpc/grpc-java/tree/v1.33.0
+[34] Source available at https://github.com/apache/curator/releases/tag/apache.curator-5.1.0
+[35] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
+[36] Source available at https://github.com/google/error-prone/tree/v2.4.0
+[37] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
+[38] Source available at https://github.com/JCTools/JCTools/tree/v2.1.2
+[39] Source available at https://github.com/apache/httpcomponents-client/tree/rel/v4.4.1
+[40] Source available at https://github.com/apache/httpcomponents-core/tree/rel/v4.4.1
+[41] Source available at https://github.com/apache/thrift/tree/0.12.0
+[42] Source available at https://source.android.com/
+[43] Source available at https://github.com/googleapis/google-http-java-client/releases/tag/v1.34.0
+[44] Source available at https://github.com/google/auto/releases/tag/auto-value-1.7
+[45] Source available at https://github.com/google/j2objc/releases/tag/1.3
+[46] Source available at https://github.com/google/re2j/releases/tag/re2j-1.2
+[47] Source available at https://github.com/dropwizard/metrics/releases/tag/v3.2.5
+[48] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.19.0
+[49] Source available at https://github.com/google/conscrypt/releases/tag/2.5.1
+[50] Source available at https://github.com/google/snappy/releases/tag/1.1.7
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.50.Final.jar bundles some 3rd party dependencies
@@ -563,7 +582,7 @@ This private header is also used by Apple's open source
     * http://www.opensource.apple.com/source/configd/configd-453.19/dnsinfo/dnsinfo.h
 
 ------------------------------------------------------------------------------------
-lib/org.rocksdb-rocksdbjni-5.13.1.jar is derived from leveldb, which is under the following license.
+lib/org.rocksdb-rocksdbjni-6.10.2.jar is derived from leveldb, which is under the following license.
 
 Copyright (c) 2011 The LevelDB Authors. All rights reserved.
 
@@ -602,9 +621,10 @@ Bundled as
 Source available at https://github.com/google/protobuf/tree/v3.14.0
 For details, see deps/protobuf-3.14.0/LICENSE.
 
-Bundled as lib/com.google.protobuf.nano-protobuf-javanano-3.0.0-alpha-5.jar
-Source available at https://github.com/google/protobuf/tree/3.0.0-pre
-For details, see deps/protobuf-3.0.0/LICENSE.
+Bundled as 
+  - lib/com.google.protobuf-protobuf-java-util-3.12.0.jar
+Source available at https://github.com/protocolbuffers/protobuf/tree/v3.12.0
+For details, see deps/protobuf-3.12.0/LICENSE.
 ------------------------------------------------------------------------------------
 This product bundles the JCP Standard Java Servlet API, which is available under a
 CDDL 1.1 license. For details, see deps/javax.servlet-api-4.0.0/CDDL+GPL-1.1.
@@ -621,18 +641,12 @@ Bundled as
 Source available at https://github.com/qos-ch/slf4j/tree/v_1.7.25
 ------------------------------------------------------------------------------------
 This product bundles the Google Auth Library, which is available under a "3-clause BSD"
-license. For details, see deps/google-auth-library-credentials-0.9.0/LICENSE
+license. For details, see deps/google-auth-library-credentials-0.20.0/LICENSE
 
 Bundled as
   - lib/com.google.auth-google-auth-library-credentials-0.20.0.jar
   - lib/com.google.auth-google-auth-library-oauth2-http-0.20.0.jar
-Source available at https://github.com/google/google-auth-library-java/tree/0.20.0
-------------------------------------------------------------------------------------
-This product bundles the JLine Library, which is available under a "2-clause BSD"
-license. For details, see deps/jline-2.11/LICENSE
-
-Bundled as
-  - lib/jline-jline-2.11.jar
+Source available at https://github.com/googleapis/google-auth-library-java/releases/tag/v0.20.0
 ------------------------------------------------------------------------------------
 This product bundles the bouncycastle Library. 
 For license details, see deps/bouncycastle-1.60/LICENSE.html
@@ -643,7 +657,7 @@ Bundled as
   - lib/org.bouncycastle-bcprov-jdk15on-1.60.jar
 ------------------------------------------------------------------------------------
 This product uses the annotations from The Checker Framework, which are licensed under
-MIT License. For details, see deps/checker-compat-qual-2.5.2/LICENSE
+MIT License. For details, see deps/checker-qual-3.5.0/LICENSE
 
 Bundles as
-  - lib/org.checkerframework-checker-compat-qual-2.5.2.jar
+  - lib/org.checkerframework-checker-qual-3.5.0.jar

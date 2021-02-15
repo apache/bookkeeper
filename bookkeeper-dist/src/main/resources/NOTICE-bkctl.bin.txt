@@ -5,19 +5,19 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
 ------------------------------------------------------------------------------------
-- lib/io.netty-netty-buffer-4.1.32.Final.jar
-- lib/io.netty-netty-codec-4.1.32.Final.jar
-- lib/io.netty-netty-codec-http-4.1.32.Final.jar
-- lib/io.netty-netty-codec-http2-4.1.32.Final.jar
-- lib/io.netty-netty-codec-socks-4.1.32.Final.jar
-- lib/io.netty-netty-common-4.1.32.Final.jar
-- lib/io.netty-netty-handler-4.1.32.Final.jar
-- lib/io.netty-netty-handler-proxy-4.1.32.Final.jar
-- lib/io.netty-netty-resolver-4.1.32.Final.jar
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.20.Final.jar
-- lib/io.netty-netty-transport-4.1.32.Final.jar
-- lib/io.netty-netty-transport-native-epoll-4.1.32.Final-linux-x86_64.jar
-- lib/io.netty-netty-transport-native-unix-common-4.1.32.Final.jar
+- lib/io.netty-netty-buffer-4.1.50.Final.jar
+- lib/io.netty-netty-codec-4.1.50.Final.jar
+- lib/io.netty-netty-codec-http-4.1.50.Final.jar
+- lib/io.netty-netty-codec-http2-4.1.50.Final.jar
+- lib/io.netty-netty-codec-socks-4.1.50.Final.jar
+- lib/io.netty-netty-common-4.1.50.Final.jar
+- lib/io.netty-netty-handler-4.1.50.Final.jar
+- lib/io.netty-netty-handler-proxy-4.1.50.Final.jar
+- lib/io.netty-netty-resolver-4.1.50.Final.jar
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.31.Final.jar
+- lib/io.netty-netty-transport-4.1.50.Final.jar
+- lib/io.netty-netty-transport-native-epoll-4.1.50.Final-linux-x86_64.jar
+- lib/io.netty-netty-transport-native-unix-common-4.1.50.Final.jar
 
 
                             The Netty Project
@@ -47,17 +47,16 @@ under the License.
 Copyright 2010 Cedric Beust cedric@beust.com
 
 ------------------------------------------------------------------------------------
-- lib/io.grpc-grpc-all-1.18.0.jar
-- lib/io.grpc-grpc-auth-1.18.0.jar
-- lib/io.grpc-grpc-context-1.18.0.jar
-- lib/io.grpc-grpc-core-1.18.0.jar
-- lib/io.grpc-grpc-netty-1.18.0.jar
-- lib/io.grpc-grpc-okhttp-1.18.0.jar
-- lib/io.grpc-grpc-protobuf-1.18.0.jar
-- lib/io.grpc-grpc-protobuf-lite-1.18.0.jar
-- lib/io.grpc-grpc-protobuf-nano-1.18.0.jar
-- lib/io.grpc-grpc-stub-1.18.0.jar
-- lib/io.grpc-grpc-testing-1.18.0.jar
+- lib/io.grpc-grpc-all-1.33.0.jar
+- lib/io.grpc-grpc-auth-1.33.0.jar
+- lib/io.grpc-grpc-context-1.33.0.jar
+- lib/io.grpc-grpc-core-1.33.0.jar
+- lib/io.grpc-grpc-netty-1.33.0.jar
+- lib/io.grpc-grpc-okhttp-1.33.0.jar
+- lib/io.grpc-grpc-protobuf-1.33.0.jar
+- lib/io.grpc-grpc-protobuf-lite-1.33.0.jar
+- lib/io.grpc-grpc-stub-1.33.0.jar
+- lib/io.grpc-grpc-testing-1.33.0.jar
 
 Copyright 2014, gRPC Authors All rights reserved.
 

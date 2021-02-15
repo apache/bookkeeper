@@ -64,13 +64,12 @@
       <directory>../src/main/resources/deps</directory>
       <outputDirectory>deps</outputDirectory>
       <includes>
-        <include>checker-compat-qual-2.5.2/LICENSE</include>
-        <include>google-auth-library-credentials-0.9.0/LICENSE</include>
-        <include>netty-4.1.32.Final/*</include>
-        <include>protobuf-3.0.0/LICENSE</include>
-        <include>jline-2.11/LICENSE</include>
+        <include>checker-qual-3.5.0/LICENSE</include>
+        <include>google-auth-library-credentials-0.20.0/LICENSE</include>
+        <include>netty-4.1.50.Final/*</include>
         <include>bouncycastle-1.60/LICENSE.html</include>
-        <include>protobuf-3.5.1/LICENSE</include>
+        <include>protobuf-3.14.0/LICENSE</include>
+        <include>protobuf-3.12.0/LICENSE</include>
         <include>slf4j-1.7.25/LICENSE.txt</include>
       </includes>
       <fileMode>644</fileMode>
