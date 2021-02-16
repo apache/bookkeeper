@@ -627,12 +627,12 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
             @Override
             public void process(WatchedEvent event) {
                 if (event.getType() == EventType.NodeDeleted) {
-                    LOG.info("Recieved Ledger rereplication completion event :"
+                    LOG.info("Received Ledger rereplication completion event :"
                             + event.getType());
                     latch.countDown();
                 }
                 if (event.getType() == EventType.NodeCreated) {
-                    LOG.info("Recieved urLedger publishing event :"
+                    LOG.info("Received urLedger publishing event :"
                             + event.getType());
                     latch.countDown();
                 }

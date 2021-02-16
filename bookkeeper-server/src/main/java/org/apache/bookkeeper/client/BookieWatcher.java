@@ -35,6 +35,15 @@ public interface BookieWatcher {
     BookieAddressResolver getBookieAddressResolver();
 
     /**
+     * Determine if a bookie should be considered unavailable.
+     *
+     * @param id
+     *          Bookie to check
+     * @return whether or not the given bookie is unavailable
+     */
+    boolean isBookieUnavailable(BookieId id);
+
+    /**
      * Create an ensemble with given <i>ensembleSize</i> and <i>writeQuorumSize</i>.
      *
      * @param ensembleSize
