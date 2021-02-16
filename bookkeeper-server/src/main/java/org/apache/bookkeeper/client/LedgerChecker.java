@@ -137,8 +137,12 @@ public class LedgerChecker {
     }
 
     public LedgerChecker(BookKeeper bkc) {
-        bookieClient = bkc.getBookieClient();
-        bookieWatcher = bkc.getBookieWatcher();
+        this(bkc.getBookieClient(), bkc.getBookieWatcher());
+    }
+
+    public LedgerChecker(BookieClient client, BookieWatcher watcher) {
+        bookieClient = client;
+        bookieWatcher = watcher;
     }
 
     /**
