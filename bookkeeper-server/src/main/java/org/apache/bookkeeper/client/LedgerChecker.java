@@ -49,6 +49,7 @@ public class LedgerChecker {
     private static final Logger LOG = LoggerFactory.getLogger(LedgerChecker.class);
 
     public final BookieClient bookieClient;
+    public final BookieWatcher bookieWatcher;
 
     static class InvalidFragmentException extends Exception {
         private static final long serialVersionUID = 1467201276417062353L;
@@ -136,7 +137,12 @@ public class LedgerChecker {
     }
 
     public LedgerChecker(BookKeeper bkc) {
-        bookieClient = bkc.getBookieClient();
+        this(bkc.getBookieClient(), bkc.getBookieWatcher());
+    }
+
+    public LedgerChecker(BookieClient client, BookieWatcher watcher) {
+        bookieClient = client;
+        bookieWatcher = watcher;
     }
 
     /**
@@ -197,6 +203,9 @@ public class LedgerChecker {
                 throw new InvalidFragmentException();
             }
             cb.operationComplete(BKException.Code.OK, fragment);
+        } else if (bookieWatcher.isBookieUnavailable(fragment.getAddress(bookieIndex))) {
+            // fragment is on this bookie, but already know it's unavailable, so skip the call
+            cb.operationComplete(BKException.Code.BookieHandleNotAvailableException, fragment);
         } else if (firstStored == lastStored) {
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(1,
                     fragment, cb);

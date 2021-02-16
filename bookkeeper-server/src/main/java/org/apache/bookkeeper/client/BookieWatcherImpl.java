@@ -173,6 +173,22 @@ class BookieWatcherImpl implements BookieWatcher {
         }
     }
 
+    /**
+     * Determine if a bookie should be considered unavailable.
+     * This does not require a network call because this class
+     * maintains a current view of readonly and writable bookies.
+     * An unavailable bookie is one that is neither read only nor
+     * writable.
+     *
+     * @param id
+     *          Bookie to check
+     * @return whether or not the given bookie is unavailable
+     */
+    @Override
+    public boolean isBookieUnavailable(BookieId id) {
+        return !readOnlyBookies.contains(id) && !writableBookies.contains(id);
+    }
+
     // this callback is already not executed in zookeeper thread
     private synchronized void processWritableBookiesChanged(Set<BookieId> newBookieAddrs) {
         // Update watcher outside ZK callback thread, to avoid deadlock in case some other

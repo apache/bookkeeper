@@ -23,6 +23,11 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Set;
@@ -32,6 +37,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -485,6 +491,29 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         assertEquals("There should be 2 failed bookies in the fragment",
                 2, result.iterator().next().getBookiesIndexes().size());
         lh1.close();
+    }
+
+    @Test
+    public void testVerifyLedgerFragmentSkipsUnavailableBookie() throws Exception {
+        // Initialize LedgerChecker with mocked watcher to validate interactions
+        BookieWatcher bookieWatcher = mock(BookieWatcher.class);
+        when(bookieWatcher.isBookieUnavailable(any())).thenReturn(true);
+        LedgerChecker mockedChecker = new LedgerChecker(bkc.getBookieClient(), bookieWatcher);
+
+        LedgerHandle ledgerHandle = bkc.createLedger(BookKeeper.DigestType.CRC32, TEST_LEDGER_PASSWORD);
+
+        // Add entries to ensure the right code path is validated
+        ledgerHandle.addEntry(TEST_LEDGER_ENTRY_DATA);
+        ledgerHandle.addEntry(TEST_LEDGER_ENTRY_DATA);
+        ledgerHandle.addEntry(TEST_LEDGER_ENTRY_DATA);
+
+        CheckerCallback cb = new CheckerCallback();
+        mockedChecker.checkLedger(ledgerHandle, cb);
+        Set<LedgerFragment> result = cb.waitAndGetResult();
+
+        // Note that the bookieWatcher mock is set to make the ledger underreplicated
+        assertEquals("The one ledger should be considered underreplicated.", 1, result.size());
+        verify(bookieWatcher, times(3)).isBookieUnavailable(any());
     }
 
     private Set<LedgerFragment> getUnderReplicatedFragments(LedgerHandle lh)
