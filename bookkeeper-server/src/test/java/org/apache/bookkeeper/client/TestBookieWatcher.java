@@ -87,7 +87,8 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         Set<BookieId> readonlyBookies1 = bookieWatcher.getReadOnlyBookies();
 
         Assert.assertEquals("There should be writable bookies initially.", 2, writableBookies1.size());
-        Assert.assertEquals("There should be no read only bookies initially.", Collections.emptySet(), readonlyBookies1);
+        Assert.assertEquals("There should be no read only bookies initially.",
+                Collections.emptySet(), readonlyBookies1);
 
         BookieId bookieId0 = bs.get(0).getBookieId();
         BookieId bookieId1 = bs.get(1).getBookieId();
@@ -101,8 +102,10 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         Set<BookieId> writableBookies2 = bookieWatcher.getBookies();
         Set<BookieId> readonlyBookies2 = bookieWatcher.getReadOnlyBookies();
 
-        Assert.assertEquals("There should be one writable bookie.", Collections.singleton(bookieId1), writableBookies2);
-        Assert.assertEquals("There should be one read only bookie.", Collections.singleton(bookieId0), readonlyBookies2);
+        Assert.assertEquals("There should be one writable bookie.",
+                Collections.singleton(bookieId1), writableBookies2);
+        Assert.assertEquals("There should be one read only bookie.",
+                Collections.singleton(bookieId0), readonlyBookies2);
 
         boolean isUnavailable2 = bookieWatcher.isBookieUnavailable(bookieId0);
         Assert.assertFalse("The bookie should not be unavailable.", isUnavailable2);
@@ -113,7 +116,8 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         Set<BookieId> writableBookies3 = bookieWatcher.getBookies();
         Set<BookieId> readonlyBookies3 = bookieWatcher.getReadOnlyBookies();
 
-        Assert.assertEquals("There should be one writable bookie.", Collections.singleton(bookieId1), writableBookies3);
+        Assert.assertEquals("There should be one writable bookie.",
+                Collections.singleton(bookieId1), writableBookies3);
         Assert.assertEquals("There should be no read only bookies.", Collections.emptySet(), readonlyBookies3);
 
         boolean isUnavailable3 = bookieWatcher.isBookieUnavailable(bookieId0);

@@ -23,6 +23,11 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Set;
@@ -32,12 +37,6 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -513,7 +512,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         Set<LedgerFragment> result = cb.waitAndGetResult();
 
         // Note that the bookieWatcher mock is set to make the ledger underreplicated
-        assertEquals("The one ledger should be considered underreplicated.",1, result.size());
+        assertEquals("The one ledger should be considered underreplicated.", 1, result.size());
         verify(bookieWatcher, times(3)).isBookieUnavailable(any());
     }
 
