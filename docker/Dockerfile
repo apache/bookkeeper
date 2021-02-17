@@ -33,7 +33,7 @@ ENV JAVA_HOME=/usr/lib/jvm/java-11
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-11-openjdk-devel wget bash python sudo\
+    && yum install -y java-11-openjdk-devel wget bash python3 sudo\
     && mkdir -pv /opt \
     && cd /opt \
     && wget -q "${DISTRO_URL}" \
@@ -48,6 +48,7 @@ RUN set -x \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
     # install zookeeper shell
     && wget -q https://bootstrap.pypa.io/2.7/get-pip.py \
+    && python --version \
     && python get-pip.py \
     && pip install zk-shell \
     && rm -rf get-pip.py \
