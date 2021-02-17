@@ -100,13 +100,15 @@ bash
 "
 
 pushd ${BOOKKEEPER_ROOT}
+echo $BOOKKEEPER_ROOT
 
 docker run -i -t \
   --rm=true \
   -w ${BOOKKEEPER_ROOT} \
   -u "${USER}" \
-  -v "$(realpath $BOOKKEEPER_ROOT):${BOOKKEEPER_ROOT}" \
-  -v "$(realpath ~):/home/${USER_NAME}" \
+  -v "$BOOKKEEPER_ROOT:${BOOKKEEPER_ROOT}" \
+  -v "$(realpath ~/):/home/${USER_NAME}" \
+  -e MAVEN_CONFIG=/home/${USER_NAME}/.m2 \
   -e VERSION=${VERSION} \
   -e MAJOR_VERSION=${MAJOR_VERSION} \
   -e NEXT_VERSION=${NEXT_VERSION} \
