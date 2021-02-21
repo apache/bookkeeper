@@ -507,16 +507,19 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get base dir path to persist entryLog-metadataMap.
+     * Get directory to persist Entrylog metadata if
+     * gcPersistentEntrylogMetadataMapEnabled is true.
      *
-     * @return entrylog metadata-map persistent store dir path.
+     * @return entrylog metadata-map persistent store dir path.(default: it
+     *         creates a sub-directory under a first available base ledger
+     *         directory with name "entrylogIndexCache").
      */
     public String getGcEntryLogMetadataCachePath() {
         return getString(GC_ENTRYLOG_METADATA_CACHE_PATH, getLedgerDirNames()[0] + "/" + ENTRYLOG_INDEX_CACHE);
     }
 
     /**
-     * Set base dir path to persist entryLog-metadataMap.
+     * Set directory to persist Entrylog metadata if gcPersistentEntrylogMetadataMapEnabled is true.
      *
      * @param gcPersistentEntrylogMetadataMapPath.
      * @return server configuration.
