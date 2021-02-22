@@ -384,8 +384,8 @@ public class GarbageCollectorThread extends SafeRunnable {
             }
 
             long curTime = System.currentTimeMillis();
-            if (((isForceMajorCompactionAllow && force)
-                    || (enableMajorCompaction && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)))
+            if (((isForceMajorCompactionAllow && force) || (enableMajorCompaction
+                    && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)))
                     && (!suspendMajor)) {
                 // enter major compaction
                 LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
@@ -396,8 +396,8 @@ public class GarbageCollectorThread extends SafeRunnable {
                 lastMinorCompactionTime = lastMajorCompactionTime;
                 gcStats.getMajorCompactionCounter().inc();
                 majorCompacting.set(false);
-            } else if (((isForceMinorCompactionAllow && force)
-                    || (enableMinorCompaction && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)))
+            } else if (((isForceMinorCompactionAllow && force) || (enableMinorCompaction
+                    && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)))
                     && (!suspendMinor)) {
                 // enter minor compaction
                 LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
@@ -411,12 +411,12 @@ public class GarbageCollectorThread extends SafeRunnable {
             if (force && forceGarbageCollection.compareAndSet(true, false)) {
                 LOG.info("{} Set forceGarbageCollection to false after force GC to make it forceGC-able again.",
                         Thread.currentThread().getName());
-            }  
+            }
         } catch (EntryLogMetadataMapException e) {
             LOG.error("Error in entryLog-metadatamap, Failed to complete GC/Compaction due to entry-log {}",
                     e.getMessage(), e);
         }
-        
+
         gcStats.getGcThreadRuntime().registerSuccessfulEvent(
                 MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
     }
@@ -576,7 +576,7 @@ public class GarbageCollectorThread extends SafeRunnable {
      *
      * @param entryLogId
      *          Entry Log File Id
-     * @throws EntryLogMetadataMapException 
+     * @throws EntryLogMetadataMapException
      */
     protected void removeEntryLog(long entryLogId) throws EntryLogMetadataMapException {
         // remove entry log file successfully
@@ -618,9 +618,7 @@ public class GarbageCollectorThread extends SafeRunnable {
      * Method to read in all of the entry logs (those that we haven't done so yet),
      * and find the set of ledger ID's that make up each entry log file.
      *
-     * @param entryLogMetaMap
-     *          Existing EntryLogs to Meta
-     * @throws IOException
+     * @throws EntryLogMetadataMapException
      */
     protected void extractMetaFromEntryLogs() throws EntryLogMetadataMapException {
         // Entry Log ID's are just a long value that starts at 0 and increments by 1 when the log fills up and we roll

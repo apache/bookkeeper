@@ -143,7 +143,6 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         baseConf.setIsThrottleByBytes(this.isThrottleByBytes);
         baseConf.setIsForceGCAllowWhenNoSpace(false);
         baseConf.setGcEntryLogMetadataCacheEnabled(true);
-
         super.setUp();
     }
 

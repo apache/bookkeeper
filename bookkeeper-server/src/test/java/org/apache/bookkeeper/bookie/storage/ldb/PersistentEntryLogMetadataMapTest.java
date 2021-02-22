@@ -55,7 +55,7 @@ public class PersistentEntryLogMetadataMapTest {
      */
     @Test
     public void simple() throws Exception {
-        File tmpDir = tempFolder.newFolder();
+        File tmpDir = tempFolder.newFolder("metadata-cache");
         String path = tmpDir.getAbsolutePath().toString();
         PersistentEntryLogMetadataMap entryMetadataMap = new PersistentEntryLogMetadataMap(path, configuration);
 

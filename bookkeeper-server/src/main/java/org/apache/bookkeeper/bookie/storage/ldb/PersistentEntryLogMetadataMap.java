@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,7 +38,6 @@ import org.apache.bookkeeper.bookie.EntryLogMetadataMap;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.CloseableIterator;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,7 +78,14 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
 
     public PersistentEntryLogMetadataMap(String metadataPath, ServerConfiguration conf) throws IOException {
         LOG.info("Loading persistent entrylog metadata-map from {}", metadataPath);
-        metadataMapDB = null;//KeyValueStorageRocksDB.factory.newKeyValueStorage(metadataPath, DbConfigType.Small, conf);
+        File dir = new File(metadataPath);
+        if (!dir.mkdirs() && !dir.exists()) {
+            String err = "Unable to create directory " + dir;
+            LOG.error(err);
+            throw new IOException(err);
+        }
+        metadataMapDB = KeyValueStorageRocksDB.factory.newKeyValueStorage(metadataPath, "metadata-cache",
+                DbConfigType.Small, conf);
     }
 
     @Override
