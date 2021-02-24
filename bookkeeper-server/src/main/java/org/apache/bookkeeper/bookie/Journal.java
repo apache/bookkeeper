@@ -864,11 +864,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         entry.retain();
 
         journalStats.getJournalQueueSize().inc();
-        journalStats.getJournalCBQueueSize().inc();
+        journalStats.getJournalCbQueueSize().inc();
         queue.put(QueueEntry.create(
                 entry, ackBeforeSync,  ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalAddEntryStats(),
-                journalStats.getJournalCBQueueSize()));
+                journalStats.getJournalCbQueueSize()));
     }
 
     void forceLedger(long ledgerId, WriteCallback cb, Object ctx) {
@@ -876,10 +876,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 null, false /* ackBeforeSync */, ledgerId,
                 Bookie.METAENTRY_ID_FORCE_LEDGER, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalForceLedgerStats(),
-                journalStats.getJournalCBQueueSize()));
-        // Add afterwards because the add operation could fail.
+                journalStats.getJournalCbQueueSize()));
+        // Increment afterwards because the add operation could fail.
         journalStats.getJournalQueueSize().inc();
-        journalStats.getJournalCBQueueSize().inc();
+        journalStats.getJournalCbQueueSize().inc();
     }
 
     /**
