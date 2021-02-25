@@ -44,7 +44,7 @@
         <a class="navbar-link">Documentation</a>
         <div class="navbar-dropdown is-boxed">
           <a class="navbar-item" href="/docs/latest/overview/overview">
-            Version 4.13.0-SNAPSHOT
+            Version 4.14.0-SNAPSHOT
             <span class="tag is-warning">Development</span>
           </a>
           <a class="navbar-item" href="/docs/latest/api/javadoc">
@@ -54,6 +54,11 @@
             Javadoc
           </a>
           <hr class="dropdown-divider">
+          
+          <a class="navbar-item" href="/docs/4.13.0/overview/overview">
+            Release 4.13.0
+            
+          </a>
           
           <a class="navbar-item" href="/docs/4.12.1/overview/overview">
             Release 4.12.1
@@ -1669,14 +1674,14 @@ Available formats are 0-1:
       <td><code>dbStorage_readAheadCacheMaxSizeMb</code></td>
       <td><p>Size of read cache. Memory is allocated from JVM direct memory. The read cache is pre-filled doing read-ahead whenever a cache miss happens.</p>
 </td>
-      <td><code>256</code></td>
+      <td><code>25% of the available direct memroy</code></td>
     </tr>
     
     <tr id="dbStorage_readAheadCacheBatchSize">
       <td><code>dbStorage_readAheadCacheBatchSize</code></td>
       <td><p>How many entries to pre-fill in cache after a read cache miss</p>
 </td>
-      <td><code>1000</code></td>
+      <td><code>100</code></td>
     </tr>
     
     <tr id="dbStorage_rocksDB_blockSize">
@@ -1909,6 +1914,13 @@ Options:</p>
     </tr>
   </thead>
   <tbody>
+    
+    <tr id="prometheusStatsHttpAddress">
+      <td><code>prometheusStatsHttpAddress</code></td>
+      <td><p>default bind address for Prometheus metrics exporter</p>
+</td>
+      <td><code>0.0.0.0</code></td>
+    </tr>
     
     <tr id="prometheusStatsHttpPort">
       <td><code>prometheusStatsHttpPort</code></td>

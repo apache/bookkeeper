@@ -44,7 +44,7 @@
         <a class="navbar-link">Documentation</a>
         <div class="navbar-dropdown is-boxed">
           <a class="navbar-item" href="/docs/latest/overview/overview">
-            Version 4.13.0-SNAPSHOT
+            Version 4.14.0-SNAPSHOT
             <span class="tag is-warning">Development</span>
           </a>
           <a class="navbar-item" href="/docs/latest/api/javadoc">
@@ -54,6 +54,11 @@
             Javadoc
           </a>
           <hr class="dropdown-divider">
+          
+          <a class="navbar-item" href="/docs/4.13.0/overview/overview">
+            Release 4.13.0
+            
+          </a>
           
           <a class="navbar-item" href="/docs/4.12.1/overview/overview">
             Release 4.12.1
@@ -715,7 +720,7 @@
 
 <h2 id="metadata-storage">Metadata storage</h2>
 
-<p>BookKeeper requires a metadata storage service to store information related to <a href="#ledgers">ledgers</a> and available bookies. BookKeeper currently uses <a href="https://zookeeper.apache.org">ZooKeeper</a> for this and other tasks.</p>
+<p>The BookKeeper metadata store maintains all the metadata of the BookKeeper cluster, such as <a href="#ledgers">ledger</a> metadata, available bookies, and so on. Currently, BookKeeper uses <a href="https://zookeeper.apache.org">ZooKeeper</a> for metadata storage.</p>
 
 <h2 id="data-management-in-bookies">Data management in bookies</h2>
 

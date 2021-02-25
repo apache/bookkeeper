@@ -7541,7 +7541,9 @@ h2.bk-subtitle {
     min-height: 70vh; }
   .bk-docs-container .container {
     top: 5rem;
-    position: sticky; }
+    position: sticky;
+    flex: 1 1 auto;
+    max-width: 240px; }
 
 .bk-community-container {
   width: 60%; }

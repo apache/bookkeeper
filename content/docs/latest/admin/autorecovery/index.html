@@ -44,7 +44,7 @@
         <a class="navbar-link">Documentation</a>
         <div class="navbar-dropdown is-boxed">
           <a class="navbar-item" href="/docs/latest/overview/overview">
-            Version 4.13.0-SNAPSHOT
+            Version 4.14.0-SNAPSHOT
             <span class="tag is-warning">Development</span>
           </a>
           <a class="navbar-item" href="/docs/latest/api/javadoc">
@@ -54,6 +54,11 @@
             Javadoc
           </a>
           <hr class="dropdown-divider">
+          
+          <a class="navbar-item" href="/docs/4.13.0/overview/overview">
+            Release 4.13.0
+            
+          </a>
           
           <a class="navbar-item" href="/docs/4.12.1/overview/overview">
             Release 4.12.1
@@ -645,11 +650,12 @@
   <li>rereplicates all the <span class="pop" id="ledger-popover">ledgers</span> that were stored on that bookie.</li>
 </ul>
 
-<p>AutoRecovery can be run in two ways:</p>
+<p>AutoRecovery can be run in three ways:</p>
 
 <ol>
   <li>On dedicated nodes in your BookKeeper cluster</li>
   <li>On the same machines on which your bookies are running</li>
+  <li>On a combination of autorecovery nodes and bookie nodes</li>
 </ol>
 
 <h2 id="running-autorecovery">Running AutoRecovery</h2>
@@ -667,20 +673,23 @@
 
 <p>You can also start up AutoRecovery on a fresh machine if you’d like to create a dedicated cluster of AutoRecovery nodes.</p>
 
+<p>Note that if you <em>only</em> want the AutoRecovery process to run on your dedicated AutoRecovery nodes, you must set <code class="highlighter-rouge">autoRecoveryDaemonEnabled</code> to <code class="highlighter-rouge">false</code> in the <code class="highlighter-rouge">bookkeeper</code> configuration. Otherwise,
+bookkeeper nodes will also handle rereplication work.</p>
+
 <h2 id="configuration">Configuration</h2>
 
 <p>There are a handful of AutoRecovery-related configs in the <a href="../../reference/config"><code class="highlighter-rouge">bk_server.conf</code></a> configuration file. For a listing of those configs, see <a href="../../reference/config#autorecovery-settings">AutoRecovery settings</a>.</p>
 
 <h2 id="disable-autorecovery">Disable AutoRecovery</h2>
 
-<p>You can disable AutoRecovery at any time, for example during maintenance. Disabling AutoRecovery ensures that bookies’ data isn’t unnecessarily rereplicated when the bookie is only taken down for a short period of time, for example when the bookie is being updated or the configuration if being changed.</p>
+<p>You can disable AutoRecovery for the whole cluster at any time, for example during maintenance. Disabling AutoRecovery ensures that bookies’ data isn’t unnecessarily rereplicated when the bookie is only taken down for a short period of time, for example when the bookie is being updated or the configuration if being changed.</p>
 
-<p>You can disable AutoRecover using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
+<p>You can disable AutoRecover for the whole cluster using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell autorecovery <span class="nt">-disable</span>
 </code></pre></div></div>
 
-<p>Once disabled, you can reenable AutoRecovery using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">enable</code></a> shell command:</p>
+<p>Once disabled, you can reenable AutoRecovery for the whole cluster using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">enable</code></a> shell command:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper shell autorecovery <span class="nt">-enable</span>
 </code></pre></div></div>
