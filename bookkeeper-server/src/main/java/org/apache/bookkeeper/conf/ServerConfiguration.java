@@ -90,8 +90,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
 
 
-    protected static final String IS_FORCE_COMPACTION_ALLOW_WHEN_DISABLE_COMPACTION =
-        "isForceCompactionAllowWhenDisableCompaction";
+    protected static final String IS_FORCE_COMPACTION_ALLOW_WHEN_DISABLE_COMPACTION = "forceAllowCompaction";
     protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
