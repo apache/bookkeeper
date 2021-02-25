@@ -331,6 +331,23 @@ public class RocksCheckpointerTest {
 
         verifyNumKvs(300);
     }
+    @Test
+    public void testCheckpointOrder() throws Exception {
+        List<String> checkpointIds = createMultipleCheckpoints(3, false, false);
+
+        List<CheckpointInfo> checkpoints = RocksCheckpointer.getCheckpoints(store.name(), checkpointStore);
+        int totalCheckpoints = checkpoints.size();
+        // there is an additional null checkpoint
+        assertTrue(checkpoints.size() == checkpointIds.size() + 1);
+
+        // Last checkpoint should be null checkpoint
+        assertTrue(checkpoints.get(totalCheckpoints - 1).getMetadata() == null);
+
+        // checkpoints are in reverse order
+        for (int i = 0; i < checkpointIds.size(); i++) {
+            assertEquals(checkpointIds.get(i), checkpoints.get(totalCheckpoints - 2 - i).getId());
+        }
+    }
 
     @Test
     public void testRestoreCheckpointMissingLocally() throws Exception {
