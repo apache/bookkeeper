@@ -66,6 +66,9 @@ public class TestStateStore {
     private RocksdbCheckpointTask checkpointer;
     private RocksdbRestoreTask restorer;
     private ScheduledExecutorService checkpointExecutor;
+    private boolean checkpointChecksumEnable;
+    private boolean checkpointChecksumCompatible;
+    private boolean enableNonChecksumCompatibility;
 
     public TestStateStore(String dbName,
                           File localDir,
@@ -77,8 +80,11 @@ public class TestStateStore {
         this.remoteDir = remoteDir;
         this.removeLocal = removeLocal;
         this.removeRemote = removeRemote;
+        this.checkpointChecksumEnable = true;
+        this.checkpointChecksumCompatible = true;
         localCheckpointsDir = new File(localDir, "checkpoints");
         remoteCheckpointsPath = Paths.get(remoteDir.getAbsolutePath(), dbName);
+        enableNonChecksumCompatibility = false;
     }
     public TestStateStore(TestName runtime, TemporaryFolder testDir) throws IOException {
         this(
@@ -88,6 +94,14 @@ public class TestStateStore {
             false,
             false
         );
+    }
+
+    public void checkpointChecksumEnable(boolean val) {
+        checkpointChecksumEnable = val;
+    }
+
+    public void checkpointChecksumCompatible(boolean val) {
+        checkpointChecksumCompatible = val;
     }
 
     public File getLocalDir() {
@@ -114,6 +128,8 @@ public class TestStateStore {
             .keyCoder(StringUtf8Coder.of())
             .valCoder(StringUtf8Coder.of())
             .localStateStoreDir(localDir)
+            .checkpointChecksumEnable(checkpointChecksumEnable)
+            .checkpointChecksumCompatible(checkpointChecksumCompatible)
             .stream(dbName);
         if (checkpointExecutor != null) {
             builder = builder.checkpointStore(checkpointStore)
@@ -125,7 +141,8 @@ public class TestStateStore {
 
         this.checkpointer = new RocksdbCheckpointTask(
             dbName, Checkpoint.create(store.getDb()), localCheckpointsDir, checkpointStore,
-            removeLocal, removeRemote);
+            removeLocal, removeRemote, spec.isCheckpointChecksumEnable(),
+            spec.isCheckpointChecksumCompatible());
         this.restorer = new RocksdbRestoreTask(dbName, localCheckpointsDir, checkpointStore);
     }
 

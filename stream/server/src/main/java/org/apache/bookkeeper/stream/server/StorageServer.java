@@ -336,7 +336,7 @@ public class StorageServer {
                     () -> new DLCheckpointStore(dlNamespaceProvider.get()),
                     storageConf.getRangeStoreDirs(),
                     storageResources,
-                    storageConf.getServeReadOnlyTables()))
+                    storageConf.getServeReadOnlyTables(), storageConf))
             // with client manager for proxying grpc requests
             .withStorageServerClientManager(() -> new StorageServerClientManagerImpl(
                 proxyClientSettings,

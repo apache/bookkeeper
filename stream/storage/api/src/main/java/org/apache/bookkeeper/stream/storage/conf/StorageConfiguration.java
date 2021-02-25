@@ -31,6 +31,10 @@ public class StorageConfiguration extends ComponentConfiguration {
 
     private static final String CONTROLLER_SCHEDULE_INTERVAL_MS = "cluster.controller.schedule.interval.ms";
 
+    private static final String CHECKPOINT_CHECKSUM_ENABLE = "checkpoint.checksum.enable";
+
+    private static final String CHECKPOINT_CHECKSUM_COMPATIBLE = "checkpoint.checksum.compatible";
+
     public StorageConfiguration(CompositeConfiguration conf) {
         super(conf, COMPONENT_PREFIX);
     }
@@ -87,6 +91,14 @@ public class StorageConfiguration extends ComponentConfiguration {
     public StorageConfiguration setClusterControllerScheduleInterval(long time, TimeUnit timeUnit) {
         setProperty(CONTROLLER_SCHEDULE_INTERVAL_MS, timeUnit.toMillis(time));
         return this;
+    }
+
+    public boolean getCheckpointChecksumEnable() {
+        return getBoolean(CHECKPOINT_CHECKSUM_ENABLE, true);
+    }
+
+    public boolean getCheckpointChecksumCompatible() {
+        return getBoolean(CHECKPOINT_CHECKSUM_COMPATIBLE, true);
     }
 
 }
