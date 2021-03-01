@@ -754,6 +754,10 @@ public class NetworkTopologyImpl implements NetworkTopology {
     private Set<Node> doGetLeaves(String scope) {
         Node node = getNode(scope);
         Set<Node> leafNodes = new HashSet<Node>();
+        if (node == null) {
+            return leafNodes;
+        }
+
         if (!(node instanceof InnerNode)) {
             leafNodes.add(node);
         } else {
