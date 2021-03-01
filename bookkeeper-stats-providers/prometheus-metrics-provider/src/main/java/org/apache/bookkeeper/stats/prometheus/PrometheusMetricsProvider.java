@@ -72,6 +72,9 @@ public class PrometheusMetricsProvider implements StatsProvider {
     public static final String PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS = "prometheusStatsLatencyRolloverSeconds";
     public static final int DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS = 60;
 
+    public static final String PROMETHEUS_BASIC_STATS_ENABLE = "prometheusBasicStatsEnable";
+    public static final boolean DEFAULT_PROMETHEUS_BASIC_STATS_ENABLE = true;
+
     final CollectorRegistry registry;
 
     Server server;
@@ -145,26 +148,30 @@ public class PrometheusMetricsProvider implements StatsProvider {
             }
         }
 
-        // Include standard JVM stats
-        registerMetrics(new StandardExports());
-        registerMetrics(new MemoryPoolsExports());
-        registerMetrics(new GarbageCollectorExports());
-        registerMetrics(new ThreadExports());
+        boolean basicStatsEnabled = conf.getBoolean(PROMETHEUS_BASIC_STATS_ENABLE,
+            DEFAULT_PROMETHEUS_BASIC_STATS_ENABLE);
+        if (basicStatsEnabled) {
+            // Include standard JVM stats
+            registerMetrics(new StandardExports());
+            registerMetrics(new MemoryPoolsExports());
+            registerMetrics(new GarbageCollectorExports());
+            registerMetrics(new ThreadExports());
 
-        // Add direct memory allocated through unsafe
-        registerMetrics(Gauge.build("jvm_memory_direct_bytes_used", "-").create().setChild(new Child() {
-            @Override
-            public double get() {
-                return directMemoryUsage != null ? directMemoryUsage.longValue() : Double.NaN;
-            }
-        }));
+            // Add direct memory allocated through unsafe
+            registerMetrics(Gauge.build("jvm_memory_direct_bytes_used", "-").create().setChild(new Child() {
+                @Override
+                public double get() {
+                    return directMemoryUsage != null ? directMemoryUsage.longValue() : Double.NaN;
+                }
+            }));
 
-        registerMetrics(Gauge.build("jvm_memory_direct_bytes_max", "-").create().setChild(new Child() {
-            @Override
-            public double get() {
-                return PlatformDependent.maxDirectMemory();
-            }
-        }));
+            registerMetrics(Gauge.build("jvm_memory_direct_bytes_max", "-").create().setChild(new Child() {
+                @Override
+                public double get() {
+                    return PlatformDependent.maxDirectMemory();
+                }
+            }));
+        }
 
         executor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("metrics"));
 
