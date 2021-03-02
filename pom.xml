@@ -124,7 +124,6 @@
     <commons-lang3.version>3.6</commons-lang3.version>
     <commons-io.version>2.4</commons-io.version>
     <bouncycastle.version>1.0.2</bouncycastle.version>
-    <bouncycastle.version>1.0.2</bouncycastle.version>
     <curator.version>5.1.0</curator.version>
     <dropwizard.version>3.2.5</dropwizard.version>
     <etcd.version>0.5.4</etcd.version>
