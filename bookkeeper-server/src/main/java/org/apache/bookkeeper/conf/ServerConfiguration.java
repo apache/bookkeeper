@@ -90,7 +90,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
 
 
-    protected static final String IS_FORCE_COMPACTION_ALLOW_WHEN_DISABLE_COMPACTION = "forceAllowCompaction";
+    protected static final String FORCE_ALLOW_COMPACTION = "forceAllowCompaction";
     protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
@@ -1458,8 +1458,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *          whether allow manually force compact the entry log or not.
      * @return service configuration.
      */
-    public ServerConfiguration setIsForceCompactionAllowWhenDisableCompaction(boolean enable) {
-        setProperty(IS_FORCE_COMPACTION_ALLOW_WHEN_DISABLE_COMPACTION, enable);
+    public ServerConfiguration setForceAllowCompaction(boolean enable) {
+        setProperty(FORCE_ALLOW_COMPACTION, enable);
         return this;
     }
 
@@ -1468,8 +1468,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @return the force compaction is allowed or not when disabling the entry log compaction.
      */
-    public boolean isForceCompactionAllowWhenDisableCompaction() {
-        return getBoolean(IS_FORCE_COMPACTION_ALLOW_WHEN_DISABLE_COMPACTION, false);
+    public boolean isForceAllowCompaction() {
+        return getBoolean(FORCE_ALLOW_COMPACTION, false);
     }
 
     /**

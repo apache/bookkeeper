@@ -177,7 +177,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         majorCompactionThreshold = conf.getMajorCompactionThreshold();
         majorCompactionInterval = conf.getMajorCompactionInterval() * SECOND;
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
-        boolean isForceCompactionAllowWhenDisableCompaction = conf.isForceCompactionAllowWhenDisableCompaction();
+        boolean isForceAllowCompaction = conf.isForceAllowCompaction();
 
         AbstractLogCompactor.LogRemovalListener remover = new AbstractLogCompactor.LogRemovalListener() {
             @Override
@@ -203,7 +203,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             enableMinorCompaction = true;
         }
 
-        if (isForceCompactionAllowWhenDisableCompaction) {
+        if (isForceAllowCompaction) {
             if (minorCompactionThreshold > 0 || minorCompactionThreshold < 1.0f) {
                 isForceMinorCompactionAllow = true;
             }

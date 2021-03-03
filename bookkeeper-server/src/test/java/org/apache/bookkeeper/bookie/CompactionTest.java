@@ -233,7 +233,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
 
-        baseConf.setIsForceCompactionAllowWhenDisableCompaction(true);
+        baseConf.setForceAllowCompaction(true);
         baseConf.setMajorCompactionThreshold(0.5f);
         baseConf.setMinorCompactionThreshold(0.2f);
         baseConf.setMajorCompactionInterval(0);
@@ -261,7 +261,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         if (isForceCompactionAllowWhenDisableCompaction) {
             conf.setMinorCompactionInterval(0);
             conf.setMajorCompactionInterval(0);
-            conf.setIsForceCompactionAllowWhenDisableCompaction(true);
+            conf.setForceAllowCompaction(true);
             conf.setMajorCompactionThreshold(0.5f);
             conf.setMinorCompactionThreshold(0.2f);
         } else {
