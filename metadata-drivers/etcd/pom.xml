@@ -49,6 +49,12 @@
       <groupId>io.grpc</groupId>
       <artifactId>grpc-all</artifactId>
       <version>${grpc.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpkix-jdk15on</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>

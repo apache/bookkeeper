@@ -60,7 +60,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
     static {
         // Fixes loading PKCS8Key file: https://stackoverflow.com/a/18912362
-        java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        java.security.Security.addProvider(new org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider());
     }
 
     /**
