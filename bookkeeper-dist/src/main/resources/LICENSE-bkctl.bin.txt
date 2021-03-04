@@ -585,12 +585,10 @@ Bundled as
 Source available at https://github.com/google/google-auth-library-java/tree/0.20.0
 ------------------------------------------------------------------------------------
 This product bundles the bouncycastle Library. 
-For license details, see deps/bouncycastle-1.60/LICENSE.html
+For license details, see deps/bouncycastle-1.0.2/LICENSE.html
 
 Bundled as
-  - lib/org.bouncycastle-bcpkix-jdk15on-1.60.jar
-  - lib/org.bouncycastle-bcprov-ext-jdk15on-1.60.jar
-  - lib/org.bouncycastle-bcprov-jdk15on-1.60.jar
+  - lib/org.bouncycastle-bc-fips-1.0.2.jar
 ------------------------------------------------------------------------------------
 
 This product uses the annotations from The Checker Framework, which are licensed under
