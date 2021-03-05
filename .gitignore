@@ -41,3 +41,6 @@ tools/all/src/main/resources
 
 node_modules
 package-lock.json
+# gradle
+build/
+.gradle/
