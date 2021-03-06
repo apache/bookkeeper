@@ -63,6 +63,13 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     // This is how often we want to run the Garbage Collector Thread (in milliseconds).
     final long gcWaitTime;
+    // Max number of entry-logger files should be extracted concurrently while
+    // performing GC
+    final int maxEntryLoggersPerScan;
+    // flag to iterate over chunk of of entry-logger files
+    boolean moreEntryLoggers = true;
+    long lastIterationLogId = 0;
+    private final boolean verifyMetadataOnGc;
 
     // Compaction parameters
     boolean enableMinorCompaction = false;
@@ -146,6 +153,9 @@ public class GarbageCollectorThread extends SafeRunnable {
         this.entryLogger = ledgerStorage.getEntryLogger();
         this.ledgerStorage = ledgerStorage;
         this.gcWaitTime = conf.getGcWaitTime();
+        
+        this.maxEntryLoggersPerScan = conf.getMaxEntryLoggersScanOnGc();
+        this.verifyMetadataOnGc = conf.getVerifyMetadataOnGC();
 
         this.numActiveEntryLogs = 0;
         this.totalEntryLogSize = 0L;
@@ -322,55 +332,64 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
         // Recover and clean up previous state if using transactional compaction
         compactor.cleanUpAndRecover();
+        
+        long startTime = System.currentTimeMillis();
+        boolean isIteration = false;
+        do {
+            // Extract all of the ledger ID's that comprise all of the entry
+            // logs
+            // (except for the current new one which is still being written to).
+            entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap, isIteration);
 
-        // Extract all of the ledger ID's that comprise all of the entry logs
-        // (except for the current new one which is still being written to).
-        entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
+            // gc inactive/deleted ledgers
+            doGcLedgers();
 
-        // gc inactive/deleted ledgers
-        doGcLedgers();
+            // gc entry logs
+            doGcEntryLogs();
 
-        // gc entry logs
-        doGcEntryLogs();
-
-        if (suspendMajor) {
-            LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
-        }
-        if (suspendMinor) {
-            LOG.info("Disk full, suspend minor compaction to slow down filling disk.");
-        }
-
-        long curTime = System.currentTimeMillis();
-        if (enableMajorCompaction && (!suspendMajor)
-            && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
-            // enter major compaction
-            LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
-            majorCompacting.set(true);
-            doCompactEntryLogs(majorCompactionThreshold);
-            lastMajorCompactionTime = System.currentTimeMillis();
-            // and also move minor compaction time
-            lastMinorCompactionTime = lastMajorCompactionTime;
-            gcStats.getMajorCompactionCounter().inc();
-            majorCompacting.set(false);
-        } else if (enableMinorCompaction && (!suspendMinor)
-            && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
-            // enter minor compaction
-            LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
-            minorCompacting.set(true);
-            doCompactEntryLogs(minorCompactionThreshold);
-            lastMinorCompactionTime = System.currentTimeMillis();
-            gcStats.getMinorCompactionCounter().inc();
-            minorCompacting.set(false);
-        }
-
-        if (force) {
-            if (forceGarbageCollection.compareAndSet(true, false)) {
-                LOG.info("{} Set forceGarbageCollection to false after force GC to make it forceGC-able again.", Thread
-                    .currentThread().getName());
+            if (suspendMajor) {
+                LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
             }
-        }
-        gcStats.getGcThreadRuntime().registerSuccessfulEvent(
-                MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
+            if (suspendMinor) {
+                LOG.info("Disk full, suspend minor compaction to slow down filling disk.");
+            }
+
+            long curTime = System.currentTimeMillis();
+            if (enableMajorCompaction && (!suspendMajor)
+                    && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
+                // enter major compaction
+                LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
+                majorCompacting.set(true);
+                doCompactEntryLogs(majorCompactionThreshold);
+                lastMajorCompactionTime = System.currentTimeMillis();
+                // and also move minor compaction time
+                lastMinorCompactionTime = lastMajorCompactionTime;
+                gcStats.getMajorCompactionCounter().inc();
+                majorCompacting.set(false);
+            } else if (enableMinorCompaction && (!suspendMinor)
+                    && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
+                // enter minor compaction
+                LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
+                minorCompacting.set(true);
+                doCompactEntryLogs(minorCompactionThreshold);
+                lastMinorCompactionTime = System.currentTimeMillis();
+                gcStats.getMinorCompactionCounter().inc();
+                minorCompacting.set(false);
+            }
+
+            if (force) {
+                if (forceGarbageCollection.compareAndSet(true, false)) {
+                    LOG.info("{} Set forceGarbageCollection to false after force GC to make it forceGC-able again.",
+                            Thread.currentThread().getName());
+                }
+            }
+            gcStats.getGcThreadRuntime().registerSuccessfulEvent(MathUtils.nowInNano() - threadStart,
+                    TimeUnit.NANOSECONDS);
+            isIteration = true;
+        } while (moreEntryLoggers);
+
+        long endTime = System.currentTimeMillis();
+        LOG.info("Garbage collector completed in {}", TimeUnit.MILLISECONDS.toSeconds(endTime - startTime));
     }
 
     /**
@@ -532,21 +551,35 @@ public class GarbageCollectorThread extends SafeRunnable {
      *          Existing EntryLogs to Meta
      * @throws IOException
      */
-    protected Map<Long, EntryLogMetadata> extractMetaFromEntryLogs(Map<Long, EntryLogMetadata> entryLogMetaMap) {
+    protected Map<Long, EntryLogMetadata> extractMetaFromEntryLogs(Map<Long, EntryLogMetadata> entryLogMetaMap, boolean isIteration) {
+        moreEntryLoggers = false;
         // Extract it for every entry log except for the current one.
         // Entry Log ID's are just a long value that starts at 0 and increments
         // by 1 when the log fills up and we roll to a new one.
         long curLogId = entryLogger.getLeastUnflushedLogId();
         boolean hasExceptionWhenScan = false;
-        for (long entryLogId = scannedLogId; entryLogId < curLogId; entryLogId++) {
-            // Comb the current entry log file if it has not already been extracted.
+        int entryLogFileCount = 0;
+        long entryLogId = isIteration ? lastIterationLogId : scannedLogId;
+        for (; entryLogId < curLogId; entryLogId++, entryLogFileCount++) {
+            if (entryLogFileCount > maxEntryLoggersPerScan && verifyMetadataOnGc) {
+                lastIterationLogId = entryLogId;
+                moreEntryLoggers = true;
+                LOG.debug("extraction max-entry-logger {}, next iteration starts from {}", entryLogFileCount,
+                        maxEntryLoggersPerScan, entryLogId);
+                break;
+            }
+            // Comb the current entry log file if it has not already been
+            // extracted.
             if (entryLogMetaMap.containsKey(entryLogId)) {
+                entryLogFileCount--;
                 continue;
             }
 
             // check whether log file exists or not
-            // if it doesn't exist, this log file might have been garbage collected.
+            // if it doesn't exist, this log file might have been garbage
+            // collected.
             if (!entryLogger.logExists(entryLogId)) {
+                entryLogFileCount--;
                 continue;
             }
 

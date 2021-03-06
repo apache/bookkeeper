@@ -138,6 +138,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         baseConf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         baseConf.setIsThrottleByBytes(this.isThrottleByBytes);
         baseConf.setIsForceGCAllowWhenNoSpace(false);
+        baseConf.setVerifyMetadataOnGc(true);
+        baseConf.setMaxEntryLoggersScanOnGc(1);
 
         super.setUp();
     }
@@ -300,7 +302,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         baseConf.setGcWaitTime(60000);
         baseConf.setMinorCompactionInterval(120000);
         baseConf.setMajorCompactionInterval(240000);
-
+        
         // restart bookies
         restartBookies(baseConf);
 
