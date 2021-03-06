@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Thread to monitor the disk space periodically.
  */
-class LedgerDirsMonitor {
+public class LedgerDirsMonitor {
     private static final Logger LOG = LoggerFactory.getLogger(LedgerDirsMonitor.class);
 
     private final int interval;

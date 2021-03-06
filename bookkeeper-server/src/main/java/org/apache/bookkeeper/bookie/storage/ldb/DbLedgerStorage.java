@@ -52,6 +52,7 @@ import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerDirsMonitor;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
@@ -92,6 +93,7 @@ public class DbLedgerStorage implements LedgerStorage {
     private DbLedgerStorageStats stats;
 
     protected ByteBufAllocator allocator;
+    private LedgerDirsMonitor dirsMonitor;
 
     @Override
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
@@ -119,6 +121,7 @@ public class DbLedgerStorage implements LedgerStorage {
 
         gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollector"));
 
+        List<LedgerDirsManager> dirsManagers = new ArrayList<>();
         ledgerStorageList = Lists.newArrayList();
         for (File ledgerDir : ledgerDirsManager.getAllLedgerDirs()) {
             // Create a ledger dirs manager for the single directory
@@ -129,6 +132,16 @@ public class DbLedgerStorage implements LedgerStorage {
             ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm, indexDirsManager,
                     stateManager, checkpointSource, checkpointer, statsLogger, gcExecutor, perDirectoryWriteCacheSize,
                     perDirectoryReadCacheSize));
+            dirsManagers.add(ldm);
+        }
+
+        this.dirsMonitor = new LedgerDirsMonitor(conf, ledgerDirsManager.getDiskChecker(), dirsManagers);
+        try {
+            this.dirsMonitor.init();
+        } catch (LedgerDirsManager.NoWritableLedgerDirException nle) {
+            if (!conf.isReadOnlyModeEnabled()) {
+                throw nle;
+            }
         }
 
         this.stats = new DbLedgerStorageStats(
@@ -154,6 +167,7 @@ public class DbLedgerStorage implements LedgerStorage {
     @Override
     public void start() {
         ledgerStorageList.forEach(LedgerStorage::start);
+        dirsMonitor.start();
     }
 
     @Override
@@ -161,6 +175,7 @@ public class DbLedgerStorage implements LedgerStorage {
         for (LedgerStorage ls : ledgerStorageList) {
             ls.shutdown();
         }
+        dirsMonitor.shutdown();
     }
 
     @Override
