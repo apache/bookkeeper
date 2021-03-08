@@ -37,6 +37,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import java.util.concurrent.atomic.AtomicLong;
+
+import lombok.Getter;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.bookie.stats.GarbageCollectorStats;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -75,6 +77,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     final long majorCompactionInterval;
     long lastMajorCompactionTime;
 
+    @Getter
     final boolean isForceGCAllowWhenNoSpace;
 
     // Entry Logger Handle

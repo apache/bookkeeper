@@ -39,6 +39,7 @@ import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
+import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -53,6 +54,7 @@ public class DbLedgerStorageTest {
 
     private DbLedgerStorage storage;
     private File tmpDir;
+    private LedgerDirsManager ledgerDirsManager;
 
     @Before
     public void setup() throws Exception {
@@ -69,6 +71,7 @@ public class DbLedgerStorageTest {
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         Bookie bookie = new Bookie(conf);
 
+        ledgerDirsManager = bookie.getLedgerDirsManager();
         storage = (DbLedgerStorage) bookie.getLedgerStorage();
     }
 
@@ -432,5 +435,12 @@ public class DbLedgerStorageTest {
         assertEquals(entry1, storage.getEntry(1, 1));
 
         storage.flush();
+    }
+
+    @Test
+    public void testGetLedgerDirsListeners() throws IOException {
+        // we should have two listeners, one is the SingleLedgerDirectories listener,
+        // and another is EntryLogManagerForEntryLogPerLedger
+        assertEquals(2, ledgerDirsManager.getListeners().size());
     }
 }
