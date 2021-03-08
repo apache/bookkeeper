@@ -229,11 +229,45 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testForceGarbageCollectionWhenDisableCompactionConfigurationSettings() throws Exception {
+        // prepare data
+        LedgerHandle[] lhs = prepareData(3, false);
+
+        baseConf.setForceAllowCompaction(true);
+        baseConf.setMajorCompactionThreshold(0.5f);
+        baseConf.setMinorCompactionThreshold(0.2f);
+        baseConf.setMajorCompactionInterval(0);
+        baseConf.setMinorCompactionInterval(0);
+        restartBookies(baseConf);
+
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertFalse(getGCThread().enableMinorCompaction);
+        assertTrue(getGCThread().isForceMajorCompactionAllow);
+        assertTrue(getGCThread().isForceMinorCompactionAllow);
+
+        assertEquals(0.5f, getGCThread().majorCompactionThreshold, 0f);
+        assertEquals(0.2f, getGCThread().minorCompactionThreshold, 0f);
+    }
+
+    @Test
     public void testForceGarbageCollection() throws Exception {
+        testForceGarbageCollection(true);
+        testForceGarbageCollection(false);
+    }
+
+    public void testForceGarbageCollection(boolean isForceCompactionAllowWhenDisableCompaction) throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         conf.setGcWaitTime(60000);
-        conf.setMinorCompactionInterval(120000);
-        conf.setMajorCompactionInterval(240000);
+        if (isForceCompactionAllowWhenDisableCompaction) {
+            conf.setMinorCompactionInterval(0);
+            conf.setMajorCompactionInterval(0);
+            conf.setForceAllowCompaction(true);
+            conf.setMajorCompactionThreshold(0.5f);
+            conf.setMinorCompactionThreshold(0.2f);
+        } else {
+            conf.setMinorCompactionInterval(120000);
+            conf.setMajorCompactionInterval(240000);
+        }
         LedgerDirsManager dirManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         CheckpointSource cp = new CheckpointSource() {
