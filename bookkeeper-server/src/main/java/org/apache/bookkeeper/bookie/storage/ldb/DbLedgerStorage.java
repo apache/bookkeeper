@@ -129,6 +129,7 @@ public class DbLedgerStorage implements LedgerStorage {
             ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm, indexDirsManager,
                     stateManager, checkpointSource, checkpointer, statsLogger, gcExecutor, perDirectoryWriteCacheSize,
                     perDirectoryReadCacheSize));
+            ldm.getListeners().forEach(ledgerDirsManager::addLedgerDirsListener);
         }
 
         this.stats = new DbLedgerStorageStats(

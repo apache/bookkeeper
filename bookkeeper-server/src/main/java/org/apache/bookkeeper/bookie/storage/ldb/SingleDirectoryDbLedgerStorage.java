@@ -31,6 +31,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -59,6 +60,7 @@ import org.apache.bookkeeper.bookie.GarbageCollectorThread;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerEntryPage;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
@@ -178,6 +180,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             () -> readCache.size(),
             () -> readCache.count()
         );
+        ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
     }
 
     @Override
@@ -909,5 +912,63 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
         throw new UnsupportedOperationException(
                 "getListOfEntriesOfLedger method is currently unsupported for SingleDirectoryDbLedgerStorage");
+    }
+
+    private LedgerDirsManager.LedgerDirsListener getLedgerDirsListener() {
+        return new LedgerDirsListener() {
+
+            @Override
+            public void diskAlmostFull(File disk) {
+                if (gcThread.isForceGCAllowWhenNoSpace()) {
+                    gcThread.enableForceGC();
+                } else {
+                    gcThread.suspendMajorGC();
+                }
+            }
+
+            @Override
+            public void diskFull(File disk) {
+                if (gcThread.isForceGCAllowWhenNoSpace()) {
+                    gcThread.enableForceGC();
+                } else {
+                    gcThread.suspendMajorGC();
+                    gcThread.suspendMinorGC();
+                }
+            }
+
+            @Override
+            public void allDisksFull(boolean highPriorityWritesAllowed) {
+                if (gcThread.isForceGCAllowWhenNoSpace()) {
+                    gcThread.enableForceGC();
+                } else {
+                    gcThread.suspendMajorGC();
+                    gcThread.suspendMinorGC();
+                }
+            }
+
+            @Override
+            public void diskWritable(File disk) {
+                // we have enough space now
+                if (gcThread.isForceGCAllowWhenNoSpace()) {
+                    // disable force gc.
+                    gcThread.disableForceGC();
+                } else {
+                    // resume compaction to normal.
+                    gcThread.resumeMajorGC();
+                    gcThread.resumeMinorGC();
+                }
+            }
+
+            @Override
+            public void diskJustWritable(File disk) {
+                if (gcThread.isForceGCAllowWhenNoSpace()) {
+                    // if a disk is just writable, we still need force gc.
+                    gcThread.enableForceGC();
+                } else {
+                    // still under warn threshold, only resume minor compaction.
+                    gcThread.resumeMinorGC();
+                }
+            }
+        };
     }
 }
