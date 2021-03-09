@@ -23,17 +23,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
 import org.apache.bookkeeper.stream.proto.kv.store.CheckpointMetadata;
-import org.apache.commons.lang3.tuple.Pair;
 import org.rocksdb.Checkpoint;
 import org.rocksdb.RocksDB;
 
@@ -47,46 +45,24 @@ public class RocksCheckpointer implements AutoCloseable {
                                              File dbPath,
                                              CheckpointStore checkpointStore)
         throws StateStoreException {
-        try {
-            String dbPrefix = String.format("%s", dbName);
-
-            Pair<String, CheckpointMetadata> latestCheckpoint = getLatestCheckpoint(
-                dbPrefix, checkpointStore);
-            File checkpointsDir = new File(dbPath, "checkpoints");
-            String checkpointId = latestCheckpoint.getLeft();
-            CheckpointMetadata checkpointMetadata = latestCheckpoint.getRight();
-            if (checkpointId != null) {
-                RocksdbRestoreTask task = new RocksdbRestoreTask(
-                    dbName,
-                    checkpointsDir,
-                    checkpointStore);
-                task.restore(checkpointId, checkpointMetadata);
-            } else {
-                // no checkpoints available, create an empty directory
-                checkpointId = UUID.randomUUID().toString();
-                Files.createDirectories(
-                    Paths.get(checkpointsDir.getAbsolutePath(), checkpointId));
-            }
-            Path restoredCheckpointPath = Paths.get(checkpointsDir.getAbsolutePath(), checkpointId);
-            log.info("Successfully restore checkpoint {} to {}", checkpointId, restoredCheckpointPath);
-
-            File currentDir = new File(dbPath, "current");
-            Files.deleteIfExists(Paths.get(currentDir.getAbsolutePath()));
-            Files.createSymbolicLink(
-                Paths.get(currentDir.getAbsolutePath()),
-                restoredCheckpointPath);
-
-            // after successfully restore from remote checkpoints, cleanup other unused checkpoints
-            cleanupLocalCheckpoints(checkpointsDir, checkpointId);
-
-            return checkpointMetadata;
-        } catch (IOException ioe) {
-            log.error("Failed to restore rocksdb {}", dbName, ioe);
-            throw new StateStoreException("Failed to restore rocksdb " + dbName, ioe);
-        }
+        CheckpointInfo checkpoint = getLatestCheckpoint(dbName, checkpointStore);
+        return restore(checkpoint, dbName, dbPath, checkpointStore);
     }
 
-    private static void cleanupLocalCheckpoints(File checkpointsDir, String checkpointToExclude) {
+    public static CheckpointMetadata restore(CheckpointInfo checkpoint,
+                                             String dbName,
+                                             File dbPath,
+                                             CheckpointStore checkpointStore)
+        throws StateStoreException {
+        checkpoint.restore(dbName, dbPath, checkpointStore);
+        // after successfully restore from remote checkpoints, cleanup other unused checkpoints
+        cleanupLocalCheckpoints(dbPath, checkpoint.getId());
+
+        return checkpoint.getMetadata();
+    }
+
+    private static void cleanupLocalCheckpoints(File dbPath, String checkpointToExclude) {
+        File checkpointsDir = new File(dbPath, "checkpoints");
         String[] checkpoints = checkpointsDir.list();
         for (String checkpoint : checkpoints) {
             if (checkpoint.equals(checkpointToExclude)) {
@@ -103,32 +79,44 @@ public class RocksCheckpointer implements AutoCloseable {
         }
     }
 
-    private static Pair<String, CheckpointMetadata> getLatestCheckpoint(
-        String dbPrefix, CheckpointStore checkpointStore) throws IOException {
+    private static CheckpointInfo getLatestCheckpoint(
+        String dbPrefix, CheckpointStore checkpointStore) {
+        List<CheckpointInfo> checkpoints = getCheckpoints(dbPrefix, checkpointStore);
+        if (checkpoints.size() <= 0) {
+            // Even if there are not checkpoints available, there should be a
+            // nullCheckpoint in the list
+            throw new RuntimeException("Checkpoint list can't be empty");
+        }
+        return checkpoints.get(0);
+    }
+
+    public static List<CheckpointInfo> getCheckpoints(String dbPrefix, CheckpointStore store) {
         String remoteCheckpointsPath = RocksUtils.getDestCheckpointsPath(dbPrefix);
-        List<String> files = checkpointStore.listFiles(remoteCheckpointsPath);
-        CheckpointMetadata latestCheckpoint = null;
-        String latestCheckpointId = null;
+        ArrayList<CheckpointInfo> result = new ArrayList<>();
+        result.add(CheckpointInfo.nullCheckpoint());
+        List<String> files;
+        try {
+            files = store.listFiles(remoteCheckpointsPath);
+        } catch (IOException e) {
+            log.warn("No remote checkpoints available. Starting with nullCheckpoint", e);
+            return result;
+        }
 
         for (String checkpointId : files) {
             String metadataPath = RocksUtils.getDestCheckpointMetadataPath(
                 dbPrefix,
                 checkpointId);
 
-            try (InputStream is = checkpointStore.openInputStream(metadataPath)) {
-                CheckpointMetadata ckpt = CheckpointMetadata.parseFrom(is);
-                if (null == latestCheckpoint) {
-                    latestCheckpointId = checkpointId;
-                    latestCheckpoint = ckpt;
-                } else if (latestCheckpoint.getCreatedAt() < ckpt.getCreatedAt()) {
-                    latestCheckpointId = checkpointId;
-                    latestCheckpoint = ckpt;
-                }
+            try (InputStream is = store.openInputStream(metadataPath)) {
+                result.add(new CheckpointInfo(checkpointId, is));
             } catch (FileNotFoundException fnfe) {
                 log.error("Metadata is corrupt for the checkpoint {}. Skipping it.", checkpointId);
+            } catch (IOException e) {
+                log.error("IO exception {}, Skipping it", checkpointId, e);
             }
         }
-        return Pair.of(latestCheckpointId, latestCheckpoint);
+        Collections.sort(result, Collections.reverseOrder());
+        return result;
     }
 
     private final String dbName;

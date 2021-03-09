@@ -63,6 +63,7 @@ import org.apache.bookkeeper.statelib.api.kv.KVMulti;
 import org.apache.bookkeeper.statelib.api.kv.KVStore;
 import org.apache.bookkeeper.statelib.impl.Bytes;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
+import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.CheckpointInfo;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.RocksCheckpointer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.rocksdb.BlockBasedTableConfig;
@@ -155,7 +156,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         return this.name;
     }
 
-    private void loadRocksdbFromCheckpointStore(StateStoreSpec spec) throws StateStoreException {
+    private void loadRocksdbFromCheckpointStore(StateStoreSpec spec) {
         checkNotNull(spec.getCheckpointIOScheduler(),
             "checkpoint io scheduler is not configured");
         checkNotNull(spec.getCheckpointDuration(),
@@ -164,7 +165,20 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         String dbName = spec.getName();
         File localStorePath = spec.getLocalStateStoreDir();
 
-        RocksCheckpointer.restore(dbName, localStorePath, spec.getCheckpointStore());
+        List<CheckpointInfo> checkpoints = RocksCheckpointer.getCheckpoints(dbName, spec.getCheckpointStore());
+        for (CheckpointInfo cpi : checkpoints) {
+            try {
+                cpi.restore(dbName, localStorePath, spec.getCheckpointStore());
+                openRocksdb(spec);
+                checkpoints.stream()
+                    .filter(cp -> cp != cpi) // ignore the current restored checkpoint
+                    .forEach(cp -> cp.remove(localStorePath)); // delete everything else
+                break;
+            } catch (StateStoreException e) {
+                // Got an exception. Log and try the next checkpoint
+                log.error("Failed to restore checkpoint: {}", cpi);
+            }
+        }
     }
 
     @Override
@@ -239,11 +253,6 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         checkNotNull(spec.getLocalStateStoreDir(),
             "local state store directory is not configured");
 
-        checkpointStore = spec.getCheckpointStore();
-        if (null != checkpointStore) {
-            // load checkpoint from checkpoint store
-            loadRocksdbFromCheckpointStore(spec);
-        }
 
         this.name = spec.getName();
 
@@ -251,8 +260,15 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         this.keyCoder = (Coder<K>) spec.getKeyCoder();
         this.valCoder = (Coder<V>) spec.getValCoder();
 
-        // open the rocksdb
-        openRocksdb(spec);
+        checkpointStore = spec.getCheckpointStore();
+        if (null != checkpointStore) {
+            // load checkpoint from checkpoint store
+            loadRocksdbFromCheckpointStore(spec);
+        } else {
+            // open the rocksdb
+            openRocksdb(spec);
+        }
+
 
         // once the rocksdb is opened, read the last revision
         readLastRevision();

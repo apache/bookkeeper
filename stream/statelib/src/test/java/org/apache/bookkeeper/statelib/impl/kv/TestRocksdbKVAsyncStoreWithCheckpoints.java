@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.io.MoreFiles;
@@ -37,14 +38,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
+import org.apache.bookkeeper.statelib.api.exceptions.InvalidStateStoreException;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.fs.FSCheckpointManager;
 import org.apache.bookkeeper.statelib.testing.executors.MockExecutorController;
 import org.apache.distributedlog.DLMTestUtil;
+import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
@@ -72,6 +76,7 @@ public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBa
         uri = DLMTestUtil.createDLMURI(zkPort, "/mvcc");
         conf.setPeriodicFlushFrequencyMilliSeconds(2);
         conf.setWriteLockEnabled(false);
+        conf.setExplicitTruncationByApplication(true);
         namespace = NamespaceBuilder.newBuilder()
             .conf(conf)
             .uri(uri)
@@ -282,4 +287,65 @@ public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBa
         readNumKvs(numKvs, 0);
     }
 
+    private void reinitStore(StateStoreSpec spec) throws Exception {
+        store.close();
+
+        // remove local dir
+        MoreFiles.deleteRecursively(
+            Paths.get(localDir.getAbsolutePath()),
+            RecursiveDeleteOption.ALLOW_INSECURE);
+
+        store = new RocksdbKVAsyncStore<>(
+            () -> new RocksdbKVStore<>(),
+            () -> namespace);
+        result(store.init(spec));
+    }
+
+    @Test
+    public void testMissingData() throws Exception {
+        int numKeys = 100;
+        this.streamName = runtime.getMethodName();
+        StateStoreSpec spec = initSpec(runtime.getMethodName());
+
+        reinitStore(spec);
+
+        writeNumKvs(numKeys, 0);
+        readNumKvs(numKeys, 0);
+
+        // Reload store from Journal
+        reinitStore(spec);
+
+        readNumKvs(numKeys, 0);
+
+        // Trigger a checkpoint
+        store.getLocalStore().checkpoint();
+        // ensure checkpoint completed
+        checkpointExecutor.submit(() -> {}).get();
+
+        writeNumKvs(numKeys, 100);
+
+        reinitStore(spec);
+
+        // Validate that we can load from both checkpoint and journal
+        readNumKvs(numKeys, 0);
+        readNumKvs(numKeys, 100);
+
+        // Add some more data
+        writeNumKvs(numKeys, 200);
+        DLSN dlsn = store.getLastDLSN();
+
+        // Truncate and purge part of Journal
+        result(store.truncateJournal(dlsn));
+        store.purgeOlderThan(Integer.MAX_VALUE);
+
+        // reloading the statestore should fail.
+        try {
+            reinitStore(spec);
+            fail("Store initialization should fail due to missing data");
+        } catch (InvalidStateStoreException isse) {
+            assertEquals(
+                "replayJournal failed: Invalid starting transaction 204 expecting 102 for stream testMissingData",
+                isse.getMessage());
+        }
+    }
 }
