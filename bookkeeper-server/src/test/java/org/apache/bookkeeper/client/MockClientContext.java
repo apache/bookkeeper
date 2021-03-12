@@ -35,6 +35,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.MockLedgerManager;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.MockBookieClient;
+import org.apache.bookkeeper.proto.MockBookies;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.mockito.Mockito;
 
@@ -55,7 +56,7 @@ public class MockClientContext implements ClientContext {
     private MockRegistrationClient regClient;
     private ByteBufAllocator allocator;
 
-    static MockClientContext create() throws Exception {
+    static MockClientContext create(MockBookies mockBookies) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder().name("mock-executor").numThreads(1).build();
         MockRegistrationClient regClient = new MockRegistrationClient();
@@ -67,17 +68,22 @@ public class MockClientContext implements ClientContext {
         bookieWatcherImpl.initialBlockingBookieRead();
 
         return new MockClientContext()
-            .setConf(ClientInternalConf.fromConfig(conf))
-            .setLedgerManager(new MockLedgerManager())
-            .setBookieWatcher(bookieWatcherImpl)
-            .setPlacementPolicy(placementPolicy)
-            .setRegistrationClient(regClient)
-            .setBookieClient(new MockBookieClient(scheduler))
-            .setByteBufAllocator(UnpooledByteBufAllocator.DEFAULT)
-            .setMainWorkerPool(scheduler)
-            .setScheduler(scheduler)
-            .setClientStats(BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE))
-            .setIsClientClosed(() -> false);
+                .setConf(ClientInternalConf.fromConfig(conf))
+                .setLedgerManager(new MockLedgerManager())
+                .setBookieWatcher(bookieWatcherImpl)
+                .setPlacementPolicy(placementPolicy)
+                .setRegistrationClient(regClient)
+                .setBookieClient(new MockBookieClient(scheduler, mockBookies))
+                .setByteBufAllocator(UnpooledByteBufAllocator.DEFAULT)
+                .setMainWorkerPool(scheduler)
+                .setScheduler(scheduler)
+                .setClientStats(BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE))
+                .setIsClientClosed(() -> false);
+    }
+
+    static MockClientContext create() throws Exception {
+        MockBookies mockBookies = new MockBookies();
+        return create(mockBookies);
     }
 
     static MockClientContext copyOf(ClientContext other) {
