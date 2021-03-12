@@ -129,6 +129,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             BookieNode node = createBookieNode(addr);
             topology.add(node);
             knownBookies.put(addr, node);
+            historyBookies.put(addr, node);
             String region = getLocalRegion(node);
             if (null == perRegionPlacement.get(region)) {
                 perRegionPlacement.put(region, new RackawareEnsemblePlacementPolicy()
@@ -450,7 +451,10 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
             BookieNode bookieNodeToReplace = knownBookies.get(bookieToReplace);
             if (null == bookieNodeToReplace) {
-                bookieNodeToReplace = createBookieNode(bookieToReplace);
+                bookieNodeToReplace = historyBookies.get(bookieToReplace);
+                if (null == bookieNodeToReplace) {
+                    bookieNodeToReplace = createBookieNode(bookieToReplace);
+                }
             }
             excludeNodes.add(bookieNodeToReplace);
 
