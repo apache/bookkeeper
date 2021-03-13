@@ -103,8 +103,9 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             options.setCreateIfMissing(true);
 
             if (dbConfigType == DbConfigType.Huge) {
-                // Set default RocksDB block-cache size to 10% of direct mem, unless override
-                long defaultRocksDBBlockCacheSizeBytes = PlatformDependent.maxDirectMemory() / 10;
+                // Set default RocksDB block-cache size to 10% / numberOfLedgers of direct memory, unless override
+                int ledgerDirsSize = conf.getLedgerDirNames().length;
+                long defaultRocksDBBlockCacheSizeBytes = PlatformDependent.maxDirectMemory() / ledgerDirsSize / 10;
                 long blockCacheSize = DbLedgerStorage.getLongVariableOrDefault(conf, ROCKSDB_BLOCK_CACHE_SIZE,
                         defaultRocksDBBlockCacheSizeBytes);
 
