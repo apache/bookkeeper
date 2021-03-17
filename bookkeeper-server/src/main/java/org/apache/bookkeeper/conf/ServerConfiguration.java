@@ -1771,7 +1771,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the auto-throttling status of the read-worker threads
+     * Get the auto-throttling status of the read-worker threads.
      * @return
      */
     public boolean isReadWorkerThreadsThrottle() {

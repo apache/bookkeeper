@@ -19,7 +19,6 @@ package org.apache.bookkeeper.proto;
 
 import io.netty.channel.Channel;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
@@ -77,7 +76,7 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
 
     /**
      * Write on the channel and wait until the write is completed.
-     *
+     * <p>
      * That will make the thread to get blocked until we're able to
      * write everything on the TCP stack, providing auto-throttling
      * and avoiding using too much memory when handling read-requests.
