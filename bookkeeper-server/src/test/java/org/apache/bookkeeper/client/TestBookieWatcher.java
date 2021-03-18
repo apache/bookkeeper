@@ -23,12 +23,15 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import lombok.Cleanup;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
@@ -37,6 +40,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -66,6 +70,58 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
             throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
         }
         newZk.close();
+    }
+
+    /**
+     * Test to validate behavior of the isBookieUnavailable method.
+     * Because the method relies on getBookies and getReadOnlyBookies,
+     * these methods are essentially tested here as well.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testBookieWatcherIsBookieUnavailable() throws Exception {
+        BookieWatcher bookieWatcher = bkc.getBookieWatcher();
+
+        Set<BookieId> writableBookies1 = bookieWatcher.getBookies();
+        Set<BookieId> readonlyBookies1 = bookieWatcher.getReadOnlyBookies();
+
+        Assert.assertEquals("There should be writable bookies initially.", 2, writableBookies1.size());
+        Assert.assertEquals("There should be no read only bookies initially.",
+                Collections.emptySet(), readonlyBookies1);
+
+        BookieId bookieId0 = bs.get(0).getBookieId();
+        BookieId bookieId1 = bs.get(1).getBookieId();
+
+        boolean isUnavailable1 = bookieWatcher.isBookieUnavailable(bookieId0);
+        Assert.assertFalse("The bookie should not be unavailable.", isUnavailable1);
+
+        // Next, set to read only, which is still available
+        setBookieToReadOnly(bookieId0);
+
+        Set<BookieId> writableBookies2 = bookieWatcher.getBookies();
+        Set<BookieId> readonlyBookies2 = bookieWatcher.getReadOnlyBookies();
+
+        Assert.assertEquals("There should be one writable bookie.",
+                Collections.singleton(bookieId1), writableBookies2);
+        Assert.assertEquals("There should be one read only bookie.",
+                Collections.singleton(bookieId0), readonlyBookies2);
+
+        boolean isUnavailable2 = bookieWatcher.isBookieUnavailable(bookieId0);
+        Assert.assertFalse("The bookie should not be unavailable.", isUnavailable2);
+
+        // Next, kill it, which should make it unavailable
+        killBookieAndWaitForZK(0);
+
+        Set<BookieId> writableBookies3 = bookieWatcher.getBookies();
+        Set<BookieId> readonlyBookies3 = bookieWatcher.getReadOnlyBookies();
+
+        Assert.assertEquals("There should be one writable bookie.",
+                Collections.singleton(bookieId1), writableBookies3);
+        Assert.assertEquals("There should be no read only bookies.", Collections.emptySet(), readonlyBookies3);
+
+        boolean isUnavailable3 = bookieWatcher.isBookieUnavailable(bookieId0);
+        Assert.assertTrue("The bookie should be unavailable.", isUnavailable3);
     }
 
     @Test

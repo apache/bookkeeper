@@ -17,6 +17,7 @@
  */
 package org.apache.distributedlog;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.distributedlog.DistributedLogConstants.INVALID_TXID;
 import static org.apache.distributedlog.LogRecord.MAX_LOGRECORDSET_SIZE;
@@ -1239,7 +1240,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                         fullyQualifiedLogSegment, entryId,
                         transmitPacket.getRecordSet().getMaxTxId(), rc, cause);
                 }
-            });
+            }, directExecutor());
             // Race condition if we notify before the addComplete is enqueued.
             transmitPacket.notifyTransmitComplete(effectiveRC);
             outstandingTransmitsUpdater.getAndDecrement(this);

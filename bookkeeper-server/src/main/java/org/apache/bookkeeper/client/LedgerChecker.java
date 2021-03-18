@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.BKException.Code;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -49,6 +49,7 @@ public class LedgerChecker {
     private static final Logger LOG = LoggerFactory.getLogger(LedgerChecker.class);
 
     public final BookieClient bookieClient;
+    public final BookieWatcher bookieWatcher;
 
     static class InvalidFragmentException extends Exception {
         private static final long serialVersionUID = 1467201276417062353L;
@@ -136,7 +137,12 @@ public class LedgerChecker {
     }
 
     public LedgerChecker(BookKeeper bkc) {
-        bookieClient = bkc.getBookieClient();
+        this(bkc.getBookieClient(), bkc.getBookieWatcher());
+    }
+
+    public LedgerChecker(BookieClient client, BookieWatcher watcher) {
+        bookieClient = client;
+        bookieWatcher = watcher;
     }
 
     /**
@@ -186,7 +192,7 @@ public class LedgerChecker {
         long firstStored = fragment.getFirstStoredEntryId(bookieIndex);
         long lastStored = fragment.getLastStoredEntryId(bookieIndex);
 
-        BookieSocketAddress bookie = fragment.getAddress(bookieIndex);
+        BookieId bookie = fragment.getAddress(bookieIndex);
         if (null == bookie) {
             throw new InvalidFragmentException();
         }
@@ -197,6 +203,9 @@ public class LedgerChecker {
                 throw new InvalidFragmentException();
             }
             cb.operationComplete(BKException.Code.OK, fragment);
+        } else if (bookieWatcher.isBookieUnavailable(fragment.getAddress(bookieIndex))) {
+            // fragment is on this bookie, but already know it's unavailable, so skip the call
+            cb.operationComplete(BKException.Code.BookieHandleNotAvailableException, fragment);
         } else if (firstStored == lastStored) {
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(1,
                     fragment, cb);
@@ -325,8 +334,8 @@ public class LedgerChecker {
         final Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
 
         Long curEntryId = null;
-        List<BookieSocketAddress> curEnsemble = null;
-        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : lh
+        List<BookieId> curEnsemble = null;
+        for (Map.Entry<Long, ? extends List<BookieId>> e : lh
                 .getLedgerMetadata().getAllEnsembles().entrySet()) {
             if (curEntryId != null) {
                 Set<Integer> bookieIndexes = new HashSet<Integer>();
@@ -386,7 +395,7 @@ public class LedgerChecker {
 
                 DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(entryToRead);
                 for (int i = 0; i < writeSet.size(); i++) {
-                    BookieSocketAddress addr = curEnsemble.get(writeSet.get(i));
+                    BookieId addr = curEnsemble.get(writeSet.get(i));
                     bookieClient.readEntry(addr, lh.getId(), entryToRead,
                                            eecb, null, BookieProtocol.FLAG_NONE);
                 }

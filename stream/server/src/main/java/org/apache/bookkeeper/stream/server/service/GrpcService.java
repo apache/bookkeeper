@@ -43,11 +43,15 @@ public class GrpcService extends AbstractLifecycleComponent<StorageServerConfigu
 
     @Override
     protected void doStop() {
-        this.server.stop();
+        if (null != server) {
+            this.server.stop();
+        }
     }
 
     @Override
     protected void doClose() throws IOException {
-        this.server.close();
+        if (null != server) {
+            this.server.close();
+        }
     }
 }

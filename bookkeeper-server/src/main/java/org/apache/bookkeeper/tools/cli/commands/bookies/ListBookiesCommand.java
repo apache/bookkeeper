@@ -26,12 +26,16 @@ import java.util.Collection;
 import java.util.Set;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.apache.bookkeeper.client.DefaultBookieAddressResolver;
 import org.apache.bookkeeper.discover.RegistrationClient;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand.Flags;
 import org.apache.bookkeeper.tools.cli.helpers.DiscoveryCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Command to list available bookies.
@@ -40,6 +44,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
 
     private static final String NAME = "list";
     private static final String DESC = "List the bookies, which are running as either readwrite or readonly mode.";
+    private static final Logger LOG = LoggerFactory.getLogger(ListBookiesCommand.class);
 
     public ListBookiesCommand() {
         this(new Flags());
@@ -80,43 +85,43 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
 
         boolean hasBookies = false;
         if (flags.readwrite) {
-            Set<BookieSocketAddress> bookies = result(
+            Set<BookieId> bookies = result(
                 regClient.getWritableBookies()
             ).getValue();
             if (!bookies.isEmpty()) {
-                System.out.println("ReadWrite Bookies :");
-                printBookies(bookies);
+                LOG.info("ReadWrite Bookies :");
+                printBookies(bookies, new DefaultBookieAddressResolver(regClient));
                 hasBookies = true;
             }
         }
         if (flags.readonly) {
-            Set<BookieSocketAddress> bookies = result(
+            Set<BookieId> bookies = result(
                 regClient.getReadOnlyBookies()
             ).getValue();
             if (!bookies.isEmpty()) {
-                System.out.println("Readonly Bookies :");
-                printBookies(bookies);
+                LOG.info("Readonly Bookies :");
+                printBookies(bookies, new DefaultBookieAddressResolver(regClient));
                 hasBookies = true;
             }
         }
         if (flags.all) {
-            Set<BookieSocketAddress> bookies = result(
+            Set<BookieId> bookies = result(
                 regClient.getAllBookies()
             ).getValue();
             if (!bookies.isEmpty()) {
-                System.out.println("All Bookies :");
-                printBookies(bookies);
+                LOG.info("All Bookies :");
+                printBookies(bookies, new DefaultBookieAddressResolver(regClient));
                 hasBookies = true;
             }
         }
         if (!hasBookies) {
-            System.err.println("No bookie exists!");
+            LOG.error("No bookie exists!");
         }
     }
 
-    private static void printBookies(Collection<BookieSocketAddress> bookies) {
-        for (BookieSocketAddress b : bookies) {
-            System.out.println(getBookieSocketAddrStringRepresentation(b));
+    private static void printBookies(Collection<BookieId> bookies, BookieAddressResolver bookieAddressResolver) {
+        for (BookieId b : bookies) {
+            LOG.info(getBookieSocketAddrStringRepresentation(b, bookieAddressResolver));
         }
     }
 

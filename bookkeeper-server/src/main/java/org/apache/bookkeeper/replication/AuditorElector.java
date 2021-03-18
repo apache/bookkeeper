@@ -43,7 +43,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.Counter;
@@ -184,7 +184,7 @@ public class AuditorElector {
             AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder()
                 .setBookieId(bookieId);
             myVote = zkc.create(getVotePath(PATH_SEPARATOR + VOTE_PREFIX),
-                    TextFormat.printToString(builder.build()).getBytes(UTF_8), zkAcls,
+                    builder.build().toString().getBytes(UTF_8), zkAcls,
                     CreateMode.EPHEMERAL_SEQUENTIAL);
         }
     }
@@ -310,7 +310,7 @@ public class AuditorElector {
                                 .setBookieId(bookieId);
 
                             zkc.setData(getVotePath(""),
-                                        TextFormat.printToString(builder.build()).getBytes(UTF_8), -1);
+                                        builder.build().toString().getBytes(UTF_8), -1);
                             auditor = new Auditor(bookieId, conf, bkc, false, statsLogger);
                             auditor.start();
                         } else {
@@ -352,7 +352,7 @@ public class AuditorElector {
      * Query zookeeper for the currently elected auditor.
      * @return the bookie id of the current auditor
      */
-    public static BookieSocketAddress getCurrentAuditor(ServerConfiguration conf, ZooKeeper zk)
+    public static BookieId getCurrentAuditor(ServerConfiguration conf, ZooKeeper zk)
             throws KeeperException, InterruptedException, IOException {
         String electionRoot = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf) + '/'
             + BookKeeperConstants.UNDER_REPLICATION_NODE + '/' + ELECTION_ZNODE;
@@ -368,9 +368,7 @@ public class AuditorElector {
         AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder();
         TextFormat.merge(new String(data, UTF_8), builder);
         AuditorVoteFormat v = builder.build();
-        String[] parts = v.getBookieId().split(":");
-        return new BookieSocketAddress(parts[0],
-                                       Integer.parseInt(parts[1]));
+        return BookieId.parse(v.getBookieId());
     }
 
     /**

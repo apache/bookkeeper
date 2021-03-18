@@ -46,7 +46,7 @@ import org.apache.bookkeeper.client.LedgerMetadataUtils;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 
 import org.slf4j.Logger;
@@ -201,10 +201,10 @@ public class LedgerMetadataSerDe {
                 }
             }
 
-            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry : metadata.getAllEnsembles().entrySet()) {
+            for (Map.Entry<Long, ? extends List<BookieId>> entry : metadata.getAllEnsembles().entrySet()) {
                 LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
                 segmentBuilder.setFirstEntryId(entry.getKey());
-                for (BookieSocketAddress addr : entry.getValue()) {
+                for (BookieId addr : entry.getValue()) {
                     segmentBuilder.addEnsembleMember(addr.toString());
                 }
                 builder.addSegment(segmentBuilder.build());
@@ -268,17 +268,17 @@ public class LedgerMetadataSerDe {
                     }
                 }
 
-                for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry :
+                for (Map.Entry<Long, ? extends List<BookieId>> entry :
                          metadata.getAllEnsembles().entrySet()) {
                     LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
                     segmentBuilder.setFirstEntryId(entry.getKey());
-                    for (BookieSocketAddress addr : entry.getValue()) {
+                    for (BookieId addr : entry.getValue()) {
                         segmentBuilder.addEnsembleMember(addr.toString());
                     }
                     builder.addSegment(segmentBuilder.build());
                 }
 
-                TextFormat.print(builder.build(), writer);
+                TextFormat.printer().print(builder.build(), writer);
                 writer.flush();
             }
             return os.toByteArray();
@@ -294,10 +294,10 @@ public class LedgerMetadataSerDe {
                 writer.append(String.valueOf(metadata.getEnsembleSize())).append(LINE_SPLITTER);
                 writer.append(String.valueOf(metadata.getLength())).append(LINE_SPLITTER);
 
-                for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry :
+                for (Map.Entry<Long, ? extends List<BookieId>> entry :
                          metadata.getAllEnsembles().entrySet()) {
                     writer.append(String.valueOf(entry.getKey()));
-                    for (BookieSocketAddress addr : entry.getValue()) {
+                    for (BookieId addr : entry.getValue()) {
                         writer.append(FIELD_SPLITTER).append(addr.toString());
                     }
                     writer.append(LINE_SPLITTER);
@@ -340,6 +340,7 @@ public class LedgerMetadataSerDe {
      *             if the given byte[] cannot be parsed
      */
     public LedgerMetadata parseConfig(byte[] bytes,
+                                      long ledgerId,
                                       Optional<Long> metadataStoreCtime) throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("Deserializing {}", Base64.getEncoder().encodeToString(bytes));
@@ -356,11 +357,11 @@ public class LedgerMetadataSerDe {
 
             switch (metadataFormatVersion) {
             case METADATA_FORMAT_VERSION_3:
-                return parseVersion3Config(is, metadataStoreCtime);
+                return parseVersion3Config(ledgerId, is, metadataStoreCtime);
             case METADATA_FORMAT_VERSION_2:
-                return parseVersion2Config(is, metadataStoreCtime);
+                return parseVersion2Config(ledgerId, is, metadataStoreCtime);
             case METADATA_FORMAT_VERSION_1:
-                return parseVersion1Config(is);
+                return parseVersion1Config(ledgerId, is);
             default:
                 throw new IOException(
                         String.format("Metadata version not compatible. Expected between %d and %d, but got %d",
@@ -370,9 +371,10 @@ public class LedgerMetadataSerDe {
         }
     }
 
-    private static LedgerMetadata parseVersion3Config(InputStream is, Optional<Long> metadataStoreCtime)
+    private static LedgerMetadata parseVersion3Config(long ledgerId, InputStream is, Optional<Long> metadataStoreCtime)
             throws IOException {
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create()
+                .withId(ledgerId)
                 .withMetadataFormatVersion(METADATA_FORMAT_VERSION_3);
         LedgerMetadataFormat.Builder formatBuilder = LedgerMetadataFormat.newBuilder();
         formatBuilder.mergeDelimitedFrom(is);
@@ -386,9 +388,10 @@ public class LedgerMetadataSerDe {
         return builder.build();
     }
 
-    private static LedgerMetadata parseVersion2Config(InputStream is, Optional<Long> metadataStoreCtime)
+    private static LedgerMetadata parseVersion2Config(long ledgerId, InputStream is, Optional<Long> metadataStoreCtime)
             throws IOException {
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create()
+            .withId(ledgerId)
             .withMetadataFormatVersion(METADATA_FORMAT_VERSION_2);
 
         LedgerMetadataFormat.Builder formatBuilder = LedgerMetadataFormat.newBuilder();
@@ -431,9 +434,9 @@ public class LedgerMetadataSerDe {
         }
 
         for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
-            List<BookieSocketAddress> addrs = new ArrayList<>();
+            List<BookieId> addrs = new ArrayList<>();
             for (String addr : s.getEnsembleMemberList()) {
-                addrs.add(new BookieSocketAddress(addr));
+                addrs.add(BookieId.parse(addr));
             }
             builder.newEnsembleEntry(s.getFirstEntryId(), addrs);
         }
@@ -449,9 +452,11 @@ public class LedgerMetadataSerDe {
         }
     }
 
-    private static LedgerMetadata parseVersion1Config(InputStream is) throws IOException {
+    private static LedgerMetadata parseVersion1Config(long ledgerId, InputStream is) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, UTF_8.name()))) {
-            LedgerMetadataBuilder builder = LedgerMetadataBuilder.create().withMetadataFormatVersion(1);
+            LedgerMetadataBuilder builder = LedgerMetadataBuilder.create()
+                    .withId(ledgerId)
+                    .withMetadataFormatVersion(1);
             int quorumSize = Integer.parseInt(reader.readLine());
             int ensembleSize = Integer.parseInt(reader.readLine());
             long length = Long.parseLong(reader.readLine());
@@ -472,9 +477,9 @@ public class LedgerMetadataSerDe {
                     break;
                 }
 
-                ArrayList<BookieSocketAddress> addrs = new ArrayList<BookieSocketAddress>();
+                ArrayList<BookieId> addrs = new ArrayList<BookieId>();
                 for (int j = 1; j < parts.length; j++) {
-                    addrs.add(new BookieSocketAddress(parts[j]));
+                    addrs.add(BookieId.parse(parts[j]));
                 }
                 builder.newEnsembleEntry(Long.parseLong(parts[0]), addrs);
 

@@ -73,6 +73,7 @@ import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -95,17 +96,17 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     }
 
     private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
-        BookieSocketAddress selfBookie = Bookie.getBookieAddress(baseConf);
+        BookieId selfBookie = Bookie.getBookieId(baseConf);
         createLedgers(numLedgers, createdLedgers, selfBookie);
     }
 
     /**
      * Create ledgers.
      */
-    private void createLedgers(int numLedgers, final Set<Long> createdLedgers, BookieSocketAddress selfBookie)
+    private void createLedgers(int numLedgers, final Set<Long> createdLedgers, BookieId selfBookie)
             throws IOException {
         final AtomicInteger expected = new AtomicInteger(numLedgers);
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(selfBookie);
+        List<BookieId> ensemble = Lists.newArrayList(selfBookie);
 
         for (int i = 0; i < numLedgers; i++) {
             getLedgerIdGenerator().generateLedgerId(new GenericCallback<Long>() {
@@ -122,6 +123,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                     }
 
                     LedgerMetadata md = LedgerMetadataBuilder.create()
+                        .withId(ledgerId)
                         .withDigestType(DigestType.CRC32C)
                         .withPassword(new byte[0])
                         .withEnsembleSize(1).withWriteQuorumSize(1).withAckQuorumSize(1)
@@ -599,7 +601,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
+        public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         }
 
         @Override
@@ -715,7 +717,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         // Create few ledgers
         final int numLedgers = 5;
 
-        BookieSocketAddress bookieAddress = new BookieSocketAddress("192.0.0.1", 1234);
+        BookieId bookieAddress = new BookieSocketAddress("192.0.0.1", 1234).toBookieId();
         createLedgers(numLedgers, createdLedgers, bookieAddress);
 
         LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {

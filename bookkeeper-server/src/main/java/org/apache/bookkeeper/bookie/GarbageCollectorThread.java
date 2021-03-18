@@ -37,6 +37,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import java.util.concurrent.atomic.AtomicLong;
+
+import lombok.Getter;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.bookie.stats.GarbageCollectorStats;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -65,16 +67,19 @@ public class GarbageCollectorThread extends SafeRunnable {
     final long gcWaitTime;
 
     // Compaction parameters
+    boolean isForceMinorCompactionAllow = false;
     boolean enableMinorCompaction = false;
     final double minorCompactionThreshold;
     final long minorCompactionInterval;
     long lastMinorCompactionTime;
 
+    boolean isForceMajorCompactionAllow = false;
     boolean enableMajorCompaction = false;
     final double majorCompactionThreshold;
     final long majorCompactionInterval;
     long lastMajorCompactionTime;
 
+    @Getter
     final boolean isForceGCAllowWhenNoSpace;
 
     // Entry Logger Handle
@@ -175,6 +180,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         majorCompactionThreshold = conf.getMajorCompactionThreshold();
         majorCompactionInterval = conf.getMajorCompactionInterval() * SECOND;
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
+        boolean isForceAllowCompaction = conf.isForceAllowCompaction();
 
         AbstractLogCompactor.LogRemovalListener remover = new AbstractLogCompactor.LogRemovalListener() {
             @Override
@@ -198,6 +204,15 @@ public class GarbageCollectorThread extends SafeRunnable {
                                     + minorCompactionInterval);
             }
             enableMinorCompaction = true;
+        }
+
+        if (isForceAllowCompaction) {
+            if (minorCompactionThreshold > 0 || minorCompactionThreshold < 1.0f) {
+                isForceMinorCompactionAllow = true;
+            }
+            if (majorCompactionThreshold > 0 || majorCompactionThreshold < 1.0f) {
+                isForceMajorCompactionAllow = true;
+            }
         }
 
         if (majorCompactionInterval > 0 && majorCompactionThreshold > 0) {
@@ -341,7 +356,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
 
         long curTime = System.currentTimeMillis();
-        if (enableMajorCompaction && (!suspendMajor)
+        if ((isForceMajorCompactionAllow || enableMajorCompaction) && (!suspendMajor)
             && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
             // enter major compaction
             LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
@@ -352,7 +367,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             lastMinorCompactionTime = lastMajorCompactionTime;
             gcStats.getMajorCompactionCounter().inc();
             majorCompacting.set(false);
-        } else if (enableMinorCompaction && (!suspendMinor)
+        } else if ((isForceMinorCompactionAllow || enableMinorCompaction) && (!suspendMinor)
             && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
             // enter minor compaction
             LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);

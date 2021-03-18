@@ -18,10 +18,10 @@
 
 package org.apache.bookkeeper.metadata.etcd;
 
-import com.coreos.jetcd.data.ByteSequence;
-import com.coreos.jetcd.options.WatchOption;
-import com.coreos.jetcd.watch.WatchResponse;
-import com.coreos.jetcd.watch.WatchResponseWithError;
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.options.WatchOption;
+import io.etcd.jetcd.watch.WatchResponse;
+import io.etcd.jetcd.watch.WatchResponseWithError;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
@@ -86,7 +86,7 @@ public class EtcdWatcher implements AutoCloseable {
                 c.accept(null, watchResponse.getException());
             } else {
                 c.accept(
-                    new WatchResponse(watchResponse.getWatchResponse()),
+                    watchResponse.getWatchResponse(),
                     null);
             }
         }));

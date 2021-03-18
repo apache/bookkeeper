@@ -32,6 +32,8 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Command to delete a given ledger.
@@ -41,6 +43,7 @@ public class DeleteLedgerCommand extends BookieCommand<DeleteLedgerCommand.Delet
     private static final String NAME = "delete";
     private static final String DESC = "Delete a ledger.";
     private static final String DEFAULT = "";
+    private static final Logger LOG = LoggerFactory.getLogger(DeleteLedgerCommand.class);
 
     private LedgerIdFormatter ledgerIdFormatter;
 
@@ -101,7 +104,7 @@ public class DeleteLedgerCommand extends BookieCommand<DeleteLedgerCommand.Delet
         throws IOException, BKException, InterruptedException {
 
         if (flags.ledgerId < 0) {
-            System.err.println("Ledger id error.");
+            LOG.error("Ledger id error.");
             return false;
         }
 

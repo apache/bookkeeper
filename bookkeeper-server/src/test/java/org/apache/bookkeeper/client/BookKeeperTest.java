@@ -27,6 +27,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -52,12 +53,13 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
+import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -85,7 +87,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     private final DigestType digestType;
 
     public BookKeeperTest() {
-        super(4);
+        super(3);
         this.digestType = DigestType.CRC32;
     }
 
@@ -982,7 +984,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieSocketAddress> ackedBookies,
+        public boolean areAckedBookiesAdheringToPlacementPolicy(Set<BookieId> ackedBookies,
                                                                 int writeQuorumSize,
                                                                 int ackQuorumSize) {
             conditionFirstInvocationLatch.countDown();
@@ -1027,7 +1029,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         currPlacementPolicy.setConditionFirstInvocationLatch(countDownLatch);
         currPlacementPolicy.setWriteQuorumSizeToUseForTesting(writeQuorumSize);
 
-        BookieSocketAddress bookieToSleep;
+        BookieId bookieToSleep;
 
         try (LedgerHandle lh = bk.createLedger(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password)) {
             CountDownLatch sleepLatchCase1 = new CountDownLatch(1);
@@ -1037,8 +1039,8 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             LOG.info("Putting all non ensemble bookies to sleep.");
             for (BookieServer bookieServer : bs) {
                 try {
-                    if (!lh.getCurrentEnsemble().contains(bookieServer.getLocalAddress())) {
-                        sleepBookie(bookieServer.getLocalAddress(), sleepLatchCase2);
+                    if (!lh.getCurrentEnsemble().contains(bookieServer.getBookieId())) {
+                        sleepBookie(bookieServer.getBookieId(), sleepLatchCase2);
                     }
                 } catch (UnknownHostException ignored) {}
             }
@@ -1112,4 +1114,20 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                          1);
         }
     }
+
+    @Test
+    public void testBookieAddressResolverPassedToDNSToSwitchMapping() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        StaticDNSResolver tested = new StaticDNSResolver();
+        try (BookKeeper bkc = BookKeeper
+                        .forConfig(conf)
+                        .dnsResolver(tested)
+                        .build()) {
+            bkc.createLedger(digestType, "testPasswd".getBytes()).close();
+            assertSame(bkc.getBookieAddressResolver(), tested.getBookieAddressResolver());
+        }
+    }
+
 }

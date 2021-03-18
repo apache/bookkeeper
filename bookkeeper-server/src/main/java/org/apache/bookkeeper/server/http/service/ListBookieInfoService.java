@@ -36,7 +36,7 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +85,7 @@ public class ListBookieInfoService implements HttpEndpointService {
             clientConf.setDiskWeightBasedPlacementEnabled(true);
             BookKeeper bk = new BookKeeper(clientConf);
 
-            Map<BookieSocketAddress, BookieInfoReader.BookieInfo> map = bk.getBookieInfo();
+            Map<BookieId, BookieInfoReader.BookieInfo> map = bk.getBookieInfo();
             if (map.size() == 0) {
                 bk.close();
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
@@ -104,7 +104,7 @@ public class ListBookieInfoService implements HttpEndpointService {
              */
             LinkedHashMap<String, String> output = Maps.newLinkedHashMapWithExpectedSize(map.size());
             Long totalFree = 0L, total = 0L;
-            for (Map.Entry<BookieSocketAddress, BookieInfoReader.BookieInfo> infoEntry : map.entrySet()) {
+            for (Map.Entry<BookieId, BookieInfoReader.BookieInfo> infoEntry : map.entrySet()) {
                 BookieInfoReader.BookieInfo bInfo = infoEntry.getValue();
                 output.put(infoEntry.getKey().toString(),
                     ": {Free: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace())

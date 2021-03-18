@@ -167,7 +167,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         for (String child : children) {
             byte[] data = zkc.getData(electionPath + '/' + child, false, null);
             String bookieIP = new String(data);
-            String addr = auditor.getLocalAddress().toString();
+            String addr = auditor.getBookieId().toString();
             assertFalse("AuditorElection cleanup fails", bookieIP
                     .contains(addr));
         }
@@ -182,7 +182,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         BookieServer auditor = verifyAuditor();
 
         shutdownBookie(auditor);
-        String addr = auditor.getLocalAddress().toString();
+        String addr = auditor.getBookieId().toString();
 
         // restarting Bookie with same configurations.
         int indexOfDownBookie = bs.indexOf(auditor);
@@ -203,8 +203,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
                 "Auditor re-election is not happened for auditor failure!",
                 auditor, newAuditor);
         assertFalse("No relection after old auditor rejoins", auditor
-                .getLocalAddress().getPort() == newAuditor.getLocalAddress()
-                .getPort());
+                .getBookieId().equals(newAuditor.getBookieId()));
     }
 
     private void startAuditorElector(String addr) throws Exception {
@@ -217,7 +216,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
 
     private void startAuditorElectors() throws Exception {
         for (BookieServer bserver : bs) {
-            String addr = bserver.getLocalAddress().toString();
+            String addr = bserver.getBookieId().toString();
             startAuditorElector(addr);
         }
     }
@@ -242,7 +241,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         byte[] data = zkc.getData(electionPath, false, null);
         assertNotNull("Auditor election failed", data);
         for (BookieServer bks : bs) {
-            if (new String(data).contains(bks.getLocalAddress().getPort() + "")) {
+            if (new String(data).contains(bks.getBookieId() + "")) {
                 auditors.add(bks);
             }
         }
@@ -250,7 +249,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
     }
 
     private void shutdownBookie(BookieServer bkServer) throws Exception {
-        String addr = bkServer.getLocalAddress().toString();
+        String addr = bkServer.getBookieId().toString();
         LOG.debug("Shutting down bookie:" + addr);
 
         // shutdown bookie which is an auditor

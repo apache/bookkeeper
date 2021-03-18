@@ -81,9 +81,11 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.SimpleBookieServiceInfoProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -190,7 +192,7 @@ public class Bookie extends BookieCriticalThread {
     static class NopWriteCallback implements WriteCallback {
         @Override
         public void writeComplete(int rc, long ledgerId, long entryId,
-                                  BookieSocketAddress addr, Object ctx) {
+                                  BookieId addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
                         entryId, ledgerId, addr, rc);
@@ -304,11 +306,11 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
-    static List<BookieSocketAddress> possibleBookieIds(ServerConfiguration conf)
+    static List<BookieId> possibleBookieIds(ServerConfiguration conf)
             throws BookieException {
         // we need to loop through all possible bookie identifiers to ensure it is treated as a new environment
         // just because of bad configuration
-        List<BookieSocketAddress> addresses = Lists.newArrayListWithExpectedSize(3);
+        List<BookieId> addresses = Lists.newArrayListWithExpectedSize(3);
         // we are checking all possibilities here, so we don't need to fail if we can only get
         // loopback address. it will fail anyway when the bookie attempts to listen on loopback address.
         try {
@@ -318,17 +320,20 @@ public class Bookie extends BookieCriticalThread {
                     .setUseHostNameAsBookieID(false)
                     .setAdvertisedAddress(null)
                     .setAllowLoopback(true)
-            ));
+            ).toBookieId());
             // host name
             addresses.add(getBookieAddress(
                 new ServerConfiguration(conf)
                     .setUseHostNameAsBookieID(true)
                     .setAdvertisedAddress(null)
                     .setAllowLoopback(true)
-            ));
+            ).toBookieId());
             // advertised address
             if (null != conf.getAdvertisedAddress()) {
-                addresses.add(getBookieAddress(conf));
+                addresses.add(getBookieAddress(conf).toBookieId());
+            }
+            if (null != conf.getBookieId()) {
+                addresses.add(BookieId.parse(conf.getBookieId()));
             }
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
@@ -338,10 +343,10 @@ public class Bookie extends BookieCriticalThread {
 
     static Versioned<Cookie> readAndVerifyCookieFromRegistrationManager(
             Cookie masterCookie, RegistrationManager rm,
-            List<BookieSocketAddress> addresses, boolean allowExpansion)
+            List<BookieId> addresses, boolean allowExpansion)
             throws BookieException {
         Versioned<Cookie> rmCookie = null;
-        for (BookieSocketAddress address : addresses) {
+        for (BookieId address : addresses) {
             try {
                 rmCookie = Cookie.readFromRegistrationManager(rm, address);
                 // If allowStorageExpansion option is set, we should
@@ -421,7 +426,7 @@ public class Bookie extends BookieCriticalThread {
             // 3. read the cookie from registration manager. it is the `source-of-truth` of a given bookie.
             //    if it doesn't exist in registration manager, this bookie is a new bookie, otherwise it is
             //    an old bookie.
-            List<BookieSocketAddress> possibleBookieIds = possibleBookieIds(conf);
+            List<BookieId> possibleBookieIds = possibleBookieIds(conf);
             final Versioned<Cookie> rmCookie = readAndVerifyCookieFromRegistrationManager(
                         masterCookie, rm, possibleBookieIds, allowExpansion);
 
@@ -534,6 +539,14 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
+    public static BookieId getBookieId(ServerConfiguration conf) throws UnknownHostException {
+        String customBookieId = conf.getBookieId();
+        if (customBookieId != null) {
+            return BookieId.parse(customBookieId);
+        }
+        return getBookieAddress(conf).toBookieId();
+    }
+
     /**
      * Return the configured address of the bookie.
      */
@@ -616,7 +629,7 @@ public class Bookie extends BookieCriticalThread {
 
     public Bookie(ServerConfiguration conf)
             throws IOException, InterruptedException, BookieException {
-        this(conf, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT, BookieServiceInfo.NO_INFO);
+        this(conf, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT, new SimpleBookieServiceInfoProvider(conf));
     }
 
     private static LedgerStorage buildLedgerStorage(ServerConfiguration conf) throws IOException {
@@ -1493,7 +1506,7 @@ public class Bookie extends BookieCriticalThread {
         int count;
 
         @Override
-        public synchronized void writeComplete(int rc, long l, long e, BookieSocketAddress addr, Object ctx) {
+        public synchronized void writeComplete(int rc, long l, long e, BookieId addr, Object ctx) {
             count--;
             if (count == 0) {
                 notifyAll();
@@ -1553,23 +1566,23 @@ public class Bookie extends BookieCriticalThread {
                 LOG.error("Formatting journal directory failed");
                 return false;
             }
+        }
 
-            File[] ledgerDirs = conf.getLedgerDirs();
-            for (File dir : ledgerDirs) {
-                if (!cleanDir(dir)) {
-                    LOG.error("Formatting ledger directory " + dir + " failed");
-                    return false;
-                }
+        File[] ledgerDirs = conf.getLedgerDirs();
+        for (File dir : ledgerDirs) {
+            if (!cleanDir(dir)) {
+                LOG.error("Formatting ledger directory " + dir + " failed");
+                return false;
             }
+        }
 
-            // Clean up index directories if they are separate from the ledger dirs
-            File[] indexDirs = conf.getIndexDirs();
-            if (null != indexDirs) {
-                for (File dir : indexDirs) {
-                    if (!cleanDir(dir)) {
-                        LOG.error("Formatting ledger directory " + dir + " failed");
-                        return false;
-                    }
+        // Clean up index directories if they are separate from the ledger dirs
+        File[] indexDirs = conf.getIndexDirs();
+        if (null != indexDirs) {
+            for (File dir : indexDirs) {
+                if (!cleanDir(dir)) {
+                    LOG.error("Formatting index directory " + dir + " failed");
+                    return false;
                 }
             }
         }

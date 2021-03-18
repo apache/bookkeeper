@@ -37,7 +37,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
@@ -95,7 +94,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -299,7 +298,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         RegistrationManager rm = mock(RegistrationManager.class);
         doThrow(new MetadataStoreException("mocked exception"))
             .when(rm)
-            .registerBookie(anyString(), anyBoolean(), any(BookieServiceInfo.class));
+            .registerBookie(any(BookieId.class), anyBoolean(), any(BookieServiceInfo.class));
 
         // simulating ZooKeeper exception by assigning a closed zk client to bk
         BookieServer bkServer = new BookieServer(conf) {
@@ -327,7 +326,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         conf.setMetadataServiceUri(metadataServiceUri)
             .setListeningInterface(null);
 
-        String bookieId = Bookie.getBookieAddress(conf).toString();
+        BookieId bookieId = Bookie.getBookieId(conf);
 
         driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
         try (StateManager manager = new BookieStateManager(conf, driver)) {
@@ -413,7 +412,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setUseHostNameAsBookieID(true)
             .setListeningInterface(null);
 
-        final String bookieId = InetAddress.getLocalHost().getCanonicalHostName() + ":" + conf.getBookiePort();
+        final BookieId bookieId =
+                BookieId.parse(InetAddress.getLocalHost().getCanonicalHostName() + ":" + conf.getBookiePort());
 
         driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
         try (StateManager manager = new BookieStateManager(conf, driver)) {
@@ -431,8 +431,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setUseShortHostName(true)
             .setListeningInterface(null);
 
-        final String bookieId = InetAddress.getLocalHost().getCanonicalHostName().split("\\.", 2)[0]
-            + ":" + conf.getBookiePort();
+        final BookieId bookieId = BookieId.parse(InetAddress.getLocalHost().getCanonicalHostName().split("\\.", 2)[0]
+            + ":" + conf.getBookiePort());
 
         driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
         try (StateManager manager = new BookieStateManager(conf, driver)) {
@@ -453,8 +453,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setMetadataServiceUri(metadataServiceUri)
             .setListeningInterface(null);
 
-        String bookieId = InetAddress.getLocalHost().getHostAddress() + ":"
-                + conf.getBookiePort();
+        BookieId bookieId = BookieId.parse(InetAddress.getLocalHost().getHostAddress() + ":"
+                + conf.getBookiePort());
         String bkRegPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf) + "/" + AVAILABLE_NODE + "/" + bookieId;
 
         driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
@@ -510,8 +510,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setUseShortHostName(true)
             .setListeningInterface(null);
 
-        final String bookieId = InetAddress.getLocalHost().getCanonicalHostName().split("\\.", 2)[0]
-                + ":" + conf.getBookiePort();
+        final BookieId bookieId = BookieId.parse(InetAddress.getLocalHost().getCanonicalHostName().split("\\.", 2)[0]
+                + ":" + conf.getBookiePort());
         String bkRegPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf) + "/" + AVAILABLE_NODE + "/" + bookieId;
 
         driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
@@ -764,7 +764,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         Versioned<byte[]> newCookie = new Versioned<>(
                 cookie.toString().getBytes(UTF_8), Version.NEW
         );
-        driver.getRegistrationManager().writeCookie(Bookie.getBookieAddress(conf).toString(), newCookie);
+        driver.getRegistrationManager().writeCookie(Bookie.getBookieId(conf), newCookie);
 
         /*
          * Create LifecycleComponent for BookieServer and start it.
@@ -1558,7 +1558,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         Bookie b = new Bookie(conf);
 
-        final BookieSocketAddress bookieAddress = Bookie.getBookieAddress(conf);
+        final BookieId bookieAddress = Bookie.getBookieId(conf);
 
         // Read cookie from registation manager
         Versioned<Cookie> rmCookie = Cookie.readFromRegistrationManager(rm, bookieAddress);
@@ -1574,6 +1574,45 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             Assert.fail("Bookie should not have come up. Cookie no present in metadata store.");
         } catch (Exception e) {
             LOG.info("As expected Bookie fails to come up without a cookie in metadata store.");
+        }
+    }
+
+    @Test
+    public void testInvalidServiceMetadataURI() throws Exception {
+       testInvalidServiceMetadataURICase("zk+null:///ledgers"); // no hostname
+       testInvalidServiceMetadataURICase("zk+null://ledgers");
+       testInvalidServiceMetadataURICase("zk+null:ledgers");
+        {
+            ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+            conf.setMetadataServiceUri("//ledgers");
+            try {
+                new BookieServer(conf);
+                Assert.fail("Bookie metadata initialization must fail with metadata service uri: //ledgers");
+            } catch (NullPointerException e) {
+                assertTrue(e.getMessage().contains("Invalid metadata service uri : //ledgers"));
+            }
+        }
+
+        {
+            ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+            conf.setMetadataServiceUri("");
+            try {
+                new BookieServer(conf);
+                Assert.fail("Bookie metadata initialization must fail with empty metadata service uri");
+            } catch (NullPointerException e) {
+                assertTrue(e.getMessage().contains("Invalid metadata service uri :"));
+            }
+        }
+    }
+
+    private void testInvalidServiceMetadataURICase(String uri) throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setMetadataServiceUri(uri);
+        try {
+            new BookieServer(conf);
+            Assert.fail("Bookie metadata initialization must fail with an invalid metadata service uri: " + uri);
+        } catch (MetadataStoreException e) {
+            // ok
         }
     }
 }

@@ -21,14 +21,14 @@ package org.apache.bookkeeper.net;
  * Bookie Node implementation.
  */
 public class BookieNode extends NodeBase {
-    private final BookieSocketAddress addr; // identifier of a bookie node.
+    private final BookieId addr; // identifier of a bookie node.
 
-    public BookieNode(BookieSocketAddress addr, String networkLoc) {
+    public BookieNode(BookieId addr, String networkLoc) {
         super(addr.toString(), networkLoc);
         this.addr = addr;
     }
 
-    public BookieSocketAddress getAddr() {
+    public BookieId getAddr() {
         return addr;
     }
 

@@ -21,6 +21,7 @@ package org.apache.bookkeeper.client;
  *
  */
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -28,6 +29,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,7 +39,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
@@ -62,8 +64,8 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
     private ScheduledExecutorService scheduler;
 
     public TestGetBookieInfoTimeout() {
-        super(10);
-        this.digestType = DigestType.CRC32;
+        super(5);
+        this.digestType = DigestType.CRC32C;
     }
 
     @Before
@@ -100,17 +102,16 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         // set timeout for getBookieInfo to be 2 secs and cause one of the bookies to go to sleep for 3X that time
         ClientConfiguration cConf = new ClientConfiguration();
         cConf.setGetBookieInfoTimeout(2);
+        cConf.setReadEntryTimeout(100000); // by default we are using readEntryTimeout for timeouts
 
-        final BookieSocketAddress bookieToSleep = writelh.getLedgerMetadata().getEnsembleAt(0).get(0);
+        final BookieId bookieToSleep = writelh.getLedgerMetadata().getEnsembleAt(0).get(0);
         int sleeptime = cConf.getBookieInfoTimeout() * 3;
         CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
         latch.await();
 
         // try to get bookie info from the sleeping bookie. It should fail with timeout error
-        BookieSocketAddress addr = new BookieSocketAddress(bookieToSleep.getSocketAddress().getHostString(),
-                bookieToSleep.getPort());
         BookieClient bc = new BookieClientImpl(cConf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, executor,
-                scheduler, NullStatsLogger.INSTANCE);
+                scheduler, NullStatsLogger.INSTANCE, bkc.getBookieAddressResolver());
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
                 | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 
@@ -128,7 +129,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
             }
         }
         CallbackObj obj = new CallbackObj(flags);
-        bc.getBookieInfo(addr, flags, new GetBookieInfoCallback() {
+        bc.getBookieInfo(bookieToSleep, flags, new GetBookieInfoCallback() {
             @Override
             public void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
                 CallbackObj obj = (CallbackObj) ctx;
@@ -149,5 +150,14 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         obj.latch.await();
         LOG.debug("Return code: " + obj.rc);
         assertTrue("GetBookieInfo failed with unexpected error code: " + obj.rc, obj.rc == Code.TimeoutException);
+    }
+
+    @Test
+    public void testGetBookieInfoWithAllStoppedBookies() throws Exception {
+        Map<BookieId, BookieInfo> bookieInfo = bkc.getBookieInfo();
+        assertEquals(5, bookieInfo.size());
+        stopAllBookies(false);
+        bookieInfo = bkc.getBookieInfo();
+        assertEquals(0, bookieInfo.size());
     }
 }

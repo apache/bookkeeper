@@ -27,4 +27,5 @@ message LedgerData {
     required bool exists = 1;
     required bool fenced = 2;
     required bytes masterKey = 3;
+    optional bytes explicitLac = 4;
 }

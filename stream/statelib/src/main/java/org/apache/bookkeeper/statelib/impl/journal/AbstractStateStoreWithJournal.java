@@ -39,6 +39,7 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.AsyncStateStore;
 import org.apache.bookkeeper.statelib.api.StateStore;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
+import org.apache.bookkeeper.statelib.api.exceptions.InvalidStateStoreException;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreClosedException;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreRuntimeException;
@@ -107,6 +108,17 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
 
     synchronized AsyncLogWriter getWriter() {
         return writer;
+    }
+
+    public void purgeOlderThan(long txId) throws IOException {
+        logManager.purgeLogsOlderThan(txId);
+    }
+    public CompletableFuture<Boolean> truncateJournal(DLSN dlsn) {
+        return getWriter().truncate(dlsn);
+    }
+
+    public DLSN getLastDLSN() throws IOException {
+        return logManager.getLastDLSN();
     }
 
     private void validateStoreSpec(StateStoreSpec spec) {
@@ -310,9 +322,38 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
                     });
 
                 log.info("Successfully open the journal reader for mvcc store {} : end dlsn = {}", name(), endDLSN);
-                replayJournal(r, endDLSN, replayFuture);
+                replayJournal(r, endDLSN, replayFuture, lastRevision);
                 return replayFuture;
             }, writeIOScheduler);
+    }
+
+    private void replayJournal(AsyncLogReader reader,
+                               DLSN endDLSN,
+                               CompletableFuture<Void> future,
+                               long startingTxId) {
+        synchronized (this) {
+            if (null != closeFuture) {
+                FutureUtils.completeExceptionally(future, new StateStoreClosedException(name()));
+                return;
+            }
+        }
+
+        reader.readNext().whenComplete(
+            (record, exc) -> {
+                if (exc != null) {
+                    FutureUtils.completeExceptionally(future, exc.getCause());
+                    return;
+                }
+                if (startingTxId != -1 && startingTxId != record.getTransactionId()) {
+                    String msg = String.format(
+                        "replayJournal failed: Invalid starting transaction %d expecting %d for stream %s",
+                        record.getTransactionId(), startingTxId, name);
+                    log.error(msg);
+                    FutureUtils.completeExceptionally(future, new InvalidStateStoreException(msg));
+                    return;
+                }
+            }
+        ).whenComplete(newRecordHandler(reader, endDLSN, future));
     }
 
     private void replayJournal(AsyncLogReader reader,
@@ -325,7 +366,13 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             }
         }
 
-        reader.readNext().whenComplete(new FutureEventListener<LogRecordWithDLSN>() {
+        reader.readNext().whenComplete(newRecordHandler(reader, endDLSN, future));
+    }
+
+    private FutureEventListener<LogRecordWithDLSN> newRecordHandler(AsyncLogReader reader,
+                                                                    DLSN endDLSN,
+                                                                    CompletableFuture<Void> future) {
+        return new FutureEventListener<LogRecordWithDLSN>() {
             @Override
             public void onSuccess(LogRecordWithDLSN record) {
                 if (log.isDebugEnabled()) {
@@ -363,7 +410,7 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             public void onFailure(Throwable cause) {
                 FutureUtils.completeExceptionally(future, cause);
             }
-        });
+        };
     }
 
     private void replayLoop(AsyncLogReader reader) {

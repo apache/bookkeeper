@@ -27,4 +27,4 @@ class BytesHashRouter(object):
         return
 
     def getRoutingKey(self, key):
-        return mmh3.hash64(key, seed=__SEED__, signed=True)[0]
+        return mmh3.hash64(key, seed=__SEED__)[0]

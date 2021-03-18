@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.common.util;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.createFuture;
 
 import com.google.common.util.concurrent.FutureCallback;
@@ -71,7 +72,7 @@ public final class ListenableFutures {
             public void onFailure(Throwable t) {
                 completableFuture.completeExceptionally(t);
             }
-        });
+        }, directExecutor());
         return completableFuture;
     }
 
@@ -101,7 +102,7 @@ public final class ListenableFutures {
             public void onFailure(Throwable t) {
                 completableFuture.completeExceptionally(t);
             }
-        });
+        }, directExecutor());
         return completableFuture;
     }
 }

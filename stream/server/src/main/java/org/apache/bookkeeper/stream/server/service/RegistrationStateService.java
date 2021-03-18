@@ -28,6 +28,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.conf.BookieConfiguration;
@@ -80,7 +81,7 @@ public class RegistrationStateService
                     statsLogger.scope("state"),
                     () -> regManager,
                     Collections.emptyList(),
-                    () -> NetUtils.endpointToString(myEndpoint),
+                    () -> BookieId.parse(NetUtils.endpointToString(myEndpoint)),
                     BookieServiceInfo.NO_INFO);
                 stateManager.initState();
                 stateManager.registerBookie(true).get();
@@ -94,6 +95,10 @@ public class RegistrationStateService
 
     @Override
     protected void doStop() {
+        if (null == stateManager) {
+            log.info("State Manager is null, no need to stop it.");
+            return;
+        }
         stateManager.forceToShuttingDown();
 
         // turn the server to readonly during shutting down process
@@ -103,7 +108,11 @@ public class RegistrationStateService
 
     @Override
     protected void doClose() throws IOException {
-        stateManager.close();
-        regManager.close();
+        if (null != stateManager) {
+            stateManager.close();
+        }
+        if (null != regManager) {
+            regManager.close();
+        }
     }
 }

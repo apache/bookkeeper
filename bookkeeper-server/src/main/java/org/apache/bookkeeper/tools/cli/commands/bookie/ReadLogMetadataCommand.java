@@ -97,7 +97,7 @@ public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> 
             this.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(conf);
         }
         if (cmdFlags.logId == DEFAULT_LOGID && cmdFlags.logFilename.equals(DEFAULT_FILENAME)) {
-            System.err.println("Missing entry log id or entry log file name");
+            LOG.error("Missing entry log id or entry log file name");
             return false;
         }
         try {

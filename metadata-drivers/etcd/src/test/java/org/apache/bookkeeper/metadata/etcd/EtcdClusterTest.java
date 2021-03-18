@@ -35,16 +35,18 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.coreos.jetcd.Client;
-import com.coreos.jetcd.data.ByteSequence;
-import com.coreos.jetcd.kv.GetResponse;
-import com.coreos.jetcd.options.GetOption;
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.Client;
+import io.etcd.jetcd.kv.GetResponse;
+import io.etcd.jetcd.options.GetOption;
+
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerLayout;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -202,7 +204,7 @@ public class EtcdClusterTest extends EtcdTestBase {
                                          int numBookies,
                                          boolean readonly) throws Exception {
         for (int i = 0; i < numBookies; i++) {
-            String bookieId = "bookie-" + i + ":3181";
+            BookieId bookieId = BookieId.parse("bookie-" + i + ":3181");
             String bookiePath;
             if (readonly) {
                 bookiePath = EtcdUtils.getReadonlyBookiePath(scope, bookieId);
@@ -210,7 +212,7 @@ public class EtcdClusterTest extends EtcdTestBase {
                 bookiePath = EtcdUtils.getWritableBookiePath(scope, bookieId);
             }
             msResult(client.getKVClient().put(
-                ByteSequence.fromString(bookiePath),
+                ByteSequence.from(bookiePath, UTF_8),
                 EtcdConstants.EMPTY_BS
             ));
         }
@@ -221,7 +223,7 @@ public class EtcdClusterTest extends EtcdTestBase {
                                          int numBookies,
                                          boolean readonly) throws Exception {
         for (int i = 0; i < numBookies; i++) {
-            String bookieId = "bookie-" + i + ":3181";
+            BookieId bookieId = BookieId.parse("bookie-" + i + ":3181");
             String bookiePath;
             if (readonly) {
                 bookiePath = EtcdUtils.getReadonlyBookiePath(scope, bookieId);
@@ -229,7 +231,7 @@ public class EtcdClusterTest extends EtcdTestBase {
                 bookiePath = EtcdUtils.getWritableBookiePath(scope, bookieId);
             }
             msResult(client.getKVClient().delete(
-                ByteSequence.fromString(bookiePath)
+                ByteSequence.from(bookiePath, UTF_8)
             ));
         }
     }
@@ -238,7 +240,7 @@ public class EtcdClusterTest extends EtcdTestBase {
                                            String scope) throws Exception {
         GetResponse resp = msResult(
             client.getKVClient().get(
-                ByteSequence.fromString(scope)));
+                ByteSequence.from(scope, UTF_8)));
         assertEquals(1, resp.getCount());
     }
 
@@ -247,7 +249,7 @@ public class EtcdClusterTest extends EtcdTestBase {
         String layoutPath = getLayoutKey(scope);
         GetResponse resp = msResult(
             client.getKVClient().get(
-                ByteSequence.fromString(layoutPath)));
+                ByteSequence.from(layoutPath, UTF_8)));
         assertEquals(1, resp.getCount());
         LedgerLayout layout = LedgerLayout.parseLayout(
             resp.getKvs().get(0).getValue().getBytes()
@@ -264,7 +266,7 @@ public class EtcdClusterTest extends EtcdTestBase {
                                                 String scope) throws Exception {
         String instanceIdPath = getClusterInstanceIdPath(scope);
         GetResponse resp = msResult(
-            client.getKVClient().get(ByteSequence.fromString(instanceIdPath)));
+            client.getKVClient().get(ByteSequence.from(instanceIdPath, UTF_8)));
         assertEquals(1, resp.getCount());
         String instanceId = new String(resp.getKvs().get(0).getValue().getBytes(), UTF_8);
         UUID uuid = UUID.fromString(instanceId);
@@ -275,7 +277,7 @@ public class EtcdClusterTest extends EtcdTestBase {
                                           String scope) throws Exception {
         String bookiesPath = getBookiesPath(scope);
         GetResponse resp = msResult(
-            client.getKVClient().get(ByteSequence.fromString(bookiesPath)));
+            client.getKVClient().get(ByteSequence.from(bookiesPath, UTF_8)));
         assertEquals(1, resp.getCount());
     }
 
@@ -283,7 +285,7 @@ public class EtcdClusterTest extends EtcdTestBase {
                                                   String scope) throws Exception {
         String bookiesPath = getWritableBookiesPath(scope);
         GetResponse resp = msResult(
-            client.getKVClient().get(ByteSequence.fromString(bookiesPath)));
+            client.getKVClient().get(ByteSequence.from(bookiesPath, UTF_8)));
         assertEquals(1, resp.getCount());
     }
 
@@ -291,28 +293,28 @@ public class EtcdClusterTest extends EtcdTestBase {
                                                   String scope) throws Exception {
         String bookiesPath = getReadonlyBookiesPath(scope);
         GetResponse resp = msResult(
-            client.getKVClient().get(ByteSequence.fromString(bookiesPath)));
+            client.getKVClient().get(ByteSequence.from(bookiesPath, UTF_8)));
         assertEquals(1, resp.getCount());
     }
 
     private static void assertLedgersPath(Client client, String scope) throws Exception {
         String ledgersPath = getLedgersPath(scope);
         GetResponse resp = msResult(
-            client.getKVClient().get(ByteSequence.fromString(ledgersPath)));
+            client.getKVClient().get(ByteSequence.from(ledgersPath, UTF_8)));
         assertEquals(1, resp.getCount());
     }
 
     private static void assertBucketsPath(Client client, String scope) throws Exception {
         String bucketsPath = getBucketsPath(scope);
         GetResponse resp = msResult(
-            client.getKVClient().get(ByteSequence.fromString(bucketsPath)));
+            client.getKVClient().get(ByteSequence.from(bucketsPath, UTF_8)));
         assertEquals(1, resp.getCount());
     }
 
     private static void assertUnderreplicationPath(Client client, String scope) throws Exception {
         String urPath = getUnderreplicationPath(scope);
         GetResponse resp = msResult(
-            client.getKVClient().get(ByteSequence.fromString(urPath)));
+            client.getKVClient().get(ByteSequence.from(urPath, UTF_8)));
         assertEquals(1, resp.getCount());
     }
 
@@ -331,9 +333,9 @@ public class EtcdClusterTest extends EtcdTestBase {
     private static void assertClusterNotExists(Client client, String scope) throws Exception {
         GetResponse response = msResult(
             client.getKVClient().get(
-                ByteSequence.fromString(scope),
+                ByteSequence.from(scope, UTF_8),
                 GetOption.newBuilder()
-                    .withRange(ByteSequence.fromString(getScopeEndKey(scope)))
+                    .withRange(ByteSequence.from(getScopeEndKey(scope), UTF_8))
                     .build()));
         assertEquals(0, response.getCount());
     }

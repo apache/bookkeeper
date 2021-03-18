@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.junit.Test;
 
 /**
@@ -128,7 +128,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
             assertEquals(NUM_ENTRIES - 1, wh.getLastAddPushed());
             assertEquals(-1, wh.getLastAddConfirmed());
 
-            BookieSocketAddress bookieAddress = wh.getLedgerMetadata().getEnsembleAt(wh.getLastAddPushed()).get(0);
+            BookieId bookieAddress = wh.getLedgerMetadata().getEnsembleAt(wh.getLastAddPushed()).get(0);
             killBookie(bookieAddress);
 
             // write should succeed (we still have 2 bookies out of 3)
@@ -162,7 +162,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
             assertEquals(-1, wh.getLastAddConfirmed());
 
             // one bookie will stop sending acks for forceLedger
-            BookieSocketAddress bookieAddress = wh.getLedgerMetadata().getEnsembleAt(wh.getLastAddPushed()).get(0);
+            BookieId bookieAddress = wh.getLedgerMetadata().getEnsembleAt(wh.getLastAddPushed()).get(0);
             suspendBookieForceLedgerAcks(bookieAddress);
 
             // start and complete a force, lastAddConfirmed cannot be "lastAddPushedAfterSuspendedWrite"

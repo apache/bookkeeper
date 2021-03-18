@@ -20,7 +20,7 @@
   <parent>
     <artifactId>distributedlog</artifactId>
     <groupId>org.apache.distributedlog</groupId>
-    <version>4.12.0-SNAPSHOT</version>
+    <version>4.14.0-SNAPSHOT</version>
     <relativePath>../..</relativePath>
   </parent>
   <groupId>org.apache.distributedlog</groupId>
@@ -58,6 +58,18 @@
       <version>${project.parent.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+       <!-- needed by ZooKeeper server -->
+       <groupId>org.xerial.snappy</groupId>
+       <artifactId>snappy-java</artifactId>
+       <scope>test</scope>
+    </dependency>
+    <dependency>
+        <!-- needed by ZooKeeper server -->
+       <groupId>io.dropwizard.metrics</groupId>
+       <artifactId>metrics-core</artifactId>
+       <scope>test</scope>
     </dependency>
   </dependencies>
   <build>

@@ -13,7 +13,7 @@ Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve
 Just like running a BookKeeper cluster in one machine(http://bookkeeper.apache.org/docs/latest/getting-started/run-locally/), you can run a standalone BookKeeper in one docker container, the command is:
 ```
 docker run -it \
-     --env JAVA_HOME=/usr/lib/jvm/jre-1.8.0 \
+     --env JAVA_HOME=/usr/lib/jvm/java-11 \
      --entrypoint "/bin/bash" \
      apache/bookkeeper \
      -c "/opt/bookkeeper/bin/bookkeeper localbookie 3"
@@ -131,7 +131,7 @@ docker run -it\
 ```
 And so on for "bookie2" and "bookie3". We have now our fully functional ensemble, ready to accept clients.
 
-In order to play with our freshly created ensemble, you can use the simple application taken from [Bookkeeper Tutorial](http://bookkeeper.apache.org/docs/master/bookkeeperTutorial.html) and packaged in a [docker image](https://github.com/caiok/bookkeeper-tutorial) for convenience.
+In order to play with our freshly created ensemble, you can use the simple application taken from [Bookkeeper Tutorial](https://github.com/ivankelly/bookkeeper-tutorial) and packaged in a [docker image](https://github.com/caiok/bookkeeper-tutorial) for convenience.
 
 This application check if it can be leader, if yes start to roll a dice and book this rolls on Bookkeeper, otherwise it will start to follow the leader rolls. If leader stops, follower will try to become leader and so on.
 
@@ -217,7 +217,7 @@ This variable allows you to specify where to store data in docker instance.
 
 This could be override by env vars "BK_journalDirectory", "BK_ledgerDirectories", "BK_indexDirectories"  and also `journalDirectory`, `ledgerDirectories`, `indexDirectories` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
 
-Default value is "/data/bookkeeper", which contains volumes `/data/bookkeeper/journal`, `/data/bookkeeper/ledger` and `/data/bookkeeper/index` to hold Bookkeeper data in docker.
+Default value is "/data/bookkeeper", which contains volumes `/data/bookkeeper/journal`, `/data/bookkeeper/ledgers` and `/data/bookkeeper/index` to hold Bookkeeper data in docker.
 
 
 ### Configure files under /opt/bookkeeper/conf

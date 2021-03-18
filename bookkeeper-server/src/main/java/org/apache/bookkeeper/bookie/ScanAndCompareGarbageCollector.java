@@ -44,7 +44,7 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -79,7 +79,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
     private final LedgerManager ledgerManager;
     private final CompactableLedgerStorage ledgerStorage;
     private final ServerConfiguration conf;
-    private final BookieSocketAddress selfBookieAddress;
+    private final BookieId selfBookieAddress;
     private ZooKeeper zk = null;
     private boolean enableGcOverReplicatedLedger;
     private final long gcOverReplicatedLedgerIntervalMillis;
@@ -94,7 +94,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         this.ledgerManager = ledgerManager;
         this.ledgerStorage = ledgerStorage;
         this.conf = conf;
-        this.selfBookieAddress = Bookie.getBookieAddress(conf);
+        this.selfBookieAddress = Bookie.getBookieId(conf);
         this.gcOverReplicatedLedgerIntervalMillis = conf.getGcOverreplicatedLedgerWaitTimeMillis();
         this.lastOverReplicatedLedgerGcTimeMillis = System.currentTimeMillis();
         if (gcOverReplicatedLedgerIntervalMillis > 0) {
@@ -256,9 +256,9 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                                     if (!metadata.getValue().isClosed()) {
                                         return;
                                     }
-                                    SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles =
+                                    SortedMap<Long, ? extends List<BookieId>> ensembles =
                                         metadata.getValue().getAllEnsembles();
-                                    for (List<BookieSocketAddress> ensemble : ensembles.values()) {
+                                    for (List<BookieId> ensemble : ensembles.values()) {
                                         // check if this bookie is supposed to have this ledger
                                         if (ensemble.contains(selfBookieAddress)) {
                                             return;

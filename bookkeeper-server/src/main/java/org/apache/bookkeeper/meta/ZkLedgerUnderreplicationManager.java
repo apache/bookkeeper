@@ -164,7 +164,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             // if we cant get the address, ignore. it's optional
             // in the data structure in any case
         }
-        return TextFormat.printToString(lockDataBuilder.build()).getBytes(UTF_8);
+        return lockDataBuilder.build().toString().getBytes(UTF_8);
     }
 
     private void checkLayout()
@@ -182,7 +182,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 LedgerRereplicationLayoutFormat.Builder builder = LedgerRereplicationLayoutFormat.newBuilder();
                 builder.setType(LAYOUT).setVersion(LAYOUT_VERSION);
                 try {
-                    zkc.create(layoutZNode, TextFormat.printToString(builder.build()).getBytes(UTF_8),
+                    zkc.create(layoutZNode, builder.build().toString().getBytes(UTF_8),
                                zkAcls, CreateMode.PERSISTENT);
                 } catch (KeeperException.NodeExistsException nne) {
                     // someone else managed to create it
@@ -310,7 +310,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             builder.setCtime(System.currentTimeMillis());
         }
         missingReplicas.forEach(builder::addReplica);
-        final byte[] urLedgerData = TextFormat.printToString(builder.build()).getBytes(UTF_8);
+        final byte[] urLedgerData = builder.build().toString().getBytes(UTF_8);
         ZkUtils.asyncCreateFullPathOptimistic(
             zkc, znode, urLedgerData, zkAcls, CreateMode.PERSISTENT,
             (rc, path, ctx, name) -> {
@@ -361,7 +361,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 if (conf.getStoreSystemTimeAsLedgerUnderreplicatedMarkTime()) {
                     builder.setCtime(System.currentTimeMillis());
                 }
-                final byte[] newUrLedgerData = TextFormat.printToString(builder.build()).getBytes(UTF_8);
+                final byte[] newUrLedgerData = builder.build().toString().getBytes(UTF_8);
                 zkc.setData(znode, newUrLedgerData, getStat.getVersion(), (setRc, setPath, setCtx, setStat) -> {
                     if (Code.OK.intValue() == setRc) {
                         FutureUtils.complete(finalFuture, null);
@@ -588,13 +588,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             Watcher w = new Watcher() {
                 @Override
                 public void process(WatchedEvent e) {
-                    if (e.getType() == Watcher.Event.EventType.NodeChildrenChanged
-                            || e.getType() == Watcher.Event.EventType.NodeDeleted
-                            || e.getType() == Watcher.Event.EventType.NodeCreated
-                            || e.getState() == Watcher.Event.KeeperState.Expired
-                            || e.getState() == Watcher.Event.KeeperState.Disconnected) {
-                        changedLatch.countDown();
-                    }
+                    LOG.info("Latch countdown due to ZK event: " + e);
+                    changedLatch.countDown();
                 }
             };
             try (SubTreeCache.WatchGuard wg = subTreeCache.registerWatcherWithGuard(w)) {
@@ -810,6 +805,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         } catch (KeeperException.NodeExistsException ke) {
             LOG.info("lostBookieRecoveryDelay Znode is already present, so using "
                     + "existing lostBookieRecoveryDelay Znode value");
+            return false;
+        } catch (KeeperException.NoNodeException nne) {
+            LOG.error("lostBookieRecoveryDelay Znode not found. Please verify if Auditor has been initialized.", nne);
             return false;
         } catch (KeeperException ke) {
             LOG.error("Error while initializing LostBookieRecoveryDelay", ke);

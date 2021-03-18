@@ -51,6 +51,7 @@ public class ZKMetadataClientDriver
     ClientConfiguration clientConf;
     ScheduledExecutorService scheduler;
     RegistrationClient regClient;
+    boolean bookieAddressTracking = true;
 
     @Override
     public synchronized MetadataClientDriver initialize(ClientConfiguration conf,
@@ -70,6 +71,7 @@ public class ZKMetadataClientDriver
         this.statsLogger = statsLogger;
         this.clientConf = conf;
         this.scheduler = scheduler;
+        this.bookieAddressTracking = conf.getEnableBookieAddressTracking();
         return this;
     }
 
@@ -79,7 +81,8 @@ public class ZKMetadataClientDriver
             regClient = new ZKRegistrationClient(
                 zk,
                 ledgersRootPath,
-                scheduler);
+                scheduler,
+                bookieAddressTracking);
         }
         return regClient;
     }

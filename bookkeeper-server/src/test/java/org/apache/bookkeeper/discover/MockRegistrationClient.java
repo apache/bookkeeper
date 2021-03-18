@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 
@@ -38,9 +38,9 @@ import org.apache.bookkeeper.versioning.Versioned;
 public class MockRegistrationClient implements RegistrationClient {
     final ExecutorService executor;
     private long currentVersion = 0;
-    private Set<BookieSocketAddress> bookies = new HashSet<BookieSocketAddress>();
-    private Set<BookieSocketAddress> allBookies = new HashSet<BookieSocketAddress>();
-    private Set<BookieSocketAddress> readOnlyBookies = new HashSet<BookieSocketAddress>();
+    private Set<BookieId> bookies = new HashSet<BookieId>();
+    private Set<BookieId> allBookies = new HashSet<BookieId>();
+    private Set<BookieId> readOnlyBookies = new HashSet<BookieId>();
     private Set<RegistrationListener> bookieWatchers = new HashSet<RegistrationListener>();
     private Set<RegistrationListener> readOnlyBookieWatchers = new HashSet<RegistrationListener>();
 
@@ -53,11 +53,11 @@ public class MockRegistrationClient implements RegistrationClient {
         executor.shutdownNow();
     }
 
-    private static Versioned<Set<BookieSocketAddress>> versioned(Set<BookieSocketAddress> bookies, long version) {
+    private static Versioned<Set<BookieId>> versioned(Set<BookieId> bookies, long version) {
         return new Versioned<>(Collections.unmodifiableSet(bookies), new LongVersion(version));
     }
 
-    public CompletableFuture<Void> addBookies(BookieSocketAddress... bookies) {
+    public CompletableFuture<Void> addBookies(BookieId... bookies) {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
@@ -68,7 +68,7 @@ public class MockRegistrationClient implements RegistrationClient {
         return promise;
     }
 
-    public CompletableFuture<Void> removeBookies(BookieSocketAddress... bookies) {
+    public CompletableFuture<Void> removeBookies(BookieId... bookies) {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
@@ -79,7 +79,7 @@ public class MockRegistrationClient implements RegistrationClient {
         return promise;
     }
 
-    public CompletableFuture<Void> addReadOnlyBookies(BookieSocketAddress... bookies) {
+    public CompletableFuture<Void> addReadOnlyBookies(BookieId... bookies) {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
@@ -90,7 +90,7 @@ public class MockRegistrationClient implements RegistrationClient {
         return promise;
     }
 
-    public CompletableFuture<Void> removeReadOnlyBookies(BookieSocketAddress... bookies) {
+    public CompletableFuture<Void> removeReadOnlyBookies(BookieId... bookies) {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
@@ -102,22 +102,22 @@ public class MockRegistrationClient implements RegistrationClient {
     }
 
     @Override
-    public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getWritableBookies() {
-        CompletableFuture<Versioned<Set<BookieSocketAddress>>> promise = new CompletableFuture<>();
+    public CompletableFuture<Versioned<Set<BookieId>>> getWritableBookies() {
+        CompletableFuture<Versioned<Set<BookieId>>> promise = new CompletableFuture<>();
         executor.submit(() -> promise.complete(versioned(bookies, currentVersion)));
         return promise;
     }
 
     @Override
-    public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getAllBookies() {
-        CompletableFuture<Versioned<Set<BookieSocketAddress>>> promise = new CompletableFuture<>();
+    public CompletableFuture<Versioned<Set<BookieId>>> getAllBookies() {
+        CompletableFuture<Versioned<Set<BookieId>>> promise = new CompletableFuture<>();
         executor.submit(() -> promise.complete(versioned(allBookies, currentVersion)));
         return promise;
     }
 
     @Override
-    public CompletableFuture<Versioned<Set<BookieSocketAddress>>> getReadOnlyBookies() {
-        CompletableFuture<Versioned<Set<BookieSocketAddress>>> promise = new CompletableFuture<>();
+    public CompletableFuture<Versioned<Set<BookieId>>> getReadOnlyBookies() {
+        CompletableFuture<Versioned<Set<BookieId>>> promise = new CompletableFuture<>();
         executor.submit(() -> promise.complete(versioned(readOnlyBookies, currentVersion)));
         return promise;
     }

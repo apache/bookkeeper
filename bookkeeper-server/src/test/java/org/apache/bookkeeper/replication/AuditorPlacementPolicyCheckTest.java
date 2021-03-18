@@ -50,6 +50,7 @@ import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorPeriodicCheckTest.TestAuditor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -100,7 +101,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     @Test
     public void testPlacementPolicyCheckWithBookiesFromDifferentRacks() throws Exception {
         int numOfBookies = 5;
-        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
+        List<BookieId> bookieAddresses = new ArrayList<>();
         BookieSocketAddress bookieAddress;
         RegistrationManager regManager = driver.getRegistrationManager();
 
@@ -108,8 +109,8 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         for (int i = 0; i < numOfBookies; i++) {
             bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
             StaticDNSResolver.addNodeToRack(bookieAddress.getHostName(), "/rack" + (i));
-            bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
+            bookieAddresses.add(bookieAddress.toBookieId());
+            regManager.registerBookie(bookieAddress.toBookieId(), false, BookieServiceInfo.EMPTY);
         }
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
@@ -122,6 +123,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
 
         // closed ledger
         LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(1L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -138,6 +140,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         ensembleSize = 4;
         // closed ledger with multiple segments
         initMeta = LedgerMetadataBuilder.create()
+                .withId(2L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -155,6 +158,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         Collections.shuffle(bookieAddresses);
         // non-closed ledger
         initMeta = LedgerMetadataBuilder.create()
+                .withId(3L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -167,6 +171,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         Collections.shuffle(bookieAddresses);
         // non-closed ledger with multiple segments
         initMeta = LedgerMetadataBuilder.create()
+                .withId(4L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -212,21 +217,21 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     public void testPlacementPolicyCheckWithLedgersNotAdheringToPlacementPolicy() throws Exception {
         int numOfBookies = 5;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
-        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
+        List<BookieId> bookieAddresses = new ArrayList<>();
         RegistrationManager regManager = driver.getRegistrationManager();
 
         for (int i = 0; i < numOfBookies; i++) {
-            BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
             bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
+            regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
         }
 
         // only three racks
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(0).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(1).getHostName(), "/rack2");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(2).getHostName(), "/rack3");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(3).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(4).getHostName(), "/rack2");
+        StaticDNSResolver.addNodeToRack("98.98.98.0", "/rack1");
+        StaticDNSResolver.addNodeToRack("98.98.98.1", "/rack2");
+        StaticDNSResolver.addNodeToRack("98.98.98.2", "/rack3");
+        StaticDNSResolver.addNodeToRack("98.98.98.3", "/rack1");
+        StaticDNSResolver.addNodeToRack("98.98.98.4", "/rack2");
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
@@ -240,6 +245,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * 3 racks, and the ensembleSize is 5.
          */
         LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(1L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -258,6 +264,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * adhering to placement policy
          */
         initMeta = LedgerMetadataBuilder.create()
+                .withId(2L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -307,13 +314,13 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          */
         int underreplicatedLedgerRecoveryGracePeriod = timeElapsed ? 1 : 1000;
         int numOfURLedgersElapsedRecoveryGracePeriod = 0;
-        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
+        List<BookieId> bookieAddresses = new ArrayList<BookieId>();
         RegistrationManager regManager = driver.getRegistrationManager();
 
         for (int i = 0; i < numOfBookies; i++) {
-            BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
             bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
+            regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
         }
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
@@ -325,6 +332,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
 
         long ledgerId1 = 1L;
         LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(ledgerId1)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -348,6 +356,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         ensembleSize = 3;
         long ledgerId2 = 21234561L;
         initMeta = LedgerMetadataBuilder.create()
+                .withId(ledgerId2)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -369,6 +378,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          */
         long ledgerId3 = 31234561L;
         initMeta = LedgerMetadataBuilder.create()
+                .withId(ledgerId3)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -423,23 +433,23 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     public void testPlacementPolicyCheckWithLedgersNotAdheringToPolicyWithMultipleSegments() throws Exception {
         int numOfBookies = 7;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
-        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
+        List<BookieId> bookieAddresses = new ArrayList<>();
         RegistrationManager regManager = driver.getRegistrationManager();
 
         for (int i = 0; i < numOfBookies; i++) {
-            BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
             bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
+            regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
         }
 
         // only three racks
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(0).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(1).getHostName(), "/rack2");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(2).getHostName(), "/rack3");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(3).getHostName(), "/rack4");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(4).getHostName(), "/rack1");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(5).getHostName(), "/rack2");
-        StaticDNSResolver.addNodeToRack(bookieAddresses.get(6).getHostName(), "/rack3");
+        StaticDNSResolver.addNodeToRack("98.98.98.0", "/rack1");
+        StaticDNSResolver.addNodeToRack("98.98.98.1", "/rack2");
+        StaticDNSResolver.addNodeToRack("98.98.98.2", "/rack3");
+        StaticDNSResolver.addNodeToRack("98.98.98.3", "/rack4");
+        StaticDNSResolver.addNodeToRack("98.98.98.4", "/rack1");
+        StaticDNSResolver.addNodeToRack("98.98.98.5", "/rack2");
+        StaticDNSResolver.addNodeToRack("98.98.98.6", "/rack3");
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
@@ -454,6 +464,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * counted as ledgers not adhering to placement policy.
          */
         LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(1L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -480,6 +491,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * policy, it should be counted as single ledger.
          */
         initMeta = LedgerMetadataBuilder.create()
+                .withId(2L)
                 .withEnsembleSize(ensembleSize)
                 .withWriteQuorumSize(writeQuorumSize)
                 .withAckQuorumSize(ackQuorumSize)
@@ -526,7 +538,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         int numOfBookies = 6;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
         int numOfLedgersSoftlyAdheringToPlacementPolicy = 0;
-        List<BookieSocketAddress> bookieAddresses = new ArrayList<BookieSocketAddress>();
+        List<BookieId> bookieAddresses = new ArrayList<BookieId>();
         RegistrationManager regManager = driver.getRegistrationManager();
 
         /*
@@ -534,8 +546,8 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          */
         for (int i = 0; i < numOfBookies; i++) {
             BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
-            bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress.toString(), false, BookieServiceInfo.EMPTY);
+            bookieAddresses.add(bookieAddress.toBookieId());
+            regManager.registerBookie(bookieAddress.toBookieId(), false, BookieServiceInfo.EMPTY);
             String zone = "/zone" + (i % 3);
             String upgradeDomain = "/ud" + (i % 2);
             String networkLocation = zone + upgradeDomain;
@@ -555,6 +567,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * ensemble is spread across 3 zones and 2 UDs
          */
         LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(1L)
                 .withEnsembleSize(6)
                 .withWriteQuorumSize(6)
                 .withAckQuorumSize(2)
@@ -573,6 +586,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * this shouldn't be reported
          */
         initMeta = LedgerMetadataBuilder.create()
+                .withId(2L)
                 .withEnsembleSize(6)
                 .withWriteQuorumSize(5)
                 .withAckQuorumSize(2)
@@ -587,6 +601,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * this ledger is not adhering to placement policy.
          */
         initMeta = LedgerMetadataBuilder.create()
+                .withId(3L)
                 .withEnsembleSize(6)
                 .withWriteQuorumSize(5)
                 .withAckQuorumSize(2)
@@ -605,12 +620,13 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
          * ensemble/writeQuorum of size 4 has spread across just
          * minNumZonesPerWriteQuorum (2).
          */
-        List<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>();
+        List<BookieId> newEnsemble = new ArrayList<BookieId>();
         newEnsemble.add(bookieAddresses.get(0));
         newEnsemble.add(bookieAddresses.get(1));
         newEnsemble.add(bookieAddresses.get(3));
         newEnsemble.add(bookieAddresses.get(4));
         initMeta = LedgerMetadataBuilder.create()
+                .withId(4L)
                 .withEnsembleSize(4)
                 .withWriteQuorumSize(4)
                 .withAckQuorumSize(2)
@@ -671,7 +687,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         TestOpStatsLogger placementPolicyCheckStatsLogger = (TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
 
-        final TestAuditor auditor = new TestAuditor(Bookie.getBookieAddress(servConf).toString(), servConf,
+        final TestAuditor auditor = new TestAuditor(Bookie.getBookieId(servConf).toString(), servConf,
                 statsLogger);
         auditorRef.setValue(auditor);
         CountDownLatch latch = auditor.getLatch();

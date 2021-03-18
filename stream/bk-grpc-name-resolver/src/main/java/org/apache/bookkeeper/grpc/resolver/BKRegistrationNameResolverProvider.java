@@ -36,6 +36,13 @@ import org.apache.bookkeeper.meta.MetadataDrivers;
  * An implementation of {@link NameResolverProvider} that provides {@link io.grpc.NameResolver}s
  * to resolve servers registered using bookkeeper registration library.
  */
+@SuppressWarnings("deprecation")
+// One experimental API (ManagedChannelBuilder.nameResolverFactory)
+// is deprecated in favor of another experimental API (NameResolverRegistry).
+// https://github.com/grpc/grpc-java/issues/1770
+// https://github.com/grpc/grpc-java/issues/7133#issuecomment-680981331
+// Skipping the migration for now, will have to deal with this later when GRPC team
+// finalizes their API.
 @Slf4j
 public class BKRegistrationNameResolverProvider extends NameResolverFactoryProvider {
 

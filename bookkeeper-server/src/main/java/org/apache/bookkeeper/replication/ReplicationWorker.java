@@ -61,7 +61,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -468,10 +468,10 @@ public class ReplicationWorker implements Runnable {
             return false;
         }
 
-        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = admin.getLedgerMetadata(lh).getAllEnsembles();
-        List<BookieSocketAddress> finalEnsemble = ensembles.get(ensembles.lastKey());
-        Collection<BookieSocketAddress> available = admin.getAvailableBookies();
-        for (BookieSocketAddress b : finalEnsemble) {
+        SortedMap<Long, ? extends List<BookieId>> ensembles = admin.getLedgerMetadata(lh).getAllEnsembles();
+        List<BookieId> finalEnsemble = ensembles.get(ensembles.lastKey());
+        Collection<BookieId> available = admin.getAvailableBookies();
+        for (BookieId b : finalEnsemble) {
             if (!available.contains(b)) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Bookie {} is missing from the list of Available Bookies. ledger {}:ensemble {}.",

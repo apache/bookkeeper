@@ -20,12 +20,17 @@
 name: TLS Tests
 
 on:
+  push:
   pull_request:
     branches:
       - master
+      - branch-*
     paths-ignore:
       - 'site/**'
+    workflow_dispatch:
 
+env:
+  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
 
 jobs:
   test:
@@ -43,4 +48,4 @@ jobs:
         with:
           java-version: 1.8
       - name: Run tls tests
-        run: mvn -B -am -nsu -pl bookkeeper-server clean install test -Dtest="org.apache.bookkeeper.tls.**" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=ERROR
+        run: mvn -B -am -nsu -pl bookkeeper-server clean install test -Dtest="org.apache.bookkeeper.tls.**" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO

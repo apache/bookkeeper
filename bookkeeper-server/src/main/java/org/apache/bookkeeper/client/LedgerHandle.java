@@ -76,7 +76,7 @@ import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.Counter;
@@ -120,7 +120,7 @@ public class LedgerHandle implements WriteHandle {
 
      /**
       * Next entryId which is expected to move forward during {@link #sendAddSuccessCallbacks() }. This is important
-      * in order to have an ordered sequence of addEntry ackknowledged to the writer
+      * in order to have an ordered sequence of addEntry acknowledged to the writer
       */
     volatile long pendingAddsSequenceHead;
 
@@ -140,15 +140,15 @@ public class LedgerHandle implements WriteHandle {
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
-    final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
+    final LoadingCache<BookieId, Long> bookieFailureHistory;
     final BookiesHealthInfo bookiesHealthInfo;
     final EnumSet<WriteFlag> writeFlags;
 
     ScheduledFuture<?> timeoutFuture = null;
 
     @VisibleForTesting
-    final Map<Integer, BookieSocketAddress> delayedWriteFailedBookies =
-        new HashMap<Integer, BookieSocketAddress>();
+    final Map<Integer, BookieId> delayedWriteFailedBookies =
+        new HashMap<Integer, BookieId>();
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -222,21 +222,21 @@ public class LedgerHandle implements WriteHandle {
                 metadata.getEnsembleSize());
         this.bookieFailureHistory = CacheBuilder.newBuilder()
             .expireAfterWrite(clientCtx.getConf().bookieFailureHistoryExpirationMSec, TimeUnit.MILLISECONDS)
-            .build(new CacheLoader<BookieSocketAddress, Long>() {
+            .build(new CacheLoader<BookieId, Long>() {
             @Override
-            public Long load(BookieSocketAddress key) {
+            public Long load(BookieId key) {
                 return -1L;
             }
         });
         this.bookiesHealthInfo = new BookiesHealthInfo() {
             @Override
-            public long getBookieFailureHistory(BookieSocketAddress bookieSocketAddress) {
+            public long getBookieFailureHistory(BookieId bookieSocketAddress) {
                 Long lastFailure = bookieFailureHistory.getIfPresent(bookieSocketAddress);
                 return lastFailure == null ? -1L : lastFailure;
             }
 
             @Override
-            public long getBookiePendingRequests(BookieSocketAddress bookieSocketAddress) {
+            public long getBookiePendingRequests(BookieId bookieSocketAddress) {
                 return clientCtx.getBookieClient().getNumPendingRequests(bookieSocketAddress, ledgerId);
             }
         };
@@ -403,9 +403,9 @@ public class LedgerHandle implements WriteHandle {
      * @return count of unique bookies
      */
     public synchronized long getNumBookies() {
-        Map<Long, ? extends List<BookieSocketAddress>> m = getLedgerMetadata().getAllEnsembles();
-        Set<BookieSocketAddress> s = Sets.newHashSet();
-        for (List<BookieSocketAddress> aList : m.values()) {
+        Map<Long, ? extends List<BookieId>> m = getLedgerMetadata().getAllEnsembles();
+        Set<BookieId> s = Sets.newHashSet();
+        for (List<BookieId> aList : m.values()) {
             s.addAll(aList);
         }
         return s.size();
@@ -1212,7 +1212,7 @@ public class LedgerHandle implements WriteHandle {
         doAsyncAddEntry(op);
     }
 
-    private boolean isWritesetWritable(DistributionSchedule.WriteSet writeSet,
+    private boolean isWriteSetWritable(DistributionSchedule.WriteSet writeSet,
                                        long key, int allowedNonWritableCount) {
         if (allowedNonWritableCount < 0) {
             allowedNonWritableCount = 0;
@@ -1222,7 +1222,7 @@ public class LedgerHandle implements WriteHandle {
         final int requiredWritable = sz - allowedNonWritableCount;
 
         int nonWritableCount = 0;
-        List<BookieSocketAddress> currentEnsemble = getCurrentEnsemble();
+        List<BookieId> currentEnsemble = getCurrentEnsemble();
         for (int i = 0; i < sz; i++) {
             if (!clientCtx.getBookieClient().isWritable(currentEnsemble.get(i), key)) {
                 nonWritableCount++;
@@ -1246,14 +1246,14 @@ public class LedgerHandle implements WriteHandle {
         }
 
         final long startTime = MathUtils.nowInNano();
-        boolean success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
+        boolean success = isWriteSetWritable(writeSet, key, allowedNonWritableCount);
 
         if (!success && durationMs > 0) {
             int backoff = 1;
             final int maxBackoff = 4;
             final long deadline = startTime + TimeUnit.MILLISECONDS.toNanos(durationMs);
 
-            while (!isWritesetWritable(writeSet, key, allowedNonWritableCount)) {
+            while (!isWriteSetWritable(writeSet, key, allowedNonWritableCount)) {
                 if (MathUtils.nowInNano() < deadline) {
                     long maxSleep = MathUtils.elapsedMSec(startTime);
                     if (maxSleep < 0) {
@@ -1265,7 +1265,7 @@ public class LedgerHandle implements WriteHandle {
                         TimeUnit.MILLISECONDS.sleep(sleepMs);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
+                        success = isWriteSetWritable(writeSet, key, allowedNonWritableCount);
                         break;
                     }
                     if (backoff <= maxBackoff) {
@@ -1383,6 +1383,15 @@ public class LedgerHandle implements WriteHandle {
      */
 
     public void asyncReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        if (clientCtx.getConf().useV2WireProtocol) {
+            // in v2 protocol we don't support readLAC RPC
+            asyncReadPiggybackLastConfirmed(cb, ctx);
+        } else {
+            asyncReadExplicitLastConfirmed(cb, ctx);
+        }
+    }
+
+    private void asyncReadPiggybackLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
         boolean isClosed;
         long lastEntryId;
         synchronized (this) {
@@ -1830,7 +1839,7 @@ public class LedgerHandle implements WriteHandle {
         return !delayedWriteFailedBookies.isEmpty();
     }
 
-    void notifyWriteFailed(int index, BookieSocketAddress addr) {
+    void notifyWriteFailed(int index, BookieId addr) {
         synchronized (metadataLock) {
             delayedWriteFailedBookies.put(index, addr);
         }
@@ -1841,7 +1850,7 @@ public class LedgerHandle implements WriteHandle {
             if (delayedWriteFailedBookies.isEmpty()) {
                 return;
             }
-            Map<Integer, BookieSocketAddress> toReplace = new HashMap<>(delayedWriteFailedBookies);
+            Map<Integer, BookieId> toReplace = new HashMap<>(delayedWriteFailedBookies);
             delayedWriteFailedBookies.clear();
 
             // Original intent of this change is to do a best-effort ensemble change.
@@ -1852,7 +1861,7 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
-    void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
+    void handleBookieFailure(final Map<Integer, BookieId> failedBookies) {
         if (clientCtx.getConf().disableEnsembleChangeFeature.isAvailable()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
@@ -1874,8 +1883,8 @@ public class LedgerHandle implements WriteHandle {
 
 
         boolean triggerLoop = false;
-        Map<Integer, BookieSocketAddress> toReplace = null;
-        List<BookieSocketAddress> origEnsemble = null;
+        Map<Integer, BookieId> toReplace = null;
+        List<BookieId> origEnsemble = null;
         synchronized (metadataLock) {
             if (changingEnsemble) {
                 delayedWriteFailedBookies.putAll(failedBookies);
@@ -1895,7 +1904,7 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
-    void ensembleChangeLoop(List<BookieSocketAddress> origEnsemble, Map<Integer, BookieSocketAddress> failedBookies) {
+    void ensembleChangeLoop(List<BookieId> origEnsemble, Map<Integer, BookieId> failedBookies) {
         int ensembleChangeId = numEnsembleChanges.incrementAndGet();
         String logContext = String.format("[EnsembleChange(ledger:%d, change-id:%010d)]", ledgerId, ensembleChangeId);
 
@@ -1922,8 +1931,8 @@ public class LedgerHandle implements WriteHandle {
                 (metadata) -> {
                     attempts.incrementAndGet();
 
-                    List<BookieSocketAddress> currentEnsemble = getCurrentEnsemble();
-                    List<BookieSocketAddress> newEnsemble = EnsembleUtils.replaceBookiesInEnsemble(
+                    List<BookieId> currentEnsemble = getCurrentEnsemble();
+                    List<BookieId> newEnsemble = EnsembleUtils.replaceBookiesInEnsemble(
                             clientCtx.getBookieWatcher(), metadata, currentEnsemble, failedBookies, logContext);
                     Long lastEnsembleKey = LedgerMetadataUtils.getLastEnsembleKey(metadata);
                     LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);
@@ -1964,11 +1973,11 @@ public class LedgerHandle implements WriteHandle {
                             LOG.debug("{}[attempt:{}] Success updating metadata.", logContext, attempts.get());
                         }
 
-                        List<BookieSocketAddress> newEnsemble = null;
+                        List<BookieId> newEnsemble = null;
                         Set<Integer> replaced = null;
                         synchronized (metadataLock) {
                             if (!delayedWriteFailedBookies.isEmpty()) {
-                                Map<Integer, BookieSocketAddress> toReplace = new HashMap<>(delayedWriteFailedBookies);
+                                Map<Integer, BookieId> toReplace = new HashMap<>(delayedWriteFailedBookies);
                                 delayedWriteFailedBookies.clear();
 
                                 ensembleChangeLoop(origEnsemble, toReplace);
@@ -1987,7 +1996,7 @@ public class LedgerHandle implements WriteHandle {
             }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
     }
 
-    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble, final Set<Integer> bookies) {
+    void unsetSuccessAndSendWriteRequest(List<BookieId> ensemble, final Set<Integer> bookies) {
         for (PendingAddOp pendingAddOp : pendingAddOps) {
             for (Integer bookieIndex: bookies) {
                 pendingAddOp.unsetSuccessAndSendWriteRequest(ensemble, bookieIndex);
@@ -1995,7 +2004,7 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
-    void registerOperationFailureOnBookie(BookieSocketAddress bookie, long entryId) {
+    void registerOperationFailureOnBookie(BookieId bookie, long entryId) {
         if (clientCtx.getConf().enableBookieFailureTracking) {
             bookieFailureHistory.put(bookie, entryId);
         }
@@ -2026,7 +2035,7 @@ public class LedgerHandle implements WriteHandle {
      * operations themselves, to avoid adding more dependencies between the classes.
      * There are too many already.
      */
-    List<BookieSocketAddress> getCurrentEnsemble() {
+    List<BookieId> getCurrentEnsemble() {
         // Getting current ensemble from the metadata is only a temporary
         // thing until metadata is immutable. At that point, current ensemble
         // becomes a property of the LedgerHandle itself.

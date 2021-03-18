@@ -38,6 +38,7 @@ import org.apache.bookkeeper.common.conf.validators.RangeValidator;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.ConfigurationException;
@@ -89,6 +90,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
 
 
+    protected static final String FORCE_ALLOW_COMPACTION = "forceAllowCompaction";
     protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
@@ -149,6 +151,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String LISTENING_INTERFACE = "listeningInterface";
     protected static final String ALLOW_LOOPBACK = "allowLoopback";
     protected static final String ADVERTISED_ADDRESS = "advertisedAddress";
+    protected static final String BOOKIE_ID = "bookieId";
     protected static final String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
 
     protected static final String JOURNAL_DIR = "journalDirectory";
@@ -288,6 +291,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Perform local consistency check on bookie startup
     protected static final String LOCAL_CONSISTENCY_CHECK_ON_STARTUP = "localConsistencyCheckOnStartup";
+
+    // Certificate role based authorization
+    protected static final String AUTHORIZED_ROLES = "authorizedRoles";
 
     /**
      * Construct a default configuration object.
@@ -1007,6 +1013,38 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
+     /**
+     * Get the configured BookieId for the bookie.
+     *
+     * <p>If present, this setting will take precedence over the
+     * automatic BookieId generation, based on Network Addresses.
+     *
+     * @see #setBookieId(java.lang.String)
+     * @see #getAdvertisedAddress()
+     * @return the configure address to be advertised
+     */
+    public String getBookieId() {
+        return this.getString(BOOKIE_ID, null);
+    }
+
+    /**
+     * Configure the bookie to advertise a specific BookieId.
+     *
+     * <p>By default, a bookie will advertise a BookieId computed
+     * from the primary network endpoint addresss.
+     *
+     * @see #getBookieId()
+     * @see #setAdvertisedAddress(java.lang.String)
+     * @param bookieId the bookie id
+     *
+     * @return server configuration
+     */
+    public ServerConfiguration setBookieId(String bookieId) {
+        BookieId.parse(bookieId);
+        this.setProperty(BOOKIE_ID, bookieId);
+        return this;
+    }
+
     /**
      * Get the configured advertised address for the bookie.
      *
@@ -1412,6 +1450,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setStatisticsEnabled(boolean enabled) {
         setProperty(ENABLE_STATISTICS, Boolean.toString(enabled));
         return this;
+    }
+
+    /**
+     * Allow manually force compact the entry log or not.
+     *
+     * @param enable
+     *          whether allow manually force compact the entry log or not.
+     * @return service configuration.
+     */
+    public ServerConfiguration setForceAllowCompaction(boolean enable) {
+        setProperty(FORCE_ALLOW_COMPACTION, enable);
+        return this;
+    }
+
+    /**
+     * The force compaction is allowed or not when disabling the entry log compaction.
+     *
+     * @return the force compaction is allowed or not when disabling the entry log compaction.
+     */
+    public boolean isForceAllowCompaction() {
+        return getBoolean(FORCE_ALLOW_COMPACTION, false);
     }
 
     /**
@@ -3352,5 +3411,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public boolean isLocalConsistencyCheckOnStartup() {
         return this.getBoolean(LOCAL_CONSISTENCY_CHECK_ON_STARTUP, false);
+    }
+
+    /**
+     * Get the authorized roles.
+     *
+     * @return String array of configured auth roles.
+     */
+    public String[] getAuthorizedRoles() {
+        return getStringArray(AUTHORIZED_ROLES);
+    }
+
+    /**
+     * Set authorized roles.
+     *
+     * @return Configuration Object with roles set
+     */
+    public ServerConfiguration setAuthorizedRoles(String roles) {
+        this.setProperty(AUTHORIZED_ROLES, roles);
+        return this;
     }
 }

@@ -22,7 +22,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.List;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
@@ -54,7 +54,7 @@ class PendingReadLacOp implements ReadLacCallback {
     int lastSeenError = BKException.Code.ReadException;
     final DistributionSchedule.QuorumCoverageSet coverageSet;
     long maxLac = LedgerHandle.INVALID_ENTRY_ID;
-    final List<BookieSocketAddress> currentEnsemble;
+    final List<BookieId> currentEnsemble;
 
     /*
      * Wrapper to get Lac from the request
@@ -63,7 +63,7 @@ class PendingReadLacOp implements ReadLacCallback {
         void getLacComplete(int rc, long lac);
     }
 
-    PendingReadLacOp(LedgerHandle lh, BookieClient bookieClient, List<BookieSocketAddress> ensemble, LacCallback cb) {
+    PendingReadLacOp(LedgerHandle lh, BookieClient bookieClient, List<BookieId> ensemble, LacCallback cb) {
         this.lh = lh;
         this.bookieClient = bookieClient;
         this.cb = cb;

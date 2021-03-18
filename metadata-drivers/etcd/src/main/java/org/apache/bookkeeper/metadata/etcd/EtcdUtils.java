@@ -38,6 +38,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -103,9 +104,9 @@ final class EtcdUtils {
         return String.format("%s/%s/%s%s", scope, MEMBERS_NODE, WRITEABLE_NODE, END_SEP);
     }
 
-    static String getWritableBookiePath(String scope, String bookieId) {
+    static String getWritableBookiePath(String scope, BookieId bookieId) {
         return String.format("%s/%s/%s/%s",
-            scope, MEMBERS_NODE, WRITEABLE_NODE, bookieId);
+            scope, MEMBERS_NODE, WRITEABLE_NODE, bookieId.toString());
     }
 
     static String getReadonlyBookiesPath(String scope) {
@@ -120,17 +121,17 @@ final class EtcdUtils {
         return String.format("%s/%s/%s%s", scope, MEMBERS_NODE, READONLY_NODE, END_SEP);
     }
 
-    static String getReadonlyBookiePath(String scope, String bookieId) {
+    static String getReadonlyBookiePath(String scope, BookieId bookieId) {
         return String.format("%s/%s/%s/%s",
-            scope, MEMBERS_NODE, READONLY_NODE, bookieId);
+            scope, MEMBERS_NODE, READONLY_NODE, bookieId.toString());
     }
 
     static String getCookiesPath(String scope) {
         return String.format("%s/%s", scope, COOKIES_NODE);
     }
 
-    static String getCookiePath(String scope, String bookieId) {
-        return String.format("%s/%s/%s", scope, COOKIES_NODE, bookieId);
+    static String getCookiePath(String scope, BookieId bookieId) {
+        return String.format("%s/%s/%s", scope, COOKIES_NODE, bookieId.toString());
     }
 
     static String getClusterInstanceIdPath(String scope) {

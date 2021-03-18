@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
@@ -74,7 +73,8 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -107,12 +107,6 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     // LedgerFragmentReplicator instance
     private LedgerFragmentReplicator lfr;
-
-    /*
-     * Random number generator used to choose an available bookie server to
-     * replicate data from a dead bookie.
-     */
-    private Random rand = new Random();
 
     private LedgerManagerFactory mFactory;
 
@@ -214,7 +208,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      *
      * @return a collection of bookie addresses
      */
-    public Collection<BookieSocketAddress> getAvailableBookies()
+    public Collection<BookieId> getAvailableBookies()
             throws BKException {
         return bkc.bookieWatcher.getBookies();
     }
@@ -224,16 +218,20 @@ public class BookKeeperAdmin implements AutoCloseable {
      *
      * @return a collection of bookie addresses
      */
-    public Collection<BookieSocketAddress> getAllBookies()
+    public Collection<BookieId> getAllBookies()
             throws BKException {
         return bkc.bookieWatcher.getAllBookies();
+    }
+
+    public BookieAddressResolver getBookieAddressResolver() {
+        return bkc.bookieWatcher.getBookieAddressResolver();
     }
 
     @SneakyThrows
     public BookieServiceInfo getBookieServiceInfo(String bookiedId)
             throws BKException {
         return FutureUtils.result(bkc.getMetadataClientDriver()
-                .getRegistrationClient().getBookieServiceInfo(bookiedId)).getValue();
+                .getRegistrationClient().getBookieServiceInfo(BookieId.parse(bookiedId))).getValue();
     }
 
     /**
@@ -242,7 +240,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @return a collection of bookie addresses
      * @throws BKException if there are issues trying to read the list.
      */
-    public Collection<BookieSocketAddress> getReadOnlyBookies() throws BKException {
+    public Collection<BookieId> getReadOnlyBookies() throws BKException {
         return bkc.bookieWatcher.getReadOnlyBookies();
     }
 
@@ -479,7 +477,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 
-    public SortedMap<Long, LedgerMetadata> getLedgersContainBookies(Set<BookieSocketAddress> bookies)
+    public SortedMap<Long, LedgerMetadata> getLedgersContainBookies(Set<BookieId> bookies)
             throws InterruptedException, BKException {
         final SyncObject sync = new SyncObject();
         final AtomicReference<SortedMap<Long, LedgerMetadata>> resultHolder =
@@ -507,7 +505,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         return resultHolder.get();
     }
 
-    public void asyncGetLedgersContainBookies(final Set<BookieSocketAddress> bookies,
+    public void asyncGetLedgersContainBookies(final Set<BookieId> bookies,
                                               final GenericCallback<SortedMap<Long, LedgerMetadata>> callback) {
         final SortedMap<Long, LedgerMetadata> ledgers = new ConcurrentSkipListMap<Long, LedgerMetadata>();
         bkc.getLedgerManager().asyncProcessLedgers(new Processor<Long>() {
@@ -524,9 +522,9 @@ public class BookKeeperAdmin implements AutoCloseable {
                                 cb.processResult(BKException.getExceptionCode(exception), null, null);
                                 return;
                             }
-                            Set<BookieSocketAddress> bookiesInLedger =
+                            Set<BookieId> bookiesInLedger =
                                 LedgerMetadataUtils.getBookiesInThisLedger(metadata.getValue());
-                            Sets.SetView<BookieSocketAddress> intersection =
+                            Sets.SetView<BookieId> intersection =
                                 Sets.intersection(bookiesInLedger, bookies);
                             if (!intersection.isEmpty()) {
                                 ledgers.put(lid, metadata.getValue());
@@ -557,18 +555,18 @@ public class BookKeeperAdmin implements AutoCloseable {
      *            Source bookie that had a failure. We want to replicate the
      *            ledger fragments that were stored there.
      */
-    public void recoverBookieData(final BookieSocketAddress bookieSrc)
+    public void recoverBookieData(final BookieId bookieSrc)
             throws InterruptedException, BKException {
-        Set<BookieSocketAddress> bookiesSrc = Sets.newHashSet(bookieSrc);
+        Set<BookieId> bookiesSrc = Sets.newHashSet(bookieSrc);
         recoverBookieData(bookiesSrc);
     }
 
-    public void recoverBookieData(final Set<BookieSocketAddress> bookiesSrc)
+    public void recoverBookieData(final Set<BookieId> bookiesSrc)
             throws InterruptedException, BKException {
         recoverBookieData(bookiesSrc, false, false);
     }
 
-    public void recoverBookieData(final Set<BookieSocketAddress> bookiesSrc, boolean dryrun, boolean skipOpenLedgers)
+    public void recoverBookieData(final Set<BookieId> bookiesSrc, boolean dryrun, boolean skipOpenLedgers)
             throws InterruptedException, BKException {
         SyncObject sync = new SyncObject();
         // Call the async method to recover bookie data.
@@ -597,7 +595,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     public void recoverBookieData(final long lid,
-                                  final Set<BookieSocketAddress> bookiesSrc,
+                                  final Set<BookieId> bookiesSrc,
                                   boolean dryrun,
                                   boolean skipOpenLedgers)
             throws InterruptedException, BKException {
@@ -644,18 +642,18 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @param context
      *            Context for the RecoverCallback to call.
      */
-    public void asyncRecoverBookieData(final BookieSocketAddress bookieSrc,
+    public void asyncRecoverBookieData(final BookieId bookieSrc,
                                        final RecoverCallback cb, final Object context) {
-        Set<BookieSocketAddress> bookiesSrc = Sets.newHashSet(bookieSrc);
+        Set<BookieId> bookiesSrc = Sets.newHashSet(bookieSrc);
         asyncRecoverBookieData(bookiesSrc, cb, context);
     }
 
-    public void asyncRecoverBookieData(final Set<BookieSocketAddress> bookieSrc,
+    public void asyncRecoverBookieData(final Set<BookieId> bookieSrc,
                                        final RecoverCallback cb, final Object context) {
         asyncRecoverBookieData(bookieSrc, false, false, cb, context);
     }
 
-    public void asyncRecoverBookieData(final Set<BookieSocketAddress> bookieSrc, boolean dryrun,
+    public void asyncRecoverBookieData(final Set<BookieId> bookieSrc, boolean dryrun,
                                        final boolean skipOpenLedgers, final RecoverCallback cb, final Object context) {
         getActiveLedgers(bookieSrc, dryrun, skipOpenLedgers, cb, context);
     }
@@ -677,7 +675,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @param context
      *          Context for the RecoverCallback to call.
      */
-    public void asyncRecoverBookieData(long lid, final Set<BookieSocketAddress> bookieSrc, boolean dryrun,
+    public void asyncRecoverBookieData(long lid, final Set<BookieId> bookieSrc, boolean dryrun,
                                        boolean skipOpenLedgers, final RecoverCallback callback, final Object context) {
         AsyncCallback.VoidCallback callbackWrapper = (rc, path, ctx)
             -> callback.recoverComplete(bkc.getReturnRc(rc), context);
@@ -703,7 +701,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @param context
      *            Context for the RecoverCallback to call.
      */
-    private void getActiveLedgers(final Set<BookieSocketAddress> bookiesSrc, final boolean dryrun,
+    private void getActiveLedgers(final Set<BookieId> bookiesSrc, final boolean dryrun,
                                   final boolean skipOpenLedgers, final RecoverCallback cb, final Object context) {
         // Wrapper class around the RecoverCallback so it can be used
         // as the final VoidCallback to process ledgers
@@ -748,7 +746,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      *            IterationCallback to invoke once we've recovered the current
      *            ledger.
      */
-    private void recoverLedger(final Set<BookieSocketAddress> bookiesSrc, final long lId, final boolean dryrun,
+    private void recoverLedger(final Set<BookieId> bookiesSrc, final long lId, final boolean dryrun,
                                final boolean skipOpenLedgers, final AsyncCallback.VoidCallback finalLedgerIterCb) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Recovering ledger : {}", lId);
@@ -841,7 +839,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                  */
                 Map<Long, Long> ledgerFragmentsRange = new HashMap<Long, Long>();
                 Long curEntryId = null;
-                for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry :
+                for (Map.Entry<Long, ? extends List<BookieId>> entry :
                          lh.getLedgerMetadata().getAllEnsembles().entrySet()) {
                     if (curEntryId != null) {
                         ledgerFragmentsRange.put(curEntryId, entry.getKey() - 1);
@@ -887,9 +885,9 @@ public class BookKeeperAdmin implements AutoCloseable {
                  */
                 for (final Long startEntryId : ledgerFragmentsToRecover) {
                     Long endEntryId = ledgerFragmentsRange.get(startEntryId);
-                    List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getAllEnsembles().get(startEntryId);
+                    List<BookieId> ensemble = lh.getLedgerMetadata().getAllEnsembles().get(startEntryId);
                     // Get bookies to replace
-                    Map<Integer, BookieSocketAddress> targetBookieAddresses;
+                    Map<Integer, BookieId> targetBookieAddresses;
                     try {
                         targetBookieAddresses = getReplacementBookies(lh, ensemble, bookiesSrc);
                     } catch (BKException.BKNotEnoughBookiesException e) {
@@ -903,7 +901,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                     }
 
                     if (dryrun) {
-                        ArrayList<BookieSocketAddress> newEnsemble =
+                        ArrayList<BookieId> newEnsemble =
                                 replaceBookiesInEnsemble(ensemble, targetBookieAddresses);
                         VERBOSE.info("  Fragment [{} - {}] : ", startEntryId, endEntryId);
                         VERBOSE.info("    old ensemble : {}", formatEnsemble(ensemble, bookiesSrc, '*'));
@@ -935,7 +933,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             }, null);
     }
 
-    static String formatEnsemble(List<BookieSocketAddress> ensemble, Set<BookieSocketAddress> bookiesSrc,
+    static String formatEnsemble(List<BookieId> ensemble, Set<BookieId> bookiesSrc,
             char marker) {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
@@ -973,19 +971,19 @@ public class BookKeeperAdmin implements AutoCloseable {
     private void asyncRecoverLedgerFragment(final LedgerHandle lh,
             final LedgerFragment ledgerFragment,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
-            final Set<BookieSocketAddress> newBookies,
+            final Set<BookieId> newBookies,
             final BiConsumer<Long, Long> onReadEntryFailureCallback) throws InterruptedException {
         lfr.replicate(lh, ledgerFragment, ledgerFragmentMcb, newBookies, onReadEntryFailureCallback);
     }
 
-    private Map<Integer, BookieSocketAddress> getReplacementBookies(
+    private Map<Integer, BookieId> getReplacementBookies(
                 LedgerHandle lh,
-                List<BookieSocketAddress> ensemble,
-                Set<BookieSocketAddress> bookiesToRereplicate)
+                List<BookieId> ensemble,
+                Set<BookieId> bookiesToRereplicate)
             throws BKException.BKNotEnoughBookiesException {
         Set<Integer> bookieIndexesToRereplicate = Sets.newHashSet();
         for (int bookieIndex = 0; bookieIndex < ensemble.size(); bookieIndex++) {
-            BookieSocketAddress bookieInEnsemble = ensemble.get(bookieIndex);
+            BookieId bookieInEnsemble = ensemble.get(bookieIndex);
             if (bookiesToRereplicate.contains(bookieInEnsemble)) {
                 bookieIndexesToRereplicate.add(bookieIndex);
             }
@@ -994,31 +992,31 @@ public class BookKeeperAdmin implements AutoCloseable {
                 lh, ensemble, bookieIndexesToRereplicate, Optional.of(bookiesToRereplicate));
     }
 
-    private Map<Integer, BookieSocketAddress> getReplacementBookiesByIndexes(
+    private Map<Integer, BookieId> getReplacementBookiesByIndexes(
                 LedgerHandle lh,
-                List<BookieSocketAddress> ensemble,
+                List<BookieId> ensemble,
                 Set<Integer> bookieIndexesToRereplicate,
-                Optional<Set<BookieSocketAddress>> excludedBookies)
+                Optional<Set<BookieId>> excludedBookies)
             throws BKException.BKNotEnoughBookiesException {
         // target bookies to replicate
-        Map<Integer, BookieSocketAddress> targetBookieAddresses =
+        Map<Integer, BookieId> targetBookieAddresses =
                 Maps.newHashMapWithExpectedSize(bookieIndexesToRereplicate.size());
         // bookies to exclude for ensemble allocation
-        Set<BookieSocketAddress> bookiesToExclude = Sets.newHashSet();
+        Set<BookieId> bookiesToExclude = Sets.newHashSet();
         if (excludedBookies.isPresent()) {
             bookiesToExclude.addAll(excludedBookies.get());
         }
 
         // excluding bookies that need to be replicated
         for (Integer bookieIndex : bookieIndexesToRereplicate) {
-            BookieSocketAddress bookie = ensemble.get(bookieIndex);
+            BookieId bookie = ensemble.get(bookieIndex);
             bookiesToExclude.add(bookie);
         }
 
         // allocate bookies
         for (Integer bookieIndex : bookieIndexesToRereplicate) {
-            BookieSocketAddress oldBookie = ensemble.get(bookieIndex);
-            EnsemblePlacementPolicy.PlacementResult<BookieSocketAddress> replaceBookieResponse =
+            BookieId oldBookie = ensemble.get(bookieIndex);
+            EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse =
                     bkc.getPlacementPolicy().replaceBookie(
                             lh.getLedgerMetadata().getEnsembleSize(),
                             lh.getLedgerMetadata().getWriteQuorumSize(),
@@ -1027,7 +1025,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                             ensemble,
                             oldBookie,
                             bookiesToExclude);
-            BookieSocketAddress newBookie = replaceBookieResponse.getResult();
+            BookieId newBookie = replaceBookieResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
             if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
                 if (LOG.isDebugEnabled()) {
@@ -1044,11 +1042,11 @@ public class BookKeeperAdmin implements AutoCloseable {
         return targetBookieAddresses;
     }
 
-    private ArrayList<BookieSocketAddress> replaceBookiesInEnsemble(
-            List<BookieSocketAddress> ensemble,
-            Map<Integer, BookieSocketAddress> replacedBookies) {
-        ArrayList<BookieSocketAddress> newEnsemble = Lists.newArrayList(ensemble);
-        for (Map.Entry<Integer, BookieSocketAddress> entry : replacedBookies.entrySet()) {
+    private ArrayList<BookieId> replaceBookiesInEnsemble(
+            List<BookieId> ensemble,
+            Map<Integer, BookieId> replacedBookies) {
+        ArrayList<BookieId> newEnsemble = Lists.newArrayList(ensemble);
+        for (Map.Entry<Integer, BookieId> entry : replacedBookies.entrySet()) {
             newEnsemble.set(entry.getKey(), entry.getValue());
         }
         return newEnsemble;
@@ -1066,8 +1064,8 @@ public class BookKeeperAdmin implements AutoCloseable {
             final LedgerFragment ledgerFragment,
             final BiConsumer<Long, Long> onReadEntryFailureCallback)
             throws InterruptedException, BKException {
-        Optional<Set<BookieSocketAddress>> excludedBookies = Optional.empty();
-        Map<Integer, BookieSocketAddress> targetBookieAddresses =
+        Optional<Set<BookieId>> excludedBookies = Optional.empty();
+        Map<Integer, BookieId> targetBookieAddresses =
                 getReplacementBookiesByIndexes(lh, ledgerFragment.getEnsemble(),
                         ledgerFragment.getBookiesIndexes(), excludedBookies);
         replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
@@ -1075,7 +1073,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     private void replicateLedgerFragment(LedgerHandle lh,
             final LedgerFragment ledgerFragment,
-            final Map<Integer, BookieSocketAddress> targetBookieAddresses,
+            final Map<Integer, BookieId> targetBookieAddresses,
             final BiConsumer<Long, Long> onReadEntryFailureCallback)
             throws InterruptedException, BKException {
         CompletableFuture<Void> result = new CompletableFuture<>();
@@ -1087,7 +1085,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             ledgerFragment.getFirstEntryId(),
             getReplacementBookiesMap(ledgerFragment, targetBookieAddresses));
 
-        Set<BookieSocketAddress> targetBookieSet = Sets.newHashSet();
+        Set<BookieId> targetBookieSet = Sets.newHashSet();
         targetBookieSet.addAll(targetBookieAddresses.values());
         asyncRecoverLedgerFragment(lh, ledgerFragment, cb, targetBookieSet, onReadEntryFailureCallback);
 
@@ -1098,45 +1096,45 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 
-    private static Map<BookieSocketAddress, BookieSocketAddress> getReplacementBookiesMap(
-            List<BookieSocketAddress> ensemble,
-            Map<Integer, BookieSocketAddress> targetBookieAddresses) {
-        Map<BookieSocketAddress, BookieSocketAddress> bookiesMap =
-                new HashMap<BookieSocketAddress, BookieSocketAddress>();
-        for (Map.Entry<Integer, BookieSocketAddress> entry : targetBookieAddresses.entrySet()) {
-            BookieSocketAddress oldBookie = ensemble.get(entry.getKey());
-            BookieSocketAddress newBookie = entry.getValue();
+    private static Map<BookieId, BookieId> getReplacementBookiesMap(
+            List<BookieId> ensemble,
+            Map<Integer, BookieId> targetBookieAddresses) {
+        Map<BookieId, BookieId> bookiesMap =
+                new HashMap<BookieId, BookieId>();
+        for (Map.Entry<Integer, BookieId> entry : targetBookieAddresses.entrySet()) {
+            BookieId oldBookie = ensemble.get(entry.getKey());
+            BookieId newBookie = entry.getValue();
             bookiesMap.put(oldBookie, newBookie);
         }
         return bookiesMap;
     }
 
-    private static Map<BookieSocketAddress, BookieSocketAddress> getReplacementBookiesMap(
+    private static Map<BookieId, BookieId> getReplacementBookiesMap(
             LedgerFragment ledgerFragment,
-            Map<Integer, BookieSocketAddress> targetBookieAddresses) {
-        Map<BookieSocketAddress, BookieSocketAddress> bookiesMap =
-                new HashMap<BookieSocketAddress, BookieSocketAddress>();
+            Map<Integer, BookieId> targetBookieAddresses) {
+        Map<BookieId, BookieId> bookiesMap =
+                new HashMap<BookieId, BookieId>();
         for (Integer bookieIndex : ledgerFragment.getBookiesIndexes()) {
-            BookieSocketAddress oldBookie = ledgerFragment.getAddress(bookieIndex);
-            BookieSocketAddress newBookie = targetBookieAddresses.get(bookieIndex);
+            BookieId oldBookie = ledgerFragment.getAddress(bookieIndex);
+            BookieId newBookie = targetBookieAddresses.get(bookieIndex);
             bookiesMap.put(oldBookie, newBookie);
         }
         return bookiesMap;
     }
 
     private static boolean containBookiesInLastEnsemble(LedgerMetadata lm,
-                                                        Set<BookieSocketAddress> bookies) {
+                                                        Set<BookieId> bookies) {
         if (lm.getAllEnsembles().size() <= 0) {
             return false;
         }
         Long lastKey = lm.getAllEnsembles().lastKey();
-        List<BookieSocketAddress> lastEnsemble = lm.getAllEnsembles().get(lastKey);
+        List<BookieId> lastEnsemble = lm.getAllEnsembles().get(lastKey);
         return containBookies(lastEnsemble, bookies);
     }
 
-    private static boolean containBookies(List<BookieSocketAddress> ensemble,
-                                          Set<BookieSocketAddress> bookies) {
-        for (BookieSocketAddress bookie : ensemble) {
+    private static boolean containBookies(List<BookieId> ensemble,
+                                          Set<BookieId> bookies) {
+        for (BookieId bookie : ensemble) {
             if (bookies.contains(bookie)) {
                 return true;
             }
@@ -1300,7 +1298,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                  * make sure that there is no bookie registered with the same
                  * bookieid and the cookie for the same bookieid is not existing.
                  */
-                String bookieId = Bookie.getBookieAddress(conf).toString();
+                BookieId bookieId = Bookie.getBookieId(conf);
                 if (rm.isBookieRegistered(bookieId)) {
                     LOG.error("Bookie with bookieId: {} is still registered, "
                         + "If this node is running bookie process, try stopping it first.", bookieId);
@@ -1457,7 +1455,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             throw new UnavailableException("Autorecovery is disabled. So giving up!");
         }
 
-        BookieSocketAddress auditorId =
+        BookieId auditorId =
             AuditorElector.getCurrentAuditor(new ServerConfiguration(bkc.getConf()), bkc.getZkHandle());
         if (auditorId == null) {
             LOG.error("No auditor elected, though Autorecovery is enabled. So giving up.");
@@ -1489,7 +1487,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @throws TimeoutException
      * @throws BKException
      */
-    public void decommissionBookie(BookieSocketAddress bookieAddress)
+    public void decommissionBookie(BookieId bookieAddress)
             throws CompatibilityException, UnavailableException, KeeperException, InterruptedException, IOException,
             BKAuditException, TimeoutException, BKException {
         if (getAvailableBookies().contains(bookieAddress) || getReadOnlyBookies().contains(bookieAddress)) {
@@ -1539,7 +1537,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 
-    private void waitForLedgersToBeReplicated(Collection<Long> ledgers, BookieSocketAddress thisBookieAddress,
+    private void waitForLedgersToBeReplicated(Collection<Long> ledgers, BookieId thisBookieAddress,
             LedgerManager ledgerManager) throws InterruptedException, TimeoutException {
         int maxSleepTimeInBetweenChecks = 10 * 60 * 1000; // 10 minutes
         int sleepTimePerLedger = 10 * 1000; // 10 secs
@@ -1555,7 +1553,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 
-    public static boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
+    public static boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieId bookieAddress,
             LedgerManager ledgerManager) {
         try {
             LedgerMetadata ledgerMetadata = ledgerManager.readLedgerMetadata(ledgerId).get().getValue();
@@ -1576,11 +1574,11 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 
-    public static boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
+    public static boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieId bookieAddress,
             LedgerMetadata ledgerMetadata) {
-        Collection<? extends List<BookieSocketAddress>> ensemblesOfSegments = ledgerMetadata.getAllEnsembles().values();
-        Iterator<? extends List<BookieSocketAddress>> ensemblesOfSegmentsIterator = ensemblesOfSegments.iterator();
-        List<BookieSocketAddress> ensemble;
+        Collection<? extends List<BookieId>> ensemblesOfSegments = ledgerMetadata.getAllEnsembles().values();
+        Iterator<? extends List<BookieId>> ensemblesOfSegmentsIterator = ensemblesOfSegments.iterator();
+        List<BookieId> ensemble;
         int segmentNo = 0;
         while (ensemblesOfSegmentsIterator.hasNext()) {
             ensemble = ensemblesOfSegmentsIterator.next();
@@ -1595,14 +1593,14 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     private static boolean areEntriesOfSegmentStoredInTheBookie(LedgerMetadata ledgerMetadata,
-            BookieSocketAddress bookieAddress, int segmentNo) {
+            BookieId bookieAddress, int segmentNo) {
         boolean isLedgerClosed = ledgerMetadata.isClosed();
         int ensembleSize = ledgerMetadata.getEnsembleSize();
         int writeQuorumSize = ledgerMetadata.getWriteQuorumSize();
 
-        List<Entry<Long, ? extends List<BookieSocketAddress>>> segments =
+        List<Entry<Long, ? extends List<BookieId>>> segments =
             new LinkedList<>(ledgerMetadata.getAllEnsembles().entrySet());
-        List<BookieSocketAddress> currentSegmentEnsemble = segments.get(segmentNo).getValue();
+        List<BookieId> currentSegmentEnsemble = segments.get(segmentNo).getValue();
         boolean lastSegment = (segmentNo == (segments.size() - 1));
 
         /*
@@ -1691,7 +1689,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @return <tt>true</tt> if the ledger is adhering to
      *         EnsemblePlacementPolicy
      */
-    public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieSocketAddress> ensembleBookiesList,
+    public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieId> ensembleBookiesList,
             int writeQuorumSize, int ackQuorumSize) {
         return bkc.getPlacementPolicy().isEnsembleAdheringToPlacementPolicy(ensembleBookiesList, writeQuorumSize,
                 ackQuorumSize);
@@ -1702,12 +1700,12 @@ public class BookKeeperAdmin implements AutoCloseable {
      * and returns Future for the result.
      *
      * @param address
-     *            BookieSocketAddress of the bookie
+     *            BookieId of the bookie
      * @param ledgerId
      *            ledgerId
      * @return returns Future
      */
-    public CompletableFuture<AvailabilityOfEntriesOfLedger> asyncGetListOfEntriesOfLedger(BookieSocketAddress address,
+    public CompletableFuture<AvailabilityOfEntriesOfLedger> asyncGetListOfEntriesOfLedger(BookieId address,
             long ledgerId) {
         return bkc.getBookieClient().getListOfEntriesOfLedger(address, ledgerId);
     }

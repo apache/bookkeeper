@@ -42,7 +42,7 @@ import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.BookieException.UnknownBookieIdException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -68,15 +68,15 @@ public class Cookie {
 
     static final int CURRENT_COOKIE_LAYOUT_VERSION = 4;
     private final int layoutVersion;
-    private final String bookieHost;
+    private final String bookieId;
     private final String journalDirs;
     private final String ledgerDirs;
     private final String instanceId;
     private static final String SEPARATOR = "\t";
 
-    private Cookie(int layoutVersion, String bookieHost, String journalDirs, String ledgerDirs, String instanceId) {
+    private Cookie(int layoutVersion, String bookieId, String journalDirs, String ledgerDirs, String instanceId) {
         this.layoutVersion = layoutVersion;
-        this.bookieHost = bookieHost;
+        this.bookieId = bookieId;
         this.journalDirs = journalDirs;
         this.ledgerDirs = ledgerDirs;
         this.instanceId = instanceId;
@@ -130,7 +130,7 @@ public class Cookie {
             errMsg = "Cookie is of too old version " + c.layoutVersion;
             LOG.error(errMsg);
             throw new BookieException.InvalidCookieException(errMsg);
-        } else if (!(c.layoutVersion >= 3 && c.bookieHost.equals(bookieHost)
+        } else if (!(c.layoutVersion >= 3 && c.bookieId.equals(bookieId)
             && c.journalDirs.equals(journalDirs) && verifyLedgerDirs(c, checkIfSuperSet))) {
             errMsg = "Cookie [" + this + "] is not matching with [" + c + "]";
             throw new BookieException.InvalidCookieException(errMsg);
@@ -157,7 +157,7 @@ public class Cookie {
             return toStringVersion3();
         }
         CookieFormat.Builder builder = CookieFormat.newBuilder();
-        builder.setBookieHost(bookieHost);
+        builder.setBookieHost(bookieId);
         builder.setJournalDir(journalDirs);
         builder.setLedgerDirs(ledgerDirs);
         if (null != instanceId) {
@@ -165,14 +165,14 @@ public class Cookie {
         }
         StringBuilder b = new StringBuilder();
         b.append(CURRENT_COOKIE_LAYOUT_VERSION).append("\n");
-        b.append(TextFormat.printToString(builder.build()));
+        b.append(builder.build().toString());
         return b.toString();
     }
 
     private String toStringVersion3() {
         StringBuilder b = new StringBuilder();
         b.append(CURRENT_COOKIE_LAYOUT_VERSION).append("\n")
-            .append(bookieHost).append("\n")
+            .append(bookieId).append("\n")
             .append(journalDirs).append("\n")
             .append(ledgerDirs).append("\n");
         return b.toString();
@@ -193,14 +193,14 @@ public class Cookie {
                     + "', cannot parse cookie.");
         }
         if (layoutVersion == 3) {
-            cBuilder.setBookieHost(reader.readLine());
+            cBuilder.setBookieId(reader.readLine());
             cBuilder.setJournalDirs(reader.readLine());
             cBuilder.setLedgerDirs(reader.readLine());
         } else if (layoutVersion >= 4) {
             CookieFormat.Builder cfBuilder = CookieFormat.newBuilder();
             TextFormat.merge(reader, cfBuilder);
             CookieFormat data = cfBuilder.build();
-            cBuilder.setBookieHost(data.getBookieHost());
+            cBuilder.setBookieId(data.getBookieHost());
             cBuilder.setJournalDirs(data.getJournalDir());
             cBuilder.setLedgerDirs(data.getLedgerDirs());
             // Since InstanceId is optional
@@ -234,14 +234,14 @@ public class Cookie {
      */
     public void writeToRegistrationManager(RegistrationManager rm, ServerConfiguration conf, Version version)
             throws BookieException {
-        BookieSocketAddress address = null;
+        BookieId address = null;
         try {
-            address = Bookie.getBookieAddress(conf);
+            address = Bookie.getBookieId(conf);
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
         byte[] data = toString().getBytes(UTF_8);
-        rm.writeCookie(address.toString(), new Versioned<>(data, version));
+        rm.writeCookie(address, new Versioned<>(data, version));
     }
 
     /**
@@ -255,9 +255,9 @@ public class Cookie {
     public void deleteFromRegistrationManager(RegistrationManager rm,
                                               ServerConfiguration conf,
                                               Version version) throws BookieException {
-        BookieSocketAddress address = null;
+        BookieId address = null;
         try {
-            address = Bookie.getBookieAddress(conf);
+            address = Bookie.getBookieId(conf);
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
@@ -273,13 +273,13 @@ public class Cookie {
      * @throws BookieException when fail to delete cookie.
      */
     public void deleteFromRegistrationManager(RegistrationManager rm,
-                                              BookieSocketAddress address,
+                                              BookieId address,
                                               Version version) throws BookieException {
         if (!(version instanceof LongVersion)) {
             throw new IllegalArgumentException("Invalid version type, expected ZkVersion type");
         }
 
-        rm.removeCookie(address.toString(), version);
+        rm.removeCookie(address, version);
     }
 
     /**
@@ -293,7 +293,7 @@ public class Cookie {
             throws UnknownHostException {
         Builder builder = Cookie.newBuilder();
         builder.setLayoutVersion(CURRENT_COOKIE_LAYOUT_VERSION);
-        builder.setBookieHost(Bookie.getBookieAddress(conf).toString());
+        builder.setBookieId(Bookie.getBookieId(conf).toString());
         builder.setJournalDirs(Joiner.on(',').join(conf.getJournalDirNames()));
         builder.setLedgerDirs(encodeDirPaths(conf.getLedgerDirNames()));
         return builder;
@@ -310,7 +310,7 @@ public class Cookie {
     public static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm, ServerConfiguration conf)
             throws BookieException {
         try {
-            return readFromRegistrationManager(rm, Bookie.getBookieAddress(conf));
+            return readFromRegistrationManager(rm, Bookie.getBookieId(conf));
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
@@ -325,8 +325,8 @@ public class Cookie {
      * @throws BookieException when fail to read cookie
      */
     public static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm,
-                                                         BookieSocketAddress address) throws BookieException {
-        Versioned<byte[]> cookieData = rm.readCookie(address.toString());
+                                                         BookieId address) throws BookieException {
+        Versioned<byte[]> cookieData = rm.readCookie(address);
         try {
             try (BufferedReader reader = new BufferedReader(
                     new StringReader(new String(cookieData.getValue(), UTF_8)))) {
@@ -364,15 +364,17 @@ public class Cookie {
      *         if the 'bookieHost' was created using a hostname
      */
     public boolean isBookieHostCreatedFromIp() throws IOException {
-        String[] parts = bookieHost.split(":");
+        String[] parts = bookieId.split(":");
         if (parts.length != 2) {
-            throw new IOException(bookieHost + " does not have the form host:port");
+            // custom BookieId ?
+            return false;
         }
         int port;
         try {
             port = Integer.parseInt(parts[1]);
         } catch (NumberFormatException e) {
-            throw new IOException(bookieHost + " does not have the form host:port");
+            // custom BookieId ?
+            return false;
         }
 
         InetSocketAddress addr = new InetSocketAddress(parts[0], port);
@@ -384,7 +386,7 @@ public class Cookie {
      */
     public static class Builder {
         private int layoutVersion = CURRENT_COOKIE_LAYOUT_VERSION;
-        private String bookieHost = null;
+        private String bookieId = null;
         private String journalDirs = null;
         private String ledgerDirs = null;
         private String instanceId = null;
@@ -392,10 +394,10 @@ public class Cookie {
         private Builder() {
         }
 
-        private Builder(int layoutVersion, String bookieHost, String journalDirs, String ledgerDirs,
+        private Builder(int layoutVersion, String bookieId, String journalDirs, String ledgerDirs,
                         String instanceId) {
             this.layoutVersion = layoutVersion;
-            this.bookieHost = bookieHost;
+            this.bookieId = bookieId;
             this.journalDirs = journalDirs;
             this.ledgerDirs = ledgerDirs;
             this.instanceId = instanceId;
@@ -406,8 +408,8 @@ public class Cookie {
             return this;
         }
 
-        public Builder setBookieHost(String bookieHost) {
-            this.bookieHost = bookieHost;
+        public Builder setBookieId(String bookieId) {
+            this.bookieId = bookieId;
             return this;
         }
 
@@ -427,7 +429,7 @@ public class Cookie {
         }
 
         public Cookie build() {
-            return new Cookie(layoutVersion, bookieHost, journalDirs, ledgerDirs, instanceId);
+            return new Cookie(layoutVersion, bookieId, journalDirs, ledgerDirs, instanceId);
         }
     }
 
@@ -447,7 +449,7 @@ public class Cookie {
      * @return cookie builder
      */
     public static Builder newBuilder(Cookie oldCookie) {
-        return new Builder(oldCookie.layoutVersion, oldCookie.bookieHost, oldCookie.journalDirs, oldCookie.ledgerDirs,
+        return new Builder(oldCookie.layoutVersion, oldCookie.bookieId, oldCookie.journalDirs, oldCookie.ledgerDirs,
                 oldCookie.instanceId);
     }
 }

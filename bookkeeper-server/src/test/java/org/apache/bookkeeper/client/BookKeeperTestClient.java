@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
@@ -70,12 +70,12 @@ public class BookKeeperTestClient extends BookKeeper {
         return bookieClient;
     }
 
-    public Future<?> waitForReadOnlyBookie(BookieSocketAddress b)
+    public Future<?> waitForReadOnlyBookie(BookieId b)
             throws Exception {
         return waitForBookieInSet(b, false);
     }
 
-    public Future<?> waitForWritableBookie(BookieSocketAddress b)
+    public Future<?> waitForWritableBookie(BookieId b)
             throws Exception {
         return waitForBookieInSet(b, true);
     }
@@ -85,7 +85,7 @@ public class BookKeeperTestClient extends BookKeeper {
      * or the read only set of bookies. Also ensure that it doesn't exist
      * in the other set before completing.
      */
-    private Future<?> waitForBookieInSet(BookieSocketAddress b,
+    private Future<?> waitForBookieInSet(BookieId b,
                                                        boolean writable) throws Exception {
         log.info("Wait for {} to become {}",
                  b, writable ? "writable" : "readonly");

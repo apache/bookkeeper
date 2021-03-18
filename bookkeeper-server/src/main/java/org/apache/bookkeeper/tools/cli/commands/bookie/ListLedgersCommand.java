@@ -34,7 +34,7 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ListLedgersCommand.ListLedgersFlags;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
 
-    static final Logger LOG = LoggerFactory.getLogger(ListLedgersCommand.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ListLedgersCommand.class);
 
     private static final String NAME = "listledgers";
     private static final String DESC = "List all ledgers on the cluster (this may take a long time).";
@@ -98,7 +98,7 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
         try {
             handler(conf, cmdFlags);
         } catch (UnknownHostException e) {
-            System.err.println("Bookie id error");
+            LOG.error("Bookie id error");
             return false;
         } catch (MetadataException | ExecutionException e) {
             throw new UncheckedExecutionException(e.getMessage(), e);
@@ -121,8 +121,8 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
     public boolean handler(ServerConfiguration conf, ListLedgersFlags flags)
         throws UnknownHostException, MetadataException, ExecutionException {
 
-        final BookieSocketAddress bookieAddress = StringUtils.isBlank(flags.bookieId) ? null :
-                                                      new BookieSocketAddress(flags.bookieId);
+        final BookieId bookieAddress = StringUtils.isBlank(flags.bookieId) ? null :
+                                                      BookieId.parse(flags.bookieId);
 
         runFunctionWithLedgerManagerFactory(conf, mFactory -> {
             try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
@@ -187,9 +187,9 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
     }
 
     private void printLedgerMetadata(long ledgerId, LedgerMetadata md, boolean printMeta) {
-        System.out.println("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
+        LOG.info("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
         if (printMeta) {
-            System.out.println(md.toString());
+            LOG.info(md.toString());
         }
     }
 }

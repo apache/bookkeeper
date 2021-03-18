@@ -20,9 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -52,7 +50,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -68,11 +66,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link RecoverCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ RecoverCommand.class, MetadataDrivers.class, Cookie.class })
+@PrepareForTest({ RecoverCommand.class, MetadataDrivers.class, Cookie.class})
 public class RecoverCommandTest extends BookieCommandTestBase {
 
-    @Mock
-    private BookieSocketAddress bookieSocketAddress;
+    private BookieId bookieSocketAddress = BookieId.parse("127.0.0.1:8000");
 
     @Mock
     private ClientConfiguration clientConfiguration;
@@ -99,12 +96,9 @@ public class RecoverCommandTest extends BookieCommandTestBase {
     @Override
     public void setup() throws Exception {
         super.setup();
-
         PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
         PowerMockito.whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
                     .withArguments(eq(clientConfiguration)).thenReturn(conf);
-        PowerMockito.whenNew(BookieSocketAddress.class).withArguments(anyString(), anyInt())
-                    .thenReturn(bookieSocketAddress);
         PowerMockito.whenNew(ClientConfiguration.class).withParameterTypes(AbstractConfiguration.class)
                     .withArguments(eq(conf)).thenReturn(clientConfiguration);
         PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
@@ -121,11 +115,11 @@ public class RecoverCommandTest extends BookieCommandTestBase {
         SortedMap<Long, LedgerMetadata> ledgerMetadataSortedMap = new TreeMap<>();
         ledgerMetadataSortedMap.put(1L, ledgerMetadata);
         when(bookKeeperAdmin.getLedgersContainBookies(any())).thenReturn(ledgerMetadataSortedMap);
-        ArrayList<BookieSocketAddress> arrayList = new ArrayList<>();
+        ArrayList<BookieId> arrayList = new ArrayList<>();
         arrayList.add(bookieSocketAddress);
-        Map<Long, List<BookieSocketAddress>> map = new HashMap<>();
+        Map<Long, List<BookieId>> map = new HashMap<>();
         map.put(1L, arrayList);
-        NavigableMap<Long, ImmutableList<BookieSocketAddress>> navigableMap = Collections.unmodifiableNavigableMap(
+        NavigableMap<Long, ImmutableList<BookieId>> navigableMap = Collections.unmodifiableNavigableMap(
             map.entrySet().stream()
                .collect(TreeMap::new, (m, e) -> m.put(e.getKey(), ImmutableList.copyOf(e.getValue())),
                         TreeMap::putAll));
@@ -164,7 +158,7 @@ public class RecoverCommandTest extends BookieCommandTestBase {
     @Test
     public void testBookieListCheck() {
         RecoverCommand cmd = new RecoverCommand();
-        Assert.assertFalse(cmd.apply(bkFlags, new String[] { "-bs", "127.0.0.1:8000,8001" }));
+        Assert.assertFalse(cmd.apply(bkFlags, new String[] { "-bs", "127.0.0.1:8000,$nonvalidbookieid:8001" }));
     }
 
     @Test

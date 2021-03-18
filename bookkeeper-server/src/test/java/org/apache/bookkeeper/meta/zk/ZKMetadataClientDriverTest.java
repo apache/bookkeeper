@@ -21,6 +21,7 @@ package org.apache.bookkeeper.meta.zk;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -72,8 +73,8 @@ public class ZKMetadataClientDriverTest extends ZKMetadataDriverTestBase {
         ZKRegistrationClient mockRegClient = PowerMockito.mock(ZKRegistrationClient.class);
 
         PowerMockito.whenNew(ZKRegistrationClient.class)
-            .withParameterTypes(ZooKeeper.class, String.class, ScheduledExecutorService.class)
-            .withArguments(any(ZooKeeper.class), anyString(), any(ScheduledExecutorService.class))
+            .withParameterTypes(ZooKeeper.class, String.class, ScheduledExecutorService.class, Boolean.TYPE)
+            .withArguments(any(ZooKeeper.class), anyString(), any(ScheduledExecutorService.class), anyBoolean())
             .thenReturn(mockRegClient);
 
         RegistrationClient client = driver.getRegistrationClient();
@@ -81,7 +82,7 @@ public class ZKMetadataClientDriverTest extends ZKMetadataDriverTestBase {
         assertSame(mockRegClient, driver.regClient);
 
         PowerMockito.verifyNew(ZKRegistrationClient.class, times(1))
-            .withArguments(eq(mockZkc), eq(ledgersRootPath), eq(mockExecutor));
+            .withArguments(eq(mockZkc), eq(ledgersRootPath), eq(mockExecutor), anyBoolean());
 
         driver.close();
         verify(mockRegClient, times(1)).close();

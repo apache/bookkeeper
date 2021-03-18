@@ -35,7 +35,7 @@ import lombok.EqualsAndHashCode;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,9 +45,13 @@ import org.slf4j.LoggerFactory;
  *
  * <p>It provides parsing and serialization methods of such metadata.
  */
-@EqualsAndHashCode
+@EqualsAndHashCode(exclude =
+        "ledgerId" // ledgerId is not serialized inside ZK node data
+)
 class LedgerMetadataImpl implements LedgerMetadata {
     static final Logger LOG = LoggerFactory.getLogger(LedgerMetadataImpl.class);
+
+    private final long ledgerId;
 
     private final int metadataFormatVersion;
     private final int ensembleSize;
@@ -60,8 +64,8 @@ class LedgerMetadataImpl implements LedgerMetadata {
     private final long ctime;
     final boolean storeCtime; // non-private so builder can access for copy
 
-    private final NavigableMap<Long, ImmutableList<BookieSocketAddress>> ensembles;
-    private final ImmutableList<BookieSocketAddress> currentEnsemble;
+    private final NavigableMap<Long, ImmutableList<BookieId>> ensembles;
+    private final ImmutableList<BookieId> currentEnsemble;
 
     private final boolean hasPassword;
     private final DigestType digestType;
@@ -71,14 +75,15 @@ class LedgerMetadataImpl implements LedgerMetadata {
 
     private long cToken;
 
-    LedgerMetadataImpl(int metadataFormatVersion,
+    LedgerMetadataImpl(long ledgerId,
+                       int metadataFormatVersion,
                        int ensembleSize,
                        int writeQuorumSize,
                        int ackQuorumSize,
                        State state,
                        Optional<Long> lastEntryId,
                        Optional<Long> length,
-                       Map<Long, List<BookieSocketAddress>> ensembles,
+                       Map<Long, List<BookieId>> ensembles,
                        Optional<DigestType> digestType,
                        Optional<byte[]> password,
                        long ctime,
@@ -97,6 +102,7 @@ class LedgerMetadataImpl implements LedgerMetadata {
                       || (!digestType.isPresent() && !password.isPresent()),
                       "Either both password and digest type must be set, or neither");
 
+        this.ledgerId = ledgerId;
         this.metadataFormatVersion = metadataFormatVersion;
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
@@ -136,7 +142,12 @@ class LedgerMetadataImpl implements LedgerMetadata {
     }
 
     @Override
-    public NavigableMap<Long, ? extends List<BookieSocketAddress>> getAllEnsembles() {
+    public long getLedgerId() {
+        return ledgerId;
+    }
+
+    @Override
+    public NavigableMap<Long, ? extends List<BookieId>> getAllEnsembles() {
         return ensembles;
     }
 
@@ -210,7 +221,7 @@ class LedgerMetadataImpl implements LedgerMetadata {
     }
 
     @Override
-    public List<BookieSocketAddress> getEnsembleAt(long entryId) {
+    public List<BookieId> getEnsembleAt(long entryId) {
         // the head map cannot be empty, since we insert an ensemble for
         // entry-id 0, right when we start
         return ensembles.get(ensembles.headMap(entryId + 1).lastKey());

@@ -43,7 +43,7 @@ import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -125,9 +125,52 @@ class LedgerCreateOp {
      * Initiates the operation.
      */
     public void initiate() {
+        int actualEnsembleSize = ensembleSize;
+        List<BookieId> ensemble = null;
+        // select bookies for first ensemble
+        if (bk.getConf().getOpportunisticStriping()) {
+            BKNotEnoughBookiesException lastError = null;
+            // we would like to select ensembleSize bookies, but
+            // we can settle to writeQuorumSize
+            while (actualEnsembleSize >= writeQuorumSize) {
+                try {
+                    ensemble = bk.getBookieWatcher()
+                        .newEnsemble(actualEnsembleSize, writeQuorumSize, ackQuorumSize, customMetadata);
+                    lastError = null;
+                    break;
+                } catch (BKNotEnoughBookiesException e) {
+                    if (actualEnsembleSize >= writeQuorumSize + 1) {
+                        LOG.info("Not enough bookies to create ledger with ensembleSize={},"
+                                + " writeQuorumSize={} and ackQuorumSize={}, opportusticStriping enabled, try again",
+                                    actualEnsembleSize, writeQuorumSize, ackQuorumSize);
+                    }
+                    lastError = e;
+                    actualEnsembleSize--;
+                }
+            }
+            if (lastError != null) {
+                LOG.error("Not enough bookies to create ledger with ensembleSize={},"
+                        + " writeQuorumSize={} and ackQuorumSize={}",
+                        actualEnsembleSize, writeQuorumSize, ackQuorumSize);
+                createComplete(lastError.getCode(), null);
+                return;
+            }
+        } else {
+            try {
+                ensemble = bk.getBookieWatcher()
+                        .newEnsemble(actualEnsembleSize, writeQuorumSize, ackQuorumSize, customMetadata);
+            } catch (BKNotEnoughBookiesException e) {
+                LOG.error("Not enough bookies to create ledger with ensembleSize={},"
+                        + " writeQuorumSize={} and ackQuorumSize={}",
+                            actualEnsembleSize, writeQuorumSize, ackQuorumSize);
+                createComplete(e.getCode(), null);
+                return;
+            }
+        }
         LedgerMetadataBuilder metadataBuilder = LedgerMetadataBuilder.create()
-            .withEnsembleSize(ensembleSize).withWriteQuorumSize(writeQuorumSize).withAckQuorumSize(ackQuorumSize)
+            .withEnsembleSize(actualEnsembleSize).withWriteQuorumSize(writeQuorumSize).withAckQuorumSize(ackQuorumSize)
             .withDigestType(digestType.toApiDigestType()).withPassword(passwd);
+        metadataBuilder.newEnsembleEntry(0L, ensemble);
         if (customMetadata != null) {
             metadataBuilder.withCustomMetadata(customMetadata);
         }
@@ -135,29 +178,17 @@ class LedgerCreateOp {
             metadataBuilder.withCreationTime(System.currentTimeMillis()).storingCreationTime(true);
         }
 
-        // select bookies for first ensemble
-        try {
-            List<BookieSocketAddress> ensemble = bk.getBookieWatcher()
-                .newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata);
-            metadataBuilder.newEnsembleEntry(0L, ensemble);
-        } catch (BKNotEnoughBookiesException e) {
-            LOG.error("Not enough bookies to create ledger");
-            createComplete(e.getCode(), null);
-            return;
-        }
-
-
-        this.metadata = metadataBuilder.build();
         if (this.generateLedgerId) {
-            generateLedgerIdAndCreateLedger();
+            generateLedgerIdAndCreateLedger(metadataBuilder);
         } else {
+            this.metadata = metadataBuilder.withId(ledgerId).build();
             // Create ledger with supplied ledgerId
             bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata)
-                .whenComplete((written, exception) -> metadataCallback(written, exception));
+                .whenComplete((written, exception) -> metadataCallback(written, exception, metadataBuilder));
         }
     }
 
-    void generateLedgerIdAndCreateLedger() {
+    void generateLedgerIdAndCreateLedger(LedgerMetadataBuilder metadataBuilder) {
         // generate a ledgerId
         final LedgerIdGenerator ledgerIdGenerator = bk.getLedgerIdGenerator();
         ledgerIdGenerator.generateLedgerId(new GenericCallback<Long>() {
@@ -168,9 +199,10 @@ class LedgerCreateOp {
                     return;
                 }
                 LedgerCreateOp.this.ledgerId = ledgerId;
+                LedgerCreateOp.this.metadata = metadataBuilder.withId(ledgerId).build();
                 // create a ledger with metadata
                 bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata)
-                    .whenComplete((written, exception) -> metadataCallback(written, exception));
+                    .whenComplete((written, exception) -> metadataCallback(written, exception, metadataBuilder));
             }
         });
     }
@@ -190,12 +222,13 @@ class LedgerCreateOp {
     /**
      * Callback when metadata store has responded.
      */
-    private void metadataCallback(Versioned<LedgerMetadata> writtenMetadata, Throwable exception) {
+    private void metadataCallback(Versioned<LedgerMetadata> writtenMetadata,
+                                  Throwable exception, LedgerMetadataBuilder metadataBuilder) {
         if (exception != null) {
             if (this.generateLedgerId
                 && (BKException.getExceptionCode(exception) == BKException.Code.LedgerExistException)) {
                 // retry to generate a new ledger id
-                generateLedgerIdAndCreateLedger();
+                generateLedgerIdAndCreateLedger(metadataBuilder);
             } else {
                 createComplete(BKException.getExceptionCode(exception), null);
             }
@@ -217,10 +250,10 @@ class LedgerCreateOp {
                 return;
             }
 
-            List<BookieSocketAddress> curEns = lh.getLedgerMetadata().getEnsembleAt(0L);
+            List<BookieId> curEns = lh.getLedgerMetadata().getEnsembleAt(0L);
             LOG.info("Ensemble: {} for ledger: {}", curEns, lh.getId());
 
-            for (BookieSocketAddress bsa : curEns) {
+            for (BookieId bsa : curEns) {
                 clientStats.getEnsembleBookieDistributionCounter(bsa.toString()).inc();
             }
 
