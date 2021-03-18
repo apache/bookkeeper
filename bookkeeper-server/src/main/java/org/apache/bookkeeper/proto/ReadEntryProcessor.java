@@ -45,14 +45,17 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
     private static final Logger LOG = LoggerFactory.getLogger(ReadEntryProcessor.class);
 
     private ExecutorService fenceThreadPool;
+    private boolean throttleReadResponses;
 
     public static ReadEntryProcessor create(ReadRequest request,
                                             Channel channel,
                                             BookieRequestProcessor requestProcessor,
-                                            ExecutorService fenceThreadPool) {
+                                            ExecutorService fenceThreadPool,
+                                            boolean throttleReadResponses) {
         ReadEntryProcessor rep = RECYCLER.get();
         rep.init(request, channel, requestProcessor);
         rep.fenceThreadPool = fenceThreadPool;
+        rep.throttleReadResponses = throttleReadResponses;
         return rep;
     }
 
@@ -129,7 +132,12 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
             logger.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             response = ResponseBuilder.buildErrorResponse(errorCode, request);
         }
-        sendResponse(errorCode, response, stats.getReadRequestStats());
+
+        if (throttleReadResponses) {
+            sendResponseAndWait(errorCode, response, stats.getReadRequestStats());
+        } else {
+            sendResponse(errorCode, response, stats.getReadRequestStats());
+        }
         recycle();
     }
 

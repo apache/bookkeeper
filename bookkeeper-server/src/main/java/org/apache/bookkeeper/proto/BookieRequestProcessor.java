@@ -128,6 +128,8 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     private final ByteBufAllocator allocator;
 
+    private final boolean throttleReadResponses;
+
     public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie, StatsLogger statsLogger,
             SecurityHandlerFactory shFactory, ByteBufAllocator allocator) throws SecurityException {
         this.serverCfg = serverCfg;
@@ -135,6 +137,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         this.waitTimeoutOnBackpressureMillis = serverCfg.getWaitTimeoutOnResponseBackpressureMillis();
         this.preserveMdcForTaskExecution = serverCfg.getPreserveMdcForTaskExecution();
         this.bookie = bookie;
+        this.throttleReadResponses = serverCfg.isReadWorkerThreadsThrottlingEnabled();
         this.readThreadPool = createExecutor(
                 this.serverCfg.getNumReadWorkerThreads(),
                 "BookieReadThreadPool",
@@ -643,7 +646,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     private void processReadRequest(final BookieProtocol.ReadRequest r, final Channel c) {
         ExecutorService fenceThreadPool =
                 null == highPriorityThreadPool ? null : highPriorityThreadPool.chooseThread(c);
-        ReadEntryProcessor read = ReadEntryProcessor.create(r, c, this, fenceThreadPool);
+        ReadEntryProcessor read = ReadEntryProcessor.create(r, c, this, fenceThreadPool, throttleReadResponses);
 
         // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
         // gets executed as fast as possible, so bypass the normal readThreadPool
