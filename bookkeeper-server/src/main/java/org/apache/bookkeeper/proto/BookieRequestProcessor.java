@@ -137,7 +137,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         this.waitTimeoutOnBackpressureMillis = serverCfg.getWaitTimeoutOnResponseBackpressureMillis();
         this.preserveMdcForTaskExecution = serverCfg.getPreserveMdcForTaskExecution();
         this.bookie = bookie;
-        this.throttleReadResponses = serverCfg.isReadWorkerThreadsThrottle();
+        this.throttleReadResponses = serverCfg.isReadWorkerThreadsThrottlingEnabled();
         this.readThreadPool = createExecutor(
                 this.serverCfg.getNumReadWorkerThreads(),
                 "BookieReadThreadPool",
