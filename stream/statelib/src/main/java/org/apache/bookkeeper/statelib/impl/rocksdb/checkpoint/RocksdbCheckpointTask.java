@@ -17,9 +17,7 @@
  */
 package org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
 import com.google.protobuf.UnsafeByteOperations;
@@ -30,7 +28,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
@@ -44,6 +42,7 @@ import org.rocksdb.RocksDBException;
  */
 @Slf4j
 public class RocksdbCheckpointTask {
+
 
     /**
      * Error injection support for testing of the checkpoint.
@@ -61,6 +60,8 @@ public class RocksdbCheckpointTask {
     private final String dbPrefix;
     private final boolean removeLocalCheckpointAfterSuccessfulCheckpoint;
     private final boolean removeRemoteCheckpointsAfterSuccessfulCheckpoint;
+    private final boolean checkpointChecksumCompatible;
+    private final boolean checkpointChecksumEnable;
 
     // for testing only
     private InjectedError<String> injectedError = (String checkpointId) -> {};
@@ -70,7 +71,9 @@ public class RocksdbCheckpointTask {
                                  File checkpointDir,
                                  CheckpointStore checkpointStore,
                                  boolean removeLocalCheckpoint,
-                                 boolean removeRemoteCheckpoints) {
+                                 boolean removeRemoteCheckpoints,
+                                 boolean checkpointChecksumEnable,
+                                 boolean checkpointChecksumCompatible) {
         this.dbName = dbName;
         this.checkpoint = checkpoint;
         this.checkpointDir = checkpointDir;
@@ -78,6 +81,8 @@ public class RocksdbCheckpointTask {
         this.dbPrefix = String.format("%s", dbName);
         this.removeLocalCheckpointAfterSuccessfulCheckpoint = removeLocalCheckpoint;
         this.removeRemoteCheckpointsAfterSuccessfulCheckpoint = removeRemoteCheckpoints;
+        this.checkpointChecksumEnable = checkpointChecksumEnable;
+        this.checkpointChecksumCompatible = checkpointChecksumCompatible;
     }
 
     public void setInjectedError(InjectedError<String> injectedError) {
@@ -108,8 +113,10 @@ public class RocksdbCheckpointTask {
 
             injectedError.accept(checkpointId);
 
-            // get the files to copy
-            List<File> filesToCopy = getFilesToCopy(tempDir);
+            List<CheckpointFile> checkpointFiles = CheckpointFile.list(tempDir);
+            List<CheckpointFile> filesToCopy = checkpointFiles.stream()
+                .filter(f -> f.needCopy(checkpointStore, dbPrefix, checkpointChecksumEnable))
+                .collect(Collectors.toList());
 
             // copy the files
             copyFilesToDest(checkpointId, filesToCopy);
@@ -118,11 +125,11 @@ public class RocksdbCheckpointTask {
             finalizeCopyFiles(checkpointId, filesToCopy);
 
             // dump the file list to checkpoint file
-            finalizeCheckpoint(checkpointId, tempDir, txid);
+            finalizeCheckpoint(checkpointFiles, checkpointId, txid);
 
             // clean up the remote checkpoints
             if (removeRemoteCheckpointsAfterSuccessfulCheckpoint) {
-                cleanupRemoteCheckpoints(tempDir, checkpointId);
+                cleanupRemoteCheckpoints(tempDir, checkpointId, checkpointFiles);
             }
 
             return checkpointId;
@@ -144,63 +151,35 @@ public class RocksdbCheckpointTask {
         }
     }
 
-    private List<File> getFilesToCopy(File checkpointedDir) throws IOException {
-        File[] files = checkpointedDir.listFiles();
-
-        List<File> fileToCopy = Lists.newArrayListWithExpectedSize(files.length);
-        for (File file : files) {
-            if (RocksUtils.isSstFile(file)) {
-                // sst files
-                String destSstPath = RocksUtils.getDestSstPath(dbPrefix, file);
-                // TODO: do more validation on the file
-                if (!checkpointStore.fileExists(destSstPath)) {
-                    fileToCopy.add(file);
-                }
-            } else {
-                fileToCopy.add(file);
-            }
-        }
-        return fileToCopy;
-    }
-
-    private void copyFilesToDest(String checkpointId, List<File> files) throws IOException {
-        for (File file : files) {
-            copyFileToDest(checkpointId, file);
-        }
-
-    }
-
     /**
      * All sst files are copied to checkpoint location first.
      */
-    private void copyFileToDest(String checkpointId, File file) throws IOException {
-        String destPath = RocksUtils.getDestPath(dbPrefix, checkpointId, file);
-        try (OutputStream os = checkpointStore.openOutputStream(destPath)) {
-            Files.copy(file, os);
+    private void copyFilesToDest(String checkpointId, List<CheckpointFile> files) throws IOException {
+        for (CheckpointFile file : files) {
+            file.copyToRemote(checkpointStore, dbPrefix, checkpointId);
         }
     }
 
     /**
      * Move the sst files to a common location.
      */
-    private void finalizeCopyFiles(String checkpointId, List<File> files) throws IOException {
-        for (File file : files) {
-            if (RocksUtils.isSstFile(file)) {
-                String destSstTempPath = RocksUtils.getDestTempSstPath(
-                    dbPrefix, checkpointId, file);
-                String destSstPath = RocksUtils.getDestSstPath(dbPrefix, file);
-                checkpointStore.rename(destSstTempPath, destSstPath);
-            }
+    private void finalizeCopyFiles(String checkpointId,
+                                   List<CheckpointFile> files) throws IOException {
+        for (CheckpointFile file : files) {
+            file.finalize(checkpointStore, dbPrefix, checkpointId,
+                checkpointChecksumEnable, checkpointChecksumCompatible);
         }
     }
 
-    private void finalizeCheckpoint(String checkpointId,
-                                    File checkpointedDir,
+    private void finalizeCheckpoint(List<CheckpointFile> files,
+                                    String checkpointId,
                                     byte[] txid) throws IOException {
-        File[] files = checkpointedDir.listFiles();
 
         CheckpointMetadata.Builder metadataBuilder = CheckpointMetadata.newBuilder();
-        for (File file : files) {
+        for (CheckpointFile file : files) {
+            if (checkpointChecksumEnable) {
+                metadataBuilder.addFileInfos(file.getFileInfo());
+            }
             metadataBuilder.addFiles(file.getName());
         }
         if (null != txid) {
@@ -220,7 +199,9 @@ public class RocksdbCheckpointTask {
      * <p>1) remove unneeded checkpoints
      * 2) remove unreferenced sst files.
      */
-    private void cleanupRemoteCheckpoints(File checkpointedDir, String checkpointToExclude) throws IOException {
+    private void cleanupRemoteCheckpoints(File checkpointedDir,
+                                          String checkpointToExclude,
+                                          List<CheckpointFile> filesToKeep) throws IOException {
         String checkpointsPath = RocksUtils.getDestCheckpointsPath(dbPrefix);
         List<String> checkpoints = checkpointStore.listFiles(checkpointsPath);
 
@@ -237,17 +218,24 @@ public class RocksdbCheckpointTask {
         }
 
         // delete unused ssts
-        Set<String> checkpointedFileSet = Sets.newHashSet();
-        String[] checkpointedFiles = checkpointedDir.list();
-        for (String file : checkpointedFiles) {
-            checkpointedFileSet.add(file);
+        Set<String> sstsToKeep = filesToKeep.stream()
+            .filter(f -> f.isSstFile())
+            .map(f -> f.getNameWithChecksum())
+            .collect(Collectors.toSet());
+        if (checkpointChecksumCompatible) {
+            // If we are running in compatible mode, we need to retain sst files without checksum suffix.
+            Set<String> files = filesToKeep.stream()
+                .filter(f -> f.isSstFile())
+                .map(f -> f.getName())
+                .collect(Collectors.toSet());
+            sstsToKeep.addAll(files);
         }
+        Set<String> allSsts = checkpointStore.listFiles(RocksUtils.getDestSstsPath(dbPrefix))
+            .stream()
+            .collect(Collectors.toSet());
 
-        List<String> allSsts = checkpointStore.listFiles(RocksUtils.getDestSstsPath(dbPrefix));
-        for (String sst : allSsts) {
-            if (checkpointedFileSet.contains(sst)) {
-                continue;
-            }
+        Set<String> toDelete = Sets.difference(allSsts, sstsToKeep);
+        for (String sst: toDelete) {
             checkpointStore.delete(RocksUtils.getDestSstPath(dbPrefix, sst));
         }
     }

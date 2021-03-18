@@ -17,18 +17,14 @@
  */
 package org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint;
 
-import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
-import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
 import org.apache.bookkeeper.stream.proto.kv.store.CheckpointMetadata;
 
 /**
@@ -55,9 +51,13 @@ public class RocksdbRestoreTask {
         File checkpointedDir = new File(checkpointDir, checkpointId);
 
         try {
-            List<String> filesToCopy = getFilesToCopy(checkpointId, checkpointedDir, metadata);
 
-            copyFilesFromRemote(checkpointId, checkpointedDir, filesToCopy);
+            if (!checkpointedDir.exists()) {
+                Files.createDirectories(
+                        Paths.get(checkpointedDir.getAbsolutePath()));
+            }
+            List<CheckpointFile> files = getCheckpointFiles(checkpointedDir, metadata);
+            copyFilesFromRemote(checkpointId, files);
         } catch (IOException ioe) {
             log.error("Failed to restore checkpoint {} to local directory {}",
                 new Object[] { checkpointId, checkpointedDir, ioe });
@@ -67,65 +67,14 @@ public class RocksdbRestoreTask {
         }
     }
 
-    private List<String> getFilesToCopy(String checkpointId,
-                                        File checkpointedDir,
-                                        CheckpointMetadata metadata) throws IOException {
-        if (!checkpointedDir.exists()) {
-            Files.createDirectories(
-                Paths.get(checkpointedDir.getAbsolutePath()));
-        }
-
-        List<String> filesToCopy = Lists.newArrayListWithExpectedSize(metadata.getFilesCount());
-        for (String fileName : metadata.getFilesList()) {
-            File localFile = new File(checkpointedDir, fileName);
-            if (!localFile.exists()) {
-                filesToCopy.add(fileName);
-                continue;
-            }
-
-            String srcFile;
-            if (RocksUtils.isSstFile(localFile)) {
-                srcFile = RocksUtils.getDestSstPath(dbPrefix, localFile);
-            } else {
-                srcFile = RocksUtils.getDestPath(dbPrefix, checkpointId, localFile);
-            }
-
-            long srcFileLength = checkpointStore.getFileLength(srcFile);
-            long localFileLength = localFile.length();
-            if (srcFileLength != localFileLength) {
-                filesToCopy.add(fileName);
-            }
-        }
-
-        return filesToCopy;
+    protected List<CheckpointFile> getCheckpointFiles(File checkpointedDir, CheckpointMetadata metadata) {
+        return CheckpointFile.list(checkpointedDir, metadata);
     }
 
     private void copyFilesFromRemote(String checkpointId,
-                                     File checkpointedDir,
-                                     List<String> remoteFiles) throws IOException {
-        for (String file : remoteFiles) {
-            copyFileFromRemote(checkpointId, checkpointedDir, file);
+                                     List<CheckpointFile> remoteFiles) throws IOException {
+        for (CheckpointFile file : remoteFiles) {
+            file.copyFromRemote(checkpointStore, dbPrefix, checkpointId);
         }
     }
-
-    private void copyFileFromRemote(String checkpointId,
-                                    File checkpointedDir,
-                                    String remoteFile) throws IOException {
-        File localFile = new File(checkpointedDir, remoteFile);
-        String remoteFilePath;
-        if (RocksUtils.isSstFile(localFile)) {
-            remoteFilePath = RocksUtils.getDestSstPath(dbPrefix, localFile);
-        } else {
-            remoteFilePath = RocksUtils.getDestPath(dbPrefix, checkpointId, localFile);
-        }
-
-        byte[] data = new byte[128 * 1024];
-        try (InputStream is = checkpointStore.openInputStream(remoteFilePath)) {
-            Files.copy(
-                is,
-                Paths.get(localFile.getAbsolutePath()),
-                StandardCopyOption.REPLACE_EXISTING);
-        }
-    }
-
 }

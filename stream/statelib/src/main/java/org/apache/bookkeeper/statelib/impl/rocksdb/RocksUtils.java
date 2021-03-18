@@ -60,6 +60,10 @@ public final class RocksUtils {
         return String.format("%s/ssts/%s", dbPrefix, file.getName());
     }
 
+    public static String getDestSstPath(String dbPrefix, String cksum, File file) {
+        return String.format("%s/ssts/%s-%s", dbPrefix, file.getName(), cksum);
+    }
+
     public static String getDestSstPath(String dbPrefix, String fileName) {
         return String.format("%s/ssts/%s", dbPrefix, fileName);
     }
@@ -72,6 +76,12 @@ public final class RocksUtils {
                                      String checkpointId,
                                      File file) {
         return String.format("%s/checkpoints/%s/%s", dbPrefix, checkpointId, file.getName());
+    }
+
+    public static String getDestPath(String dbPrefix,
+                                     String checkpointId,
+                                     String fileName) {
+        return String.format("%s/checkpoints/%s/%s", dbPrefix, checkpointId, fileName);
     }
 
 }

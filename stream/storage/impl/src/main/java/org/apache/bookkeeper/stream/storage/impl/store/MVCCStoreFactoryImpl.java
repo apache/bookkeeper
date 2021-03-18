@@ -43,6 +43,7 @@ import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.bookkeeper.stream.protocol.RangeId;
 import org.apache.bookkeeper.stream.storage.StorageResources;
+import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.api.namespace.Namespace;
 
 /**
@@ -72,12 +73,13 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
     private final Map<Long, Map<RangeId, MVCCAsyncStore<byte[], byte[]>>> stores;
     private final boolean serveReadOnlyTable;
     private boolean closed = false;
+    private final StorageConfiguration storageConf;
 
     public MVCCStoreFactoryImpl(Supplier<Namespace> namespaceSupplier,
                                 Supplier<CheckpointStore> checkpointStoreSupplier,
                                 File[] localStoreDirs,
                                 StorageResources storageResources,
-                                boolean serveReadOnlyTable) {
+                                boolean serveReadOnlyTable, StorageConfiguration storageConf) {
         this.storeSupplier = StateStores.mvccKvBytesStoreSupplier(namespaceSupplier);
         this.storageResources = storageResources;
         this.writeIOScheduler =
@@ -88,6 +90,7 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             SharedResourceManager.shared().get(storageResources.checkpointScheduler());
         this.localStateDirs = localStoreDirs;
         this.checkpointStoreSupplier = checkpointStoreSupplier;
+        this.storageConf = storageConf;
         this.stores = Maps.newHashMap();
         this.serveReadOnlyTable = serveReadOnlyTable;
     }
@@ -206,7 +209,10 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             .checkpointDuration(Duration.ofMinutes(15))
             .checkpointIOScheduler(chooseCheckpointIOExecutor(streamId))
             .isReadonly(serveReadOnlyTable)
+            .checkpointChecksumEnable(storageConf.getCheckpointChecksumEnable())
+            .checkpointChecksumCompatible(storageConf.getCheckpointChecksumCompatible())
             .build();
+
 
         return store.init(spec).whenComplete((ignored, throwable) -> {
             // since the store has not been added, so can't release its resources during close sc

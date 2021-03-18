@@ -146,6 +146,8 @@ public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBa
             .checkpointStore(checkpointStore)
             .checkpointIOScheduler(checkpointExecutor)
             .checkpointDuration(Duration.ofMinutes(1))
+            .checkpointChecksumEnable(true)
+            .checkpointChecksumCompatible(false)
             .build();
     }
 

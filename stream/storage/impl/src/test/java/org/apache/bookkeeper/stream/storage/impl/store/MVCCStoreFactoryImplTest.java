@@ -39,6 +39,8 @@ import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.fs.FSCheckpointManager;
 import org.apache.bookkeeper.stream.storage.StorageResources;
 import org.apache.bookkeeper.stream.storage.StorageResourcesSpec;
+import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.LogRecordWithDLSN;
@@ -64,6 +66,11 @@ public class MVCCStoreFactoryImplTest {
     private File[] storeDirs;
     private StorageResources resources;
     private MVCCStoreFactoryImpl factory;
+
+    private final CompositeConfiguration compConf =
+        new CompositeConfiguration();
+    private final StorageConfiguration storageConf =
+        new StorageConfiguration(compConf);
 
     @Before
     public void setup() throws IOException {
@@ -103,7 +110,7 @@ public class MVCCStoreFactoryImplTest {
             () -> new FSCheckpointManager(new File(storeDirs[0], "checkpoints")),
             storeDirs,
             resources,
-            false);
+            false, storageConf);
     }
 
     @Test
