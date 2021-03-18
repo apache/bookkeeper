@@ -134,6 +134,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private static final long DEFAULT_MAX_THROTTLE_TIME_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
+    private final long maxReadAheadBytesSize;
+
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
             LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StateManager stateManager,
             CheckpointSource checkpointSource, Checkpointer checkpointer, StatsLogger statsLogger,
@@ -154,6 +156,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         readCacheMaxSize = readCacheSize;
         readAheadCacheBatchSize = conf.getInt(READ_AHEAD_CACHE_BATCH_SIZE, DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE);
+
+        // Do not attempt to perform read-ahead more than half the total size of the cache
+        maxReadAheadBytesSize = readCacheMaxSize / 2;
 
         long maxThrottleTimeMillis = conf.getLong(DbLedgerStorage.MAX_THROTTLE_TIME_MILLIS,
                 DEFAULT_MAX_THROTTLE_TIME_MILLIS);
@@ -469,7 +474,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             int count = 0;
             long size = 0;
 
-            while (count < readAheadCacheBatchSize && currentEntryLogId == firstEntryLogId) {
+            while (count < readAheadCacheBatchSize
+                    && size < maxReadAheadBytesSize
+                    && currentEntryLogId == firstEntryLogId) {
                 ByteBuf entry = entryLogger.internalReadEntry(orginalLedgerId, firstEntryId, currentEntryLocation,
                         false /* validateEntry */);
 
