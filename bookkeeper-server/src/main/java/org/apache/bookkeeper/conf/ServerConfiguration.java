@@ -203,6 +203,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
     protected static final String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
     protected static final String NUM_HIGH_PRIORITY_WORKER_THREADS = "numHighPriorityWorkerThreads";
+    protected static final String READ_WORKER_THREADS_THROTTLING_ENABLED = "readWorkerThreadsThrottlingEnabled";
 
     // Long poll parameters
     protected static final String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
@@ -1754,6 +1755,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public int getNumHighPriorityWorkerThreads() {
         return getInt(NUM_HIGH_PRIORITY_WORKER_THREADS, 8);
     }
+
+    /**
+     * Use auto-throttling of the read-worker threads. This is done
+     * to ensure the bookie is not using unlimited amount of memory
+     * to respond to read-requests.
+     *
+     * @param throttle
+     *          whether to throttle the read workers threads
+     * @return server configuration
+     */
+    public ServerConfiguration setReadWorkerThreadsThrottlingEnabled(boolean throttle) {
+        setProperty(READ_WORKER_THREADS_THROTTLING_ENABLED, throttle);
+        return this;
+    }
+
+    /**
+     * Get the auto-throttling status of the read-worker threads.
+     * @return
+     */
+    public boolean isReadWorkerThreadsThrottlingEnabled() {
+        return getBoolean(READ_WORKER_THREADS_THROTTLING_ENABLED, true);
+    }
+
 
 
     /**
