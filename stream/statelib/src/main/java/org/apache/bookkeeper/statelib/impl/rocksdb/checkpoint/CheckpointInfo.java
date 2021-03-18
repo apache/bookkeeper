@@ -73,6 +73,7 @@ public class CheckpointInfo implements Comparable<CheckpointInfo> {
                                               CheckpointStore store) throws StateStoreException {
                 try {
                     Files.createDirectories(getCheckpointPath(dbPath));
+                    updateCurrent(dbPath);
                 } catch (IOException ioe) {
                     throw new StateStoreException("Failed to create dir " + dbName, ioe);
                 }
@@ -127,8 +128,10 @@ public class CheckpointInfo implements Comparable<CheckpointInfo> {
         return this.getCreatedAt().compareTo(o.getCreatedAt());
     }
 
-    public CheckpointMetadata restore(RocksdbRestoreTask task) throws StateStoreException {
+    public CheckpointMetadata restore(File dbPath, RocksdbRestoreTask task) throws StateStoreException, IOException {
         task.restore(id, metadata);
+        updateCurrent(dbPath);
+        log.info("Successfully restore checkpoint {} to {}", id, getCheckpointPath(dbPath));
         return metadata;
     }
 
@@ -136,12 +139,7 @@ public class CheckpointInfo implements Comparable<CheckpointInfo> {
         try {
             File checkpointsDir = new File(dbPath, "checkpoints");
             RocksdbRestoreTask task = new RocksdbRestoreTask(dbName, checkpointsDir, store);
-
-            task.restore(id, metadata);
-            updateCurrent(dbPath);
-
-            log.info("Successfully restore checkpoint {} to {}", id, getCheckpointPath(dbPath));
-            return metadata;
+            return restore(dbPath, task);
         } catch (IOException ioe) {
             log.error("Failed to restore rocksdb {}", dbName, ioe);
             throw new StateStoreException("Failed to restore rocksdb " + dbName, ioe);

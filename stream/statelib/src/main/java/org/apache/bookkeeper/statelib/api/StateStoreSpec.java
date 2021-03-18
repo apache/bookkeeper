@@ -51,4 +51,8 @@ public class StateStoreSpec {
     @Singular
     private Map<String, Object> configs;
 
+    @Default
+    private boolean checkpointChecksumEnable = true;
+    @Default
+    private boolean checkpointChecksumCompatible = true;
 }

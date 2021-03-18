@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import lombok.Cleanup;
 import org.apache.bookkeeper.common.coder.StringUtf8Coder;
@@ -48,6 +49,7 @@ import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
 import org.apache.bookkeeper.statelib.api.kv.KVIterator;
 import org.apache.bookkeeper.statelib.impl.kv.RocksdbKVStore;
+import org.apache.bookkeeper.statelib.impl.kv.TestStateStore;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.fs.FSCheckpointManager;
 import org.apache.bookkeeper.stream.proto.kv.store.CheckpointMetadata;
@@ -141,30 +143,29 @@ public class RocksCheckpointerTest {
 
     private void verifyCheckpointMetadata(File checkpointedDir,
                                           CheckpointMetadata metadata) {
-        String[] files = checkpointedDir.list();
+        List<CheckpointFile> files = CheckpointFile.list(checkpointedDir);
         assertNotNull(files);
-        assertEquals(files.length, metadata.getFilesCount());
-        Set<String> fileSet = Sets.newHashSet();
-        for (String file : files) {
-            fileSet.add(file);
-        }
-        for (String file : metadata.getFilesList()) {
-            assertTrue(fileSet.contains(file));
-        }
+        assertEquals(files.size(), metadata.getFileInfosCount());
+
+        Set<CheckpointFile> localFiles = Sets.newHashSet(files);
+        Set<CheckpointFile> metadataFiles = metadata.getFileInfosList()
+            .stream()
+            .map(f -> CheckpointFile.builder()
+                .file(checkpointedDir, f.getName())
+                .computeChecksum()
+                .build())
+            .collect(Collectors.toSet());
+
+        assertEquals(localFiles, metadataFiles);
     }
 
     private void verifyRemoteFiles(String checkpointId, File checkpointedDir) throws Exception {
-        File[] files = checkpointedDir.listFiles();
+        List<CheckpointFile> files = CheckpointFile.list(checkpointedDir);
         assertNotNull(files);
 
-        for (File file : files) {
-            String remoteFile;
-            if (RocksUtils.isSstFile(file)) {
-                remoteFile = RocksUtils.getDestSstPath(store.name(), file.getName());
-            } else {
-                remoteFile = RocksUtils.getDestPath(store.name(), checkpointId, file);
-            }
-            verifyRemoteFile(remoteFile, file);
+        for (CheckpointFile file : files) {
+            String remoteFile = file.getRemotePath(store.name(), checkpointId, true);
+            verifyRemoteFile(remoteFile, file.getFile());
         }
     }
 
@@ -200,7 +201,9 @@ public class RocksCheckpointerTest {
             store.getDb(),
             checkpointStore,
             removeLocalCheckpointAfterCheckpoint,
-            removeRemoteCheckpointsAfterCheckpoint)) {
+            removeRemoteCheckpointsAfterCheckpoint,
+            true,
+            false)) {
             int idx = 0;
             for (int i = 0; i < numCheckpoints; i++) {
                 writeNumKvs(100, idx);
@@ -242,6 +245,8 @@ public class RocksCheckpointerTest {
             localCheckpointsDir,
             checkpointStore,
             false,
+            false,
+            true,
             false);
 
         String checkpointId = checkpointTask.checkpoint(txid);
@@ -347,6 +352,131 @@ public class RocksCheckpointerTest {
         for (int i = 0; i < checkpointIds.size(); i++) {
             assertEquals(checkpointIds.get(i), checkpoints.get(totalCheckpoints - 2 - i).getId());
         }
+    }
+
+    @Test
+    public void testStaleSSTFile() throws Exception {
+        final int numKvs = 100;
+        TestStateStore testStore = new TestStateStore(
+            runtime.getMethodName(), localDir, remoteDir, true, false);
+
+        store.close();
+
+        testStore.enableCheckpoints(true);
+        testStore.init();
+
+        testStore.addNumKVs("transaction-1", numKvs, 0);
+        // create base checkpoint
+        String baseCheckpoint = testStore.checkpoint("checkpoint-1");
+        testStore.restore();
+
+        testStore.addNumKVs("transaction-2", numKvs, 100);
+        // create failed checkpoint
+        String failedCheckpoint = testStore.checkpoint("checkpoint-2");
+        // Remove metadata from the checkpoint to signal failure
+
+        CheckpointInfo checkpoint = testStore.getLatestCheckpoint();
+        testStore.corruptCheckpoint(checkpoint);
+
+        // restore : this should restore from base checkpoint
+        testStore.destroyLocal();
+        testStore.restore();
+        assertEquals("transaction-1", testStore.get("transaction-id"));
+
+        testStore.addNumKVs("transaction-3", numKvs * 3, 200);
+        // create another test checkpoint
+        String newCheckpoint = testStore.checkpoint("checkpoint-3");
+
+        // Ensure latest checkpoint can be restored.
+        testStore.destroyLocal();
+        testStore.restore();
+        assertEquals("transaction-3", testStore.get("transaction-id"));
+    }
+
+    @Test
+    public void testRestoreDowngradeWithoutChecksumCompatible() throws Exception {
+        store.close();
+        TestStateStore testStore = new TestStateStore(
+            runtime.getMethodName(), localDir, remoteDir, true, false);
+
+        testStore.checkpointChecksumCompatible(true);
+        downgradeWithoutChecksum(testStore);
+        // if compatible then downgrade should work
+        assertEquals("transaction-1", testStore.get("transaction-id"));
+    }
+
+    @Test
+    public void testRestoreDowngradeWithoutChecksumNonCompatible() throws Exception {
+        store.close();
+        TestStateStore testStore = new TestStateStore(
+            runtime.getMethodName(), localDir, remoteDir, true, false);
+
+        testStore.checkpointChecksumCompatible(false);
+        try {
+            downgradeWithoutChecksum(testStore);
+            fail("Downgrade without checksum compatible set should fail");
+        } catch (StateStoreException sse) {
+        }
+    }
+
+    private String downgradeWithoutChecksum(TestStateStore testStore) throws Exception {
+        final int numKvs = 100;
+        testStore.init();
+
+        testStore.addNumKVs("transaction-1", numKvs, 0);
+        String checkpoint1 = testStore.checkpoint("checkpoint-1");
+
+        assertEquals("transaction-1", testStore.get("transaction-id"));
+
+        // restore without checksum information
+        RocksdbRestoreTask restoreTask = getDowngradeRestoreTask();
+
+        testStore.destroyLocal();
+        CheckpointInfo latest = testStore.getLatestCheckpoint();
+
+        latest.restore(localDir, restoreTask);
+
+        testStore.init();
+        return checkpoint1;
+    }
+
+    private RocksdbRestoreTask getDowngradeRestoreTask() {
+        return new RocksdbRestoreTask(
+            runtime.getMethodName(), localCheckpointsDir, checkpointStore) {
+
+            @Override
+            protected List<CheckpointFile> getCheckpointFiles(File checkpointedDir, CheckpointMetadata metadata) {
+                // ignore the checksum info in metadata
+                return metadata.getFilesList().stream()
+                    .map(f -> CheckpointFile.builder()
+                        .file(checkpointedDir, f)
+                        .build())
+                    .collect(Collectors.toList());
+            }
+        };
+    }
+
+    @Test
+    public void testRestoreOldCheckpointWithoutChecksum() throws Exception {
+        final int numKvs = 100;
+        TestStateStore testStore = new TestStateStore(
+            runtime.getMethodName(), localDir, remoteDir, true, false);
+
+        store.close();
+
+        testStore.enableCheckpoints(true);
+        testStore.checkpointChecksumEnable(false);
+        testStore.init();
+
+        testStore.addNumKVs("transaction-1", numKvs, 0);
+        String checkpoint1 = testStore.checkpoint("checkpoint-1");
+
+
+        testStore.checkpointChecksumEnable(true);
+        // restore : this should restore to checkpoint-2
+        testStore.destroyLocal();
+        testStore.restore();
+        assertEquals("transaction-1", testStore.get("transaction-id"));
     }
 
     @Test
@@ -461,6 +591,8 @@ public class RocksCheckpointerTest {
                 localCheckpointsDir,
                 checkpointStore,
                 false,
+                false,
+                true,
                 false);
 
         // let's simulate the crash.
