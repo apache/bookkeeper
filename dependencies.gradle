@@ -1,0 +1,108 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+ext {
+    depVersions = null
+    depLibs = null
+}
+
+depVersions = [
+    bcFips: "1.0.1",
+    bouncycastle: "1.60",
+    commonsCli: "1.2",
+    commonsCodec: "1.6",
+    commonsCollections4: "4.1",
+    commonsConfiguration: "1.10",
+    commonsIO: "2.4",
+    commonsLang3: "3.6",
+    errorprone: "2.1.2",
+    guava: "21.0",
+    hamcrest: "1.3",
+    httpclient: "4.5.13",
+    jackson: "2.9.7",
+    jcommander: "1.78",
+    jctools: "2.1.2",
+    jetty: "9.4.5.v20170502",
+    jna: "3.2.7",
+    jsr305: "3.0.2",
+    junit: "4.12",
+    junitFoundation: "11.0.0",
+    kerby: "1.1.1",
+    log4j: "1.2.17",
+    lombok: "1.18.10",
+    mockito: "3.0.0",
+    netty: "4.1.32.Final",
+    nettyTcnativeBoringSsl: "2.0.20.Final",
+    powermock: "2.0.2",
+    prometheus: "0.0.21",
+    protobuf: "3.14.0",
+    rocksDb: "6.13.3",
+    slf4j: "1.7.25",
+    spotbugsAnnotations: "3.1.8",
+    yahooDatasketches: "0.8.3",
+    zookeeper: "3.4.13",
+]
+
+depLibs = [
+    bcpkixJdk15on: "org.bouncycastle:bcpkix-jdk15on:${depVersions.bouncycastle}",
+    bcproveExtJdk15on: "org.bouncycastle:bcprov-ext-jdk15on:${depVersions.bouncycastle}",
+    bcFips: "org.bouncycastle:bc-fips:${depVersions.bcFips}",
+    commonsCli: "commons-cli:commons-cli:${depVersions.commonsCli}",
+    commonsCodec: "commons-codec:commons-codec:${depVersions.commonsCodec}",
+    commonsCollections4: "org.apache.commons:commons-collections4:${depVersions.commonsCollections4}",
+    commonsConfiguration: "commons-configuration:commons-configuration:${depVersions.commonsConfiguration}",
+    commonsIO: "commons-io:commons-io:${depVersions.commonsIO}",
+    commonsLang3: "org.apache.commons:commons-lang3:${depVersions.commonsLang3}",
+    errorprone: "com.google.errorprone:error_prone_annotations:${depVersions.errorprone}",
+    guava: "com.google.guava:guava:${depVersions.guava}",
+    hamcrest: "org.hamcrest:hamcrest-all:${depVersions.hamcrest}",
+    httpclient: "org.apache.httpcomponents:httpclient:${depVersions.httpclient}",
+    jacksonAnnotations: "com.fasterxml.jackson.core:jackson-annotations:${depVersions.jackson}",
+    jacksonCore: "com.fasterxml.jackson.core:jackson-core:${depVersions.jackson}",
+    jacksonDatabind: "com.fasterxml.jackson.core:jackson-databind:${depVersions.jackson}",
+    jcommander: "com.beust:jcommander:${depVersions.jcommander}",
+    jctools: "org.jctools:jctools-core:${depVersions.jctools}",
+    jettyServlet: "org.eclipse.jetty:jetty-servlet:${depVersions.jetty}",
+    jna: "net.java.dev.jna:jna:${depVersions.jna}",
+    jsr305: "com.google.code.findbugs:jsr305:${depVersions.jsr305}",
+    junit: "junit:junit:${depVersions.junit}",
+    junitFoundation: "com.nordstrom.tools:junit-foundation:${depVersions.junitFoundation}",
+    kerbySimpleKdc: "org.apache.kerby:kerb-simplekdc:${depVersions.kerby}",
+    log4j: "log4j:log4j:${depVersions.log4j}",
+    lombok: "org.projectlombok:lombok:${depVersions.lombok}",
+    mockito: "org.mockito:mockito-core:${depVersions.mockito}",
+    nettyBuffer: "io.netty:netty-buffer:${depVersions.netty}",
+    nettyCommon: "io.netty:netty-common:${depVersions.netty}",
+    nettyHandler: "io.netty:netty-handler:${depVersions.netty}",
+    nettyTcnativeBoringSsl: "io.netty:netty-tcnative-boringssl-static:${depVersions.nettyTcnativeBoringSsl}",
+    nettyTransportNativeEpoll: "io.netty:netty-transport-native-epoll:${depVersions.netty}",
+    powermockJunit: "org.powermock:powermock-module-junit4:${depVersions.powermock}",
+    powermockMockito: "org.powermock:powermock-api-mockito2:${depVersions.powermock}",
+    prometheusSimpleClient: "io.prometheus:simpleclient:${depVersions.prometheus}",
+    prometheusSimpleClientHotspot: "io.prometheus:simpleclient_hotspot:${depVersions.prometheus}",
+    prometheusSimpleClientServlet: "io.prometheus:simpleclient_servlet:${depVersions.prometheus}",
+    protobuf: "com.google.protobuf:protobuf-java:${depVersions.protobuf}",
+    protoc: "com.google.protobuf:protoc:${depVersions.protobuf}",
+    rocksDb: "org.rocksdb:rocksdbjni:${depVersions.rocksDb}",
+    slf4j: "org.slf4j:slf4j-api:${depVersions.slf4j}",
+    slf4jLog4j: "org.slf4j:slf4j-log4j12:${depVersions.slf4j}",
+    spotbugsAnnotations: "com.github.spotbugs:spotbugs-annotations:${depVersions.spotbugsAnnotations}",
+    yahooDatasketches: "com.yahoo.datasketches:sketches-core:${depVersions.yahooDatasketches}",
+    zookeeper: "org.apache.zookeeper:zookeeper:${depVersions.zookeeper}",
+    zookeeperTest: "org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests",
+]
