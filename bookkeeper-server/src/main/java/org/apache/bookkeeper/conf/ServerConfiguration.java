@@ -93,10 +93,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String FORCE_ALLOW_COMPACTION = "forceAllowCompaction";
     protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
-    protected static final String MINOR_COMPACTION_LIMIT_MS = "minorCompactionLimit";
+    protected static final String MINOR_COMPACTION_LIMIT_MS = "minorCompactionLimitMs";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
     protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
-    protected static final String MAJOR_COMPACTION_LIMIT_MS = "majorCompactionLimit";
+    protected static final String MAJOR_COMPACTION_LIMIT_MS = "majorCompactionLimitMs";
     protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
     protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
     protected static final String COMPACTION_RATE = "compactionRate";
@@ -1532,8 +1532,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the limit on the number of seconds to run. If <= 0 the
-     * thread will run till all compaction is completed.
+     * Get the limit on the number of milliseconds to run. If <= 0 the
+     * thread will run until all compaction is completed.
      *
      * @return limit
      *           The number of milliseconds to run compaction.
@@ -1543,8 +1543,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the limit on the number of seconds to run. If <= 0 the
-     * thread will run till all compaction is completed.
+     * Set the limit on the number of milliseconds to run. If <= 0 the
+     * thread will run until all compaction is completed.
      *
      * @see #getMajorCompactionLimitMs()
      *
@@ -1609,8 +1609,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the limit on the number of seconds to run. If <= 0 the
-     * thread will run till all compaction is completed.
+     * Get the limit on the number of milliseconds to run. If <= 0 the
+     * thread will run until all compaction is completed.
      *
      * @return limit
      *           The number of milliseconds to run compaction.
@@ -1620,8 +1620,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the limit on the number of seconds to run. If <= 0 the
-     * thread will run till all compaction is completed.
+     * Set the limit on the number of milliseconds to run. If <= 0 the
+     * thread will run until all compaction is completed.
      *
      * @see #getMinorCompactionLimitMs()
      *

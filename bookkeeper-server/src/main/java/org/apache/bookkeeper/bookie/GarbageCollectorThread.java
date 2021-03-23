@@ -71,14 +71,14 @@ public class GarbageCollectorThread extends SafeRunnable {
     boolean enableMinorCompaction = false;
     final double minorCompactionThreshold;
     final long minorCompactionInterval;
-    final long minorCompactionLimit;
+    final long minorCompactionLimitMs;
     long lastMinorCompactionTime;
 
     boolean isForceMajorCompactionAllow = false;
     boolean enableMajorCompaction = false;
     final double majorCompactionThreshold;
     final long majorCompactionInterval;
-    long majorCompactionLimit;
+    long majorCompactionLimitMs;
     long lastMajorCompactionTime;
 
     @Getter
@@ -182,8 +182,8 @@ public class GarbageCollectorThread extends SafeRunnable {
         majorCompactionThreshold = conf.getMajorCompactionThreshold();
         majorCompactionInterval = conf.getMajorCompactionInterval() * SECOND;
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
-        majorCompactionLimit = conf.getMajorCompactionLimitMs();
-        minorCompactionLimit = conf.getMinorCompactionLimitMs();
+        majorCompactionLimitMs = conf.getMajorCompactionLimitMs();
+        minorCompactionLimitMs = conf.getMinorCompactionLimitMs();
 
         boolean isForceAllowCompaction = conf.isForceAllowCompaction();
 
@@ -366,7 +366,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             // enter major compaction
             LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
             majorCompacting.set(true);
-            doCompactEntryLogs(majorCompactionThreshold, majorCompactionLimit);
+            doCompactEntryLogs(majorCompactionThreshold, majorCompactionLimitMs);
             lastMajorCompactionTime = System.currentTimeMillis();
             // and also move minor compaction time
             lastMinorCompactionTime = lastMajorCompactionTime;
@@ -377,7 +377,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             // enter minor compaction
             LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
             minorCompacting.set(true);
-            doCompactEntryLogs(minorCompactionThreshold, minorCompactionLimit);
+            doCompactEntryLogs(minorCompactionThreshold, minorCompactionLimitMs);
             lastMinorCompactionTime = System.currentTimeMillis();
             gcStats.getMinorCompactionCounter().inc();
             minorCompacting.set(false);
