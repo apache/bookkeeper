@@ -17,35 +17,22 @@
  * under the License.
  */
 plugins {
-    id 'java-library'
-    id "java-test-fixtures"
+    id 'java'
 }
 
 dependencies {
-    implementation project(":bookkeeper-stats")
-    implementation project(":cpu-affinity")
-
-    compileOnly depLibs.errorprone
-    compileOnly depLibs.jsr305
-    compileOnly depLibs.lombok
-    compileOnly depLibs.spotbugsAnnotations
-    implementation depLibs.commonsConfiguration
-    implementation depLibs.guava
-    implementation depLibs.jacksonAnnotations
-    implementation depLibs.jacksonCore
-    implementation depLibs.jacksonDatabind
-    implementation depLibs.jctools
-    implementation depLibs.nettyCommon
+    implementation project(':bookkeeper-http:http-server')
     implementation depLibs.slf4j
-    testCompileOnly depLibs.lombok
-    testImplementation depLibs.commonsLang3
-    testImplementation depLibs.hamcrest
+    implementation depLibs.vertxCore
+    implementation depLibs.vertxWeb
     testImplementation depLibs.junit
-    testImplementation depLibs.log4j
-    testImplementation depLibs.mockito
-    testImplementation depLibs.slf4jLog4j
-
-    annotationProcessor depLibs.lombok
-    testAnnotationProcessor depLibs.lombok
 }
 
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.apache.bookkeeper.http'
+            artifactId = 'vertx-http-server'
+        }
+    }
+}

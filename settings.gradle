@@ -29,4 +29,10 @@ include('circe-checksum', 'circe-checksum:src:main:circe',
         'bookkeeper-http:http-server', 'bookkeeper-server',
         'bookkeeper-common-allocator', 'bookkeeper-proto', 'bookkeeper-stats',
         'bookkeeper-stats-providers:prometheus-metrics-provider',
-        'tools:framework')
+        'tools:framework',
+        'stream:distributedlog:common', 'stream:distributedlog:protocol', 'stream:distributedlog:core',
+        'stream:api', 'stream:common', 'stream:proto', 'stream:statelib',
+        'stream:storage:api', 'stream:storage:impl', 'stream:server',
+        'stream:clients:java:all', 'stream:clients:java:base', 'stream:clients:java:kv',
+        'stream:tests-common')
+

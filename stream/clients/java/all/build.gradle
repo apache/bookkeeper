@@ -16,36 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-plugins {
-    id 'java-library'
-    id "java-test-fixtures"
-}
-
 dependencies {
-    implementation project(":bookkeeper-stats")
-    implementation project(":cpu-affinity")
+    implementation project(':bookkeeper-common')
+    implementation project(':stream:api')
+    implementation project(':stream:common')
+    implementation project(':stream:clients:java:base')
+    implementation project(':stream:clients:java:kv')
+    implementation project(':stream:proto')
 
-    compileOnly depLibs.errorprone
-    compileOnly depLibs.jsr305
-    compileOnly depLibs.lombok
-    compileOnly depLibs.spotbugsAnnotations
-    implementation depLibs.commonsConfiguration
-    implementation depLibs.guava
-    implementation depLibs.jacksonAnnotations
-    implementation depLibs.jacksonCore
-    implementation depLibs.jacksonDatabind
-    implementation depLibs.jctools
-    implementation depLibs.nettyCommon
+    implementation depLibs.grpc
+    implementation depLibs.lombok
     implementation depLibs.slf4j
-    testCompileOnly depLibs.lombok
-    testImplementation depLibs.commonsLang3
-    testImplementation depLibs.hamcrest
-    testImplementation depLibs.junit
-    testImplementation depLibs.log4j
+
+    testImplementation project(path: ':stream:clients:java:base', configuration: 'testArtifacts')
     testImplementation depLibs.mockito
-    testImplementation depLibs.slf4jLog4j
+    testImplementation depLibs.powermockJunit
+    testImplementation depLibs.powermockMockito
 
     annotationProcessor depLibs.lombok
-    testAnnotationProcessor depLibs.lombok
 }
 
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'stream-storage-java-client'
+        }
+    }
+}

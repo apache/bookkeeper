@@ -16,36 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-plugins {
-    id 'java-library'
-    id "java-test-fixtures"
-}
-
 dependencies {
-    implementation project(":bookkeeper-stats")
-    implementation project(":cpu-affinity")
-
-    compileOnly depLibs.errorprone
-    compileOnly depLibs.jsr305
     compileOnly depLibs.lombok
-    compileOnly depLibs.spotbugsAnnotations
+
+    implementation project(":bookkeeper-common")
+    implementation project(":bookkeeper-stats")
+
     implementation depLibs.commonsConfiguration
+    implementation depLibs.commonsLang3
     implementation depLibs.guava
-    implementation depLibs.jacksonAnnotations
-    implementation depLibs.jacksonCore
-    implementation depLibs.jacksonDatabind
-    implementation depLibs.jctools
-    implementation depLibs.nettyCommon
+    implementation depLibs.jsr305
+    implementation depLibs.lz4
+    implementation depLibs.nettyBuffer
     implementation depLibs.slf4j
-    testCompileOnly depLibs.lombok
-    testImplementation depLibs.commonsLang3
-    testImplementation depLibs.hamcrest
+
+    testImplementation depLibs.jmock
     testImplementation depLibs.junit
-    testImplementation depLibs.log4j
-    testImplementation depLibs.mockito
-    testImplementation depLibs.slf4jLog4j
 
     annotationProcessor depLibs.lombok
-    testAnnotationProcessor depLibs.lombok
 }
 
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.apache.distributedlog'
+            artifactId = 'distributedlog-common'
+        }
+    }
+}
