@@ -31,6 +31,8 @@ subprojects {
     task allDeps(type: DependencyReportTask) {}
 }
 
+apply from: "$rootDir/version.gradle"
+
 allprojects {
     apply from: "$rootDir/dependencies.gradle"
 
@@ -54,12 +56,21 @@ allprojects {
             testArtifacts testJar
         }
 
+        plugins.withType(DistributionPlugin) {
+            distTar {
+                compression = Compression.GZIP
+                archiveExtension = 'tar.gz'
+            }
+        }
+
         def componentName = it.name
         publishing {
             publications {
                 maven(MavenPublication) {
                     groupId = 'org.apache.bookkeeper'
                     artifactId = componentName
+                    version = buildVersion
+
                     from components.java
                     artifact testJar
                 }
@@ -70,6 +81,7 @@ allprojects {
     repositories {
         mavenCentral()
     }
+
 }
 
 pluginManager.withPlugin('java') {
