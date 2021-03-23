@@ -333,7 +333,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 remainingEnsembleBeforeIteration = remainingEnsemble;
                 int regionsToAllocate = numRemainingRegions;
                 int startRegionIndex = regionIndex % numRegionsAvailable;
-                for (int i = 0; i< numRegionsAvailable; ++i) {
+                for (int i = 0; i < numRegionsAvailable; ++i) {
                     String region = availableRegions.get(startRegionIndex % numRegionsAvailable);
                     startRegionIndex++;
                     final Pair<Integer, Integer> currentAllocation = regionsWiseAllocation.get(region);
