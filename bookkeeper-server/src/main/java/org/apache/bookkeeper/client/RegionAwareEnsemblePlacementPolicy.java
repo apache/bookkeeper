@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -77,6 +78,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     protected boolean enableValidation = true;
     protected boolean enforceDurabilityInReplace = false;
     protected Feature disableDurabilityFeature;
+    private int regionIndex = new Random().nextInt(Integer.MAX_VALUE);
 
     RegionAwareEnsemblePlacementPolicy() {
         super();
@@ -263,7 +265,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             Set<BookieId> comprehensiveExclusionBookiesSet = addDefaultRackBookiesIfMinNumRacksIsEnforced(
                     excludedBookies);
             Set<Node> excludeNodes = convertBookiesToNodes(comprehensiveExclusionBookiesSet);
-            Set<String> availableRegions = new HashSet<String>();
+            List<String> availableRegions = new ArrayList<>();
             for (String region: perRegionPlacement.keySet()) {
                 if ((null == disallowBookiePlacementInRegionFeatureName)
                         || !featureProvider.scope(region).getFeature(disallowBookiePlacementInRegionFeatureName)
@@ -330,9 +332,11 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         effectiveMinRegionsForDurability, minNumRacksPerWriteQuorum);
                 remainingEnsembleBeforeIteration = remainingEnsemble;
                 int regionsToAllocate = numRemainingRegions;
-                for (Map.Entry<String, Pair<Integer, Integer>> regionEntry: regionsWiseAllocation.entrySet()) {
-                    String region = regionEntry.getKey();
-                    final Pair<Integer, Integer> currentAllocation = regionEntry.getValue();
+                int startRegionIndex = regionIndex % numRegionsAvailable;
+                for (int i = 0; i< numRegionsAvailable; ++i) {
+                    String region = availableRegions.get(startRegionIndex % numRegionsAvailable);
+                    startRegionIndex++;
+                    final Pair<Integer, Integer> currentAllocation = regionsWiseAllocation.get(region);
                     TopologyAwareEnsemblePlacementPolicy policyWithinRegion = perRegionPlacement.get(region);
                     if (!regionsReachedMaxAllocation.contains(region)) {
                         if (numRemainingRegions <= 0) {
@@ -364,6 +368,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                 regionsWiseAllocation.put(region, Pair.of(newEnsembleSize, newWriteQuorumSize));
                                 success = true;
                                 regionsToAllocate--;
+                                regionIndex = startRegionIndex;
                                 LOG.info("Region {} allocating bookies with ensemble size {} "
                                         + "and write quorum size {} : {}",
                                         region, newEnsembleSize, newWriteQuorumSize, allocated);
