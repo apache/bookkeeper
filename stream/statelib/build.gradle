@@ -17,35 +17,53 @@
  * under the License.
  */
 plugins {
-    id 'java-library'
-    id "java-test-fixtures"
+    id 'com.google.protobuf'
 }
 
 dependencies {
-    implementation project(":bookkeeper-stats")
-    implementation project(":cpu-affinity")
+    implementation project(':bookkeeper-common')
+    implementation project(':stream:api')
+    implementation project(':stream:common')
+    implementation project(':stream:distributedlog:common')
+    implementation project(':stream:distributedlog:core')
+    implementation project(':stream:distributedlog:protocol')
+    implementation project(':stream:proto')
 
-    compileOnly depLibs.errorprone
-    compileOnly depLibs.jsr305
-    compileOnly depLibs.lombok
-    compileOnly depLibs.spotbugsAnnotations
-    implementation depLibs.commonsConfiguration
+    implementation depLibs.commonsLang2
+    implementation depLibs.commonsLang3
     implementation depLibs.guava
-    implementation depLibs.jacksonAnnotations
-    implementation depLibs.jacksonCore
-    implementation depLibs.jacksonDatabind
-    implementation depLibs.jctools
+    implementation depLibs.jsr305
+    implementation depLibs.lombok
+    implementation depLibs.nettyBuffer
     implementation depLibs.nettyCommon
+    implementation depLibs.protobuf
+    implementation depLibs.rocksDb
     implementation depLibs.slf4j
-    testCompileOnly depLibs.lombok
-    testImplementation depLibs.commonsLang3
-    testImplementation depLibs.hamcrest
+
+    testImplementation depLibs.commonsConfiguration
+    testImplementation depLibs.commonsIO
     testImplementation depLibs.junit
-    testImplementation depLibs.log4j
     testImplementation depLibs.mockito
-    testImplementation depLibs.slf4jLog4j
+    testImplementation project(path: ':stream:distributedlog:core', configuration: 'testArtifacts')
 
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
 }
 
+protobuf {
+    plugins {
+        grpc {
+            artifact = depLibs.protocGenGrpcJava
+        }
+    }
+
+    protoc {
+        artifact = depLibs.protoc
+    }
+
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
+}

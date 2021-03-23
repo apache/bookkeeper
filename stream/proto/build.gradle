@@ -17,19 +17,40 @@
  * under the License.
  */
 plugins {
-    id 'java'
+    id 'com.google.protobuf'
 }
 
 dependencies {
-    implementation depLibs.commonsConfiguration
-    implementation depLibs.slf4j
+    implementation project(':stream:common')
+    implementation depLibs.lombok
+    implementation depLibs.grpc
+    implementation depLibs.commonsLang3
+
+    annotationProcessor depLibs.lombok
+}
+
+protobuf {
+    plugins {
+        grpc {
+            artifact = depLibs.protocGenGrpcJava
+        }
+    }
+
+    protoc {
+        artifact = depLibs.protoc
+    }
+
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
 }
 
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = 'org.apache.bookkeeper.stats'
-            artifactId = 'bookkeeper-stats-api'
+            artifactId = 'stream-storage-proto'
         }
     }
 }

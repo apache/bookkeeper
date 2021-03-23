@@ -84,4 +84,3 @@ test.doFirst {
     jvmArgs("-javaagent:${junitFoundation.file}", "-Djunit.timeout.test=600000", "-Djunit.max.retry=3",
             "-Djava.net.preferIPv4Stack=true", "-Dio.netty.leakDetection.level=paranoid")
 }
-

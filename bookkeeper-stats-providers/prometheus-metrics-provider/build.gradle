@@ -36,3 +36,11 @@ dependencies {
     testImplementation depLibs.junit
     testAnnotationProcessor depLibs.lombok
 }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.apache.bookkeeper.stats'
+        }
+    }
+}

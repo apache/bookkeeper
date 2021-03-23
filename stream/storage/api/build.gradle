@@ -16,20 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-plugins {
-    id 'java'
-}
-
 dependencies {
+    implementation project(':bookkeeper-common')
+    implementation project(':stream:common')
+    implementation project(':stream:proto')
     implementation depLibs.commonsConfiguration
-    implementation depLibs.slf4j
+    implementation depLibs.grpc
 }
 
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = 'org.apache.bookkeeper.stats'
-            artifactId = 'bookkeeper-stats-api'
+            artifactId = 'stream-storage-service-api'
         }
     }
 }
+
