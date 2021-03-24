@@ -16,6 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+plugins {
+    id 'java'
+}
+
 dependencies {
     implementation project(':bookkeeper-common')
     implementation project(':bookkeeper-server')
@@ -43,6 +47,16 @@ dependencies {
 
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
+}
+
+test {
+    maxHeapSize = '4G'
+    forkEvery = 1
+}
+
+test.doFirst {
+    jvmArgs("-Djunit.timeout.test=600000", "-Djunit.max.retry=3",
+            "-Djava.net.preferIPv4Stack=true", "-Dio.netty.leakDetection.level=paranoid")
 }
 
 publishing {

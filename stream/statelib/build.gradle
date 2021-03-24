@@ -44,6 +44,10 @@ dependencies {
     testImplementation depLibs.commonsIO
     testImplementation depLibs.junit
     testImplementation depLibs.mockito
+    testImplementation depLibs.metricsCore
+    testImplementation depLibs.snappy
+    testImplementation depLibs.slf4jSimple
+    runtimeOnly depLibs.commonsBeanutils
     testImplementation project(path: ':stream:distributedlog:core', configuration: 'testArtifacts')
 
     annotationProcessor depLibs.lombok
@@ -66,4 +70,9 @@ protobuf {
             grpc {}
         }
     }
+}
+
+test {
+    maxHeapSize = '2G'
+    forkEvery = 1
 }

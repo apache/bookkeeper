@@ -31,13 +31,14 @@ dependencies {
     implementation project(':stream:storage:impl')
 
     implementation depLibs.commonsConfiguration
-    implementation depLibs.commonsLang3
+    implementation depLibs.commonsLang2
     implementation depLibs.curatorFramework
     implementation depLibs.grpc
     implementation depLibs.guava
     implementation depLibs.jcommander
     implementation depLibs.lombok
     implementation depLibs.slf4j
+    testImplementation depLibs.mockito
 
     annotationProcessor depLibs.lombok
 }
