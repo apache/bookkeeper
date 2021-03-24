@@ -1508,7 +1508,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         repp.onClusterChanged(addrs, new HashSet<>());
         try {
-            List<BookieId> ensemble1 = repp.newEnsemble(3,3,2,
+            List<BookieId> ensemble1 = repp.newEnsemble(3, 3, 2,
                 null, new HashSet<>()).getResult();
             assertEquals(ensemble1.size(), 3);
             List<BookieId> ensemble2 = repp.newEnsemble(3, 3, 2,
