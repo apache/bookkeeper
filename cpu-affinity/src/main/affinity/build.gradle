@@ -28,6 +28,15 @@ library {
         compileTask.dependsOn project(':cpu-affinity').generateJniHeaders
         compileTask.includes.from("${Jvm.current().javaHome}/include",
                                   project(':cpu-affinity').generateJniHeaders.javahOutputDir)
+
+        def osFamily = binary.targetPlatform.targetMachine.operatingSystemFamily
+
+        if (osFamily.linux) {
+            compileTask.includes.from("${Jvm.current().javaHome}/include/linux")
+        } else if (osFamily.macOs) {
+            compileTask.includes.from("${Jvm.current().javaHome}/include/darwin")
+        }
+
         compileTask.includes.from("${Jvm.current().javaHome}/include/linux")
         compileTask.includes.from("${Jvm.current().javaHome}/include/darwin")
         compileTask.source.from fileTree(dir: "cpp", include: "**/*.c")

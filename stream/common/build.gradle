@@ -24,7 +24,7 @@ dependencies {
     implementation depLibs.jsr305
     implementation depLibs.lombok
     implementation depLibs.slf4j
-
+    testImplementation depLibs.mockito
     testImplementation project(':stream:tests-common')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
     annotationProcessor depLibs.lombok

@@ -17,31 +17,26 @@
  * under the License.
  */
 dependencies {
-    implementation project(':bookkeeper-common')
-    implementation project(':bookkeeper-stats')
-    implementation project(':stream:common')
-    implementation project(':stream:proto')
-
-    implementation depLibs.commonsLang2
-    implementation depLibs.freebuilder
-    implementation depLibs.grpc
+    implementation depLibs.arquillianCubeDocker
+    implementation depLibs.zookeeper
+    implementation depLibs.junit
     implementation depLibs.lombok
     implementation depLibs.slf4j
-
-    testImplementation depLibs.mockito
-
-    annotationProcessor depLibs.freebuilder
+    implementation depLibs.groovy
+    implementation depLibs.shrinkwrapImpl
+    implementation depLibs.shrinkwrapApi
+    implementation depLibs.dockerJava
     annotationProcessor depLibs.lombok
 }
 
-configurations {
-    testCompile.exclude group:'io.grpc', module: 'grpc-netty-shaded'
+test {
+    exclude '**/MavenClassLoaderTest.class'
 }
 
 publishing {
     publications {
         maven(MavenPublication) {
-            artifactId = 'stream-storage-java-client-base'
+            artifactId = 'integration-tests-utils'
         }
     }
 }

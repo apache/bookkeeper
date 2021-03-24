@@ -27,6 +27,10 @@ plugins {
     id 'java'
 }
 
+subprojects {
+    task allDeps(type: DependencyReportTask) {}
+}
+
 allprojects {
     apply from: "$rootDir/dependencies.gradle"
 

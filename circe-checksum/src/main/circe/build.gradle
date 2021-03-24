@@ -31,8 +31,13 @@ library {
         compileTask.includes.from("${Jvm.current().javaHome}/include",
                                   project(':circe-checksum').generateJniHeaders.javahOutputDir)
 
-        compileTask.includes.from("${Jvm.current().javaHome}/include/linux")
-        compileTask.includes.from("${Jvm.current().javaHome}/include/darwin")
+        def osFamily = binary.targetPlatform.targetMachine.operatingSystemFamily
+
+        if (osFamily.linux) {
+            compileTask.includes.from("${Jvm.current().javaHome}/include/linux")
+        } else if (osFamily.macOs) {
+            compileTask.includes.from("${Jvm.current().javaHome}/include/darwin")
+        }
 
         compileTask.source.from fileTree(dir: "cpp", include: "**/*.cpp")
         compileTask.compilerArgs.addAll(["-msse4.2", "-mpclmul", "-O3"])
