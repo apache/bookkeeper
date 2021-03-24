@@ -78,7 +78,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     protected boolean enableValidation = true;
     protected boolean enforceDurabilityInReplace = false;
     protected Feature disableDurabilityFeature;
-    private int regionIndex = new Random().nextInt(Integer.MAX_VALUE);
+    private int lastRegionIndex = 0;
 
     RegionAwareEnsemblePlacementPolicy() {
         super();
@@ -332,7 +332,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         effectiveMinRegionsForDurability, minNumRacksPerWriteQuorum);
                 remainingEnsembleBeforeIteration = remainingEnsemble;
                 int regionsToAllocate = numRemainingRegions;
-                int startRegionIndex = regionIndex % numRegionsAvailable;
+                int startRegionIndex = lastRegionIndex % numRegionsAvailable;
                 for (int i = 0; i < numRegionsAvailable; ++i) {
                     String region = availableRegions.get(startRegionIndex % numRegionsAvailable);
                     startRegionIndex++;
@@ -368,7 +368,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                 regionsWiseAllocation.put(region, Pair.of(newEnsembleSize, newWriteQuorumSize));
                                 success = true;
                                 regionsToAllocate--;
-                                regionIndex = startRegionIndex;
+                                lastRegionIndex = startRegionIndex;
                                 LOG.info("Region {} allocating bookies with ensemble size {} "
                                         + "and write quorum size {} : {}",
                                         region, newEnsembleSize, newWriteQuorumSize, allocated);
