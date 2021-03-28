@@ -40,7 +40,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import junit.framework.TestCase;
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -1464,7 +1463,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         currentEnsemble.add(addr6.toBookieId());
 
         EnsemblePlacementPolicy.PlacementResult<BookieId> placementResult = repp.replaceBookie(3,
-            3,2, null,
+            3, 2, null,
             currentEnsemble, addr1.toBookieId(), new HashSet<>());
 
         assertEquals(placementResult.getResult(), addr2.toBookieId());
