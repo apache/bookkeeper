@@ -145,7 +145,7 @@ commands:
     description: End Position
 - name: recover
   description: Recover the ledger data for failed bookie.
-  argument: <bookieSrc> [<bookieDest>]
+  argument: <bookieSrc[,bookieSrc,...]>
   options:
   - flag: -deleteCookie
     description: Delete cookie node for the bookie.
