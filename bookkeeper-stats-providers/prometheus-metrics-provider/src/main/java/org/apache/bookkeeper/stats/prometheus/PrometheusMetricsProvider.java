@@ -75,10 +75,14 @@ public class PrometheusMetricsProvider implements StatsProvider {
     public static final String PROMETHEUS_BASIC_STATS_ENABLE = "prometheusBasicStatsEnable";
     public static final boolean DEFAULT_PROMETHEUS_BASIC_STATS_ENABLE = true;
 
+    public static final String PROMETHEUS_METRIC_PREFIX = "prometheusMetricPrefix";
+    public static final String DEFAULT_PROMETHEUS_METRIC_PREFIX = "";
+
     final CollectorRegistry registry;
 
     Server server;
     private final CachingStatsProvider cachingStatsProvider;
+    private String metricPrefix = DEFAULT_PROMETHEUS_METRIC_PREFIX;
 
     /*
      * These acts a registry of the metrics defined in this provider
@@ -115,7 +119,8 @@ public class PrometheusMetricsProvider implements StatsProvider {
                 if (statsComponents.length == 0) {
                     return "";
                 } else if (statsComponents[0].isEmpty()) {
-                    completeName = StringUtils.join(statsComponents, '_', 1, statsComponents.length);
+                    completeName = StringUtils.join(statsComponents, '_',
+                        1, statsComponents.length);
                 } else {
                     completeName = StringUtils.join(statsComponents, '_');
                 }
@@ -127,6 +132,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
     @Override
     public void start(Configuration conf) {
         boolean httpEnabled = conf.getBoolean(PROMETHEUS_STATS_HTTP_ENABLE, DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE);
+        metricPrefix = conf.getString(PROMETHEUS_METRIC_PREFIX, DEFAULT_PROMETHEUS_METRIC_PREFIX);
         boolean bkHttpServerEnabled = conf.getBoolean("httpServerEnabled", false);
         // only start its own http server when prometheus http is enabled and bk http server is not enabled.
         if (httpEnabled && !bkHttpServerEnabled) {
@@ -158,14 +164,16 @@ public class PrometheusMetricsProvider implements StatsProvider {
             registerMetrics(new ThreadExports());
 
             // Add direct memory allocated through unsafe
-            registerMetrics(Gauge.build("jvm_memory_direct_bytes_used", "-").create().setChild(new Child() {
+            registerMetrics(Gauge.build("jvm_memory_direct_bytes_used", "-")
+                .create().setChild(new Child() {
                 @Override
                 public double get() {
                     return directMemoryUsage != null ? directMemoryUsage.longValue() : Double.NaN;
                 }
             }));
 
-            registerMetrics(Gauge.build("jvm_memory_direct_bytes_max", "-").create().setChild(new Child() {
+            registerMetrics(Gauge.build("jvm_memory_direct_bytes_max", "-")
+                .create().setChild(new Child() {
                 @Override
                 public double get() {
                     return PlatformDependent.maxDirectMemory();
@@ -202,7 +210,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     @Override
     public void writeAllMetrics(Writer writer) throws IOException {
-        PrometheusTextFormatUtil.writeMetricsCollectedByPrometheusClient(writer, registry);
+        PrometheusTextFormatUtil.writeMetricsCollectedByPrometheusClient(writer, registry, metricPrefix);
 
         gauges.forEach((name, gauge) -> PrometheusTextFormatUtil.writeGauge(writer, name, gauge));
         counters.forEach((name, counter) -> PrometheusTextFormatUtil.writeCounter(writer, name, counter));

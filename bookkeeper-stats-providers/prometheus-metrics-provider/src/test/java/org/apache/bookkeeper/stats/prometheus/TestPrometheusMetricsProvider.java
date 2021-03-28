@@ -20,8 +20,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -31,6 +36,7 @@ import org.junit.Test;
 /**
  * Unit test of {@link PrometheusMetricsProvider}.
  */
+@Slf4j
 public class TestPrometheusMetricsProvider {
 
     @Test
@@ -84,6 +90,44 @@ public class TestPrometheusMetricsProvider {
         try {
             provider.start(config);
             assertNotNull(provider.server);
+        } finally {
+            provider.stop();
+        }
+    }
+
+    @Test
+    public void testDisableBasicStats() {
+        PropertiesConfiguration config = new PropertiesConfiguration();
+        config.setProperty(PrometheusMetricsProvider.PROMETHEUS_BASIC_STATS_ENABLE, false);
+        PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
+        try {
+            provider.start(config);
+            assertNotNull(provider.server);
+            StringWriter writer = new StringWriter();
+            provider.writeAllMetrics(writer);
+            assertTrue(!writer.toString().contains("process_cpu_seconds_total"));
+        } catch (IOException e) {
+            fail();
+        } finally {
+            provider.stop();
+        }
+    }
+
+    @Test
+    public void testPrometheusMetricPrefix() {
+        PropertiesConfiguration config = new PropertiesConfiguration();
+        config.setProperty(PrometheusMetricsProvider.PROMETHEUS_METRIC_PREFIX, "bk_");
+        PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
+        try {
+            provider.start(config);
+            assertNotNull(provider.server);
+            StringWriter writer = new StringWriter();
+            provider.writeAllMetrics(writer);
+            String metricsContent = writer.toString();
+            assertTrue(metricsContent.contains("bk_process_cpu_seconds_total"));
+            assertTrue(metricsContent.contains("bk_jvm_memory_direct_bytes_max"));
+        } catch (IOException e) {
+            fail();
         } finally {
             provider.stop();
         }

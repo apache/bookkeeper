@@ -147,4 +147,33 @@ public class PrometheusTextFormatUtil {
             }
         }
     }
+
+
+    static void writeMetricsCollectedByPrometheusClient(Writer w, CollectorRegistry registry, String metricPrefix)
+        throws IOException {
+        Enumeration<MetricFamilySamples> metricFamilySamples = registry.metricFamilySamples();
+        while (metricFamilySamples.hasMoreElements()) {
+            MetricFamilySamples metricFamily = metricFamilySamples.nextElement();
+
+            for (int i = 0; i < metricFamily.samples.size(); i++) {
+                Sample sample = metricFamily.samples.get(i);
+                w.write(metricPrefix);
+                w.write(sample.name);
+                w.write('{');
+                for (int j = 0; j < sample.labelNames.size(); j++) {
+                    if (j != 0) {
+                        w.write(", ");
+                    }
+                    w.write(sample.labelNames.get(j));
+                    w.write("=\"");
+                    w.write(sample.labelValues.get(j));
+                    w.write('"');
+                }
+
+                w.write("} ");
+                w.write(Collector.doubleToGoString(sample.value));
+                w.write('\n');
+            }
+        }
+    }
 }
