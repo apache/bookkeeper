@@ -17,6 +17,7 @@
 package org.apache.bookkeeper.stats.prometheus;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -105,7 +106,7 @@ public class TestPrometheusMetricsProvider {
             assertNotNull(provider.server);
             StringWriter writer = new StringWriter();
             provider.writeAllMetrics(writer);
-            assertTrue(!writer.toString().contains("process_cpu_seconds_total"));
+            assertFalse(writer.toString().contains("process_cpu_seconds_total"));
         } catch (IOException e) {
             fail();
         } finally {
