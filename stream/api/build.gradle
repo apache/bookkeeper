@@ -28,6 +28,10 @@ dependencies {
     annotationProcessor depLibs.lombok
 }
 
+jar {
+    archiveBaseName = 'stream-storage-api'
+}
+
 publishing {
     publications {
         maven(MavenPublication) {
