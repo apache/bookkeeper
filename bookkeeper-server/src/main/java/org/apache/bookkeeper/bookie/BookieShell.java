@@ -489,7 +489,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "recover [-deleteCookie] <bookieSrc[:bookieSrc]>";
+            return "recover [-deleteCookie] <bookieSrc[,bookieSrc,...]>";
         }
 
         @Override
