@@ -16,6 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+plugins {
+    id 'java'
+    id 'com.adarshr.test-logger' version '2.0.0'
+}
+
 dependencies {
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
     testImplementation project(':bookkeeper-server')
@@ -27,6 +32,15 @@ dependencies {
     testImplementation depLibs.commonsConfiguration
     testImplementation depLibs.arquillianCubeDocker
     testAnnotationProcessor depLibs.lombok
+}
+
+task buildImage(type:Exec) {
+    workingDir '../../..'
+    commandLine './tests/docker-images/statestore-image/image_builder.sh'
+}
+
+test {
+    dependsOn buildImage
 }
 
 publishing {

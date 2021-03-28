@@ -31,6 +31,9 @@ dependencies {
     testAnnotationProcessor depLibs.lombok
 }
 
+jar {
+    archiveBaseName = 'stream-storage-common'
+}
 
 publishing {
     publications {

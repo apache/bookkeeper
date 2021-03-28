@@ -16,6 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+plugins {
+    id 'java'
+    id 'com.adarshr.test-logger' version '2.0.0'
+}
+
 dependencies {
     implementation depLibs.grpc
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
@@ -29,12 +34,26 @@ dependencies {
     testImplementation project(':bookkeeper-server')
     testImplementation project(':bookkeeper-stats')
     testImplementation project(':tests:integration-tests-topologies')
+    testImplementation project(':stream:clients:java:kv')
 
     testCompileOnly depLibs.lombok
     testImplementation depLibs.slf4jLog4j
     testImplementation depLibs.testcontainers
     testImplementation depLibs.commonsConfiguration
     testAnnotationProcessor depLibs.lombok
+}
+
+task buildImage(type:Exec) {
+    workingDir '../../..'
+    commandLine './tests/docker-images/statestore-image/image_builder.sh'
+}
+
+test {
+    dependsOn buildImage
+    jvmArgs("-Djunit.timeout.test=600000",
+            "-Djunit.max.retry=3",
+            "-Djava.net.preferIPv4Stack=true",
+            "-Dio.netty.leakDetection.level=paranoid")
 }
 
 publishing {

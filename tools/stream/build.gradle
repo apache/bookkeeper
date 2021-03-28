@@ -16,34 +16,40 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+plugins {
+    id 'java'
+}
+
 dependencies {
-    implementation project(':bookkeeper-common')
+    implementation project(":bookkeeper-common")
+    implementation project(':bookkeeper-tools-framework')
+    implementation project(':bookkeeper-server')
     implementation project(':stream:api')
     implementation project(':stream:common')
     implementation project(':stream:clients:java:base')
     implementation project(':stream:clients:java:kv')
+    implementation project(':stream:clients:java:all')
+    implementation project(':stream:storage:api')
+    implementation project(':stream:storage:impl')
+    implementation project(':stream:distributedlog:core')
+    implementation project(':stream:distributedlog:protocol')
+    implementation project(':stream:distributedlog:core')
     implementation project(':stream:proto')
 
-    implementation depLibs.grpc
-    implementation depLibs.lombok
-    implementation depLibs.slf4j
-
-    testImplementation project(path: ':stream:clients:java:base', configuration: 'testArtifacts')
-    testImplementation depLibs.mockito
-    testImplementation depLibs.powermockJunit
-    testImplementation depLibs.powermockMockito
-
+    compileOnly depLibs.lombok
+    compileOnly depLibs.spotbugsAnnotations
+    implementation depLibs.commonsConfiguration
+    implementation depLibs.guava
+    implementation depLibs.jcommander
+    implementation depLibs.slf4jLog4j
+    implementation depLibs.zookeeper
+    implementation depLibs.curatorFramework
+    implementation depLibs.protobuf
+    implementation depLibs.commonsLang3
+    implementation depLibs.nettyBuffer
     annotationProcessor depLibs.lombok
 }
 
 jar {
-    archiveBaseName = 'stream-storage-java-client'
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            artifactId = 'stream-storage-java-client'
-        }
-    }
+    archiveBaseName = 'bookkeeper-tools-stream'
 }
