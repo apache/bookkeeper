@@ -454,10 +454,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             excludeBookies.addAll(currentEnsemble);
             BookieNode bn = knownBookies.get(bookieToReplace);
             if (null == bn) {
-                bn = historyBookies.get(bookieToReplace);
-                if (null == bn) {
-                    bn = createBookieNode(bookieToReplace);
-                }
+                bn = createBookieNode(bookieToReplace);
             }
 
             Set<Node> ensembleNodes = convertBookiesToNodes(currentEnsemble);

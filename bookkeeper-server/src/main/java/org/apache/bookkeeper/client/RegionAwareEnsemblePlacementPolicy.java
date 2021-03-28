@@ -451,10 +451,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
             BookieNode bookieNodeToReplace = knownBookies.get(bookieToReplace);
             if (null == bookieNodeToReplace) {
-                bookieNodeToReplace = historyBookies.get(bookieToReplace);
-                if (null == bookieNodeToReplace) {
-                    bookieNodeToReplace = createBookieNode(bookieToReplace);
-                }
+                bookieNodeToReplace = createBookieNode(bookieToReplace);
             }
             excludeNodes.add(bookieNodeToReplace);
 

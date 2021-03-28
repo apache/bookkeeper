@@ -750,6 +750,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                     topology.remove(node);
                     topology.add(newNode);
                     knownBookies.put(bookieAddress, newNode);
+                    historyBookies.put(bookieAddress, newNode);
                 }
             }
         } finally {
@@ -795,6 +796,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         try {
             return NetUtils.resolveNetworkLocation(dnsResolver, bookieAddressResolver.resolve(addr));
         } catch (BookieAddressResolver.BookieIdNotResolvedException err) {
+            BookieNode historyBookie = historyBookies.get(addr);
+            if (null != historyBookie) {
+                return historyBookie.getNetworkLocation();
+            }
+
             LOG.error("Cannot resolve bookieId {} to a network address, resolving as {}", addr,
                       NetworkTopology.DEFAULT_REGION_AND_RACK, err);
             return NetworkTopology.DEFAULT_REGION_AND_RACK;
