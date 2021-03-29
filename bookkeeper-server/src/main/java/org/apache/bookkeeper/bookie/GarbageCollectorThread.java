@@ -207,10 +207,10 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
 
         if (isForceAllowCompaction) {
-            if (minorCompactionThreshold > 0 || minorCompactionThreshold < 1.0f) {
+            if (minorCompactionThreshold > 0 && minorCompactionThreshold < 1.0f) {
                 isForceMinorCompactionAllow = true;
             }
-            if (majorCompactionThreshold > 0 || majorCompactionThreshold < 1.0f) {
+            if (majorCompactionThreshold > 0 && majorCompactionThreshold < 1.0f) {
                 isForceMajorCompactionAllow = true;
             }
         }
@@ -356,8 +356,9 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
 
         long curTime = System.currentTimeMillis();
-        if ((isForceMajorCompactionAllow || enableMajorCompaction) && (!suspendMajor)
-            && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
+        if (((isForceMajorCompactionAllow && force)
+                || (enableMajorCompaction && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)))
+                && (!suspendMajor)) {
             // enter major compaction
             LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
             majorCompacting.set(true);
@@ -367,8 +368,9 @@ public class GarbageCollectorThread extends SafeRunnable {
             lastMinorCompactionTime = lastMajorCompactionTime;
             gcStats.getMajorCompactionCounter().inc();
             majorCompacting.set(false);
-        } else if ((isForceMinorCompactionAllow || enableMinorCompaction) && (!suspendMinor)
-            && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
+        } else if (((isForceMinorCompactionAllow && force)
+                || (enableMinorCompaction && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)))
+                && (!suspendMinor)) {
             // enter minor compaction
             LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
             minorCompacting.set(true);
