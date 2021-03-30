@@ -146,7 +146,7 @@ GC_OPTS=$(build_bookie_jvm_opts ${BOOKIE_LOG_DIR} "gc_%p.log")
 NETTY_OPTS=$(build_netty_opts)
 LOGGING_OPTS=$(build_logging_opts ${BOOKIE_LOG_CONF} ${BOOKIE_LOG_DIR} ${BOOKIE_LOG_FILE} ${BOOKIE_ROOT_LOGGER})
 
-BOOKIE_EXTRA_OPTS=$(BOOKIE_EXTRA_OPTS) "-Dorg.bouncycastle.fips.approved_only=true"
+BOOKIE_EXTRA_OPTS="${BOOKIE_EXTRA_OPTS} -Dorg.bouncycastle.fips.approved_only=true"
 OPTS="${OPTS} -cp ${BOOKIE_CLASSPATH} ${BOOKIE_OPTS} ${GC_OPTS} ${NETTY_OPTS} ${LOGGING_OPTS} ${BOOKIE_EXTRA_OPTS}"
 
 # Create log dir if it doesn't exist
