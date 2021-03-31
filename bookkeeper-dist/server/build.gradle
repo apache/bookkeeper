@@ -1,0 +1,113 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+plugins {
+    id 'java'
+    id 'distribution'
+}
+
+description = 'Apache BookKeeper :: Dist (Server)'
+
+//    implementation project(':bookkeeper-http:vertx-http-server')
+dependencies {
+
+    implementation project(':bookkeeper-http:http-server')
+    implementation project(':bookkeeper-server')
+    implementation project(':bookkeeper-stats-providers:prometheus-metrics-provider')
+    implementation project(':bookkeeper-stats')
+    implementation project(':stream:distributedlog:core')
+    implementation project(':stream:server')
+    implementation project(':bookkeeper-tools')
+
+    compileOnly depLibs.lombok
+    compileOnly depLibs.spotbugsAnnotations
+
+    implementation depLibs.slf4jLog4j
+
+
+    testCompileOnly depLibs.lombok
+
+
+    annotationProcessor depLibs.lombok
+    testAnnotationProcessor depLibs.lombok
+}
+
+jar {
+    archiveBaseName = 'bookkeeper-dist-server'
+}
+
+def depLicences = [
+        "checker-qual-3.5.0/LICENSE",
+        "google-auth-library-credentials-0.20.0/LICENSE",
+        "javax.servlet-api-4.0.0/CDDL+GPL-1.1",
+        "netty-4.1.50.Final/*",
+        "bouncycastle-1.0.2/LICENSE.html",
+        "protobuf-3.14.0/LICENSE",
+        "protobuf-3.12.0/LICENSE",
+        "slf4j-1.7.25/LICENSE.txt",
+]
+distributions {
+    main {
+        def distname = "bookkeeper-server-${buildVersion}"
+        distributionBaseName = "${distname}"
+        contents {
+            into("/${distname}/conf") {
+                from("../../conf")
+            }
+            into("/${distname}/bin") {
+                fileMode = 0755
+                from("../../bin")
+            }
+            into("/${distname}/deps") {
+                from("../src/main/resources/deps/") {
+                    include depLicences
+                }
+            }
+            into("/${distname}/") {
+                fileMode = 0644
+                from("../../README.md")
+                from("../src/main/resources/") {
+                    include "*-server.bin.txt"
+                    rename "(.*)-server.bin.txt", '$1'
+                }
+            }
+            into("/${distname}/lib").with {
+                configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each {
+                    dep ->
+                        from(dep.file) {
+                            String archiveName;
+                            if (dep.id.componentIdentifier.hasProperty("projectName")) {
+                                def p = project.findProject("${dep.id.componentIdentifier.projectPath}")
+                                p.publishing.publications.matching({
+                                    it.artifactId == dep.name
+                                }).each { pub ->
+                                    archiveName = "${pub.groupId}-${pub.artifactId}-${pub.version}.jar"
+                                }
+                            } else {
+                                // External dependencies
+                                def id = dep.moduleVersion.id
+                                archiveName = "${id.group}-${id.name}-${id.version}.jar"
+                            }
+                            rename {archiveName}
+                        }
+                }
+                from jar
+            }
+        }
+    }
+}
