@@ -25,12 +25,17 @@ pluginManagement {
 rootProject.name = 'bookkeeper'
 
 include(':bookkeeper-benchmark',
+        ':bookkeeper-tools',
         ':bookkeeper-tools-framework',
         ':bookkeeper-tools-ledger',
         ':bookkeeper-tools-perf',
         ':bookkeeper-tools-stream',
         'bookkeeper-common',
         'bookkeeper-common-allocator',
+        'bookkeeper-dist-all',
+        'bookkeeper-dist-bkctl',
+        'bookkeeper-dist-server',
+        'bookkeeper-dist-src',
         'bookkeeper-dist:storage-bench',
         'bookkeeper-http:http-server',
         'bookkeeper-http:vertx-http-server',
@@ -38,6 +43,8 @@ include(':bookkeeper-benchmark',
         'bookkeeper-server',
         'bookkeeper-stats',
         'bookkeeper-stats-providers:prometheus-metrics-provider',
+        'bookkeeper-stats-providers:codahale-metrics-provider',
+        'buildtools',
         'circe-checksum',
         'circe-checksum:src:main:circe',
         'cpu-affinity',
@@ -65,10 +72,14 @@ include(':bookkeeper-benchmark',
         'tests:integration:standalone',
         'tools:framework')
 
+project(':bookkeeper-tools').projectDir = file('tools/all')
 project(':bookkeeper-tools-framework').projectDir = file('tools/framework')
 project(':bookkeeper-tools-ledger').projectDir = file('tools/ledger')
 project(':bookkeeper-tools-stream').projectDir = file('tools/stream')
 project(':bookkeeper-tools-perf').projectDir = file('tools/perf')
+project(':bookkeeper-dist-all').projectDir = file('bookkeeper-dist/all')
+project(':bookkeeper-dist-bkctl').projectDir = file('bookkeeper-dist/bkctl')
+project(':bookkeeper-dist-server').projectDir = file('bookkeeper-dist/server')
+project(':bookkeeper-dist-src').projectDir = file('bookkeeper-dist')
 include 'stream:perf'
 findProject(':stream:perf')?.name = 'perf'
-
