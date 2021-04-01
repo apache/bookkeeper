@@ -454,9 +454,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         int[] entryLogUsageBuckets = new int[numBuckets];
 
         for (EntryLogMetadata meta : logsToCompact) {
-            int bucketIndex = Math.min(
-                    numBuckets - 1,
-                    (int) Math.ceil(meta.getUsage() * numBuckets));
+            int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
             entryLogUsageBuckets[bucketIndex]++;
 
             if (meta.getUsage() >= threshold) {
@@ -477,6 +475,19 @@ public class GarbageCollectorThread extends SafeRunnable {
         LOG.info(
                 "Compaction: entry log usage buckets[10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}",
                 entryLogUsageBuckets);
+    }
+
+    /**
+     * Calculate the index for the batch based on the usage between 0 and 1.
+     *
+     * @param numBuckets Number of reporting buckets.
+     * @param usage 0.0 - 1.0 value representing the usage of the entry log.
+     * @return index based on the number of buckets The last bucket will have the 1.0 if added.
+     */
+    int calculateUsageIndex(int numBuckets, double usage) {
+        return Math.min(
+                numBuckets - 1,
+                (int) Math.floor(usage * numBuckets));
     }
 
     /**

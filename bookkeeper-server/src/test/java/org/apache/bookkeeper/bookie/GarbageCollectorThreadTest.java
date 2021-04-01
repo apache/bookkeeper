@@ -32,18 +32,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.powermock.reflect.Whitebox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Unit test for {@link GarbageCollectorThread}.
  */
 public class GarbageCollectorThreadTest {
-
+    private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThreadTest.class);
     @InjectMocks
     @Spy
     private GarbageCollectorThread mockGCThread;
@@ -77,5 +80,32 @@ public class GarbageCollectorThreadTest {
         assertFalse(compacting.get());
         mockGCThread.compactEntryLog(new EntryLogMetadata(9999));
         assertFalse(compacting.get());
+    }
+
+    @Test
+    public void testCalculateUsageBucket() {
+        // Valid range for usage is [0.0 to 1.0]
+        final int numBuckets = 10;
+        int[] usageBuckets = new int[numBuckets];
+        for (int i = 0; i < numBuckets; i++) {
+            usageBuckets[i] = 0;
+        }
+
+        int items = 10000;
+        for (int item = 0; item <= items; item++) {
+            double usage = ((double) item / (double) items);
+            int index = mockGCThread.calculateUsageIndex(numBuckets, usage);
+            Assert.assertFalse("Boundary condition exceeded", index < 0 || index >= numBuckets);
+            LOG.debug("Mapped {} usage to {}}\n", usage, index);
+            usageBuckets[index]++;
+        }
+        LOG.info(
+                "Compaction: entry log usage buckets[10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}",
+                usageBuckets);
+        int sum = 0;
+        for (int i = 0; i < numBuckets; i++) {
+            sum += usageBuckets[i];
+        }
+        Assert.assertEquals("Incorrect number of items", items + 1, sum);
     }
 }
