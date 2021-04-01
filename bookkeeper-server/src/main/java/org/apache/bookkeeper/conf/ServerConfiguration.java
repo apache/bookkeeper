@@ -93,10 +93,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String FORCE_ALLOW_COMPACTION = "forceAllowCompaction";
     protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
-    protected static final String MINOR_COMPACTION_LIMIT_MS = "minorCompactionLimitMs";
+    protected static final String MINOR_COMPACTION_MAX_TIME_MILLIS = "minorCompactionMaxTimeMillis";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
     protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
-    protected static final String MAJOR_COMPACTION_LIMIT_MS = "majorCompactionLimitMs";
+    protected static final String MAJOR_COMPACTION_MAX_TIME_MILLIS = "majorCompactionMaxTimeMillis";
     protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
     protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
     protected static final String COMPACTION_RATE = "compactionRate";
@@ -1532,29 +1532,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the limit on the number of milliseconds to run. If <= 0 the
+     * Get the maximum milliseconds to run major compaction. If <= 0 the
      * thread will run until all compaction is completed.
      *
      * @return limit
      *           The number of milliseconds to run compaction.
      */
-    public long getMajorCompactionLimitMs() {
-        return getLong(MAJOR_COMPACTION_LIMIT_MS, -1);
+    public long getMajorCompactionMaxTimeMillis() {
+        return getLong(MAJOR_COMPACTION_MAX_TIME_MILLIS, -1);
     }
 
     /**
-     * Set the limit on the number of milliseconds to run. If <= 0 the
+     * Set the maximum milliseconds to run major compaction. If <= 0 the
      * thread will run until all compaction is completed.
      *
-     * @see #getMajorCompactionLimitMs()
+     * @see #getMajorCompactionMaxTimeMillis()
      *
-     * @param majorCompactionLimitMs
+     * @param majorCompactionMaxTimeMillis
      *           The number of milliseconds to run compaction.
      *
      * @return  server configuration
      */
-    public ServerConfiguration setMajorCompactionLimitMs(long majorCompactionLimitMs) {
-        setProperty(MAJOR_COMPACTION_LIMIT_MS, majorCompactionLimitMs);
+    public ServerConfiguration setMajorCompactionMaxTimeMillis(long majorCompactionMaxTimeMillis) {
+        setProperty(MAJOR_COMPACTION_MAX_TIME_MILLIS, majorCompactionMaxTimeMillis);
         return this;
     }
 
@@ -1609,29 +1609,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the limit on the number of milliseconds to run. If <= 0 the
+     * Get the maximum milliseconds to run minor compaction. If <= 0 the
      * thread will run until all compaction is completed.
      *
      * @return limit
      *           The number of milliseconds to run compaction.
      */
-    public long getMinorCompactionLimitMs() {
-        return getLong(MINOR_COMPACTION_LIMIT_MS, -1);
+    public long getMinorCompactionMaxTimeMillis() {
+        return getLong(MINOR_COMPACTION_MAX_TIME_MILLIS, -1);
     }
 
     /**
-     * Set the limit on the number of milliseconds to run. If <= 0 the
+     * Set the maximum milliseconds to run minor compaction. If <= 0 the
      * thread will run until all compaction is completed.
      *
-     * @see #getMinorCompactionLimitMs()
+     * @see #getMinorCompactionMaxTimeMillis()
      *
-     * @param minorCompactionLimitMs
+     * @param minorCompactionMaxTimeMillis
      *           The number of milliseconds to run compaction.
      *
      * @return  server configuration
      */
-    public ServerConfiguration setMinorCompactionLimitMs(long minorCompactionLimitMs) {
-        setProperty(MINOR_COMPACTION_LIMIT_MS, minorCompactionLimitMs);
+    public ServerConfiguration setMinorCompactionMaxTimeMillis(long minorCompactionMaxTimeMillis) {
+        setProperty(MINOR_COMPACTION_MAX_TIME_MILLIS, minorCompactionMaxTimeMillis);
         return this;
     }
 

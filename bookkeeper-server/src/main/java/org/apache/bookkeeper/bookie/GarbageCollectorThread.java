@@ -71,14 +71,14 @@ public class GarbageCollectorThread extends SafeRunnable {
     boolean enableMinorCompaction = false;
     final double minorCompactionThreshold;
     final long minorCompactionInterval;
-    final long minorCompactionLimitMs;
+    final long minorCompactionMaxTimeMillis;
     long lastMinorCompactionTime;
 
     boolean isForceMajorCompactionAllow = false;
     boolean enableMajorCompaction = false;
     final double majorCompactionThreshold;
     final long majorCompactionInterval;
-    long majorCompactionLimitMs;
+    long majorCompactionMaxTimeMillis;
     long lastMajorCompactionTime;
 
     @Getter
@@ -182,8 +182,8 @@ public class GarbageCollectorThread extends SafeRunnable {
         majorCompactionThreshold = conf.getMajorCompactionThreshold();
         majorCompactionInterval = conf.getMajorCompactionInterval() * SECOND;
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
-        majorCompactionLimitMs = conf.getMajorCompactionLimitMs();
-        minorCompactionLimitMs = conf.getMinorCompactionLimitMs();
+        majorCompactionMaxTimeMillis = conf.getMajorCompactionMaxTimeMillis();
+        minorCompactionMaxTimeMillis = conf.getMinorCompactionMaxTimeMillis();
 
         boolean isForceAllowCompaction = conf.isForceAllowCompaction();
 
@@ -366,7 +366,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             // enter major compaction
             LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
             majorCompacting.set(true);
-            doCompactEntryLogs(majorCompactionThreshold, majorCompactionLimitMs);
+            doCompactEntryLogs(majorCompactionThreshold, majorCompactionMaxTimeMillis);
             lastMajorCompactionTime = System.currentTimeMillis();
             // and also move minor compaction time
             lastMinorCompactionTime = lastMajorCompactionTime;
@@ -377,7 +377,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             // enter minor compaction
             LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
             minorCompacting.set(true);
-            doCompactEntryLogs(minorCompactionThreshold, minorCompactionLimitMs);
+            doCompactEntryLogs(minorCompactionThreshold, minorCompactionMaxTimeMillis);
             lastMinorCompactionTime = System.currentTimeMillis();
             gcStats.getMinorCompactionCounter().inc();
             minorCompacting.set(false);
@@ -447,7 +447,7 @@ public class GarbageCollectorThread extends SafeRunnable {
      * </p>
      */
     @VisibleForTesting
-    void doCompactEntryLogs(double threshold, long limit) {
+    void doCompactEntryLogs(double threshold, long maxTimeMillis) {
         LOG.info("Do compaction to compact those files lower than {}", threshold);
 
         // sort the ledger meta by usage in ascending order.
@@ -467,11 +467,11 @@ public class GarbageCollectorThread extends SafeRunnable {
             int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
             entryLogUsageBuckets[bucketIndex]++;
 
-            if (timeDiff < limit) {
+            if (timeDiff < maxTimeMillis) {
                 end = System.currentTimeMillis();
                 timeDiff = end - start;
             }
-            if (meta.getUsage() >= threshold || (limit > 0 && timeDiff > limit) || !running) {
+            if (meta.getUsage() >= threshold || (maxTimeMillis > 0 && timeDiff > maxTimeMillis) || !running) {
                 // We allow the usage limit calculation to continue so that we get a accurate
                 // report of where the usage was prior to running compaction.
                 continue;
@@ -490,8 +490,8 @@ public class GarbageCollectorThread extends SafeRunnable {
             if (!running) {
                 LOG.debug("Compaction exited due to gc not running");
             }
-            if (timeDiff > limit) {
-                LOG.debug("Compaction ran for {} but was limited by {}", timeDiff, limit);
+            if (timeDiff > maxTimeMillis) {
+                LOG.debug("Compaction ran for {}ms but was limited by {}ms", timeDiff, maxTimeMillis);
             }
         }
         LOG.info(

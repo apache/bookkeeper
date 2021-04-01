@@ -391,7 +391,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testMinorCompactionWithLimits() throws Exception {
+    public void testMinorCompactionWithMaxTimeMillis() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(6, false);
 
@@ -406,8 +406,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         baseConf.setMajorCompactionInterval(240000);
 
         // Setup limit on compaction duration.
-        baseConf.setMinorCompactionLimitMs(15);
-        baseConf.setMajorCompactionLimitMs(15);
+        baseConf.setMinorCompactionMaxTimeMillis(15);
+        baseConf.setMajorCompactionMaxTimeMillis(15);
 
         // restart bookies
         restartBookies(baseConf);

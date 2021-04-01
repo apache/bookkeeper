@@ -160,22 +160,22 @@ public class TestServerConfiguration {
         long major, minor;
 
         // Default Values
-        major = conf.getMajorCompactionLimitMs();
-        minor = conf.getMinorCompactionLimitMs();
+        major = conf.getMajorCompactionMaxTimeMillis();
+        minor = conf.getMinorCompactionMaxTimeMillis();
         Assert.assertEquals(-1, major);
         Assert.assertEquals(-1, minor);
 
         // Set values major then minor
-        conf.setMajorCompactionLimitMs(500).setMinorCompactionLimitMs(250);
-        major = conf.getMajorCompactionLimitMs();
-        minor = conf.getMinorCompactionLimitMs();
+        conf.setMajorCompactionMaxTimeMillis(500).setMinorCompactionMaxTimeMillis(250);
+        major = conf.getMajorCompactionMaxTimeMillis();
+        minor = conf.getMinorCompactionMaxTimeMillis();
         Assert.assertEquals(500, major);
         Assert.assertEquals(250, minor);
 
         // Set values minor then major
-        conf.setMinorCompactionLimitMs(150).setMajorCompactionLimitMs(1500);
-        major = conf.getMajorCompactionLimitMs();
-        minor = conf.getMinorCompactionLimitMs();
+        conf.setMinorCompactionMaxTimeMillis(150).setMajorCompactionMaxTimeMillis(1500);
+        major = conf.getMajorCompactionMaxTimeMillis();
+        minor = conf.getMinorCompactionMaxTimeMillis();
         Assert.assertEquals(1500, major);
         Assert.assertEquals(150, minor);
 
