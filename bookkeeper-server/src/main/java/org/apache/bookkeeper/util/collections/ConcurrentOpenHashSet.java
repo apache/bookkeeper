@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Consumer;
 
@@ -155,6 +156,10 @@ public class ConcurrentOpenHashSet<V> {
         private int usedBuckets;
         private int resizeThreshold;
 
+        private static final AtomicIntegerFieldUpdater<Section>
+                sizeUpdater =
+                AtomicIntegerFieldUpdater.newUpdater(Section.class, "size");
+
         Section(int capacity) {
             this.capacity = alignToPowerOfTwo(capacity);
             this.values = (V[]) new Object[this.capacity];
@@ -244,7 +249,7 @@ public class ConcurrentOpenHashSet<V> {
                         }
 
                         values[bucket] = value;
-                        ++size;
+                        sizeUpdater.incrementAndGet(this);
                         return true;
                     } else if (storedValue == DeletedValue) {
                         // The bucket contained a different deleted key
@@ -279,7 +284,7 @@ public class ConcurrentOpenHashSet<V> {
 
                     V storedValue = values[bucket];
                     if (value.equals(storedValue)) {
-                        --size;
+                        sizeUpdater.decrementAndGet(this);
 
                         int nextInArray = signSafeMod(bucket + 1, capacity);
                         if (values[nextInArray] == EmptyValue) {

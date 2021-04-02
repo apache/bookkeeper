@@ -28,6 +28,7 @@ import com.google.common.collect.Maps;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.StampedLock;
 
 /**
@@ -134,7 +135,7 @@ public class ConcurrentLongLongPairHashMap {
 
     /**
      *
-     * @param key
+     * @param key1
      * @return the value or -1 if the key was not present
      */
     public LongPair get(long key1, long key2) {
@@ -164,7 +165,7 @@ public class ConcurrentLongLongPairHashMap {
     /**
      * Remove an existing entry if found.
      *
-     * @param key
+     * @param key1
      * @return the value associated with the key or -1 if key was not present
      */
     public boolean remove(long key1, long key2) {
@@ -229,6 +230,10 @@ public class ConcurrentLongLongPairHashMap {
         private volatile int size;
         private int usedBuckets;
         private int resizeThreshold;
+
+        private static final AtomicIntegerFieldUpdater<Section>
+                sizeUpdater =
+                AtomicIntegerFieldUpdater.newUpdater(Section.class, "size");
 
         Section(int capacity) {
             this.capacity = alignToPowerOfTwo(capacity);
@@ -324,7 +329,7 @@ public class ConcurrentLongLongPairHashMap {
                         table[bucket + 1] = key2;
                         table[bucket + 2] = value1;
                         table[bucket + 3] = value2;
-                        ++size;
+                        sizeUpdater.incrementAndGet(this);
                         return true;
                     } else if (storedKey1 == DeletedKey) {
                         // The bucket contained a different deleted key
@@ -360,7 +365,7 @@ public class ConcurrentLongLongPairHashMap {
                     long storedValue2 = table[bucket + 3];
                     if (key1 == storedKey1 && key2 == storedKey2) {
                         if (value1 == ValueNotFound || (value1 == storedValue1 && value2 == storedValue2)) {
-                            --size;
+                            sizeUpdater.decrementAndGet(this);
 
                             cleanBucket(bucket);
                             return true;

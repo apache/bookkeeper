@@ -22,6 +22,7 @@ package org.apache.bookkeeper.util.collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -91,8 +92,8 @@ public class ConcurrentOpenHashMapTest {
 
         assertEquals(map.remove("1"), "one");
         assertEquals(map.size(), 2);
-        assertEquals(map.get("1"), null);
-        assertEquals(map.get("5"), null);
+        assertNull(map.get("1"));
+        assertNull(map.get("5"));
         assertEquals(map.size(), 2);
 
         assertNull(map.put("1", "one"));
@@ -281,14 +282,14 @@ public class ConcurrentOpenHashMapTest {
         int bucket2 = ConcurrentOpenHashMap.signSafeMod(ConcurrentOpenHashMap.hash(key2), buckets);
         assertEquals(bucket1, bucket2);
 
-        assertEquals(map.put(key1, "value-1"), null);
-        assertEquals(map.put(key2, "value-2"), null);
+        assertNull(map.put(key1, "value-1"));
+        assertNull(map.put(key2, "value-2"));
         assertEquals(map.size(), 2);
 
         assertEquals(map.remove(key1), "value-1");
         assertEquals(map.size(), 1);
 
-        assertEquals(map.put(key1, "value-1-overwrite"), null);
+        assertNull(map.put(key1, "value-1-overwrite"));
         assertEquals(map.size(), 2);
 
         assertEquals(map.remove(key1), "value-1-overwrite");
@@ -305,7 +306,7 @@ public class ConcurrentOpenHashMapTest {
     @Test
     public void testPutIfAbsent() {
         ConcurrentOpenHashMap<Long, String> map = new ConcurrentOpenHashMap<>();
-        assertEquals(map.putIfAbsent(1L, "one"), null);
+        assertNull(map.putIfAbsent(1L, "one"));
         assertEquals(map.get(1L), "one");
 
         assertEquals(map.putIfAbsent(1L, "uno"), "one");
@@ -344,12 +345,7 @@ public class ConcurrentOpenHashMapTest {
         Collections.sort(keys);
         assertEquals(keys, Lists.newArrayList(0, 1, 3, 6, 7));
 
-        int numOfItemsDeleted = map.removeIf(new BiPredicate<Integer, String>() {
-            @Override
-            public boolean test(Integer k, String v) {
-                return k < 5;
-            }
-        });
+        int numOfItemsDeleted = map.removeIf((k, v) -> k < 5);
         assertEquals(numOfItemsDeleted, 3);
         assertEquals(map.size(), keys.size() - numOfItemsDeleted);
         keys = map.keys();
@@ -360,7 +356,7 @@ public class ConcurrentOpenHashMapTest {
     @Test
     public void testEqualsKeys() {
         class T {
-            int value;
+            final int value;
 
             T(int value) {
                 this.value = value;
@@ -388,8 +384,8 @@ public class ConcurrentOpenHashMapTest {
         T t2 = new T(2);
 
         assertEquals(t1, t1B);
-        assertFalse(t1.equals(t2));
-        assertFalse(t1B.equals(t2));
+        assertNotEquals(t1, t2);
+        assertNotEquals(t1B, t2);
 
         assertNull(map.put(t1, "t1"));
         assertEquals(map.get(t1), "t1");
@@ -405,7 +401,7 @@ public class ConcurrentOpenHashMapTest {
     static final int ReadIterations = 100;
     static final int N = 1_000_000;
 
-    public void benchConcurrentOpenHashMap() throws Exception {
+    public void benchConcurrentOpenHashMap() {
         // public static void main(String args[]) {
         ConcurrentOpenHashMap<Long, String> map = new ConcurrentOpenHashMap<>(N, 1);
 
@@ -426,8 +422,8 @@ public class ConcurrentOpenHashMapTest {
         }
     }
 
-    public void benchConcurrentHashMap() throws Exception {
-        ConcurrentHashMap<Long, String> map = new ConcurrentHashMap<Long, String>(N, 0.66f, 1);
+    public void benchConcurrentHashMap() {
+        ConcurrentHashMap<Long, String> map = new ConcurrentHashMap<>(N, 0.66f, 1);
 
         for (long i = 0; i < Iterations; i++) {
             for (int j = 0; j < N; j++) {
@@ -446,8 +442,8 @@ public class ConcurrentOpenHashMapTest {
         }
     }
 
-    void benchHashMap() throws Exception {
-        HashMap<Long, String> map = new HashMap<Long, String>(N, 0.66f);
+    void benchHashMap() {
+        HashMap<Long, String> map = new HashMap<>(N, 0.66f);
 
         for (long i = 0; i < Iterations; i++) {
             for (int j = 0; j < N; j++) {

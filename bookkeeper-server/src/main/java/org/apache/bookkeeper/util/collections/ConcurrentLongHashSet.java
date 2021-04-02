@@ -25,6 +25,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.StampedLock;
 
 /**
@@ -173,6 +174,10 @@ public class ConcurrentLongHashSet {
         private int usedBuckets;
         private int resizeThreshold;
 
+        private static final AtomicIntegerFieldUpdater<Section>
+                sizeUpdater =
+                AtomicIntegerFieldUpdater.newUpdater(Section.class, "size");
+
         Section(int capacity) {
             this.capacity = alignToPowerOfTwo(capacity);
             this.table = new long[this.capacity];
@@ -251,7 +256,7 @@ public class ConcurrentLongHashSet {
                         }
 
                         table[bucket] = item;
-                        ++size;
+                        sizeUpdater.incrementAndGet(this);
                         return true;
                     } else if (storedItem == DeletedItem) {
                         // The bucket contained a different deleted key
@@ -283,7 +288,7 @@ public class ConcurrentLongHashSet {
                 while (true) {
                     long storedItem = table[bucket];
                     if (item == storedItem) {
-                        --size;
+                        sizeUpdater.incrementAndGet(this);
 
                         cleanBucket(bucket);
                         return true;
@@ -368,8 +373,7 @@ public class ConcurrentLongHashSet {
             Arrays.fill(newTable, EmptyItem);
 
             // Re-hash table
-            for (int i = 0; i < table.length; i++) {
-                long storedItem = table[i];
+            for (long storedItem : table) {
                 if (storedItem != EmptyItem && storedItem != DeletedItem) {
                     insertKeyValueNoLock(newTable, newCapacity, storedItem);
                 }

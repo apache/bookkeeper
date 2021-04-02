@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.LongFunction;
 
@@ -223,6 +224,10 @@ public class ConcurrentLongHashMap<V> {
         private int usedBuckets;
         private int resizeThreshold;
 
+        private static final AtomicIntegerFieldUpdater<Section>
+                sizeUpdater =
+                AtomicIntegerFieldUpdater.newUpdater(Section.class, "size");
+
         Section(int capacity) {
             this.capacity = alignToPowerOfTwo(capacity);
             this.keys = new long[this.capacity];
@@ -306,12 +311,12 @@ public class ConcurrentLongHashMap<V> {
                     if (storedKey == key) {
                         if (storedValue == EmptyValue) {
                             values[bucket] = value != null ? value : valueProvider.apply(key);
-                            ++size;
+                            sizeUpdater.incrementAndGet(this);
                             ++usedBuckets;
                             return valueProvider != null ? values[bucket] : null;
                         } else if (storedValue == DeletedValue) {
                             values[bucket] = value != null ? value : valueProvider.apply(key);
-                            ++size;
+                            sizeUpdater.incrementAndGet(this);
                             return valueProvider != null ? values[bucket] : null;
                         } else if (!onlyIfAbsent) {
                             // Over written an old value for same key
@@ -331,7 +336,7 @@ public class ConcurrentLongHashMap<V> {
 
                         keys[bucket] = key;
                         values[bucket] = value != null ? value : valueProvider.apply(key);
-                        ++size;
+                        sizeUpdater.incrementAndGet(this);
                         return valueProvider != null ? values[bucket] : null;
                     } else if (storedValue == DeletedValue) {
                         // The bucket contained a different deleted key
@@ -372,7 +377,7 @@ public class ConcurrentLongHashMap<V> {
                                 return null;
                             }
 
-                            --size;
+                            sizeUpdater.decrementAndGet(this);
                             V nextValueInArray = values[signSafeMod(bucket + 1, capacity)];
                             if (nextValueInArray == EmptyValue) {
                                 values[bucket] = (V) EmptyValue;
@@ -412,7 +417,7 @@ public class ConcurrentLongHashMap<V> {
                     if (storedValue != EmptyValue && storedValue != DeletedValue) {
                         if (filter.test(storedKey, storedValue)) {
                             // Removing item
-                            --size;
+                            sizeUpdater.decrementAndGet(this);
                             ++removedCount;
 
                             V nextValueInArray = values[signSafeMod(bucket + 1, capacity)];

@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
@@ -201,6 +202,10 @@ public class ConcurrentOpenHashMap<K, V> {
         private int usedBuckets;
         private int resizeThreshold;
 
+        private static final AtomicIntegerFieldUpdater<Section>
+                sizeUpdater =
+                AtomicIntegerFieldUpdater.newUpdater(Section.class, "size");
+
         Section(int capacity) {
             this.capacity = alignToPowerOfTwo(capacity);
             this.table = new Object[2 * this.capacity];
@@ -291,7 +296,7 @@ public class ConcurrentOpenHashMap<K, V> {
 
                         table[bucket] = key;
                         table[bucket + 1] = value;
-                        ++size;
+                        sizeUpdater.incrementAndGet(this);
                         return valueProvider != null ? value : null;
                     } else if (storedKey == DeletedKey) {
                         // The bucket contained a different deleted key
@@ -325,7 +330,7 @@ public class ConcurrentOpenHashMap<K, V> {
                     V storedValue = (V) table[bucket + 1];
                     if (key.equals(storedKey)) {
                         if (value == null || value.equals(storedValue)) {
-                            --size;
+                            sizeUpdater.decrementAndGet(this);
                             cleanBucket(bucket);
                             return storedValue;
                         } else {
@@ -410,7 +415,7 @@ public class ConcurrentOpenHashMap<K, V> {
                     if (storedKey != DeletedKey && storedKey != EmptyKey) {
                         if (filter.test(storedKey, storedValue)) {
                             // Removing item
-                            --size;
+                            sizeUpdater.decrementAndGet(this);
                             ++removedCount;
                             cleanBucket(bucket);
                         }

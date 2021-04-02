@@ -29,6 +29,7 @@ import com.google.common.collect.Maps;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.LongPredicate;
 
@@ -284,6 +285,11 @@ public class ConcurrentLongLongHashMap {
     // A section is a portion of the hash map that is covered by a single
     @SuppressWarnings("serial")
     private static final class Section extends StampedLock {
+
+        private static final AtomicIntegerFieldUpdater<Section>
+                sizeUpdater =
+                AtomicIntegerFieldUpdater.newUpdater(Section.class, "size");
+
         // Keys and values are stored interleaved in the table array
         private volatile long[] table;
 
@@ -383,7 +389,7 @@ public class ConcurrentLongLongHashMap {
 
                         table[bucket] = key;
                         table[bucket + 1] = value;
-                        ++size;
+                        sizeUpdater.incrementAndGet(this);
                         return valueProvider != null ? value : ValueNotFound;
                     } else if (storedKey == DeletedKey) {
                         // The bucket contained a different deleted key
@@ -439,7 +445,7 @@ public class ConcurrentLongLongHashMap {
 
                         table[bucket] = key;
                         table[bucket + 1] = delta;
-                        ++size;
+                        sizeUpdater.incrementAndGet(this);
                         return delta;
                     } else if (storedKey == DeletedKey) {
                         // The bucket contained a different deleted key
@@ -494,7 +500,7 @@ public class ConcurrentLongLongHashMap {
 
                             table[bucket] = key;
                             table[bucket + 1] = newValue;
-                            ++size;
+                            sizeUpdater.incrementAndGet(this);
                             return true;
                         } else {
                             return false;
@@ -531,8 +537,7 @@ public class ConcurrentLongLongHashMap {
                     long storedValue = table[bucket + 1];
                     if (key == storedKey) {
                         if (value == ValueNotFound || value == storedValue) {
-                            --size;
-
+                            sizeUpdater.decrementAndGet(this);
                             cleanBucket(bucket);
                             return storedValue;
                         } else {
@@ -563,7 +568,7 @@ public class ConcurrentLongLongHashMap {
                     if (storedKey != DeletedKey && storedKey != EmptyKey) {
                         if (filter.test(storedKey)) {
                             // Removing item
-                            --size;
+                            sizeUpdater.decrementAndGet(this);
                             ++removedCount;
                             cleanBucket(bucket);
                         }
@@ -589,7 +594,7 @@ public class ConcurrentLongLongHashMap {
                     if (storedKey != DeletedKey && storedKey != EmptyKey) {
                         if (filter.test(storedKey, storedValue)) {
                             // Removing item
-                            --size;
+                            sizeUpdater.decrementAndGet(this);
                             ++removedCount;
                             cleanBucket(bucket);
                         }
