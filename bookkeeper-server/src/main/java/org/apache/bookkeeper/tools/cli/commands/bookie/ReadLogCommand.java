@@ -176,7 +176,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
                            + rangeStartPos + " - " + rangeEndPos);
         final MutableBoolean entryFound = new MutableBoolean(false);
         scanEntryLog(conf, logId, new EntryLogger.EntryLogScanner() {
-            private MutableBoolean stopScanning = new MutableBoolean(false);
+            private final MutableBoolean stopScanning = new MutableBoolean(false);
 
             @Override
             public boolean accept(long ledgerId) {
@@ -199,7 +199,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
                          * EntryLogger.scanEntryLog.
                          */
                         long entryEndPos = entryStartPos + entrySize + 4 - 1;
-                        if (((rangeEndPos == -1) || (entryStartPos <= rangeEndPos)) && (rangeStartPos <= entryEndPos)) {
+                        if (rangeStartPos <= entryEndPos) {
                             FormatUtil.formatEntry(entryStartPos, entry, printMsg, ledgerIdFormatter, entryFormatter);
                             entryFound.setValue(true);
                         }

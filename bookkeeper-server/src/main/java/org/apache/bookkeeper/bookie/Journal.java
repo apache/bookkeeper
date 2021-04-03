@@ -72,8 +72,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private static final Logger LOG = LoggerFactory.getLogger(Journal.class);
 
     private static final RecyclableArrayList.Recycler<QueueEntry> entryListRecycler =
-        new RecyclableArrayList.Recycler<QueueEntry>();
-    private static final RecyclableArrayList<QueueEntry> EMPTY_ARRAY_LIST = new RecyclableArrayList<>();
+            new RecyclableArrayList.Recycler<>();
+    private static final RecyclableArrayList<QueueEntry> EMPTY_ARRAY_LIST =
+            new RecyclableArrayList<>();
 
     /**
      * Filter to pickup journals.
@@ -107,7 +108,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         if (logFiles == null || logFiles.length == 0) {
             return Collections.emptyList();
         }
-        List<Long> logs = new ArrayList<Long>();
+        List<Long> logs = new ArrayList<>();
         for (File f: logFiles) {
             String name = f.getName();
             if (!name.endsWith(".txn")) {

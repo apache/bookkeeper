@@ -539,14 +539,14 @@ public class ConcurrentLongHashMap<V> {
     private static final long HashMixer = 0xc6a4a7935bd1e995L;
     private static final int R = 47;
 
-    static final long hash(long key) {
+    static long hash(long key) {
         long hash = key * HashMixer;
         hash ^= hash >>> R;
         hash *= HashMixer;
         return hash;
     }
 
-    static final int signSafeMod(long n, int max) {
+    static int signSafeMod(long n, int max) {
         return (int) n & (max - 1);
     }
 

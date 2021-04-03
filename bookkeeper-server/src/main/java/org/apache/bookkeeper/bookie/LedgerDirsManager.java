@@ -50,8 +50,7 @@ public class LedgerDirsManager {
     private volatile List<File> writableLedgerDirectories;
     private final List<LedgerDirsListener> listeners;
     private final Random rand = new Random();
-    private final ConcurrentMap<File, Float> diskUsages =
-            new ConcurrentHashMap<File, Float>();
+    private final ConcurrentMap<File, Float> diskUsages = new ConcurrentHashMap<>();
     private final long entryLogSize;
     private long minUsableSizeForEntryLogCreation;
     private long minUsableSizeForIndexFileCreation;
@@ -65,9 +64,9 @@ public class LedgerDirsManager {
     public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger) {
         this.ledgerDirectories = Arrays.asList(Bookie
                 .getCurrentDirectories(dirs));
-        this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
-        this.filledDirs = new ArrayList<File>();
-        this.listeners = new ArrayList<LedgerDirsListener>();
+        this.writableLedgerDirectories = new ArrayList<>(ledgerDirectories);
+        this.filledDirs = new ArrayList<>();
+        this.listeners = new ArrayList<>();
         this.entryLogSize = conf.getEntryLogSizeLimit();
         this.minUsableSizeForIndexFileCreation = conf.getMinUsableSizeForIndexFileCreation();
         this.minUsableSizeForEntryLogCreation = conf.getMinUsableSizeForEntryLogCreation();
@@ -230,11 +229,11 @@ public class LedgerDirsManager {
         if (!filledDirs.contains(dir)) {
             LOG.warn(dir + " is out of space. Adding it to filled dirs list");
             // Update filled dirs list
-            List<File> updatedFilledDirs = new ArrayList<File>(filledDirs);
+            List<File> updatedFilledDirs = new ArrayList<>(filledDirs);
             updatedFilledDirs.add(dir);
             filledDirs = updatedFilledDirs;
             // Update the writable ledgers list
-            List<File> newDirs = new ArrayList<File>(writableLedgerDirectories);
+            List<File> newDirs = new ArrayList<>(writableLedgerDirectories);
             newDirs.removeAll(filledDirs);
             writableLedgerDirectories = newDirs;
             // Notify listeners about disk full
@@ -255,11 +254,11 @@ public class LedgerDirsManager {
         }
         LOG.info("{} becomes writable. Adding it to writable dirs list.", dir);
         // Update writable dirs list
-        List<File> updatedWritableDirs = new ArrayList<File>(writableLedgerDirectories);
+        List<File> updatedWritableDirs = new ArrayList<>(writableLedgerDirectories);
         updatedWritableDirs.add(dir);
         writableLedgerDirectories = updatedWritableDirs;
         // Update the filled dirs list
-        List<File> newDirs = new ArrayList<File>(filledDirs);
+        List<File> newDirs = new ArrayList<>(filledDirs);
         newDirs.removeAll(writableLedgerDirectories);
         filledDirs = newDirs;
         // Notify listeners about disk writable

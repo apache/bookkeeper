@@ -78,8 +78,7 @@ public class CleanupLedgerManager implements LedgerManager {
     }
 
     private final LedgerManager underlying;
-    private final ConcurrentMap<GenericCallback, GenericCallback> callbacks =
-        new ConcurrentHashMap<GenericCallback, GenericCallback>();
+    private final ConcurrentMap<GenericCallback, GenericCallback> callbacks = new ConcurrentHashMap<>();
     private boolean closed = false;
     private final ReentrantReadWriteLock closeLock = new ReentrantReadWriteLock();
     private final Set<CompletableFuture<?>> futures = ConcurrentHashMap.newKeySet();
@@ -232,7 +231,7 @@ public class CleanupLedgerManager implements LedgerManager {
                 return;
             }
             closed = true;
-            keys = new HashSet<GenericCallback>(callbacks.keySet());
+            keys = new HashSet<>(callbacks.keySet());
         } finally {
             closeLock.writeLock().unlock();
         }

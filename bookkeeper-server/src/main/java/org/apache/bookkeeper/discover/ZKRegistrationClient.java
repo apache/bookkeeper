@@ -271,10 +271,9 @@ public class ZKRegistrationClient implements RegistrationClient {
                     bookieServiceInfoCache.put(bookieId, result);
                     promise.complete(result);
                 } catch (IOException ex) {
-                    log.error("Cannot update BookieInfo for {}", ex);
+                    log.error("Cannot update BookieInfo for", ex);
                     promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path)
                             .initCause(ex));
-                    return;
                 }
             } else if (KeeperException.Code.NONODE.intValue() == rc) {
                 // not found, looking for a readonly bookie
@@ -289,10 +288,9 @@ public class ZKRegistrationClient implements RegistrationClient {
                             bookieServiceInfoCache.put(bookieId, result);
                             promise.complete(result);
                         } catch (IOException ex) {
-                            log.error("Cannot update BookieInfo for {}", ex);
+                            log.error("Cannot update BookieInfo for", ex);
                             promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2)
                                     .initCause(ex));
-                            return;
                         }
                     } else {
                         // not found as writable and readonly, the bookie is offline

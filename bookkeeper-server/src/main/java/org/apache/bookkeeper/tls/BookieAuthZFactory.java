@@ -72,7 +72,7 @@ public class BookieAuthZFactory implements BookieAuthProvider.Factory {
                                           final AuthCallbacks.GenericCallback<Void> completeCb) {
         return new BookieAuthProvider() {
 
-            AuthCallbacks.GenericCallback<Void> completeCallback = completeCb;
+            final AuthCallbacks.GenericCallback<Void> completeCallback = completeCb;
 
             @Override
             public void onProtocolUpgrade() {

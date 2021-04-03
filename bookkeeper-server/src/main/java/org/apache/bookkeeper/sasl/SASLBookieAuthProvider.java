@@ -31,7 +31,6 @@ import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +44,10 @@ public class SASLBookieAuthProvider implements BookieAuthProvider {
     private SaslServerState server;
     private final AuthCallbacks.GenericCallback<Void> completeCb;
 
-    SASLBookieAuthProvider(BookieConnectionPeer addr, AuthCallbacks.GenericCallback<Void> completeCb,
-        ServerConfiguration serverConfiguration, Subject subject, Pattern allowedIdsPattern) {
+    SASLBookieAuthProvider(AuthCallbacks.GenericCallback<Void> completeCb,
+                           ServerConfiguration serverConfiguration,
+                           Subject subject,
+                           Pattern allowedIdsPattern) {
         this.completeCb = completeCb;
         try {
             server = new SaslServerState(serverConfiguration, subject, allowedIdsPattern);

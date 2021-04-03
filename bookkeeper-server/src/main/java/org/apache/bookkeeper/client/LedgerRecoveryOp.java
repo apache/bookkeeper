@@ -212,7 +212,6 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
             LOG.warn("Successfully read entry {} for ledger {}, but readDone is already {}",
                     entry.getEntryId(), lh.getId(), readDone);
         }
-        return;
     }
 
     @Override

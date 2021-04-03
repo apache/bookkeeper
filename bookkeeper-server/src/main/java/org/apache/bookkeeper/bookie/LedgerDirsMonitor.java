@@ -52,7 +52,7 @@ class LedgerDirsMonitor {
     private final ServerConfiguration conf;
     private final DiskChecker diskChecker;
     private final List<LedgerDirsManager> dirsManagers;
-    private long minUsableSizeForHighPriorityWrites;
+    private final long minUsableSizeForHighPriorityWrites;
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> checkTask;
 

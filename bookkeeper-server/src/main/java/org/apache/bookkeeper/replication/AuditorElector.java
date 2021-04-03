@@ -101,7 +101,7 @@ public class AuditorElector {
 
     private String myVote;
     Auditor auditor;
-    private AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean running = new AtomicBoolean(false);
 
     // Expose Stats
     @StatsDoc(
@@ -429,9 +429,7 @@ public class AuditorElector {
         public int compare(String vote1, String vote2) {
             long voteSeqId1 = getVoteSequenceId(vote1);
             long voteSeqId2 = getVoteSequenceId(vote2);
-            int result = voteSeqId1 < voteSeqId2 ? -1
-                    : (voteSeqId1 > voteSeqId2 ? 1 : 0);
-            return result;
+            return Long.compare(voteSeqId1, voteSeqId2);
         }
 
         private long getVoteSequenceId(String vote) {

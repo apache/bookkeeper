@@ -502,7 +502,7 @@ public class ConcurrentLongLongPairHashMap {
     private static final long HashMixer = 0xc6a4a7935bd1e995L;
     private static final int R = 47;
 
-    static final long hash(long key1, long key2) {
+    static long hash(long key1, long key2) {
         long hash = key1 * HashMixer;
         hash ^= hash >>> R;
         hash *= HashMixer;
@@ -512,7 +512,7 @@ public class ConcurrentLongLongPairHashMap {
         return hash;
     }
 
-    static final int signSafeMod(long n, int max) {
+    static int signSafeMod(long n, int max) {
         return (int) (n & (max - 1)) << 2;
     }
 

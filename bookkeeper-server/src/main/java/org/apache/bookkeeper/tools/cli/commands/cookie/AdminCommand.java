@@ -257,7 +257,7 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
         }
 
         File[] allCurDirs = Bookie.getCurrentDirectories(allDirs);
-        List<File> allVersionFiles = new LinkedList<File>();
+        List<File> allVersionFiles = new LinkedList<>();
         File versionFile;
         for (File curDir : allCurDirs) {
             versionFile = new File(curDir, BookKeeperConstants.VERSION_FILENAME);

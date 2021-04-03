@@ -828,7 +828,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
-    public void flushEntriesLocationsIndex() throws IOException {
+    public void flushEntriesLocationsIndex() {
         // No-op. Location index is already flushed in updateEntriesLocations() call
     }
 

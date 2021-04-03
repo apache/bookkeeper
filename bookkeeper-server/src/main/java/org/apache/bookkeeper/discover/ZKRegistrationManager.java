@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -519,8 +520,8 @@ public class ZKRegistrationManager implements RegistrationManager {
             false
         )) {
             if (availableNodeExists) {
-                Collection<BookieId> rwBookies = FutureUtils
-                        .result(regClient.getWritableBookies(), EXCEPTION_FUNC).getValue();
+                Collection<BookieId> rwBookies = Objects.requireNonNull(FutureUtils
+                        .result(regClient.getWritableBookies(), EXCEPTION_FUNC)).getValue();
                 if (rwBookies != null && !rwBookies.isEmpty()) {
                     log.error("Bookies are still up and connected to this cluster, "
                             + "stop all bookies before nuking the cluster");
@@ -529,8 +530,8 @@ public class ZKRegistrationManager implements RegistrationManager {
 
                 boolean readonlyNodeExists = null != zk.exists(bookieReadonlyRegistrationPath, false);
                 if (readonlyNodeExists) {
-                    Collection<BookieId> roBookies = FutureUtils
-                            .result(regClient.getReadOnlyBookies(), EXCEPTION_FUNC).getValue();
+                    Collection<BookieId> roBookies = Objects.requireNonNull(FutureUtils
+                            .result(regClient.getReadOnlyBookies(), EXCEPTION_FUNC)).getValue();
                     if (roBookies != null && !roBookies.isEmpty()) {
                         log.error("Readonly Bookies are still up and connected to this cluster, "
                                 + "stop all bookies before nuking the cluster");

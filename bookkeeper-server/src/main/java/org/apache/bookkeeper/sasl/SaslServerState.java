@@ -58,13 +58,13 @@ public class SaslServerState {
 
     public SaslServerState(
         ServerConfiguration serverConfiguration, Subject subject, Pattern allowedIdsPattern)
-        throws IOException, SaslException, LoginException {
+        throws IOException, LoginException {
         this.allowedIdsPattern = allowedIdsPattern;
         saslServer = createSaslServer(subject, serverConfiguration);
     }
 
     private SaslServer createSaslServer(final Subject subject, ServerConfiguration serverConfiguration)
-        throws SaslException, IOException {
+        throws IOException {
 
         SaslServerCallbackHandler callbackHandler = new SaslServerCallbackHandler(Configuration.getConfiguration(),
             serverConfiguration);
@@ -131,8 +131,7 @@ public class SaslServerState {
 
     public byte[] response(byte[] token) throws SaslException {
         try {
-            byte[] retval = saslServer.evaluateResponse(token);
-            return retval;
+            return saslServer.evaluateResponse(token);
         } catch (SaslException e) {
             LOG.error("response: Failed to evaluate client token", e);
             throw e;

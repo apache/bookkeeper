@@ -165,7 +165,7 @@ public class LedgerChecker {
         }
 
         AtomicInteger numBookies = new AtomicInteger(bookiesToCheck.size());
-        Map<Integer, Integer> badBookies = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> badBookies = new HashMap<>();
         for (Integer bookieIndex : bookiesToCheck) {
             LedgerFragmentCallback lfCb = new LedgerFragmentCallback(
                     fragment, bookieIndex, cb, badBookies, numBookies);
@@ -222,7 +222,7 @@ public class LedgerChecker {
             int numberOfEntriesToBeVerified =
                 (int) (lengthOfLedgerFragment * (percentageOfLedgerFragmentToBeVerified / 100.0));
 
-            TreeSet<Long> entriesToBeVerified = new TreeSet<Long>();
+            TreeSet<Long> entriesToBeVerified = new TreeSet<>();
 
             if (numberOfEntriesToBeVerified < lengthOfLedgerFragment) {
                 // Evenly pick random entries over the length of the fragment
@@ -299,7 +299,7 @@ public class LedgerChecker {
 
         FullLedgerCallback(long numFragments,
                 GenericCallback<Set<LedgerFragment>> cb) {
-            badFragments = new HashSet<LedgerFragment>();
+            badFragments = new HashSet<>();
             this.numFragments = new AtomicLong(numFragments);
             this.cb = cb;
         }
@@ -370,7 +370,7 @@ public class LedgerChecker {
                 lastEntry = curEntryId;
             }
 
-            Set<Integer> bookieIndexes = new HashSet<Integer>();
+            Set<Integer> bookieIndexes = new HashSet<>();
             for (int i = 0; i < curEnsemble.size(); i++) {
                 bookieIndexes.add(i);
             }

@@ -26,7 +26,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -166,10 +165,7 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
 
             if (bookie == null) {
                 // No bookie was specified, use normal bk client
-                Iterator<LedgerEntry> entries = bk.readEntries(flags.ledgerId, flags.firstEntryId, lastEntry)
-                                                  .iterator();
-                while (entries.hasNext()) {
-                    LedgerEntry entry = entries.next();
+                for (LedgerEntry entry : bk.readEntries(flags.ledgerId, flags.firstEntryId, lastEntry)) {
                     formatEntry(entry, flags.msg);
                 }
             } else {

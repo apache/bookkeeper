@@ -91,7 +91,7 @@ public abstract class CertUtils {
         return getRolesFromOUMap(getOUMap(cert));
     }
 
-    public static String[] getRolesFromOUMap(Map<String, String> ouMap) throws IOException {
+    public static String[] getRolesFromOUMap(Map<String, String> ouMap) {
         String roleNames = ouMap.get(OU_ROLE_NAME_CODE);
         if (roleNames != null) {
             String[] roleParts = OU_NAME_SPLITTER.split(roleNames);

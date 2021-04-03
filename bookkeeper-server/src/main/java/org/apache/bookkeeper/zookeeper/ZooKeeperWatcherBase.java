@@ -46,19 +46,19 @@ public class ZooKeeperWatcherBase implements Watcher {
     private final int zkSessionTimeOut;
     private volatile CountDownLatch clientConnectLatch = new CountDownLatch(1);
     private final CopyOnWriteArraySet<Watcher> childWatchers =
-            new CopyOnWriteArraySet<Watcher>();
+            new CopyOnWriteArraySet<>();
     private final StatsLogger statsLogger;
     private final ConcurrentHashMap<Event.KeeperState, Counter> stateCounters =
-            new ConcurrentHashMap<Event.KeeperState, Counter>();
+            new ConcurrentHashMap<>();
     private final ConcurrentHashMap<EventType, Counter> eventCounters =
-            new ConcurrentHashMap<EventType, Counter>();
+            new ConcurrentHashMap<>();
 
     public ZooKeeperWatcherBase(int zkSessionTimeOut) {
         this(zkSessionTimeOut, NullStatsLogger.INSTANCE);
     }
 
     public ZooKeeperWatcherBase(int zkSessionTimeOut, StatsLogger statsLogger) {
-        this(zkSessionTimeOut, new HashSet<Watcher>(), statsLogger);
+        this(zkSessionTimeOut, new HashSet<>(), statsLogger);
     }
 
     public ZooKeeperWatcherBase(int zkSessionTimeOut,

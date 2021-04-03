@@ -218,7 +218,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                             Predicate<BookieNode> predicate,
                                             Ensemble<BookieNode> ensemble)
         throws BKException.BKNotEnoughBookiesException {
-        List<BookieNode> availableBookies = new ArrayList<BookieNode>();
+        List<BookieNode> availableBookies = new ArrayList<>();
         for (BookieNode bookieNode: knownBookies.values()) {
             if (availableRegions.contains(getLocalRegion(bookieNode))) {
                 availableBookies.add(bookieNode);
@@ -263,7 +263,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             Set<BookieId> comprehensiveExclusionBookiesSet = addDefaultRackBookiesIfMinNumRacksIsEnforced(
                     excludedBookies);
             Set<Node> excludeNodes = convertBookiesToNodes(comprehensiveExclusionBookiesSet);
-            Set<String> availableRegions = new HashSet<String>();
+            Set<String> availableRegions = new HashSet<>();
             for (String region: perRegionPlacement.keySet()) {
                 if ((null == disallowBookiePlacementInRegionFeatureName)
                         || !featureProvider.scope(region).getFeature(disallowBookiePlacementInRegionFeatureName)

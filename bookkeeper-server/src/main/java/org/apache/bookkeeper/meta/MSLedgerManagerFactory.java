@@ -478,7 +478,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             Value data = new Value().setField(META_FIELD, bytes);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, currentVersion });
+                LOG.debug("Writing ledger {} metadata, version {}", ledgerId, currentVersion);
             }
 
             final String key = ledgerId2Key(ledgerId);
@@ -551,7 +551,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         return;
                     }
 
-                    SortedSet<Long> ledgers = new TreeSet<Long>();
+                    SortedSet<Long> ledgers = new TreeSet<>();
                     while (entries.hasNext()) {
                         MetastoreTableItem item = entries.next();
                         try {
@@ -628,7 +628,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             @Override
             public LedgerRange next() throws IOException {
                 try {
-                    SortedSet<Long> ledgerIds = new TreeSet<Long>();
+                    SortedSet<Long> ledgerIds = new TreeSet<>();
                     Iterator<MetastoreTableItem> iter = cursor.readEntries(maxEntriesPerScan);
                     while (iter.hasNext()) {
                         ledgerIds.add(key2LedgerId(iter.next().getKey()));

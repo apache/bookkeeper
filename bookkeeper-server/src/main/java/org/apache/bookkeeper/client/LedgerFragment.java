@@ -111,7 +111,7 @@ public class LedgerFragment {
     }
 
     public Set<BookieId> getAddresses() {
-        Set<BookieId> addresses = new HashSet<BookieId>();
+        Set<BookieId> addresses = new HashSet<>();
         for (int bookieIndex : bookieIndexes) {
             addresses.add(ensemble.get(bookieIndex));
         }

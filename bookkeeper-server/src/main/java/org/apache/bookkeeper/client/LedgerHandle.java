@@ -1452,7 +1452,7 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
         ReadLastConfirmedOp.LastConfirmedDataCallback innercb = new ReadLastConfirmedOp.LastConfirmedDataCallback() {
-            AtomicBoolean completed = new AtomicBoolean(false);
+            final AtomicBoolean completed = new AtomicBoolean(false);
 
             @Override
             public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
@@ -1564,7 +1564,7 @@ public class LedgerHandle implements WriteHandle {
         // wait for entry <i>entryId</i>
         ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback innercb =
             new ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback() {
-            AtomicBoolean completed = new AtomicBoolean(false);
+            final AtomicBoolean completed = new AtomicBoolean(false);
             @Override
             public void readLastConfirmedAndEntryComplete(int rc, long lastAddConfirmed, LedgerEntry entry) {
                 if (rc == BKException.Code.OK) {

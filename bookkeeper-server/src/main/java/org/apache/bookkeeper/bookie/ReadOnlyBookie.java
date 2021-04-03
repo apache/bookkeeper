@@ -28,7 +28,6 @@ import java.util.function.Supplier;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +43,7 @@ public class ReadOnlyBookie extends Bookie {
 
     public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger,
             ByteBufAllocator allocator, Supplier<BookieServiceInfo> bookieServiceInfoProvider)
-            throws IOException, KeeperException, InterruptedException, BookieException {
+            throws IOException, InterruptedException, BookieException {
         super(conf, statsLogger, allocator, bookieServiceInfoProvider);
         if (conf.isReadOnlyModeEnabled()) {
             stateManager.forceToReadOnly();

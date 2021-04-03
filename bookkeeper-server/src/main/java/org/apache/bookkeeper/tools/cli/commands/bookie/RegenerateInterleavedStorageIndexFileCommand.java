@@ -25,9 +25,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.InterleavedStorageRegenerateIndexOp;
@@ -110,7 +110,7 @@ public class RegenerateInterleavedStorageIndexFileCommand
             return false;
         }
 
-        Set<Long> ledgerIds = flags.ledgerIds.stream().collect(Collectors.toSet());
+        Set<Long> ledgerIds = new HashSet<>(flags.ledgerIds);
 
         LOG.info("=== Rebuilding index file for {} ===", ledgerIds);
         ServerConfiguration serverConfiguration = new ServerConfiguration(conf);

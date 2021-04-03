@@ -181,8 +181,7 @@ public class SaslClientState {
 
     public byte[] saslResponse(byte[] saslTokenMessage) {
         try {
-            byte[] retval = saslClient.evaluateChallenge(saslTokenMessage);
-            return retval;
+            return saslClient.evaluateChallenge(saslTokenMessage);
         } catch (SaslException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("saslResponse: Failed to respond to SASL server's token:", e);

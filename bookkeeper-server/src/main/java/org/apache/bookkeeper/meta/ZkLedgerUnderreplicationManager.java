@@ -530,9 +530,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                     zkc.create(lockPath, LOCK_DATA, zkAcls, CreateMode.EPHEMERAL);
                     heldLocks.put(ledgerId, new Lock(lockPath, stat.getVersion()));
                     return ledgerId;
-                } catch (KeeperException.NodeExistsException nee) {
-                    children.remove(tryChild);
-                } catch (NumberFormatException nfe) {
+                } catch (KeeperException.NodeExistsException | NumberFormatException nee) {
                     children.remove(tryChild);
                 }
             }

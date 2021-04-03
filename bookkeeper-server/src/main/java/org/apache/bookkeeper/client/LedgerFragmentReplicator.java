@@ -68,8 +68,9 @@ import org.slf4j.LoggerFactory;
 public class LedgerFragmentReplicator {
 
     // BookKeeper instance
-    private BookKeeper bkc;
-    private StatsLogger statsLogger;
+    private final BookKeeper bkc;
+    private final StatsLogger statsLogger;
+
     @StatsDoc(
         name = NUM_ENTRIES_READ,
         help = "Number of entries read by the replicator"
@@ -119,8 +120,8 @@ public class LedgerFragmentReplicator {
                                             null, null);
             return;
         }
-        Long startEntryId = lf.getFirstStoredEntryId();
-        Long endEntryId = lf.getLastStoredEntryId();
+        long startEntryId = lf.getFirstStoredEntryId();
+        long endEntryId = lf.getLastStoredEntryId();
 
         /*
          * if startEntryId is INVALID_ENTRY_ID then endEntryId should be
@@ -144,7 +145,7 @@ public class LedgerFragmentReplicator {
          * Add all the entries to entriesToReplicate list from
          * firstStoredEntryId to lastStoredEntryID.
          */
-        List<Long> entriesToReplicate = new LinkedList<Long>();
+        List<Long> entriesToReplicate = new LinkedList<>();
         long lastStoredEntryId = lf.getLastStoredEntryId();
         for (long i = lf.getFirstStoredEntryId(); i <= lastStoredEntryId; i++) {
             entriesToReplicate.add(i);
@@ -238,7 +239,7 @@ public class LedgerFragmentReplicator {
      */
     static Set<LedgerFragment> splitIntoSubFragments(LedgerHandle lh,
             LedgerFragment ledgerFragment, long rereplicationEntryBatchSize) {
-        Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
+        Set<LedgerFragment> fragments = new HashSet<>();
         if (rereplicationEntryBatchSize <= 0) {
             // rereplicationEntryBatchSize can not be 0 or less than 0,
             // returning with the current fragment
@@ -306,7 +307,7 @@ public class LedgerFragmentReplicator {
             final LedgerHandle lh,
             final AsyncCallback.VoidCallback ledgerFragmentEntryMcb,
             final Set<BookieId> newBookies,
-            final BiConsumer<Long, Long> onReadEntryFailureCallback) throws InterruptedException {
+            final BiConsumer<Long, Long> onReadEntryFailureCallback) {
         final long ledgerId = lh.getId();
         final AtomicInteger numCompleted = new AtomicInteger(0);
         final AtomicBoolean completed = new AtomicBoolean(false);
@@ -413,8 +414,11 @@ public class LedgerFragmentReplicator {
      * Updates the ensemble with newBookie and notify the ensembleUpdatedCb.
      */
     private static void updateEnsembleInfo(
-            LedgerManager ledgerManager, AsyncCallback.VoidCallback ensembleUpdatedCb, long fragmentStartId,
-            LedgerHandle lh, Map<BookieId, BookieId> oldBookie2NewBookie) {
+            LedgerManager ledgerManager,
+            AsyncCallback.VoidCallback ensembleUpdatedCb,
+            long fragmentStartId,
+            LedgerHandle lh,
+            Map<BookieId, BookieId> oldBookie2NewBookie) {
 
         MetadataUpdateLoop updateLoop = new MetadataUpdateLoop(
                 ledgerManager,
@@ -437,8 +441,8 @@ public class LedgerFragmentReplicator {
 
         updateLoop.run().whenComplete((result, ex) -> {
                 if (ex == null) {
-                    LOG.info("Updated ZK for ledgerId: ({}:{}) to point ledger fragments"
-                             + " from old bookies to new bookies: {}", oldBookie2NewBookie);
+                    LOG.info("Updated ZK for ledgerId: {} to point ledger fragments"
+                             + " from old bookies to new bookies: {}", lh.getId(), oldBookie2NewBookie);
 
                     ensembleUpdatedCb.processResult(BKException.Code.OK, null, null);
                 } else {

@@ -468,7 +468,7 @@ public class LedgerMetadataSerDe {
                 String[] parts = line.split(FIELD_SPLITTER);
 
                 if (parts[1].equals(V1_CLOSED_TAG)) {
-                    Long l = Long.parseLong(parts[0]);
+                    long l = Long.parseLong(parts[0]);
                     if (l == V1_IN_RECOVERY_ENTRY_ID) {
                         builder.withInRecoveryState();
                     } else {
@@ -477,7 +477,7 @@ public class LedgerMetadataSerDe {
                     break;
                 }
 
-                ArrayList<BookieId> addrs = new ArrayList<BookieId>();
+                ArrayList<BookieId> addrs = new ArrayList<>();
                 for (int j = 1; j < parts.length; j++) {
                     addrs.add(BookieId.parse(parts[j]));
                 }

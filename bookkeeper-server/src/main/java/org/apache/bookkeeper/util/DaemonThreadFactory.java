@@ -25,14 +25,18 @@ import java.util.concurrent.ThreadFactory;
  * Daemon thread factory.
  */
 public class DaemonThreadFactory implements ThreadFactory {
-    private ThreadFactory defaultThreadFactory = Executors.defaultThreadFactory();
+
+    private final ThreadFactory defaultThreadFactory = Executors.defaultThreadFactory();
     private int priority = Thread.NORM_PRIORITY;
+
     public DaemonThreadFactory() {
     }
+
     public DaemonThreadFactory(int priority) {
         assert priority >= Thread.MIN_PRIORITY && priority <= Thread.MAX_PRIORITY;
         this.priority = priority;
     }
+
     @Override
     public Thread newThread(Runnable r) {
         Thread thread = defaultThreadFactory.newThread(r);

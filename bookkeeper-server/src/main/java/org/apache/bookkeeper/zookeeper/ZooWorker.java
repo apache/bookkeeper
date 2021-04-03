@@ -144,7 +144,7 @@ class ZooWorker {
                 ++attempts;
                 boolean rethrow = true;
                 long elapsedTime = MathUtils.elapsedMSec(startTimeNanos);
-                if (((null != client && isRecoverableException(e)) || null == client)
+                if ((null == client || isRecoverableException(e))
                     && retryPolicy.allowRetry(attempts, elapsedTime)) {
                     rethrow = false;
                 }

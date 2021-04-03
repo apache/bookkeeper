@@ -20,11 +20,9 @@ package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import java.io.IOException;
 import java.util.Collection;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -75,11 +73,9 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
         }
     }
 
-    private boolean getEndpointInfo(ServerConfiguration conf, EndpointInfoFlags flags)
-            throws BKException, InterruptedException, IOException {
+    private boolean getEndpointInfo(ServerConfiguration conf, EndpointInfoFlags flags) {
         ClientConfiguration adminConf = new ClientConfiguration(conf);
-        BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-        try {
+        try (BookKeeperAdmin admin = new BookKeeperAdmin(adminConf)) {
             final String bookieId = flags.bookie;
             if (bookieId == null || bookieId.isEmpty()) {
                 throw new IllegalArgumentException("BookieId is required");
@@ -116,10 +112,6 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
         } catch (Exception e) {
             LOG.error("Received exception in EndpointInfoCommand ", e);
             return false;
-        } finally {
-            if (admin != null) {
-                admin.close();
-            }
         }
     }
 }

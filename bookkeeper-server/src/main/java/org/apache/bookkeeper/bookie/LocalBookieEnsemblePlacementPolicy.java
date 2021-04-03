@@ -123,7 +123,6 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
 
     @Override
     public void updateBookieInfo(Map<BookieId, BookieInfo> bookieToFreeSpaceMap) {
-        return;
     }
 
     @Override

@@ -56,7 +56,7 @@ class JournalChannel implements Closeable {
 
     static final int SECTOR_SIZE = 512;
     private static final int START_OF_FILE = -12345;
-    private static long cacheDropLagBytes = 8 * 1024 * 1024;
+    private static final long cacheDropLagBytes = 8 * 1024 * 1024;
 
     // No header
     static final int V1 = 1;

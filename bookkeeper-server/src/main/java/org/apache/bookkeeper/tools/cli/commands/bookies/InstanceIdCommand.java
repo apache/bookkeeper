@@ -47,7 +47,7 @@ public class InstanceIdCommand extends BookieCommand<CliFlags> {
     public boolean apply(ServerConfiguration conf, CliFlags cmdFlags) {
         try {
             runFunctionWithRegistrationManager(conf, rm -> {
-                String readInstanceId = null;
+                String readInstanceId;
                 try {
                     readInstanceId = rm.getClusterInstanceId();
                 } catch (BookieException e) {

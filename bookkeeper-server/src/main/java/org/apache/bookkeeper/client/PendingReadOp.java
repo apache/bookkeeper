@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.client;
 
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
@@ -33,6 +32,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -63,7 +64,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     private final CompletableFuture<LedgerEntries> future;
     private final Set<BookieId> heardFromHosts;
     private final BitSet heardFromHostsBitSet;
-    private final Set<BookieId> sentToHosts = new HashSet<BookieId>();
+    private final Set<BookieId> sentToHosts = new HashSet<>();
     LedgerHandle lh;
     final ClientContext clientCtx;
 
@@ -261,7 +262,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         public ListenableFuture<Boolean> issueSpeculativeRequest() {
             return clientCtx.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
                 @Override
-                public Boolean call() throws Exception {
+                public Boolean call() {
                     if (!isComplete() && null != maybeSendSpeculativeRead(heardFromHostsBitSet)) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Send speculative read for {}. Hosts sent are {}, "
@@ -645,7 +646,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             future.completeExceptionally(BKException.create(code));
         } else {
             clientCtx.getClientStats().getReadOpLogger().registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
-            future.complete(LedgerEntriesImpl.create(Lists.transform(seq, input -> input.entryImpl)));
+            future.complete(LedgerEntriesImpl.create(
+                    seq.stream().map(input -> input.entryImpl).collect(Collectors.toList())));
         }
     }
 

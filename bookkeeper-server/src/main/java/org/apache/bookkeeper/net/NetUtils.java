@@ -61,7 +61,7 @@ public class NetUtils {
      * @see #normalizeHostName(String)
      */
     public static List<String> normalizeHostNames(Collection<String> names) {
-        List<String> hostNames = new ArrayList<String>(names.size());
+        List<String> hostNames = new ArrayList<>(names.size());
         for (String name : names) {
             hostNames.add(normalizeHostName(name));
         }
@@ -70,7 +70,7 @@ public class NetUtils {
 
     public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver,
                                                 BookieSocketAddress addr) {
-        List<String> names = new ArrayList<String>(1);
+        List<String> names = new ArrayList<>(1);
 
         InetSocketAddress inetSocketAddress = addr.getSocketAddress();
         if (dnsResolver.useHostName()) {

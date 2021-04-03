@@ -201,7 +201,7 @@ public class DiskChecker {
      */
     public long getTotalDiskSpace(List<File> dirs) throws IOException {
         long totalDiskSpace = 0;
-        Set<FileStore> dirsFileStore = new HashSet<FileStore>();
+        Set<FileStore> dirsFileStore = new HashSet<>();
         for (File dir : dirs) {
             FileStore fileStore = Files.getFileStore(dir.toPath());
             if (dirsFileStore.add(fileStore)) {

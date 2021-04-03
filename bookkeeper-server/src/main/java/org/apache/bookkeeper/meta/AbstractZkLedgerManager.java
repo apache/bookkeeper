@@ -84,7 +84,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
 
     // ledger metadata listeners
     protected final ConcurrentMap<Long, Set<LedgerMetadataListener>> listeners =
-            new ConcurrentHashMap<Long, Set<LedgerMetadataListener>>();
+            new ConcurrentHashMap<>();
     // we use this to prevent long stack chains from building up in callbacks
     protected ScheduledExecutorService scheduler;
 
@@ -199,7 +199,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         if (Event.EventType.None == event.getType()) {
             if (Event.KeeperState.Expired == event.getState()) {
                 LOG.info("ZooKeeper client expired on ledger manager.");
-                Set<Long> keySet = new HashSet<Long>(listeners.keySet());
+                Set<Long> keySet = new HashSet<>(listeners.keySet());
                 for (Long lid : keySet) {
                     scheduler.submit(new ReadLedgerMetadataTask(lid));
                     LOG.info("Re-read ledger metadata for {} after zookeeper session expired.", lid);
@@ -628,7 +628,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
      * @return ledger id hash set
      */
     protected NavigableSet<Long> ledgerListToSet(List<String> ledgerNodes, String path) {
-        NavigableSet<Long> zkActiveLedgers = new TreeSet<Long>();
+        NavigableSet<Long> zkActiveLedgers = new TreeSet<>();
         for (String ledgerNode : ledgerNodes) {
             if (isSpecialZnode(ledgerNode)) {
                 continue;
@@ -641,7 +641,6 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 // This is a pretty bad error as it indicates a ledger node in ZK
                 // has an incorrect format. For now just continue and consider
                 // this as a non-existent ledger.
-                continue;
             }
         }
         return zkActiveLedgers;

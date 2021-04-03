@@ -31,9 +31,9 @@ public abstract class CacheableFeatureProvider<T extends Feature> implements Fea
 
     protected final String scope;
     protected final ConcurrentMap<String, FeatureProvider> scopes =
-            new ConcurrentHashMap<String, FeatureProvider>();
+            new ConcurrentHashMap<>();
     protected final ConcurrentMap<String, T> features =
-            new ConcurrentHashMap<String, T>();
+            new ConcurrentHashMap<>();
 
     protected CacheableFeatureProvider(String scope) {
         this.scope = scope;

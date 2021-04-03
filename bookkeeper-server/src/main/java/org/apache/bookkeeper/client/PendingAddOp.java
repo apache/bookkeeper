@@ -453,7 +453,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
        if (o instanceof PendingAddOp) {
            return (this.entryId == ((PendingAddOp) o).entryId);
        }
-       return (this == o);
+       return false;
     }
 
     private final Handle<PendingAddOp> recyclerHandle;

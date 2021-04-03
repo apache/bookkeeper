@@ -20,7 +20,6 @@ package org.apache.bookkeeper.client;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +37,7 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
     Double randomMax;
     int maxProbabilityMultiplier;
     Map<T, WeightedObject> map;
-    TreeMap<Double, T> cummulativeMap = new TreeMap<Double, T>();
+    TreeMap<Double, T> cummulativeMap = new TreeMap<>();
     ReadWriteLock rwLock = new ReentrantReadWriteLock(true);
 
     WeightedRandomSelectionImpl() {
@@ -53,9 +52,9 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
     public void updateMap(Map<T, WeightedObject> map) {
         // get the sum total of all the values; this will be used to
         // calculate the weighted probability later on
-        Long totalWeight = 0L, min = Long.MAX_VALUE;
-        List<WeightedObject> values = new ArrayList<WeightedObject>(map.values());
-        Collections.sort(values, new Comparator<WeightedObject>() {
+        long totalWeight = 0L, min = Long.MAX_VALUE;
+        List<WeightedObject> values = new ArrayList<>(map.values());
+        values.sort(new Comparator<WeightedObject>() {
             @Override
             public int compare(WeightedObject o1, WeightedObject o2) {
                 long diff = o1.getWeight() - o2.getWeight();
@@ -68,20 +67,20 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
                 }
             }
         });
-        for (int i = 0; i < values.size(); i++) {
-            totalWeight += values.get(i).getWeight();
-            if (values.get(i).getWeight() != 0 && min > values.get(i).getWeight()) {
-                min = values.get(i).getWeight();
+        for (WeightedObject value : values) {
+            totalWeight += value.getWeight();
+            if (value.getWeight() != 0 && min > value.getWeight()) {
+                min = value.getWeight();
             }
         }
 
-        double median = 0;
+        double median;
         if (totalWeight == 0) {
             // all the values are zeros; assign a value of 1 to all and the totalWeight equal
             // to the size of the values
             min = 1L;
             median = 1;
-            totalWeight = (long) values.size();
+            totalWeight = values.size();
         } else {
             int mid = values.size() / 2;
             if ((values.size() % 2) == 1) {
@@ -100,7 +99,7 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
         }
 
         double maxWeight = maxProbabilityMultiplier * medianWeight;
-        Map<T, Double> weightMap = new HashMap<T, Double>();
+        Map<T, Double> weightMap = new HashMap<>();
         for (Map.Entry<T, WeightedObject> e : map.entrySet()) {
             double weightedProbability;
             if (e.getValue().getWeight() > 0) {
@@ -121,7 +120,7 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
         // The probability of picking a bookie randomly is defaultPickProbability
         // but we change that priority by looking at the weight that each bookie
         // carries.
-        TreeMap<Double, T> tmpCummulativeMap = new TreeMap<Double, T>();
+        TreeMap<Double, T> tmpCummulativeMap = new TreeMap<>();
         Double key = 0.0;
         for (Map.Entry<T, Double> e : weightMap.entrySet()) {
             tmpCummulativeMap.put(key, e.getKey());

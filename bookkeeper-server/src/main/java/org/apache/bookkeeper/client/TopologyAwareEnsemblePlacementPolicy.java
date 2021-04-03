@@ -60,9 +60,9 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         ITopologyAwareEnsemblePlacementPolicy<BookieNode> {
     static final Logger LOG = LoggerFactory.getLogger(TopologyAwareEnsemblePlacementPolicy.class);
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
-    protected final Map<BookieId, BookieNode> knownBookies = new HashMap<BookieId, BookieNode>();
+    protected final Map<BookieId, BookieNode> knownBookies = new HashMap<>();
     protected final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
-    protected Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
+    protected Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<>();
     // Initialize to empty set
     protected ImmutableSet<BookieId> readOnlyBookies = ImmutableSet.of();
     boolean isWeighted;
@@ -133,7 +133,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
 
         protected class RackQuorumCoverageSet implements CoverageSet {
-            HashSet<String> racksOrRegionsInQuorum = new HashSet<String>();
+            HashSet<String> racksOrRegionsInQuorum = new HashSet<>();
             int seenBookies = 0;
             private final int minNumRacksPerWriteQuorum;
 
@@ -239,8 +239,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                         }
                         return false;
                     } else {
-                        Set<String> remainingElements = new HashSet<String>(remainingRacksOrRegions);
-                        Set<String> includedElements = new HashSet<String>(includedRacksOrRegions);
+                        Set<String> remainingElements = new HashSet<>(remainingRacksOrRegions);
+                        Set<String> includedElements = new HashSet<>(includedRacksOrRegions);
                         includedElements.add(rackOrRegion);
                         remainingElements.remove(rackOrRegion);
                         if (!checkSumOfSubsetWithinLimit(includedElements,
@@ -332,7 +332,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             this.parentPredicate = that.parentPredicate;
             this.parentEnsemble = that.parentEnsemble;
             if (null != that.racksOrRegions) {
-                this.racksOrRegions = new HashSet<String>(that.racksOrRegions);
+                this.racksOrRegions = new HashSet<>(that.racksOrRegions);
             } else {
                 this.racksOrRegions = null;
             }
@@ -476,8 +476,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
          */
         @Override
         public boolean validate() {
-            HashSet<BookieId> addresses = new HashSet<BookieId>(ensembleSize);
-            HashSet<String> racksOrRegions = new HashSet<String>();
+            HashSet<BookieId> addresses = new HashSet<>(ensembleSize);
+            HashSet<String> racksOrRegions = new HashSet<>();
             for (BookieNode bn : chosenNodes) {
                 if (addresses.contains(bn.getAddr())) {
                     return false;
@@ -507,7 +507,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
         @Override
         public List<String> resolve(List<String> names) {
-            List<String> rNames = new ArrayList<String>(names.size());
+            List<String> rNames = new ArrayList<>(names.size());
             for (@SuppressWarnings("unused") String name : names) {
                 final String defaultRack = defaultRackSupplier.get();
                 checkNotNull(defaultRack, "defaultRack cannot be null");
@@ -763,9 +763,9 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
         rwLock.writeLock().lock();
         try {
-            List<BookieNode> allBookies = new ArrayList<BookieNode>(knownBookies.values());
+            List<BookieNode> allBookies = new ArrayList<>(knownBookies.values());
             // create a new map to reflect the new mapping
-            Map<BookieNode, WeightedObject> map = new HashMap<BookieNode, WeightedObject>();
+            Map<BookieNode, WeightedObject> map = new HashMap<>();
             for (BookieNode bookie : allBookies) {
                 if (bookieInfoMap.containsKey(bookie.getAddr())) {
                     map.put(bookie, bookieInfoMap.get(bookie.getAddr()));
@@ -800,7 +800,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     }
 
     protected Set<Node> convertBookiesToNodes(Collection<BookieId> excludeBookies) {
-        Set<Node> nodes = new HashSet<Node>();
+        Set<Node> nodes = new HashSet<>();
         for (BookieId addr : excludeBookies) {
             BookieNode bn = knownBookies.get(addr);
             if (null == bn) {

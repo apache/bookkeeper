@@ -451,7 +451,7 @@ public interface EnsemblePlacementPolicy {
      */
     enum PlacementPolicyAdherence {
         FAIL(1), MEETS_SOFT(3), MEETS_STRICT(5);
-        private int numVal;
+        private final int numVal;
 
         private PlacementPolicyAdherence(int numVal) {
             this.numVal = numVal;

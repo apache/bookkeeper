@@ -45,7 +45,6 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,14 +111,14 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
     }
 
     private boolean recover(ServerConfiguration conf, RecoverFlags flags)
-        throws IOException, BKException, InterruptedException, KeeperException {
+        throws IOException, BKException, InterruptedException {
         boolean query = flags.query;
         boolean dryrun = flags.dryRun;
         boolean force = flags.force;
         boolean skipOpenLedgers = flags.skipOpenLedgers;
         boolean removeCookies = !dryrun && flags.deleteCookie;
 
-        Long ledgerId = flags.ledger;
+        long ledgerId = flags.ledger;
 
         // Get bookies list
         final String[] bookieStrs = flags.bookieAddress.split(",");

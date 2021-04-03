@@ -84,7 +84,7 @@ public class UpdateLedgerOp {
         final AtomicInteger updatedLedgerCnt = new AtomicInteger();
         final CompletableFuture<Void> finalPromise = new CompletableFuture<>();
         final Set<CompletableFuture<?>> outstanding =
-            Collections.newSetFromMap(new ConcurrentHashMap<CompletableFuture<?>, Boolean>());
+            Collections.newSetFromMap(new ConcurrentHashMap<>());
         final RateLimiter throttler = RateLimiter.create(rate);
         final Semaphore outstandingReads = new Semaphore(maxOutstandingReads);
         final Iterator<Long> ledgerItr = admin.listLedgers().iterator();
@@ -104,14 +104,10 @@ public class UpdateLedgerOp {
                     return new MetadataUpdateLoop(
                             lm, ledgerId,
                             ref::get,
-                            (metadata) -> {
-                                return metadata.getAllEnsembles().values().stream()
-                                    .flatMap(Collection::stream)
-                                    .anyMatch(b -> b.equals(oldBookieId));
-                            },
-                            (metadata) -> {
-                                return replaceBookieInEnsembles(metadata, oldBookieId, newBookieId);
-                            },
+                            (metadata) -> metadata.getAllEnsembles().values().stream()
+                                .flatMap(Collection::stream)
+                                .anyMatch(b -> b.equals(oldBookieId)),
+                            (metadata) -> replaceBookieInEnsembles(metadata, oldBookieId, newBookieId),
                             ref::compareAndSet, throttler).run();
                 });
 
@@ -135,7 +131,7 @@ public class UpdateLedgerOp {
                     });
         }
 
-        CompletableFuture.allOf(outstanding.stream().toArray(CompletableFuture[]::new))
+        CompletableFuture.allOf(outstanding.toArray(new CompletableFuture[0]))
             .whenComplete((res, ex) -> {
                     if (ex != null) {
                         finalPromise.completeExceptionally(ex);

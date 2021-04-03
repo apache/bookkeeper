@@ -70,13 +70,11 @@ public class StringUtils {
     public static String getShortHierarchicalLedgerPath(long ledgerId) {
         String ledgerIdStr = getZKStringId(ledgerId);
         // do 2-4-4 split
-        StringBuilder sb = new StringBuilder();
-        sb.append("/")
-          .append(ledgerIdStr.substring(0, 2)).append("/")
-          .append(ledgerIdStr.substring(2, 6)).append("/")
-          .append(LEDGER_NODE_PREFIX)
-          .append(ledgerIdStr.substring(6, 10));
-        return sb.toString();
+        return "/"
+                + ledgerIdStr.substring(0, 2) + "/"
+                + ledgerIdStr.substring(2, 6) + "/"
+                + LEDGER_NODE_PREFIX
+                + ledgerIdStr.substring(6, 10);
     }
 
     /**
@@ -89,15 +87,13 @@ public class StringUtils {
     public static String getLongHierarchicalLedgerPath(long ledgerId) {
         String ledgerIdStr = getZKStringIdForLongHierarchical(ledgerId);
         // do 3-4-4-4-4 split
-        StringBuilder sb = new StringBuilder();
-        sb.append("/")
-          .append(ledgerIdStr.substring(0, 3)).append("/")
-          .append(ledgerIdStr.substring(3, 7)).append("/")
-          .append(ledgerIdStr.substring(7, 11)).append("/")
-          .append(ledgerIdStr.substring(11, 15)).append("/")
-          .append(LEDGER_NODE_PREFIX)
-          .append(ledgerIdStr.substring(15, 19));
-        return sb.toString();
+        return "/"
+                + ledgerIdStr.substring(0, 3) + "/"
+                + ledgerIdStr.substring(3, 7) + "/"
+                + ledgerIdStr.substring(7, 11) + "/"
+                + ledgerIdStr.substring(11, 15) + "/"
+                + LEDGER_NODE_PREFIX
+                + ledgerIdStr.substring(15, 19);
     }
 
     public static String getHybridHierarchicalLedgerPath(long ledgerId) {

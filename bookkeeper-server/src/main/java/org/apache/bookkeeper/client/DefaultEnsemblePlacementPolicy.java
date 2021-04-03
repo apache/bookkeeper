@@ -50,17 +50,17 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     static final Logger LOG = LoggerFactory.getLogger(DefaultEnsemblePlacementPolicy.class);
-    static final Set<BookieId> EMPTY_SET = new HashSet<BookieId>();
+    static final Set<BookieId> EMPTY_SET = new HashSet<>();
 
     private boolean isWeighted;
     private int maxWeightMultiple;
-    private Set<BookieId> knownBookies = new HashSet<BookieId>();
+    private Set<BookieId> knownBookies = new HashSet<>();
     private Map<BookieId, WeightedObject> bookieInfoMap;
     private WeightedRandomSelection<BookieId> weightedSelection;
     private final ReentrantReadWriteLock rwLock;
 
     DefaultEnsemblePlacementPolicy() {
-        bookieInfoMap = new HashMap<BookieId, WeightedObject>();
+        bookieInfoMap = new HashMap<>();
         rwLock = new ReentrantReadWriteLock();
     }
 
@@ -68,7 +68,7 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     public PlacementResult<List<BookieId>> newEnsemble(int ensembleSize, int quorumSize, int ackQuorumSize,
             Map<String, byte[]> customMetadata, Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
-        ArrayList<BookieId> newBookies = new ArrayList<BookieId>(ensembleSize);
+        ArrayList<BookieId> newBookies = new ArrayList<>(ensembleSize);
         if (ensembleSize <= 0) {
             return PlacementResult.of(newBookies, PlacementPolicyAdherence.FAIL);
         }

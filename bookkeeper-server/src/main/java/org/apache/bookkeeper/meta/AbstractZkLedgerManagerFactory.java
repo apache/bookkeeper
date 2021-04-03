@@ -304,7 +304,7 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
     protected static LedgerManagerFactory createNewLMFactory(
             final AbstractConfiguration conf, final LayoutManager layoutManager,
             Class<? extends LedgerManagerFactory> factoryClass)
-            throws IOException, InterruptedException {
+            throws IOException {
 
         LedgerManagerFactory lmFactory;
         LedgerLayout layout;
@@ -315,15 +315,19 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             if (lmType == null) {
                 factoryClass = HierarchicalLedgerManagerFactory.class;
             } else {
-                if (FlatLedgerManagerFactory.NAME.equals(lmType)) {
-                    factoryClass = FlatLedgerManagerFactory.class;
-                } else if (HierarchicalLedgerManagerFactory.NAME.equals(lmType)) {
-                    factoryClass = HierarchicalLedgerManagerFactory.class;
-                } else if (LongHierarchicalLedgerManagerFactory.NAME.equals(lmType)) {
-                    factoryClass = LongHierarchicalLedgerManagerFactory.class;
-                } else {
-                    throw new IOException("Unknown ledger manager type: "
-                            + lmType);
+                switch (lmType) {
+                    case FlatLedgerManagerFactory.NAME:
+                        factoryClass = FlatLedgerManagerFactory.class;
+                        break;
+                    case HierarchicalLedgerManagerFactory.NAME:
+                        factoryClass = HierarchicalLedgerManagerFactory.class;
+                        break;
+                    case LongHierarchicalLedgerManagerFactory.NAME:
+                        factoryClass = LongHierarchicalLedgerManagerFactory.class;
+                        break;
+                    default:
+                        throw new IOException("Unknown ledger manager type: "
+                                + lmType);
                 }
             }
         }

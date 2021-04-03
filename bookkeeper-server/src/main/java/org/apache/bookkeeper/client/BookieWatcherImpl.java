@@ -75,8 +75,7 @@ class BookieWatcherImpl implements BookieWatcher {
             log.error("Interrupted reading bookie list : ", cause);
             return new BKInterruptedException();
         } else {
-            MetaStoreException mse = new MetaStoreException(cause);
-            return mse;
+            return new MetaStoreException(cause);
         }
     };
 

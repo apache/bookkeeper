@@ -178,15 +178,13 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
             checkBounds(to);
             if (from > to) {
                 int tmp = array[from];
-                for (int i = from; i > to; i--) {
-                    array[i] = array[i - 1];
+                if (from - to >= 0) {
+                    System.arraycopy(array, to, array, to + 1, from - to);
                 }
                 array[to] = tmp;
             } else if (from < to) {
                 int tmp = array[from];
-                for (int i = from; i < to; i++) {
-                    array[i] = array[i + 1];
-                }
+                System.arraycopy(array, from + 1, array, from, to - from);
                 array[to] = tmp;
             }
         }
@@ -348,8 +346,8 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
 
         private int failed() {
             int count = 0;
-            for (int i = 0; i < failureMap.length; i++) {
-                if (failureMap[i] != null) {
+            for (BookieId bookieId : failureMap) {
+                if (bookieId != null) {
                     count++;
                 }
             }
@@ -361,9 +359,7 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
         private final int[] covered = new int[ensembleSize];
 
         private RRQuorumCoverageSet() {
-            for (int i = 0; i < covered.length; i++) {
-                covered[i] = BKException.Code.UNINITIALIZED;
-            }
+            Arrays.fill(covered, BKException.Code.UNINITIALIZED);
         }
 
         @Override

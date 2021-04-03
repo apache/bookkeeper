@@ -134,7 +134,7 @@ public class DNS {
      */
     private static LinkedHashSet<InetAddress> getSubinterfaceInetAddrs(
             NetworkInterface nif) {
-        LinkedHashSet<InetAddress> addrs = new LinkedHashSet<InetAddress>();
+        LinkedHashSet<InetAddress> addrs = new LinkedHashSet<>();
         Enumeration<NetworkInterface> subNifs = nif.getSubInterfaces();
         while (subNifs.hasMoreElements()) {
             NetworkInterface subNif = subNifs.nextElement();
@@ -188,8 +188,7 @@ public class DNS {
         // NB: Using a LinkedHashSet to preserve the order for callers
         // that depend on a particular element being 1st in the array.
         // For example, getDefaultIP always returns the first element.
-        LinkedHashSet<InetAddress> allAddrs = new LinkedHashSet<InetAddress>();
-        allAddrs.addAll(Collections.list(netIf.getInetAddresses()));
+        LinkedHashSet<InetAddress> allAddrs = new LinkedHashSet<>(Collections.list(netIf.getInetAddresses()));
         if (!returnSubinterfaces) {
             allAddrs.removeAll(getSubinterfaceInetAddrs(netIf));
         }
@@ -233,13 +232,12 @@ public class DNS {
     public static String[] getHosts(String strInterface, String nameserver)
             throws UnknownHostException {
         String[] ips = getIPs(strInterface);
-        Vector<String> hosts = new Vector<String>();
-        for (int ctr = 0; ctr < ips.length; ctr++) {
+        Vector<String> hosts = new Vector<>();
+        for (String ip : ips) {
             try {
-                hosts.add(reverseDns(InetAddress.getByName(ips[ctr]),
+                hosts.add(reverseDns(InetAddress.getByName(ip),
                         nameserver));
-            } catch (UnknownHostException ignored) {
-            } catch (NamingException ignored) {
+            } catch (UnknownHostException | NamingException ignored) {
             }
         }
         if (hosts.isEmpty()) {

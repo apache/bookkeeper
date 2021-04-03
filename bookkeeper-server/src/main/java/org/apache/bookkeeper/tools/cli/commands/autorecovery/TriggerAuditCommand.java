@@ -53,14 +53,9 @@ public class TriggerAuditCommand extends BookieCommand<CliFlags> {
 
     public boolean handler(ServerConfiguration configuration) throws Exception {
         ClientConfiguration adminConf = new ClientConfiguration(configuration);
-        BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
 
-        try {
+        try (BookKeeperAdmin admin = new BookKeeperAdmin(adminConf)) {
             admin.triggerAudit();
-        } finally {
-            if (admin != null) {
-                admin.close();
-            }
         }
 
         return true;

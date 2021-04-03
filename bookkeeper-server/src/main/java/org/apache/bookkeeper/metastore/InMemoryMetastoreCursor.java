@@ -77,7 +77,7 @@ class InMemoryMetastoreCursor implements MetastoreCursor {
     }
 
     private Iterator<MetastoreTableItem> unsafeReadEntries(int numEntries) {
-        List<MetastoreTableItem> entries = new ArrayList<MetastoreTableItem>();
+        List<MetastoreTableItem> entries = new ArrayList<>();
         int nCount = 0;
         while (iter.hasNext() && nCount < numEntries) {
             Map.Entry<String, Versioned<Value>> entry = iter.next();

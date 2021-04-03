@@ -313,10 +313,13 @@ public class DbLedgerStorage implements LedgerStorage {
         int dirIndex = MathUtils.signSafeMod(ledgerId, ledgerDirs.size());
         String ledgerBasePath = ledgerDirs.get(dirIndex).toString();
 
-        EntryLocationIndex entryLocationIndex = new EntryLocationIndex(serverConf,
-                (path, dbConfigType, conf1) -> new KeyValueStorageRocksDB(path, DbConfigType.Small, conf1, true),
-                ledgerBasePath, NullStatsLogger.INSTANCE);
-        try {
+        try (EntryLocationIndex entryLocationIndex =
+                     new EntryLocationIndex(
+                             serverConf,
+                             (path, dbConfigType, conf1)
+                                     -> new KeyValueStorageRocksDB(path, DbConfigType.Small, conf1, true),
+                             ledgerBasePath,
+                             NullStatsLogger.INSTANCE)) {
             long lastEntryId = entryLocationIndex.getLastEntryInLedger(ledgerId);
             for (long currentEntry = 0; currentEntry <= lastEntryId; currentEntry++) {
                 long offset = entryLocationIndex.getLocation(ledgerId, currentEntry);
@@ -328,14 +331,12 @@ public class DbLedgerStorage implements LedgerStorage {
                 long position = offset & 0xffffffffL;
                 processor.process(currentEntry, entryLogId, position);
             }
-        } finally {
-            entryLocationIndex.close();
         }
     }
 
     @Override
     public void forceGC() {
-        ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::forceGC);
+        ledgerStorageList.forEach(SingleDirectoryDbLedgerStorage::forceGC);
     }
 
     @Override

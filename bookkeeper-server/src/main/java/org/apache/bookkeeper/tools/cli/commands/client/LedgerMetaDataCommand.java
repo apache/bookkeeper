@@ -52,7 +52,7 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
     private static final long DEFAULT_ID = -1L;
     private static final Logger LOG = LoggerFactory.getLogger(LedgerMetaDataCommand.class);
 
-    private LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
+    private final LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
     private LedgerIdFormatter ledgerIdFormatter;
 
     public LedgerMetaDataCommand() {

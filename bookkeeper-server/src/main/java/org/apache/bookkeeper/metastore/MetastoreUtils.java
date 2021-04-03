@@ -103,12 +103,12 @@ public class MetastoreUtils {
     public static void cleanTable(MetastoreTable table, int numEntriesPerScan)
     throws MSException, InterruptedException {
         // open cursor
-        SyncMetastoreCallback<MetastoreCursor> openCb = new SyncMetastoreCallback<MetastoreCursor>();
+        SyncMetastoreCallback<MetastoreCursor> openCb = new SyncMetastoreCallback<>();
         table.openCursor(MetastoreTable.NON_FIELDS, openCb, null);
         MetastoreCursor cursor = openCb.getResult();
         logger.info("Open cursor for table {} to clean entries.", table.getName());
 
-        List<String> keysToClean = new ArrayList<String>(numEntriesPerScan);
+        List<String> keysToClean = new ArrayList<>(numEntriesPerScan);
         int numEntriesRemoved = 0;
         while (cursor.hasMoreEntries()) {
             logger.info("Fetching next {} entries from table {} to clean.",
@@ -126,7 +126,7 @@ public class MetastoreUtils {
 
             logger.info("Issuing deletes to delete keys {}", keysToClean);
             // issue deletes to delete batch of keys
-            MultiMetastoreCallback<Void> mcb = new MultiMetastoreCallback<Void>(keysToClean.size());
+            MultiMetastoreCallback<Void> mcb = new MultiMetastoreCallback<>(keysToClean.size());
             for (String key : keysToClean) {
                 table.remove(key, Version.ANY, mcb, null);
             }

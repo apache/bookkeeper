@@ -188,7 +188,7 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
      */
     @Override
     protected NavigableSet<Long> ledgerListToSet(List<String> ledgerNodes, String path) {
-        NavigableSet<Long> zkActiveLedgers = new TreeSet<Long>();
+        NavigableSet<Long> zkActiveLedgers = new TreeSet<>();
 
         if (!path.startsWith(ledgerRootPath)) {
             LOG.warn("Ledger path [{}] is not a valid path name, it should start wth {}", path, ledgerRootPath);

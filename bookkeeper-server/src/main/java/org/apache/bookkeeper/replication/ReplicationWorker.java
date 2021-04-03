@@ -504,7 +504,6 @@ public class ReplicationWorker implements Runnable {
      * is still in open state when timer task fired.
      */
     private void deferLedgerLockRelease(final long ledgerId) {
-        long gracePeriod = this.openLedgerRereplicationGracePeriod;
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
@@ -573,7 +572,7 @@ public class ReplicationWorker implements Runnable {
                 }
             }
         };
-        scheduleTaskWithDelay(timerTask, gracePeriod);
+        scheduleTaskWithDelay(timerTask, this.openLedgerRereplicationGracePeriod);
     }
 
     /**
@@ -660,7 +659,7 @@ public class ReplicationWorker implements Runnable {
     private static class CheckerCallback implements
             GenericCallback<Set<LedgerFragment>> {
         private Set<LedgerFragment> result = null;
-        private CountDownLatch latch = new CountDownLatch(1);
+        private final CountDownLatch latch = new CountDownLatch(1);
 
         @Override
         public void operationComplete(int rc, Set<LedgerFragment> result) {

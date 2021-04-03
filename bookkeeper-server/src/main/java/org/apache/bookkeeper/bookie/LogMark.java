@@ -75,11 +75,7 @@ public class LogMark {
 
     @Override
     public synchronized String toString() {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("LogMark: logFileId - ").append(logFileId)
-                .append(" , logFileOffset - ").append(logFileOffset);
-
-        return sb.toString();
+        return "LogMark: logFileId - " + logFileId
+                + " , logFileOffset - " + logFileOffset;
     }
 }

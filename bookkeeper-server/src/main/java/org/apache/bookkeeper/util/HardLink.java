@@ -54,7 +54,7 @@ public class HardLink {
   }
 
   public static final OSType OS_TYPE;
-  private static HardLinkCommandGetter getHardLinkCommand;
+  private static final HardLinkCommandGetter getHardLinkCommand;
 
   public final LinkStats linkStats; //not static
 
@@ -166,9 +166,9 @@ public class HardLink {
    * Implementation of HardLinkCommandGetter class for Unix.
    */
   static class HardLinkCGUnix extends HardLinkCommandGetter {
-    private static String[] hardLinkCommand = {"ln", null, null};
-    private static String[] hardLinkMultPrefix = {"ln"};
-    private static String[] hardLinkMultSuffix = {null};
+    private static final String[] hardLinkCommand = {"ln", null, null};
+    private static final String[] hardLinkMultPrefix = {"ln"};
+    private static final String[] hardLinkMultSuffix = {null};
     private static String[] getLinkCountCommand = {"stat", "-c%h", null};
     //Unix guarantees at least 32K bytes cmd length.
     //Subtract another 64b to allow for Java 'exec' overhead

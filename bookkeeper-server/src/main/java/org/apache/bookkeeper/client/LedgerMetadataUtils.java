@@ -56,7 +56,7 @@ public class LedgerMetadataUtils {
     }
 
     static Set<BookieId> getBookiesInThisLedger(LedgerMetadata metadata) {
-        Set<BookieId> bookies = new HashSet<BookieId>();
+        Set<BookieId> bookies = new HashSet<>();
         for (List<BookieId> ensemble : metadata.getAllEnsembles().values()) {
             bookies.addAll(ensemble);
         }

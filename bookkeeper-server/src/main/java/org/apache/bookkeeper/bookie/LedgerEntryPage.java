@@ -302,7 +302,7 @@ public class LedgerEntryPage implements AutoCloseable {
 
     public OfLong getEntriesIterator() {
         return new OfLong() {
-            long firstEntry = getFirstEntry();
+            final long firstEntry = getFirstEntry();
             int curDiffEntry = 0;
 
             @Override

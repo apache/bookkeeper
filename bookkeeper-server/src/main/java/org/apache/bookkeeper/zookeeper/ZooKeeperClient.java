@@ -79,7 +79,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
     private final boolean allowReadOnlyMode;
 
     // state for the zookeeper client
-    private final AtomicReference<ZooKeeper> zk = new AtomicReference<ZooKeeper>();
+    private final AtomicReference<ZooKeeper> zk = new AtomicReference<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ZooKeeperWatcherBase watcherManager;
 
@@ -109,7 +109,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
     private final Callable<ZooKeeper> clientCreator = new Callable<ZooKeeper>() {
 
         @Override
-        public ZooKeeper call() throws Exception {
+        public ZooKeeper call() {
             try {
                 return ZooWorker.syncCallWithRetries(null, new ZooCallable<ZooKeeper>() {
 

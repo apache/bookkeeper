@@ -270,7 +270,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             } catch (RuntimeException re) {
                 if (!conf.getEnforceMinNumRacksPerWriteQuorum()) {
                     LOG.error("Failed to initialize DNS Resolver {}, used default subnet resolver : {}",
-                            dnsResolverName, re, re.getMessage());
+                            dnsResolverName, re, re);
                     dnsResolver = new DefaultResolver(() -> this.getDefaultRack());
                 } else {
                     /*
@@ -289,7 +289,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             .expireAfterWrite(conf.getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
             .build(new CacheLoader<BookieId, Long>() {
                 @Override
-                public Long load(BookieId key) throws Exception {
+                public Long load(BookieId key) {
                     return -1L;
                 }
             });
@@ -325,7 +325,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             for (Node node : defaultRackLeaves) {
                 if (node instanceof BookieNode) {
                     if (bookiesInDefaultRack == null) {
-                        bookiesInDefaultRack = new HashSet<BookieId>(excludeBookies);
+                        bookiesInDefaultRack = new HashSet<>(excludeBookies);
                     }
                     bookiesInDefaultRack.add(((BookieNode) node).getAddr());
                 } else {
@@ -335,7 +335,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             if ((bookiesInDefaultRack == null) || bookiesInDefaultRack.isEmpty()) {
                 comprehensiveExclusionBookiesSet = excludeBookies;
             } else {
-                comprehensiveExclusionBookiesSet = new HashSet<BookieId>(excludeBookies);
+                comprehensiveExclusionBookiesSet = new HashSet<>(excludeBookies);
                 comprehensiveExclusionBookiesSet.addAll(bookiesInDefaultRack);
                 LOG.info("enforceMinNumRacksPerWriteQuorum is enabled, so Excluding bookies of defaultRack: {}",
                         bookiesInDefaultRack);
@@ -352,11 +352,15 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
         try {
-            Set<BookieId> comprehensiveExclusionBookiesSet = addDefaultRackBookiesIfMinNumRacksIsEnforced(
-                    excludeBookies);
-            PlacementResult<List<BookieId>> newEnsembleResult = newEnsembleInternal(ensembleSize,
-                    writeQuorumSize, ackQuorumSize, comprehensiveExclusionBookiesSet, null, null);
-            return newEnsembleResult;
+            Set<BookieId> comprehensiveExclusionBookiesSet =
+                    addDefaultRackBookiesIfMinNumRacksIsEnforced(excludeBookies);
+            return newEnsembleInternal(
+                    ensembleSize,
+                    writeQuorumSize,
+                    ackQuorumSize,
+                    comprehensiveExclusionBookiesSet,
+                    null,
+                    null);
         } finally {
             rwLock.readLock().unlock();
         }
@@ -484,7 +488,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 LOG.debug("Bookie {} is chosen to replace bookie {}.", candidate, bn);
             }
             BookieId candidateAddr = candidate.getAddr();
-            List<BookieId> newEnsemble = new ArrayList<BookieId>(currentEnsemble);
+            List<BookieId> newEnsemble = new ArrayList<>(currentEnsemble);
             if (currentEnsemble.isEmpty()) {
                 /*
                  * in testing code there are test cases which would pass empty
@@ -593,7 +597,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         // create a map of bookieNode->freeDiskSpace for this rack. The assumption is that
         // the number of nodes in a rack is of the order of 40, so it shouldn't be too bad
         // to build it every time during a ledger creation
-        Map<BookieNode, WeightedObject> rackMap = new HashMap<BookieNode, WeightedObject>();
+        Map<BookieNode, WeightedObject> rackMap = new HashMap<>();
         for (Node n : leaves) {
             if (!(n instanceof BookieNode)) {
                 continue;
@@ -645,7 +649,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
 
         Iterator<Node> it = leaves.iterator();
-        Set<Node> bookiesSeenSoFar = new HashSet<Node>();
+        Set<Node> bookiesSeenSoFar = new HashSet<>();
         while (true) {
             Node n;
             if (isWeighted) {
@@ -716,7 +720,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 throw new BKNotEnoughBookiesException();
             }
             if (wRSelection == null) {
-                Map<BookieNode, WeightedObject> rackMap = new HashMap<BookieNode, WeightedObject>();
+                Map<BookieNode, WeightedObject> rackMap = new HashMap<>();
                 for (BookieNode n : bookiesToSelectFrom) {
                     if (excludeBookies.contains(n)) {
                         continue;
@@ -727,7 +731,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         rackMap.put(n, new BookieInfo());
                     }
                 }
-                wRSelection = new WeightedRandomSelectionImpl<BookieNode>(this.maxWeightMultiple);
+                wRSelection = new WeightedRandomSelectionImpl<>(this.maxWeightMultiple);
                 wRSelection.updateMap(rackMap);
             }
         } else {
@@ -735,9 +739,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
 
         BookieNode bookie;
-        List<BookieNode> newBookies = new ArrayList<BookieNode>(numBookies);
+        List<BookieNode> newBookies = new ArrayList<>(numBookies);
         Iterator<BookieNode> it = bookiesToSelectFrom.iterator();
-        Set<BookieNode> bookiesSeenSoFar = new HashSet<BookieNode>();
+        Set<BookieNode> bookiesSeenSoFar = new HashSet<>();
         while (numBookies > 0) {
             if (isWeighted) {
                 if (bookiesSeenSoFar.size() == bookiesToSelectFrom.size()) {
@@ -907,7 +911,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             int idx = writeSet.get(i);
             BookieId address = ensemble.get(idx);
             String region = writeSetWithRegion.get(idx);
-            Long lastFailedEntryOnBookie = bookiesHealthInfo.getBookieFailureHistory(address);
+            long lastFailedEntryOnBookie = bookiesHealthInfo.getBookieFailureHistory(address);
             if (null == knownBookies.get(address)) {
                 // there isn't too much differences between readonly bookies
                 // from unavailable bookies. since there
@@ -1020,7 +1024,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             int writeQuorumSize, int ackQuorumSize) {
         int ensembleSize = ensembleList.size();
         int minNumRacksPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
-        HashSet<String> racksInQuorum = new HashSet<String>();
+        HashSet<String> racksInQuorum = new HashSet<>();
         BookieId bookie;
         for (int i = 0; i < ensembleList.size(); i++) {
             racksInQuorum.clear();

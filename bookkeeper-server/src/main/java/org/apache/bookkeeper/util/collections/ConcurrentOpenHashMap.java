@@ -478,14 +478,14 @@ public class ConcurrentOpenHashMap<K, V> {
     private static final long HashMixer = 0xc6a4a7935bd1e995L;
     private static final int R = 47;
 
-    static final <K> long hash(K key) {
+    static <K> long hash(K key) {
         long hash = key.hashCode() * HashMixer;
         hash ^= hash >>> R;
         hash *= HashMixer;
         return hash;
     }
 
-    static final int signSafeMod(long n, int max) {
+    static int signSafeMod(long n, int max) {
         return (int) (n & (max - 1)) << 1;
     }
 

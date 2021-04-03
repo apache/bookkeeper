@@ -36,9 +36,9 @@ public class SnapshotMap<K, V> {
     final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public SnapshotMap() {
-        updates = new ConcurrentHashMap<K, V>();
-        updatesToMerge = new ConcurrentHashMap<K, V>();
-        snapshot = new ConcurrentSkipListMap<K, V>();
+        updates = new ConcurrentHashMap<>();
+        updatesToMerge = new ConcurrentHashMap<>();
+        snapshot = new ConcurrentSkipListMap<>();
     }
 
     /**

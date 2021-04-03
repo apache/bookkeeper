@@ -103,7 +103,7 @@ public class StabilizeNetworkTopology implements NetworkTopology {
                                     int stabilizePeriodSeconds) {
         this.impl = new NetworkTopologyImpl();
         this.timer = timer;
-        this.nodeStatuses = new ConcurrentHashMap<Node, NodeStatus>();
+        this.nodeStatuses = new ConcurrentHashMap<>();
         this.stabilizePeriodMillis = TimeUnit.SECONDS.toMillis(stabilizePeriodSeconds);
     }
 

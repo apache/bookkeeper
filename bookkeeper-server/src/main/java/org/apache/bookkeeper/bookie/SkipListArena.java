@@ -46,7 +46,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
  * </p>
  */
 public class SkipListArena {
-    private AtomicReference<Chunk> curChunk = new AtomicReference<Chunk>();
+    private final AtomicReference<Chunk> curChunk = new AtomicReference<>();
 
     final int chunkSize;
 
@@ -136,10 +136,10 @@ public class SkipListArena {
          * Offset for the next allocation, or the sentinel value -1
          * which implies that the chunk is still uninitialized.
          */
-        private AtomicInteger nextFreeOffset = new AtomicInteger(UNINITIALIZED);
+        private final AtomicInteger nextFreeOffset = new AtomicInteger(UNINITIALIZED);
 
         /** Total number of allocations satisfied from this buffer. */
-        private AtomicInteger allocCount = new AtomicInteger();
+        private final AtomicInteger allocCount = new AtomicInteger();
 
         /** Size of chunk in bytes. */
         private final int size;

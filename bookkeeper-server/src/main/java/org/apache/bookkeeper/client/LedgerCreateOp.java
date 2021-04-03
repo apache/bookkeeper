@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -170,7 +171,7 @@ class LedgerCreateOp {
         LedgerMetadataBuilder metadataBuilder = LedgerMetadataBuilder.create()
             .withEnsembleSize(actualEnsembleSize).withWriteQuorumSize(writeQuorumSize).withAckQuorumSize(ackQuorumSize)
             .withDigestType(digestType.toApiDigestType()).withPassword(passwd);
-        metadataBuilder.newEnsembleEntry(0L, ensemble);
+        metadataBuilder.newEnsembleEntry(0L, Objects.requireNonNull(ensemble));
         if (customMetadata != null) {
             metadataBuilder.withCustomMetadata(customMetadata);
         }

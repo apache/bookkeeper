@@ -98,7 +98,7 @@ public class SASLBookieAuthProviderFactory implements org.apache.bookkeeper.auth
     @Override
     public org.apache.bookkeeper.auth.BookieAuthProvider newProvider(BookieConnectionPeer addr,
         AuthCallbacks.GenericCallback<Void> completeCb) {
-        return new SASLBookieAuthProvider(addr, completeCb, serverConfiguration,
+        return new SASLBookieAuthProvider(completeCb, serverConfiguration,
             subject, allowedIdsPattern);
     }
 

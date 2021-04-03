@@ -92,6 +92,7 @@ public class BookkeeperVerifierMain {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             printHelpAndExit(options, "Unable to parse command line", 1);
+            return;
         }
 
         if (cmd.hasOption("help")) {

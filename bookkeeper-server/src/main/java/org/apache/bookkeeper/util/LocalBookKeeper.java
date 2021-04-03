@@ -61,7 +61,8 @@ import org.slf4j.LoggerFactory;
  * Local Bookkeeper.
  */
 public class LocalBookKeeper {
-    protected static final Logger LOG = LoggerFactory.getLogger(LocalBookKeeper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LocalBookKeeper.class);
+
     public static final int CONNECTION_TIMEOUT = 30000;
 
     private static String newMetadataServiceUri(String zkServers, int port, String layout, String ledgerPath) {
@@ -78,31 +79,32 @@ public class LocalBookKeeper {
         this(numberOfBookies, 5000, new ServerConfiguration(), defaultLocalBookiesConfigDir);
     }
 
-    public LocalBookKeeper(
-            int numberOfBookies,
-            int initialPort,
-            ServerConfiguration baseConf,
-            String localBookiesConfigDirName) {
+    public LocalBookKeeper(int numberOfBookies,
+                           int initialPort,
+                           ServerConfiguration baseConf,
+                           String localBookiesConfigDirName) {
         this.numberOfBookies = numberOfBookies;
         this.initialPort = initialPort;
         this.localBookiesConfigDir = new File(localBookiesConfigDirName);
         this.baseConf = baseConf;
-        LOG.info("Running {} bookie(s) on zk ensemble = '{}:{}'.", this.numberOfBookies,
-                zooKeeperDefaultHost, zooKeeperDefaultPort);
+        LOG.info("Running {} bookie(s) on zk ensemble = '{}:{}'.",
+                this.numberOfBookies,
+                zooKeeperDefaultHost,
+                zooKeeperDefaultPort);
     }
 
-    private static String zooKeeperDefaultHost = "127.0.0.1";
-    private static int zooKeeperDefaultPort = 2181;
-    private static int zkSessionTimeOut = 5000;
-    private static Integer bookieDefaultInitialPort = 5000;
-    private static String defaultLocalBookiesConfigDir = "/tmp/localbookies-config";
+    private static final String zooKeeperDefaultHost = "127.0.0.1";
+    private static final int zooKeeperDefaultPort = 2181;
+    private static final int zkSessionTimeOut = 5000;
+    private static final Integer bookieDefaultInitialPort = 5000;
+    private static final String defaultLocalBookiesConfigDir = "/tmp/localbookies-config";
 
     //BookKeeper variables
     File[] journalDirs;
     BookieServer[] bs;
     ServerConfiguration[] bsConfs;
     Integer initialPort = 5000;
-    private ServerConfiguration baseConf;
+    private final ServerConfiguration baseConf;
 
     File localBookiesConfigDir;
     /**
@@ -122,14 +124,13 @@ public class LocalBookKeeper {
         server.start();
 
         boolean b = waitForServerUp(InetAddress.getLoopbackAddress().getHostAddress() + ":" + zookeeperPort,
-          CONNECTION_TIMEOUT);
+                                    CONNECTION_TIMEOUT);
         if (LOG.isDebugEnabled()) {
             LOG.debug("ZooKeeper server up: {}", b);
         }
         return server;
     }
 
-    @SuppressWarnings("deprecation")
     private void initializeZookeeper(String zkHost, int zkPort) throws IOException {
         LOG.info("Instantiate ZK Client");
         //initialize the zk client with values
@@ -179,8 +180,7 @@ public class LocalBookKeeper {
     }
 
     @SuppressWarnings("deprecation")
-    private void runBookies(List<File> tempDirs, String dirSuffix)
-            throws Exception {
+    private void runBookies(List<File> tempDirs, String dirSuffix) throws Exception {
         LOG.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
 
@@ -199,10 +199,10 @@ public class LocalBookKeeper {
 
         for (int i = 0; i < numberOfBookies; i++) {
             if (null == baseConf.getJournalDirNameWithoutDefault()) {
-                journalDirs[i] = IOUtils.createTempDir("localbookkeeper" + Integer.toString(i), dirSuffix);
+                journalDirs[i] = IOUtils.createTempDir("localbookkeeper" + i, dirSuffix);
                 tempDirs.add(journalDirs[i]);
             } else {
-                journalDirs[i] = new File(baseConf.getJournalDirName(), "bookie" + Integer.toString(i));
+                journalDirs[i] = new File(baseConf.getJournalDirName(), "bookie" + i);
             }
             if (journalDirs[i].exists()) {
                 if (journalDirs[i].isDirectory()) {
@@ -220,7 +220,7 @@ public class LocalBookKeeper {
                 ledgerDirs = new String[] { journalDirs[i].getPath() };
             } else {
                 for (int l = 0; l < ledgerDirs.length; l++) {
-                    File dir = new File(ledgerDirs[l], "bookie" + Integer.toString(i));
+                    File dir = new File(ledgerDirs[l], "bookie" + i);
                     if (dir.exists()) {
                         if (dir.isDirectory()) {
                             FileUtils.deleteDirectory(dir);
@@ -298,8 +298,16 @@ public class LocalBookKeeper {
             throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
         startLocalBookiesInternal(
-                conf, zkHost, zkPort, numBookies, shouldStartZK,
-                initialBookiePort, true, "test", null, defaultLocalBookiesConfigDir);
+                conf,
+                zkHost,
+                zkPort,
+                numBookies,
+                shouldStartZK,
+                initialBookiePort,
+                true,
+                "test",
+                null,
+                defaultLocalBookiesConfigDir);
     }
 
     public static void startLocalBookies(String zkHost,
@@ -310,8 +318,16 @@ public class LocalBookKeeper {
                                          ServerConfiguration conf)
             throws Exception {
         startLocalBookiesInternal(
-                conf, zkHost, zkPort, numBookies, shouldStartZK,
-                initialBookiePort, true, "test", null, defaultLocalBookiesConfigDir);
+                conf,
+                zkHost,
+                zkPort,
+                numBookies,
+                shouldStartZK,
+                initialBookiePort,
+                true,
+                "test",
+                null,
+                defaultLocalBookiesConfigDir);
     }
 
     public static void startLocalBookies(String zkHost,
@@ -323,8 +339,16 @@ public class LocalBookKeeper {
             throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
         startLocalBookiesInternal(
-                conf, zkHost, zkPort, numBookies, shouldStartZK,
-                initialBookiePort, true, dirSuffix, null, defaultLocalBookiesConfigDir);
+                conf,
+                zkHost,
+                zkPort,
+                numBookies,
+                shouldStartZK,
+                initialBookiePort,
+                true,
+                dirSuffix,
+                null,
+                defaultLocalBookiesConfigDir);
     }
 
     @SuppressWarnings("deprecation")
@@ -552,16 +576,14 @@ public class LocalBookKeeper {
      */
     private static BookieServiceInfo buildBookieServiceInfo(ComponentInfoPublisher componentInfoPublisher) {
         List<Endpoint> endpoints = componentInfoPublisher.getEndpoints().values()
-                .stream().map(e -> {
-                    return new Endpoint(
-                            e.getId(),
-                            e.getPort(),
-                            e.getHost(),
-                            e.getProtocol(),
-                            e.getAuth(),
-                            e.getExtensions()
-                    );
-                }).collect(Collectors.toList());
+                .stream().map(e -> new Endpoint(
+                        e.getId(),
+                        e.getPort(),
+                        e.getHost(),
+                        e.getProtocol(),
+                        e.getAuth(),
+                        e.getExtensions()
+                )).collect(Collectors.toList());
         return new BookieServiceInfo(componentInfoPublisher.getProperties(), endpoints);
     }
 }

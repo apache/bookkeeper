@@ -73,10 +73,7 @@ public final class BookieId {
             return false;
         }
         final BookieId other = (BookieId) obj;
-        if (!Objects.equals(this.id, other.id)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.id, other.id);
     }
 
     private static void validateBookieId(String id) {

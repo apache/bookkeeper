@@ -29,8 +29,7 @@ public class InMemoryMetaStore implements MetaStore {
 
     static final int CUR_VERSION = 1;
 
-    static Map<String, InMemoryMetastoreTable> tables =
-        new HashMap<String, InMemoryMetastoreTable>();
+    static Map<String, InMemoryMetastoreTable> tables = new HashMap<>();
 
     // for test
     public static void reset() {
@@ -71,7 +70,7 @@ public class InMemoryMetaStore implements MetaStore {
     private InMemoryMetastoreTable createInMemoryTable(String name) {
         InMemoryMetastoreTable t = tables.get(name);
         if (t == null) {
-            t = new InMemoryMetastoreTable(this, name);
+            t = new InMemoryMetastoreTable(name);
             tables.put(name, t);
         }
         return t;

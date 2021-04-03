@@ -97,7 +97,6 @@ public class SubTreeCache {
     }
 
     private synchronized void handleEvent(WatchedEvent event) {
-        Set<Watcher> toReturn = pendingWatchers;
         for (Watcher watcher: pendingWatchers) {
             watcher.process(event);
         }

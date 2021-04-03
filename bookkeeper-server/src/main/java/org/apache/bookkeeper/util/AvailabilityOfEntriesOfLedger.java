@@ -170,10 +170,10 @@ public class AvailabilityOfEntriesOfLedger {
     public static final int V0 = 0;
     // current version of AvailabilityOfEntriesOfLedger header is V0
     public static final int CURRENT_HEADER_VERSION = V0;
-    private final TreeMap<Long, SequenceGroup> sortedSequenceGroups = new TreeMap<Long, SequenceGroup>();
-    private MutableObject<SequenceGroup> curSequenceGroup = new MutableObject<SequenceGroup>(null);
-    private MutableLong curSequenceStartEntryId = new MutableLong(INVALID_ENTRYID);
-    private MutableInt curSequenceSize = new MutableInt(0);
+    private final TreeMap<Long, SequenceGroup> sortedSequenceGroups = new TreeMap<>();
+    private final MutableObject<SequenceGroup> curSequenceGroup = new MutableObject<>(null);
+    private final MutableLong curSequenceStartEntryId = new MutableLong(INVALID_ENTRYID);
+    private final MutableInt curSequenceSize = new MutableInt(0);
     private boolean availabilityOfEntriesOfLedgerClosed = false;
     private long totalNumOfAvailableEntries = 0;
 

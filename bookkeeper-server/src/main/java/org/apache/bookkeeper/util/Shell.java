@@ -50,7 +50,7 @@ public abstract class Shell {
     public static final boolean WINDOWS = /* borrowed from Path.WINDOWS */
             System.getProperty("os.name").startsWith("Windows");
 
-    private long interval; // refresh interval in msec
+    private final long interval; // refresh interval in msec
     private long lastTime; // last time the command was performed
     private Map<String, String> environment; // env for the command execution
     private File dir;
@@ -154,7 +154,7 @@ public abstract class Shell {
         };
         try {
             errThread.start();
-        } catch (IllegalStateException ise) {
+        } catch (IllegalStateException ignored) {
         }
         try {
             parseExecResult(inReader); // parse the output
@@ -263,7 +263,7 @@ public abstract class Shell {
      */
     public static class ShellCommandExecutor extends Shell {
 
-        private String[] command;
+        private final String[] command;
         private StringBuffer output;
 
         public ShellCommandExecutor(String[] execString) {
@@ -413,7 +413,7 @@ public abstract class Shell {
      */
     private static class ShellTimeoutTimerTask extends TimerTask {
 
-        private Shell shell;
+        private final Shell shell;
 
         public ShellTimeoutTimerTask(Shell shell) {
             this.shell = shell;

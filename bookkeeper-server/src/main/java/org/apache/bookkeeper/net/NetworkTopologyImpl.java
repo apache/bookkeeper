@@ -753,7 +753,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
      */
     private Set<Node> doGetLeaves(String scope) {
         Node node = getNode(scope);
-        Set<Node> leafNodes = new HashSet<Node>();
+        Set<Node> leafNodes = new HashSet<>();
         if (node == null) {
             return leafNodes;
         }
@@ -776,7 +776,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
             if (scope.startsWith("~")) {
                 Set<Node> allNodes = doGetLeaves(NodeBase.ROOT);
                 String[] excludeScopes = scope.substring(1).split(NODE_SEPARATOR);
-                Set<Node> excludeNodes = new HashSet<Node>();
+                Set<Node> excludeNodes = new HashSet<>();
                 Arrays.stream(excludeScopes).forEach((excludeScope) -> {
                     excludeNodes.addAll(doGetLeaves(excludeScope));
                 });

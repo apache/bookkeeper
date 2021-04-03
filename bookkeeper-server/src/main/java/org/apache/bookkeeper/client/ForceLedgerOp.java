@@ -74,7 +74,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
         if (LOG.isDebugEnabled()) {
             LOG.debug("force {} clientNonDurableLac {}", lh.ledgerId, currentNonDurableLastAddConfirmed);
         }
-        // we need to send the request to every bookie in the ensamble
+        // we need to send the request to every bookie in the ensemble
         this.ackSet = lh.distributionSchedule.getEnsembleAckSet();
 
         DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule()

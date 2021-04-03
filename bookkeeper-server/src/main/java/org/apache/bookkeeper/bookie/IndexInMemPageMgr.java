@@ -53,8 +53,7 @@ import org.slf4j.LoggerFactory;
 
 class IndexInMemPageMgr {
     private static final Logger LOG = LoggerFactory.getLogger(IndexInMemPageMgr.class);
-    private static final ConcurrentHashMap<Long, LedgerEntryPage> EMPTY_PAGE_MAP =
-            new ConcurrentHashMap<Long, LedgerEntryPage>();
+    private static final ConcurrentHashMap<Long, LedgerEntryPage> EMPTY_PAGE_MAP = new ConcurrentHashMap<>();
 
     private static class InMemPageCollection implements LEPStateChangeCallback {
 
@@ -68,8 +67,8 @@ class IndexInMemPageMgr {
         public InMemPageCollection(StatsLogger statsLogger) {
             pages = new ConcurrentHashMap<>();
             lruCleanPageMap =
-                    Collections.synchronizedMap(new LinkedHashMap<EntryKey, LedgerEntryPage>(16, 0.75f, true));
-            listOfFreePages = new ConcurrentLinkedQueue<LedgerEntryPage>();
+                    Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true));
+            listOfFreePages = new ConcurrentLinkedQueue<>();
             inMemPageMgrStats = new IndexInMemPageMgrStats(statsLogger);
         }
 

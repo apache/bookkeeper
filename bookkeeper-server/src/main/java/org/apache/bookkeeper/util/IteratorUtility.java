@@ -72,7 +72,7 @@ public class IteratorUtility {
                     throw new NoSuchElementException();
                 }
 
-                long returnEntryId = INVALID_ELEMENT;
+                long returnEntryId;
                 if (curIter1Element != INVALID_ELEMENT && curIter2Element != INVALID_ELEMENT) {
                     if (curIter1Element == curIter2Element) {
                         returnEntryId = curIter1Element;

@@ -27,6 +27,7 @@ import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_DEFAULT_AUDITOR_SECT
 import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_DEFAULT_CLIENT_SECTION_NAME;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
@@ -66,7 +67,7 @@ public class SASLClientProviderFactory implements
         try {
 
             this.login = loginClient();
-            this.subject = login.getSubject();
+            this.subject = Objects.requireNonNull(login).getSubject();
             this.isKrbTicket = !subject.getPrivateCredentials(KerberosTicket.class).isEmpty();
             boolean systemRole = CLIENT_ROLE_SYSTEM.equals(clientConfiguration.getClientRole());
             this.loginContextName = systemRole

@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.discover;
 
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Collections;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 
@@ -45,7 +44,7 @@ public final class BookieServiceInfoUtils {
         endpoint.setProtocol("bookie-rpc");
         endpoint.setAuth(Collections.emptyList());
         endpoint.setExtensions(Collections.emptyList());
-        return new BookieServiceInfo(Collections.emptyMap(), Arrays.asList(endpoint));
+        return new BookieServiceInfo(Collections.emptyMap(), Collections.singletonList(endpoint));
     }
 
 }

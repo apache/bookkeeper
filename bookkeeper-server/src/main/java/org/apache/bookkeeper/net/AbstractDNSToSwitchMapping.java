@@ -118,7 +118,7 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
         builder.append("Mapping: ").append(toString()).append("\n");
         if (rack != null) {
             builder.append("Map:\n");
-            Set<String> switches = new HashSet<String>();
+            Set<String> switches = new HashSet<>();
             for (Map.Entry<String, String> entry : rack.entrySet()) {
                 builder.append("  ").append(entry.getKey()).append(" -> ").append(entry.getValue()).append("\n");
                 switches.add(entry.getValue());
@@ -148,7 +148,7 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
      * is not derived from this class.
      */
     public static boolean isMappingSingleSwitch(DNSToSwitchMapping mapping) {
-        return mapping != null && mapping instanceof AbstractDNSToSwitchMapping
+        return mapping instanceof AbstractDNSToSwitchMapping
                 && ((AbstractDNSToSwitchMapping) mapping).isSingleSwitch();
     }
 

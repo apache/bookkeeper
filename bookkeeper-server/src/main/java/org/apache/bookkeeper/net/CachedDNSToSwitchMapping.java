@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  */
 public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
-  private Map<String, String> cache = new ConcurrentHashMap<String, String>();
+  private final Map<String, String> cache = new ConcurrentHashMap<>();
 
   /**
    * The uncached mapping.
@@ -58,7 +58,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
    */
   private List<String> getUncachedHosts(List<String> names) {
     // find out all names without cached resolved location
-    List<String> unCachedHosts = new ArrayList<String>(names.size());
+    List<String> unCachedHosts = new ArrayList<>(names.size());
     for (String name : names) {
       if (cache.get(name) == null) {
         unCachedHosts.add(name);
@@ -91,7 +91,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
    *  or null if any of the names are not currently in the cache
    */
   private List<String> getCachedHosts(List<String> names) {
-    List<String> result = new ArrayList<String>(names.size());
+    List<String> result = new ArrayList<>(names.size());
     // Construct the result
     for (String name : names) {
       String networkLocation = cache.get(name);
@@ -131,8 +131,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
    */
   @Override
   public Map<String, String> getSwitchMap() {
-    Map<String, String> switchMap = new HashMap<String, String>(cache);
-    return switchMap;
+    return new HashMap<>(cache);
   }
 
 
