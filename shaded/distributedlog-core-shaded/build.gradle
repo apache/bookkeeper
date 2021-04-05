@@ -1,0 +1,59 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow'
+    id 'com.github.hierynomus.license'
+}
+
+description = 'Apache BookKeeper :: Shaded :: distributedlog-core-shaded'
+
+dependencies {
+    implementation project(':stream:distributedlog:core')
+}
+
+shadowJar {
+    dependencies {
+    }
+    relocate 'com.google', 'org.apache.bookkeeper.shaded.com.google'
+    relocate 'org.apache.commons.cli', 'dlshade.org.apache.commons.cli'
+    relocate 'org.apache.commons.codec', 'dlshade.org.apache.commons.codec'
+    relocate 'org.apache.commons.collections4', 'dlshade.org.apache.commons.collections4'
+    relocate 'org.apache.commons.lang', 'dlshade.org.apache.commons.lang'
+    relocate 'org.apache.commons.lang3', 'dlshade.org.apache.commons.lang3'
+    relocate 'org.apache.commons.logging', 'dlshade.org.apache.commons.logging'
+    relocate 'org.apache.commons.io', 'dlshade.org.apache.commons.io'
+    relocate 'org.apache.httpcomponents', 'dlshade.org.apache.httpcomponents'
+    relocate 'org.apache.http', 'dlshade.org.apache.http'
+    relocate 'org.apache.thrift', 'dlshade.org.apache.thrift'
+    relocate 'org.apache.zookeeper', 'dlshade.org.apache.zookeeper'
+    relocate 'org.apache.jute', 'dlshade.org.apache.jute'
+    relocate 'com.fasterxml.jackson', 'dlshade.com.fasterxml.jackson'
+    relocate 'com.sun.jna', 'dlshade.com.sun.jna'
+    relocate 'com.google', 'dlshade.com.google'
+    relocate 'org.jboss.netty', 'dlshade.org.jboss.netty'
+    relocate 'net.jpountz', 'dlshade.net.jpountz'
+    relocate 'org.rocksdb', 'dlshade.org.rocksdb'
+    relocate 'com.scurrilous.circe', 'dlshade.com.scurrilous.circe'
+    relocate 'org.apache.bookkeeper', 'dlshade.org.apache.bookkeeper'
+    relocate 'org.apache.distributedlog', 'dhshade.org.apache.distributedlog'
+    archiveBaseName.set("distributedlog-core-shaded")
+    archiveClassifier.set("")
+}
