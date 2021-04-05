@@ -42,6 +42,7 @@ allprojects {
         && it.name != 'main') {
         apply plugin: 'java'
         apply plugin: 'maven-publish'
+        apply plugin: 'signing'
 
         task testJar(type: Jar, dependsOn: testClasses) {
             classifier = 'tests'
@@ -74,6 +75,31 @@ allprojects {
                     from components.java
                     artifact testJar
                 }
+            }
+        }
+        signing {
+            def skipSigning = project.hasProperty('skipSigning') && skipSigning.toBoolean()
+            def shouldSign = !skipSigning
+
+            if (shouldSign) {
+                if (project.hasProperty("singingKey")) {
+                    // The following allow the secretKey and password to be specified using env var
+                    // This is mainly for the CI system.
+                    //   * ORG_GRADLE_PROJECT_signingKey
+                    //   * ORG_GRADLE_PROJECT_signingPassword
+                    //   * ORG_GRADLE_PROJECT_signingKeyId
+                    // See https://docs.gradle.org/current/userguide/signing_plugin.html#sec:in-memory-keys
+                    // for details
+                    def signingKey = findProperty("signingKey")
+                    def signingKeyId = findProperty("signingKeyId")
+                    def signingPassword = findProperty("signingPassword")
+                    if (signingKeyId && signingKey && signingPassword) {
+                        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+                    } else if (signingKey && signingPassword) {
+                        useInMemoryPgpKeys(signingKey, signingPassword)
+                    }
+                }
+                sign publishing.publications.maven
             }
         }
     }
