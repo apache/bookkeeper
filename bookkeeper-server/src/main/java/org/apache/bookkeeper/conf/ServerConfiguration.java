@@ -93,8 +93,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String FORCE_ALLOW_COMPACTION = "forceAllowCompaction";
     protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
+    protected static final String MINOR_COMPACTION_MAX_TIME_MILLIS = "minorCompactionMaxTimeMillis";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
     protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
+    protected static final String MAJOR_COMPACTION_MAX_TIME_MILLIS = "majorCompactionMaxTimeMillis";
     protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
     protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
     protected static final String COMPACTION_RATE = "compactionRate";
@@ -1063,7 +1065,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Configure the bookie to advertise a specific address.
      *
      * <p>By default, a bookie will advertise either its own IP or hostname,
-     * depending on the {@link getUseHostNameAsBookieID()} setting.
+     * depending on the {@link #getUseHostNameAsBookieID()} setting.
      *
      * <p>When the advertised is set to a non-empty string, the bookie will
      * register and advertise using this address.
@@ -1332,7 +1334,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * This is the number of threads used by Netty to handle TCP connections.
      * </p>
      *
-     * @see #getNumIOThreads()
+     * @see #getServerNumIOThreads()
      * @param numThreads number of IO threads used for bookkeeper
      * @return client configuration
      */
@@ -1530,6 +1532,33 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Get the maximum milliseconds to run major compaction. If <= 0 the
+     * thread will run until all compaction is completed.
+     *
+     * @return limit
+     *           The number of milliseconds to run compaction.
+     */
+    public long getMajorCompactionMaxTimeMillis() {
+        return getLong(MAJOR_COMPACTION_MAX_TIME_MILLIS, -1);
+    }
+
+    /**
+     * Set the maximum milliseconds to run major compaction. If <= 0 the
+     * thread will run until all compaction is completed.
+     *
+     * @see #getMajorCompactionMaxTimeMillis()
+     *
+     * @param majorCompactionMaxTimeMillis
+     *           The number of milliseconds to run compaction.
+     *
+     * @return  server configuration
+     */
+    public ServerConfiguration setMajorCompactionMaxTimeMillis(long majorCompactionMaxTimeMillis) {
+        setProperty(MAJOR_COMPACTION_MAX_TIME_MILLIS, majorCompactionMaxTimeMillis);
+        return this;
+    }
+
+    /**
      * Get interval to run minor compaction, in seconds.
      *
      * <p>If it is set to less than zero, the minor compaction is disabled.
@@ -1576,6 +1605,33 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setMajorCompactionInterval(long interval) {
         setProperty(MAJOR_COMPACTION_INTERVAL, interval);
+        return this;
+    }
+
+    /**
+     * Get the maximum milliseconds to run minor compaction. If <= 0 the
+     * thread will run until all compaction is completed.
+     *
+     * @return limit
+     *           The number of milliseconds to run compaction.
+     */
+    public long getMinorCompactionMaxTimeMillis() {
+        return getLong(MINOR_COMPACTION_MAX_TIME_MILLIS, -1);
+    }
+
+    /**
+     * Set the maximum milliseconds to run minor compaction. If <= 0 the
+     * thread will run until all compaction is completed.
+     *
+     * @see #getMinorCompactionMaxTimeMillis()
+     *
+     * @param minorCompactionMaxTimeMillis
+     *           The number of milliseconds to run compaction.
+     *
+     * @return  server configuration
+     */
+    public ServerConfiguration setMinorCompactionMaxTimeMillis(long minorCompactionMaxTimeMillis) {
+        setProperty(MINOR_COMPACTION_MAX_TIME_MILLIS, minorCompactionMaxTimeMillis);
         return this;
     }
 

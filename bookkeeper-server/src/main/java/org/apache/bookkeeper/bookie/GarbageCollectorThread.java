@@ -71,12 +71,14 @@ public class GarbageCollectorThread extends SafeRunnable {
     boolean enableMinorCompaction = false;
     final double minorCompactionThreshold;
     final long minorCompactionInterval;
+    final long minorCompactionMaxTimeMillis;
     long lastMinorCompactionTime;
 
     boolean isForceMajorCompactionAllow = false;
     boolean enableMajorCompaction = false;
     final double majorCompactionThreshold;
     final long majorCompactionInterval;
+    long majorCompactionMaxTimeMillis;
     long lastMajorCompactionTime;
 
     @Getter
@@ -180,6 +182,9 @@ public class GarbageCollectorThread extends SafeRunnable {
         majorCompactionThreshold = conf.getMajorCompactionThreshold();
         majorCompactionInterval = conf.getMajorCompactionInterval() * SECOND;
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
+        majorCompactionMaxTimeMillis = conf.getMajorCompactionMaxTimeMillis();
+        minorCompactionMaxTimeMillis = conf.getMinorCompactionMaxTimeMillis();
+
         boolean isForceAllowCompaction = conf.isForceAllowCompaction();
 
         AbstractLogCompactor.LogRemovalListener remover = new AbstractLogCompactor.LogRemovalListener() {
@@ -361,7 +366,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             // enter major compaction
             LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
             majorCompacting.set(true);
-            doCompactEntryLogs(majorCompactionThreshold);
+            doCompactEntryLogs(majorCompactionThreshold, majorCompactionMaxTimeMillis);
             lastMajorCompactionTime = System.currentTimeMillis();
             // and also move minor compaction time
             lastMinorCompactionTime = lastMajorCompactionTime;
@@ -372,7 +377,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             // enter minor compaction
             LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
             minorCompacting.set(true);
-            doCompactEntryLogs(minorCompactionThreshold);
+            doCompactEntryLogs(minorCompactionThreshold, minorCompactionMaxTimeMillis);
             lastMinorCompactionTime = System.currentTimeMillis();
             gcStats.getMinorCompactionCounter().inc();
             minorCompacting.set(false);
@@ -442,7 +447,7 @@ public class GarbageCollectorThread extends SafeRunnable {
      * </p>
      */
     @VisibleForTesting
-    void doCompactEntryLogs(double threshold) {
+    void doCompactEntryLogs(double threshold, long maxTimeMillis) {
         LOG.info("Do compaction to compact those files lower than {}", threshold);
 
         // sort the ledger meta by usage in ascending order.
@@ -452,29 +457,46 @@ public class GarbageCollectorThread extends SafeRunnable {
 
         final int numBuckets = 10;
         int[] entryLogUsageBuckets = new int[numBuckets];
+        int[] compactedBuckets = new int[numBuckets];
+
+        long start = System.currentTimeMillis();
+        long end = start;
+        long timeDiff = 0;
 
         for (EntryLogMetadata meta : logsToCompact) {
             int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
             entryLogUsageBuckets[bucketIndex]++;
 
-            if (meta.getUsage() >= threshold) {
+            if (timeDiff < maxTimeMillis) {
+                end = System.currentTimeMillis();
+                timeDiff = end - start;
+            }
+            if (meta.getUsage() >= threshold || (maxTimeMillis > 0 && timeDiff > maxTimeMillis) || !running) {
+                // We allow the usage limit calculation to continue so that we get a accurate
+                // report of where the usage was prior to running compaction.
                 continue;
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Compacting entry log {} below threshold {}", meta.getEntryLogId(), threshold);
+                LOG.debug("Compacting entry log {} with usage {} below threshold {}",
+                        meta.getEntryLogId(), meta.getUsage(), threshold);
             }
 
             long priorRemainingSize = meta.getRemainingSize();
             compactEntryLog(meta);
             gcStats.getReclaimedSpaceViaCompaction().add(meta.getTotalSize() - priorRemainingSize);
-
-            if (!running) { // if gc thread is not running, stop compaction
-                return;
+            compactedBuckets[bucketIndex]++;
+        }
+        if (LOG.isDebugEnabled()) {
+            if (!running) {
+                LOG.debug("Compaction exited due to gc not running");
+            }
+            if (timeDiff > maxTimeMillis) {
+                LOG.debug("Compaction ran for {}ms but was limited by {}ms", timeDiff, maxTimeMillis);
             }
         }
         LOG.info(
-                "Compaction: entry log usage buckets[10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}",
-                entryLogUsageBuckets);
+                "Compaction: entry log usage buckets[10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}, compacted {}",
+                entryLogUsageBuckets, compactedBuckets);
     }
 
     /**

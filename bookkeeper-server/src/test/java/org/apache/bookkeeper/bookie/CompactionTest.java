@@ -371,6 +371,80 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // entry logs ([0,1,2].log) should be compacted.
         for (File ledgerDirectory : tmpDirs) {
             assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
+                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
+        }
+
+        // even though entry log files are removed, we still can access entries for ledger1
+        // since those entries have been compacted to a new entry log
+        verifyLedger(lhs[0].getId(), 0, lhs[0].getLastAddConfirmed());
+
+        assertTrue(
+                "RECLAIMED_COMPACTION_SPACE_BYTES should have been updated",
+                getStatsProvider(0)
+                        .getCounter("bookie.gc." + RECLAIMED_COMPACTION_SPACE_BYTES)
+                        .get().intValue() > 0);
+        assertTrue(
+                "RECLAIMED_DELETION_SPACE_BYTES should have been updated",
+                getStatsProvider(0)
+                        .getCounter("bookie.gc." + RECLAIMED_DELETION_SPACE_BYTES)
+                        .get().intValue() > 0);
+    }
+
+    @Test
+    public void testMinorCompactionWithMaxTimeMillis() throws Exception {
+        // prepare data
+        LedgerHandle[] lhs = prepareData(6, false);
+
+        for (LedgerHandle lh : lhs) {
+            lh.close();
+        }
+
+        // disable major compaction
+        baseConf.setMajorCompactionThreshold(0.0f);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(120000);
+        baseConf.setMajorCompactionInterval(240000);
+
+        // Setup limit on compaction duration.
+        baseConf.setMinorCompactionMaxTimeMillis(15);
+        baseConf.setMajorCompactionMaxTimeMillis(15);
+
+        // restart bookies
+        restartBookies(baseConf);
+
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+        assertTrue(
+                "ACTIVE_ENTRY_LOG_COUNT should have been updated",
+                getStatsProvider(0)
+                        .getGauge("bookie.gc." + ACTIVE_ENTRY_LOG_COUNT)
+                        .getSample().intValue() > 0);
+        assertTrue(
+                "ACTIVE_ENTRY_LOG_SPACE_BYTES should have been updated",
+                getStatsProvider(0)
+                        .getGauge("bookie.gc." + ACTIVE_ENTRY_LOG_SPACE_BYTES)
+                        .getSample().intValue() > 0);
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertTrue(getGCThread().enableMinorCompaction);
+
+        // remove ledger2 and ledger3
+        bkc.deleteLedger(lhs[1].getId());
+        bkc.deleteLedger(lhs[2].getId());
+
+        LOG.info("Finished deleting the ledgers contains most entries.");
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+
+        // after garbage collection, major compaction should not be executed
+        assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
+
+        // entry logs ([0,1,2].log) should be compacted.
+        for (File ledgerDirectory : tmpDirs) {
+            assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
                             + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
         }
 
@@ -389,6 +463,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                         .getCounter("bookie.gc." + RECLAIMED_DELETION_SPACE_BYTES)
                         .get().intValue() > 0);
     }
+
+
+
 
     @Test
     public void testMinorCompactionWithNoWritableLedgerDirs() throws Exception {
@@ -1065,8 +1142,10 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             UnpooledByteBufAllocator.DEFAULT);
 
         double threshold = 0.1;
+        long limit = 0;
+
         // shouldn't throw exception
-        storage.gcThread.doCompactEntryLogs(threshold);
+        storage.gcThread.doCompactEntryLogs(threshold, limit);
     }
 
     /**
