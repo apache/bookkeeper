@@ -468,6 +468,77 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
 
     @Test
+    public void testForceMinorCompaction() throws Exception {
+        // prepare data
+        LedgerHandle[] lhs = prepareData(3, false);
+
+        for (LedgerHandle lh : lhs) {
+            lh.close();
+        }
+
+        // disable major compaction
+        baseConf.setMajorCompactionThreshold(0.0f);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(-1);
+        baseConf.setMajorCompactionInterval(-1);
+        baseConf.setForceAllowCompaction(true);
+
+        // restart bookies
+        restartBookies(baseConf);
+
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+        assertTrue(
+                "ACTIVE_ENTRY_LOG_COUNT should have been updated",
+                getStatsProvider(0)
+                        .getGauge("bookie.gc." + ACTIVE_ENTRY_LOG_COUNT)
+                        .getSample().intValue() > 0);
+        assertTrue(
+                "ACTIVE_ENTRY_LOG_SPACE_BYTES should have been updated",
+                getStatsProvider(0)
+                        .getGauge("bookie.gc." + ACTIVE_ENTRY_LOG_SPACE_BYTES)
+                        .getSample().intValue() > 0);
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertFalse(getGCThread().enableMinorCompaction);
+
+        // remove ledger2 and ledger3
+        bkc.deleteLedger(lhs[1].getId());
+        bkc.deleteLedger(lhs[2].getId());
+
+        LOG.info("Finished deleting the ledgers contains most entries.");
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+
+        // after garbage collection, major compaction should not be executed
+        assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
+
+        // entry logs ([0,1,2].log) should be compacted.
+        for (File ledgerDirectory : tmpDirs) {
+            assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
+                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
+        }
+
+        // even though entry log files are removed, we still can access entries for ledger1
+        // since those entries have been compacted to a new entry log
+        verifyLedger(lhs[0].getId(), 0, lhs[0].getLastAddConfirmed());
+
+        assertTrue(
+                "RECLAIMED_COMPACTION_SPACE_BYTES should have been updated",
+                getStatsProvider(0)
+                        .getCounter("bookie.gc." + RECLAIMED_COMPACTION_SPACE_BYTES)
+                        .get().intValue() > 0);
+        assertTrue(
+                "RECLAIMED_DELETION_SPACE_BYTES should have been updated",
+                getStatsProvider(0)
+                        .getCounter("bookie.gc." + RECLAIMED_DELETION_SPACE_BYTES)
+                        .get().intValue() > 0);
+    }
+
+    @Test
     public void testMinorCompactionWithNoWritableLedgerDirs() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
@@ -649,6 +720,55 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         for (File ledgerDirectory : tmpDirs) {
             assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
                       + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
+        }
+
+        // even entry log files are removed, we still can access entries for ledger2
+        // since those entries has been compacted to new entry log
+        verifyLedger(lhs[1].getId(), 0, lhs[1].getLastAddConfirmed());
+    }
+
+    @Test
+    public void testForceMajorCompaction() throws Exception {
+
+        // prepare data
+        LedgerHandle[] lhs = prepareData(3, true);
+
+        for (LedgerHandle lh : lhs) {
+            lh.close();
+        }
+
+        // disable minor compaction
+        baseConf.setMinorCompactionThreshold(0.0f);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(-1);
+        baseConf.setMajorCompactionInterval(-1);
+        baseConf.setForceAllowCompaction(true);
+
+        // restart bookies
+        restartBookies(baseConf);
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertFalse(getGCThread().enableMinorCompaction);
+        assertTrue(getGCThread().isForceMajorCompactionAllow);
+        assertFalse(getGCThread().isForceMinorCompactionAllow);
+
+        // remove ledger1 and ledger3
+        bkc.deleteLedger(lhs[0].getId());
+        bkc.deleteLedger(lhs[2].getId());
+        LOG.info("Finished deleting the ledgers contains most entries.");
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+
+        // after garbage collection, minor compaction should not be executed
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
+        assertTrue(getGCThread().lastMajorCompactionTime > lastMajorCompactionTime);
+
+        // entry logs ([0,1,2].log) should be compacted
+        for (File ledgerDirectory : tmpDirs) {
+            assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
+                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
         }
 
         // even entry log files are removed, we still can access entries for ledger2
