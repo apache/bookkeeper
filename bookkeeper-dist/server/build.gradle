@@ -19,9 +19,14 @@
 plugins {
     id 'java'
     id 'distribution'
+    id "com.github.vlsi.stage-vote-release"
 }
 
 description = 'Apache BookKeeper :: Dist (Server)'
+
+releaseArtifacts {
+    artifact(tasks.named("distTar"))
+}
 
 //    implementation project(':bookkeeper-http:vertx-http-server')
 dependencies {

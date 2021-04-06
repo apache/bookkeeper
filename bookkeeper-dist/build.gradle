@@ -18,6 +18,11 @@
  */
 plugins {
     id 'distribution'
+    id "com.github.vlsi.stage-vote-release"
+}
+
+releaseArtifacts {
+    artifact(tasks.named("distTar"))
 }
 
 distributions {
