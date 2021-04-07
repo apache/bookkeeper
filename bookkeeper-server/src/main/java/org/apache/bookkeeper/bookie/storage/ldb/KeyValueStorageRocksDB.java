@@ -272,6 +272,15 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     }
 
     @Override
+    public void compact(byte[] firstKey, byte[] lastKey) throws IOException {
+        try {
+            db.compactRange(firstKey, lastKey);
+        } catch (RocksDBException e) {
+            throw new IOException("Error in RocksDB compact", e);
+        }
+    }
+
+    @Override
     public void sync() throws IOException {
         try {
             db.write(optionSync, emptyBatch);
