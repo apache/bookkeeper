@@ -22,14 +22,11 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.primitives.UnsignedBytes;
-
 //CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
 //CHECKSTYLE.ON: IllegalImport
 
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
@@ -311,13 +308,15 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     @Override
     public CloseableIterator<byte[]> keys(byte[] firstKey, byte[] lastKey) {
-        final RocksIterator iterator = db.newIterator(optionCache);
+        final Slice upperBound = new Slice(lastKey);
+        final ReadOptions option = new ReadOptions(optionCache).setIterateUpperBound(upperBound);
+        final RocksIterator iterator = db.newIterator(option);
         iterator.seek(firstKey);
 
         return new CloseableIterator<byte[]>() {
             @Override
             public boolean hasNext() {
-                return iterator.isValid() && ByteComparator.compare(iterator.key(), lastKey) < 0;
+                return iterator.isValid();
             }
 
             @Override
@@ -331,6 +330,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             @Override
             public void close() {
                 iterator.close();
+                option.close();
+                upperBound.close();
             }
         };
     }
@@ -458,8 +459,6 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             return key;
         }
     }
-
-    private static final Comparator<byte[]> ByteComparator = UnsignedBytes.lexicographicalComparator();
 
     private static final Logger log = LoggerFactory.getLogger(KeyValueStorageRocksDB.class);
 }
