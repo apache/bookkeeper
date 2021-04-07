@@ -47,6 +47,7 @@ import org.rocksdb.ReadOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
+import org.rocksdb.Slice;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
@@ -239,31 +240,15 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     @Override
     public Entry<byte[], byte[]> getFloor(byte[] key) throws IOException {
-        try (RocksIterator iterator = db.newIterator(optionCache)) {
-            // Position the iterator on the record whose key is >= to the supplied key
-            iterator.seek(key);
-
-            if (!iterator.isValid()) {
-                // There are no entries >= key
-                iterator.seekToLast();
-                if (iterator.isValid()) {
-                    return new EntryWrapper(iterator.key(), iterator.value());
-                } else {
-                    // Db is empty
-                    return null;
-                }
-            }
-
-            iterator.prev();
-
-            if (!iterator.isValid()) {
-                // Iterator is on the 1st entry of the db and this entry key is >= to the target
-                // key
-                return null;
-            } else {
+        try (Slice upperBound = new Slice(key);
+                 ReadOptions option = new ReadOptions(optionCache).setIterateUpperBound(upperBound);
+                 RocksIterator iterator = db.newIterator(option)) {
+            iterator.seekToLast();
+            if (iterator.isValid()) {
                 return new EntryWrapper(iterator.key(), iterator.value());
             }
         }
+        return null;
     }
 
     @Override
