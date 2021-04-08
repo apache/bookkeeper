@@ -25,6 +25,7 @@ dependencies {
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
     testImplementation project(':bookkeeper-server')
     testImplementation project(':tests:integration-tests-utils')
+    testImplementation project(':tests:integration-tests-topologies')
     testCompileOnly depLibs.lombok
     testImplementation depLibs.arquillianJunitContainer
     testImplementation depLibs.arquillianJunitStandalone
@@ -32,6 +33,10 @@ dependencies {
     testImplementation depLibs.commonsConfiguration
     testImplementation depLibs.arquillianCubeDocker
     testAnnotationProcessor depLibs.lombok
+}
+
+test {
+    exclude '**/*'
 }
 
 publishing {
