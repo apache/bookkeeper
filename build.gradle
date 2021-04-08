@@ -25,6 +25,7 @@ buildscript {
 plugins {
     id 'com.google.protobuf'
     id 'java'
+    id 'checkstyle'
 }
 
 subprojects {
@@ -35,7 +36,6 @@ apply from: "$rootDir/version.gradle"
 
 allprojects {
     apply from: "$rootDir/dependencies.gradle"
-
     if (it.path != ':circe-checksum:src:main:circe'
         && it.path != ':cpu-affinity:src:main:affinity'
         && it.name != 'src'
@@ -43,6 +43,18 @@ allprojects {
         apply plugin: 'java'
         apply plugin: 'maven-publish'
         apply plugin: 'signing'
+        apply plugin: "checkstyle"
+        checkstyle {
+            toolVersion "${checkStyleVersion}"
+            configFile file("$rootDir/buildtools/src/main/resources/bookkeeper/checkstyle.xml")
+            checkstyleMain {
+                source ='src/main/java'
+            }
+
+            checkstyleTest {
+                source ='src/test/java'
+            }
+        }
 
         task testJar(type: Jar, dependsOn: testClasses) {
             classifier = 'tests'
