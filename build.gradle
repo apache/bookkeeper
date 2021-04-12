@@ -76,6 +76,17 @@ allprojects {
             }
         }
 
+        javadoc {
+            options.addBooleanOption('Xdoclint:none', true)
+            includes = [
+                    '**/org/apache/bookkeeper/client/api/**',
+                    '**/org/apache/bookkeeper/common/annotation/**',
+                    '**/org/apache/bookkeeper/conf/**',
+                    '**/org/apache/bookkeeper/feature/**',
+                    '**/org/apache/bookkeeper/stats/**',
+            ]
+        }
+
         def componentName = it.name
         publishing {
             publications {
