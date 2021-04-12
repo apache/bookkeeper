@@ -26,6 +26,7 @@ plugins {
     id 'com.google.protobuf'
     id 'java'
     id "com.github.vlsi.stage-vote-release" version "1.73"
+    id 'checkstyle'
 }
 
 subprojects {
@@ -57,7 +58,6 @@ releaseParams { // ReleaseExtension
 
 allprojects {
     apply from: "$rootDir/dependencies.gradle"
-
     if (it.path != ':circe-checksum:src:main:circe'
         && it.path != ':cpu-affinity:src:main:affinity'
         && it.name != 'src'
@@ -65,6 +65,18 @@ allprojects {
         apply plugin: 'java'
         apply plugin: 'maven-publish'
         apply plugin: 'signing'
+        apply plugin: "checkstyle"
+        checkstyle {
+            toolVersion "${checkStyleVersion}"
+            configFile file("$rootDir/buildtools/src/main/resources/bookkeeper/checkstyle.xml")
+            checkstyleMain {
+                source ='src/main/java'
+            }
+
+            checkstyleTest {
+                source ='src/test/java'
+            }
+        }
 
         task testJar(type: Jar, dependsOn: testClasses) {
             classifier = 'tests'
@@ -84,6 +96,17 @@ allprojects {
                 compression = Compression.GZIP
                 archiveExtension = 'tar.gz'
             }
+        }
+
+        javadoc {
+            options.addBooleanOption('Xdoclint:none', true)
+            includes = [
+                    '**/org/apache/bookkeeper/client/api/**',
+                    '**/org/apache/bookkeeper/common/annotation/**',
+                    '**/org/apache/bookkeeper/conf/**',
+                    '**/org/apache/bookkeeper/feature/**',
+                    '**/org/apache/bookkeeper/stats/**',
+            ]
         }
 
         def componentName = it.name
