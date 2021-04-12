@@ -59,13 +59,30 @@ public class LedgerRecovery2Test {
     private static final BookieId b5 = new BookieSocketAddress("b5", 3181).toBookieId();
 
     private static Versioned<LedgerMetadata> setupLedger(ClientContext clientCtx, long ledgerId,
-                                              List<BookieId> bookies) throws Exception {
+                                                         List<BookieId> bookies) throws Exception {
         LedgerMetadata md = LedgerMetadataBuilder.create()
-            .withId(ledgerId)
-            .withPassword(PASSWD).withDigestType(DigestType.CRC32C)
-            .newEnsembleEntry(0, bookies).build();
-        return clientCtx.getLedgerManager().createLedgerMetadata(1L, md).get();
+                .withId(ledgerId)
+                .withPassword(PASSWD).withDigestType(DigestType.CRC32C)
+                .withWriteQuorumSize(bookies.size())
+                .newEnsembleEntry(0, bookies).build();
+        return clientCtx.getLedgerManager().createLedgerMetadata(ledgerId, md).get();
     }
+
+    private static Versioned<LedgerMetadata> setupLedger(ClientContext clientCtx, long ledgerId,
+                                                         List<BookieId> bookies,
+                                                         int ensembleSize,
+                                                         int writeQuorumSize,
+                                                         int ackQuorumSize) throws Exception {
+        LedgerMetadata md = LedgerMetadataBuilder.create()
+                .withId(ledgerId)
+                .withPassword(PASSWD).withDigestType(DigestType.CRC32C)
+                .withEnsembleSize(ensembleSize)
+                .withWriteQuorumSize(writeQuorumSize)
+                .withAckQuorumSize(ackQuorumSize)
+                .newEnsembleEntry(0, bookies).build();
+        return clientCtx.getLedgerManager().createLedgerMetadata(ledgerId, md).get();
+    }
+
 
     @Test
     public void testCantRecoverAllDown() throws Exception {
@@ -490,5 +507,78 @@ public class LedgerRecovery2Test {
         try {
             reachedStepFuture.get();
         } catch (Exception e) {}
+    }
+
+
+    /*
+     * This test verifies that an IllegalStateException does not occur during recovery because of an attempt
+     * to create a new ensemble that has a lower first entry id than an existing ledger.
+     *
+     * To reproduce original issue, revert the fix and run this test.
+     * The fix was to apply max(LAC from current ensemble, (first entry of current ensemble - 1)) as the LAC
+     * of the recovery phase rather than accept a value of -1 that might be returned by the LAC reads.
+     */
+    @Test
+    public void testRecoveryWhenSecondEnsembleReturnsLacMinusOne() throws Exception {
+        MockClientContext clientCtx = MockClientContext.create();
+        clientCtx.getMockRegistrationClient().addBookies(b4).get();
+
+        // at least two non-empty ensembles required as else the first ensemble would
+        // only be replaced, thus avoiding the issue.
+
+        // initial state: 2 ensembles due to a write failure of e1 to b2
+        // ensemble 1
+        Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2), 2, 2, 2);
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b1, 1L, 0L, -1L);
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b2, 1L, 0L, -1L);
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b1, 1L, 1L, -1L);
+        // write to b2 failed, causing ensemble change
+
+        // ensemble 2 - the write of e1 to b2 failed, so new ensemble with b3 created
+        ClientUtil.transformMetadata(clientCtx, 1L,
+                (metadata) -> LedgerMetadataBuilder.from(metadata).newEnsembleEntry(1L, Lists.newArrayList(b1, b3))
+                        .build());
+        clientCtx.getMockBookieClient().getMockBookies().seedEntries(b3, 1L, 1L, 0L);
+
+        ReadOnlyLedgerHandle lh = new ReadOnlyLedgerHandle(
+                clientCtx, 1L, md, BookKeeper.DigestType.CRC32C, PASSWD, false);
+
+        // however, any read or write to b3 fails, which will:
+        // 1. cause the LAC read to return -1 (b1 has -1)
+        // 2. cause an ensemble change during recovery write back phase
+        clientCtx.getMockBookieClient().setPreWriteHook(
+                (bookie, ledgerId, entryId) -> {
+                    if (bookie.equals(b3)) {
+                        return FutureUtils.exception(new BKException.BKWriteException());
+                    } else {
+                        return FutureUtils.value(null);
+                    }
+                });
+
+        clientCtx.getMockBookieClient().setPreReadHook(
+                (bookie, ledgerId, entryId) -> {
+                    if (bookie.equals(b3)) {
+                        return FutureUtils.exception(new BKException.BKTimeoutException());
+                    } else {
+                        return FutureUtils.value(null);
+                    }
+                });
+
+        // writer 2 starts recovery (the subject of this test)
+        // (either the writer failed or simply has not yet sent the pending writes to the new ensemble)
+        GenericCallbackFuture<Void> recoveryPromise = new GenericCallbackFuture<>();
+        lh.recover(recoveryPromise, null, false);
+        recoveryPromise.get();
+
+        // The recovery process is successfully able to complete recovery, with the expected ensembles.
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 2);
+        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b1));
+        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b2));
+        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(1L).contains(b1));
+        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(1L).contains(b4));
+
+        // the ledger is closed with entry id 1
+        Assert.assertEquals(lh.getLastAddConfirmed(), 1L);
+        Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), 1L);
     }
 }
