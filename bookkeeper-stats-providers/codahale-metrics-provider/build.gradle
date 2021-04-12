@@ -37,6 +37,8 @@ dependencies {
 
     testCompileOnly depLibs.lombok
 
+    testImplementation depLibs.junit
+
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
 }
