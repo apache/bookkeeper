@@ -26,6 +26,7 @@ plugins {
     id 'com.google.protobuf'
     id 'java'
     id 'checkstyle'
+    id 'org.nosphere.apache.rat'
 }
 
 subprojects {
@@ -43,6 +44,7 @@ allprojects {
         apply plugin: 'java'
         apply plugin: 'maven-publish'
         apply plugin: 'signing'
+        apply plugin: 'org.nosphere.apache.rat'
         apply plugin: "checkstyle"
         checkstyle {
             toolVersion "${checkStyleVersion}"
@@ -59,6 +61,49 @@ allprojects {
         task testJar(type: Jar, dependsOn: testClasses) {
             classifier = 'tests'
             from sourceSets.test.output
+        }
+
+        // TODO- Seperate rat plugins and other plugins configuration in seperate files
+        rat {
+            excludes = [
+                    '**/.*/**',
+                    '**/*.ipr',
+                    '**/out/**',
+                    '**/generated/**',
+                    '**/build/**',
+                    '**/.idea/**',
+                    '.git/**/*',
+                    '.github/**/*',
+                    '**/.gitignore',
+                    '**/.svn/**/*',
+                    '**/target/**/*',
+                    '**/README.md',
+                    '**/README.rst',
+                    '**/apidocs/*',
+                    '**/src/main/resources/deps/**',
+                    '**/META-INF/**',
+                    '**/.classpath',
+                    '**/.project',
+                    '**/.checkstyle',
+                    '**/.settings/*',
+                    '**/*.iml',
+                    '**/*.iws',
+                    '**/*.ipr',
+                    'site/**',
+                    'site2/**',
+                    '**/*.log',
+                    'data/**',
+                    'dev/.vagrant/**',
+                    '**/proto/**.py',
+                    '**/keyStoreClientPassword.txt',
+                    '**/keyStoreServerPassword.txt',
+                    '**/proc_cpuinfo.txt',
+                    '**/__pycache__/**',
+                    '**/bookkeeper.egg-info/**',
+                    '**/apache_bookkeeper_client.egg-info/**',
+                    '**/pip-selfcheck.json',
+                    '**/test_conf_2.conf'
+            ]
         }
 
         configurations {
