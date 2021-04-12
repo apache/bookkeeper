@@ -20,6 +20,8 @@ pluginManagement {
     plugins {
         id "com.google.protobuf" version "${protobufPluginVersion}"
         id "org.nosphere.apache.rat" version "${apcheRatPluginVersion}"
+        id "com.github.johnrengelman.shadow" version "${shadowPluginVersion}"
+        id "com.github.hierynomus.license" version "${licenseGradlePluginVersion}"
     }
 }
 
@@ -42,6 +44,8 @@ include(':bookkeeper-benchmark',
         'bookkeeper-http:vertx-http-server',
         'bookkeeper-proto',
         'bookkeeper-server',
+        'shaded:bookkeeper-server-shaded',
+        'shaded:bookkeeper-server-tests-shaded',
         'bookkeeper-stats',
         'bookkeeper-stats-providers:prometheus-metrics-provider',
         'bookkeeper-stats-providers:codahale-metrics-provider',
@@ -50,6 +54,8 @@ include(':bookkeeper-benchmark',
         'circe-checksum:src:main:circe',
         'cpu-affinity',
         'cpu-affinity:src:main:affinity',
+        'microbenchmarks',
+        'shaded:distributedlog-core-shaded',
         'stats:utils',
         'stream:api',
         'stream:clients:java:all',
