@@ -28,6 +28,7 @@ plugins {
     id "com.github.vlsi.stage-vote-release" version "1.73"
     id 'checkstyle'
     id 'org.nosphere.apache.rat'
+    id "org.gradle.test-retry" version "1.2.1"
 }
 
 subprojects {
@@ -68,6 +69,8 @@ allprojects {
         apply plugin: 'signing'
         apply plugin: 'org.nosphere.apache.rat'
         apply plugin: "checkstyle"
+        apply plugin: 'org.gradle.test-retry'
+
         checkstyle {
             toolVersion "${checkStyleVersion}"
             configFile file("$rootDir/buildtools/src/main/resources/bookkeeper/checkstyle.xml")
@@ -189,6 +192,24 @@ allprojects {
                     }
                 }
                 // Signing task is added by the release plugin
+            }
+        }
+        test {
+            testLogging {
+                events "skipped", "failed", "standardError"
+            }
+
+            String testGroup = System.properties['testGroup']
+            if (testGroup == 'client') {
+                include '**/client/*'
+            } else if (testGroup == 'bookie') {
+                include '**/bookie/*'
+            } else if (testGroup == 'other') {
+                exclude '**/client/*'
+                exclude '**/bookie/*'
+            }
+            if (project.hasProperty('excludeTests')) {
+                exclude project.property('excludeTests')
             }
         }
     }

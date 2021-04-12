@@ -29,7 +29,6 @@ on:
       - 'site/**'
     workflow_dispatch:
 
-
 env:
   MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
 
@@ -49,14 +48,29 @@ jobs:
         with:
           java-version: 1.8
 
-      - name: Maven build bookkeeper-server
-        run: mvn -B -nsu -am -pl bookkeeper-server clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+      - name: Cache Gradle packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: gradle build bookkeeper-server
+        run: ./gradlew -PskipSigning=true  :bookkeeper-server:clean :bookkeeper-server:publishToMavenLocal  :bookkeeper-server:cleanTest
 
       - name: Run EntryLogTests
-        run: mvn -B -nsu -pl bookkeeper-server test -Dtest="org.apache.bookkeeper.bookie.TestEntryLog" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: ./gradlew  -PskipSigning=true  :bookkeeper-server:test --tests=org.apache.bookkeeper.bookie.TestEntryLog
 
       - name: Run InterleavedLedgerStorageTest
-        run: mvn -B -nsu -pl bookkeeper-server test -Dtest="org.apache.bookkeeper.bookie.TestInterleavedLederStorage" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: ./gradlew  -PskipSigning=true  :bookkeeper-server:test --tests=org.apache.bookkeeper.bookie.TestInterleavedLedgerStorage
 
       - name: Run bookie tests
-        run: mvn -B -nsu -pl bookkeeper-server test -Dtest="org.apache.bookkeeper.bookie.*Test" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: ./gradlew  -PskipSigning=true  :bookkeeper-server:test --tests="org.apache.bookkeeper.bookie.*Test"
+
+      - name: Cleanup Gradle Cache
+        run: |
+          rm -f ~/.gradle/caches/modules-2/modules-2.lock
+          rm -f ~/.gradle/caches/modules-2/gc.properties
