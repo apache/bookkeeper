@@ -21,10 +21,15 @@ import org.gradle.api.artifacts.transform.TransformParameters
 plugins {
     id 'java'
     id 'distribution'
+    id "com.github.vlsi.stage-vote-release"
 }
 
 dependencies {
     implementation project(":bookkeeper-tools")
+}
+
+releaseArtifacts {
+    artifact(tasks.named("distTar"))
 }
 
 def depLicences = [

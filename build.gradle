@@ -25,6 +25,7 @@ buildscript {
 plugins {
     id 'com.google.protobuf'
     id 'java'
+    id "com.github.vlsi.stage-vote-release" version "1.73"
     id 'checkstyle'
     id 'org.nosphere.apache.rat'
 }
@@ -34,6 +35,27 @@ subprojects {
 }
 
 apply from: "$rootDir/version.gradle"
+version = buildVersion
+
+releaseArtifacts {
+    fromProject("bookkeeper-dist")
+    fromProject("bookkeeper-dist-all")
+    fromProject("bookkeeper-dist-bkctl")
+    fromProject("bookkeeper-dist-server")
+}
+
+releaseParams { // ReleaseExtension
+    tlp.set("Bookkeeper")
+    componentName.set("Apache Bookkeeper")
+    releaseTag.set("release-$buildVersion")
+    rcTag.set(rc.map { "release-$buildVersion-rc$it" })
+
+    sitePreviewEnabled.set(false)
+
+    nexus {
+        packageGroup.set("org.apache.bookkeeper")
+    }
+}
 
 allprojects {
     apply from: "$rootDir/dependencies.gradle"
@@ -141,7 +163,6 @@ allprojects {
                     version = buildVersion
 
                     from components.java
-                    artifact testJar
                 }
             }
         }
@@ -167,7 +188,7 @@ allprojects {
                         useInMemoryPgpKeys(signingKey, signingPassword)
                     }
                 }
-                sign publishing.publications.maven
+                // Signing task is added by the release plugin
             }
         }
     }
