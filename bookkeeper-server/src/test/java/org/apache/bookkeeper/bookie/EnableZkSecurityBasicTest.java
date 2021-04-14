@@ -53,7 +53,7 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
     @BeforeClass
     public static void setupJAAS() throws IOException {
         System.setProperty("zookeeper.authProvider.1", "org.apache.zookeeper.server.auth.SASLAuthenticationProvider");
-        File tmpJaasDir = new File("target").getAbsoluteFile();
+        File tmpJaasDir = Files.createTempDirectory("jassTmpDir").toFile();
         File tmpJaasFile = new File(tmpJaasDir, "jaas.conf");
         String jassFileContent = "Server {\n"
             + "       org.apache.zookeeper.server.auth.DigestLoginModule required\n"
