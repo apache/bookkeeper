@@ -122,7 +122,9 @@ depLibs = [
     jna: "net.java.dev.jna:jna:${depVersions.jna}",
     jsr305: "com.google.code.findbugs:jsr305:${depVersions.jsr305}",
     junit: "junit:junit:${depVersions.junit}",
-    junitFoundation: "com.nordstrom.tools:junit-foundation:${depVersions.junitFoundation}",
+    junitFoundation: dependencies.create("com.nordstrom.tools:junit-foundation:${depVersions.junitFoundation}") {
+        exclude group: 'ch.qos.logback', module: 'logback-classic'
+    },
     kerbySimpleKdc: "org.apache.kerby:kerb-simplekdc:${depVersions.kerby}",
     log4j: "log4j:log4j:${depVersions.log4j}",
     lombok: "org.projectlombok:lombok:${depVersions.lombok}",
@@ -160,6 +162,17 @@ depLibs = [
     vertxCore: "io.vertx:vertx-core:${depVersions.vertx}",
     vertxWeb: "io.vertx:vertx-web:${depVersions.vertx}",
     yahooDatasketches: "com.yahoo.datasketches:sketches-core:${depVersions.yahooDatasketches}",
-    zookeeper: "org.apache.zookeeper:zookeeper:${depVersions.zookeeper}",
-    zookeeperTest: "org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests"
+    zookeeper: dependencies.create("org.apache.zookeeper:zookeeper:${depVersions.zookeeper}"){
+        exclude group: "net.java.dev.javacc", module: "javacc"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "org.slf4j", module: "slf4j-api"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "io.netty", module: "*"
+    },
+    zookeeperTest: dependencies.create("org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests"){
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "org.slf4j", module: "slf4j-api"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "io.netty", module: "*"
+    }
 ]
