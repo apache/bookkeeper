@@ -191,6 +191,24 @@ allprojects {
                 // Signing task is added by the release plugin
             }
         }
+        test {
+            testLogging {
+                events "skipped", "failed", "standardError"
+            }
+
+            String testGroup = System.properties['testGroup']
+            if (testGroup == 'client') {
+                include '**/client/*'
+            } else if (testGroup == 'bookie') {
+                include '**/bookie/*'
+            } else if (testGroup == 'other') {
+                exclude '**/client/*'
+                exclude '**/bookie/*'
+            }
+            if (project.hasProperty('excludeTests')) {
+                exclude project.property('excludeTests')
+            }
+        }
     }
 
     repositories {

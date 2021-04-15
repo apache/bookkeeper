@@ -41,7 +41,6 @@ dependencies {
     implementation depLibs.commonsConfiguration
     implementation depLibs.commonsIO
     implementation depLibs.commonsLang3
-    implementation depLibs.commonsLang3
     implementation depLibs.guava
     implementation depLibs.httpclient
     implementation depLibs.jacksonAnnotations
@@ -53,9 +52,12 @@ dependencies {
     implementation depLibs.nettyTransportNativeEpoll
     implementation depLibs.protobuf
     implementation depLibs.rocksDb
+    implementation depLibs.slf4j
+    implementation depLibs.slf4jLog4j
     implementation depLibs.zookeeper
 
     testImplementation project(':bookkeeper-stats-providers:prometheus-metrics-provider')
+    testImplementation project(':bookkeeper-http:vertx-http-server')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
 
     testCompileOnly depLibs.lombok
@@ -64,9 +66,11 @@ dependencies {
     testImplementation depLibs.junit
     testImplementation depLibs.junitFoundation
     testImplementation depLibs.kerbySimpleKdc
+    testImplementation depLibs.metricsCore
     testImplementation depLibs.mockito
     testImplementation depLibs.powermockJunit
     testImplementation depLibs.powermockMockito
+    testImplementation depLibs.snappy
     testImplementation depLibs.zookeeperTest
 
     annotationProcessor depLibs.lombok
