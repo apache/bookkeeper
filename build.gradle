@@ -192,10 +192,6 @@ allprojects {
             }
         }
         test {
-            testLogging {
-                events "skipped", "failed", "standardError"
-            }
-
             String testGroup = System.properties['testGroup']
             if (testGroup == 'client') {
                 include '**/client/*'
