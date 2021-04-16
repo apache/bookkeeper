@@ -32,15 +32,14 @@ dependencies {
 
     compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations
-    implementation depLibs.bcpkixJdk15on
-    implementation depLibs.bcproveExtJdk15on
+    //implementation depLibs.bcpkixJdk15on
+    //implementation depLibs.bcproveExtJdk15on
     implementation depLibs.bcFips
     implementation depLibs.commonsCli
     implementation depLibs.commonsCodec
     implementation depLibs.commonsCollections4
     implementation depLibs.commonsConfiguration
     implementation depLibs.commonsIO
-    implementation depLibs.commonsLang3
     implementation depLibs.commonsLang3
     implementation depLibs.guava
     implementation depLibs.httpclient
@@ -53,9 +52,12 @@ dependencies {
     implementation depLibs.nettyTransportNativeEpoll
     implementation depLibs.protobuf
     implementation depLibs.rocksDb
+    implementation depLibs.slf4j
+    implementation depLibs.slf4jLog4j
     implementation depLibs.zookeeper
 
     testImplementation project(':bookkeeper-stats-providers:prometheus-metrics-provider')
+    testImplementation project(':bookkeeper-http:vertx-http-server')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
 
     testCompileOnly depLibs.lombok
@@ -64,13 +66,15 @@ dependencies {
     testImplementation depLibs.junit
     testImplementation depLibs.junitFoundation
     testImplementation depLibs.kerbySimpleKdc
+    testImplementation depLibs.metricsCore
     testImplementation depLibs.mockito
     testImplementation depLibs.powermockJunit
     testImplementation depLibs.powermockMockito
+    testImplementation depLibs.snappy
     testImplementation depLibs.zookeeperTest
-
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
+    testImplementation depLibs.slf4jLog4j
 }
 
 test {
@@ -81,6 +85,6 @@ test {
 test.doFirst {
     def junitFoundation = configurations.testCompileClasspath.resolvedConfiguration
         .resolvedArtifacts.find { it.name == 'junit-foundation' }
-    jvmArgs("-javaagent:${junitFoundation.file}", "-Djunit.timeout.test=600000", "-Djunit.max.retry=3",
+    jvmArgs("-Djunit.timeout.test=600000", "-Djunit.max.retry=3",
             "-Djava.net.preferIPv4Stack=true", "-Dio.netty.leakDetection.level=paranoid")
 }
