@@ -41,6 +41,7 @@ dependencies {
 
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
+    testImplementation depLibs.junit
 }
 
 jar {
