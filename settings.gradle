@@ -22,6 +22,7 @@ pluginManagement {
         id "org.nosphere.apache.rat" version "${apcheRatPluginVersion}"
         id "com.github.johnrengelman.shadow" version "${shadowPluginVersion}"
         id "com.github.hierynomus.license" version "${licenseGradlePluginVersion}"
+        id "com.github.spotbugs" version "${spotbugsPlugin}"
     }
 }
 

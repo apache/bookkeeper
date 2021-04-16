@@ -965,7 +965,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
         // raw key
         byte[] rawKey = (null != key) ? keyCoder.encode(key) : NULL_START_KEY;
-
+        byte[] rawEndKey = NULL_END_KEY;
         if (null == endKey) {
             // point lookup
             MVCCRecord record = getKeyRecord(key, rawKey);
@@ -988,8 +988,9 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                     record.recycle();
                 }
             }
+        } else {
+            rawEndKey = keyCoder.encode(endKey);
         }
-        byte[] rawEndKey = (null != endKey) ? keyCoder.encode(endKey) : NULL_END_KEY;
         Pair<byte[], byte[]> realRange = getRealRange(rawKey, rawEndKey);
         rawKey = realRange.getLeft();
         rawEndKey = realRange.getRight();
