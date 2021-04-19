@@ -279,8 +279,6 @@ Apache Software License, Version 2.
 - lib/com.google.re2j-re2j-1.2.jar [45]
 - lib/io.dropwizard.metrics-metrics-core-3.2.5.jar [46]
 - lib/io.perfmark-perfmark-api-0.19.0.jar [47]
-- lib/org.codehaus.jackson-jackson-core-asl-1.9.11.jar [48]
-- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [48]
 - lib/org.conscrypt-conscrypt-openjdk-uber-2.5.1.jar [49]
 - lib/org.xerial.snappy-snappy-java-1.1.7.jar [50]
 
@@ -323,7 +321,6 @@ Apache Software License, Version 2.
 [45] Source available at https://github.com/google/re2j/releases/tag/re2j-1.2
 [46] Source available at https://github.com/dropwizard/metrics/releases/tag/v3.1.0
 [47] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.19.0
-[48] Source available at https://github.com/codehaus/jackson/tree/d1c26ec538a8701cff7548009254fd6183b71873
 [49] Source available at https://github.com/google/conscrypt/releases/tag/2.5.1
 [50] Source available at https://github.com/google/snappy/releases/tag/1.1.7
 
@@ -563,7 +560,7 @@ Bundled as
 Source available at https://github.com/google/protobuf/tree/v3.14.0
 For details, see deps/protobuf-3.14.0/LICENSE.
 
-Bundled as 
+Bundled as
   - lib/com.google.protobuf-protobuf-java-util-3.12.0.jar
 Source available at https://github.com/protocolbuffers/protobuf/tree/v3.12.0
 For details, see deps/protobuf-3.12.0/LICENSE.
@@ -584,7 +581,7 @@ Bundled as
   - lib/com.google.auth-google-auth-library-oauth2-http-0.20.0.jar
 Source available at https://github.com/google/google-auth-library-java/tree/0.20.0
 ------------------------------------------------------------------------------------
-This product bundles the bouncycastle Library. 
+This product bundles the bouncycastle Library.
 For license details, see deps/bouncycastle-1.0.2/LICENSE.html
 
 Bundled as

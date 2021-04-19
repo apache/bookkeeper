@@ -258,8 +258,6 @@ Apache Software License, Version 2.
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
 - lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [25]
 - lib/net.jpountz.lz4-lz4-1.3.0.jar [26]
-- lib/org.codehaus.jackson-jackson-core-asl-1.9.11.jar [27]
-- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [27]
 - lib/com.google.api.grpc-proto-google-common-protos-1.17.0.jar [28]
 - lib/com.google.code.gson-gson-2.8.6.jar [29]
 - lib/io.opencensus-opencensus-api-0.24.0.jar [30]
@@ -329,7 +327,6 @@ Apache Software License, Version 2.
 [24] Source available at https://github.com/cbeust/jcommander/tree/1.78
 [25] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
 [26] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
-[27] Source available at https://github.com/codehaus/jackson/tree/d1c26ec538a8701cff7548009254fd6183b71873
 [28] Source available at https://github.com/googleapis/googleapis
 [29] Source available at https://github.com/google/gson/tree/gson-parent-2.8.6
 [30] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.24.0
@@ -621,7 +618,7 @@ Bundled as
 Source available at https://github.com/google/protobuf/tree/v3.14.0
 For details, see deps/protobuf-3.14.0/LICENSE.
 
-Bundled as 
+Bundled as
   - lib/com.google.protobuf-protobuf-java-util-3.12.0.jar
 Source available at https://github.com/protocolbuffers/protobuf/tree/v3.12.0
 For details, see deps/protobuf-3.12.0/LICENSE.
@@ -648,7 +645,7 @@ Bundled as
   - lib/com.google.auth-google-auth-library-oauth2-http-0.20.0.jar
 Source available at https://github.com/googleapis/google-auth-library-java/releases/tag/v0.20.0
 ------------------------------------------------------------------------------------
-This product bundles the bouncycastle Library. 
+This product bundles the bouncycastle Library.
 For license details, see deps/bouncycastle-1.0.2/LICENSE.html
 
 Bundled as
