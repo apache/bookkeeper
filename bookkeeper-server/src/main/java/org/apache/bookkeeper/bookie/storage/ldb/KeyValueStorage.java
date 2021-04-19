@@ -97,6 +97,16 @@ public interface KeyValueStorage extends Closeable {
     void delete(byte[] key) throws IOException;
 
     /**
+     * Compact storage within a specified range.
+     *
+     * @param firstKey
+     *            the first key in the range (included)
+     * @param lastKey
+     *            the last key in the range (not included)
+     */
+    default void compact(byte[] firstKey, byte[] lastKey) throws IOException {}
+
+    /**
      * Get an iterator over to scan sequentially through all the keys in the
      * database.
      *
