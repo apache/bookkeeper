@@ -138,16 +138,8 @@ public class ZooKeeperUtil implements ZooKeeperCluster {
                             final TimeUnit timeUnit,
                             final CountDownLatch l)
             throws InterruptedException, IOException {
-
-        // Gradle handles thread groups differently to surefire, so we must
-        // enumerate from the parent thread group to find the zookeeper sync
-        // thread to sleep
-        ThreadGroup tg = Thread.currentThread().getThreadGroup();
-        while (tg.getParent() != null) {
-            tg = tg.getParent();
-        }
-        Thread[] allthreads = new Thread[tg.activeCount()];
-        tg.enumerate(allthreads);
+        Thread[] allthreads = new Thread[Thread.activeCount()];
+        Thread.enumerate(allthreads);
         for (final Thread t : allthreads) {
             if (t.getName().contains("SyncThread:0")) {
                 Thread sleeper = new Thread() {
