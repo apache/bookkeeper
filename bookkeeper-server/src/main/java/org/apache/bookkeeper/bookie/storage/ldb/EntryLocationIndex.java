@@ -24,7 +24,6 @@ import com.google.common.collect.Iterables;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -54,8 +53,7 @@ public class EntryLocationIndex implements Closeable {
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
-        String locationsDbPath = FileSystems.getDefault().getPath(basePath, "locations").toFile().toString();
-        locationsDb = storageFactory.newKeyValueStorage(locationsDbPath, DbConfigType.Huge, conf);
+        locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.Huge, conf);
 
         this.stats = new EntryLocationIndexStats(
             stats,
