@@ -23,6 +23,7 @@ package org.apache.bookkeeper.util;
 import com.google.common.annotations.VisibleForTesting;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -136,7 +137,11 @@ public class ByteBufList extends AbstractReferenceCounted {
      * Append a {@link ByteBuf} at the end of this {@link ByteBufList}.
      */
     public void add(ByteBuf buf) {
-        buffers.add(buf);
+        if (buf instanceof CompositeByteBuf) {
+            ((CompositeByteBuf) buf).forEach(buffers::add);
+        } else {
+            buffers.add(buf);
+        }
     }
 
     /**

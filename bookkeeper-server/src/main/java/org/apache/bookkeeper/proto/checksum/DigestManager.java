@@ -19,6 +19,7 @@ package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.security.GeneralSecurityException;
@@ -110,7 +111,11 @@ public abstract class DigestManager {
         headersBuffer.writeLong(length);
 
         update(headersBuffer);
-        update(data);
+        if (data instanceof CompositeByteBuf) {
+            ((CompositeByteBuf) data).forEach(this::update);
+        } else {
+            update(data);
+        }
         populateValueAndReset(headersBuffer);
 
         return ByteBufList.get(headersBuffer, data);
