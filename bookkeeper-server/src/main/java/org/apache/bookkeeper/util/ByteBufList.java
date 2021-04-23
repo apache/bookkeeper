@@ -137,10 +137,19 @@ public class ByteBufList extends AbstractReferenceCounted {
      * Append a {@link ByteBuf} at the end of this {@link ByteBufList}.
      */
     public void add(ByteBuf buf) {
-        if (buf instanceof CompositeByteBuf) {
-            ((CompositeByteBuf) buf).forEach(buffers::add);
+        final ByteBuf unwrapped = buf.unwrap() != null && buf.unwrap() instanceof CompositeByteBuf
+                ? buf.unwrap() : buf;
+        ReferenceCountUtil.retain(unwrapped);
+        ReferenceCountUtil.release(buf);
+
+        if (unwrapped instanceof CompositeByteBuf) {
+            ((CompositeByteBuf) unwrapped).forEach(b -> {
+                ReferenceCountUtil.retain(b);
+                buffers.add(b);
+            });
+            ReferenceCountUtil.release(unwrapped);
         } else {
-            buffers.add(buf);
+            buffers.add(unwrapped);
         }
     }
 
@@ -148,7 +157,23 @@ public class ByteBufList extends AbstractReferenceCounted {
      * Prepend a {@link ByteBuf} at the beginning of this {@link ByteBufList}.
      */
     public void prepend(ByteBuf buf) {
-        buffers.add(0, buf);
+        // don't unwrap slices
+        final ByteBuf unwrapped = buf.unwrap() != null && buf.unwrap() instanceof CompositeByteBuf
+                ? buf.unwrap() : buf;
+        ReferenceCountUtil.retain(unwrapped);
+        ReferenceCountUtil.release(buf);
+
+        if (unwrapped instanceof CompositeByteBuf) {
+            CompositeByteBuf composite = (CompositeByteBuf) unwrapped;
+            for (int i = composite.numComponents() - 1; i >= 0; i--) {
+                ByteBuf b = composite.component(i);
+                ReferenceCountUtil.retain(b);
+                buffers.add(0, b);
+            }
+            ReferenceCountUtil.release(unwrapped);
+        } else {
+            buffers.add(0, unwrapped);
+        }
     }
 
     /**
@@ -264,7 +289,7 @@ public class ByteBufList extends AbstractReferenceCounted {
     @Override
     protected void deallocate() {
         for (int i = 0; i < buffers.size(); i++) {
-            buffers.get(i).release();
+            ReferenceCountUtil.release(buffers.get(i));
         }
 
         buffers.clear();
