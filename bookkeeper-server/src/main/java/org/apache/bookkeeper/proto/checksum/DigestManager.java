@@ -19,7 +19,9 @@ package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -110,10 +112,21 @@ public abstract class DigestManager {
         headersBuffer.writeLong(length);
 
         update(headersBuffer);
-        update(data);
+
+        // don't unwrap slices
+        final ByteBuf unwrapped = data.unwrap() != null && data.unwrap() instanceof CompositeByteBuf
+                ? data.unwrap() : data;
+        ReferenceCountUtil.retain(unwrapped);
+        ReferenceCountUtil.release(data);
+
+        if (unwrapped instanceof CompositeByteBuf) {
+            ((CompositeByteBuf) unwrapped).forEach(this::update);
+        } else {
+            update(unwrapped);
+        }
         populateValueAndReset(headersBuffer);
 
-        return ByteBufList.get(headersBuffer, data);
+        return ByteBufList.get(headersBuffer, unwrapped);
     }
 
     /**
