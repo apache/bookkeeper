@@ -137,7 +137,6 @@
     <hamcrest.version>1.3</hamcrest.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.11.0</jackson.version>
-    <jackson-mapper-asl.version>1.9.11</jackson-mapper-asl.version>
     <jcommander.version>1.78</jcommander.version>
     <jetty.version>9.4.33.v20201020</jetty.version>
     <jmh.version>1.19</jmh.version>
@@ -235,7 +234,7 @@
         <artifactId>freebuilder</artifactId>
         <version>${freebuilder.version}</version>
       </dependency>
-      
+
       <!-- logging dependencies -->
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -363,12 +362,6 @@
         <groupId>com.fasterxml.jackson.module</groupId>
         <artifactId>jackson-module-scala_2.11</artifactId>
         <version>${jackson.version}</version>
-      </dependency>
-      <!-- dependency needed for zookeeper jetty admin server -->
-      <dependency>
-        <groupId>org.codehaus.jackson</groupId>
-        <artifactId>jackson-mapper-asl</artifactId>
-        <version>${jackson-mapper-asl.version}</version>
       </dependency>
 
       <!-- protobuf dependencies -->

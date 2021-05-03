@@ -126,13 +126,6 @@
         </exclusions>
       </dependency>
 
-      <!-- dependency needed for zookeeper jetty admin server -->
-      <dependency>
-        <groupId>org.codehaus.jackson</groupId>
-        <artifactId>jackson-mapper-asl</artifactId>
-        <version>${jackson-mapper-asl.version}</version>
-      </dependency>
-
       <dependency>
          <!-- needed by ZooKeeper server -->
          <groupId>org.xerial.snappy</groupId>
