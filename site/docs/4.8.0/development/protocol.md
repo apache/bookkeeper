@@ -64,7 +64,7 @@ Entry | Write quorum
 4 | B1, B2, B3
 5 | B2, B3, B4
 
-There are only **E** distinct write quorums in any ensemble. If **Q<sub>w</sub>** = **Q<sub>a</sub>**, then there is only one, as no striping occurs.
+There are only **E** distinct write quorums in any ensemble. If **Q<sub>w</sub>** = **E**, then there is only one, as no striping occurs.
 
 ### Ack quorums
 
