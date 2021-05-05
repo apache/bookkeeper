@@ -19,13 +19,11 @@
 package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.UnsafeByteOperations;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -60,7 +58,6 @@ import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
@@ -82,11 +79,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiPredicate;
-
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import lombok.SneakyThrows;
-
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
@@ -1282,7 +1277,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             return;
         }
 
-        if (cause instanceof DecoderException && cause.getCause() instanceof SSLHandshakeException) {
+        // TLSv1.3 doesn't throw SSLHandshakeException for certificate issues
+        // see https://stackoverflow.com/a/62465859 for details about the reason
+        // therefore catch SSLException to also cover TLSv1.3
+        if (cause instanceof DecoderException && cause.getCause() instanceof SSLException) {
             LOG.error("TLS handshake failed", cause);
             errorOutPendingOps(BKException.Code.SecurityException);
             Channel c = ctx.channel();
