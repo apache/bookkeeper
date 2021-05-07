@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 /**
- * Test the bookie journal PageCache flush interval.
+ * Test the bookie journal max memory controller.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JournalChannel.class, Journal.class})

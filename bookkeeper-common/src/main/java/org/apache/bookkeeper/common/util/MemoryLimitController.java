@@ -22,6 +22,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Controller for tracking the amount of memory used for some task.
+ */
 public class MemoryLimitController {
 
     private final long memoryLimit;
@@ -66,8 +69,7 @@ public class MemoryLimitController {
 
     public void releaseMemory(long size) {
         long newUsage = currentUsage.addAndGet(-size);
-        if (newUsage + size > memoryLimit &&
-                newUsage <= memoryLimit) {
+        if (newUsage + size > memoryLimit && newUsage <= memoryLimit) {
             // We just crossed the limit. Now we have more space
             mutex.lock();
             try {
