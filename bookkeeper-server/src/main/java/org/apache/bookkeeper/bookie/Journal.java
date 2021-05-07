@@ -1212,4 +1212,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         join();
     }
 
+    long getMemoryUsage() {
+        return memoryLimitController.currentUsage();
+    }
 }
