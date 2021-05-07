@@ -36,25 +36,6 @@ import java.util.Collections;
 public class TestPrometheusMetricsProvider {
 
     @Test
-    public void testCache() {
-        PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
-
-        StatsLogger statsLogger =  provider.getStatsLogger("test");
-
-        OpStatsLogger opStatsLogger1 = statsLogger.getOpStatsLogger("optest");
-        OpStatsLogger opStatsLogger2 = statsLogger.getOpStatsLogger("optest");
-        assertSame(opStatsLogger1, opStatsLogger2);
-
-        Counter counter1 = statsLogger.getCounter("countertest");
-        Counter counter2 = statsLogger.getCounter("countertest");
-        assertSame(counter1, counter2);
-
-        StatsLogger scope1 = statsLogger.scope("scopetest");
-        StatsLogger scope2 = statsLogger.scope("scopetest");
-        assertSame(scope1, scope2);
-    }
-
-    @Test
     public void testStartNoHttp() {
         PropertiesConfiguration config = new PropertiesConfiguration();
         config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ENABLE, false);
