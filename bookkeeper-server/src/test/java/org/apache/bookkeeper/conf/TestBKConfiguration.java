@@ -47,6 +47,7 @@ public class TestBKConfiguration {
      */
     public static ServerConfiguration newServerConfiguration() {
         ServerConfiguration confReturn = new ServerConfiguration();
+        confReturn.setTLSEnabledProtocols("TLSv1.2,TLSv1.1");
         confReturn.setJournalFlushWhenQueueEmpty(true);
         // enable journal format version
         confReturn.setJournalFormatVersionToWrite(5);
@@ -82,5 +83,11 @@ public class TestBKConfiguration {
         serverConf.setListeningInterface(getLoopbackInterfaceName());
         serverConf.setAllowLoopback(true);
         return serverConf;
+    }
+
+    public static ClientConfiguration newClientConfiguration() {
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        clientConfiguration.setTLSEnabledProtocols("TLSv1.2,TLSv1.1");
+        return clientConfiguration;
     }
 }
