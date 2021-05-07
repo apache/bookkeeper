@@ -22,9 +22,11 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+// CHECKSTYLE.OFF: IllegalImport
+import io.netty.util.internal.PlatformDependent;
+// CHECKSTYLE.ON: IllegalImport
 import java.io.File;
 import java.util.concurrent.TimeUnit;
-import io.netty.util.internal.PlatformDependent;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
@@ -840,7 +842,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getJournalMaxMemorySizeMb() {
         // Default is taking 5% of max direct memory (and convert to MB).
-        long defaultValue = (long)(PlatformDependent.maxDirectMemory() * 0.05 / 1024 / 1024);
+        long defaultValue = (long) (PlatformDependent.maxDirectMemory() * 0.05 / 1024 / 1024);
         return this.getLong(JOURNAL_MAX_MEMORY_SIZE_MB, defaultValue);
     }
 
