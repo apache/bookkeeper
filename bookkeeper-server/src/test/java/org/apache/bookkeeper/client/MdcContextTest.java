@@ -228,7 +228,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
         } catch (BKException.BKReadException e) {
             // pass
         }
-        assertLogWithMdc("ledger_read_entry", "ReadException on ledgerId:0 firstEntry:100 lastEntry:100");
+        assertLogWithMdc("ledger_read_entry", "ReadEntries exception on ledgerId:0 firstEntry:100 lastEntry:100");
     }
 
     @Test
@@ -245,7 +245,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
         } catch (BKException.BKReadException e) {
             // pass
         }
-        assertLogWithMdc("ledger_read_entry", "ReadException on ledgerId:0 firstEntry:100 lastEntry:100");
+        assertLogWithMdc("ledger_read_entry", "ReadEntries exception on ledgerId:0 firstEntry:100 lastEntry:100");
     }
 
 }
