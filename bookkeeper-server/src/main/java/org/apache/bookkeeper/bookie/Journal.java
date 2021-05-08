@@ -52,6 +52,7 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirExcepti
 import org.apache.bookkeeper.bookie.stats.JournalStats;
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
 import org.apache.bookkeeper.common.collections.RecyclableArrayList;
+import org.apache.bookkeeper.common.util.MemoryLimitController;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -295,7 +296,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     /**
      * Journal Entry to Record.
      */
-    private static class QueueEntry implements Runnable {
+    static class QueueEntry implements Runnable {
         ByteBuf entry;
         long ledgerId;
         long entryId;
@@ -631,6 +632,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
     private final ByteBufAllocator allocator;
+    private final MemoryLimitController memoryLimitController;
 
     // Expose Stats
     private final JournalStats journalStats;
@@ -655,6 +657,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             forceWriteRequests = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
         }
 
+        // Adjust the journal max memory in case there are multiple journals configured.
+        long journalMaxMemory = conf.getJournalMaxMemorySizeMb() / conf.getJournalDirNames().length * 1024 * 1024;
+        this.memoryLimitController = new MemoryLimitController(journalMaxMemory);
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
         this.journalDirectory = journalDirectory;
@@ -860,11 +865,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     public void logAddEntry(long ledgerId, long entryId, ByteBuf entry,
                             boolean ackBeforeSync, WriteCallback cb, Object ctx)
             throws InterruptedException {
-        //Retain entry until it gets written to journal
+        // Retain entry until it gets written to journal
         entry.retain();
 
         journalStats.getJournalQueueSize().inc();
         journalStats.getJournalCbQueueSize().inc();
+
+        memoryLimitController.reserveMemory(entry.readableBytes());
+
         queue.put(QueueEntry.create(
                 entry, ackBeforeSync,  ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalAddEntryStats(),
@@ -1110,6 +1118,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                      * shouldn't write this special entry
                      * (METAENTRY_ID_LEDGER_EXPLICITLAC) to Journal.
                      */
+                    memoryLimitController.releaseMemory(qe.entry.readableBytes());
                     qe.entry.release();
                 } else if (qe.entryId != Bookie.METAENTRY_ID_FORCE_LEDGER) {
                     int entrySize = qe.entry.readableBytes();
@@ -1125,6 +1134,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
                     bc.write(lenBuff);
                     bc.write(qe.entry);
+                    memoryLimitController.releaseMemory(qe.entry.readableBytes());
                     qe.entry.release();
                 }
 
@@ -1202,4 +1212,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         join();
     }
 
+    long getMemoryUsage() {
+        return memoryLimitController.currentUsage();
+    }
 }
