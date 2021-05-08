@@ -404,7 +404,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         this.statsLogger = parentStatsLogger.scope(BookKeeperClientStats.CHANNEL_SCOPE)
-            .scope(buildStatsLoggerScopeName(bookieId));
+            .scopeLabel(BookKeeperClientStats.BOOKIE_LABEL, bookieId.toString());
 
         readEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_READ_OP);
         addEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_ADD_OP);
@@ -502,12 +502,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
 
         };
-    }
-
-    public static String buildStatsLoggerScopeName(BookieId addr) {
-        StringBuilder nameBuilder = new StringBuilder();
-        nameBuilder.append(addr.toString().replace('.', '_').replace('-', '_').replace(":", "_"));
-        return nameBuilder.toString();
     }
 
     private void completeOperation(GenericCallback<PerChannelBookieClient> op, int rc) {

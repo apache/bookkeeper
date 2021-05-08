@@ -274,7 +274,7 @@ public class BookKeeperClientStatsImpl implements BookKeeperClientStats {
     }
     @Override
     public Counter getEnsembleBookieDistributionCounter(String bookie) {
-        return stats.getCounter(LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + "-" + bookie);
+        return stats.scopeLabel(BOOKIE_LABEL, bookie).getCounter(LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION);
     }
     @Override
     public OpStatsLogger getWriteDelayedDueToNotEnoughFaultDomainsLatency() {

@@ -24,8 +24,7 @@ import io.prometheus.client.CollectorRegistry;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Enumeration;
-
-import org.apache.bookkeeper.stats.Counter;
+import java.util.Map;
 
 /**
  * Logic to write metrics in Prometheus text format.
@@ -37,19 +36,23 @@ public class PrometheusTextFormatUtil {
         // bookie_storage_entries_count 519
         try {
             w.append("# TYPE ").append(name).append(" gauge\n");
-            w.append(name).append(' ').append(gauge.getSample().toString()).append('\n');
+            w.append(name);
+            writeLabels(w, gauge.getLabels());
+            w.append(' ').append(gauge.getSample().toString()).append('\n');
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    static void writeCounter(Writer w, String name, Counter counter) {
+    static void writeCounter(Writer w, String name, LongAdderCounter counter) {
         // Example:
         // # TYPE jvm_threads_started_total counter
         // jvm_threads_started_total 59
         try {
             w.append("# TYPE ").append(name).append(" counter\n");
-            w.append(name).append(' ').append(counter.get().toString()).append('\n');
+            w.append(name);
+            writeLabels(w, counter.getLabels());
+            w.append(' ').append(counter.get().toString()).append('\n');
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -103,22 +106,58 @@ public class PrometheusTextFormatUtil {
         }
     }
 
+    private static void writeLabels(Writer w, Map<String, String> labels) throws IOException {
+        if (labels.isEmpty()) {
+            return;
+        }
+
+        w.append('{');
+        writeLabelsNoBraces(w, labels);
+        w.append('}');
+    }
+
+    private static void writeLabelsNoBraces(Writer w, Map<String, String> labels) throws IOException {
+        if (labels.isEmpty()) {
+            return;
+        }
+
+        boolean isFirst = true;
+        for (Map.Entry<String, String> e : labels.entrySet()) {
+            if (!isFirst) {
+                w.append(',');
+            }
+            isFirst = false;
+            w.append(e.getKey())
+                    .append("=\"")
+                    .append(e.getValue())
+                    .append('"');
+        }
+    }
+
     private static void writeQuantile(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success,
             double quantile) throws IOException {
-        w.append(name).append("{success=\"").append(success.toString()).append("\",quantile=\"")
-                .append(Double.toString(quantile)).append("\"} ")
+        w.append(name)
+                .append("{success=\"").append(success.toString())
+                .append("\",quantile=\"").append(Double.toString(quantile))
+                .append("\", ");
+        writeLabelsNoBraces(w, opStat.getLabels());
+        w.append("} ")
                 .append(Double.toString(opStat.getQuantileValue(success, quantile))).append('\n');
     }
 
     private static void writeCount(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success)
             throws IOException {
-        w.append(name).append("_count{success=\"").append(success.toString()).append("\"} ")
+        w.append(name).append("_count{success=\"").append(success.toString()).append("\", ");
+        writeLabelsNoBraces(w, opStat.getLabels());
+        w.append("\"} ")
                 .append(Long.toString(opStat.getCount(success))).append('\n');
     }
 
     private static void writeSum(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success)
             throws IOException {
-        w.append(name).append("_sum{success=\"").append(success.toString()).append("\"} ")
+        w.append(name).append("_sum{success=\"").append(success.toString()).append("\", ");
+        writeLabelsNoBraces(w, opStat.getLabels());
+        w.append("\"} ")
                 .append(Double.toString(opStat.getSum(success))).append('\n');
     }
 
