@@ -21,14 +21,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
+import java.util.Collections;
 import lombok.Cleanup;
 import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.junit.Test;
-
-import java.util.Collections;
 
 /**
  * Unit test of {@link PrometheusMetricsProvider}.

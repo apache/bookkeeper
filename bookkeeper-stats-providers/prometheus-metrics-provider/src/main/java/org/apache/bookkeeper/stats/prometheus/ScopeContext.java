@@ -20,6 +20,9 @@ package org.apache.bookkeeper.stats.prometheus;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Holder for a scope and a set of associated labels.
+ */
 public class ScopeContext {
     private final String scope;
     private final Map<String, String> labels;
@@ -42,8 +45,7 @@ public class ScopeContext {
             return false;
         }
         ScopeContext that = (ScopeContext) o;
-        return Objects.equals(scope, that.scope) &&
-                Objects.equals(labels, that.labels);
+        return Objects.equals(scope, that.scope) && Objects.equals(labels, that.labels);
     }
 
     @Override

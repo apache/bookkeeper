@@ -26,8 +26,6 @@ import java.io.Writer;
 import java.util.Enumeration;
 import java.util.Map;
 
-import org.apache.bookkeeper.stats.Counter;
-
 /**
  * Logic to write metrics in Prometheus text format.
  */

@@ -16,9 +16,8 @@
  */
 package org.apache.bookkeeper.stats.prometheus;
 
-import org.apache.bookkeeper.stats.Gauge;
-
 import java.util.Map;
+import org.apache.bookkeeper.stats.Gauge;
 
 /**
  * A {@link Gauge} implementation that forwards on the value supplier.

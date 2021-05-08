@@ -19,14 +19,12 @@ package org.apache.bookkeeper.stats.prometheus;
 import com.google.common.base.Joiner;
 
 import io.prometheus.client.Collector;
-
+import java.util.Map;
+import java.util.TreeMap;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * A {@code Prometheus} based {@link StatsLogger} implementation.
