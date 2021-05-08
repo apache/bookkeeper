@@ -103,6 +103,8 @@ public interface BookKeeperClientStats {
     String WRITE_TIMED_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS = "WRITE_TIME_OUT_DUE_TO_NOT_ENOUGH_FAULT_DOMAINS";
     String NUM_WRITABLE_BOOKIES_IN_DEFAULT_FAULTDOMAIN = "NUM_WRITABLE_BOOKIES_IN_DEFAULT_FAULTDOMAIN";
 
+    String BOOKIE_LABEL = "bookie";
+
     OpStatsLogger getCreateOpLogger();
     OpStatsLogger getOpenOpLogger();
     OpStatsLogger getDeleteOpLogger();

@@ -21,9 +21,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
+import java.util.Collections;
 import lombok.Cleanup;
 import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.junit.Test;
@@ -32,25 +32,6 @@ import org.junit.Test;
  * Unit test of {@link PrometheusMetricsProvider}.
  */
 public class TestPrometheusMetricsProvider {
-
-    @Test
-    public void testCache() {
-        PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
-
-        StatsLogger statsLogger =  provider.getStatsLogger("test");
-
-        OpStatsLogger opStatsLogger1 = statsLogger.getOpStatsLogger("optest");
-        OpStatsLogger opStatsLogger2 = statsLogger.getOpStatsLogger("optest");
-        assertSame(opStatsLogger1, opStatsLogger2);
-
-        Counter counter1 = statsLogger.getCounter("countertest");
-        Counter counter2 = statsLogger.getCounter("countertest");
-        assertSame(counter1, counter2);
-
-        StatsLogger scope1 = statsLogger.scope("scopetest");
-        StatsLogger scope2 = statsLogger.scope("scopetest");
-        assertSame(scope1, scope2);
-    }
 
     @Test
     public void testStartNoHttp() {
@@ -106,7 +87,7 @@ public class TestPrometheusMetricsProvider {
 
     @Test
     public void testCounter() {
-        LongAdderCounter counter = new LongAdderCounter();
+        LongAdderCounter counter = new LongAdderCounter(Collections.emptyMap());
         long value = counter.get();
         assertEquals(0L, value);
         counter.inc();

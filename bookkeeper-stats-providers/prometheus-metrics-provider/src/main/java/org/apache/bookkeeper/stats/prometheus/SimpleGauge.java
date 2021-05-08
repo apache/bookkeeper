@@ -16,6 +16,7 @@
  */
 package org.apache.bookkeeper.stats.prometheus;
 
+import java.util.Map;
 import org.apache.bookkeeper.stats.Gauge;
 
 /**
@@ -23,18 +24,19 @@ import org.apache.bookkeeper.stats.Gauge;
  */
 public class SimpleGauge<T extends Number> {
 
-    // public SimpleGauge(CollectorRegistry registry, String name) {
-    // this.gauge = PrometheusUtil.safeRegister(registry,
-    // Gauge.build().name(Collector.sanitizeMetricName(name)).help("-").create());
-    // }
-
+    private final Map<String, String> labels;
     private final Gauge<T> gauge;
 
-    public SimpleGauge(final Gauge<T> gauge) {
+    public SimpleGauge(final Gauge<T> gauge, Map<String, String> labels) {
         this.gauge = gauge;
+        this.labels = labels;
     }
 
     Number getSample() {
         return gauge.getSample();
+    }
+
+    public Map<String, String> getLabels() {
+        return labels;
     }
 }

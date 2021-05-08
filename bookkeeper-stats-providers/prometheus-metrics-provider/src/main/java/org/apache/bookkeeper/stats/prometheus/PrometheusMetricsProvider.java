@@ -35,14 +35,14 @@ import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.bookkeeper.stats.CachingStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.Configuration;
@@ -75,14 +75,13 @@ public class PrometheusMetricsProvider implements StatsProvider {
     final CollectorRegistry registry;
 
     Server server;
-    private final CachingStatsProvider cachingStatsProvider;
 
     /*
      * These acts a registry of the metrics defined in this provider
      */
-    final ConcurrentMap<String, LongAdderCounter> counters = new ConcurrentSkipListMap<>();
-    final ConcurrentMap<String, SimpleGauge<? extends Number>> gauges = new ConcurrentSkipListMap<>();
-    final ConcurrentMap<String, DataSketchesOpStatsLogger> opStats = new ConcurrentSkipListMap<>();
+    final ConcurrentMap<ScopeContext, LongAdderCounter> counters = new ConcurrentHashMap<>();
+    final ConcurrentMap<ScopeContext, SimpleGauge<? extends Number>> gauges = new ConcurrentHashMap<>();
+    final ConcurrentMap<ScopeContext, DataSketchesOpStatsLogger> opStats = new ConcurrentHashMap<>();
 
     public PrometheusMetricsProvider() {
         this(CollectorRegistry.defaultRegistry);
@@ -90,35 +89,6 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     public PrometheusMetricsProvider(CollectorRegistry registry) {
         this.registry = registry;
-        this.cachingStatsProvider = new CachingStatsProvider(new StatsProvider() {
-            @Override
-            public void start(Configuration conf) {
-                // nop
-            }
-
-            @Override
-            public void stop() {
-                // nop
-            }
-
-            @Override
-            public StatsLogger getStatsLogger(String scope) {
-                return new PrometheusStatsLogger(PrometheusMetricsProvider.this, scope);
-            }
-
-            @Override
-            public String getStatsName(String... statsComponents) {
-                String completeName;
-                if (statsComponents.length == 0) {
-                    return "";
-                } else if (statsComponents[0].isEmpty()) {
-                    completeName = StringUtils.join(statsComponents, '_', 1, statsComponents.length);
-                } else {
-                    completeName = StringUtils.join(statsComponents, '_');
-                }
-                return Collector.sanitizeMetricName(completeName);
-            }
-        });
     }
 
     @Override
@@ -190,21 +160,30 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     @Override
     public StatsLogger getStatsLogger(String scope) {
-        return this.cachingStatsProvider.getStatsLogger(scope);
+        return new PrometheusStatsLogger(PrometheusMetricsProvider.this, scope, Collections.emptyMap());
     }
 
     @Override
     public void writeAllMetrics(Writer writer) throws IOException {
         PrometheusTextFormatUtil.writeMetricsCollectedByPrometheusClient(writer, registry);
 
-        gauges.forEach((name, gauge) -> PrometheusTextFormatUtil.writeGauge(writer, name, gauge));
-        counters.forEach((name, counter) -> PrometheusTextFormatUtil.writeCounter(writer, name, counter));
-        opStats.forEach((name, opStatLogger) -> PrometheusTextFormatUtil.writeOpStat(writer, name, opStatLogger));
+        gauges.forEach((sc, gauge) -> PrometheusTextFormatUtil.writeGauge(writer, sc.getScope(), gauge));
+        counters.forEach((sc, counter) -> PrometheusTextFormatUtil.writeCounter(writer, sc.getScope(), counter));
+        opStats.forEach((sc, opStatLogger) ->
+                PrometheusTextFormatUtil.writeOpStat(writer, sc.getScope(), opStatLogger));
     }
 
     @Override
     public String getStatsName(String... statsComponents) {
-        return cachingStatsProvider.getStatsName(statsComponents);
+        String completeName;
+        if (statsComponents.length == 0) {
+            return "";
+        } else if (statsComponents[0].isEmpty()) {
+            completeName = StringUtils.join(statsComponents, '_', 1, statsComponents.length);
+        } else {
+            completeName = StringUtils.join(statsComponents, '_');
+        }
+        return Collector.sanitizeMetricName(completeName);
     }
 
     @VisibleForTesting
