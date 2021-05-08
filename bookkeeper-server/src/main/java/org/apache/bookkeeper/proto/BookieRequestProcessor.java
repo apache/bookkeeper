@@ -578,7 +578,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                         if (future.isSuccess()) {
                             LOG.error("TLS Handshake failed: Could not authenticate.");
                         } else {
-                            LOG.error("TLS Handshake failure: {} ", future.cause());
+                            LOG.error("TLS Handshake failure: ", future.cause());
                         }
                         BookkeeperProtocol.Response.Builder errResponse = BookkeeperProtocol.Response.newBuilder()
                                 .setHeader(r.getHeader()).setStatus(BookkeeperProtocol.StatusCode.EIO);

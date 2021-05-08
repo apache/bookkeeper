@@ -394,7 +394,7 @@ class IndexInMemPageMgr {
         return pageCount.get();
     }
 
-        /**
+    /**
      * Get the ledger entry page for a given <i>pageEntry</i>.
      *
      * @param ledger

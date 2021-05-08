@@ -152,8 +152,8 @@ class BookieNettyServer {
                         try {
                             CpuAffinity.acquireCore();
                         } catch (Throwable t) {
-                            LOG.warn("Failed to acquire CPU core for thread {}", Thread.currentThread().getName(),
-                                    t.getMessage(), t);
+                            LOG.warn("Failed to acquire CPU core for thread {} {}",
+                                    Thread.currentThread().getName(), t.getMessage(), t);
                         }
                     });
                 }

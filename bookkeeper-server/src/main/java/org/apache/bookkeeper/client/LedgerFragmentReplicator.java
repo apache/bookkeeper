@@ -437,7 +437,7 @@ public class LedgerFragmentReplicator {
 
         updateLoop.run().whenComplete((result, ex) -> {
                 if (ex == null) {
-                    LOG.info("Updated ZK for ledgerId: ({}:{}) to point ledger fragments"
+                    LOG.info("Updated ZK to point ledger fragments"
                              + " from old bookies to new bookies: {}", oldBookie2NewBookie);
 
                     ensembleUpdatedCb.processResult(BKException.Code.OK, null, null);
