@@ -65,24 +65,24 @@ public class BookieJournalBypassTest extends BookKeeperClusterTestCase {
         ls0.flush();
         ls1.flush();
 
-        long offset0_before = journal0.getLastLogMark().getCurMark().getLogFileOffset();
-        long offset1_before = journal1.getLastLogMark().getCurMark().getLogFileOffset();
+        long bk0OffsetBefore = journal0.getLastLogMark().getCurMark().getLogFileOffset();
+        long bk1OffsetBefore = journal1.getLastLogMark().getCurMark().getLogFileOffset();
 
         writeEntries(conf);
         ls0.flush();
         ls1.flush();
 
-        long offset0_after = journal0.getLastLogMark().getCurMark().getLogFileOffset();
-        long offset1_after = journal1.getLastLogMark().getCurMark().getLogFileOffset();
+        long bk0OffsetAfter = journal0.getLastLogMark().getCurMark().getLogFileOffset();
+        long bk1OffsetAfter = journal1.getLastLogMark().getCurMark().getLogFileOffset();
 
         int flushDelta = 10 * 1024;
         int dataSize = 10 * 1024 * 1024;
 
         // Offset for journal-0 will be very close to previous point, just few KBs when flushing
-        assertEquals(offset0_before, offset0_after, flushDelta);
+        assertEquals(bk0OffsetBefore, bk0OffsetAfter, flushDelta);
 
         // Offset for journal-0 should have changed with the data size
-        assertEquals(offset1_before + dataSize, offset1_after, flushDelta);
+        assertEquals(bk1OffsetBefore + dataSize, bk1OffsetAfter, flushDelta);
     }
 
     private void writeEntries(ClientConfiguration conf)

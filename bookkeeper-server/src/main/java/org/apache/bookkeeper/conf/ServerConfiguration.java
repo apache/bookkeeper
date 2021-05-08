@@ -2080,7 +2080,14 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public boolean getJournalSyncData() {
         return getBoolean(JOURNAL_SYNC_DATA, true);
     }
-    
+
+    /**
+     * Should the data be written to journal before acknowledgment.
+     *
+     * <p>Default is true
+     *
+     * @return
+     */
     public boolean getJournalWriteData() {
         return getBoolean(JOURNAL_WRITE_DATA, true);
     }
