@@ -150,6 +150,8 @@ public class Bookie extends BookieCriticalThread {
 
     private final ByteBufAllocator allocator;
 
+    private final boolean writeDataToJournal;
+
     @StatsDoc(
             name = JOURNAL_MEMORY_MAX,
             help = "The max amount of memory in bytes that can be used by the bookie journal"
@@ -721,6 +723,7 @@ public class Bookie extends BookieCriticalThread {
         this.ledgerDirsManager = createLedgerDirsManager(conf, diskChecker, statsLogger.scope(LD_LEDGER_SCOPE));
         this.indexDirsManager = createIndexDirsManager(conf, diskChecker, statsLogger.scope(LD_INDEX_SCOPE),
                                                        this.ledgerDirsManager);
+        this.writeDataToJournal = conf.getJournalWriteData();
         this.allocator = allocator;
 
         // instantiate zookeeper client to initialize ledger manager
@@ -1336,6 +1339,11 @@ public class Bookie extends BookieCriticalThread {
 
                 getJournal(ledgerId).logAddEntry(bb, false /* ackBeforeSync */, new NopWriteCallback(), null);
             }
+        }
+
+        if (!writeDataToJournal) {
+            cb.writeComplete(0, ledgerId, entryId, null, ctx);
+            return;
         }
 
         if (LOG.isTraceEnabled()) {

@@ -131,6 +131,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
     protected static final String MAX_BACKUP_JOURNALS = "journalMaxBackups";
     protected static final String JOURNAL_SYNC_DATA = "journalSyncData";
+    protected static final String JOURNAL_WRITE_DATA = "journalWriteData";
     protected static final String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
     protected static final String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
     protected static final String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
@@ -2105,6 +2106,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public boolean getJournalSyncData() {
         return getBoolean(JOURNAL_SYNC_DATA, true);
+    }
+
+    /**
+     * Should the data be written to journal before acknowledgment.
+     *
+     * <p>Default is true
+     *
+     * @return
+     */
+    public boolean getJournalWriteData() {
+        return getBoolean(JOURNAL_WRITE_DATA, true);
+    }
+
+    /**
+     * Should the data be written to journal before acknowledgment.
+     *
+     * <p>Default is true
+     *
+     * @return
+     */
+    public ServerConfiguration setJournalWriteData(boolean journalWriteData) {
+        setProperty(JOURNAL_WRITE_DATA, journalWriteData);
+        return this;
     }
 
     /**
