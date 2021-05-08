@@ -28,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -151,5 +152,72 @@ public class TestServerConfiguration {
         conf.setEntryLogSizeLimit(1073741824);
         conf.validate();
         assertEquals(1073741824, conf.getEntryLogSizeLimit());
+    }
+
+    @Test
+    public void testCompactionSettings() {
+        ServerConfiguration conf = new ServerConfiguration();
+        long major, minor;
+
+        // Default Values
+        major = conf.getMajorCompactionMaxTimeMillis();
+        minor = conf.getMinorCompactionMaxTimeMillis();
+        Assert.assertEquals(-1, major);
+        Assert.assertEquals(-1, minor);
+
+        // Set values major then minor
+        conf.setMajorCompactionMaxTimeMillis(500).setMinorCompactionMaxTimeMillis(250);
+        major = conf.getMajorCompactionMaxTimeMillis();
+        minor = conf.getMinorCompactionMaxTimeMillis();
+        Assert.assertEquals(500, major);
+        Assert.assertEquals(250, minor);
+
+        // Set values minor then major
+        conf.setMinorCompactionMaxTimeMillis(150).setMajorCompactionMaxTimeMillis(1500);
+        major = conf.getMajorCompactionMaxTimeMillis();
+        minor = conf.getMinorCompactionMaxTimeMillis();
+        Assert.assertEquals(1500, major);
+        Assert.assertEquals(150, minor);
+
+        // Default Values
+        major = conf.getMajorCompactionInterval();
+        minor = conf.getMinorCompactionInterval();
+        Assert.assertEquals(3600, minor);
+        Assert.assertEquals(86400, major);
+
+        // Set values major then minor
+        conf.setMajorCompactionInterval(43200).setMinorCompactionInterval(1800);
+        major = conf.getMajorCompactionInterval();
+        minor = conf.getMinorCompactionInterval();
+        Assert.assertEquals(1800, minor);
+        Assert.assertEquals(43200, major);
+
+        // Set values minor then major
+        conf.setMinorCompactionInterval(900).setMajorCompactionInterval(21700);
+        major = conf.getMajorCompactionInterval();
+        minor = conf.getMinorCompactionInterval();
+        Assert.assertEquals(900, minor);
+        Assert.assertEquals(21700, major);
+
+        // Default Values
+        double majorThreshold, minorThreshold;
+        majorThreshold = conf.getMajorCompactionThreshold();
+        minorThreshold = conf.getMinorCompactionThreshold();
+        Assert.assertEquals(0.8, majorThreshold, 0.00001);
+        Assert.assertEquals(0.2, minorThreshold, 0.00001);
+
+        // Set values major then minor
+        conf.setMajorCompactionThreshold(0.7).setMinorCompactionThreshold(0.1);
+        majorThreshold = conf.getMajorCompactionThreshold();
+        minorThreshold = conf.getMinorCompactionThreshold();
+        Assert.assertEquals(0.7, majorThreshold, 0.00001);
+        Assert.assertEquals(0.1, minorThreshold, 0.00001);
+
+        // Set values minor then major
+        conf.setMinorCompactionThreshold(0.3).setMajorCompactionThreshold(0.6);
+        majorThreshold = conf.getMajorCompactionThreshold();
+        minorThreshold = conf.getMinorCompactionThreshold();
+        Assert.assertEquals(0.6, majorThreshold, 0.00001);
+        Assert.assertEquals(0.3, minorThreshold, 0.00001);
     }
 }

@@ -384,7 +384,7 @@ public class MetaRangeImpl implements MetaRange {
         }
     }
 
-    private void loadStreamMetadata(long streamId, byte[] streamMetadataBytes) {
+    private synchronized void loadStreamMetadata(long streamId, byte[] streamMetadataBytes) {
         this.streamId = streamId;
         StreamMetadata metadata;
         try {

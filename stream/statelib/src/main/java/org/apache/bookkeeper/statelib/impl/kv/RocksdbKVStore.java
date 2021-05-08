@@ -176,7 +176,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                 break;
             } catch (StateStoreException e) {
                 // Got an exception. Log and try the next checkpoint
-                log.error("Failed to restore checkpoint: {}", cpi);
+                log.error("Failed to restore checkpoint: {}", cpi, e);
             }
         }
     }
@@ -280,7 +280,9 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                 db,
                 checkpointStore,
                 true,
-                true);
+                true,
+                spec.isCheckpointChecksumEnable(),
+                spec.isCheckpointChecksumCompatible());
             checkpointScheduler = spec.getCheckpointIOScheduler();
         }
 

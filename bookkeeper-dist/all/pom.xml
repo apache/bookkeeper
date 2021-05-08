@@ -103,12 +103,6 @@
       <artifactId>slf4j-log4j12</artifactId>
     </dependency>
 
-    <!-- jackson mapper for running zookeeper -->
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-mapper-asl</artifactId>
-    </dependency>
-
     <dependency>
        <!-- needed by ZooKeeper server -->
        <groupId>org.xerial.snappy</groupId>

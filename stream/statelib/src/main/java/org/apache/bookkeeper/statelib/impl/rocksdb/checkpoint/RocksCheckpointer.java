@@ -125,19 +125,25 @@ public class RocksCheckpointer implements AutoCloseable {
     private final CheckpointStore checkpointStore;
     private final boolean removeLocalCheckpointAfterSuccessfulCheckpoint;
     private final boolean removeRemoteCheckpointsAfterSuccessfulCheckpoint;
+    private final boolean checkpointChecksumEnable;
+    private final boolean checkpointChecksumCompatible;
 
     public RocksCheckpointer(String dbName,
                              File dbPath,
                              RocksDB rocksDB,
                              CheckpointStore checkpointStore,
                              boolean removeLocalCheckpointAfterSuccessfulCheckpoint,
-                             boolean removeRemoteCheckpointsAfterSuccessfulCheckpoint) {
+                             boolean removeRemoteCheckpointsAfterSuccessfulCheckpoint,
+                             boolean checkpointChecksumEnable,
+                             boolean checkpointChecksumCompatible) {
         this.dbName = dbName;
         this.dbPath = dbPath;
         this.checkpoint = Checkpoint.create(rocksDB);
         this.checkpointStore = checkpointStore;
         this.removeLocalCheckpointAfterSuccessfulCheckpoint = removeLocalCheckpointAfterSuccessfulCheckpoint;
         this.removeRemoteCheckpointsAfterSuccessfulCheckpoint = removeRemoteCheckpointsAfterSuccessfulCheckpoint;
+        this.checkpointChecksumEnable = checkpointChecksumEnable;
+        this.checkpointChecksumCompatible = checkpointChecksumCompatible;
     }
 
     public String checkpointAtTxid(byte[] txid) throws StateStoreException {
@@ -147,7 +153,10 @@ public class RocksCheckpointer implements AutoCloseable {
             new File(dbPath, "checkpoints"),
             checkpointStore,
             removeLocalCheckpointAfterSuccessfulCheckpoint,
-            removeRemoteCheckpointsAfterSuccessfulCheckpoint);
+            removeRemoteCheckpointsAfterSuccessfulCheckpoint,
+            checkpointChecksumEnable,
+            checkpointChecksumCompatible
+        );
         return task.checkpoint(txid);
     }
 

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -73,6 +74,39 @@ public class ByteBufListTest {
         ByteBufList buf = ByteBufList.get(b1, b2);
 
         assertEquals(2, buf.size());
+        assertEquals(256, buf.readableBytes());
+        assertEquals(b1, buf.getBuffer(0));
+        assertEquals(b2, buf.getBuffer(1));
+
+        assertEquals(buf.refCnt(), 1);
+        assertEquals(b1.refCnt(), 1);
+        assertEquals(b2.refCnt(), 1);
+
+        buf.release();
+
+        assertEquals(buf.refCnt(), 0);
+        assertEquals(b1.refCnt(), 0);
+        assertEquals(b2.refCnt(), 0);
+    }
+
+    @Test
+    public void testComposite() throws Exception {
+        ByteBuf b1 = PooledByteBufAllocator.DEFAULT.heapBuffer(128, 128);
+        b1.writerIndex(b1.capacity());
+        ByteBuf b2 = PooledByteBufAllocator.DEFAULT.heapBuffer(128, 128);
+        b2.writerIndex(b2.capacity());
+
+        CompositeByteBuf composite = PooledByteBufAllocator.DEFAULT.compositeBuffer();
+        composite.addComponent(b1);
+        composite.addComponent(b2);
+
+        ByteBufList buf = ByteBufList.get(composite);
+
+        // composite is unwrapped into two parts
+        assertEquals(2, buf.size());
+        // and released
+        assertEquals(composite.refCnt(), 0);
+
         assertEquals(256, buf.readableBytes());
         assertEquals(b1, buf.getBuffer(0));
         assertEquals(b2, buf.getBuffer(1));
