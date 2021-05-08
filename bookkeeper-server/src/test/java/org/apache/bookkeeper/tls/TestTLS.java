@@ -27,7 +27,6 @@ import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -60,7 +59,6 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.ClientConnectionPeer;
-import org.apache.bookkeeper.proto.PerChannelBookieClient;
 import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
