@@ -1480,4 +1480,48 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertEquals(ensemble.get(reoderSet.get(7)), addr4.toBookieId());
     }
 
+    public void testNewEnsembleSetWithFiveRegions() throws Exception {
+        repp.uninitalize();
+        repp = new RegionAwareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL,
+            NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+
+        // Update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region2/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region3/r3");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region4/r4");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region5/r5");
+
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+
+        repp.onClusterChanged(addrs, new HashSet<>());
+        try {
+            List<BookieId> ensemble1 = repp.newEnsemble(3, 3, 2,
+                null, new HashSet<>()).getResult();
+            assertEquals(ensemble1.size(), 3);
+            List<BookieId> ensemble2 = repp.newEnsemble(3, 3, 2,
+                null, new HashSet<>()).getResult();
+            ensemble1.retainAll(ensemble2);
+            assert(ensemble1.size() >= 1);
+
+            List<BookieId> ensemble3 = repp.newEnsemble(3, 3, 2,
+                null, new HashSet<>()).getResult();
+            ensemble2.removeAll(ensemble3);
+            assert(ensemble2.size() >= 1);
+        } catch (BKNotEnoughBookiesException bnebe) {
+            fail("Should not get not enough bookies exception even there is only one rack.");
+        }
+    }
 }
