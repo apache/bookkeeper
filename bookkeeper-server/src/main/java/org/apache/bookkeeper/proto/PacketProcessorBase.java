@@ -74,6 +74,27 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
         }
     }
 
+    /**
+     * Write on the channel and wait until the write is completed.
+     *
+     * <p>That will make the thread to get blocked until we're able to
+     * write everything on the TCP stack, providing auto-throttling
+     * and avoiding using too much memory when handling read-requests.
+     */
+    protected void sendResponseAndWait(int rc, Object response, OpStatsLogger statsLogger) {
+        try {
+            channel.writeAndFlush(response).await();
+        } catch (InterruptedException e) {
+            return;
+        }
+
+        if (BookieProtocol.EOK == rc) {
+            statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+        } else {
+            statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+        }
+    }
+
     @Override
     public void safeRun() {
         if (!isVersionCompatible()) {

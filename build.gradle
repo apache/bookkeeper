@@ -1,0 +1,226 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'com.google.protobuf'
+    id 'java'
+    id "com.github.vlsi.stage-vote-release" version "1.73"
+    id 'checkstyle'
+    id 'org.nosphere.apache.rat'
+    id 'com.github.spotbugs'
+}
+
+subprojects {
+    task allDeps(type: DependencyReportTask) {}
+}
+
+apply from: "$rootDir/version.gradle"
+version = buildVersion
+
+releaseArtifacts {
+    fromProject("bookkeeper-dist")
+    fromProject("bookkeeper-dist-all")
+    fromProject("bookkeeper-dist-bkctl")
+    fromProject("bookkeeper-dist-server")
+}
+
+releaseParams { // ReleaseExtension
+    tlp.set("Bookkeeper")
+    componentName.set("Apache Bookkeeper")
+    releaseTag.set("release-$buildVersion")
+    rcTag.set(rc.map { "release-$buildVersion-rc$it" })
+
+    sitePreviewEnabled.set(false)
+
+    nexus {
+        packageGroup.set("org.apache.bookkeeper")
+    }
+}
+
+allprojects {
+    apply from: "$rootDir/dependencies.gradle"
+    if (it.path != ':circe-checksum:src:main:circe'
+        && it.path != ':cpu-affinity:src:main:affinity'
+        && it.name != 'src'
+        && it.name != 'main') {
+        apply plugin: 'java'
+        apply plugin: 'maven-publish'
+        apply plugin: 'signing'
+        apply plugin: 'org.nosphere.apache.rat'
+        apply plugin: "checkstyle"
+        apply plugin: 'com.github.spotbugs'
+        checkstyle {
+            toolVersion "${checkStyleVersion}"
+            configFile file("$rootDir/buildtools/src/main/resources/bookkeeper/checkstyle.xml")
+            checkstyleMain {
+                source ='src/main/java'
+            }
+
+            checkstyleTest {
+                source ='src/test/java'
+            }
+        }
+ 
+        spotbugs {
+            toolVersion = '3.1.8'
+            excludeFilter = file("$rootDir/buildtools/src/main/resources/bookkeeper/findbugsExclude.xml")
+            reportLevel = 'high'
+        }
+
+        task testJar(type: Jar, dependsOn: testClasses) {
+            classifier = 'tests'
+            from sourceSets.test.output
+        }
+
+        // TODO- Seperate rat plugins and other plugins configuration in seperate files
+        rat {
+            excludes = [
+                    '**/.*/**',
+                    '**/*.ipr',
+                    '**/out/**',
+                    '**/generated/**',
+                    '**/build/**',
+                    '**/.idea/**',
+                    '.git/**/*',
+                    '.github/**/*',
+                    '**/.gitignore',
+                    '**/.svn/**/*',
+                    '**/target/**/*',
+                    '**/README.md',
+                    '**/README.rst',
+                    '**/apidocs/*',
+                    '**/src/main/resources/deps/**',
+                    '**/META-INF/**',
+                    '**/.classpath',
+                    '**/.project',
+                    '**/.checkstyle',
+                    '**/.settings/*',
+                    '**/*.iml',
+                    '**/*.iws',
+                    '**/*.ipr',
+                    'site/**',
+                    'site2/**',
+                    '**/*.log',
+                    'data/**',
+                    'dev/.vagrant/**',
+                    '**/proto/**.py',
+                    '**/keyStoreClientPassword.txt',
+                    '**/keyStoreServerPassword.txt',
+                    '**/proc_cpuinfo.txt',
+                    '**/__pycache__/**',
+                    '**/bookkeeper.egg-info/**',
+                    '**/apache_bookkeeper_client.egg-info/**',
+                    '**/pip-selfcheck.json',
+                    '**/test_conf_2.conf'
+            ]
+        }
+
+        configurations {
+            testArtifacts.extendsFrom testRuntime
+        }
+
+        artifacts {
+            testArtifacts testJar
+        }
+
+        plugins.withType(DistributionPlugin) {
+            distTar {
+                compression = Compression.GZIP
+                archiveExtension = 'tar.gz'
+            }
+        }
+
+        javadoc {
+            options.addBooleanOption('Xdoclint:none', true)
+            includes = [
+                    '**/org/apache/bookkeeper/client/api/**',
+                    '**/org/apache/bookkeeper/common/annotation/**',
+                    '**/org/apache/bookkeeper/conf/**',
+                    '**/org/apache/bookkeeper/feature/**',
+                    '**/org/apache/bookkeeper/stats/**',
+            ]
+        }
+
+        def componentName = it.name
+        publishing {
+            publications {
+                maven(MavenPublication) {
+                    groupId = 'org.apache.bookkeeper'
+                    artifactId = componentName
+                    version = buildVersion
+
+                    from components.java
+                }
+            }
+        }
+        signing {
+            def skipSigning = project.hasProperty('skipSigning') && skipSigning.toBoolean()
+            def shouldSign = !skipSigning
+
+            if (shouldSign) {
+                if (project.hasProperty("singingKey")) {
+                    // The following allow the secretKey and password to be specified using env var
+                    // This is mainly for the CI system.
+                    //   * ORG_GRADLE_PROJECT_signingKey
+                    //   * ORG_GRADLE_PROJECT_signingPassword
+                    //   * ORG_GRADLE_PROJECT_signingKeyId
+                    // See https://docs.gradle.org/current/userguide/signing_plugin.html#sec:in-memory-keys
+                    // for details
+                    def signingKey = findProperty("signingKey")
+                    def signingKeyId = findProperty("signingKeyId")
+                    def signingPassword = findProperty("signingPassword")
+                    if (signingKeyId && signingKey && signingPassword) {
+                        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+                    } else if (signingKey && signingPassword) {
+                        useInMemoryPgpKeys(signingKey, signingPassword)
+                    }
+                }
+                // Signing task is added by the release plugin
+            }
+        }
+        test {
+            String testGroup = System.properties['testGroup']
+            if (testGroup == 'client') {
+                include '**/client/*'
+            } else if (testGroup == 'bookie') {
+                include '**/bookie/*'
+            } else if (testGroup == 'other') {
+                exclude '**/client/*'
+                exclude '**/bookie/*'
+            }
+            if (project.hasProperty('excludeTests')) {
+                exclude project.property('excludeTests')
+            }
+        }
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+}
+
+pluginManager.withPlugin('java') {
+    sourceCompatibility = targetCompatibility = 8
+}

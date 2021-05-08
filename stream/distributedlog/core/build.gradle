@@ -1,0 +1,69 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation project(':bookkeeper-common')
+    implementation project(':bookkeeper-server')
+    implementation project(':bookkeeper-stats')
+    implementation project(':stream:distributedlog:common')
+    implementation project(':stream:distributedlog:protocol')
+    implementation depLibs.commonsCli
+    implementation depLibs.commonsCodec
+    implementation depLibs.commonsConfiguration
+    implementation depLibs.commonsIO
+    implementation depLibs.commonsLang3
+    implementation depLibs.guava
+    implementation depLibs.jsr305
+    implementation depLibs.lombok
+    implementation depLibs.nettyBuffer
+    implementation depLibs.nettyTransportNativeEpoll
+    implementation depLibs.slf4j
+    implementation depLibs.thrift
+    implementation depLibs.zookeeper
+
+    testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
+    testImplementation project(path: ':stream:distributedlog:common', configuration: 'testArtifacts')
+    testImplementation depLibs.junit
+    testImplementation depLibs.mockito
+
+    annotationProcessor depLibs.lombok
+    testAnnotationProcessor depLibs.lombok
+}
+
+test {
+    maxHeapSize = '4G'
+    forkEvery = 1
+}
+
+test.doFirst {
+    jvmArgs("-Djunit.timeout.test=600000", "-Djunit.max.retry=3",
+            "-Djava.net.preferIPv4Stack=true", "-Dio.netty.leakDetection.level=paranoid")
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.apache.distributedlog'
+            artifactId = 'distributedlog-core'
+        }
+    }
+}

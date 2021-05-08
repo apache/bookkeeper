@@ -390,7 +390,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     if (qe != null) {
                         cbThreadPool.execute(qe);
                     }
-                    journalStats.getJournalCbQueueSize().inc();
                 }
 
                 return forceWriteWaiters.size();
@@ -865,19 +864,22 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         entry.retain();
 
         journalStats.getJournalQueueSize().inc();
+        journalStats.getJournalCbQueueSize().inc();
         queue.put(QueueEntry.create(
                 entry, ackBeforeSync,  ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalAddEntryStats(),
-                journalStats.getJournalQueueSize()));
+                journalStats.getJournalCbQueueSize()));
     }
 
     void forceLedger(long ledgerId, WriteCallback cb, Object ctx) {
-        journalStats.getJournalQueueSize().inc();
         queue.add(QueueEntry.create(
-                null, false /* ackBeforeSync */,  ledgerId,
+                null, false /* ackBeforeSync */, ledgerId,
                 Bookie.METAENTRY_ID_FORCE_LEDGER, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalForceLedgerStats(),
-                journalStats.getJournalQueueSize()));
+                journalStats.getJournalCbQueueSize()));
+        // Increment afterwards because the add operation could fail.
+        journalStats.getJournalQueueSize().inc();
+        journalStats.getJournalCbQueueSize().inc();
     }
 
     /**
@@ -969,6 +971,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     if (numEntriesToFlush == 0) {
                         qe = queue.take();
                         dequeueStartTime = MathUtils.nowInNano();
+                        journalStats.getJournalQueueSize().dec();
                         journalStats.getJournalQueueStats()
                             .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
                     } else {
@@ -981,6 +984,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                         dequeueStartTime = MathUtils.nowInNano();
 
                         if (qe != null) {
+                            journalStats.getJournalQueueSize().dec();
                             journalStats.getJournalQueueStats()
                                 .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
                         }

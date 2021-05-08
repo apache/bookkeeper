@@ -59,11 +59,17 @@ message Command {
 // Checkpoint related
 //
 
+message FileInfo {
+    string name = 1;
+    string checksum = 2;
+}
+
 message CheckpointMetadata {
 
     repeated string files = 1;
     bytes txid = 2;
     uint64 created_at = 3;
 
+    repeated FileInfo fileInfos = 4;
 }
 
