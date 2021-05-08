@@ -2086,6 +2086,18 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Should the data be written to journal before acknowledgment.
+     *
+     * <p>Default is true
+     *
+     * @return
+     */
+    public ServerConfiguration setJournalWriteData(boolean journalWriteData) {
+        setProperty(JOURNAL_WRITE_DATA, journalWriteData);
+        return this;
+    }
+
+    /**
      * Enable or disable journal syncs.
      *
      * <p>By default, data sync is enabled to guarantee durability of writes.
