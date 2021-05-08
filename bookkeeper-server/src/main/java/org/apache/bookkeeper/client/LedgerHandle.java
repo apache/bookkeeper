@@ -685,8 +685,8 @@ public class LedgerHandle implements WriteHandle {
         }
 
         if (lastEntry > lastAddConfirmed) {
-            LOG.error("ReadException on ledgerId:{} firstEntry:{} lastEntry:{}",
-                    ledgerId, firstEntry, lastEntry);
+            LOG.error("ReadEntries exception on ledgerId:{} firstEntry:{} lastEntry:{} lastAddConfirmed:{}",
+                    ledgerId, firstEntry, lastEntry, lastAddConfirmed);
             cb.readComplete(BKException.Code.ReadException, this, null, ctx);
             return;
         }
@@ -751,8 +751,8 @@ public class LedgerHandle implements WriteHandle {
         }
 
         if (lastEntry > lastAddConfirmed) {
-            LOG.error("ReadException on ledgerId:{} firstEntry:{} lastEntry:{}",
-                    ledgerId, firstEntry, lastEntry);
+            LOG.error("ReadAsync exception on ledgerId:{} firstEntry:{} lastEntry:{} lastAddConfirmed:{}",
+                    ledgerId, firstEntry, lastEntry, lastAddConfirmed);
             return FutureUtils.exception(new BKReadException());
         }
 
