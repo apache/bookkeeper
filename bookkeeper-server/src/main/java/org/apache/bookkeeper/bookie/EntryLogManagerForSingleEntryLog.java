@@ -44,7 +44,7 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
     private volatile BufferedLogChannel activeLogChannel;
     private long logIdBeforeFlush = INVALID_LID;
     private final AtomicBoolean shouldCreateNewEntryLog = new AtomicBoolean(false);
-    private EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
+    private final EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
 
     EntryLogManagerForSingleEntryLog(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
             EntryLoggerAllocator entryLoggerAllocator, List<EntryLogger.EntryLogListener> listeners,

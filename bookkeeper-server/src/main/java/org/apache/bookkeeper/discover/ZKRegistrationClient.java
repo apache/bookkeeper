@@ -271,7 +271,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                     bookieServiceInfoCache.put(bookieId, result);
                     promise.complete(result);
                 } catch (IOException ex) {
-                    log.error("Cannot update BookieInfo for {}", ex);
+                    log.error("Cannot update BookieInfo for ", ex);
                     promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path)
                             .initCause(ex));
                     return;
@@ -289,7 +289,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                             bookieServiceInfoCache.put(bookieId, result);
                             promise.complete(result);
                         } catch (IOException ex) {
-                            log.error("Cannot update BookieInfo for {}", ex);
+                            log.error("Cannot update BookieInfo for ", ex);
                             promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2)
                                     .initCause(ex));
                             return;

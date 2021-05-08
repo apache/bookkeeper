@@ -505,7 +505,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     private void completeOperation(GenericCallback<PerChannelBookieClient> op, int rc) {
-        //Thread.dumpStack();
         closeLock.readLock().lock();
         try {
             if (ConnectionState.CLOSED == state) {
@@ -531,7 +530,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         try {
             addr = bookieAddressResolver.resolve(bookieId);
         } catch (BookieAddressResolver.BookieIdNotResolvedException err) {
-            LOG.error("Cannot connect to {} as endpoint resolution failed (probably bookie is down)",
+            LOG.error("Cannot connect to {} as endpoint resolution failed (probably bookie is down) err {}",
                     bookieId, err.toString());
             return processBookieNotResolvedError(startTime, err);
         }
