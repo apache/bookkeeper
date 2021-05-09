@@ -73,13 +73,11 @@ public class LocationsIndexRebuildOp {
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())));
         Set<Long> entryLogs = entryLogger.getEntryLogsSet();
 
-        String locationsDbPath = FileSystems.getDefault().getPath(basePath, "locations").toFile().toString();
-
         Set<Long> activeLedgers = getActiveLedgers(conf, KeyValueStorageRocksDB.factory, basePath);
         LOG.info("Found {} active ledgers in ledger manager", activeLedgers.size());
 
-        KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(locationsDbPath, DbConfigType.Huge,
-                conf);
+        KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(basePath, "locations",
+                DbConfigType.Huge, conf);
 
         int totalEntryLogs = entryLogs.size();
         int completedEntryLogs = 0;
