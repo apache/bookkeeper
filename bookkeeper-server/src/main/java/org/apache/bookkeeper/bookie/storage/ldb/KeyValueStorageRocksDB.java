@@ -27,6 +27,9 @@ import io.netty.util.internal.PlatformDependent;
 //CHECKSTYLE.ON: IllegalImport
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
@@ -55,8 +58,8 @@ import org.slf4j.LoggerFactory;
  */
 public class KeyValueStorageRocksDB implements KeyValueStorage {
 
-    static KeyValueStorageFactory factory = (path, dbConfigType, conf) -> new KeyValueStorageRocksDB(path, dbConfigType,
-            conf);
+    static KeyValueStorageFactory factory = (defaultBasePath, subPath, dbConfigType, conf) ->
+            new KeyValueStorageRocksDB(defaultBasePath, subPath, dbConfigType, conf);
 
     private final RocksDB db;
 
@@ -68,6 +71,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     private final WriteBatch emptyBatch;
 
+    private static final String ROCKSDB_LOG_PATH = "dbStorage_rocksDB_logPath";
     private static final String ROCKSDB_LOG_LEVEL = "dbStorage_rocksDB_logLevel";
     private static final String ROCKSDB_LZ4_COMPRESSION_ENABLED = "dbStorage_rocksDB_lz4CompressionEnabled";
     private static final String ROCKSDB_WRITE_BUFFER_SIZE_MB = "dbStorage_rocksDB_writeBufferSizeMB";
@@ -79,11 +83,13 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private static final String ROCKSDB_NUM_FILES_IN_LEVEL0 = "dbStorage_rocksDB_numFilesInLevel0";
     private static final String ROCKSDB_MAX_SIZE_IN_LEVEL1_MB = "dbStorage_rocksDB_maxSizeInLevel1MB";
 
-    public KeyValueStorageRocksDB(String path, DbConfigType dbConfigType, ServerConfiguration conf) throws IOException {
-        this(path, dbConfigType, conf, false);
+    public KeyValueStorageRocksDB(String basePath, String subPath, DbConfigType dbConfigType, ServerConfiguration conf)
+            throws IOException {
+        this(basePath, subPath, dbConfigType, conf, false);
     }
 
-    public KeyValueStorageRocksDB(String path, DbConfigType dbConfigType, ServerConfiguration conf, boolean readOnly)
+    public KeyValueStorageRocksDB(String basePath, String subPath, DbConfigType dbConfigType, ServerConfiguration conf,
+                                  boolean readOnly)
             throws IOException {
         try {
             RocksDB.loadLibrary();
@@ -149,6 +155,16 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
                 options.setTableFormatConfig(tableOptions);
             }
+
+            // Configure file path
+            String logPath = conf.getString(ROCKSDB_LOG_PATH, "");
+            if (!logPath.isEmpty()) {
+                Path logPathSetting = FileSystems.getDefault().getPath(logPath, subPath);
+                Files.createDirectories(logPathSetting);
+                log.info("RocksDB<{}> log path: {}", subPath, logPathSetting);
+                options.setDbLogDir(logPathSetting.toString());
+            }
+            String path = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
 
             // Configure log level
             String logLevel = conf.getString(ROCKSDB_LOG_LEVEL, "info");

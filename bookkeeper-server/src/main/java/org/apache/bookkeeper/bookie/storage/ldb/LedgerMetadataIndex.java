@@ -27,7 +27,6 @@ import io.netty.buffer.ByteBuf;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Map.Entry;
@@ -66,8 +65,7 @@ public class LedgerMetadataIndex implements Closeable {
 
     public LedgerMetadataIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
-        String ledgersPath = FileSystems.getDefault().getPath(basePath, "ledgers").toFile().toString();
-        ledgersDb = storageFactory.newKeyValueStorage(ledgersPath, DbConfigType.Small, conf);
+        ledgersDb = storageFactory.newKeyValueStorage(basePath, "ledgers", DbConfigType.Small, conf);
 
         ledgers = new ConcurrentLongHashMap<>();
         ledgersCount = new AtomicInteger();

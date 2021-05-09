@@ -26,6 +26,8 @@ import static org.junit.Assert.assertTrue;
 import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -35,6 +37,7 @@ import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.CloseableIterator;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -71,10 +74,10 @@ public class KeyValueStorageTest {
 
     @Test
     public void simple() throws Exception {
-        File tmpDir = File.createTempFile("bookie", "test");
-        tmpDir.delete();
+        File tmpDir = Files.createTempDirectory("junitTemporaryFolder").toFile();
+        Files.createDirectory(Paths.get(tmpDir.toString(), "subDir"));
 
-        KeyValueStorage db = storageFactory.newKeyValueStorage(tmpDir.getAbsolutePath(), DbConfigType.Small,
+        KeyValueStorage db = storageFactory.newKeyValueStorage(tmpDir.toString(), "subDir", DbConfigType.Small,
                 configuration);
 
         assertEquals(null, db.getFloor(toArray(3)));
@@ -167,6 +170,6 @@ public class KeyValueStorageTest {
         batch.close();
 
         db.close();
-        tmpDir.delete();
+        FileUtils.deleteDirectory(tmpDir);
     }
 }
