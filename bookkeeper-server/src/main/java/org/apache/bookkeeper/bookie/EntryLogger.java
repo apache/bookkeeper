@@ -1009,9 +1009,8 @@ public class EntryLogger {
                     continue;
                 }
                 // read the entry
-
                 data.clear();
-                if (entrySize < 0) {
+                if (entrySize <= 0) {
                     LOG.warn("bad read for ledger entry from entryLog {}@{} (entry size {})",
                             entryLogId, pos, entrySize);
                     return;
