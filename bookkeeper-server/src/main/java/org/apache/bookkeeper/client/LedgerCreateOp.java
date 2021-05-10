@@ -108,7 +108,7 @@ class LedgerCreateOp {
             EnumSet<WriteFlag> writeFlags,
             BookKeeperClientStats clientStats) {
         this.bk = bk;
-        this.metadataFormatVersion = bk.conf.getLedgerMetadataFormatVersion();
+        this.metadataFormatVersion = bk.getConf().getLedgerMetadataFormatVersion();
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
