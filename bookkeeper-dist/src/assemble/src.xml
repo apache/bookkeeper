@@ -60,6 +60,7 @@
         <exclude>dev/**</exclude>
         <!-- site -->
         <exclude>site/**</exclude>
+        <exclude>site2/**</exclude>
         <!-- jenkins -->
         <exclude>jenkins/**</exclude>
       </excludes>
