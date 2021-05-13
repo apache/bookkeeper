@@ -147,6 +147,7 @@ message StreamConfiguration {
     SegmentRollingPolicy rolling_policy = 5;
     RetentionPolicy retention_policy    = 6;
     StorageType storage_type            = 7;
+    int32 ttl_seconds                   = 8;
 }
 
 message StreamProperties {

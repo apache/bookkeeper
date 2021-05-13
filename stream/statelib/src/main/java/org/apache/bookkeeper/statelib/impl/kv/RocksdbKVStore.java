@@ -77,9 +77,11 @@ import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.FlushOptions;
 import org.rocksdb.LRUCache;
+import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
+import org.rocksdb.TtlDB;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 
@@ -93,7 +95,12 @@ import org.rocksdb.WriteOptions;
 public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     private static final byte[] METADATA_CF = ".meta".getBytes(UTF_8);
+
+    // Use a separate column family when a TTL is set so that we can't (easily) open a TTL
+    // enabled DB with the old code.
     private static final byte[] DATA_CF = "default".getBytes(UTF_8);
+    private static final byte[] DATA_TTL_CF = "default_ttl".getBytes(UTF_8);
+
     private static final byte[] LAST_REVISION = ".lrev".getBytes(UTF_8);
 
     private static final AtomicLongFieldUpdater<RocksdbKVStore> lastRevisionUpdater =
@@ -101,6 +108,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     // parameters for the store
     protected String name;
+    protected int ttlSeconds;
     protected Coder<K> keyCoder;
     protected Coder<V> valCoder;
 
@@ -262,7 +270,9 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
             "local state store directory is not configured");
 
         this.name = spec.getName();
+
         this.cleanupLocalStoreDirEnable = spec.isLocalStorageCleanupEnable();
+        this.ttlSeconds = spec.getTtlSeconds();
 
         // initialize the coders
         this.keyCoder = (Coder<K>) spec.getKeyCoder();
@@ -349,18 +359,20 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         return openRocksdb(dir, options, cfOpts);
     }
 
-    protected static Pair<RocksDB, List<ColumnFamilyHandle>> openRocksdb(
+    protected Pair<RocksDB, List<ColumnFamilyHandle>> openRocksdb(
         File dir, DBOptions options, ColumnFamilyOptions cfOpts)
         throws StateStoreException {
-        // make sure the db directory's parent dir is created
-        ColumnFamilyDescriptor metaDesc = new ColumnFamilyDescriptor(METADATA_CF, cfOpts);
-        ColumnFamilyDescriptor dataDesc = new ColumnFamilyDescriptor(DATA_CF, cfOpts);
+        final boolean haveTtl = ttlSeconds != 0;
+        final ColumnFamilyDescriptor metaDesc = new ColumnFamilyDescriptor(METADATA_CF, cfOpts);
+        final ColumnFamilyDescriptor dataDesc = new ColumnFamilyDescriptor(haveTtl ? DATA_TTL_CF : DATA_CF, cfOpts);
 
         try {
+            // make sure the db directory's parent dir is created
             Files.createDirectories(dir.toPath());
             File dbDir = new File(dir, "current");
 
-            if (!dbDir.exists()) {
+            final boolean dbExists = dbDir.exists();
+            if (!dbExists) {
                 // empty state
                 String uuid = UUID.randomUUID().toString();
                 Path checkpointPath = Paths.get(dir.getAbsolutePath(), "checkpoints", uuid);
@@ -368,14 +380,36 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                 Files.createSymbolicLink(
                     Paths.get(dbDir.getAbsolutePath()),
                     checkpointPath);
+            } else {
+                // For an existing database, ensure we open with a TTL if it was created that way: values in a TTLDB
+                // are prefixed with the ttl, and therefore incompatible with a plain RocksDB.  If the new TTL value
+                // does not match the previous TTL, it will apply to any new or updated keys
+
+                try (Options opts = new org.rocksdb.Options(options, cfOpts)) {
+                    byte[] wanted = haveTtl ? DATA_TTL_CF : DATA_CF;
+                    byte[] other = haveTtl ? DATA_CF : DATA_TTL_CF;
+                    List<byte[]> cfNames = RocksDB.listColumnFamilies(opts, dbDir.getAbsolutePath());
+                    if (!cfNames.contains(wanted) && cfNames.contains(other)) {
+                        throw new StateStoreException(String.format("{}: expected {} column family, found {}",
+                                dbDir.getAbsolutePath(), wanted, other));
+                    }
+                }
             }
 
             List<ColumnFamilyHandle> cfHandles = Lists.newArrayListWithExpectedSize(2);
-            RocksDB db = RocksDB.open(
-                options,
-                dbDir.getAbsolutePath(),
-                Lists.newArrayList(metaDesc, dataDesc),
-                cfHandles);
+            final RocksDB db = haveTtl
+                    ? TtlDB.open(
+                        options,
+                        dbDir.getAbsolutePath(),
+                        Lists.newArrayList(metaDesc, dataDesc),
+                        cfHandles,
+                        Lists.newArrayList(Integer.valueOf(0), Integer.valueOf(ttlSeconds)),
+                        false)
+                    : RocksDB.open(
+                        options,
+                        dbDir.getAbsolutePath(),
+                        Lists.newArrayList(metaDesc, dataDesc),
+                        cfHandles);
             return Pair.of(db, cfHandles);
         } catch (IOException ioe) {
             log.error("Failed to create parent directory {} for opening rocksdb", dir.getParentFile().toPath(), ioe);
