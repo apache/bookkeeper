@@ -98,7 +98,7 @@ public class Cookie {
         return s.substring(s.indexOf(SEPARATOR) + SEPARATOR.length()).split(SEPARATOR);
     }
 
-    String[] getLedgerDirPathsFromCookie() {
+    public String[] getLedgerDirPathsFromCookie() {
         return decodeDirPathFromCookie(ledgerDirs);
     }
 
@@ -289,7 +289,7 @@ public class Cookie {
      * @return cookie builder object
      * @throws UnknownHostException
      */
-    static Builder generateCookie(ServerConfiguration conf)
+    public static Builder generateCookie(ServerConfiguration conf)
             throws UnknownHostException {
         Builder builder = Cookie.newBuilder();
         builder.setLayoutVersion(CURRENT_COOKIE_LAYOUT_VERSION);
