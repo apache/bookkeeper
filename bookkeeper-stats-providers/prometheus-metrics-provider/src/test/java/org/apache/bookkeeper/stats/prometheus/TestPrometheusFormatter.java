@@ -43,7 +43,7 @@ import org.junit.Test;
  */
 public class TestPrometheusFormatter {
 
-    @Test
+    @Test(timeout = 30000)
     public void testStatsOutput() throws Exception {
         PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
         StatsLogger statsLogger = provider.getStatsLogger("test");
@@ -55,6 +55,12 @@ public class TestPrometheusFormatter {
         OpStatsLogger opStats = statsLogger.getOpStatsLogger("op");
         opStats.registerSuccessfulEvent(10, TimeUnit.MILLISECONDS);
         opStats.registerSuccessfulEvent(5, TimeUnit.MILLISECONDS);
+
+        OpStatsLogger opStats1 = statsLogger.scopeLabel("test_label", "test_value")
+                .getOpStatsLogger("op_label");
+        opStats1.registerSuccessfulEvent(10, TimeUnit.MILLISECONDS);
+        opStats1.registerSuccessfulEvent(5, TimeUnit.MILLISECONDS);
+        opStats1.registerFailedEvent(1, TimeUnit.MILLISECONDS);
 
         provider.rotateLatencyCollection();
 
@@ -112,6 +118,52 @@ public class TestPrometheusFormatter {
         }
 
         assertTrue(found);
+
+        // test_op_label_sum
+        cm = (List<Metric>) metrics.get("test_op_label_sum");
+        assertEquals(2, cm.size());
+        m = cm.get(0);
+        assertEquals(2, m.tags.size());
+        assertEquals(1.0, m.value, 0.0);
+        assertEquals("false", m.tags.get("success"));
+        assertEquals("test_value", m.tags.get("test_label"));
+
+        m = cm.get(1);
+        assertEquals(15.0, m.value, 0.0);
+        assertEquals(2, m.tags.size());
+        assertEquals("true", m.tags.get("success"));
+        assertEquals("test_value", m.tags.get("test_label"));
+
+        // test_op_label_count
+        cm = (List<Metric>) metrics.get("test_op_label_count");
+        assertEquals(2, cm.size());
+        m = cm.get(0);
+        assertEquals(1, m.value, 0.0);
+        assertEquals(2, m.tags.size());
+        assertEquals("false", m.tags.get("success"));
+        assertEquals("test_value", m.tags.get("test_label"));
+
+        m = cm.get(1);
+        assertEquals(2.0, m.value, 0.0);
+        assertEquals(2, m.tags.size());
+        assertEquals("true", m.tags.get("success"));
+        assertEquals("test_value", m.tags.get("test_label"));
+
+        // Latency
+        cm = (List<Metric>) metrics.get("test_op_label");
+        assertEquals(14, cm.size());
+
+        found = false;
+        for (Metric mt : cm) {
+            if ("true".equals(mt.tags.get("success"))
+                    && "test_value".equals(mt.tags.get("test_label"))
+                    && "1.0".equals(mt.tags.get("quantile"))) {
+                assertEquals(10.0, mt.value, 0.0);
+                found = true;
+            }
+        }
+
+        assertTrue(found);
     }
 
     /**
@@ -126,6 +178,8 @@ public class TestPrometheusFormatter {
         // pulsar_subscriptions_count{cluster="standalone", namespace="sample/standalone/ns1",
         // topic="persistent://sample/standalone/ns1/test-2"} 0.0 1517945780897
         Pattern pattern = Pattern.compile("^(\\w+)(\\{([^\\}]+)\\})?\\s(-?[\\d\\w\\.]+)(\\s(\\d+))?$");
+        Pattern formatPattern = Pattern.compile("^(\\w+)(\\{(\\w+=[\\\"\\.\\w]+(,\\s?\\w+=[\\\"\\.\\w]+)*)\\})?"
+                + "\\s(-?[\\d\\w\\.]+)(\\s(\\d+))?$");
         Pattern tagsPattern = Pattern.compile("(\\w+)=\"([^\"]+)\"(,\\s?)?");
 
         Splitter.on("\n").split(metrics).forEach(line -> {
@@ -135,6 +189,7 @@ public class TestPrometheusFormatter {
 
             System.err.println("LINE: '" + line + "'");
             Matcher matcher = pattern.matcher(line);
+            Matcher formatMatcher = formatPattern.matcher(line);
             System.err.println("Matches: " + matcher.matches());
             System.err.println(matcher);
 
@@ -144,6 +199,7 @@ public class TestPrometheusFormatter {
             }
 
             checkArgument(matcher.matches());
+            checkArgument(formatMatcher.matches());
             String name = matcher.group(1);
 
             Metric m = new Metric();
