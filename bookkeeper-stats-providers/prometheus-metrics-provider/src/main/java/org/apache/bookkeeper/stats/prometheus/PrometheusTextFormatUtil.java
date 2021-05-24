@@ -139,25 +139,34 @@ public class PrometheusTextFormatUtil {
         w.append(name)
                 .append("{success=\"").append(success.toString())
                 .append("\",quantile=\"").append(Double.toString(quantile))
-                .append("\", ");
-        writeLabelsNoBraces(w, opStat.getLabels());
+                .append("\"");
+        if (!opStat.getLabels().isEmpty()) {
+            w.append(", ");
+            writeLabelsNoBraces(w, opStat.getLabels());
+        }
         w.append("} ")
                 .append(Double.toString(opStat.getQuantileValue(success, quantile))).append('\n');
     }
 
     private static void writeCount(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success)
             throws IOException {
-        w.append(name).append("_count{success=\"").append(success.toString()).append("\", ");
-        writeLabelsNoBraces(w, opStat.getLabels());
-        w.append("\"} ")
+        w.append(name).append("_count{success=\"").append(success.toString()).append("\"");
+        if (!opStat.getLabels().isEmpty()) {
+            w.append(", ");
+            writeLabelsNoBraces(w, opStat.getLabels());
+        }
+        w.append("} ")
                 .append(Long.toString(opStat.getCount(success))).append('\n');
     }
 
     private static void writeSum(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success)
             throws IOException {
-        w.append(name).append("_sum{success=\"").append(success.toString()).append("\", ");
-        writeLabelsNoBraces(w, opStat.getLabels());
-        w.append("\"} ")
+        w.append(name).append("_sum{success=\"").append(success.toString()).append("\"");
+        if (!opStat.getLabels().isEmpty()) {
+            w.append(", ");
+            writeLabelsNoBraces(w, opStat.getLabels());
+        }
+        w.append("} ")
                 .append(Double.toString(opStat.getSum(success))).append('\n');
     }
 
