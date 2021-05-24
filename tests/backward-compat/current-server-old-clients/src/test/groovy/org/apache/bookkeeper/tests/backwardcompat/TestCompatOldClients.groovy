@@ -40,7 +40,8 @@ class TestCompatOldClients {
     private static byte[] PASSWD = "foobar".getBytes()
 
     // 4.1.0 doesn't work because metadata format changed
-    private def oldClientVersions = ["4.4.0", "4.5.1", "4.6.2", "4.7.2", "4.8.2", "4.9.2" ]
+    private def oldClientVersions = ["4.4.0", "4.5.1", "4.6.2", "4.7.2", "4.8.2", "4.9.2",
+                                     "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.0" ]
 
     @ArquillianResource
     DockerClient docker
