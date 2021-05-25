@@ -180,6 +180,9 @@ groups:
   - param: tlsTrustStorePasswordPath
     description: Bookie Truststore password path, if the truststore is protected by a password.
     default: null
+  - param: tlsCertificatePath
+    description: Bookie TLS certificate path.
+    default: null
 
 - name: Journal settings
   params:
