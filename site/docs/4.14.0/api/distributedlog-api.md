@@ -115,12 +115,12 @@ If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`]
 
 ```groovy
 dependencies {
-    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '{{ site.latest_version }}'
+    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '4.14.0'
 }
 
 // Alternatively:
 dependencies {
-    compile 'org.apache.bookkeeper:bookkeeper-server:{{ site.latest_version }}'
+    compile 'org.apache.bookkeeper:bookkeeper-server:4.14.0'
 }
 ```
 

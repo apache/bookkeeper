@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper&trade; 4.14.0
+title: Apache BookKeeper&trade; 4.15.0-SNAPSHOT
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +20,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-This documentation is for Apache BookKeeper&trade; version {{ site.latest_version }}.
+This documentation is for Apache BookKeeper&trade; version 4.14.0.
 
 Apache BookKeeper&trade; is a scalable, fault-tolerant, low-latency storage service optimized for real-time workloads. It offers durability, replication, and strong consistency as essentials for building reliable real-time applications.
 
@@ -37,7 +37,7 @@ Object/[BLOB](https://en.wikipedia.org/wiki/Binary_large_object) storage | Stori
 
 Learn more about Apache BookKeeper&trade; and what it can do for your organization:
 
-- [Apache BookKeeper {{ site.latest_version }} Release Notes](../releaseNotes)
+- [Apache BookKeeper 4.14.0 Release Notes](../releaseNotes)
 - [Java API docs](../../api/javadoc)
 
 Or start [using](../../getting-started/installation) Apache BookKeeper today.
