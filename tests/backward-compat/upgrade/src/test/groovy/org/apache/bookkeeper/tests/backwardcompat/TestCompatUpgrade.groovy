@@ -202,7 +202,70 @@ class TestCompatUpgrade {
     }
 
     @Test
-    public void test472toCurrentMaster() throws Exception {
-        testUpgrade("4.7.2", System.getProperty("currentVersion"))
+    public void test472to480() throws Exception {
+        testUpgrade("4.7.2", "4.8.0")
+    }
+
+    @Test
+    public void test480to481() throws Exception {
+        testUpgrade("4.8.0", "4.8.1")
+    }
+
+
+    @Test
+    public void test481to482() throws Exception {
+        testUpgrade("4.8.1", "4.8.2")
+    }
+
+    @Test
+    public void test490to491() throws Exception {
+        testUpgrade("4.9.0", "4.9.1")
+    }
+
+
+    @Test
+    public void test491to492() throws Exception {
+        testUpgrade("4.9.1", "4.9.2")
+    }
+
+    @Test
+    public void test492to4100() throws Exception {
+        testUpgrade("4.9.2", "4.10.0")
+    }
+
+    @Test
+    public void test4100to4110() throws Exception {
+        testUpgrade("4.10.0", "4.11.0")
+    }
+
+    @Test
+    public void test4110to4111() throws Exception {
+        testUpgrade("4.11.0", "4.11.1")
+    }
+
+    @Test
+    public void test4111to4120() throws Exception {
+        testUpgrade("4.11.1", "4.12.0")
+    }
+
+
+    @Test
+    public void test4120to4121() throws Exception {
+        testUpgrade("4.12.0", "4.12.1")
+    }
+
+    @Test
+    public void test4121to4130() throws Exception {
+        testUpgrade("4.12.1", "4.13.0")
+    }
+
+    @Test
+    public void test4130to4140() throws Exception {
+        testUpgrade("4.13.0", "4.14.0")
+    }
+
+    @Test
+    public void test414toCurrentMaster() throws Exception {
+        testUpgrade("4.14.0", System.getProperty("currentVersion"))
     }
 }

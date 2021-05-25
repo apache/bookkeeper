@@ -37,7 +37,8 @@ class TestCompatUpgradeWithHostnameBookieId {
     private static final Logger LOG = LoggerFactory.getLogger(TestCompatUpgradeWithHostnameBookieId.class)
     private static byte[] PASSWD = "foobar".getBytes()
 
-    private def oldClientVersions = ["4.4.0", "4.5.1", "4.6.2", "4.7.2", "4.8.2", "4.9.2"]
+    private def oldClientVersions = ["4.4.0", "4.5.1", "4.6.2", "4.7.2", "4.8.2", "4.9.2",
+                                     "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.0" ]
 
     @ArquillianResource
     DockerClient docker
