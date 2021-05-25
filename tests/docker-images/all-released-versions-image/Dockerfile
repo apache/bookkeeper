@@ -52,6 +52,14 @@ RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.7.1/bookkee
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.7.2/bookkeeper-server-4.7.2-bin.tar.gz{,.sha512,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.8.2/bookkeeper-server-4.8.2-bin.tar.gz{,.sha512,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.9.2/bookkeeper-server-4.9.2-bin.tar.gz{,.sha512,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.10.0/bookkeeper-server-4.10.0-bin.tar.gz{,.sha512,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.11.0/bookkeeper-server-4.11.0-bin.tar.gz{,.sha512,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.11.1/bookkeeper-server-4.11.1-bin.tar.gz{,.sha512,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.12.0/bookkeeper-server-4.12.0-bin.tar.gz{,.sha512,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.12.1/bookkeeper-server-4.12.1-bin.tar.gz{,.sha512,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.13.0/bookkeeper-server-4.13.0-bin.tar.gz{,.sha512,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.14.0/bookkeeper-server-4.14.0-bin.tar.gz{,.sha512,.asc}
+
 RUN wget -nv https://archive.apache.org/dist/incubator/pulsar/pulsar-1.21.0-incubating/apache-pulsar-1.21.0-incubating-bin.tar.gz{,.asc}
 RUN wget -nv https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
 RUN wget -nv http://svn.apache.org/repos/asf/zookeeper/bookkeeper/dist/KEYS?p=1620552 -O KEYS.old
