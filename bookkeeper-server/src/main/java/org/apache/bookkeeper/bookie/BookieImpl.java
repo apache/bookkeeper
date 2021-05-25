@@ -28,7 +28,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -53,6 +52,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1436,8 +1436,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
      * able to add entries to the ledger.
      * This method is idempotent. Once a ledger is fenced, it can
      * never be unfenced. Fencing a fenced ledger has no effect.
+     * @return
      */
-    public SettableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey)
+    public CompletableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey)
             throws IOException, BookieException {
         LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
         return handle.fenceAndLogInJournal(getJournal(ledgerId));

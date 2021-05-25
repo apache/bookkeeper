@@ -18,10 +18,10 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.PrimitiveIterator;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -67,9 +67,9 @@ public interface Bookie {
      * able to add entries to the ledger.
      * This method is idempotent. Once a ledger is fenced, it can
      * never be unfenced. Fencing a fenced ledger has no effect.
+     * @return
      */
-    // TODO: replace settable future with completablefuture
-    SettableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey)
+    CompletableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey)
             throws IOException, BookieException;
 
     // TODO: Replace Watcher with a completableFuture (cancellable)
