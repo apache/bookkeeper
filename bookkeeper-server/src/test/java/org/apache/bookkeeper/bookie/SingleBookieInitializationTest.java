@@ -89,7 +89,7 @@ public class SingleBookieInitializationTest {
         conf.setMinUsableSizeForEntryLogCreation(Long.MIN_VALUE);
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
 
-        bookie = new Bookie(conf);
+        bookie = new BookieImpl(conf);
         bookie.start();
 
         CompletableFuture<Integer> writeFuture = new CompletableFuture<>();
@@ -111,7 +111,7 @@ public class SingleBookieInitializationTest {
         conf.setMinUsableSizeForEntryLogCreation(Long.MAX_VALUE);
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
 
-        bookie = new Bookie(conf);
+        bookie = new BookieImpl(conf);
         bookie.start();
 
         try {

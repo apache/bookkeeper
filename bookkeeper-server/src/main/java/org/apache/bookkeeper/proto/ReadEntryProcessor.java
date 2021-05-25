@@ -17,23 +17,19 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.Recycler;
 import io.netty.util.ReferenceCountUtil;
-
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -68,7 +64,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         long startTimeNanos = MathUtils.nowInNano();
         ByteBuf data = null;
         try {
-            SettableFuture<Boolean> fenceResult = null;
+            CompletableFuture<Boolean> fenceResult = null;
             if (request.isFencing()) {
                 LOG.warn("Ledger: {}  fenced by: {}", request.getLedgerId(), channel.remoteAddress());
 
@@ -146,11 +142,11 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         sendResponse(data, retCode, startTimeNanos);
     }
 
-    private void handleReadResultForFenceRead(ListenableFuture<Boolean> fenceResult,
+    private void handleReadResultForFenceRead(CompletableFuture<Boolean> fenceResult,
                                               ByteBuf data,
                                               long startTimeNanos) {
         if (null != fenceThreadPool) {
-            Futures.addCallback(fenceResult, new FutureCallback<Boolean>() {
+            fenceResult.whenCompleteAsync(new FutureEventListener<Boolean>() {
                 @Override
                 public void onSuccess(Boolean result) {
                     sendFenceResponse(result, data, startTimeNanos);

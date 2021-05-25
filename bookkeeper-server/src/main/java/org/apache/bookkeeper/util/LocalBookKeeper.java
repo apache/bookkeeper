@@ -36,7 +36,7 @@ import java.util.List;
 
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
@@ -254,7 +254,7 @@ public class LocalBookKeeper {
             bsConfs[i].setLedgerDirNames(ledgerDirs);
 
             // write config into file before start so we can know what's wrong if start failed
-            String fileName = Bookie.getBookieId(bsConfs[i]).toString() + ".conf";
+            String fileName = BookieImpl.getBookieId(bsConfs[i]).toString() + ".conf";
             serializeLocalBookieConfig(bsConfs[i], fileName);
 
             // Mimic BookKeeper Main

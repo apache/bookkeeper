@@ -27,6 +27,7 @@ import java.io.File;
 import java.util.Enumeration;
 
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -89,7 +90,7 @@ public class ForceReadOnlyBookieTest extends BookKeeperClusterTestCase {
         LOG.info("successed read entry from ReadOnlyBookie");
 
         // test will not transfer to Writable mode.
-        LedgerDirsManager ledgerDirsManager = bookie.getLedgerDirsManager();
+        LedgerDirsManager ledgerDirsManager = ((BookieImpl) bookie).getLedgerDirsManager();
         ledgerDirsManager.addToWritableDirs(new File(ledgerDirs[0], "current"), true);
         assertTrue("Bookie should be running and in readonly mode",
                 bookie.isRunning() && bookie.isReadOnly());

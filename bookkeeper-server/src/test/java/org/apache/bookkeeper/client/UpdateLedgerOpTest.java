@@ -24,14 +24,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieShell.UpdateLedgerNotifier;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -106,7 +104,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             BookieSocketAddress curBookieAddr = bk.getBookieAddressResolver().resolve(ensemble.get(0));
             baseConf.setUseHostNameAsBookieID(true);
             baseConf.setUseShortHostName(useShortHostName);
-            BookieSocketAddress curBookieId = Bookie.getBookieAddress(baseConf);
+            BookieSocketAddress curBookieId = BookieImpl.getBookieAddress(baseConf);
             BookieId toBookieAddr = new BookieSocketAddress(curBookieId.getHostName() + ":"
                     + curBookieAddr.getPort()).toBookieId();
             UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);
@@ -145,7 +143,8 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
 
             BookieId curBookieAddr = ensemble.get(0);
             baseConf.setUseHostNameAsBookieID(true);
-            BookieSocketAddress toBookieId = Bookie.getBookieAddress(baseConf);
+
+            BookieSocketAddress toBookieId = BookieImpl.getBookieAddress(baseConf);
             BookieId toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
                     + bk.getBookieAddressResolver().resolve(curBookieAddr).getPort()).toBookieId();
             UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);
@@ -208,7 +207,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             assertNotNull("Couldn't find the bookie in ledger metadata!", curBookieAddr);
             baseConf.setUseHostNameAsBookieID(true);
             baseConf.setUseShortHostName(useShortHostName);
-            BookieSocketAddress toBookieId = Bookie.getBookieAddress(baseConf);
+            BookieSocketAddress toBookieId = BookieImpl.getBookieAddress(baseConf);
             BookieId toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
                     + curBookieAddr.getPort()).toBookieId();
             UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);

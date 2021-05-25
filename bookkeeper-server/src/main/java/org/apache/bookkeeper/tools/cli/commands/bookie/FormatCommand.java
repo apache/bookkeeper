@@ -25,7 +25,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.concurrent.ExecutionException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
@@ -84,7 +84,7 @@ public class FormatCommand extends BookieCommand<FormatCommand.Flags> {
     public boolean apply(ServerConfiguration conf, Flags cmdFlags) {
 
         ServerConfiguration bfconf = new ServerConfiguration(conf);
-        boolean result = Bookie.format(bfconf, cmdFlags.nonInteractive, cmdFlags.force);
+        boolean result = BookieImpl.format(bfconf, cmdFlags.nonInteractive, cmdFlags.force);
 
         // delete cookie
         if (cmdFlags.deleteCookie) {

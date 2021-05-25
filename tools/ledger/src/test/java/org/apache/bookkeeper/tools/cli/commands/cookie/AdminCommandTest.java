@@ -28,13 +28,13 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.when;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.function.Function;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -58,7 +58,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link AdminCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ AdminCommand.class, MetadataDrivers.class, Cookie.class, Bookie.class, RegistrationManager.class })
+@PrepareForTest({ AdminCommand.class, MetadataDrivers.class,
+        Cookie.class, Bookie.class, BookieImpl.class, RegistrationManager.class })
 public class AdminCommandTest extends BookieCommandTestBase {
 
     @Mock
@@ -98,6 +99,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
         PowerMockito.mockStatic(Cookie.class);
         PowerMockito.mockStatic(MetadataDrivers.class);
         PowerMockito.mockStatic(Bookie.class);
+        PowerMockito.mockStatic(BookieImpl.class);
 
         mockUpdateBookieIdInCookie();
         mockVerifyCookie();
@@ -111,7 +113,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
         File[] files = new File[1];
         files[0] = testDir.getRoot();
         testDir.newFile(BookKeeperConstants.VERSION_FILENAME);
-        PowerMockito.when(Bookie.getCurrentDirectories(any())).thenReturn(files);
+        PowerMockito.when(BookieImpl.getCurrentDirectories(any())).thenReturn(files);
     }
 
     private void mockUpdateBookieIdInCookie() throws Exception {
@@ -123,7 +125,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
         }).when(MetadataDrivers.class, "runFunctionWithRegistrationManager", any(ServerConfiguration.class),
                 any(Function.class));
 
-        PowerMockito.when(Bookie.getBookieId(eq(serverConfiguration))).thenReturn(bookieSocketAddress);
+        serverConfiguration.setBookieId(bookieSocketAddress.getId());
         PowerMockito.when(Cookie.readFromRegistrationManager(eq(registrationManager), eq(serverConfiguration)))
                     .thenReturn(cookieVersioned);
         PowerMockito.when(Cookie.readFromRegistrationManager(eq(registrationManager), eq(bookieSocketAddress)))
@@ -165,14 +167,11 @@ public class AdminCommandTest extends BookieCommandTestBase {
             return true;
         }).when(MetadataDrivers.class, "runFunctionWithMetadataBookieDriver", any(ServerConfiguration.class),
                 any(Function.class));
-        PowerMockito.doNothing()
-                    .when(Bookie.class, "checkEnvironmentWithStorageExpansion", any(ServerConfiguration.class),
-                          eq(metadataBookieDriver), any(), any());
     }
 
     private void mockListOrDeleteCookies() throws UnknownHostException {
 
-        when(Bookie.getBookieId(any(ServerConfiguration.class))).thenReturn(bookieSocketAddress);
+        when(BookieImpl.getBookieId(any(ServerConfiguration.class))).thenReturn(bookieSocketAddress);
     }
 
     @Test

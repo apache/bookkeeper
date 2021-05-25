@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -29,8 +28,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieShell;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -75,10 +73,9 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         String[] argv = new String[] { "updateledgers", "-b", "hostname", "-v", "true", "-p", "2" };
         final ServerConfiguration conf = bsConfs.get(0);
         conf.setUseHostNameAsBookieID(true);
-        BookieSocketAddress toBookieId = Bookie.getBookieAddress(conf);
+        BookieSocketAddress toBookieId = BookieImpl.getBookieAddress(conf);
         BookieId toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
                 + conf.getBookiePort()).toBookieId();
-
         updateLedgerCmd(argv, 0, conf);
 
         int updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, toBookieAddr);

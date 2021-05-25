@@ -22,13 +22,10 @@
 package org.apache.bookkeeper.test;
 
 
-
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.junit.Assert.assertTrue;
-
 import com.google.common.base.Stopwatch;
 import io.netty.buffer.ByteBufAllocator;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -43,9 +40,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -420,7 +417,7 @@ public abstract class BookKeeperClusterTestCase {
     public void setBookieToReadOnly(BookieId addr) throws InterruptedException, UnknownHostException {
         for (BookieServer server : bs) {
             if (server.getBookieId().equals(addr)) {
-                server.getBookie().getStateManager().doTransitionToReadOnlyMode();
+                ((BookieImpl) server.getBookie()).getStateManager().doTransitionToReadOnlyMode();
                 break;
             }
         }
@@ -678,8 +675,9 @@ public abstract class BookKeeperClusterTestCase {
     protected BookieServer startBookie(ServerConfiguration conf)
             throws Exception {
         TestStatsProvider provider = new TestStatsProvider();
+
         BookieServer server = new BookieServer(conf, provider.getStatsLogger(""), null);
-        BookieId address = Bookie.getBookieId(conf);
+        BookieId address = BookieImpl.getBookieId(conf);
         bsLoggers.put(address, provider);
 
         if (bkc == null) {
@@ -720,7 +718,7 @@ public abstract class BookKeeperClusterTestCase {
             }
         };
 
-        BookieId address = Bookie.getBookieId(conf);
+        BookieId address = BookieImpl.getBookieId(conf);
         if (bkc == null) {
             bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }

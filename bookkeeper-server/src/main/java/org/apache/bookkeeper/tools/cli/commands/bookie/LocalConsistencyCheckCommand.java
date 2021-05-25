@@ -21,7 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.util.List;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
@@ -60,7 +60,7 @@ public class LocalConsistencyCheckCommand extends BookieCommand<CliFlags> {
     private boolean check(ServerConfiguration conf) throws IOException {
         LOG.info("=== Performing local consistency check ===");
         ServerConfiguration serverConfiguration = new ServerConfiguration(conf);
-        LedgerStorage ledgerStorage = Bookie.mountLedgerStorageOffline(serverConfiguration, null);
+        LedgerStorage ledgerStorage = BookieImpl.mountLedgerStorageOffline(serverConfiguration, null);
         List<LedgerStorage.DetectedInconsistency> errors = ledgerStorage.localConsistencyCheck(
             java.util.Optional.empty());
         if (errors.size() > 0) {

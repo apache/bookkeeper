@@ -72,10 +72,10 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         assertEquals("10.0.0.1", conf.getAdvertisedAddress());
 
         BookieSocketAddress bkAddress = new BookieSocketAddress("10.0.0.1", bookiePort);
-        assertEquals(bkAddress, Bookie.getBookieAddress(conf));
-        assertEquals(bkAddress.toBookieId(), Bookie.getBookieId(conf));
+        assertEquals(bkAddress, BookieImpl.getBookieAddress(conf));
+        assertEquals(bkAddress.toBookieId(), BookieImpl.getBookieId(conf));
 
-        Bookie b = new Bookie(conf);
+        Bookie b = new BookieImpl(conf);
         b.start();
 
         BookKeeperAdmin bka = new BookKeeperAdmin(baseClientConf);
@@ -102,8 +102,8 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         assertEquals("10.0.0.1", conf.getAdvertisedAddress());
 
         BookieSocketAddress bkAddress = new BookieSocketAddress("10.0.0.1", bookiePort);
-        assertEquals(bkAddress, Bookie.getBookieAddress(conf));
-        assertEquals(bkAddress.toBookieId(), Bookie.getBookieId(conf));
+        assertEquals(bkAddress, BookieImpl.getBookieAddress(conf));
+        assertEquals(bkAddress.toBookieId(), BookieImpl.getBookieId(conf));
     }
 
     /**
@@ -124,10 +124,10 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         assertEquals(uuid, conf.getBookieId());
 
         BookieSocketAddress bkAddress = new BookieSocketAddress("10.0.0.1", bookiePort);
-        assertEquals(bkAddress, Bookie.getBookieAddress(conf));
-        assertEquals(uuid, Bookie.getBookieId(conf).getId());
+        assertEquals(bkAddress, BookieImpl.getBookieAddress(conf));
+        assertEquals(uuid, BookieImpl.getBookieId(conf).getId());
 
-        Bookie b = new Bookie(conf);
+        Bookie b = new BookieImpl(conf);
         b.start();
 
         BookKeeperAdmin bka = new BookKeeperAdmin(baseClientConf);

@@ -19,14 +19,13 @@
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
-
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -92,7 +91,7 @@ public class DecommissionCommand extends BookieCommand<DecommissionCommand.Decom
         try {
             final String remoteBookieidToDecommission = flags.remoteBookieIdToDecommission;
             final BookieId bookieAddressToDecommission = (StringUtils.isBlank(remoteBookieidToDecommission)
-                                                                  ? Bookie.getBookieId(conf)
+                                                                  ? BookieImpl.getBookieId(conf)
                                                                   : BookieId.parse(remoteBookieidToDecommission));
             admin.decommissionBookie(bookieAddressToDecommission);
             LOG.info("The ledgers stored in the given decommissioning bookie: {} are properly replicated",

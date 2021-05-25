@@ -22,17 +22,14 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
-
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieShell;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -80,8 +77,8 @@ public class ConversionTest {
         File tmpDir = File.createTempFile("bkTest", ".dir");
         tmpDir.delete();
         tmpDir.mkdir();
-        File curDir = Bookie.getCurrentDirectory(tmpDir);
-        Bookie.checkDirectoryStructure(curDir);
+        File curDir = BookieImpl.getCurrentDirectory(tmpDir);
+        BookieImpl.checkDirectoryStructure(curDir);
 
         System.out.println(tmpDir);
 

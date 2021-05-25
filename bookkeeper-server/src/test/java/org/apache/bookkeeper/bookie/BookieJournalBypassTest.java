@@ -56,10 +56,12 @@ public class BookieJournalBypassTest extends BookKeeperClusterTestCase {
     public void testJournalBypass() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
 
-        Journal journal0 = bs.get(0).getBookie().journals.get(0);
+        BookieImpl bookieImpl = (BookieImpl) bs.get(0).getBookie();
+        Journal journal0 = bookieImpl.journals.get(0);
         LedgerStorage ls0 = bs.get(0).getBookie().getLedgerStorage();
 
-        Journal journal1 = bs.get(1).getBookie().journals.get(0);
+        bookieImpl = (BookieImpl) bs.get(1).getBookie();
+        Journal journal1 = bookieImpl.journals.get(0);
         LedgerStorage ls1 = bs.get(1).getBookie().getLedgerStorage();
 
         ls0.flush();

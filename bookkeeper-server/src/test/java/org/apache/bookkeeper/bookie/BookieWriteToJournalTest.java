@@ -57,14 +57,14 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Test the bookie journal.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Bookie.class})
+@PrepareForTest({BookieImpl.class})
 @Slf4j
 public class BookieWriteToJournalTest {
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
-    class NoOpJournalReplayBookie extends Bookie {
+    class NoOpJournalReplayBookie extends BookieImpl {
 
         public NoOpJournalReplayBookie(ServerConfiguration conf)
                 throws IOException, InterruptedException, BookieException {
@@ -84,14 +84,15 @@ public class BookieWriteToJournalTest {
     public void testJournalLogAddEntryCalledCorrectly() throws Exception {
 
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
         File ledgerDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
                 .setLedgerDirNames(new String[]{ledgerDir.getPath()})
                 .setMetadataServiceUri(null);
-        BookieId bookieAddress = Bookie.getBookieId(conf);
+
+        BookieId bookieAddress = BookieImpl.getBookieId(conf);
         CountDownLatch journalJoinLatch = new CountDownLatch(1);
         Journal journal = mock(Journal.class);
         MutableBoolean effectiveAckBeforeSync = new MutableBoolean(false);
@@ -150,14 +151,14 @@ public class BookieWriteToJournalTest {
     public void testForceLedger() throws Exception {
 
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
         File ledgerDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
                 .setLedgerDirNames(new String[]{ledgerDir.getPath()});
 
-        Bookie b = new Bookie(conf);
+        Bookie b = new BookieImpl(conf);
         b.start();
 
         long ledgerId = 1;

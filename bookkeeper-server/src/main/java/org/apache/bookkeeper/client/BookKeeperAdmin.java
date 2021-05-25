@@ -23,12 +23,10 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,9 +50,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import lombok.SneakyThrows;
-
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdherence;
@@ -1298,7 +1295,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                  * make sure that there is no bookie registered with the same
                  * bookieid and the cookie for the same bookieid is not existing.
                  */
-                BookieId bookieId = Bookie.getBookieId(conf);
+                BookieId bookieId = BookieImpl.getBookieId(conf);
                 if (rm.isBookieRegistered(bookieId)) {
                     LOG.error("Bookie with bookieId: {} is still registered, "
                         + "If this node is running bookie process, try stopping it first.", bookieId);

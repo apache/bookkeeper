@@ -18,21 +18,17 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
-
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -50,7 +46,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     protected Stopwatch lastPhaseStartTime;
     private final ExecutorService fenceThreadPool;
 
-    private SettableFuture<Boolean> fenceResult = null;
+    private CompletableFuture<Boolean> fenceResult = null;
 
     protected final ReadRequest readRequest;
     protected final long ledgerId;
@@ -113,7 +109,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         // reset last phase start time to measure fence result waiting time
         lastPhaseStartTime.reset().start();
         if (null != fenceThreadPool) {
-            Futures.addCallback(fenceResult, new FutureCallback<Boolean>() {
+            fenceResult.whenCompleteAsync(new FutureEventListener<Boolean>() {
                 @Override
                 public void onSuccess(Boolean result) {
                     sendFenceResponse(readResponseBuilder, entryBody, result, startTimeSw);

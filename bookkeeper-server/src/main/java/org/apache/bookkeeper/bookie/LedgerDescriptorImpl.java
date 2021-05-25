@@ -21,13 +21,14 @@
 
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.api.BKException;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     final byte[] masterKey;
 
     private AtomicBoolean fenceEntryPersisted = new AtomicBoolean();
-    private SettableFuture<Boolean> logFenceResult = null;
+    private CompletableFuture<Boolean> logFenceResult = null;
 
     LedgerDescriptorImpl(byte[] masterKey,
                          long ledgerId,
@@ -88,7 +89,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     }
 
     @Override
-    synchronized SettableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException {
+    synchronized CompletableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException {
         boolean success = this.setFenced();
         if (success) {
             // fenced for first time, we should add the key to journal ensure we can rebuild.
@@ -101,8 +102,8 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
             if (logFenceResult == null || fenceEntryPersisted.get()){
                 // Either ledger's fenced state is recovered from Journal
                 // Or Log fence entry in Journal succeed
-                SettableFuture<Boolean> result = SettableFuture.create();
-                result.set(true);
+                CompletableFuture<Boolean> result = FutureUtils.createFuture();
+                result.complete(true);
                 return result;
             } else if (logFenceResult.isDone()) {
                 // We failed to log fence entry in Journal, try again.
@@ -118,10 +119,10 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
      * @param journal log the fence entry in the Journal
      * @return A future which will be satisfied when add entry to journal complete
      */
-    private SettableFuture<Boolean> logFenceEntryInJournal(Journal journal) {
-        SettableFuture<Boolean> result;
+    private CompletableFuture<Boolean> logFenceEntryInJournal(Journal journal) {
+        CompletableFuture<Boolean> result;
         synchronized (this) {
-            result = logFenceResult = SettableFuture.create();
+            result = logFenceResult = FutureUtils.createFuture();
         }
         ByteBuf entry = createLedgerFenceEntry(ledgerId);
         try {
@@ -132,14 +133,14 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
                 }
                 if (rc == 0) {
                     fenceEntryPersisted.compareAndSet(false, true);
-                    result.set(true);
+                    result.complete(true);
                 } else {
-                    result.set(false);
+                    result.complete(false);
                 }
             }, null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            result.setException(e);
+            result.completeExceptionally(e);
         }
         return result;
     }

@@ -74,7 +74,7 @@ public class LedgerCacheTest {
 
     private final List<File> tempDirs = new ArrayList<File>();
 
-    private Bookie bookie;
+    private BookieImpl bookie;
 
     @Before
     public void setUp() throws Exception {
@@ -87,10 +87,10 @@ public class LedgerCacheTest {
         conf.setMetadataServiceUri(null);
         conf.setJournalDirName(txnDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
-        bookie = new Bookie(conf);
+        bookie = new BookieImpl(conf);
 
         activeLedgers = new SnapshotMap<Long, Boolean>();
-        ledgerCache = ((InterleavedLedgerStorage) bookie.ledgerStorage.getUnderlyingLedgerStorage()).ledgerCache;
+        ledgerCache = ((InterleavedLedgerStorage) bookie.getLedgerStorage().getUnderlyingLedgerStorage()).ledgerCache;
     }
 
     @After
@@ -99,7 +99,7 @@ public class LedgerCacheTest {
             flushThread.interrupt();
             flushThread.join();
         }
-        bookie.ledgerStorage.shutdown();
+        bookie.getLedgerStorage().shutdown();
         FileUtils.deleteDirectory(txnDir);
         FileUtils.deleteDirectory(ledgerDir);
         for (File dir : tempDirs) {
@@ -117,8 +117,8 @@ public class LedgerCacheTest {
         if (ledgerCache != null) {
             ledgerCache.close();
         }
-        ledgerCache = ((InterleavedLedgerStorage) bookie.ledgerStorage.getUnderlyingLedgerStorage())
-                .ledgerCache = new LedgerCacheImpl(conf, activeLedgers, bookie.getIndexDirsManager());
+        ledgerCache = ((InterleavedLedgerStorage) bookie.getLedgerStorage().getUnderlyingLedgerStorage())
+            .ledgerCache = new LedgerCacheImpl(conf, activeLedgers, bookie.getIndexDirsManager());
         flushThread = new Thread() {
                 public void run() {
                     while (true) {
@@ -275,9 +275,9 @@ public class LedgerCacheTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(), ledgerDir2.getAbsolutePath() });
 
-        Bookie bookie = new Bookie(conf);
+        BookieImpl bookie = new BookieImpl(conf);
         InterleavedLedgerStorage ledgerStorage =
-                ((InterleavedLedgerStorage) bookie.ledgerStorage.getUnderlyingLedgerStorage());
+            ((InterleavedLedgerStorage) bookie.getLedgerStorage().getUnderlyingLedgerStorage());
         LedgerCacheImpl ledgerCache = (LedgerCacheImpl) ledgerStorage.ledgerCache;
         // Create ledger index file
         ledgerStorage.setMasterKey(1, "key".getBytes());
@@ -315,10 +315,10 @@ public class LedgerCacheTest {
     public void testIndexPageEvictionWriteOrder() throws Exception {
         final int numLedgers = 10;
         File journalDir = createTempDir("bookie", "journal");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         File ledgerDir = createTempDir("bookie", "ledger");
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setMetadataServiceUri(null);
@@ -328,11 +328,11 @@ public class LedgerCacheTest {
             .setPageLimit(1)
             .setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
 
-        Bookie b = new Bookie(conf);
+        Bookie b = new BookieImpl(conf);
         b.start();
         for (int i = 1; i <= numLedgers; i++) {
             ByteBuf packet = generateEntry(i, 1);
-            b.addEntry(packet, false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+            b.addEntry(packet, false, new BookieImpl.NopWriteCallback(), null, "passwd".getBytes());
         }
 
         conf = TestBKConfiguration.newServerConfiguration();
@@ -340,7 +340,7 @@ public class LedgerCacheTest {
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
-        b = new Bookie(conf);
+        b = new BookieImpl(conf);
         for (int i = 1; i <= numLedgers; i++) {
             try {
                 b.readEntry(i, 1);
@@ -714,8 +714,8 @@ public class LedgerCacheTest {
     @Test
     public void testEntryMemTableFlushFailure() throws Exception {
         File tmpDir = createTempDir("bkTest", ".dir");
-        File curDir = Bookie.getCurrentDirectory(tmpDir);
-        Bookie.checkDirectoryStructure(curDir);
+        File curDir = BookieImpl.getCurrentDirectory(tmpDir);
+        BookieImpl.checkDirectoryStructure(curDir);
 
         int gcWaitTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -723,14 +723,15 @@ public class LedgerCacheTest {
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         conf.setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
 
-        Bookie bookie = new Bookie(conf);
-        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.ledgerStorage;
+        Bookie bookie = new BookieImpl(conf);
+        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.
+                getLedgerStorage();
         EntryMemTable memTable = flushTestSortedLedgerStorage.memTable;
 
         // this bookie.addEntry call is required. FileInfo for Ledger 1 would be created with this call.
         // without the fileinfo, 'flushTestSortedLedgerStorage.addEntry' calls will fail
         // because of BOOKKEEPER-965 change.
-        bookie.addEntry(generateEntry(1, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(1, 1), false, new BookieImpl.NopWriteCallback(), null, "passwd".getBytes());
 
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));
         assertFalse("Bookie is expected to be in ReadWrite mode", bookie.isReadOnly());
@@ -759,8 +760,8 @@ public class LedgerCacheTest {
     public void testSortedLedgerFlushFailure() throws Exception {
         // most of the code is same to the testEntryMemTableFlushFailure
         File tmpDir = createTempDir("bkTest", ".dir");
-        File curDir = Bookie.getCurrentDirectory(tmpDir);
-        Bookie.checkDirectoryStructure(curDir);
+        File curDir = BookieImpl.getCurrentDirectory(tmpDir);
+        BookieImpl.checkDirectoryStructure(curDir);
 
         int gcWaitTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -769,12 +770,13 @@ public class LedgerCacheTest {
             .setJournalDirName(tmpDir.toString())
             .setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
 
-        Bookie bookie = new Bookie(conf);
+        Bookie bookie = new BookieImpl(conf);
         bookie.start();
-        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.ledgerStorage;
+        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.
+                getLedgerStorage();
         EntryMemTable memTable = flushTestSortedLedgerStorage.memTable;
 
-        bookie.addEntry(generateEntry(1, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(1, 1), false, new BookieImpl.NopWriteCallback(), null, "passwd".getBytes());
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));
         assertFalse("Bookie is expected to be in ReadWrite mode", bookie.isReadOnly());
         assertTrue("EntryMemTable SnapShot is expected to be empty", memTable.snapshot.isEmpty());
@@ -819,8 +821,9 @@ public class LedgerCacheTest {
         // enable entrylog per ledger
         conf.setEntryLogPerLedgerEnabled(true);
 
-        Bookie bookie = new Bookie(conf);
-        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.ledgerStorage;
+        Bookie bookie = new BookieImpl(conf);
+        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.
+                getLedgerStorage();
         EntryMemTable memTable = flushTestSortedLedgerStorage.memTable;
 
         /*
@@ -829,9 +832,9 @@ public class LedgerCacheTest {
          * 'flushTestSortedLedgerStorage.addEntry' calls will fail because of
          * BOOKKEEPER-965 change.
          */
-        bookie.addEntry(generateEntry(1, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
-        bookie.addEntry(generateEntry(2, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
-        bookie.addEntry(generateEntry(3, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(1, 1), false, new BookieImpl.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(2, 1), false, new BookieImpl.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(3, 1), false, new BookieImpl.NopWriteCallback(), null, "passwd".getBytes());
 
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));
         flushTestSortedLedgerStorage.addEntry(generateEntry(2, 2));
@@ -859,8 +862,9 @@ public class LedgerCacheTest {
         // enable entrylog per ledger
         conf.setEntryLogPerLedgerEnabled(true);
 
-        Bookie bookie = new Bookie(conf);
-        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.ledgerStorage;
+        Bookie bookie = new BookieImpl(conf);
+        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.
+                getLedgerStorage();
         EntryMemTable memTable = flushTestSortedLedgerStorage.memTable;
 
         /*
@@ -869,9 +873,9 @@ public class LedgerCacheTest {
          * 'flushTestSortedLedgerStorage.addEntry' calls will fail because of
          * BOOKKEEPER-965 change.
          */
-        bookie.addEntry(generateEntry(1, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
-        bookie.addEntry(generateEntry(2, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
-        bookie.addEntry(generateEntry(3, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(1, 1), false, new BookieImpl.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(2, 1), false, new BookieImpl.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(3, 1), false, new BookieImpl.NopWriteCallback(), null, "passwd".getBytes());
 
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 4));
         flushTestSortedLedgerStorage.addEntry(generateEntry(2, 4));
@@ -902,8 +906,8 @@ public class LedgerCacheTest {
         String[] ledgerDirsPath = new String[numOfLedgerDirs];
         for (int i = 0; i < numOfLedgerDirs; i++) {
             ledgerDir = createTempDir("bkTest", ".dir");
-            curDir = Bookie.getCurrentDirectory(ledgerDir);
-            Bookie.checkDirectoryStructure(curDir);
+            curDir = BookieImpl.getCurrentDirectory(ledgerDir);
+            BookieImpl.checkDirectoryStructure(curDir);
             ledgerDirsPath[i] = ledgerDir.getAbsolutePath();
         }
         return ledgerDirsPath;

@@ -25,8 +25,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 import static org.powermock.api.mockito.PowerMockito.verifyNew;
-
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
@@ -47,7 +46,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link FlipBookieIdCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ FlipBookieIdCommand.class, Bookie.class, UpdateLedgerOp.class })
+@PrepareForTest({ FlipBookieIdCommand.class, BookieImpl.class, UpdateLedgerOp.class })
 public class FlipBookieIdCommandTest extends BookieCommandTestBase {
 
     @Mock
@@ -85,8 +84,8 @@ public class FlipBookieIdCommandTest extends BookieCommandTestBase {
                     .thenReturn(updateLedgerOp);
         PowerMockito.whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
                     .withArguments(eq(conf)).thenReturn(serverConfiguration);
-        PowerMockito.mockStatic(Bookie.class);
-        PowerMockito.when(Bookie.getBookieId(eq(serverConfiguration))).thenReturn(bookieSocketAddress);
+        PowerMockito.mockStatic(BookieImpl.class);
+        PowerMockito.when(BookieImpl.getBookieId(eq(serverConfiguration))).thenReturn(bookieSocketAddress);
     }
 
     @Test

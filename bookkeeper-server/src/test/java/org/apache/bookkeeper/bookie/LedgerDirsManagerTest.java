@@ -91,8 +91,8 @@ public class LedgerDirsManagerTest {
         PowerMockito.mockStatic(Executors.class);
 
         File tmpDir = createTempDir("bkTest", ".dir");
-        curDir = Bookie.getCurrentDirectory(tmpDir);
-        Bookie.checkDirectoryStructure(curDir);
+        curDir = BookieImpl.getCurrentDirectory(tmpDir);
+        BookieImpl.checkDirectoryStructure(curDir);
 
         conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
@@ -306,12 +306,12 @@ public class LedgerDirsManagerTest {
         HashMap<File, Float> usageMap;
 
         File tmpDir1 = createTempDir("bkTest", ".dir");
-        File curDir1 = Bookie.getCurrentDirectory(tmpDir1);
-        Bookie.checkDirectoryStructure(curDir1);
+        File curDir1 = BookieImpl.getCurrentDirectory(tmpDir1);
+        BookieImpl.checkDirectoryStructure(curDir1);
 
         File tmpDir2 = createTempDir("bkTest", ".dir");
-        File curDir2 = Bookie.getCurrentDirectory(tmpDir2);
-        Bookie.checkDirectoryStructure(curDir2);
+        File curDir2 = BookieImpl.getCurrentDirectory(tmpDir2);
+        BookieImpl.checkDirectoryStructure(curDir2);
 
         conf.setDiskUsageThreshold(nospace);
         conf.setDiskLowWaterMarkUsageThreshold(lwm);
@@ -390,12 +390,12 @@ public class LedgerDirsManagerTest {
         final float lwm = 0.80f;
 
         File tmpDir1 = createTempDir("bkTest", ".dir");
-        File curDir1 = Bookie.getCurrentDirectory(tmpDir1);
-        Bookie.checkDirectoryStructure(curDir1);
+        File curDir1 = BookieImpl.getCurrentDirectory(tmpDir1);
+        BookieImpl.checkDirectoryStructure(curDir1);
 
         File tmpDir2 = createTempDir("bkTest", ".dir");
-        File curDir2 = Bookie.getCurrentDirectory(tmpDir2);
-        Bookie.checkDirectoryStructure(curDir2);
+        File curDir2 = BookieImpl.getCurrentDirectory(tmpDir2);
+        BookieImpl.checkDirectoryStructure(curDir2);
 
         conf.setDiskUsageThreshold(nospace);
         conf.setDiskLowWaterMarkUsageThreshold(lwm);
