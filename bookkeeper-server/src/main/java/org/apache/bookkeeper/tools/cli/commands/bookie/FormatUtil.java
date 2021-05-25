@@ -20,7 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import io.netty.buffer.ByteBuf;
 import java.util.Formatter;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.slf4j.Logger;
@@ -53,7 +53,7 @@ public class FormatUtil {
         LOG.info(
             "--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId) + ", Eid=" + entryId + ", ByteOffset=" + pos
                 + ", EntrySize=" + entrySize + " ---------");
-        if (entryId == Bookie.METAENTRY_ID_LEDGER_KEY) {
+        if (entryId == BookieImpl.METAENTRY_ID_LEDGER_KEY) {
             int masterKeyLen = recBuff.readInt();
             byte[] masterKey = new byte[masterKeyLen];
             recBuff.readBytes(masterKey);
@@ -62,7 +62,7 @@ public class FormatUtil {
             LOG.info("");
             return;
         }
-        if (entryId == Bookie.METAENTRY_ID_FENCE_KEY) {
+        if (entryId == BookieImpl.METAENTRY_ID_FENCE_KEY) {
             LOG.info("Type:           META");
             LOG.info("Fenced");
             LOG.info("");

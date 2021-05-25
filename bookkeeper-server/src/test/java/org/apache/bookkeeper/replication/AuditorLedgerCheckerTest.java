@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Cleanup;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -307,8 +307,9 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         ServerConfiguration bookieConf = bsConfs.get(bkIndex);
         BookieServer bk = bs.get(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
-        bk.getBookie().getStateManager().doTransitionToReadOnlyMode();
-        bkc.waitForReadOnlyBookie(Bookie.getBookieId(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
+
+        ((BookieImpl) bk.getBookie()).getStateManager().doTransitionToReadOnlyMode();
+        bkc.waitForReadOnlyBookie(BookieImpl.getBookieId(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
@@ -334,8 +335,9 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         ServerConfiguration bookieConf = bsConfs.get(bkIndex);
         BookieServer bk = bs.get(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
-        bk.getBookie().getStateManager().doTransitionToReadOnlyMode();
-        bkc.waitForReadOnlyBookie(Bookie.getBookieId(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
+
+        ((BookieImpl) bk.getBookie()).getStateManager().doTransitionToReadOnlyMode();
+        bkc.waitForReadOnlyBookie(BookieImpl.getBookieId(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");

@@ -75,7 +75,7 @@ public class BookieJournalForceTest {
     @Test
     public void testAckAfterSync() throws Exception {
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setJournalDirName(journalDir.getPath())
@@ -138,7 +138,7 @@ public class BookieJournalForceTest {
     @Test
     public void testAckBeforeSync() throws Exception {
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
@@ -189,7 +189,7 @@ public class BookieJournalForceTest {
     @Test
     public void testAckBeforeSyncWithJournalBufferedEntriesThreshold() throws Exception {
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         final int journalBufferedEntriesThreshold = 10;
         // sending a burst of entries, more than journalBufferedEntriesThreshold
@@ -255,7 +255,7 @@ public class BookieJournalForceTest {
     @Test
     public void testInterleavedRequests() throws Exception {
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
@@ -322,7 +322,7 @@ public class BookieJournalForceTest {
     @Test
     public void testForceLedger() throws Exception {
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath());

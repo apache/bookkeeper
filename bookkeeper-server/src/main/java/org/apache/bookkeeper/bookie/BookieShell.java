@@ -2186,12 +2186,12 @@ public class BookieShell implements Tool {
     @Override
     public void setConf(CompositeConfiguration conf) throws Exception {
         bkConf.loadConf(conf);
-        journalDirectories = Bookie.getCurrentDirectories(bkConf.getJournalDirs());
-        ledgerDirectories = Bookie.getCurrentDirectories(bkConf.getLedgerDirs());
+        journalDirectories = BookieImpl.getCurrentDirectories(bkConf.getJournalDirs());
+        ledgerDirectories = BookieImpl.getCurrentDirectories(bkConf.getLedgerDirs());
         if (null == bkConf.getIndexDirs()) {
             indexDirectories = ledgerDirectories;
         } else {
-            indexDirectories = Bookie.getCurrentDirectories(bkConf.getIndexDirs());
+            indexDirectories = BookieImpl.getCurrentDirectories(bkConf.getIndexDirs());
         }
         pageSize = bkConf.getPageSize();
         entriesPerPage = pageSize / 8;

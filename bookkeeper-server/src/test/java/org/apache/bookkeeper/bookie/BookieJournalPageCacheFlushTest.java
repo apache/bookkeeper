@@ -92,7 +92,7 @@ public class BookieJournalPageCacheFlushTest {
     @Test
     public void testAckAfterSyncPageCacheFlush() throws Exception {
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setJournalDirName(journalDir.getPath())
@@ -159,7 +159,7 @@ public class BookieJournalPageCacheFlushTest {
     @Test
     public void testAckBeforeSyncPageCacheFlush() throws Exception {
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setJournalDirName(journalDir.getPath())
@@ -222,7 +222,7 @@ public class BookieJournalPageCacheFlushTest {
     @Test
     public void testAckBeforeUnSyncPageCacheFlush() throws Exception {
         File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setJournalDirName(journalDir.getPath())

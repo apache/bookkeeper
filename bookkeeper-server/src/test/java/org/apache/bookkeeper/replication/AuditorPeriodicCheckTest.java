@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieAccessor;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
@@ -151,11 +152,11 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         }
         lh.close();
 
-        BookieAccessor.forceFlush(bs.get(0).getBookie());
+        BookieAccessor.forceFlush((BookieImpl) bs.get(0).getBookie());
 
 
         File ledgerDir = bsConfs.get(0).getLedgerDirs()[0];
-        ledgerDir = Bookie.getCurrentDirectory(ledgerDir);
+        ledgerDir = BookieImpl.getCurrentDirectory(ledgerDir);
         // corrupt of entryLogs
         File[] entryLogs = ledgerDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
@@ -207,10 +208,10 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         }
         lh.close();
 
-        BookieAccessor.forceFlush(bs.get(0).getBookie());
+        BookieAccessor.forceFlush((BookieImpl) bs.get(0).getBookie());
 
         File ledgerDir = bsConfs.get(0).getLedgerDirs()[0];
-        ledgerDir = Bookie.getCurrentDirectory(ledgerDir);
+        ledgerDir = BookieImpl.getCurrentDirectory(ledgerDir);
 
         // corrupt of entryLogs
         File index = new File(ledgerDir, IndexPersistenceMgr.getLedgerName(ledgerToCorrupt));
@@ -273,7 +274,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         final AtomicInteger numReads = new AtomicInteger(0);
         ServerConfiguration conf = killBookie(0);
 
-        Bookie deadBookie = new Bookie(conf) {
+        Bookie deadBookie = new BookieImpl(conf) {
             @Override
             public ByteBuf readEntry(long ledgerId, long entryId)
                     throws IOException, NoLedgerException {
@@ -338,7 +339,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         }
 
         try (final Auditor auditor = new Auditor(
-                Bookie.getBookieId(bsConfs.get(0)).toString(),
+                BookieImpl.getBookieId(bsConfs.get(0)).toString(),
                 bsConfs.get(0), NullStatsLogger.INSTANCE)) {
             final AtomicBoolean exceptionCaught = new AtomicBoolean(false);
             final CountDownLatch latch = new CountDownLatch(1);
@@ -401,7 +402,8 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         servConf.setAuditorPeriodicCheckInterval(auditorPeriodicCheckInterval);
         servConf.setAuditorPeriodicPlacementPolicyCheckInterval(0);
         servConf.setAuditorPeriodicBookieCheckInterval(0);
-        final TestAuditor auditor = new TestAuditor(Bookie.getBookieId(servConf).toString(), servConf, bkc, false,
+
+        final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
                 statsLogger);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("CHECK_ALL_LEDGERS_TIME SuccessCount", 0, checkAllLedgersStatsLogger.getSuccessCount());
@@ -494,7 +496,8 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         servConf.setAuditorPeriodicPlacementPolicyCheckInterval(auditorPeriodicPlacementPolicyCheckInterval);
         servConf.setAuditorPeriodicCheckInterval(0);
         servConf.setAuditorPeriodicBookieCheckInterval(0);
-        final TestAuditor auditor = new TestAuditor(Bookie.getBookieId(servConf).toString(), servConf, bkc, false,
+
+        final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
                 statsLogger);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0, placementPolicyCheckStatsLogger.getSuccessCount());
@@ -598,7 +601,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         servConf.setAuditorPeriodicReplicasCheckInterval(auditorPeriodicReplicasCheckInterval);
         servConf.setAuditorPeriodicCheckInterval(0);
         servConf.setAuditorPeriodicBookieCheckInterval(0);
-        final TestAuditor auditor = new TestAuditor(Bookie.getBookieId(servConf).toString(), servConf, bkc, false,
+        final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
                 statsLogger);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("REPLICAS_CHECK_TIME SuccessCount", 0, replicasCheckStatsLogger.getSuccessCount());
@@ -716,7 +719,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         LOG.info("Killing bookie " + bs.get(bookieIdx).getBookieId());
         ServerConfiguration conf = killBookie(bookieIdx);
-        Bookie writeFailingBookie = new Bookie(conf) {
+        Bookie writeFailingBookie = new BookieImpl(conf) {
             @Override
             public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb,
                              Object ctx, byte[] masterKey)

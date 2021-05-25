@@ -33,7 +33,7 @@ import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -59,7 +59,7 @@ public class LocationsIndexRebuildOp {
         LOG.info("Starting index rebuilding");
 
         // Move locations index to a backup directory
-        String basePath = Bookie.getCurrentDirectory(conf.getLedgerDirs()[0]).toString();
+        String basePath = BookieImpl.getCurrentDirectory(conf.getLedgerDirs()[0]).toString();
         Path currentPath = FileSystems.getDefault().getPath(basePath, "locations");
         String timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date());
         Path backupPath = FileSystems.getDefault().getPath(basePath, "locations.BACKUP-" + timestamp);

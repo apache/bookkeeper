@@ -27,6 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.BookieAccessor;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieShell;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -68,7 +69,7 @@ public class LedgerCmdTest extends BookKeeperClusterTestCase {
 
         bs.forEach(bookieServer -> {
             try {
-                BookieAccessor.forceFlush(bookieServer.getBookie());
+                BookieAccessor.forceFlush((BookieImpl) bookieServer.getBookie());
             } catch (IOException e) {
                 LOG.error("Error forceFlush:", e);
             }

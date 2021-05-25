@@ -51,15 +51,15 @@ public class CheckpointOnNewLedgersTest {
     public final TemporaryFolder testDir = new TemporaryFolder();
 
     private ServerConfiguration conf;
-    private Bookie bookie;
+    private BookieImpl bookie;
     private CountDownLatch getLedgerDescCalledLatch;
     private CountDownLatch getLedgerDescWaitLatch;
 
     @Before
     public void setup() throws Exception {
         File bkDir = testDir.newFolder("dbLedgerStorageCheckpointTest");
-        File curDir = Bookie.getCurrentDirectory(bkDir);
-        Bookie.checkDirectoryStructure(curDir);
+        File curDir = BookieImpl.getCurrentDirectory(bkDir);
+        BookieImpl.checkDirectoryStructure(curDir);
 
         int gcWaitTime = 1000;
         conf = TestBKConfiguration.newServerConfiguration();
@@ -69,7 +69,7 @@ public class CheckpointOnNewLedgersTest {
         conf.setLedgerDirNames(new String[] { bkDir.toString() });
         conf.setEntryLogSizeLimit(10 * 1024);
 
-        bookie = spy(new Bookie(conf));
+        bookie = spy(new BookieImpl(conf));
         bookie.start();
 
         getLedgerDescCalledLatch = new CountDownLatch(1);
@@ -175,7 +175,7 @@ public class CheckpointOnNewLedgersTest {
         t1.join();
 
         // construct a new bookie to simulate "bookie restart from crash"
-        Bookie newBookie = new Bookie(conf);
+        Bookie newBookie = new BookieImpl(conf);
         newBookie.start();
 
         for (int i = 0; i < numEntries; i++) {

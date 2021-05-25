@@ -98,8 +98,8 @@ public class TestEntryLog {
     @Before
     public void setUp() throws Exception {
         this.rootDir = createTempDir("bkTest", ".dir");
-        this.curDir = Bookie.getCurrentDirectory(rootDir);
-        Bookie.checkDirectoryStructure(curDir);
+        this.curDir = BookieImpl.getCurrentDirectory(rootDir);
+        BookieImpl.checkDirectoryStructure(curDir);
         this.conf = TestBKConfiguration.newServerConfiguration();
         this.dirsMgr = new LedgerDirsManager(
             conf,
@@ -307,7 +307,7 @@ public class TestEntryLog {
         conf.setJournalDirName(ledgerDir1.toString());
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(),
                 ledgerDir2.getAbsolutePath() });
-        Bookie bookie = new Bookie(conf);
+        BookieImpl bookie = new BookieImpl(conf);
         EntryLogger entryLogger = new EntryLogger(conf,
                 bookie.getLedgerDirsManager());
         InterleavedLedgerStorage ledgerStorage =
@@ -687,7 +687,7 @@ public class TestEntryLog {
         conf.setLedgerDirNames(new String[] { ledgerDir.getAbsolutePath()});
         conf.setLedgerStorageClass(ledgerStorageClass);
         conf.setEntryLogPerLedgerEnabled(entryLogPerLedgerEnabled);
-        Bookie bookie = new Bookie(conf);
+        BookieImpl bookie = new BookieImpl(conf);
         CompactableLedgerStorage ledgerStorage = (CompactableLedgerStorage) bookie.ledgerStorage;
         Random rand = new Random(0);
 
@@ -821,8 +821,8 @@ public class TestEntryLog {
         String[] ledgerDirsPath = new String[numOfLedgerDirs];
         for (int i = 0; i < numOfLedgerDirs; i++) {
             ledgerDir = createTempDir("bkTest", ".dir");
-            curDir = Bookie.getCurrentDirectory(ledgerDir);
-            Bookie.checkDirectoryStructure(curDir);
+            curDir = BookieImpl.getCurrentDirectory(ledgerDir);
+            BookieImpl.checkDirectoryStructure(curDir);
             ledgerDirsPath[i] = ledgerDir.getAbsolutePath();
         }
         return ledgerDirsPath;
@@ -1616,8 +1616,8 @@ public class TestEntryLog {
         File curDir;
         for (int i = 0; i < numberOfLedgerDirs; i++) {
             ledgerDir = createTempDir("bkTest", ".dir").getAbsoluteFile();
-            curDir = Bookie.getCurrentDirectory(ledgerDir);
-            Bookie.checkDirectoryStructure(curDir);
+            curDir = BookieImpl.getCurrentDirectory(ledgerDir);
+            BookieImpl.checkDirectoryStructure(curDir);
             ledgerDirs.add(ledgerDir);
             ledgerDirsPath[i] = ledgerDir.getPath();
             curDirs.add(curDir);

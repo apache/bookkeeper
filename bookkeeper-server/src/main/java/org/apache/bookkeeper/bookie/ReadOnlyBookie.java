@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * ReadOnlyBookie is force started as readonly, and will not change to writable.
  * </p>
  */
-public class ReadOnlyBookie extends Bookie {
+public class ReadOnlyBookie extends BookieImpl {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyBookie.class);
 

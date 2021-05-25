@@ -29,12 +29,11 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
-
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.stream.LongStream;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
@@ -52,7 +51,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link ConvertToDBStorageCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ Bookie.class, ConvertToDBStorageCommand.class })
+@PrepareForTest({ BookieImpl.class, ConvertToDBStorageCommand.class })
 public class ConvertToDBStorageCommandTest extends BookieCommandTestBase {
 
     private InterleavedLedgerStorage interleavedLedgerStorage;
@@ -87,10 +86,10 @@ public class ConvertToDBStorageCommandTest extends BookieCommandTestBase {
         when(dbStorage.addLedgerToIndex(anyLong(), anyBoolean(), eq(new byte[0]),
             any(LedgerCache.PageEntriesIterable.class))).thenReturn(1L);
 
-        PowerMockito.mockStatic(Bookie.class);
-        PowerMockito.when(Bookie.mountLedgerStorageOffline(eq(conf), eq(interleavedLedgerStorage)))
+        PowerMockito.mockStatic(BookieImpl.class);
+        PowerMockito.when(BookieImpl.mountLedgerStorageOffline(eq(conf), eq(interleavedLedgerStorage)))
             .thenReturn(PowerMockito.mock(InterleavedLedgerStorage.class));
-        PowerMockito.when(Bookie.mountLedgerStorageOffline(eq(conf), eq(dbStorage))).thenReturn(dbStorage);
+        PowerMockito.when(BookieImpl.mountLedgerStorageOffline(eq(conf), eq(dbStorage))).thenReturn(dbStorage);
     }
 
     private Iterator<Long> getLedgerId() {

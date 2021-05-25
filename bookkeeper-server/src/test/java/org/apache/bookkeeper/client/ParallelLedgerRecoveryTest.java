@@ -23,10 +23,8 @@ package org.apache.bookkeeper.client;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
@@ -38,9 +36,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -486,7 +483,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         assertEquals("recovery callback should be triggered only once", 0, numFailureCalls.get());
     }
 
-    static class DelayResponseBookie extends Bookie {
+    static class DelayResponseBookie extends BookieImpl {
 
         static final class WriteCallbackEntry {
 

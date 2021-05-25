@@ -54,7 +54,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testLedgerDeleteNotification() throws Exception {
-        LedgerStorage ledgerStorage = bs.get(0).getBookie().ledgerStorage;
+        LedgerStorage ledgerStorage = bs.get(0).getBookie().getLedgerStorage();
 
         long deletedLedgerId = 5;
         ledgerStorage.setMasterKey(deletedLedgerId, new byte[0]);
@@ -141,7 +141,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
          * purpose.
          */
         newBookieConf.setMetadataServiceUri(null);
-        Bookie newbookie = new Bookie(newBookieConf);
+        BookieImpl newbookie = new BookieImpl(newBookieConf);
         /*
          * since 'newbookie' uses the same data as original Bookie, it should be
          * able to read journal of the original bookie and hence explicitLac buf
@@ -226,9 +226,10 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
         /*
          * flush ledgerStorage so that header of fileinfo is flushed.
          */
-        bs.get(0).getBookie().ledgerStorage.flush();
+        bs.get(0).getBookie().getLedgerStorage().flush();
 
-        ReadOnlyFileInfo fileInfo = getFileInfo(ledgerId, Bookie.getCurrentDirectories(bsConfs.get(0).getLedgerDirs()));
+        ReadOnlyFileInfo fileInfo = getFileInfo(ledgerId,
+                                                BookieImpl.getCurrentDirectories(bsConfs.get(0).getLedgerDirs()));
         fileInfo.readHeader();
         ByteBuf explicitLacBufReadFromFileInfo = fileInfo.getExplicitLac();
 
@@ -305,7 +306,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
          * purpose.
          */
         newBookieConf.setMetadataServiceUri(null);
-        Bookie newbookie = new Bookie(newBookieConf);
+        BookieImpl newbookie = new BookieImpl(newBookieConf);
         /*
          * since 'newbookie' uses the same data as original Bookie, it should be
          * able to read journal of the original bookie.

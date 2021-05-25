@@ -63,8 +63,7 @@ public class LedgerDirsManager {
     }
 
     public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger) {
-        this.ledgerDirectories = Arrays.asList(Bookie
-                .getCurrentDirectories(dirs));
+        this.ledgerDirectories = Arrays.asList(BookieImpl.getCurrentDirectories(dirs));
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
         this.filledDirs = new ArrayList<File>();
         this.listeners = new ArrayList<LedgerDirsListener>();

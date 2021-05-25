@@ -27,21 +27,19 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import com.google.common.util.concurrent.SettableFuture;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelPromise;
 import io.netty.channel.EventLoop;
-
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -84,7 +82,7 @@ public class ReadEntryProcessorTest {
     }
 
     private void testAsynchronousRequest(boolean result, int errorCode) throws Exception {
-        SettableFuture<Boolean> fenceResult = SettableFuture.create();
+        CompletableFuture<Boolean> fenceResult = FutureUtils.createFuture();
         when(bookie.fenceLedger(anyLong(), any())).thenReturn(fenceResult);
 
         ChannelPromise promise = new DefaultChannelPromise(channel);
@@ -104,7 +102,7 @@ public class ReadEntryProcessorTest {
         ReadEntryProcessor processor = ReadEntryProcessor.create(request, channel, requestProcessor, service, true);
         processor.run();
 
-        fenceResult.set(result);
+        fenceResult.complete(result);
         latch.await();
         verify(channel, times(1)).writeAndFlush(any(Response.class));
 
@@ -128,7 +126,7 @@ public class ReadEntryProcessorTest {
     }
 
     private void testSynchronousRequest(boolean result, int errorCode) throws Exception {
-        SettableFuture<Boolean> fenceResult = SettableFuture.create();
+        CompletableFuture<Boolean> fenceResult = FutureUtils.createFuture();
         when(bookie.fenceLedger(anyLong(), any())).thenReturn(fenceResult);
         ChannelPromise promise = new DefaultChannelPromise(channel);
         AtomicReference<Object> writtenObject = new AtomicReference<>();
@@ -144,7 +142,7 @@ public class ReadEntryProcessorTest {
         ReadRequest request = new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
                 1, BookieProtocol.FLAG_DO_FENCING, new byte[]{});
         ReadEntryProcessor processor = ReadEntryProcessor.create(request, channel, requestProcessor, null, true);
-        fenceResult.set(result);
+        fenceResult.complete(result);
         processor.run();
 
         latch.await();

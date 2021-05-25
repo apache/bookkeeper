@@ -22,10 +22,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.verifyNew;
-
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
@@ -41,7 +40,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link LocalConsistencyCheckCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ LocalConsistencyCheckCommand.class, Bookie.class })
+@PrepareForTest({ LocalConsistencyCheckCommand.class, BookieImpl.class })
 public class LocalConsistencyCheckCommandTest extends BookieCommandTestBase {
 
     @Mock
@@ -60,8 +59,8 @@ public class LocalConsistencyCheckCommandTest extends BookieCommandTestBase {
 
         PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
         PowerMockito.whenNew(ServerConfiguration.class).withArguments(eq(conf)).thenReturn(serverConfiguration);
-        PowerMockito.mockStatic(Bookie.class);
-        PowerMockito.when(Bookie.mountLedgerStorageOffline(eq(serverConfiguration), eq(null)))
+        PowerMockito.mockStatic(BookieImpl.class);
+        PowerMockito.when(BookieImpl.mountLedgerStorageOffline(eq(serverConfiguration), eq(null)))
                     .thenReturn(ledgerStorage);
         List<LedgerStorage.DetectedInconsistency> errors = new ArrayList<>();
         PowerMockito.when(ledgerStorage.localConsistencyCheck(eq(java.util.Optional.empty()))).thenReturn(errors);

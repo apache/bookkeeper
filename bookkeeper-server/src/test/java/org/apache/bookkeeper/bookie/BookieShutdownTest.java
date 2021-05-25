@@ -122,7 +122,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
         killBookie(0);
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch shutdownComplete = new CountDownLatch(1);
-        Bookie bookie = new Bookie(conf) {
+        Bookie bookie = new BookieImpl(conf) {
             @Override
             public void run() {
                 try {

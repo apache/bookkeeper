@@ -35,6 +35,7 @@ import io.netty.channel.DefaultChannelPromise;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerRequest;
@@ -92,7 +93,7 @@ public class ForceLedgerProcessorV3Test {
             wc.writeComplete(
                 0,
                 request.getForceLedgerRequest().getLedgerId(),
-                Bookie.METAENTRY_ID_FORCE_LEDGER,
+                BookieImpl.METAENTRY_ID_FORCE_LEDGER,
                 null,
                 null);
             return null;

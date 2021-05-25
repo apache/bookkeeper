@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -188,7 +189,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         BookieId host = beforelh.getCurrentEnsemble().get(slowBookieIdx);
         ServerConfiguration conf = killBookie(host);
 
-        Bookie fakeBookie = new Bookie(conf) {
+        Bookie fakeBookie = new BookieImpl(conf) {
             @Override
             public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
@@ -247,7 +248,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         // Add a dead bookie to the cluster
         ServerConfiguration conf = newServerConfiguration();
-        Bookie deadBookie1 = new Bookie(conf) {
+        Bookie deadBookie1 = new BookieImpl(conf) {
             @Override
             public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
@@ -328,7 +329,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         // Add a dead bookie to the cluster
         ServerConfiguration conf = newServerConfiguration();
-        Bookie deadBookie1 = new Bookie(conf) {
+        Bookie deadBookie1 = new BookieImpl(conf) {
             @Override
             public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
@@ -411,7 +412,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
     }
 
     private void startDeadBookie(ServerConfiguration conf) throws Exception {
-        Bookie rBookie = new Bookie(conf) {
+        Bookie rBookie = new BookieImpl(conf) {
             @Override
             public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {

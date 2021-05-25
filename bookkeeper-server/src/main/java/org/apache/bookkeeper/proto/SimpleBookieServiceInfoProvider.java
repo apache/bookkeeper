@@ -22,7 +22,7 @@ package org.apache.bookkeeper.proto;
 
 import java.net.UnknownHostException;
 import java.util.function.Supplier;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.BookieServiceInfoUtils;
@@ -36,7 +36,7 @@ public class SimpleBookieServiceInfoProvider implements Supplier<BookieServiceIn
 
     public SimpleBookieServiceInfoProvider(ServerConfiguration serverConfiguration) {
         try {
-            this.bookieSocketAddress = Bookie.getBookieAddress(serverConfiguration);
+            this.bookieSocketAddress = BookieImpl.getBookieAddress(serverConfiguration);
         } catch (UnknownHostException err) {
             throw new RuntimeException(err);
         }

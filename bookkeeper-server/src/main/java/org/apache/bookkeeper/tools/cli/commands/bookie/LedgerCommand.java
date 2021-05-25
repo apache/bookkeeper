@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerEntryPage;
@@ -100,7 +100,7 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
             ServerConfiguration tConf = new ServerConfiguration(conf);
             InterleavedLedgerStorage interleavedLedgerStorage = new InterleavedLedgerStorage();
             try {
-                Bookie.mountLedgerStorageOffline(tConf, interleavedLedgerStorage);
+                BookieImpl.mountLedgerStorageOffline(tConf, interleavedLedgerStorage);
             } catch (IOException e) {
                 throw new UncheckedExecutionException(e.getMessage(), e);
             }

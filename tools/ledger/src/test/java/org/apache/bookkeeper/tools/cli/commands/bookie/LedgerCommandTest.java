@@ -23,9 +23,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-
 import java.util.Iterator;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerEntryPage;
@@ -46,7 +45,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link LedgerCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ DbLedgerStorage.class, SortedLedgerStorage.class, InterleavedLedgerStorage.class, Bookie.class,
+@PrepareForTest({ DbLedgerStorage.class, SortedLedgerStorage.class, InterleavedLedgerStorage.class, BookieImpl.class,
         LedgerStorage.class, LedgerCache.PageEntries.class, LedgerCache.PageEntriesIterable.class, LedgerCommand.class,
         LedgerCache.LedgerIndexMetadata.class })
 public class LedgerCommandTest extends BookieCommandTestBase {
@@ -79,8 +78,8 @@ public class LedgerCommandTest extends BookieCommandTestBase {
         InterleavedLedgerStorage interleavedLedgerStorage = PowerMockito.mock(InterleavedLedgerStorage.class);
         PowerMockito.whenNew(InterleavedLedgerStorage.class).withNoArguments().thenReturn(interleavedLedgerStorage);
 
-        PowerMockito.mockStatic(Bookie.class);
-        PowerMockito.when(Bookie.mountLedgerStorageOffline(eq(tConf), eq(interleavedLedgerStorage)))
+        PowerMockito.mockStatic(BookieImpl.class);
+        PowerMockito.when(BookieImpl.mountLedgerStorageOffline(eq(tConf), eq(interleavedLedgerStorage)))
                 .thenReturn(PowerMockito.mock(LedgerStorage.class));
 
         LedgerCache.PageEntries e = PowerMockito.mock(LedgerCache.PageEntries.class);

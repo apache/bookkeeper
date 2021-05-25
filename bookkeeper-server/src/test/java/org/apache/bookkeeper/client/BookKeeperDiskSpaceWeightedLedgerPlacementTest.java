@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -77,7 +78,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
             BookKeeperCheckInfoReader client, ServerConfiguration conf, final long initialFreeDiskSpace,
             final long finalFreeDiskSpace, final AtomicBoolean useFinal) throws Exception {
         final AtomicBoolean ready = useFinal == null ? new AtomicBoolean(false) : useFinal;
-        Bookie bookieWithCustomFreeDiskSpace = new Bookie(conf) {
+        Bookie bookieWithCustomFreeDiskSpace = new BookieImpl(conf) {
             long startTime = System.currentTimeMillis();
             @Override
             public long getTotalFreeSpace() {

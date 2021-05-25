@@ -19,14 +19,13 @@
 package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
@@ -64,13 +63,13 @@ public class ExpandStorageService implements HttpEndpointService {
         HttpServiceResponse response = new HttpServiceResponse();
 
         if (HttpServer.Method.PUT == request.getMethod()) {
-            File[] ledgerDirectories = Bookie.getCurrentDirectories(conf.getLedgerDirs());
-            File[] journalDirectories = Bookie.getCurrentDirectories(conf.getJournalDirs());
+            File[] ledgerDirectories = BookieImpl.getCurrentDirectories(conf.getLedgerDirs());
+            File[] journalDirectories = BookieImpl.getCurrentDirectories(conf.getJournalDirs());
             File[] indexDirectories;
             if (null == conf.getIndexDirs()) {
                 indexDirectories = ledgerDirectories;
             } else {
-                indexDirectories = Bookie.getCurrentDirectories(conf.getIndexDirs());
+                indexDirectories = BookieImpl.getCurrentDirectories(conf.getIndexDirs());
             }
 
             List<File> allLedgerDirs = Lists.newArrayList();
@@ -83,7 +82,7 @@ public class ExpandStorageService implements HttpEndpointService {
                 URI.create(conf.getMetadataServiceUri())
             )) {
                 driver.initialize(conf, () -> { }, NullStatsLogger.INSTANCE);
-                Bookie.checkEnvironmentWithStorageExpansion(conf, driver,
+                BookieImpl.checkEnvironmentWithStorageExpansion(conf, driver,
                   Lists.newArrayList(journalDirectories), allLedgerDirs);
             } catch (BookieException e) {
                 LOG.error("Exception occurred while updating cookie for storage expansion", e);

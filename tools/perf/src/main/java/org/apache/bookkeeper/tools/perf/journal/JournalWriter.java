@@ -17,7 +17,6 @@ package org.apache.bookkeeper.tools.perf.journal;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
-
 import com.beust.jcommander.Parameter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -42,8 +41,8 @@ import java.util.concurrent.atomic.LongAdder;
 import lombok.extern.slf4j.Slf4j;
 import org.HdrHistogram.Histogram;
 import org.HdrHistogram.Recorder;
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -477,7 +476,7 @@ public class JournalWriter implements Runnable {
         conf.setJournalSyncData(flags.journalSyncEnabled);
         conf.setLedgerDirNames(flags.journalDirs.toArray(new String[0]));
         conf.setStatsProviderClass(PrometheusMetricsProvider.class);
-        File[] currentDirs = Bookie.getCurrentDirectories(conf.getLedgerDirs());
+        File[] currentDirs = BookieImpl.getCurrentDirectories(conf.getLedgerDirs());
         for (File dir : currentDirs) {
             if (dir.mkdirs()) {
                 log.info("Successfully created dir {}", dir);

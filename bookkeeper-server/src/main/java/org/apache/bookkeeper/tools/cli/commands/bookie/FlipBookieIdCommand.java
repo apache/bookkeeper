@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieShell;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -144,9 +144,9 @@ public class FlipBookieIdCommand extends BookieCommand<FlipBookieIdCommand.FlipB
         final BookKeeperAdmin admin = new BookKeeperAdmin(bk);
         final UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, admin);
         final ServerConfiguration serverConfiguration = new ServerConfiguration(conf);
-        final BookieId newBookieId = Bookie.getBookieId(serverConfiguration);
+        final BookieId newBookieId = BookieImpl.getBookieId(serverConfiguration);
         serverConfiguration.setUseHostNameAsBookieID(!flags.hostname);
-        final BookieId oldBookieId = Bookie.getBookieId(serverConfiguration);
+        final BookieId oldBookieId = BookieImpl.getBookieId(serverConfiguration);
 
         BookieShell.UpdateLedgerNotifier progressable = new BookieShell.UpdateLedgerNotifier() {
             long lastReport = System.nanoTime();

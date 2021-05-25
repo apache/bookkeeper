@@ -72,8 +72,8 @@ public class IndexPersistenceMgrTest {
         ledgerDir.delete();
         ledgerDir.mkdir();
         // Create current directories
-        Bookie.getCurrentDirectory(journalDir).mkdir();
-        Bookie.getCurrentDirectory(ledgerDir).mkdir();
+        BookieImpl.getCurrentDirectory(journalDir).mkdir();
+        BookieImpl.getCurrentDirectory(ledgerDir).mkdir();
 
         conf = new ServerConfiguration();
         conf.setMetadataServiceUri(null);
@@ -390,7 +390,7 @@ public class IndexPersistenceMgrTest {
     }
 
     void preCreateFileInfoForLedger(long ledgerId, int headerVersion) throws IOException {
-        File ledgerCurDir = Bookie.getCurrentDirectory(ledgerDir);
+        File ledgerCurDir = BookieImpl.getCurrentDirectory(ledgerDir);
         String ledgerName = IndexPersistenceMgr.getLedgerName(ledgerId);
         File indexFile = new File(ledgerCurDir, ledgerName);
         indexFile.getParentFile().mkdirs();

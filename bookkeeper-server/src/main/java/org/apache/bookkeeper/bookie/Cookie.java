@@ -236,7 +236,7 @@ public class Cookie {
             throws BookieException {
         BookieId address = null;
         try {
-            address = Bookie.getBookieId(conf);
+            address = BookieImpl.getBookieId(conf);
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
@@ -257,7 +257,7 @@ public class Cookie {
                                               Version version) throws BookieException {
         BookieId address = null;
         try {
-            address = Bookie.getBookieId(conf);
+            address = BookieImpl.getBookieId(conf);
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
@@ -293,7 +293,7 @@ public class Cookie {
             throws UnknownHostException {
         Builder builder = Cookie.newBuilder();
         builder.setLayoutVersion(CURRENT_COOKIE_LAYOUT_VERSION);
-        builder.setBookieId(Bookie.getBookieId(conf).toString());
+        builder.setBookieId(BookieImpl.getBookieId(conf).toString());
         builder.setJournalDirs(Joiner.on(',').join(conf.getJournalDirNames()));
         builder.setLedgerDirs(encodeDirPaths(conf.getLedgerDirNames()));
         return builder;
@@ -310,7 +310,7 @@ public class Cookie {
     public static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm, ServerConfiguration conf)
             throws BookieException {
         try {
-            return readFromRegistrationManager(rm, Bookie.getBookieId(conf));
+            return readFromRegistrationManager(rm, BookieImpl.getBookieId(conf));
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
