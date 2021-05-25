@@ -20,7 +20,7 @@ If you're using [Maven](https://maven.apache.org/), add this to your [`pom.xml`]
 
 ```xml
 <!-- in your <properties> block -->
-<bookkeeper.version>{{ site.latest_version }}</bookkeeper.version>
+<bookkeeper.version>4.14.0</bookkeeper.version>
 
 <!-- in your <dependencies> block -->
 <dependency>
@@ -36,7 +36,7 @@ shaded library, which relocate classes of protobuf and guava into a different na
 
 ```xml
 <!-- in your <properties> block -->
-<bookkeeper.version>{{ site.latest_version }}</bookkeeper.version>
+<bookkeeper.version>4.14.0</bookkeeper.version>
 
 <!-- in your <dependencies> block -->
 <dependency>
@@ -52,12 +52,12 @@ If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`]
 
 ```groovy
 dependencies {
-    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '{{ site.latest_version }}'
+    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '4.14.0'
 }
 
 // Alternatively:
 dependencies {
-    compile 'org.apache.bookkeeper:bookkeeper-server:{{ site.latest_version }}'
+    compile 'org.apache.bookkeeper:bookkeeper-server:4.14.0'
 }
 ```
 
