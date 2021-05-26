@@ -81,7 +81,6 @@ public class BookieWriteToJournalTest {
      */
 
     @Test
-//    @Ignore("PLSR-1850 test is failing due to Bookie interface change")
     public void testJournalLogAddEntryCalledCorrectly() throws Exception {
 
         File journalDir = tempDir.newFolder();

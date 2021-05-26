@@ -57,12 +57,12 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.ClientConnectionPeer;
-import org.apache.bookkeeper.proto.PerChannelBookieClient;
 import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.tls.TLSContextFactory.KeyStoreType;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.TestUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -892,7 +892,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
             StringBuilder nameBuilder = new StringBuilder(BookKeeperClientStats.CHANNEL_SCOPE)
                     .append(".")
                     .append("bookie_")
-                    .append(PerChannelBookieClient.buildStatsLoggerScopeName(bookie.getBookieId()))
+                    .append(TestUtils.buildStatsCounterPathFromBookieID(bookie.getBookieId()))
                     .append(".");
             // check stats on TLS enabled client
            TestStatsProvider.TestCounter cntr =  tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
@@ -990,7 +990,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
         StringBuilder nameBuilder = new StringBuilder(BookKeeperClientStats.CHANNEL_SCOPE)
                 .append(".")
                 .append("bookie_")
-                .append(PerChannelBookieClient.buildStatsLoggerScopeName(bookie.getBookieId()))
+                .append(TestUtils.buildStatsCounterPathFromBookieID(bookie.getBookieId()))
                 .append(".");
         assertEquals("TLS handshake failure expected", 1,
                 client.getTestStatsProvider().getCounter(nameBuilder.toString()

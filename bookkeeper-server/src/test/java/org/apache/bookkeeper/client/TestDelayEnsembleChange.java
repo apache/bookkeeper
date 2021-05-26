@@ -28,21 +28,18 @@ import static org.apache.bookkeeper.client.BookKeeperClientStats.LEDGER_ENSEMBLE
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
 import io.netty.buffer.ByteBuf;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.bookkeeper.proto.PerChannelBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -196,7 +193,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
             StringBuilder nameBuilder = new StringBuilder(CLIENT_SCOPE);
             nameBuilder.append('.').
                     append("bookie_").
-                    append(PerChannelBookieClient.buildStatsLoggerScopeName(addr)).
+                    append(TestUtils.buildStatsCounterPathFromBookieID(addr)).
                     append('.').
                     append(LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION);
             assertTrue(
