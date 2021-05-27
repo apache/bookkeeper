@@ -195,7 +195,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             LOG.info("Create ledger and add entries to it");
             LedgerHandle lh = createLedgerWithEntries(bk, 100);
 
-            BookieServer bookieServer = bs.get(0);
+            BookieServer bookieServer = serverByIndex(0);
             List<BookieId> ensemble = lh.getLedgerMetadata().getEnsembleAt(0);
             BookieSocketAddress curBookieAddr = null;
             for (BookieId bookieSocketAddress : ensemble) {
@@ -216,8 +216,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             bookieServer.shutdown();
 
             ServerConfiguration serverConf1 = newServerConfiguration();
-            bsConfs.add(serverConf1);
-            bs.add(startBookie(serverConf1));
+            startAndAddBookie(serverConf1);
 
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);

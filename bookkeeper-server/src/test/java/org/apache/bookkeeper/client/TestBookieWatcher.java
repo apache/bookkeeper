@@ -90,8 +90,8 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         Assert.assertEquals("There should be no read only bookies initially.",
                 Collections.emptySet(), readonlyBookies1);
 
-        BookieId bookieId0 = bs.get(0).getBookieId();
-        BookieId bookieId1 = bs.get(1).getBookieId();
+        BookieId bookieId0 = getBookie(0);
+        BookieId bookieId1 = getBookie(1);
 
         boolean isUnavailable1 = bookieWatcher.isBookieUnavailable(bookieId0);
         Assert.assertFalse("The bookie should not be unavailable.", isUnavailable1);

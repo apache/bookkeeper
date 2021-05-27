@@ -20,8 +20,6 @@ package org.apache.bookkeeper.replication;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -41,7 +39,6 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
@@ -181,7 +178,7 @@ public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
             LedgerHandle lh2 = createAndAddEntriesToLedger();
 
             startNewBookie();
-            shutdownBookie(bs.size() - 2);
+            shutdownBookie(lastBookieIndex() - 1);
 
             // add few more entries after ensemble reformation
             for (int i = 0; i < 10; i++) {
@@ -221,10 +218,8 @@ public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
         }
     }
 
-    private void shutdownBookie(int bkShutdownIndex) throws IOException {
-        bs.remove(bkShutdownIndex).shutdown();
-        File f = tmpDirs.remove(bkShutdownIndex);
-        FileUtils.deleteDirectory(f);
+    private void shutdownBookie(int bkShutdownIndex) throws Exception {
+        killBookie(bkShutdownIndex);
     }
 
     private LedgerHandle createAndAddEntriesToLedger() throws BKException,

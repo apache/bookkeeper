@@ -317,7 +317,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         bkServer.start();
         bkServer.join();
         assertEquals("Failed to return ExitCode.ZK_REG_FAIL",
-                ExitCode.ZK_REG_FAIL, bkServer.getExitCode());
+                     ExitCode.ZK_REG_FAIL, bkServer.getExitCode());
     }
 
     @Test
@@ -433,7 +433,6 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         final BookieId bookieId = BookieId.parse(InetAddress.getLocalHost().getCanonicalHostName().split("\\.", 2)[0]
             + ":" + conf.getBookiePort());
-
         driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
         try (StateManager manager = new BookieStateManager(conf, driver)) {
             manager.registerBookie(true).get();

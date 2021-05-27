@@ -178,15 +178,15 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
     private int entryCount(long ledgerId, ClientConfiguration clientConf)
             throws Exception {
         LOG.info("Counting entries in {}", ledgerId);
-        for (ServerConfiguration conf : bsConfs) {
-            conf.setUseHostNameAsBookieID(true);
-            conf.setBookieAuthProviderFactoryClass(
-                SASLBookieAuthProviderFactory.class.getName());
-        }
         clientConf.setClientAuthProviderFactoryClass(
             SASLClientProviderFactory.class.getName());
 
-        restartBookies();
+        restartBookies(c -> {
+                c.setUseHostNameAsBookieID(true);
+                c.setBookieAuthProviderFactoryClass(
+                        SASLBookieAuthProviderFactory.class.getName());
+                return c;
+            });
 
         try (BookKeeper bkc = new BookKeeper(clientConf, zkc);
             LedgerHandle lh = bkc.openLedger(ledgerId, DigestType.CRC32,
@@ -253,10 +253,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
 
     BookieServer startAndStoreBookie(ServerConfiguration conf) throws Exception {
         System.setProperty(SaslConstants.SASL_SERVICE_NAME, non_default_sasl_service_name);
-        bsConfs.add(conf);
-        BookieServer s = startBookie(conf);
-        bs.add(s);
-        return s;
+        return startAndAddBookie(conf).getServer();
     }
 
     @AfterClass

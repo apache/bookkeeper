@@ -153,7 +153,7 @@ public class BookieStickyReadsTest extends BookKeeperClusterTestCase {
 
         // Suspend the sticky bookie. Reads should now go to a different sticky
         // bookie
-        bs.get(bookieWithRequests).suspendProcessing();
+        serverByIndex(bookieWithRequests).suspendProcessing();
 
         for (int i = 0; i < n; i++) {
             @Cleanup

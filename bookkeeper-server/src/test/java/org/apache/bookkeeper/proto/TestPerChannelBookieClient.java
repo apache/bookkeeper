@@ -250,8 +250,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 return super.readEntry(ledgerId, entryId);
             }
         };
-        bsConfs.add(conf);
-        bs.add(startBookie(conf, delayBookie));
+        startAndAddBookie(conf, delayBookie);
 
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         final OrderedExecutor executor = getOrderedSafeExecutor();

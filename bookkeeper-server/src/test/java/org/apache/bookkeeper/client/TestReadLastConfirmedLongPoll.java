@@ -189,8 +189,7 @@ public class TestReadLastConfirmedLongPoll extends BookKeeperClusterTestCase {
 
             // start the bookies
             for (ServerConfiguration conf : confs) {
-                bs.add(startBookie(conf));
-                bsConfs.add(conf);
+                startAndAddBookie(conf);
             }
         }
     }

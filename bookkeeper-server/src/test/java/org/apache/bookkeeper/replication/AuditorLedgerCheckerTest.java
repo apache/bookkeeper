@@ -45,6 +45,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -146,8 +147,8 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
     }
 
     private void startAuditorElectors() throws Exception {
-        for (BookieServer bserver : bs) {
-            String addr = bserver.getBookieId().toString();
+        for (String addr : bookieAddresses().stream().map(Object::toString)
+                 .collect(Collectors.toList())) {
             AuditorElector auditorElector = new AuditorElector(addr, baseConf);
             auditorElectors.put(addr, auditorElector);
             auditorElector.start();
@@ -176,7 +177,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(ledgerList
                 .size());
 
-        int bkShutdownIndex = bs.size() - 1;
+        int bkShutdownIndex = lastBookieIndex();
         String shutdownBookie = shutdownBookie(bkShutdownIndex);
 
         // grace period for publishing the bk-ledger
@@ -211,12 +212,12 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
         LOG.debug("Created following ledgers : {}, {}", lh1, lh2);
 
-        int bkShutdownIndex = bs.size() - 1;
-        ServerConfiguration bookieConf1 = bsConfs.get(bkShutdownIndex);
+        int bkShutdownIndex = lastBookieIndex();
+        ServerConfiguration bookieConf1 = confByIndex(bkShutdownIndex);
         String shutdownBookie = shutdownBookie(bkShutdownIndex);
 
         // restart the failed bookie
-        bs.add(startBookie(bookieConf1));
+        startAndAddBookie(bookieConf1);
 
         waitForLedgerMissingReplicas(lh1.getId(), 10, shutdownBookie);
         waitForLedgerMissingReplicas(lh2.getId(), 10, shutdownBookie);
@@ -231,13 +232,13 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
 
         // failing first bookie
-        shutdownBookie(bs.size() - 1);
+        shutdownBookie(lastBookieIndex());
 
         // simulate re-replication
         doLedgerRereplication(lh1.getId());
 
         // failing another bookie
-        String shutdownBookie = shutdownBookie(bs.size() - 1);
+        String shutdownBookie = shutdownBookie(lastBookieIndex());
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for ledgers to be marked as under replicated");
@@ -258,8 +259,8 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         // disabling ledger replication
         urLedgerMgr.disableLedgerReplication();
         ArrayList<String> shutdownBookieList = new ArrayList<String>();
-        shutdownBookieList.add(shutdownBookie(bs.size() - 1));
-        shutdownBookieList.add(shutdownBookie(bs.size() - 1));
+        shutdownBookieList.add(shutdownBookie(lastBookieIndex()));
+        shutdownBookieList.add(shutdownBookie(lastBookieIndex()));
 
         assertFalse("Ledger replication is not disabled!", urReplicaLatch
                 .await(1, TimeUnit.SECONDS));
@@ -304,12 +305,13 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(count);
 
         final int bkIndex = 2;
-        ServerConfiguration bookieConf = bsConfs.get(bkIndex);
-        BookieServer bk = bs.get(bkIndex);
+        ServerConfiguration bookieConf = confByIndex(bkIndex);
+        BookieServer bk = serverByIndex(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
 
         ((BookieImpl) bk.getBookie()).getStateManager().doTransitionToReadOnlyMode();
-        bkc.waitForReadOnlyBookie(BookieImpl.getBookieId(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
+        bkc.waitForReadOnlyBookie(BookieImpl.getBookieId(confByIndex(bkIndex)))
+            .get(30, TimeUnit.SECONDS);
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
@@ -330,14 +332,15 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         int count = ledgerList.size();
         final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(count);
 
-        int bkIndex = bs.size() - 1;
-        LOG.debug("Moving bookie {} {} to read only...", bkIndex, bs.get(bkIndex));
-        ServerConfiguration bookieConf = bsConfs.get(bkIndex);
-        BookieServer bk = bs.get(bkIndex);
+        int bkIndex = lastBookieIndex();
+        LOG.debug("Moving bookie {} {} to read only...", bkIndex, serverByIndex(bkIndex));
+        ServerConfiguration bookieConf = confByIndex(bkIndex);
+        BookieServer bk = serverByIndex(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
 
         ((BookieImpl) bk.getBookie()).getStateManager().doTransitionToReadOnlyMode();
-        bkc.waitForReadOnlyBookie(BookieImpl.getBookieId(bsConfs.get(bkIndex))).get(30, TimeUnit.SECONDS);
+        bkc.waitForReadOnlyBookie(BookieImpl.getBookieId(confByIndex(bkIndex)))
+            .get(30, TimeUnit.SECONDS);
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
@@ -752,7 +755,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
         // shutdown a non auditor bookie to avoid an election
         int idx1 = getShutDownNonAuditorBookieIdx("");
-        ServerConfiguration conf1 = bsConfs.get(idx1);
+        ServerConfiguration conf1 = confByIndex(idx1);
         String shutdownBookie1 = shutdownBookie(idx1);
 
         // wait for 2 seconds and there shouldn't be any under replicated ledgers
@@ -762,7 +765,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
                 urLedgerList.size());
 
         // restart the bookie we shut down above
-        bs.add(startBookie(conf1));
+        startAndAddBookie(conf1);
 
         // Now to simulate the rolling upgrade, bring down a bookie different from
         // the one we brought down/up above.
@@ -852,7 +855,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
     }
 
     private String shutdownBookie(int bkShutdownIndex) throws Exception {
-        BookieServer bkServer = bs.get(bkShutdownIndex);
+        BookieServer bkServer = serverByIndex(bkShutdownIndex);
         String bookieAddr = bkServer.getBookieId().toString();
         LOG.debug("Shutting down bookie:" + bookieAddr);
         killBookie(bkShutdownIndex);
@@ -932,9 +935,10 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         List<BookieServer> auditors = new LinkedList<BookieServer>();
         byte[] data = zkc.getData(electionPath, false, null);
         assertNotNull("Auditor election failed", data);
-        for (BookieServer bks : bs) {
-            if (new String(data).contains(bks.getBookieId() + "")) {
-                auditors.add(bks);
+        for (int i = 0; i < bookieCount(); i++) {
+            BookieId bookieId = addressByIndex(i);
+            if (new String(data).contains(bookieId + "")) {
+                auditors.add(serverByIndex(i));
             }
         }
         assertEquals("Multiple Bookies acting as Auditor!", 1, auditors
@@ -950,9 +954,9 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
     private String  shutDownNonAuditorBookie() throws Exception {
         // shutdown bookie which is not an auditor
-        int indexOf = bs.indexOf(getAuditorBookie());
+        int indexOf = indexOfServer(getAuditorBookie());
         int bkIndexDownBookie;
-        if (indexOf < bs.size() - 1) {
+        if (indexOf < lastBookieIndex()) {
             bkIndexDownBookie = indexOf + 1;
         } else {
             bkIndexDownBookie = indexOf - 1;
@@ -962,10 +966,10 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
     private int getShutDownNonAuditorBookieIdx(String exclude) throws Exception {
         // shutdown bookie which is not an auditor
-        int indexOf = bs.indexOf(getAuditorBookie());
+        int indexOf = indexOfServer(getAuditorBookie());
         int bkIndexDownBookie = 0;
-        for (int i = 0; i < bs.size(); i++) {
-            if (i == indexOf || bs.get(i).getBookieId().toString().equals(exclude)) {
+        for (int i = 0; i <= lastBookieIndex(); i++) {
+            if (i == indexOf || addressByIndex(i).toString().equals(exclude)) {
                 continue;
             }
             bkIndexDownBookie = i;

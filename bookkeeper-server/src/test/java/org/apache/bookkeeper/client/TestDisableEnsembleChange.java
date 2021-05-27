@@ -209,8 +209,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
                 addLatch.await(1000, TimeUnit.MILLISECONDS));
         assertEquals(res.get(), 0xdeadbeef);
         // start the original bookie
-        bsConfs.add(killedConf);
-        bs.add(startBookie(killedConf));
+        startAndAddBookie(killedConf);
         assertTrue("Add entry operation should complete at this point.",
                 addLatch.await(10000, TimeUnit.MILLISECONDS));
         assertEquals(res.get(), BKException.Code.OK);

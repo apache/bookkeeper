@@ -173,10 +173,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
 
     // copy from TestAuth
     BookieServer startAndStoreBookie(ServerConfiguration conf) throws Exception {
-        bsConfs.add(conf);
-        BookieServer s = startBookie(conf);
-        bs.add(s);
-        return s;
+        return startAndAddBookie(conf).getServer();
     }
 
     CompatClient42 newCompatClient(BookieId addr) throws Exception {

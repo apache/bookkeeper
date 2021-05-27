@@ -33,6 +33,7 @@ import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.ReadHandle;
 
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 
@@ -43,6 +44,10 @@ import org.junit.Assert;
 public final class TestUtils {
 
     private TestUtils() {}
+
+    public static String buildStatsCounterPathFromBookieID(BookieId bookieId) {
+        return bookieId.toString().replace('.', '_').replace('-', '_').replace(":", "_");
+    }
 
     public static boolean hasLogFiles(File ledgerDirectory, boolean partial, Integer... logsId) {
         boolean result = partial ? false : true;

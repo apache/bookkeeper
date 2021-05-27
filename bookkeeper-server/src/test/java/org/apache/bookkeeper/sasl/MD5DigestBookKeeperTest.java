@@ -82,15 +82,15 @@ public class MD5DigestBookKeeperTest extends BookKeeperClusterTestCase {
     private int entryCount(long ledgerId, ServerConfiguration bookieConf,
         ClientConfiguration clientConf) throws Exception {
         LOG.info("Counting entries in {}", ledgerId);
-        for (ServerConfiguration conf : bsConfs) {
-            bookieConf.setBookieAuthProviderFactoryClass(
-                SASLBookieAuthProviderFactory.class.getName());
-            bookieConf.setProperty(JAAS_CLIENT_ALLOWED_IDS, ".*hd.*");
-        }
         clientConf.setClientAuthProviderFactoryClass(
             SASLClientProviderFactory.class.getName());
 
-        restartBookies();
+        restartBookies(c -> {
+                c.setBookieAuthProviderFactoryClass(
+                        SASLBookieAuthProviderFactory.class.getName());
+                c.setProperty(JAAS_CLIENT_ALLOWED_IDS, ".*hd.*");
+                return c;
+            });
 
         try (BookKeeper bkc = new BookKeeper(clientConf, zkc);
             LedgerHandle lh = bkc.openLedger(ledgerId, DigestType.CRC32,
@@ -134,10 +134,7 @@ public class MD5DigestBookKeeperTest extends BookKeeperClusterTestCase {
     }
 
     BookieServer startAndStoreBookie(ServerConfiguration conf) throws Exception {
-        bsConfs.add(conf);
-        BookieServer s = startBookie(conf);
-        bs.add(s);
-        return s;
+        return startAndAddBookie(conf).getServer();
     }
 
     @AfterClass

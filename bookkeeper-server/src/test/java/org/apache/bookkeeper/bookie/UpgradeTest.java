@@ -110,14 +110,12 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         return jc;
     }
 
-    static File newV1JournalDirectory() throws Exception {
-        File d = IOUtils.createTempDir("bookie", "tmpdir");
+    static File initV1JournalDirectory(File d) throws Exception {
         writeJournal(d, 100, "foobar".getBytes()).close();
         return d;
     }
 
-    static File newV1LedgerDirectory() throws Exception {
-        File d = IOUtils.createTempDir("bookie", "tmpdir");
+    static File initV1LedgerDirectory(File d) throws Exception {
         writeLedgerDir(d, "foobar".getBytes());
         return d;
     }
@@ -138,15 +136,13 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         }
     }
 
-    static File newV2JournalDirectory() throws Exception {
-        File d = newV1JournalDirectory();
-        createVersion2File(d);
+    static File initV2JournalDirectory(File d) throws Exception {
+        createVersion2File(initV1JournalDirectory(d));
         return d;
     }
 
-    static File newV2LedgerDirectory() throws Exception {
-        File d = newV1LedgerDirectory();
-        createVersion2File(d);
+    static File initV2LedgerDirectory(File d) throws Exception {
+        createVersion2File(initV1LedgerDirectory(d));
         return d;
     }
 
@@ -190,28 +186,22 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testUpgradeV1toCurrent() throws Exception {
-        File journalDir = newV1JournalDirectory();
-        tmpDirs.add(journalDir);
-        File ledgerDir = newV1LedgerDirectory();
-        tmpDirs.add(ledgerDir);
+        File journalDir = initV1JournalDirectory(createTempDir("bookie", "journal"));
+        File ledgerDir = initV1LedgerDirectory(createTempDir("bookie", "ledger"));
         testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
     }
 
     @Test
     public void testUpgradeV2toCurrent() throws Exception {
-        File journalDir = newV2JournalDirectory();
-        tmpDirs.add(journalDir);
-        File ledgerDir = newV2LedgerDirectory();
-        tmpDirs.add(ledgerDir);
+        File journalDir = initV2JournalDirectory(createTempDir("bookie", "journal"));
+        File ledgerDir = initV2LedgerDirectory(createTempDir("bookie", "ledger"));
         testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
     }
 
     @Test
     public void testUpgradeCurrent() throws Exception {
-        File journalDir = newV2JournalDirectory();
-        tmpDirs.add(journalDir);
-        File ledgerDir = newV2LedgerDirectory();
-        tmpDirs.add(ledgerDir);
+        File journalDir = initV2JournalDirectory(createTempDir("bookie", "journal"));
+        File ledgerDir = initV2LedgerDirectory(createTempDir("bookie", "ledger"));
         testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
 
         // Upgrade again

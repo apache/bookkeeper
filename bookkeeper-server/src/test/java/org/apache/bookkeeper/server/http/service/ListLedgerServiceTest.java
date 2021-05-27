@@ -60,7 +60,7 @@ public class ListLedgerServiceTest extends BookKeeperClusterTestCase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        listLedgerService = new ListLedgerService(bsConfs.get(0), bs.get(0));
+        listLedgerService = new ListLedgerService(confByIndex(0), serverByIndex(0));
     }
 
     @Test

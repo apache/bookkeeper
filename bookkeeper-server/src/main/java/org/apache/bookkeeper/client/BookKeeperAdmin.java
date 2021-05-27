@@ -225,10 +225,10 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     @SneakyThrows
-    public BookieServiceInfo getBookieServiceInfo(String bookiedId)
+    public BookieServiceInfo getBookieServiceInfo(BookieId bookiedId)
             throws BKException {
         return FutureUtils.result(bkc.getMetadataClientDriver()
-                .getRegistrationClient().getBookieServiceInfo(BookieId.parse(bookiedId))).getValue();
+                .getRegistrationClient().getBookieServiceInfo(bookiedId)).getValue();
     }
 
     /**

@@ -595,8 +595,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         ServerConfiguration conf = killBookie(address);
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         DelayResponseBookie fakeBookie = new DelayResponseBookie(conf);
-        bs.add(startBookie(conf, fakeBookie));
-        bsConfs.add(conf);
+        startAndAddBookie(conf, fakeBookie);
 
         // 1) bk0 write two entries
         lh0.addEntry("entry-0".getBytes(UTF_8));

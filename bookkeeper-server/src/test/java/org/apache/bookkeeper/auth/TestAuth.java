@@ -110,14 +110,14 @@ public class TestAuth extends BookKeeperClusterTestCase {
     private int entryCount(long ledgerId, ServerConfiguration bookieConf,
                            ClientConfiguration clientConf) throws Exception {
         LOG.info("Counting entries in {}", ledgerId);
-        for (ServerConfiguration conf : bsConfs) {
-            conf.setBookieAuthProviderFactoryClass(
-                    AlwaysSucceedBookieAuthProviderFactory.class.getName());
-        }
         clientConf.setClientAuthProviderFactoryClass(
                 SendUntilCompleteClientAuthProviderFactory.class.getName());
 
-        restartBookies();
+        restartBookies(c -> {
+                c.setBookieAuthProviderFactoryClass(
+                        AlwaysSucceedBookieAuthProviderFactory.class.getName());
+                return c;
+            });
 
         int count = 0;
         try (BookKeeper bkc = new BookKeeper(clientConf, zkc);
@@ -184,9 +184,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
         assertFalse(ledgerId.get() == -1);
         assertEquals("Should have entry", 1, entryCount(ledgerId.get(), bookieConf, clientConf));
 
-        for (BookieServer bks : bs) {
-            bks.shutdown();
-        }
+        stopAllBookies();
 
         assertEquals(LogCloseCallsBookieAuthProviderFactory.initCountersOnConnections.get(),
             LogCloseCallsBookieAuthProviderFactory.closeCountersOnConnections.get());
@@ -481,10 +479,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
     }
 
     BookieServer startAndStoreBookie(ServerConfiguration conf) throws Exception {
-        bsConfs.add(conf);
-        BookieServer s = startBookie(conf);
-        bs.add(s);
-        return s;
+        return startAndAddBookie(conf).getServer();
     }
 
     /**

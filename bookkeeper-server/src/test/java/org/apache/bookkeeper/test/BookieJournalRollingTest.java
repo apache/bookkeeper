@@ -23,19 +23,15 @@ package org.apache.bookkeeper.test;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -190,7 +186,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         Thread.sleep(2000);
 
         // verify that we only keep at most journal files
-        for (File journalDir : tmpDirs) {
+        for (File journalDir : bookieJournalDirs()) {
             File[] journals = journalDir.listFiles();
             int numJournals = 0;
             for (File f : journals) {
@@ -221,11 +217,12 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         }
 
         // set flush interval to a large value
-        ServerConfiguration newConf = TestBKConfiguration.newServerConfiguration();
-        newConf.setFlushInterval(999999999);
-        newConf.setAllowEphemeralPorts(false);
         // restart bookies
-        restartBookies(newConf);
+        restartBookies(c -> {
+                c.setFlushInterval(999999999);
+                c.setAllowEphemeralPorts(false);
+                return c;
+            });
 
         // Write enough ledger entries so that we roll over journals
         LedgerHandle[] lhs = writeLedgerEntries(4, 1024, 1024);
@@ -238,7 +235,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         // ledger indexes are not flushed
         // and after bookies restarted, journals will be relayed
         // ensure that we can still read the entries
-        restartBookies(newConf);
+        restartBookies();
         validLedgerEntries(ledgerIds, 1024, 1024);
     }
 
@@ -260,11 +257,12 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         Thread.sleep(3 * baseConf.getFlushInterval());
 
         // restart bookies with flush interval set to a large value
-        ServerConfiguration newConf = TestBKConfiguration.newServerConfiguration();
-        newConf.setFlushInterval(999999999);
-        newConf.setAllowEphemeralPorts(false);
         // restart bookies
-        restartBookies(newConf);
+        restartBookies(c -> {
+                c.setFlushInterval(999999999);
+                c.setAllowEphemeralPorts(false);
+                return c;
+            });
 
         // Write entries again to let them existed in journal
         writeLedgerEntries(lhs, 1024, 10);
@@ -274,10 +272,10 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
             bkc.deleteLedger(lh.getId());
         }
         // wait for gc
-        Thread.sleep(2 * newConf.getGcWaitTime());
+        Thread.sleep(2 * confByIndex(0).getGcWaitTime());
 
         // restart bookies again to trigger replaying journal
-        restartBookies(newConf);
+        restartBookies();
     }
 
 }

@@ -51,7 +51,7 @@ public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
     @Test
     public void testAuditingDuringRollingRestart() throws Exception {
         runFunctionWithLedgerManagerFactory(
-            bsConfs.get(0),
+            confByIndex(0),
             mFactory -> {
                 try {
                     testAuditingDuringRollingRestart(mFactory);

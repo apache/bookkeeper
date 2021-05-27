@@ -89,7 +89,7 @@ public class AuthAutoRecoveryTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testAuthClientRole() throws Exception {
-        ServerConfiguration config = bsConfs.get(0);
+        ServerConfiguration config = confByIndex(0);
         assertEquals(AuditorClientAuthInterceptorFactory.class.getName(), config.getClientAuthProviderFactoryClass());
         AutoRecoveryMain main = new AutoRecoveryMain(config);
         try {

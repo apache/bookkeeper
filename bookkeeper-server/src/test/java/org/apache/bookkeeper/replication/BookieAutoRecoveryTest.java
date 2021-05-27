@@ -172,8 +172,8 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         // starting the replication service, so that he will be able to act as
         // target bookie
         startNewBookie();
-        int newBookieIndex = bs.size() - 1;
-        BookieServer newBookieServer = bs.get(newBookieIndex);
+        int newBookieIndex = lastBookieIndex();
+        BookieServer newBookieServer = serverByIndex(newBookieIndex);
 
         LOG.debug("Waiting to finish the replication of failed bookie : "
                 + replicaToKillAddr);
@@ -226,8 +226,8 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         // starting the replication service, so that he will be able to act as
         // target bookie
         startNewBookie();
-        int newBookieIndex = bs.size() - 1;
-        BookieServer newBookieServer = bs.get(newBookieIndex);
+        int newBookieIndex = lastBookieIndex();
+        BookieServer newBookieServer = serverByIndex(newBookieIndex);
 
         LOG.debug("Waiting to finish the replication of failed bookie : "
                 + replicaToKillAddr);
@@ -293,8 +293,8 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         // starting the replication service, so that he will be able to act as
         // target bookie
         startNewBookie();
-        int newBookieIndex = bs.size() - 1;
-        BookieServer newBookieServer = bs.get(newBookieIndex);
+        int newBookieIndex = lastBookieIndex();
+        BookieServer newBookieServer = serverByIndex(newBookieIndex);
 
         LOG.debug("Waiting to finish the replication of failed bookie : "
                 + replicaToKillAddr);
@@ -427,12 +427,9 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         serverConf2.setUseHostNameAsBookieID(true);
         ServerConfiguration serverConf3 = newServerConfiguration();
         serverConf3.setUseHostNameAsBookieID(true);
-        bsConfs.add(serverConf1);
-        bsConfs.add(serverConf2);
-        bsConfs.add(serverConf3);
-        bs.add(startBookie(serverConf1));
-        bs.add(startBookie(serverConf2));
-        bs.add(startBookie(serverConf3));
+        startAndAddBookie(serverConf1);
+        startAndAddBookie(serverConf2);
+        startAndAddBookie(serverConf3);
 
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(1, 5);
         LedgerHandle lh = listOfLedgerHandle.get(0);
@@ -470,11 +467,10 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         // target bookie
         ServerConfiguration serverConf = newServerConfiguration();
         serverConf.setUseHostNameAsBookieID(false);
-        bsConfs.add(serverConf);
-        bs.add(startBookie(serverConf));
+        startAndAddBookie(serverConf);
 
-        int newBookieIndex = bs.size() - 1;
-        BookieServer newBookieServer = bs.get(newBookieIndex);
+        int newBookieIndex = lastBookieIndex();
+        BookieServer newBookieServer = serverByIndex(newBookieIndex);
 
         LOG.debug("Waiting to finish the replication of failed bookie : "
                 + replicaToKillAddr);
@@ -505,12 +501,9 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         serverConf2.setUseHostNameAsBookieID(true);
         ServerConfiguration serverConf3 = newServerConfiguration();
         serverConf3.setUseHostNameAsBookieID(true);
-        bsConfs.add(serverConf1);
-        bsConfs.add(serverConf2);
-        bsConfs.add(serverConf3);
-        bs.add(startBookie(serverConf1));
-        bs.add(startBookie(serverConf2));
-        bs.add(startBookie(serverConf3));
+        startAndAddBookie(serverConf1);
+        startAndAddBookie(serverConf2);
+        startAndAddBookie(serverConf3);
 
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(1, 5);
         LedgerHandle lh = listOfLedgerHandle.get(0);
@@ -550,11 +543,10 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         // target bookie
         ServerConfiguration serverConf = newServerConfiguration();
         serverConf.setUseHostNameAsBookieID(true);
-        bsConfs.add(serverConf);
-        bs.add(startBookie(serverConf));
+        startAndAddBookie(serverConf);
 
-        int newBookieIndex = bs.size() - 1;
-        BookieServer newBookieServer = bs.get(newBookieIndex);
+        int newBookieIndex = lastBookieIndex();
+        BookieServer newBookieServer = serverByIndex(newBookieIndex);
 
         LOG.debug("Waiting to finish the replication of failed bookie : "
                 + replicaToKillAddr);

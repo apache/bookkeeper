@@ -99,35 +99,36 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
      * @throws IOException
      */
     @Test
-    public void testAsyncBK1() throws IOException {
+    public void testAsyncBK1() throws Exception {
         LOG.info("#### BK1 ####");
-        auxTestReadWriteAsyncSingleClient(bs.get(0));
+        auxTestReadWriteAsyncSingleClient(serverByIndex(0));
     }
 
     @Test
-    public void testAsyncBK2() throws IOException {
+    public void testAsyncBK2() throws Exception {
         LOG.info("#### BK2 ####");
-        auxTestReadWriteAsyncSingleClient(bs.get(1));
+        auxTestReadWriteAsyncSingleClient(serverByIndex(1));
     }
 
     @Test
-    public void testAsyncBK3() throws IOException {
+    public void testAsyncBK3() throws Exception {
         LOG.info("#### BK3 ####");
-        auxTestReadWriteAsyncSingleClient(bs.get(2));
+        auxTestReadWriteAsyncSingleClient(serverByIndex(2));
     }
 
     @Test
-    public void testAsyncBK4() throws IOException {
+    public void testAsyncBK4() throws Exception {
         LOG.info("#### BK4 ####");
-        auxTestReadWriteAsyncSingleClient(bs.get(3));
+        auxTestReadWriteAsyncSingleClient(serverByIndex(3));
     }
 
     @Test
     public void testBookieRecovery() throws Exception {
-        //Shutdown all but 1 bookie
-        bs.get(0).shutdown();
-        bs.get(1).shutdown();
-        bs.get(2).shutdown();
+        //Shutdown all but 1 bookie (should be in it's own test case with 1 bookie)
+        assertEquals(4, bookieCount());
+        killBookie(0);
+        killBookie(0);
+        killBookie(0);
 
         byte[] passwd = "blah".getBytes();
         LedgerHandle lh = bkc.createLedger(1, 1, digestType, passwd);
@@ -138,10 +139,8 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
             lh.addEntry(data);
         }
 
-        bs.get(3).shutdown();
-        BookieServer server = new BookieServer(bsConfs.get(3));
-        server.start();
-        bs.set(3, server);
+        assertEquals(1, bookieCount());
+        restartBookies();
 
         assertEquals(numEntries - 1 , lh.getLastAddConfirmed());
         Enumeration<LedgerEntry> entries = lh.readEntries(0, lh.getLastAddConfirmed());

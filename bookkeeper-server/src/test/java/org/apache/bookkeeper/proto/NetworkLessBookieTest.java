@@ -56,8 +56,8 @@ public class NetworkLessBookieTest extends BookKeeperClusterTestCase {
             }
         }
 
-        for (BookieServer bk : bs) {
-            for (Channel channel : bk.nettyServer.allChannels) {
+        for (int i = 0; i < bookieCount(); i++) {
+            for (Channel channel : serverByIndex(i).nettyServer.allChannels) {
                 if (!(channel instanceof LocalChannel)) {
                     fail();
                 }

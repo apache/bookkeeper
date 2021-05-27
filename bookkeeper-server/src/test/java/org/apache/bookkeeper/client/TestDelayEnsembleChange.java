@@ -28,20 +28,18 @@ import static org.apache.bookkeeper.client.BookKeeperClientStats.LEDGER_ENSEMBLE
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
 import io.netty.buffer.ByteBuf;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -158,10 +156,8 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         assertEquals("There should be no ensemble change if delaying ensemble change is enabled.",
                      1, lh.getLedgerMetadata().getAllEnsembles().size());
 
-        bsConfs.add(conf0);
-        bs.add(startBookie(conf0));
-        bsConfs.add(conf1);
-        bs.add(startBookie(conf1));
+        startAndAddBookie(conf0);
+        startAndAddBookie(conf1);
 
         for (int i = 2 * numEntries; i < 3 * numEntries; i++) {
             lh.addEntry(data);
@@ -194,11 +190,15 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         }
 
         for (BookieId addr : lh.getLedgerMetadata().getAllEnsembles().get(0L)) {
+            StringBuilder nameBuilder = new StringBuilder(CLIENT_SCOPE);
+            nameBuilder.append('.').
+                    append("bookie_").
+                    append(TestUtils.buildStatsCounterPathFromBookieID(addr)).
+                    append('.').
+                    append(LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION);
             assertTrue(
                     LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + " should be > 0 for " + addr,
-                    bkc.getTestStatsProvider().getCounter(
-                            CLIENT_SCOPE + ".bookie_" + addr.toString().replace('-', '_')
-                                    + "." + LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION)
+                    bkc.getTestStatsProvider().getCounter(nameBuilder.toString())
                             .get() > 0);
         }
         assertTrue(
@@ -267,12 +267,9 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         assertEquals(firstFragment.get(3), secondFragment.get(3));
         assertEquals(firstFragment.get(4), secondFragment.get(4));
 
-        bsConfs.add(conf0);
-        bs.add(startBookie(conf0));
-        bsConfs.add(conf1);
-        bs.add(startBookie(conf1));
-        bsConfs.add(conf2);
-        bs.add(startBookie(conf2));
+        startAndAddBookie(conf0);
+        startAndAddBookie(conf1);
+        startAndAddBookie(conf2);
 
         for (int i = 4 * numEntries; i < 5 * numEntries; i++) {
             lh.addEntry(data);
@@ -320,12 +317,9 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         assertEquals("There should be ensemble change if ack quorum is broken.",
                      2, lh.getLedgerMetadata().getAllEnsembles().size());
 
-        bsConfs.add(conf0);
-        bs.add(startBookie(conf0));
-        bsConfs.add(conf1);
-        bs.add(startBookie(conf1));
-        bsConfs.add(conf2);
-        bs.add(startBookie(conf2));
+        startAndAddBookie(conf0);
+        startAndAddBookie(conf1);
+        startAndAddBookie(conf2);
 
         for (int i = 2 * numEntries; i < 3 * numEntries; i++) {
             lh.addEntry(data);
@@ -377,8 +371,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
                      2, lh.getLedgerMetadata().getAllEnsembles().size());
 
         for (ServerConfiguration conf : confs) {
-            bsConfs.add(conf);
-            bs.add(startBookie(conf));
+            startAndAddBookie(conf);
         }
 
         for (int i = 2 * numEntries; i < 3 * numEntries; i++) {

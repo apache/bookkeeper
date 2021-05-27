@@ -75,7 +75,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
              * if we try to call decommissionBookie for a bookie which is not
              * shutdown, then it should throw BKIllegalOpException
              */
-            bkAdmin.decommissionBookie(bs.get(0).getBookieId());
+            bkAdmin.decommissionBookie(addressByIndex(0));
             fail("Expected BKIllegalOpException because that bookie is not shutdown yet");
         } catch (BKIllegalOpException bkioexc) {
             // expected IllegalException
