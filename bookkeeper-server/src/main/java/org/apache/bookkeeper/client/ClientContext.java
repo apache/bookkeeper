@@ -27,6 +27,8 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieClient;
 
+import java.util.List;
+
 /**
  * Collection of client objects used by LedgerHandle to interact with
  * the outside world. Normally these are instantiated by the BookKeeper object
@@ -44,4 +46,5 @@ interface ClientContext {
     OrderedScheduler getScheduler();
     BookKeeperClientStats getClientStats();
     boolean isClientClosed();
+    List<LedgerPayloadInterceptor> getLedgerPayloadInterceptors();
 }

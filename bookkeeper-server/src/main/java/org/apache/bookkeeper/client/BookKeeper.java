@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.netty.buffer.ByteBufAllocator;
@@ -33,7 +34,9 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -45,7 +48,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Pattern;
 
+import lombok.SneakyThrows;
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
@@ -153,6 +158,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     // Close State
     boolean closed = false;
     final ReentrantReadWriteLock closeLock = new ReentrantReadWriteLock();
+
+    final private List<LedgerPayloadInterceptor> ledgerPayloadInterceptors = new ArrayList<>();
 
     /**
      * BookKeeper Client Builder to build client instances.
@@ -541,11 +548,37 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         this.bookieQuarantineRatio = conf.getBookieQuarantineRatio();
         scheduleBookieHealthCheckIfEnabled(conf);
+
+        initInterceptors(conf, this.getClientCtx(), ledgerPayloadInterceptors);
+    }
+
+    @VisibleForTesting
+    static void initInterceptors(final ClientConfiguration conf,
+                                  final ClientContext clientCtx,
+                                  final List<LedgerPayloadInterceptor> interceptors)
+            throws BKException {
+        String lpInterceptors = conf.getLedgerPayloadInterceptors();
+        if (!Strings.isNullOrEmpty(lpInterceptors)) {
+            for(String name: lpInterceptors.split(Pattern.quote(","))) {
+                try {
+                    LedgerPayloadInterceptor lpi = (LedgerPayloadInterceptor) Class.forName(name)
+                            .getConstructor().newInstance();
+                    lpi.init(clientCtx, conf.getLedgerPayloadInterceptorsConfiguration());
+                    interceptors.add(lpi);
+                } catch (Exception e) {
+                    LOG.error("Failed to create a LedgerPayloadInterceptor", e);
+                    BKException bke = BKException.create(BKException.Code.IncorrectParameterException);
+                    bke.initCause(e);
+                    throw bke;
+                }
+            }
+        }
     }
 
     /**
      * Allow to extend BookKeeper for mocking in unit tests.
      */
+    @SneakyThrows
     @VisibleForTesting
     BookKeeper() {
         conf = new ClientConfiguration();
@@ -568,6 +601,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         bookieClient = null;
         allocator = UnpooledByteBufAllocator.DEFAULT;
         bookieQuarantineRatio = 1.0;
+        initInterceptors(conf, this.getClientCtx(), ledgerPayloadInterceptors);
     }
 
     private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
@@ -1433,6 +1467,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         // Close bookie client so all pending bookie requests would be failed
         // which will reject any incoming bookie requests.
         bookieClient.close();
+
+        for (int i = ledgerPayloadInterceptors.size() - 1; i >= 0; i--) {
+            ledgerPayloadInterceptors.get(i).close();
+        }
+        ledgerPayloadInterceptors.clear();
+
         try {
             // Close ledger manage so all pending metadata requests would be failed
             // which will reject any incoming metadata requests.
@@ -1638,6 +1678,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             @Override
             public boolean isClientClosed() {
                 return BookKeeper.this.isClosed();
+            }
+
+            @Override
+            public List<LedgerPayloadInterceptor> getLedgerPayloadInterceptors() {
+                return ledgerPayloadInterceptors;
             }
 
             @Override

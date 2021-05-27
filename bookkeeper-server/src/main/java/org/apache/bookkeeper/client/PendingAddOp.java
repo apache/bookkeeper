@@ -30,6 +30,7 @@ import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
 import java.util.EnumSet;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -96,8 +97,15 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.ctx = ctx;
         op.entryId = LedgerHandle.INVALID_ENTRY_ID;
         op.currentLedgerLength = -1;
+
         op.payload = payload;
-        op.entryLength = payload.readableBytes();
+
+        List<LedgerPayloadInterceptor> interceptors = clientCtx.getLedgerPayloadInterceptors();
+        if (interceptors != null && !interceptors.isEmpty()) {
+            interceptors.forEach(lpi -> op.payload = lpi.beforeAdd(lh.getCustomMetadata(), op.payload));
+        }
+
+        op.entryLength = op.payload.readableBytes();
 
         op.completed = false;
         op.ensemble = ensemble;

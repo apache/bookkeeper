@@ -25,6 +25,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -111,7 +112,15 @@ class LedgerCreateOp {
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         this.digestType = digestType;
-        this.customMetadata = customMetadata;
+
+        List<LedgerPayloadInterceptor> interceptors = bk.getClientCtx().getLedgerPayloadInterceptors();
+        if (interceptors != null && !interceptors.isEmpty()) {
+            Map<String, byte[]> md = customMetadata == null ? new HashMap<>() : customMetadata;
+            interceptors.forEach(lpi -> lpi.beforeCreate(md));
+            this.customMetadata = md;
+        } else {
+            this.customMetadata = customMetadata;
+        }
         this.writeFlags = writeFlags;
         this.passwd = passwd;
         this.cb = cb;

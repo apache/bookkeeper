@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENS
 
 import io.netty.buffer.ByteBuf;
 
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -33,6 +34,7 @@ import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.replication.Auditor;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 
 
@@ -197,6 +199,11 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Logs
     protected static final String CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING =
             "clientConnectBookieUnavailableLogThrottling";
+
+    protected static final String LEDGER_PAYLOAD_INTERCEPTORS = "ledgerPayloadInterceptors";
+    protected static final String INTERCEPTORS_CONFIG_PREFIX = "interceptor";
+    protected static final String LEDGER_PAYLOAD_INTERCEPTORS_CONFIG_PREFIX = "lpi";
+
 
     /**
      * Construct a default client-side configuration.
@@ -2007,6 +2014,33 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     public long getClientConnectBookieUnavailableLogThrottlingMs() {
         return getLong(CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING, 5_000L);
     }
+
+    /**
+     * Sets comma-separated list of fully-qualified names of interceptors
+     * @param val
+     * @return
+     */
+    public ClientConfiguration setLedgerPayloadInterceptors(String val) {
+        setProperty(LEDGER_PAYLOAD_INTERCEPTORS, val);
+        return this;
+    }
+
+    /**
+     * gets comma-separated list of fully-qualified names of interceptors
+     * @return
+     */
+    public String getLedgerPayloadInterceptors() {
+        return getString(LEDGER_PAYLOAD_INTERCEPTORS, "");
+    }
+
+    /**
+     * Configuration for the interceptors
+     * @return
+     */
+    public Configuration getLedgerPayloadInterceptorsConfiguration() {
+        return subset(INTERCEPTORS_CONFIG_PREFIX).subset(LEDGER_PAYLOAD_INTERCEPTORS_CONFIG_PREFIX);
+    }
+
 
     @Override
     protected ClientConfiguration getThis() {

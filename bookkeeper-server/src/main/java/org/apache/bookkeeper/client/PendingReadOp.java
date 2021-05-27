@@ -144,12 +144,26 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             }
 
             if (!complete.getAndSet(true)) {
-                rc = BKException.Code.OK;
                 /*
                  * The length is a long and it is the last field of the metadata of an entry.
                  * Consequently, we have to subtract 8 from METADATA_LENGTH to get the length.
                  */
-                entryImpl.setLength(buffer.getLong(DigestManager.METADATA_LENGTH - 8));
+                long length = buffer.getLong(DigestManager.METADATA_LENGTH - 8);
+
+                List<LedgerPayloadInterceptor> interceptors = clientCtx.getLedgerPayloadInterceptors();
+                if (interceptors != null && !interceptors.isEmpty()) {
+                    // reverse order of add
+                    // Add:  I1 -> I2 -> I3
+                    // Read: I3 -> I2 -> I1
+                    for (int i = interceptors.size() - 1; i >= 0; i--) {
+                        LedgerPayloadInterceptor lpi = interceptors.get(i);
+                        content = lpi.beforeAdd(lh.getCustomMetadata(), content);
+                    }
+                }
+
+                rc = BKException.Code.OK;
+
+                entryImpl.setLength(length);
                 entryImpl.setEntryBuf(content);
                 writeSet.recycle();
                 return true;
