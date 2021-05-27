@@ -130,7 +130,7 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
         Thread.sleep(2000);
 
         // Verify that the first entry log (0.log) has been deleted from all of the Bookie Servers.
-        for (File ledgerDirectory : tmpDirs) {
+        for (File ledgerDirectory : bookieLedgerDirs()) {
             assertFalse("Found the entry log file (0.log) that should have been deleted in ledgerDirectory: "
                 + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0));
         }
@@ -169,7 +169,7 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
          * test, a new entry log is created. We know then that the first two
          * entry logs should be deleted.
          */
-        for (File ledgerDirectory : tmpDirs) {
+        for (File ledgerDirectory : bookieLedgerDirs()) {
             assertFalse("Found the entry log file ([0,1].log) that should have been deleted in ledgerDirectory: "
                 + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1));
         }

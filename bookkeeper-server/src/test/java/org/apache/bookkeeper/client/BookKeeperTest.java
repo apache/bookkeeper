@@ -30,9 +30,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import io.netty.util.IllegalReferenceCountException;
-
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -44,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
@@ -54,7 +51,6 @@ import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -1037,10 +1033,10 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
             // Put all non ensemble bookies to sleep
             LOG.info("Putting all non ensemble bookies to sleep.");
-            for (BookieServer bookieServer : bs) {
+            for (BookieId addr : bookieAddresses()) {
                 try {
-                    if (!lh.getCurrentEnsemble().contains(bookieServer.getBookieId())) {
-                        sleepBookie(bookieServer.getBookieId(), sleepLatchCase2);
+                    if (!lh.getCurrentEnsemble().contains(addr)) {
+                        sleepBookie(addr, sleepLatchCase2);
                     }
                 } catch (UnknownHostException ignored) {}
             }

@@ -67,7 +67,7 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
         conf.setAuditorPeriodicBookieCheckInterval(CHECK_INTERVAL);
         conf.setMetadataServiceUri(metadataServiceUri);
         conf.setProperty("clientConnectTimeoutMillis", 500);
-        String addr = bs.get(0).getBookieId().toString();
+        String addr = addressByIndex(0).toString();
 
         auditorElector = new AuditorElector(addr, conf);
         auditorElector.start();
@@ -86,8 +86,8 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testPeriodicBookieCheckInterval() throws Exception {
-        bsConfs.get(0).setMetadataServiceUri(zkUtil.getMetadataServiceUri());
-        runFunctionWithLedgerManagerFactory(bsConfs.get(0), mFactory -> {
+        confByIndex(0).setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        runFunctionWithLedgerManagerFactory(confByIndex(0), mFactory -> {
             try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
                 @Cleanup final LedgerUnderreplicationManager underReplicationManager =
                     mFactory.newLedgerUnderreplicationManager();

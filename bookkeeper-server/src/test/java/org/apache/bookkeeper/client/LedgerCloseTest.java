@@ -215,8 +215,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
                 throw new IOException("Dead bookie for recovery adds.");
             }
         };
-        bsConfs.add(conf);
-        bs.add(startBookie(conf, sBookie));
+        startAndAddBookie(conf, sBookie);
     }
 
     // simulate slow adds, then become normal when recover,
@@ -235,8 +234,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
                 throw new IOException("Dead bookie");
             }
         };
-        bsConfs.add(conf);
-        bs.add(startBookie(conf, dBookie));
+        startAndAddBookie(conf, dBookie);
     }
 
     @Test

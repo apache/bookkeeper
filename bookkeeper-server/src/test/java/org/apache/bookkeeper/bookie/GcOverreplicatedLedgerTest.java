@@ -22,9 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import com.google.common.collect.Lists;
-
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -41,7 +39,6 @@ import org.apache.bookkeeper.meta.LedgerManagerTestCase;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.zookeeper.ZooDefs;
@@ -182,11 +179,9 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
         Assert.assertTrue(activeLedgers.containsKey(lh.getId()));
     }
 
-    private BookieId getBookieNotInEnsemble(LedgerMetadata ledgerMetadata) throws UnknownHostException {
+    private BookieId getBookieNotInEnsemble(LedgerMetadata ledgerMetadata) throws Exception {
         List<BookieId> allAddresses = Lists.newArrayList();
-        for (BookieServer bk : bs) {
-            allAddresses.add(bk.getBookieId());
-        }
+        allAddresses.addAll(bookieAddresses());
         SortedMap<Long, ? extends List<BookieId>> ensembles = ledgerMetadata.getAllEnsembles();
         for (List<BookieId> fragmentEnsembles : ensembles.values()) {
             allAddresses.removeAll(fragmentEnsembles);

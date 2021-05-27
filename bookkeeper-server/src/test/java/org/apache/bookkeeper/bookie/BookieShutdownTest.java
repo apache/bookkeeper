@@ -84,9 +84,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
                         + " and now going to fail bookie.");
                 // Shutdown one Bookie server and restarting new one to continue
                 // writing
-                bsConfs.remove(0);
-                bs.get(0).shutdown();
-                bs.remove(0);
+                killBookie(0);
                 startNewBookie();
                 LOG.info("Shutdown one bookie server and started new bookie server...");
             } catch (BKException e) {
@@ -118,7 +116,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testBookieShutdownFromBookieThread() throws Exception {
-        ServerConfiguration conf = bsConfs.get(0);
+        ServerConfiguration conf = confByIndex(0);
         killBookie(0);
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch shutdownComplete = new CountDownLatch(1);

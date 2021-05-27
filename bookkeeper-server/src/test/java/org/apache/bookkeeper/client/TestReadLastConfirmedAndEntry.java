@@ -123,8 +123,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         for (int i = 0; i < numBookies; i++) {
             ServerConfiguration conf = newServerConfiguration();
             Bookie b = new FakeBookie(conf, expectedEntryIdToFail, i != 0);
-            bs.add(startBookie(conf, b));
-            bsConfs.add(conf);
+            startAndAddBookie(conf, b);
         }
 
         // create bookkeeper
@@ -240,9 +239,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         ServerConfiguration bsConf = killBookie(0);
         // start it with a slow bookie
         Bookie b = new SlowReadLacBookie(bsConf, lacToSlowRead, readLatch);
-        bs.add(startBookie(bsConf, b));
-        bsConfs.add(bsConf);
-
+        startAndAddBookie(bsConf, b);
         // create bookkeeper
         BookKeeper newBk = new BookKeeper(newConf);
         // create ledger

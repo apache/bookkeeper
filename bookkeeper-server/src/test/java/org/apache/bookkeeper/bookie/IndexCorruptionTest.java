@@ -55,7 +55,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
     public void testNoSuchLedger() throws Exception {
         LOG.debug("Testing NoSuchLedger");
 
-        SyncThread syncThread = ((BookieImpl) bs.get(0).getBookie()).syncThread;
+        SyncThread syncThread = ((BookieImpl) serverByIndex(0).getBookie()).syncThread;
         syncThread.suspendSync();
         // Create a ledger
         LedgerHandle lh = bkc.createLedger(1, 1, digestType, "".getBytes());
@@ -96,7 +96,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
     public void testEmptyIndexPage() throws Exception {
         LOG.debug("Testing EmptyIndexPage");
 
-        SyncThread syncThread = ((BookieImpl) bs.get(0).getBookie()).syncThread;
+        SyncThread syncThread = ((BookieImpl) serverByIndex(0).getBookie()).syncThread;
         assertNotNull("Not found SyncThread.", syncThread);
 
         syncThread.suspendSync();

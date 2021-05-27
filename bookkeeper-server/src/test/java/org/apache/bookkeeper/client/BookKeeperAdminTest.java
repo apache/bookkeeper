@@ -122,10 +122,10 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     }
 
     public void testTriggerAudit(boolean storeSystemTimeAsLedgerUnderreplicatedMarkTime) throws Exception {
-        ServerConfiguration thisServerConf = new ServerConfiguration(baseConf);
-        thisServerConf
-                .setStoreSystemTimeAsLedgerUnderreplicatedMarkTime(storeSystemTimeAsLedgerUnderreplicatedMarkTime);
-        restartBookies(thisServerConf);
+        restartBookies(c -> {
+                c.setStoreSystemTimeAsLedgerUnderreplicatedMarkTime(storeSystemTimeAsLedgerUnderreplicatedMarkTime);
+                return c;
+            });
         ClientConfiguration thisClientConf = new ClientConfiguration(baseClientConf);
         thisClientConf
                 .setStoreSystemTimeAsLedgerUnderreplicatedMarkTime(storeSystemTimeAsLedgerUnderreplicatedMarkTime);
@@ -150,7 +150,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         ledgerHandle.addEntry(0, "data".getBytes());
         ledgerHandle.close();
 
-        BookieServer bookieToKill = bs.get(1);
+        BookieServer bookieToKill = serverByIndex(1);
         killBookie(1);
         /*
          * since lostBookieRecoveryDelay is set, when a bookie is died, it will
@@ -163,8 +163,8 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         assertTrue("There are supposed to be underreplicatedledgers", underreplicatedLedgerItr.hasNext());
         UnderreplicatedLedger underreplicatedLedger = underreplicatedLedgerItr.next();
         assertEquals("Underreplicated ledgerId", ledgerId, underreplicatedLedger.getLedgerId());
-        assertTrue("Missingreplica of Underreplicated ledgerId should contain " + bookieToKill.getBookieId(),
-                underreplicatedLedger.getReplicaList().contains(bookieToKill.getBookieId().toString()));
+        assertTrue("Missingreplica of Underreplicated ledgerId should contain " + bookieToKill,
+                underreplicatedLedger.getReplicaList().contains(bookieToKill.getBookieId().getId()));
         if (storeSystemTimeAsLedgerUnderreplicatedMarkTime) {
             long ctimeOfURL = underreplicatedLedger.getCtime();
             assertTrue("ctime of underreplicated ledger should be greater than test starttime",
@@ -179,7 +179,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     @Test
     public void testBookieInit() throws Exception {
         int bookieindex = 0;
-        ServerConfiguration confOfExistingBookie = bsConfs.get(bookieindex);
+        ServerConfiguration confOfExistingBookie = confByIndex(bookieindex);
         Assert.assertFalse("initBookie shouldn't have succeeded, since bookie is still running with that configuration",
                 BookKeeperAdmin.initBookie(confOfExistingBookie));
         killBookie(bookieindex);
@@ -437,10 +437,11 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     @Test
     public void testGetListOfEntriesOfNonExistingLedger() throws Exception {
         long nonExistingLedgerId = 56789L;
+
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
-            for (int i = 0; i < bs.size(); i++) {
+            for (int i = 0; i < bookieCount(); i++) {
                 CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
-                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), nonExistingLedgerId);
+                    .asyncGetListOfEntriesOfLedger(addressByIndex(i), nonExistingLedgerId);
                 try {
                     futureResult.get();
                     fail("asyncGetListOfEntriesOfLedger is supposed to be failed with NoSuchLedgerExistsException");
@@ -467,9 +468,9 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             lh.close();
         }
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
-            for (int i = 0; i < bs.size(); i++) {
+            for (int i = 0; i < bookieCount(); i++) {
                 CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
-                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), lId);
+                    .asyncGetListOfEntriesOfLedger(addressByIndex(i), lId);
                 AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
                 assertEquals("Number of entries", numOfEntries,
                         availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
@@ -500,9 +501,9 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         }
 
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
-            for (int i = 0; i < bs.size(); i++) {
+            for (int i = 0; i < bookieCount(); i++) {
                 CompletableFuture<AvailabilityOfEntriesOfLedger> futureResult = bkAdmin
-                        .asyncGetListOfEntriesOfLedger(bs.get(i).getBookieId(), lId);
+                        .asyncGetListOfEntriesOfLedger(addressByIndex(i), lId);
                 AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = futureResult.get();
                 /*
                  * since num of bookies in the ensemble is 2 and
@@ -529,22 +530,22 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
 
         try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
             Collection<BookieId> availableBookies = bkAdmin.getAvailableBookies();
-            Assert.assertEquals(availableBookies.size(), bs.size());
+            Assert.assertEquals(availableBookies.size(), bookieCount());
 
-            for (int i = 0; i < bs.size(); i++) {
-                availableBookies.contains(bs.get(i).getBookieId());
+            for (int i = 0; i < bookieCount(); i++) {
+                availableBookies.contains(addressByIndex(i));
             }
 
-            BookieServer killedBookie = bs.get(1);
+            BookieServer killedBookie = serverByIndex(1);
             killBookieAndWaitForZK(1);
 
             Collection<BookieId> remainingBookies = bkAdmin.getAvailableBookies();
-            Assert.assertFalse(remainingBookies.contains(killedBookie.getBookieId()));
+            Assert.assertFalse(remainingBookies.contains(killedBookie));
 
             Collection<BookieId> allBookies = bkAdmin.getAllBookies();
-            for (int i = 0; i < bs.size(); i++) {
-                remainingBookies.contains(bs.get(i).getBookieId());
-                allBookies.contains(bs.get(i).getBookieId());
+            for (int i = 0; i < bookieCount(); i++) {
+                remainingBookies.contains(addressByIndex(i));
+                allBookies.contains(addressByIndex(i));
             }
 
             Assert.assertEquals(remainingBookies.size(), allBookies.size() - 1);
@@ -575,7 +576,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
          * since no entry is added, callback is supposed to fail with
          * NoSuchLedgerExistsException.
          */
-        bkAdmin.asyncGetListOfEntriesOfLedger(bs.get(0).getBookieId(), lId)
+        bkAdmin.asyncGetListOfEntriesOfLedger(addressByIndex(0), lId)
                 .whenComplete((availabilityOfEntriesOfLedger, throwable) -> {
                     exceptionInCallback.set(throwable != null);
                     if (throwable != null) {
@@ -679,9 +680,9 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         }
 
         ServerConfiguration bkConf = newServerConfiguration().setForceReadOnlyBookie(readonly);
-        BookieServer bkServer = startBookie(bkConf);
+        BookieServer bkServer = startBookie(bkConf).getServer();
 
-        String bookieId = bkServer.getBookieId().toString();
+        BookieId bookieId = bkServer.getBookieId();
         String host = bkServer.getLocalAddress().getHostName();
         int port = bkServer.getLocalAddress().getPort();
 
@@ -700,7 +701,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
 
             assertThat(bookieServiceInfo.getEndpoints().size(), is(1));
             BookieServiceInfo.Endpoint endpoint = bookieServiceInfo.getEndpoints().stream()
-                    .filter(e -> Objects.equals(e.getId(), bookieId))
+                    .filter(e -> Objects.equals(e.getId(), bookieId.getId()))
                     .findFirst()
                     .get();
             assertNotNull("Endpoint " + bookieId + " not found.", endpoint);

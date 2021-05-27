@@ -242,8 +242,7 @@ public class BookieWriteLedgerTest extends
         // Replace the bookie with a fake bookie
         ServerConfiguration conf = killBookie(ensemble.get(0));
         BookieWriteLedgerTest.CorruptReadBookie corruptBookie = new BookieWriteLedgerTest.CorruptReadBookie(conf);
-        bs.add(startBookie(conf, corruptBookie));
-        bsConfs.add(conf);
+        startAndAddBookie(conf, corruptBookie);
 
         i = numEntriesToWrite;
         numEntriesToWrite = numEntriesToWrite + 50;

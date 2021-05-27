@@ -144,8 +144,7 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
 
             // start the bookies
             for (ServerConfiguration conf : confs) {
-                bs.add(startBookie(conf));
-                bsConfs.add(conf);
+                startAndAddBookie(conf);
             }
         }
         lh.close();

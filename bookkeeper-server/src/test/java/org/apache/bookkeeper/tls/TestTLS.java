@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
-
 import java.io.File;
 import java.io.IOException;
 import java.security.cert.Certificate;
@@ -38,7 +37,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
@@ -64,6 +62,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.tls.TLSContextFactory.KeyStoreType;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.TestUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -242,7 +241,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
         ServerConfiguration bookieConf = newServerConfiguration().setTLSKeyStore(null);
 
         try {
-            bs.add(startBookie(bookieConf));
+            startAndAddBookie(bookieConf);
             fail("Shouldn't have been able to start");
         } catch (SecurityException se) {
             assertTrue(true);
@@ -261,13 +260,12 @@ public class TestTLS extends BookKeeperClusterTestCase {
 
         // restart a bookie with bad cert
         int restartBookieIdx = 0;
-        ServerConfiguration bookieConf = bsConfs.get(restartBookieIdx)
+        ServerConfiguration bookieConf = confByIndex(restartBookieIdx)
                 .setTLSCertificatePath(getResourcePath("client-cert.pem"));
         killBookie(restartBookieIdx);
         LOG.info("Sleeping for 1s before restarting bookie with bad cert");
         Thread.sleep(1000);
-        bs.add(startBookie(bookieConf));
-        bsConfs.add(bookieConf);
+        startAndAddBookie(bookieConf);
 
         // Create ledger and write entries
         BookKeeper client = new BookKeeper(clientConf);
@@ -292,7 +290,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     public void testStartTLSServerBadPassword() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration().setTLSKeyStorePasswordPath("badpassword");
         try {
-            bs.add(startBookie(bookieConf));
+            startAndAddBookie(bookieConf);
             fail("Shouldn't have been able to start");
         } catch (SecurityException se) {
             assertTrue(true);
@@ -345,12 +343,12 @@ public class TestTLS extends BookKeeperClusterTestCase {
         if (useV2Protocol) {
             return;
         }
-        ServerConfiguration serverConf = new ServerConfiguration();
-        for (ServerConfiguration conf : bsConfs) {
-            conf.setDisableServerSocketBind(true);
-            conf.setEnableLocalTransport(true);
-        }
-        restartBookies(serverConf);
+
+        restartBookies(c -> {
+                c.setDisableServerSocketBind(true);
+                c.setEnableLocalTransport(true);
+                return c;
+            });
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         testClient(clientConf, numBookies);
@@ -362,8 +360,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     @Test
     public void testRefreshDurationForBookieCerts() throws Exception {
         assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
-        ServerConfiguration serverConf = new ServerConfiguration();
-        String originalTlsKeyFilePath = bsConfs.get(0).getTLSKeyStore();
+        String originalTlsKeyFilePath = confByIndex(0).getTLSKeyStore();
         String invalidServerKey = getResourcePath("client-key.pem");
         File originalTlsCertFile = new File(originalTlsKeyFilePath);
         File newTlsKeyFile = IOUtils.createTempFileAndDeleteOnExit(originalTlsKeyFilePath, "refresh");
@@ -373,11 +370,11 @@ public class TestTLS extends BookKeeperClusterTestCase {
         // copy invalid cert to new temp file
         FileUtils.copyFile(invalidServerKeyFile, newTlsKeyFile);
         long refreshDurationInSec = 1;
-        for (ServerConfiguration conf : bsConfs) {
-            conf.setTLSCertFilesRefreshDurationSeconds(1);
-            conf.setTLSKeyStore(newTlsKeyFile.getAbsolutePath());
-        }
-        restartBookies(serverConf);
+        restartBookies(c -> {
+                c.setTLSCertFilesRefreshDurationSeconds(1);
+                c.setTLSKeyStore(newTlsKeyFile.getAbsolutePath());
+                return c;
+            });
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         try {
@@ -477,9 +474,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testConnectToTLSClusterTLSClientWithTLSNoAuthentication() throws Exception {
-        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setTLSClientAuthentication(false);
-        restartBookies(serverConf);
+        restartBookies(c -> {
+                c.setTLSClientAuthentication(false);
+                return c;
+            });
 
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         testClient(conf, numBookies);
@@ -517,11 +515,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testClientWantsTLSNoServersHaveIt() throws Exception {
-        ServerConfiguration serverConf = new ServerConfiguration();
-        for (ServerConfiguration conf : bsConfs) {
-            conf.setTLSProviderFactoryClass(null);
-        }
-        restartBookies(serverConf);
+        restartBookies(c -> {
+                c.setTLSProviderFactoryClass(null);
+                return c;
+            });
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         try {
@@ -539,11 +536,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
     @Test
     public void testTLSClientButOnlyFewTLSServers() throws Exception {
         // disable TLS on initial set of bookies
-        ServerConfiguration serverConf = new ServerConfiguration();
-        for (ServerConfiguration conf : bsConfs) {
-            conf.setTLSProviderFactoryClass(null);
-        }
-        restartBookies(serverConf);
+        restartBookies(c -> {
+                c.setTLSProviderFactoryClass(null);
+                return c;
+            });
 
         // add two bookies which support TLS
         baseConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
@@ -591,9 +587,11 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testBookieAuthPluginRequireClientTLSAuthentication() throws Exception {
-        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
-        restartBookies(serverConf);
+        restartBookies(c -> {
+                c.setBookieAuthProviderFactoryClass(
+                        AllowOnlyClientsWithX509Certificates.class.getName());
+                return c;
+            });
 
         secureBookieSideChannel = false;
         secureBookieSideChannelPrincipals = null;
@@ -617,11 +615,13 @@ public class TestTLS extends BookKeeperClusterTestCase {
             return;
         }
 
-        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
-        serverConf.setDisableServerSocketBind(true);
-        serverConf.setEnableLocalTransport(true);
-        restartBookies(serverConf);
+        restartBookies(c -> {
+                c.setBookieAuthProviderFactoryClass(
+                        AllowOnlyClientsWithX509Certificates.class.getName());
+                c.setDisableServerSocketBind(true);
+                c.setEnableLocalTransport(true);
+                return c;
+            });
 
         secureBookieSideChannel = false;
         secureBookieSideChannelPrincipals = null;
@@ -644,10 +644,11 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testRoleBasedAuthZInCertificate() throws Exception {
-        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setBookieAuthProviderFactoryClass(BookieAuthZFactory.class.getCanonicalName());
-        serverConf.setAuthorizedRoles("testRole,testRole1");
-        restartBookies(serverConf);
+        restartBookies(serverConf -> {
+            serverConf.setBookieAuthProviderFactoryClass(BookieAuthZFactory.class.getCanonicalName());
+            serverConf.setAuthorizedRoles("testRole,testRole1");
+            return serverConf;
+        });
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
 
@@ -663,10 +664,12 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testBookieAuthPluginDenyAccesstoClientWithoutTLSAuthentication() throws Exception {
-        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setTLSClientAuthentication(false);
-        serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
-        restartBookies(serverConf);
+        restartBookies(c -> {
+                c.setTLSClientAuthentication(false);
+                c.setBookieAuthProviderFactoryClass(
+                        AllowOnlyClientsWithX509Certificates.class.getName());
+                return c;
+            });
 
         secureBookieSideChannel = false;
         secureBookieSideChannelPrincipals = null;
@@ -693,12 +696,14 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testBookieAuthPluginDenyAccessToClientWithoutTLSAuthenticationLocal() throws Exception {
-        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setTLSClientAuthentication(false);
-        serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
-        serverConf.setDisableServerSocketBind(true);
-        serverConf.setEnableLocalTransport(true);
-        restartBookies(serverConf);
+        restartBookies(c -> {
+                c.setTLSClientAuthentication(false);
+                c.setBookieAuthProviderFactoryClass(
+                        AllowOnlyClientsWithX509Certificates.class.getName());
+                c.setDisableServerSocketBind(true);
+                c.setEnableLocalTransport(true);
+                return c;
+            });
 
         secureBookieSideChannel = false;
         secureBookieSideChannelPrincipals = null;
@@ -725,9 +730,11 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testBookieAuthPluginDenyAccessToClientWithoutTLS() throws Exception {
-        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
-        restartBookies(serverConf);
+        restartBookies(c -> {
+                c.setBookieAuthProviderFactoryClass(
+                        AllowOnlyClientsWithX509Certificates.class.getName());
+                return c;
+            });
 
         secureBookieSideChannel = false;
         secureBookieSideChannelPrincipals = null;
@@ -837,7 +844,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
 
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
-        bs.add(startBookie(bookieConf));
+        startAndAddBookie(bookieConf);
         testClient(clientConf, origNumBookies + 1);
     }
 
@@ -881,16 +888,16 @@ public class TestTLS extends BookKeeperClusterTestCase {
 
         // verify stats
         for (int i = 0; i < numBookies; i++) {
-            BookieServer bookie = bs.get(i);
+            BookieServer bookie = serverByIndex(i);
             StringBuilder nameBuilder = new StringBuilder(BookKeeperClientStats.CHANNEL_SCOPE)
                     .append(".")
                     .append("bookie_")
-                    .append(bookie.getBookieId().toString()
-                    .replace('.', '_')
-                    .replace('-', '_'))
+                    .append(TestUtils.buildStatsCounterPathFromBookieID(bookie.getBookieId()))
                     .append(".");
-
             // check stats on TLS enabled client
+           TestStatsProvider.TestCounter cntr =  tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.ACTIVE_TLS_CHANNEL_COUNTER);
+
             assertEquals("Mismatch TLS channel count", 1,
                     tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
                     + BookKeeperClientStats.ACTIVE_TLS_CHANNEL_COUNTER).get().longValue());
@@ -939,7 +946,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
 
         // restart a bookie with wrong trust store
         int restartBookieIdx = 0;
-        ServerConfiguration badBookieConf = bsConfs.get(restartBookieIdx);
+        ServerConfiguration badBookieConf = confByIndex(restartBookieIdx);
 
         switch (serverTrustStoreFormat) {
             case PEM:
@@ -961,10 +968,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
         killBookie(restartBookieIdx);
         LOG.info("Sleeping for 1s before restarting bookie with bad cert");
         Thread.sleep(1000);
-        BookieServer bookie = startBookie(badBookieConf);
-        bs.add(bookie);
-        bsConfs.add(badBookieConf);
-
+        BookieServer bookie = startAndAddBookie(badBookieConf).getServer();
         // Create ledger and write entries
         TestStatsProvider testStatsProvider = new TestStatsProvider();
         BookKeeperTestClient client = new BookKeeperTestClient(clientConf, testStatsProvider);
@@ -986,11 +990,8 @@ public class TestTLS extends BookKeeperClusterTestCase {
         StringBuilder nameBuilder = new StringBuilder(BookKeeperClientStats.CHANNEL_SCOPE)
                 .append(".")
                 .append("bookie_")
-                .append(bookie.getBookieId().toString()
-                        .replace('.', '_')
-                        .replace('-', '_'))
+                .append(TestUtils.buildStatsCounterPathFromBookieID(bookie.getBookieId()))
                 .append(".");
-
         assertEquals("TLS handshake failure expected", 1,
                 client.getTestStatsProvider().getCounter(nameBuilder.toString()
                 + BookKeeperClientStats.FAILED_TLS_HANDSHAKE_COUNTER).get().longValue());

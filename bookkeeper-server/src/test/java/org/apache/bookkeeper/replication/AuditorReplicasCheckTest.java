@@ -88,8 +88,8 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         StaticDNSResolver.reset();
-        driver = MetadataDrivers.getBookieDriver(URI.create(bsConfs.get(0).getMetadataServiceUri()));
-        driver.initialize(bsConfs.get(0), () -> {
+        driver = MetadataDrivers.getBookieDriver(URI.create(confByIndex(0).getMetadataServiceUri()));
+        driver.initialize(confByIndex(0), () -> {
         }, NullStatsLogger.INSTANCE);
     }
 
@@ -221,9 +221,8 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
             MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger,
             int expectedNumLedgersFoundHavingNoReplicaOfAnEntry,
             int expectedNumLedgersHavingLessThanAQReplicasOfAnEntry,
-            int expectedNumLedgersHavingLessThanWQReplicasOfAnEntry) throws CompatibilityException,
-            UnavailableException, UnknownHostException, MetadataException, KeeperException, InterruptedException {
-        ServerConfiguration servConf = new ServerConfiguration(bsConfs.get(0));
+            int expectedNumLedgersHavingLessThanWQReplicasOfAnEntry) throws Exception {
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
         setServerConfigProperties(servConf);
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
