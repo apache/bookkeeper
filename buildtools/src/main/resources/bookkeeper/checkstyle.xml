@@ -99,6 +99,7 @@ page at http://checkstyle.sourceforge.net/config.html -->
 
         <module name="AvoidStarImport">
             <property name="severity" value="error"/>
+            <property name="excludes" value="org.hamcrest.Matchers"/>
         </module>
 
         <module name="IllegalImport">

@@ -54,7 +54,7 @@ def depLicences = [
         "protobuf-3.14.0/LICENSE",
         "protobuf-3.12.0/LICENSE",
         "reactivestreams-1.0.3/LICENSE",
-        "slf4j-1.7.32/LICENSE.txt",
+        "slf4j-1.7.36/LICENSE.txt",
 ]
 
 distributions {

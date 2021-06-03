@@ -640,11 +640,11 @@ Bundled as lib/javax.servlet-javax.servlet-api-4.0.0.jar
 Source available at https://github.com/javaee/servlet-spec/tree/4.0.0
 ------------------------------------------------------------------------------------
 This product bundles Simple Logging Facade for Java, which is available under a
-MIT license. For details, see deps/slf4j-1.7.32/LICENSE.txt.
+MIT license. For details, see deps/slf4j-1.7.36/LICENSE.txt.
 
 Bundled as
-  - lib/org.slf4j-slf4j-api-1.7.32.jar
-Source available at https://github.com/qos-ch/slf4j/tree/v_1.7.32
+  - lib/org.slf4j-slf4j-api-1.7.36.jar
+Source available at https://github.com/qos-ch/slf4j/tree/v_1.7.36
 ------------------------------------------------------------------------------------
 This product bundles the Google Auth Library, which is available under a "3-clause BSD"
 license. For details, see deps/google-auth-library-credentials-0.20.0/LICENSE

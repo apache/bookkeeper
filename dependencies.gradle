@@ -77,7 +77,7 @@ depVersions = [
     reflections: "0.9.11",
     rocksDb: "6.27.3",
     rxjava: "3.0.1",
-    slf4j: "1.7.32",
+    slf4j: "1.7.36",
     snakeyaml: "1.30",
     spotbugsAnnotations: "3.1.8",
     protocGenGrpcJava: "1.12.0",
