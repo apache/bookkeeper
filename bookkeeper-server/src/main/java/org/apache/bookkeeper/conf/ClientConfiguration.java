@@ -22,7 +22,6 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENS
 
 import io.netty.buffer.ByteBuf;
 
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -2016,7 +2015,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Sets comma-separated list of fully-qualified names of interceptors
+     * Sets comma-separated list of fully-qualified names of interceptors.
      * @param val
      * @return
      */
@@ -2026,7 +2025,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * gets comma-separated list of fully-qualified names of interceptors
+     * gets comma-separated list of fully-qualified names of interceptors.
      * @return
      */
     public String getLedgerPayloadInterceptors() {
@@ -2034,7 +2033,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Configuration for the interceptors
+     * Configuration for the interceptors.
      * @return
      */
     public Configuration getLedgerPayloadInterceptorsConfiguration() {

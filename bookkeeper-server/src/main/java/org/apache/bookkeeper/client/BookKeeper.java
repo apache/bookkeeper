@@ -34,7 +34,6 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -159,7 +158,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     boolean closed = false;
     final ReentrantReadWriteLock closeLock = new ReentrantReadWriteLock();
 
-    final private List<LedgerPayloadInterceptor> ledgerPayloadInterceptors = new ArrayList<>();
+    private final List<LedgerPayloadInterceptor> ledgerPayloadInterceptors = new ArrayList<>();
 
     /**
      * BookKeeper Client Builder to build client instances.
@@ -559,7 +558,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             throws BKException {
         String lpInterceptors = conf.getLedgerPayloadInterceptors();
         if (!Strings.isNullOrEmpty(lpInterceptors)) {
-            for(String name: lpInterceptors.split(Pattern.quote(","))) {
+            for (String name: lpInterceptors.split(Pattern.quote(","))) {
                 try {
                     LedgerPayloadInterceptor lpi = (LedgerPayloadInterceptor) Class.forName(name)
                             .getConstructor().newInstance();

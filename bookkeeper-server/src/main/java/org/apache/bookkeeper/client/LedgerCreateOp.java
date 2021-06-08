@@ -25,7 +25,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -115,8 +114,10 @@ class LedgerCreateOp {
 
         List<LedgerPayloadInterceptor> interceptors = bk.getClientCtx().getLedgerPayloadInterceptors();
         if (interceptors != null && !interceptors.isEmpty()) {
-            Map<String, byte[]> md = customMetadata == null ? new HashMap<>() : customMetadata;
-            interceptors.forEach(lpi -> lpi.beforeCreate(md));
+            Map<String, byte[]> md = customMetadata;
+            for (LedgerPayloadInterceptor lpi: interceptors) {
+                md = lpi.beforeCreate(md);
+            }
             this.customMetadata = md;
         } else {
             this.customMetadata = customMetadata;
