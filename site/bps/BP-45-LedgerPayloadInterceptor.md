@@ -1,6 +1,6 @@
 ---
 title: "BP-45: Add interceptor interface allowing modifications of the payload"
-issue: https://github.com/apache/bookkeeper/<issue-number>
+issue: https://github.com/apache/bookkeeper/issues/2731
 state: Under Discussion
 release: "4.15.0"
 ---

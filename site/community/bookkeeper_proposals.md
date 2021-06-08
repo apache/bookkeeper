@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 43*
+*Next Proposal Number: 46*
 
 ### Inprogress
 
@@ -112,6 +112,8 @@ Proposal | State
 [BP-41: Separate BookieId from Separate BookieId from Bookie Network Address](../../bps/BP-41-bookieid) | Accepted
 [BP-42: New Client API - list ledgers](../../bps/BP-42-new-api-list-ledgers) | Accepted
 [BP-43: Migration to gradle](../../bps/BP-43-gradle-migration) | Draft
+[BP-44: Running without a journal](https://github.com/apache/bookkeeper/issues/2705) | Draft
+[BP-45: Payload interceptors](../../bps/BP-45-LedgerPayloadInterceptor) | Draft
 
 
 ### Adopted
