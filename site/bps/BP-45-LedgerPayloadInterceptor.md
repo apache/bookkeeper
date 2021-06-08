@@ -92,9 +92,10 @@ public interface LedgerPayloadInterceptor {
      * Executed before creating the ledger.
      * Gives opportunity to modify ledger's custom metadata.
      * Modified metadata will be persisted.
-     * @param customMetadata - ledger's custom metadata
+     * @param customMetadata - ledger's custom metadata (can be null or ImmutableMap)
+     * @return modified metadata or the original metadata
      */
-    void beforeCreate(final Map<String, byte[]> customMetadata);
+    Map<String, byte[]> beforeCreate(final Map<String, byte[]> customMetadata);
 
     /**
      * Executed before adding entry to the ledger.
