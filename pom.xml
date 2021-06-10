@@ -127,7 +127,7 @@
     <curator.version>5.1.0</curator.version>
     <dropwizard.version>3.2.5</dropwizard.version>
     <etcd.version>0.5.4</etcd.version>
-    <freebuilder.version>1.14.9</freebuilder.version>
+    <freebuilder.version>2.7.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.4.0</google.errorprone.version>
     <grpc.version>1.33.0</grpc.version>
@@ -233,6 +233,7 @@
         <groupId>org.inferred</groupId>
         <artifactId>freebuilder</artifactId>
         <version>${freebuilder.version}</version>
+        <optional>true</optional>
       </dependency>
 
       <!-- logging dependencies -->
