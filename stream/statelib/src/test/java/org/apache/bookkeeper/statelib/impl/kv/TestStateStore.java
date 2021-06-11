@@ -121,6 +121,14 @@ public class TestStateStore {
         }
     }
 
+    public void setRemoveLocal(boolean enable) {
+        removeLocal = enable;
+    }
+
+    public void setRemoveRemote(boolean enable) {
+        removeRemote = enable;
+    }
+
     public void init() throws StateStoreException {
         checkpointStore = new FSCheckpointManager(remoteDir);
         StateStoreSpec.StateStoreSpecBuilder builder = StateStoreSpec.builder()
