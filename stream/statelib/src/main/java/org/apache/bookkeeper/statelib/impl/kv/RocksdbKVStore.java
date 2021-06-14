@@ -33,6 +33,8 @@ import static org.apache.bookkeeper.statelib.impl.rocksdb.RocksConstants.WRITE_B
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.MoreFiles;
+import com.google.common.io.RecursiveDeleteOption;
 import com.google.common.primitives.SignedBytes;
 import java.io.File;
 import java.io.IOException;
@@ -131,6 +133,8 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     static {
         RocksDB.loadLibrary();
     }
+
+    private boolean cleanupLocalStoreDirEnable;
 
     public RocksdbKVStore() {
         // initialize the iterators set
@@ -253,12 +257,14 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         checkNotNull(spec.getLocalStateStoreDir(),
             "local state store directory is not configured");
 
-
         this.name = spec.getName();
+        this.cleanupLocalStoreDirEnable = spec.isLocalStorageCleanupEnable();
 
         // initialize the coders
         this.keyCoder = (Coder<K>) spec.getKeyCoder();
         this.valCoder = (Coder<V>) spec.getValCoder();
+
+        cleanupLocalStoreDir(spec.getLocalStateStoreDir());
 
         checkpointStore = spec.getCheckpointStore();
         if (null != checkpointStore) {
@@ -410,6 +416,20 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         RocksUtils.close(writeOpts);
         RocksUtils.close(flushOpts);
         RocksUtils.close(cfOpts);
+
+        cleanupLocalStoreDir(dbDir);
+    }
+
+    private void cleanupLocalStoreDir(File dbDir) {
+        if (cleanupLocalStoreDirEnable) {
+            if (dbDir.exists()) {
+                try {
+                    MoreFiles.deleteRecursively(dbDir.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
+                } catch (IOException e) {
+                    log.error("Failed to cleanup localStoreDir", e);
+                }
+            }
+        }
     }
 
     protected void closeLocalDB() {

@@ -103,6 +103,7 @@ public class TestRocksdbKVStoreCheckpoint {
 
         store.setRemoveLocal(true);
         store.setRemoveRemote(true);
+        store.setLocalStorageCleanup(true);
 
         String[] checkpoints = checkpointDir.list();
         // Initially there is only one checkpoint directory that is used by the statestore
@@ -129,7 +130,7 @@ public class TestRocksdbKVStoreCheckpoint {
 
             checkpoints = checkpointDir.list();
             // We should only have one checkpoint in the local directory.
-            assertEquals(i, checkpoints.length);
+            assertEquals(1, checkpoints.length);
         }
 
         store.close();
