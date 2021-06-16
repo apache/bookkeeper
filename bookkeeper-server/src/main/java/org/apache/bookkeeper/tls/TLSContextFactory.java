@@ -37,6 +37,8 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
@@ -58,9 +60,66 @@ import org.slf4j.LoggerFactory;
  */
 public class TLSContextFactory implements SecurityHandlerFactory {
 
-    static {
-        // Fixes loading PKCS8Key file: https://stackoverflow.com/a/18912362
-        java.security.Security.addProvider(new org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider());
+    public static final Provider BC_PROVIDER = getProvider();
+    public static final String BC_FIPS_PROVIDER_CLASS = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
+    public static final String BC_NON_FIPS_PROVIDER_CLASS = "org.bouncycastle.jce.provider.BouncyCastleProvider";
+
+    // Security.getProvider("BC") / Security.getProvider("BCFIPS").
+    // also used to get Factories. e.g. CertificateFactory.getInstance("X.509", "BCFIPS")
+    public static final String BC_FIPS = "BCFIPS";
+    public static final String BC = "BC";
+
+    /**
+     * Get Bouncy Castle provider, and call Security.addProvider(provider) if success.
+     *  1. try get from classpath.
+     *  2. try get from Nar.
+     */
+    public static Provider getProvider() {
+        boolean isProviderInstalled =
+            Security.getProvider(BC) != null || Security.getProvider(BC_FIPS) != null;
+
+        if (isProviderInstalled) {
+            Provider provider = Security.getProvider(BC) != null
+                ? Security.getProvider(BC)
+                : Security.getProvider(BC_FIPS);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Already instantiated Bouncy Castle provider {}", provider.getName());
+            }
+            return provider;
+        }
+
+        // Not installed, try load from class path
+        try {
+            return getBCProviderFromClassPath();
+        } catch (Exception e) {
+            LOG.warn("Not able to get Bouncy Castle provider for both FIPS and Non-FIPS from class path:", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Get Bouncy Castle provider from classpath, and call Security.addProvider.
+     * Throw Exception if failed.
+     */
+    public static Provider getBCProviderFromClassPath() throws Exception {
+        Class clazz;
+        try {
+            // prefer non FIPS, for backward compatibility concern.
+            clazz = Class.forName(BC_NON_FIPS_PROVIDER_CLASS);
+        } catch (ClassNotFoundException cnf) {
+            LOG.warn("Not able to get Bouncy Castle provider: {}, try to get FIPS provider {}",
+                BC_NON_FIPS_PROVIDER_CLASS, BC_FIPS_PROVIDER_CLASS);
+            // attempt to use the FIPS provider.
+            clazz = Class.forName(BC_FIPS_PROVIDER_CLASS);
+        }
+
+        @SuppressWarnings("unchecked")
+        Provider provider = (Provider) clazz.getDeclaredConstructor().newInstance();
+        Security.addProvider(provider);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Found and Instantiated Bouncy Castle provider in classpath {}", provider.getName());
+        }
+        return provider;
     }
 
     /**
