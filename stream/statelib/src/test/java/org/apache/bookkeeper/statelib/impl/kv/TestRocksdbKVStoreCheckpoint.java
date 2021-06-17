@@ -21,6 +21,8 @@
 package org.apache.bookkeeper.statelib.impl.kv;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.CheckpointInfo;
 import org.junit.After;
@@ -93,5 +95,48 @@ public class TestRocksdbKVStoreCheckpoint {
         store.restore();
         // We should fallback to checkpoint-1
         assertEquals("transaction-1", store.get("transaction-id"));
+    }
+
+    @Test
+    public void testLocalStoreCleanup() throws Exception {
+        File checkpointDir = new File(store.getLocalDir(), "checkpoints");
+
+        store.setRemoveLocal(true);
+        store.setRemoveRemote(true);
+        store.setLocalStorageCleanup(true);
+
+        String[] checkpoints = checkpointDir.list();
+        // Initially there is only one checkpoint directory that is used by the statestore
+        assertEquals(1, checkpoints.length);
+
+        store.restore();
+
+        checkpoints = checkpointDir.list();
+        // We should only have one checkpoint in the local directory.
+        assertEquals(1, checkpoints.length);
+
+        int numKvs = 100;
+        for (int i = 0; i < 3; i++) {
+            String txid = "txid-" + i;
+            store.addNumKVs(txid, numKvs, i * numKvs);
+            String checkpoint1 = store.checkpoint("checkpoint-1");
+
+            checkpoints = checkpointDir.list();
+            // Ensure the checkpoints are cleaned up
+            assertEquals(1, checkpoints.length);
+
+            store.restore();
+            assertEquals(txid, store.get("transaction-id"));
+
+            checkpoints = checkpointDir.list();
+            // We should only have one checkpoint in the local directory.
+            assertEquals(1, checkpoints.length);
+        }
+
+        store.close();
+
+        checkpoints = checkpointDir.list();
+        // We should not have any checkpoints af the store is closed.
+        assertNull(checkpoints);
     }
 }
