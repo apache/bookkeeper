@@ -211,6 +211,7 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             .isReadonly(serveReadOnlyTable)
             .checkpointChecksumEnable(storageConf.getCheckpointChecksumEnable())
             .checkpointChecksumCompatible(storageConf.getCheckpointChecksumCompatible())
+            .localStorageCleanupEnable(storageConf.getLocalStorageCleanupEnable())
             .build();
 
 
