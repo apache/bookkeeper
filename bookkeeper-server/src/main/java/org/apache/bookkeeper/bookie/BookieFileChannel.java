@@ -20,6 +20,7 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
@@ -33,7 +34,7 @@ interface BookieFileChannel {
      * An interface for get the FileChannel from the provider.
      * @return
      */
-    FileChannel getFileChannel();
+    FileChannel getFileChannel() throws FileNotFoundException;
 
     /**
      * Check the given file if exists.

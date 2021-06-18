@@ -22,6 +22,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
@@ -34,17 +35,19 @@ public class DefaultFileChannelProvider implements FileChannelProvider{
 
     static class DefaultFileChannel implements BookieFileChannel {
         private final File file;
-        private final RandomAccessFile randomAccessFile;
+        private static RandomAccessFile randomAccessFile;
         private final ServerConfiguration configuration;
 
         DefaultFileChannel(File file, ServerConfiguration serverConfiguration) throws IOException {
             this.file = file;
-            this.randomAccessFile = new RandomAccessFile(file, "rw");
             this.configuration = serverConfiguration;
         }
 
         @Override
-        public FileChannel getFileChannel() {
+        public FileChannel getFileChannel() throws FileNotFoundException {
+            if (randomAccessFile == null) {
+                randomAccessFile = new RandomAccessFile(file, "rw");
+            }
             return randomAccessFile.getChannel();
         }
 
