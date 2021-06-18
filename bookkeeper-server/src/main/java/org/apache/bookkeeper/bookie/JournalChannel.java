@@ -108,17 +108,17 @@ class JournalChannel implements Closeable {
     // Open journal to write
     JournalChannel(File journalDirectory, long logId,
                    long preAllocSize, int writeBufferSize, int journalAlignSize,
-                   boolean fRemoveFromPageCache, int formatVersionToWrite) throws IOException {
+                   boolean fRemoveFromPageCache, int formatVersionToWrite, ServerConfiguration configuration) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize,
-             fRemoveFromPageCache, formatVersionToWrite, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER);
+             fRemoveFromPageCache, formatVersionToWrite, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER, configuration);
     }
 
     JournalChannel(File journalDirectory, long logId,
                    long preAllocSize, int writeBufferSize, int journalAlignSize,
                    boolean fRemoveFromPageCache, int formatVersionToWrite,
-                   Journal.BufferedChannelBuilder bcBuilder) throws IOException {
+                   Journal.BufferedChannelBuilder bcBuilder, ServerConfiguration configuration) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize,
-                START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite, bcBuilder, new ServerConfiguration());
+                START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite, bcBuilder, configuration);
     }
 
     /**
