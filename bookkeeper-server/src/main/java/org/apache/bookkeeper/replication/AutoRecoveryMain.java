@@ -286,14 +286,14 @@ public class AutoRecoveryMain {
 
             if (cmdLine.hasOption('c')) {
                 if (null != leftArgs && leftArgs.length > 0) {
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("unexpected arguments [" + String.join(" ", leftArgs) + "]");
                 }
                 String confFile = cmdLine.getOptionValue("c");
                 loadConfFile(conf, confFile);
             }
 
             if (null != leftArgs && leftArgs.length > 0) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("unexpected arguments [" + String.join(" ", leftArgs) + "]");
             }
             return conf;
         } catch (ParseException e) {
@@ -314,6 +314,11 @@ public class AutoRecoveryMain {
         try {
             conf = parseArgs(args);
         } catch (IllegalArgumentException iae) {
+            LOG.error("Error parsing command line arguments : ", iae);
+            if (iae.getMessage() != null) {
+                System.err.println(iae.getMessage());
+            }
+            printUsage();
             return ExitCode.INVALID_CONF;
         }
 
