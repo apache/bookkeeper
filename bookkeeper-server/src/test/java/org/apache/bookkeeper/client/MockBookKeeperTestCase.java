@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -159,6 +160,7 @@ public abstract class MockBookKeeperTestCase {
         when(bookieWatcher.getBookieAddressResolver()).thenReturn(bookieAddressResolver);
 
         bk = mock(BookKeeper.class);
+        doReturn(new ClientConfiguration()).when(bk).getConf();
 
         failedBookies = new ArrayList<>();
         availableBookies = new HashSet<>();

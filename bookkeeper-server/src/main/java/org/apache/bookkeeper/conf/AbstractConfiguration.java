@@ -79,6 +79,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Ledger Manager
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
     protected static final String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
+    protected static final String LEDGER_METADATA_FORMAT_VERSION = "ledgerMetadataVersion";
     protected static final String ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS = "allowShadedLedgerManagerFactoryClass";
     protected static final String SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX = "shadedLedgerManagerFactoryClassPrefix";
     protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
@@ -438,6 +439,25 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public String getLedgerManagerFactoryClassName() {
         return getString(LEDGER_MANAGER_FACTORY_CLASS);
+    }
+
+    /**
+     * Set Ledger metadata format version.
+     *
+     * @param metadataFormatVersion
+     *          Ledger metadata format version. pass -1 to use default version
+     */
+    public void setLedgerMetadataFormatVersion(int metadataFormatVersion) {
+        setProperty(LEDGER_METADATA_FORMAT_VERSION, metadataFormatVersion);
+    }
+
+    /**
+     * Get Ledger metadata format version.
+     *
+     * @return ledger metadata format version.
+     */
+    public int getLedgerMetadataFormatVersion() {
+        return getInt(LEDGER_METADATA_FORMAT_VERSION, -1);
     }
 
     /**

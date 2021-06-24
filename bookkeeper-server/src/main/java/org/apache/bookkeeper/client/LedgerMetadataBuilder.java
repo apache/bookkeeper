@@ -20,6 +20,7 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static org.apache.bookkeeper.meta.LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION;
+import static org.apache.bookkeeper.meta.LedgerMetadataSerDe.METADATA_FORMAT_VERSION_1;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -108,6 +109,9 @@ public class LedgerMetadataBuilder {
     }
 
     public LedgerMetadataBuilder withMetadataFormatVersion(int version) {
+        if (version < METADATA_FORMAT_VERSION_1 || version > CURRENT_METADATA_FORMAT_VERSION) {
+            return this;
+        }
         this.metadataFormatVersion = version;
         return this;
     }
