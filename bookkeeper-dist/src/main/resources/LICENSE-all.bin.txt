@@ -263,8 +263,6 @@ Apache Software License, Version 2.
 - lib/io.opencensus-opencensus-api-0.24.0.jar [30]
 - lib/io.opencensus-opencensus-contrib-http-util-0.24.0.jar [30]
 - lib/io.opencensus-opencensus-proto-0.2.0.jar [30]
-- lib/com.squareup.okhttp-okhttp-2.7.4.jar [31]
-- lib/com.squareup.okio-okio-1.13.0.jar [32]
 - lib/io.grpc-grpc-all-1.33.0.jar [33]
 - lib/io.grpc-grpc-alts-1.33.0.jar [33]
 - lib/io.grpc-grpc-api-1.33.0.jar [33]
@@ -273,7 +271,6 @@ Apache Software License, Version 2.
 - lib/io.grpc-grpc-core-1.33.0.jar [33]
 - lib/io.grpc-grpc-grpclb-1.33.0.jar [33]
 - lib/io.grpc-grpc-netty-1.33.0.jar [33]
-- lib/io.grpc-grpc-okhttp-1.33.0.jar [33]
 - lib/io.grpc-grpc-protobuf-1.33.0.jar [33]
 - lib/io.grpc-grpc-protobuf-lite-1.33.0.jar [33]
 - lib/io.grpc-grpc-services-1.33.0.jar [33]
@@ -332,8 +329,6 @@ Apache Software License, Version 2.
 [28] Source available at https://github.com/googleapis/googleapis
 [29] Source available at https://github.com/google/gson/tree/gson-parent-2.8.6
 [30] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.24.0
-[31] Source available at https://github.com/square/okhttp/tree/parent-2.7.4
-[32] Source available at https://github.com/square/okio/tree/okio-parent-1.13.0
 [33] Source available at https://github.com/grpc/grpc-java/tree/v1.33.0
 [34] Source available at https://github.com/apache/curator/releases/tag/apache.curator-5.1.0
 [35] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9

@@ -48,6 +48,10 @@
           <groupId>org.bouncycastle</groupId>
           <artifactId>bcpkix-jdk15on</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>io.grpc</groupId>
+          <artifactId>grpc-okhttp</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
