@@ -468,7 +468,7 @@ public class Auditor implements AutoCloseable {
                 admin.getConf().getClientAuthProviderFactoryClass());
             if (this.ledgerUnderreplicationManager
                     .initializeLostBookieRecoveryDelay(conf.getLostBookieRecoveryDelay())) {
-                LOG.info("Initializing lostBookieRecoveryDelay zNode to the conif value: {}",
+                LOG.info("Initializing lostBookieRecoveryDelay zNode to the conf value: {}",
                         conf.getLostBookieRecoveryDelay());
             } else {
                 LOG.info("Valid lostBookieRecoveryDelay zNode is available, so not creating "
