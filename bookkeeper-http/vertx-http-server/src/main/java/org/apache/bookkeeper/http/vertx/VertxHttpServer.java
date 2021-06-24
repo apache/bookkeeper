@@ -82,7 +82,7 @@ public class VertxHttpServer implements HttpServer {
             @Override
             public void start() throws Exception {
                 LOG.info("Starting Vertx HTTP server on port {}", port);
-                vertx.createHttpServer().requestHandler(router::accept).listen(port, future::complete);
+                vertx.createHttpServer().requestHandler(router).listen(port, future::complete);
             }
         });
         try {

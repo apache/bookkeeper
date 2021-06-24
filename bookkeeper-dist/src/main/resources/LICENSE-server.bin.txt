@@ -236,10 +236,11 @@ Apache Software License, Version 2.
 - lib/io.prometheus-simpleclient_common-0.8.1.jar [12]
 - lib/io.prometheus-simpleclient_hotspot-0.8.1.jar [12]
 - lib/io.prometheus-simpleclient_servlet-0.8.1.jar [12]
-- lib/io.vertx-vertx-auth-common-3.5.3.jar [13]
-- lib/io.vertx-vertx-bridge-common-3.5.3.jar [14]
-- lib/io.vertx-vertx-core-3.5.3.jar [15]
-- lib/io.vertx-vertx-web-3.5.3.jar [16]
+- lib/io.vertx-vertx-auth-common-3.9.8.jar [13]
+- lib/io.vertx-vertx-bridge-common-3.9.8.jar [14]
+- lib/io.vertx-vertx-core-3.9.8.jar [15]
+- lib/io.vertx-vertx-web-3.9.8.jar [16]
+- lib/io.vertx-vertx-web-common-3.9.8.jar [16]
 - lib/log4j-log4j-1.2.17.jar [17]
 - lib/net.java.dev.jna-jna-3.2.7.jar [18]
 - lib/org.apache.commons-commons-collections4-4.1.jar [19]
@@ -310,10 +311,10 @@ Apache Software License, Version 2.
 [10] Source available at http://svn.apache.org/viewvc/commons/proper/logging/tags/commons-logging-1.1.1/
 [11] Source available at https://github.com/netty/netty/tree/netty-4.1.63.Final
 [12] Source available at https://github.com/prometheus/client_java/tree/parent-0.8.1
-[13] Source available at https://github.com/vert-x3/vertx-auth/tree/3.5.3
-[14] Source available at https://github.com/vert-x3/vertx-bridge-common/tree/3.5.3
-[15] Source available at https://github.com/eclipse/vert.x/tree/3.5.3
-[16] Source available at https://github.com/vert-x3/vertx-web/tree/3.5.3
+[13] Source available at https://github.com/vert-x3/vertx-auth/tree/3.9.8
+[14] Source available at https://github.com/vert-x3/vertx-bridge-common/tree/3.9.8
+[15] Source available at https://github.com/eclipse/vert.x/tree/3.9.8
+[16] Source available at https://github.com/vert-x3/vertx-web/tree/3.9.8
 [17] Source available at http://logging.apache.org/log4j/1.2/download.html
 [18] Source available at https://github.com/java-native-access/jna/tree/3.2.7
 [19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
