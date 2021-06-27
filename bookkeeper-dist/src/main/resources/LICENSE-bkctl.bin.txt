@@ -261,7 +261,7 @@ Apache Software License, Version 2.
 - lib/org.apache.curator-curator-client-5.1.0.jar [33]
 - lib/org.apache.curator-curator-framework-5.1.0.jar [33]
 - lib/org.apache.curator-curator-recipes-5.1.0.jar [33]
-- lib/org.inferred-freebuilder-1.14.9.jar [34]
+- lib/org.inferred-freebuilder-2.7.0.jar [34]
 - lib/com.google.errorprone-error_prone_annotations-2.4.0.jar [35]
 - lib/org.apache.yetus-audience-annotations-0.5.0.jar [36]
 - lib/org.jctools-jctools-core-2.1.2.jar [37]
@@ -302,7 +302,7 @@ Apache Software License, Version 2.
 [29] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.24.0
 [32] Source available at https://github.com/grpc/grpc-java/tree/v1.33.0
 [33] Source available at https://github.com/apache/curator/tree/apache-curator-5.1.0
-[34] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
+[34] Source available at https://github.com/inferred/FreeBuilder/tree/v2.7.0
 [35] Source available at https://github.com/google/error-prone/tree/v2.4.0
 [36] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
 [37] Source available at https://github.com/JCTools/JCTools/tree/v2.1.2

@@ -39,7 +39,7 @@ depVersions = [
     dockerJava: "3.2.5",
     dropwizard: "3.2.5",
     errorprone: "2.1.2",
-    freebuilder: "1.14.9",
+    freebuilder: "2.7.0",
     gradleTooling: "4.0.1",
     grpc: "1.33.0",
     groovy: "2.5.8",

@@ -23,7 +23,7 @@ dependencies {
     implementation project(':stream:proto')
 
     implementation depLibs.commonsLang2
-    implementation depLibs.freebuilder
+    compileOnly depLibs.freebuilder
     implementation depLibs.grpc
     implementation depLibs.lombok
     implementation depLibs.slf4j
