@@ -53,8 +53,6 @@ import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A factory to manage TLS contexts.
@@ -144,7 +142,6 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         }
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(TLSContextFactory.class);
     private static final String TLSCONTEXT_HANDLER_NAME = "tls";
     private String[] protocols;
     private String[] ciphers;
