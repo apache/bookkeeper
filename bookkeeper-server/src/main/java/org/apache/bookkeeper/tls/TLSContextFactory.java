@@ -48,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -58,6 +59,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A factory to manage TLS contexts.
  */
+@Slf4j
 public class TLSContextFactory implements SecurityHandlerFactory {
 
     public static final Provider BC_PROVIDER = getProvider();
@@ -71,8 +73,6 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
     /**
      * Get Bouncy Castle provider, and call Security.addProvider(provider) if success.
-     *  1. try get from classpath.
-     *  2. try get from Nar.
      */
     public static Provider getProvider() {
         boolean isProviderInstalled =
@@ -82,8 +82,8 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             Provider provider = Security.getProvider(BC) != null
                 ? Security.getProvider(BC)
                 : Security.getProvider(BC_FIPS);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Already instantiated Bouncy Castle provider {}", provider.getName());
+            if (log.isDebugEnabled()) {
+                log.debug("Already instantiated Bouncy Castle provider {}", provider.getName());
             }
             return provider;
         }
@@ -92,7 +92,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         try {
             return getBCProviderFromClassPath();
         } catch (Exception e) {
-            LOG.warn("Not able to get Bouncy Castle provider for both FIPS and Non-FIPS from class path:", e);
+            log.warn("Not able to get Bouncy Castle provider for both FIPS and Non-FIPS from class path:", e);
             throw new RuntimeException(e);
         }
     }
@@ -104,20 +104,22 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     public static Provider getBCProviderFromClassPath() throws Exception {
         Class clazz;
         try {
-            // prefer non FIPS, for backward compatibility concern.
-            clazz = Class.forName(BC_NON_FIPS_PROVIDER_CLASS);
-        } catch (ClassNotFoundException cnf) {
-            LOG.warn("Not able to get Bouncy Castle provider: {}, try to get FIPS provider {}",
-                BC_NON_FIPS_PROVIDER_CLASS, BC_FIPS_PROVIDER_CLASS);
-            // attempt to use the FIPS provider.
             clazz = Class.forName(BC_FIPS_PROVIDER_CLASS);
+        } catch (ClassNotFoundException cnf) {
+            if (log.isDebugEnabled()) {
+                log.debug("Not able to get Bouncy Castle provider: {}, try to get FIPS provider {}",
+                    BC_NON_FIPS_PROVIDER_CLASS, BC_FIPS_PROVIDER_CLASS);
+            }
+            // attempt to use the NON_FIPS provider.
+            clazz = Class.forName(BC_NON_FIPS_PROVIDER_CLASS);
+
         }
 
         @SuppressWarnings("unchecked")
         Provider provider = (Provider) clazz.getDeclaredConstructor().newInstance();
         Security.addProvider(provider);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Found and Instantiated Bouncy Castle provider in classpath {}", provider.getName());
+        if (log.isDebugEnabled()) {
+            log.debug("Found and Instantiated Bouncy Castle provider in classpath {}", provider.getName());
         }
         return provider;
     }
@@ -189,7 +191,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         KeyManagerFactory kmf = null;
 
         if (Strings.isNullOrEmpty(keyStoreLocation)) {
-            LOG.error("Key store location cannot be empty when Mutual Authentication is enabled!");
+            log.error("Key store location cannot be empty when Mutual Authentication is enabled!");
             throw new SecurityException("Key store location cannot be empty when Mutual Authentication is enabled!");
         }
 
@@ -212,7 +214,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         TrustManagerFactory tmf;
 
         if (Strings.isNullOrEmpty(trustStoreLocation)) {
-            LOG.error("Trust Store location cannot be empty!");
+            log.error("Trust Store location cannot be empty!");
             throw new SecurityException("Trust Store location cannot be empty!");
         }
 
@@ -232,18 +234,18 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     private SslProvider getTLSProvider(String sslProvider) {
         if (sslProvider.trim().equalsIgnoreCase("OpenSSL")) {
             if (OpenSsl.isAvailable()) {
-                LOG.info("Security provider - OpenSSL");
+                log.info("Security provider - OpenSSL");
                 return SslProvider.OPENSSL;
             }
 
             Throwable causeUnavailable = OpenSsl.unavailabilityCause();
-            LOG.warn("OpenSSL Unavailable: ", causeUnavailable);
+            log.warn("OpenSSL Unavailable: ", causeUnavailable);
 
-            LOG.info("Security provider - JDK");
+            log.info("Security provider - JDK");
             return SslProvider.JDK;
         }
 
-        LOG.info("Security provider - JDK");
+        log.info("Security provider - JDK");
         return SslProvider.JDK;
     }
 
@@ -365,7 +367,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                     || tlsKeyStorePasswordFilePath.checkAndRefresh() || tlsTrustStoreFilePath.checkAndRefresh()
                     || tlsTrustStorePasswordFilePath.checkAndRefresh()) {
                 try {
-                    LOG.info("Updating tls certs certFile={}, keyStoreFile={}, trustStoreFile={}",
+                    log.info("Updating tls certs certFile={}, keyStoreFile={}, trustStoreFile={}",
                             tlsCertificateFilePath.getFileName(), tlsKeyStoreFilePath.getFileName(),
                             tlsTrustStoreFilePath.getFileName());
                     if (isServerCtx) {
@@ -374,7 +376,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                         updateClientContext();
                     }
                 } catch (Exception e) {
-                    LOG.info("Failed to refresh tls certs", e);
+                    log.info("Failed to refresh tls certs", e);
                 }
             }
         }
@@ -528,15 +530,15 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         if (protocols != null && protocols.length != 0) {
             sslHandler.engine().setEnabledProtocols(protocols);
         }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Enabled cipher protocols: {} ", Arrays.toString(sslHandler.engine().getEnabledProtocols()));
+        if (log.isDebugEnabled()) {
+            log.debug("Enabled cipher protocols: {} ", Arrays.toString(sslHandler.engine().getEnabledProtocols()));
         }
 
         if (ciphers != null && ciphers.length != 0) {
             sslHandler.engine().setEnabledCipherSuites(ciphers);
         }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Enabled cipher suites: {} ", Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
+        if (log.isDebugEnabled()) {
+            log.debug("Enabled cipher suites: {} ", Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
         }
 
         return sslHandler;
