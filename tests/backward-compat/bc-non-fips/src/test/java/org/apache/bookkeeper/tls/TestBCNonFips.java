@@ -17,23 +17,20 @@
  */
 package org.apache.bookkeeper.tls;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
  * Test Bouncy Castle Provider load non FIPS version.
  */
-@Slf4j
 public class TestBCNonFips {
 
     /**
      * Verify the BouncyCastleProvider Name is expected.
      */
     @Test
-    public void testGetBouncyCastleProviderName() throws Exception {
+    public void testGetBouncyCastleProviderName() {
         String bcName = TLSContextFactory.getProvider().getName();
         Assert.assertEquals(bcName, TLSContextFactory.BC);
-        log.info("Loaded BouncyCastle name: {}", bcName);
     }
 }
