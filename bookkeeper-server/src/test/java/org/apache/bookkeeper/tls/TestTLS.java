@@ -234,6 +234,15 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
+     * Verify the BouncyCastleProvider Name is expected.
+     */
+    @Test
+    public void testGetBouncyCastleProviderName() throws Exception {
+        String bcName = TLSContextFactory.getProvider().getName();
+        Assert.assertEquals(bcName, TLSContextFactory.BC_FIPS);
+    }
+
+    /**
      * Verify that a server will not start if tls is enabled but no cert is specified.
      */
     @Test
