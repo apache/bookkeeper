@@ -113,19 +113,19 @@ fi
 cd "$BK_HOME"
 case "${COMMAND}" in
   local)
-    exec ${JAVA} ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.distributedlog.LocalDLMEmulator $@
+    exec "${JAVA}" ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.distributedlog.LocalDLMEmulator $@
     ;;
   tool)
-    exec ${JAVA} ${OPTS} org.apache.distributedlog.tools.Tool org.apache.distributedlog.tools.DistributedLogTool $@
+    exec "${JAVA}" ${OPTS} org.apache.distributedlog.tools.Tool org.apache.distributedlog.tools.DistributedLogTool $@
     ;;
   admin)
-    exec ${JAVA} ${OPTS} org.apache.distributedlog.tools.Tool org.apache.distributedlog.admin.DistributedLogAdmin $@
+    exec "${JAVA}" ${OPTS} org.apache.distributedlog.tools.Tool org.apache.distributedlog.admin.DistributedLogAdmin $@
     ;;
   help)
     dlog_help
     ;;
   *)
-    exec ${JAVA} ${OPTS} ${COMMAND} $@
+    exec "${JAVA}" ${OPTS} ${COMMAND} $@
     ;;
 esac
 
