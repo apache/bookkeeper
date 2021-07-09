@@ -65,8 +65,8 @@ public final class NativeIO {
         } catch (Exception e) {
             // We don't really expect this so throw an assertion to
             // catch this during development
-            assert false;
             LOG.warn("Unable to read {} field from {}", fieldName, cls.getName());
+            assert false;
         }
 
         return field;
