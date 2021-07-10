@@ -61,6 +61,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     static final Logger LOG = LoggerFactory.getLogger(TopologyAwareEnsemblePlacementPolicy.class);
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     protected final Map<BookieId, BookieNode> knownBookies = new HashMap<BookieId, BookieNode>();
+    protected final Map<BookieId, BookieNode> historyBookies = new HashMap<BookieId, BookieNode>();
     protected final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     protected Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
     // Initialize to empty set
@@ -716,6 +717,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 BookieNode node = createBookieNode(addr);
                 topology.add(node);
                 knownBookies.put(addr, node);
+                historyBookies.put(addr, node);
                 if (this.isWeighted) {
                     this.bookieInfoMap.putIfAbsent(node, new BookieInfo());
                 }
@@ -748,6 +750,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                     topology.remove(node);
                     topology.add(newNode);
                     knownBookies.put(bookieAddress, newNode);
+                    historyBookies.put(bookieAddress, newNode);
                 }
             }
         } finally {
@@ -793,6 +796,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         try {
             return NetUtils.resolveNetworkLocation(dnsResolver, bookieAddressResolver.resolve(addr));
         } catch (BookieAddressResolver.BookieIdNotResolvedException err) {
+            BookieNode historyBookie = historyBookies.get(addr);
+            if (null != historyBookie) {
+                return historyBookie.getNetworkLocation();
+            }
+
             LOG.error("Cannot resolve bookieId {} to a network address, resolving as {}", addr,
                       NetworkTopology.DEFAULT_REGION_AND_RACK, err);
             return NetworkTopology.DEFAULT_REGION_AND_RACK;
