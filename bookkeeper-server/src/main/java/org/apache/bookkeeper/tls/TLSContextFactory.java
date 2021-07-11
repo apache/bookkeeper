@@ -523,7 +523,16 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     @Override
     public SslHandler newTLSHandler() {
         SslHandler sslHandler = getSSLContext().newHandler(allocator);
+        return newTLSHandler(sslHandler);
+    }
 
+    @Override
+    public SslHandler newTLSHandler(String sniHostName, int sniHostPort) {
+        SslHandler sslHandler = getSSLContext().newHandler(allocator, sniHostName, sniHostPort);
+        return newTLSHandler(sslHandler);
+    }
+
+    private SslHandler newTLSHandler(SslHandler sslHandler) {
         if (protocols != null && protocols.length != 0) {
             sslHandler.engine().setEnabledProtocols(protocols);
         }

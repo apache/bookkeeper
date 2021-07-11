@@ -131,6 +131,12 @@ public class ServiceURI {
     public static final ServiceURI DEFAULT_LOCAL_STREAM_STORAGE_SERVICE_URI =
         ServiceURI.create("bk://localhost:4181");
 
+    /**
+     * Service string for bookies.
+     */
+    public static final String SERVICE_BOOKIE = "bookie";
+    public static final int SERVICE_BOOKIE_PORT = 3181;
+
     private static final String SERVICE_SEP = "+";
     private static final String SERVICE_DLOG_SEP = "-";
 
@@ -227,6 +233,8 @@ public class ServiceURI {
             return hostname;
         } else if (parts.length == 1 && serviceName.toLowerCase().equals(SERVICE_BK)) {
             return hostname + ":" + SERVICE_BK_PORT;
+        } else if (parts.length == 1 && serviceName.toLowerCase().equals(SERVICE_BOOKIE)) {
+            return hostname + ":" + SERVICE_BOOKIE_PORT;
         } else {
             return hostname;
         }
