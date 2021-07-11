@@ -62,6 +62,7 @@ where command is one of:
 [service commands]
 
     bookie              Run a bookie server
+    state-store         Run a state-store server
     autorecovery        Run AutoRecovery service daemon
     zookeeper           Run zookeeper server
 
@@ -158,6 +159,8 @@ fi
 cd "$BK_HOME"
 if [ ${COMMAND} == "bookie" ]; then
   exec ${JAVA} ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.server.Main --conf ${BOOKIE_CONF} $@
+elif [ ${COMMAND} == "state-store" ]; then
+  exec ${JAVA} ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.stream.server.StateStoreMain --conf ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "autorecovery" ]; then
   exec ${JAVA} ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.replication.AutoRecoveryMain --conf ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "localbookie" ]; then
