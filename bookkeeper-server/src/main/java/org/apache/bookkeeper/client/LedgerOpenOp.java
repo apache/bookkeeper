@@ -212,6 +212,10 @@ class LedgerOpenOp {
                 public void readLastConfirmedComplete(int rc,
                         long lastConfirmed, Object ctx) {
                     if (rc != BKException.Code.OK) {
+                        if (lh != null && !doRecovery) {
+                            bk.getClientCtx().getLedgerManager()
+                                    .unregisterLedgerMetadataListener(ledgerId, lh);
+                        }
                         openComplete(bk.getReturnRc(BKException.Code.ReadException), null);
                     } else {
                         lh.lastAddConfirmed = lh.lastAddPushed = lastConfirmed;
