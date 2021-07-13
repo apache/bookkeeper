@@ -108,4 +108,4 @@ OPTS="$OPTS -Dstreamstorage.log.file=$SS_LOG_FILE"
 #Change to SS_HOME to support relative paths
 cd "$SS_HOME"
     
-exec $JAVA $OPTS org.apache.bookkeeper.stream.cli.StreamStorageCli "$@"
+exec "${JAVA}" $OPTS org.apache.bookkeeper.stream.cli.StreamStorageCli "$@"

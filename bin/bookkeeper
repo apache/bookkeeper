@@ -157,26 +157,26 @@ fi
 #Change to BK_HOME to support relative paths
 cd "$BK_HOME"
 if [ ${COMMAND} == "bookie" ]; then
-  exec ${JAVA} ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.server.Main --conf ${BOOKIE_CONF} $@
+  exec "${JAVA}" ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.server.Main --conf ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "autorecovery" ]; then
-  exec ${JAVA} ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.replication.AutoRecoveryMain --conf ${BOOKIE_CONF} $@
+  exec "${JAVA}" ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.replication.AutoRecoveryMain --conf ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "localbookie" ]; then
   NUMBER=$1
   shift
-  exec ${JAVA} ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.util.LocalBookKeeper ${NUMBER} ${BOOKIE_CONF} $@
+  exec "${JAVA}" ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.util.LocalBookKeeper ${NUMBER} ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "standalone" ]; then
-  exec ${JAVA} ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.stream.cluster.StandaloneStarter --conf ${BK_HOME}/conf/standalone.conf $@
+  exec "${JAVA}" ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.stream.cluster.StandaloneStarter --conf ${BK_HOME}/conf/standalone.conf $@
 elif [ ${COMMAND} == "upgrade" ]; then
-  exec ${JAVA} ${OPTS} org.apache.bookkeeper.bookie.FileSystemUpgrade --conf ${BOOKIE_CONF} $@
+  exec "${JAVA}" ${OPTS} org.apache.bookkeeper.bookie.FileSystemUpgrade --conf ${BOOKIE_CONF} $@
 elif [ $COMMAND == "zookeeper" ]; then
     BOOKIE_LOG_FILE=${BOOKIE_LOG_FILE:-"zookeeper.log"}
-    exec $JAVA $OPTS -Dbookkeeper.log.file=$BOOKIE_LOG_FILE org.apache.zookeeper.server.quorum.QuorumPeerMain $BOOKIE_ZK_CONF $@
+    exec "${JAVA}" $OPTS -Dbookkeeper.log.file=$BOOKIE_LOG_FILE org.apache.zookeeper.server.quorum.QuorumPeerMain $BOOKIE_ZK_CONF $@
 elif [ ${COMMAND} == "shell" ]; then
   ENTRY_FORMATTER_ARG="-DentryFormatterClass=${ENTRY_FORMATTER_CLASS:-org.apache.bookkeeper.util.StringEntryFormatter}"
-  exec ${JAVA} ${OPTS} ${ENTRY_FORMATTER_ARG} org.apache.bookkeeper.bookie.BookieShell -conf ${BOOKIE_CONF} $@
+  exec "${JAVA}" ${OPTS} ${ENTRY_FORMATTER_ARG} org.apache.bookkeeper.bookie.BookieShell -conf ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "help" ]; then
   bookkeeper_help;
 else
-  exec ${JAVA} ${OPTS} ${COMMAND} $@
+  exec "${JAVA}" ${OPTS} ${COMMAND} $@
 fi
 
