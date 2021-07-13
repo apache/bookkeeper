@@ -22,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.thrift.AccessControlEntry;
@@ -208,16 +207,14 @@ public class ZKAccessControl {
     }
 
     static byte[] serialize(AccessControlEntry ace) throws IOException {
-        TMemoryBuffer transport = new TMemoryBuffer(BUFFER_SIZE);
-        TJSONProtocol protocol = new TJSONProtocol(transport);
         try {
+            TMemoryBuffer transport = new TMemoryBuffer(BUFFER_SIZE);
+            TJSONProtocol protocol = new TJSONProtocol(transport);
             ace.write(protocol);
             transport.flush();
-            return transport.toString(UTF_8.name()).getBytes(UTF_8);
+            return transport.toString(UTF_8).getBytes(UTF_8);
         } catch (TException e) {
             throw new IOException("Failed to serialize access control entry : ", e);
-        } catch (UnsupportedEncodingException uee) {
-            throw new IOException("Failed to serialize acesss control entry : ", uee);
         }
     }
 
@@ -227,9 +224,9 @@ public class ZKAccessControl {
         }
 
         AccessControlEntry ace = new AccessControlEntry();
-        TMemoryInputTransport transport = new TMemoryInputTransport(data);
-        TJSONProtocol protocol = new TJSONProtocol(transport);
         try {
+            TMemoryInputTransport transport = new TMemoryInputTransport(data);
+            TJSONProtocol protocol = new TJSONProtocol(transport);
             ace.read(protocol);
         } catch (TException e) {
             throw new CorruptedAccessControlException(zkPath, e);
