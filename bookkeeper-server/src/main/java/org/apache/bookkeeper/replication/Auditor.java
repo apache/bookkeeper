@@ -1851,16 +1851,17 @@ public class Auditor implements AutoCloseable {
             List<MissingEntriesInfo> missingEntriesInfoList = missingEntriesInfoOfLedger.getMissingEntriesInfoList();
             writeQuorumSize = missingEntriesInfoOfLedger.getWriteQuorumSize();
             ackQuorumSize = missingEntriesInfoOfLedger.getAckQuorumSize();
-            errMessage.append("Ledger : " + ledgerWithMissingEntries + " has following missing entries : ");
+            errMessage.append("Ledger : ").append(ledgerWithMissingEntries).append(" has following missing entries : ");
             for (int listInd = 0; listInd < missingEntriesInfoList.size(); listInd++) {
                 MissingEntriesInfo missingEntriesInfo = missingEntriesInfoList.get(listInd);
                 List<Long> unavailableEntriesList = missingEntriesInfo.getUnavailableEntriesList();
                 Entry<Long, ? extends List<BookieId>> segmentEnsemble =
                         missingEntriesInfo.getSegmentEnsemble();
                 missingEntries.addAll(unavailableEntriesList);
-                errMessage.append("In segment starting at " + segmentEnsemble.getKey() + " with ensemble "
-                        + segmentEnsemble.getValue() + ", following entries " + unavailableEntriesList
-                        + " are missing in bookie: " + missingEntriesInfo.getBookieMissingEntries());
+                errMessage.append("In segment starting at ").append(segmentEnsemble.getKey()).append(" with ensemble ")
+                        .append(segmentEnsemble.getValue()).append(", following entries ")
+                        .append(unavailableEntriesList).append(" are missing in bookie: ")
+                        .append(missingEntriesInfo.getBookieMissingEntries());
                 if (listInd < (missingEntriesInfoList.size() - 1)) {
                     errMessage.append(", ");
                 }
@@ -1903,14 +1904,15 @@ public class Auditor implements AutoCloseable {
             long ledgerWithUnavailableBookies = ledgerWithUnavailableBookiesInfo.getKey();
             List<MissingEntriesInfo> missingBookiesInfoList = ledgerWithUnavailableBookiesInfo.getValue()
                     .getMissingEntriesInfoList();
-            errMessage.append("Ledger : " + ledgerWithUnavailableBookies + " has following unavailable bookies : ");
+            errMessage.append("Ledger : ").append(ledgerWithUnavailableBookies)
+                    .append(" has following unavailable bookies : ");
             for (int listInd = 0; listInd < missingBookiesInfoList.size(); listInd++) {
                 MissingEntriesInfo missingBookieInfo = missingBookiesInfoList.get(listInd);
                 Entry<Long, ? extends List<BookieId>> segmentEnsemble =
                         missingBookieInfo.getSegmentEnsemble();
-                errMessage.append("In segment starting at " + segmentEnsemble.getKey() + " with ensemble "
-                        + segmentEnsemble.getValue() + ", following bookie has not responded "
-                        + missingBookieInfo.getBookieMissingEntries());
+                errMessage.append("In segment starting at ").append(segmentEnsemble.getKey()).append(" with ensemble ")
+                        .append(segmentEnsemble.getValue()).append(", following bookie has not responded ")
+                        .append(missingBookieInfo.getBookieMissingEntries());
                 if (listInd < (missingBookiesInfoList.size() - 1)) {
                     errMessage.append(", ");
                 }
