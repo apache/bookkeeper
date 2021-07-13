@@ -177,6 +177,8 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getStatsLogger()).thenReturn(NullStatsLogger.INSTANCE);
         BookKeeperClientStats clientStats = BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE);
         ClientContext clientCtx = new ClientContext() {
+                final List<LedgerPayloadInterceptor> lpis = new ArrayList<>();
+
                 @Override
                 public ClientInternalConf getConf() {
                     return ClientInternalConf.fromConfig(bk.getConf());
@@ -220,6 +222,11 @@ public abstract class MockBookKeeperTestCase {
                 @Override
                 public boolean isClientClosed() {
                     return bk.isClosed();
+                }
+
+                @Override
+                public List<LedgerPayloadInterceptor> getLedgerPayloadInterceptors() {
+                    return lpis;
                 }
 
                 @Override

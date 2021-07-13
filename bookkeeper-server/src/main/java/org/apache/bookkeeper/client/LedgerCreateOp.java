@@ -113,7 +113,17 @@ class LedgerCreateOp {
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         this.digestType = digestType;
-        this.customMetadata = customMetadata;
+
+        List<LedgerPayloadInterceptor> interceptors = bk.getClientCtx().getLedgerPayloadInterceptors();
+        if (interceptors != null && !interceptors.isEmpty()) {
+            Map<String, byte[]> md = customMetadata;
+            for (LedgerPayloadInterceptor lpi: interceptors) {
+                md = lpi.beforeCreate(md);
+            }
+            this.customMetadata = md;
+        } else {
+            this.customMetadata = customMetadata;
+        }
         this.writeFlags = writeFlags;
         this.passwd = passwd;
         this.cb = cb;

@@ -22,6 +22,8 @@ package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBufAllocator;
 
+import java.util.List;
+
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -44,4 +46,5 @@ interface ClientContext {
     OrderedScheduler getScheduler();
     BookKeeperClientStats getClientStats();
     boolean isClientClosed();
+    List<LedgerPayloadInterceptor> getLedgerPayloadInterceptors();
 }

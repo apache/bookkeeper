@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -49,6 +51,8 @@ class ClientInternalConf {
     final boolean enableBookieFailureTracking;
     final boolean useV2WireProtocol;
     final boolean enforceMinNumFaultDomainsForWrite;
+
+    final List<LedgerPayloadInterceptor> payloadInterceptors = new ArrayList<>();
 
     static ClientInternalConf defaultValues() {
         return fromConfig(new ClientConfiguration());
