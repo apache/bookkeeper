@@ -145,9 +145,9 @@ OPTS="$OPTS -Dstreamstorage.log.file=$SS_LOG_FILE"
 #Change to SS_HOME to support relative paths
 cd "$SS_HOME"
 if [ $COMMAND == "standalone" ]; then
-    exec $JAVA $OPTS -Dzookeeper.4lw.commands.whitelist="*" org.apache.bookkeeper.stream.cluster.StandaloneStarter -c $SS_STANDALONE_CONF $@
+    exec "${JAVA}" $OPTS -Dzookeeper.4lw.commands.whitelist="*" org.apache.bookkeeper.stream.cluster.StandaloneStarter -c $SS_STANDALONE_CONF $@
 elif [ $COMMAND == "help" ]; then
     streamstorage_help;
 else
-    exec $JAVA $OPTS $COMMAND $@
+    exec "${JAVA}" $OPTS $COMMAND $@
 fi
