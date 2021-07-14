@@ -150,7 +150,7 @@ groups:
 
 - name: TLS settings
   params:
-  - param: tslProvider
+  - param: tlsProvider
     description: TLS Provider (JDK or OpenSSL)
     default: OpenSSL
   - param: tlsProviderFactoryClass
