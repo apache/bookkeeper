@@ -17,7 +17,7 @@
 # under the License.
 #
 
-FROM centos:7
+FROM centos:8
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
 ARG BK_VERSION=4.12.1
