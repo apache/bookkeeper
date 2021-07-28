@@ -32,7 +32,7 @@ In order to explain the protocol changes, it is useful to first consider how quo
 - Write quorum (WQ)
 - Quorum Coverage (QC) where QC = (WQ - AQ) + 1
 - Ensemble Coverage (EC) where EC = (E - AQ) + 1
-- All bookies (ALL)
+- Whole Ensemble
 
 Quorum Coverage (QC) and Ensemble Coverage (EC) are both defined by the following, only the cohorts differ: 
 
@@ -70,6 +70,8 @@ The ledger recovery process assumes that ledger entries are never arbitrarily lo
 - allow the original client to keep writing entries to a ledger that has just been fenced and closed, thus losing those entries 
 - allow the recovery client to truncate the ledger too soon, closing it with a last entry id lower than that of previously acknowledged entries - thus losing data.
 
+The following scenarios assume existing behaviour but simply skipping the writing of entries and fencing ops to the journal.
+
 ### Scenario 1 - Lost Fenced Status Allows Writes After Ledger Close
 
 1. 3 bookies, B1, B2 & B3
@@ -81,31 +83,27 @@ The ledger recovery process assumes that ledger entries are never arbitrarily lo
 7. L1 sends a fencing message to all bookies in the ensemble.
 8. The fencing message succeeds in arriving at B1 & B2 and is acknowledged by both. The message to B3 is lost. 
 9. C2 sees that at least one bookie in each possible ack quorum has acknowledged the fencing message (EC threshold reached), so continues with the read/write phase of recovery, finding that E1 is the last entry of the ledger, and committing the endpoint of the ledger in the ZK.
-10. B2 crashes and boots again with all disks cleared or unflushed operations lost. 
+10. B2 crashes and boots again with all unflushed operations lost. 
 11. C1 wakes up and writes entry E2 to all bookies. B2 & B3 acknowledge positively, so C1 considers E2 as persisted. B1 rejects the message as the ledger is fenced, but since ack quorum is 2, B2 & B3 are enough to consider the entry written.
 
 ### Scenario 2 - Recovery Truncates Previously Acknowledged Entries
 
 1. C1 adds E0 to B1, B2, B3
-2. B1 and B3 confirms. W1 confirms the write to its client.
+2. B1 and B3 confirms. C1 confirms the write to its client.
 3. C2 starts recovery
-4. B2 fails to respond. W1 tries to change ensemble but gets a metadata version conflict.
+4. B2 fails to respond. C1 tries to change ensemble but gets a metadata version conflict.
 5. B1 crashes and restarts, has lost E0 (undetected)
 6. C2 fences the ledger on B1, B2, B3
 7. C2 sends Read E0 to B1, B2, B3
 8. B1 responds with NoSuchEntry
 9. B2 responds with NoSuchEntry
-10. QC negative response threshold reached. W2 closes the ledger as empty. Losing E0.
+10. QC negative response threshold reached. C2 closes the ledger as empty. Losing E0.
 
-The problem is that a bookie can:
+The problem is that without the journal (and syncing to entry log files before acknowledgement) a bookie can:
 - lose the fenced status of a previously existing ledger
 - respond with an explicit negative even though it had previously seen an entry. 
 
-Undetected data loss could occur in the following ways:
-- Running without the journal. Bookie crashes and loses most recent entries and fence statuses that had not yet been written and synced to disk.
-- Bookie is restarted with one or more disks empty - through some kind of automation error.
-
-The first case is the main subject of this proposal as it is not covered by any existing mechanisms. The second case is already protected against by the use of cookies.
+Undetected data loss could occur when running without the journal. Bookie crashes and loses most recent entries and fence statuses that had not yet been written and synced to disk.
 
 ### A note on cookies
 
@@ -115,7 +113,7 @@ When a bookie boots for the first time, it generates a cookie. The cookie encaps
 
 The absence of a disk's cookie implies that the rest of the disk's data is also missing. Cookie validation is performed on boot-up and prevents the boot from succeeding if the validation fails, thus preventing the bookie starting with undetected data loss. 
 
-This proposal improves the cookie mechanism by automating the resolution of a cookie validation error which currently requires human intervention to resolve.
+This proposal improves the cookie mechanism by automating the resolution of a cookie validation error which currently requires human intervention to resolve. This automated feature will be configurable (enabled or disabled) and additionally a CLI command will be made available so an admin can manually run the operation (for when this feature is disabled - likely to be the default). 
 
 ### Proposed Changes
 
@@ -124,15 +122,18 @@ The proposed changes involve:
 - Detecting possible data loss on boot
 - Prevent explicit negative responses when data loss may have occurred, instead reply with unknown code, until data is repaired.
 - Repair data loss
-- Auto fix cookies
+- Auto fix cookies (with new config to enable or disable the feature)
+- CLI command for admin to run fix cookie logic in the case that auto fix is disabled
 
 In these proposed changes, when running "without" the journal, the journal still exists, but add entry operations skip the addition to the journal. The boot-up sequence still replays the journal.
 
-Add operations can be configured to be written to the journal or not based on a new config `journalWriteData`. When set to `false`, add operations are not added to the journal.
+Add operations can be configured to be written to the journal or not based on the config `journalWriteData`. When set to `false`, add operations are not added to the journal.
 
 ### Detecting Data Loss On Boot
 
-The new mechanism for data loss detection is checking for an unclean shutdown (aka a crash or abrupt termination of the bookie). When an unclean shutdown is detected further measures are taken to prevent data inconsistency. 
+The new mechanism for data loss detection is checking for an unclean shutdown (aka a crash or abrupt termination of the bookie). When an unclean shutdown is detected further measures are taken to prevent data inconsistency.
+
+The unclean shutdown detection will consist of setting a bit in the index on start-up and clearing it on shutdown. On subsequent start-up, the value will be checked and if it remains set, it knows that the prior shutdown was not clean.
 
 Cookie validation will continue to be used to detect booting with one or more missing or empty disks (that once existed and contained a cookie).
 
@@ -185,7 +186,6 @@ The specification can be found here: https://github.com/Vanlightly/bookkeeper-tl
 
 ### Public Interfaces
 
-- New server config `journalWriteData`
 - Return codes. Addition of a new return code: `EUNKNOWN` which is returned when a read hits an in-limbo ledger and that ledger not contain the requested entry id.
 - Bookie ledger metadata format (LedgerData). Addition of the limbo status.
 
@@ -200,4 +200,6 @@ The specification can be found here: https://github.com/Vanlightly/bookkeeper-tl
 
 ### Rejected Alternatives
 
-None.
+Entry Log Per Ledger (ELPL) without the journal. From our performance testing of ELPL, performance degrades significantly with a large number of active ledgers and syncing to disk multiple times a second (which is required to offer low latency writes).
+
+In the future this design could be extended to offer ledger level configuration of journal use. The scope of this BP is limited to cluster level.
