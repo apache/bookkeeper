@@ -449,6 +449,11 @@ public class RootRangeStoreImpl
 
     }
 
+    private static void logStreamOp(String op, long nsId, long streamId, String streamName, StatusCode result) {
+        log.info("stream {} namespace_id={} stream_id={} stream_name={} result={}",
+                op, nsId, streamId, streamName, result);
+    }
+
     private CompletableFuture<CreateStreamResponse> executeCreateStreamTxn(long nsId,
                                                                            String streamName,
                                                                            StreamConfiguration streamConf,
@@ -462,7 +467,6 @@ public class RootRangeStoreImpl
         }
 
         long scId = placementPolicy.placeStreamRange(streamId, 0L);
-
 
         StreamProperties streamProps = StreamProperties.newBuilder()
             .setStreamId(streamId)
@@ -506,6 +510,7 @@ public class RootRangeStoreImpl
                         // TODO: differentiate the error codes
                         respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
                     }
+                    logStreamOp("create", nsId, streamId, streamName, respBuilder.getCode());
                     return respBuilder.build();
                 } finally {
                     txnResult.close();
@@ -593,6 +598,7 @@ public class RootRangeStoreImpl
                 } else {
                     respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
+                logStreamOp("delete", nsId, streamId, streamName, respBuilder.getCode());
                 return respBuilder.build();
             } finally {
                 txnResult.close();
