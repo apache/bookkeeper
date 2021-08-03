@@ -18,15 +18,20 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import org.apache.bookkeeper.conf.ServerConfiguration;
-
 import java.io.File;
 import java.io.IOException;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
  * An interface of the FileChannelProvider.
  */
 public interface FileChannelProvider {
+    /**
+     *
+     * @param providerClassName Provided class name for file channel.
+     * @return
+     * @throws IOException
+     */
     static FileChannelProvider newProvider(String providerClassName) throws IOException {
         try {
             Class<?> providerClass = Class.forName(providerClassName);

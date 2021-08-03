@@ -34,7 +34,7 @@ interface BookieFileChannel {
      * An interface for get the FileChannel from the provider.
      * @return
      */
-    FileChannel getFileChannel() throws FileNotFoundException;
+    FileChannel getFileChannel() throws FileNotFoundException, IOException;
 
     /**
      * Check the given file if exists.

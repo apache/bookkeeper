@@ -94,7 +94,8 @@ class JournalChannel implements Closeable {
     }
 
     // Open journal for scanning starting from the first record in journal.
-    JournalChannel(File journalDirectory, long logId, long preAllocSize, int writeBufferSize, ServerConfiguration conf) throws IOException {
+    JournalChannel(File journalDirectory, long logId,
+                   long preAllocSize, int writeBufferSize, ServerConfiguration conf) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, START_OF_FILE, conf);
     }
 
@@ -108,9 +109,10 @@ class JournalChannel implements Closeable {
     // Open journal to write
     JournalChannel(File journalDirectory, long logId,
                    long preAllocSize, int writeBufferSize, int journalAlignSize,
-                   boolean fRemoveFromPageCache, int formatVersionToWrite, ServerConfiguration configuration) throws IOException {
-        this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize,
-             fRemoveFromPageCache, formatVersionToWrite, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER, configuration);
+                   boolean fRemoveFromPageCache, int formatVersionToWrite,
+                   ServerConfiguration configuration) throws IOException {
+        this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize, fRemoveFromPageCache,
+                formatVersionToWrite, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER, configuration);
     }
 
     JournalChannel(File journalDirectory, long logId,
@@ -161,7 +163,8 @@ class JournalChannel implements Closeable {
         try {
             provider = FileChannelProvider.newProvider(configuration.getJournalChannelProvider());
         } catch (IOException e) {
-            LOG.warn("Failed to load journal channel provider '{}', fallback to the default JournalChannel", configuration.getJournalChannelProvider(), e);
+            LOG.warn("Failed to load journal channel provider '{}', fallback to the default JournalChannel",
+            configuration.getJournalChannelProvider(), e);
             provider = new DefaultFileChannelProvider();
         }
         channel = provider.open(fn, configuration);

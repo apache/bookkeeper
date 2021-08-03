@@ -18,15 +18,17 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import org.apache.bookkeeper.conf.ServerConfiguration;
-
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 
+/**
+ * A wrapper of FileChannel.
+ */
 public class DefaultFileChannelProvider implements FileChannelProvider{
     @Override
     public BookieFileChannel open(File file, ServerConfiguration configuration) throws IOException {
@@ -45,8 +47,10 @@ public class DefaultFileChannelProvider implements FileChannelProvider{
 
         @Override
         public FileChannel getFileChannel() throws FileNotFoundException {
-            if (randomAccessFile == null) {
-                randomAccessFile = new RandomAccessFile(file, "rw");
+            synchronized (this) {
+                if (randomAccessFile == null) {
+                    randomAccessFile = new RandomAccessFile(file, "rw");
+                }
             }
             return randomAccessFile.getChannel();
         }
