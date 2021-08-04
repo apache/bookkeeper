@@ -80,7 +80,7 @@ public class RootRangeStoreImpl
     /**
      * ns name key: [NS_NAME_TAG][ns_name].
      */
-    static final byte[] getNamespaceNameKey(String nsName) {
+    static byte[] getNamespaceNameKey(String nsName) {
         byte[] nsNameBytes = nsName.getBytes(UTF_8);
         byte[] nsNameKey = new byte[nsNameBytes.length + 1];
         System.arraycopy(nsNameBytes, 0, nsNameKey, 1, nsNameBytes.length);
@@ -91,7 +91,7 @@ public class RootRangeStoreImpl
     /**
      * ns id key: [NS_ID_TAG][ns_id].
      */
-    static final byte[] getNamespaceIdKey(long nsId) {
+    static byte[] getNamespaceIdKey(long nsId) {
         byte[] nsIdBytes = new byte[Long.BYTES + 1];
         nsIdBytes[0] = NS_ID_TAG;
         Bytes.toBytes(nsId, nsIdBytes, 1);
@@ -101,7 +101,7 @@ public class RootRangeStoreImpl
     /**
      * ns id end key: [NS_ID_TAG][ns_id][NS_END_SEP].
      */
-    static final byte[] getNamespaceIdEndKey(long nsId) {
+    static byte[] getNamespaceIdEndKey(long nsId) {
         byte[] nsIdBytes = new byte[Long.BYTES + 2];
         nsIdBytes[0] = NS_ID_TAG;
         Bytes.toBytes(nsId, nsIdBytes, 1);
@@ -112,7 +112,7 @@ public class RootRangeStoreImpl
     /**
      * stream name key: [NS_ID_TAG][ns_id][STREAM_NAME_SEP][stream_name].
      */
-    static final byte[] getStreamNameKey(long nsId, String streamName) {
+    static byte[] getStreamNameKey(long nsId, String streamName) {
         byte[] streamNameBytes = streamName.getBytes(UTF_8);
         byte[] streamNameKey = new byte[streamNameBytes.length + Long.BYTES + 2];
         streamNameKey[0] = NS_ID_TAG;
@@ -125,7 +125,7 @@ public class RootRangeStoreImpl
     /**
      * stream name id: [NS_ID_TAG][ns_id][STREAM_ID_SEP][stream_id].
      */
-    static final byte[] getStreamIdKey(long nsId, long streamId) {
+    static byte[] getStreamIdKey(long nsId, long streamId) {
         byte[] streamIdBytes = new byte[2 * Long.BYTES + 2];
         streamIdBytes[0] = NS_ID_TAG;
         Bytes.toBytes(nsId, streamIdBytes, 1);
@@ -137,7 +137,7 @@ public class RootRangeStoreImpl
     /**
      * stream id: [STREAM_ID_TAG][stream_id].
      */
-    static final byte[] getStreamIdKey(long streamId) {
+    static byte[] getStreamIdKey(long streamId) {
         byte[] streamIdBytes = new byte[Long.BYTES + 1];
         streamIdBytes[0] = STREAM_ID_TAG;
         Bytes.toBytes(streamId, streamIdBytes, 1);
