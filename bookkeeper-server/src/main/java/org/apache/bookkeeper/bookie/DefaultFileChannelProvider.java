@@ -37,7 +37,7 @@ public class DefaultFileChannelProvider implements FileChannelProvider{
 
     static class DefaultFileChannel implements BookieFileChannel {
         private final File file;
-        private static RandomAccessFile randomAccessFile;
+        private RandomAccessFile randomAccessFile;
         private final ServerConfiguration configuration;
 
         DefaultFileChannel(File file, ServerConfiguration serverConfiguration) throws IOException {
