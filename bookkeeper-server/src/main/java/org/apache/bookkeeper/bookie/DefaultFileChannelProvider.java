@@ -62,7 +62,9 @@ public class DefaultFileChannelProvider implements FileChannelProvider{
 
         @Override
         public FileDescriptor getFD() throws IOException {
-            return randomAccessFile.getFD();
+            synchronized (this) {
+                return randomAccessFile.getFD();
+            }
         }
     }
 }
