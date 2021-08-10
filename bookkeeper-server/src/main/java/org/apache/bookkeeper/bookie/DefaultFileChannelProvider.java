@@ -51,8 +51,8 @@ public class DefaultFileChannelProvider implements FileChannelProvider{
                 if (randomAccessFile == null) {
                     randomAccessFile = new RandomAccessFile(file, "rw");
                 }
+                return randomAccessFile.getChannel();
             }
-            return randomAccessFile.getChannel();
         }
 
         @Override
