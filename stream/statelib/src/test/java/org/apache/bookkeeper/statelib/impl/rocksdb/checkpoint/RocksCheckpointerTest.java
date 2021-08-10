@@ -25,23 +25,24 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
-
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
 import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.coder.StringUtf8Coder;
 import org.apache.bookkeeper.common.kv.KV;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
@@ -59,11 +60,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
+import org.mockito.Mockito;
 import org.rocksdb.Checkpoint;
 
 /**
  * Unit test of {@link RocksCheckpointer}.
  */
+@Slf4j
 public class RocksCheckpointerTest {
 
     @Rule
@@ -351,6 +354,108 @@ public class RocksCheckpointerTest {
         // checkpoints are in reverse order
         for (int i = 0; i < checkpointIds.size(); i++) {
             assertEquals(checkpointIds.get(i), checkpoints.get(totalCheckpoints - 2 - i).getId());
+        }
+    }
+
+    InputStream getBlockedStream(TestStateStore testStore, String path, Duration blockFor) throws IOException {
+        InputStream stream = testStore.getCheckpointStore().openInputStream(path);
+
+
+        FilterInputStream res = new FilterInputStream(stream) {
+            @Override
+            public synchronized int read(byte[] b, int off, int len) throws IOException {
+                try {
+                    Thread.sleep(blockFor.toMillis());
+                } catch (InterruptedException e) {
+                }
+                return super.read(b, off, len);
+            }
+        };
+        return res;
+
+    }
+
+    @Test(timeout = 20000)
+    public void testRestoreBlockedSlow() throws Exception {
+        final int numKvs = 100;
+        TestStateStore testStore = Mockito.spy(new TestStateStore(
+            runtime.getMethodName(), localDir, remoteDir, true, false));
+
+        store.close();
+
+        testStore.enableCheckpoints(true);
+        testStore.setCheckpointRestoreIdleWait(Duration.ofSeconds(3));
+
+        testStore.init();
+
+        testStore.addNumKVs("transaction-1", numKvs, 0);
+        // create base checkpoint
+        String baseCheckpoint = testStore.checkpoint("checkpoint-1");
+        testStore.close();
+
+        String dbName = runtime.getMethodName();
+
+        CheckpointInfo checkpoint = testStore.getLatestCheckpoint();
+        CheckpointStore mockCheckpointStore = Mockito.spy(testStore.getCheckpointStore());
+        File dbPath = localDir;
+
+        List<CheckpointFile> files = CheckpointFile.list(testStore.getLocalCheckpointsDir(),
+            checkpoint.getMetadata());
+        String testFile = files.get(0).getRemotePath(dbName, checkpoint.getId(), true);
+
+        // We wait for 10 sec for some data to show up. We will add the data after 8 sec. So the restore should succeed.
+        Mockito.doReturn(getBlockedStream(testStore, testFile, Duration.ofSeconds(2)))
+            .when(mockCheckpointStore)
+            .openInputStream(testFile);
+
+        Mockito.doReturn(mockCheckpointStore).when(testStore).newCheckpointStore();
+
+        try {
+            testStore.restore();
+        } catch (Exception e) {
+            fail("restore should succeed from slow stream");
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testRestoreBlockedTimeout() throws Exception {
+        final int numKvs = 100;
+        TestStateStore testStore = Mockito.spy(new TestStateStore(
+            runtime.getMethodName(), localDir, remoteDir, true, false));
+
+        store.close();
+
+        testStore.enableCheckpoints(true);
+        testStore.setCheckpointRestoreIdleWait(Duration.ofSeconds(10));
+
+        testStore.init();
+
+        testStore.addNumKVs("transaction-1", numKvs, 0);
+        // create base checkpoint
+        String baseCheckpoint = testStore.checkpoint("checkpoint-1");
+        testStore.close();
+
+        String dbName = runtime.getMethodName();
+
+        CheckpointInfo checkpoint = testStore.getLatestCheckpoint();
+        CheckpointStore mockCheckpointStore = Mockito.spy(testStore.getCheckpointStore());
+        File dbPath = localDir;
+
+        List<CheckpointFile> files = CheckpointFile.list(testStore.getLocalCheckpointsDir(),
+            checkpoint.getMetadata());
+        String testFile = files.get(0).getRemotePath(dbName, checkpoint.getId(), true);
+
+        Mockito.doReturn(getBlockedStream(testStore, testFile, Duration.ofSeconds(20)))
+            .when(mockCheckpointStore)
+            .openInputStream(testFile);
+
+        Mockito.doReturn(mockCheckpointStore).when(testStore).newCheckpointStore();
+
+        try {
+            testStore.restore();
+            fail("should Fail to restore from a blocked stream");
+        } catch (Exception e) {
+
         }
     }
 
