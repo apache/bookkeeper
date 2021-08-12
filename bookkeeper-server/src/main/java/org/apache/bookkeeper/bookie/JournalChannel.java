@@ -158,15 +158,7 @@ class JournalChannel implements Closeable {
 
         File fn = new File(journalDirectory, Long.toHexString(logId) + ".txn");
         FileChannelProvider provider;
-        // Create the file channel provider with given configuration. Fallback to use default FileChannel if
-        // load failed.
-        try {
-            provider = FileChannelProvider.newProvider(configuration.getJournalChannelProvider());
-        } catch (IOException e) {
-            LOG.warn("Failed to load journal channel provider '{}', fallback to the default JournalChannel",
-            configuration.getJournalChannelProvider(), e);
-            provider = new DefaultFileChannelProvider();
-        }
+        provider = FileChannelProvider.newProvider(configuration.getJournalChannelProvider());
         channel = provider.open(fn, configuration);
 
         if (formatVersionToWrite < V4) {

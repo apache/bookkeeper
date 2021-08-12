@@ -875,7 +875,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     public String getJournalChannelProvider() {
-        return this.getString(JOURNAL_CHANNEL_PROVIDER);
+        return this.getString(JOURNAL_CHANNEL_PROVIDER, "org.apache.bookkeeper.bookie.DefaultFileChannelProvider");
     }
 
     /**
