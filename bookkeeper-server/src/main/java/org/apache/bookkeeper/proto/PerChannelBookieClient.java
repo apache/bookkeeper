@@ -42,6 +42,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
+import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.local.LocalAddress;
@@ -540,6 +541,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         bootstrap.group(eventLoopGroup);
         if (eventLoopGroup instanceof EpollEventLoopGroup) {
             bootstrap.channel(EpollSocketChannel.class);
+            // For Epoll, also set the connection timeout via TCP_USER_TIMEOUT.
+            bootstrap.option(EpollChannelOption.TCP_USER_TIMEOUT, conf.getClientConnectTimeoutMillis());
         } else if (eventLoopGroup instanceof DefaultEventLoopGroup) {
             bootstrap.channel(LocalChannel.class);
         } else {
