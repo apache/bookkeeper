@@ -75,7 +75,7 @@ depVersions = [
     protocGenGrpcJava: "1.12.0",
     shrinkwrap:"3.1.4",
     snappy: "1.1.7.7",
-    thrift: "0.12.0",
+    thrift: "0.14.2",
     testcontainers: "1.15.1",
     vertx: "3.9.2",
     yahooDatasketches: "0.8.3",
@@ -155,7 +155,10 @@ depLibs = [
     snappy: "org.xerial.snappy:snappy-java:${depVersions.snappy}",
     snakeyaml: "org.yaml:snakeyaml:${depVersions.snakeyaml}",
     spotbugsAnnotations: "com.github.spotbugs:spotbugs-annotations:${depVersions.spotbugsAnnotations}",
-    thrift: "org.apache.thrift:libthrift:${depVersions.thrift}",
+    thrift: dependencies.create("org.apache.thrift:libthrift:${depVersions.thrift}") {
+        exclude group: 'org.apache.tomcat.embed', module: 'tomcat-embed-core'
+        exclude group: 'javax.annotation', module: 'javax.annotation-api'
+    },
     testcontainers: "org.testcontainers:testcontainers:${depVersions.testcontainers}",
     vertxCore: "io.vertx:vertx-core:${depVersions.vertx}",
     vertxWeb: "io.vertx:vertx-web:${depVersions.vertx}",

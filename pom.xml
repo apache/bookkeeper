@@ -143,8 +143,7 @@
     <jmock.version>2.8.2</jmock.version>
     <jna.version>3.2.7</jna.version>
     <junit.version>4.12</junit.version>
-    <libthrift5.version>0.5.0-1</libthrift5.version>
-    <libthrift9.version>0.12.0</libthrift9.version>
+    <libthrift.version>0.14.2</libthrift.version>
     <lombok.version>1.18.20</lombok.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>3.0.0</mockito.version>
@@ -376,7 +375,17 @@
       <dependency>
         <groupId>org.apache.thrift</groupId>
         <artifactId>libthrift</artifactId>
-        <version>${libthrift9.version}</version>
+        <version>${libthrift.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <!-- netty dependencies -->

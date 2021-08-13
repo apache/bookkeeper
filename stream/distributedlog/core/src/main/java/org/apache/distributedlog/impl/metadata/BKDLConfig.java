@@ -22,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -334,15 +333,13 @@ public class BKDLConfig implements DLConfig {
     }
 
     String serialize(BKDLConfigFormat configFormat) {
-        TMemoryBuffer transport = new TMemoryBuffer(BUFFER_SIZE);
-        TJSONProtocol protocol = new TJSONProtocol(transport);
         try {
+            TMemoryBuffer transport = new TMemoryBuffer(BUFFER_SIZE);
+            TJSONProtocol protocol = new TJSONProtocol(transport);
             configFormat.write(protocol);
             transport.flush();
-            return transport.toString("UTF-8");
+            return transport.toString(UTF_8);
         } catch (TException e) {
-            throw new RuntimeException("Failed to serialize BKDLConfig : ", e);
-        } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Failed to serialize BKDLConfig : ", e);
         }
     }
@@ -350,9 +347,9 @@ public class BKDLConfig implements DLConfig {
     @Override
     public void deserialize(byte[] data) throws IOException {
         BKDLConfigFormat configFormat = new BKDLConfigFormat();
-        TMemoryInputTransport transport = new TMemoryInputTransport(data);
-        TJSONProtocol protocol = new TJSONProtocol(transport);
         try {
+            TMemoryInputTransport transport = new TMemoryInputTransport(data);
+            TJSONProtocol protocol = new TJSONProtocol(transport);
             configFormat.read(protocol);
         } catch (TException e) {
             throw new IOException("Failed to deserialize data '"
