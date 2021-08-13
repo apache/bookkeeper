@@ -541,8 +541,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         bootstrap.group(eventLoopGroup);
         if (eventLoopGroup instanceof EpollEventLoopGroup) {
             bootstrap.channel(EpollSocketChannel.class);
-            // For Epoll, also set the connection timeout via TCP_USER_TIMEOUT.
-            bootstrap.option(EpollChannelOption.TCP_USER_TIMEOUT, conf.getClientConnectTimeoutMillis());
+            // For Epoll channels, we can set the TCP user timeout.
+            bootstrap.option(EpollChannelOption.TCP_USER_TIMEOUT, conf.getTcpUserTimeoutMillis());
         } else if (eventLoopGroup instanceof DefaultEventLoopGroup) {
             bootstrap.channel(LocalChannel.class);
         } else {
