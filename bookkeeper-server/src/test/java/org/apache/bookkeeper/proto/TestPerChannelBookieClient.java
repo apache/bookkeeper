@@ -20,6 +20,10 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.google.protobuf.ExtensionRegistry;
 
 import io.netty.buffer.ByteBuf;
@@ -54,10 +58,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for PerChannelBookieClient. Historically, this class has
@@ -313,10 +313,14 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         conf.setTcpUserTimeoutMillis(tcpUserTimeout);
         BookieId addr = getBookie(0);
 
-        PerChannelBookieClient channel = new PerChannelBookieClient(conf, executor, eventLoopGroup, addr, Mockito.mock(StatsLogger.class),
-                authProvider, extRegistry, Mockito.mock(PerChannelBookieClientPool.class), BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        // Pass to the PerChannelBookieClient object the client configuration with TCP user timeout.
+        PerChannelBookieClient channel = new PerChannelBookieClient(conf, executor, eventLoopGroup,
+                addr, Mockito.mock(StatsLogger.class), authProvider, extRegistry,
+                Mockito.mock(PerChannelBookieClientPool.class), BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
-        assertEquals(channel.connect().channel().config().getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(), tcpUserTimeout);
+        // Verify that the configured value has been set.
+        assertEquals(channel.connect().channel().config().getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(),
+                tcpUserTimeout);
 
         channel.close();
         eventLoopGroup.shutdownGracefully();
