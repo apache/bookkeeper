@@ -32,11 +32,13 @@ public class NoSystemPropertiesConfigurationTest {
         // this property is read when AbstractConfiguration class is loaded.
         // this test will work as expected only using a new JVM (or classloader) for the test
         System.setProperty(ClientConfiguration.THROTTLE, "10");
+        System.setProperty(ClientConfiguration.CLIENT_TCP_USER_TIMEOUT_MILLIS, "20000");
     }
 
     @Test
     public void testUseSystemProperty() {
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         assertEquals(5000, clientConfiguration.getThrottleValue());
+        assertEquals(10000, clientConfiguration.getTcpUserTimeoutMillis());
     }
 }
