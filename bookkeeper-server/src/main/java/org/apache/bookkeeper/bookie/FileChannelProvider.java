@@ -29,7 +29,7 @@ public interface FileChannelProvider {
     /**
      *
      * @param providerClassName Provided class name for file channel.
-     * @return
+     * @return FileChannelProvider. A file channel provider loaded from providerClassName
      * @throws IOException
      */
     static FileChannelProvider newProvider(String providerClassName) throws IOException {
@@ -47,7 +47,7 @@ public interface FileChannelProvider {
      *
      * @param file
      * @param configuration
-     * @return
+     * @return BookieFileChannel related to file parameter.
      * @throws IOException
      */
     BookieFileChannel open(File file, ServerConfiguration configuration) throws IOException;

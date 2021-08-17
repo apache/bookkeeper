@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 class JournalChannel implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
 
+    static final long MB = 1024 * 1024L;
     final BookieFileChannel channel;
     final int fd;
     final FileChannel fc;
@@ -57,7 +58,7 @@ class JournalChannel implements Closeable {
 
     static final int SECTOR_SIZE = 512;
     private static final int START_OF_FILE = -12345;
-    private static long cacheDropLagBytes = 8 * 1024 * 1024;
+    private static long cacheDropLagBytes = 8 * MB;
 
     // No header
     static final int V1 = 1;
@@ -90,7 +91,7 @@ class JournalChannel implements Closeable {
 
     // Mostly used by tests
     JournalChannel(File journalDirectory, long logId) throws IOException {
-        this(journalDirectory, logId, 4 * 1024 * 1024, 65536, START_OF_FILE, new ServerConfiguration());
+        this(journalDirectory, logId, 4 * MB, 65536, START_OF_FILE, new ServerConfiguration());
     }
 
     // Open journal for scanning starting from the first record in journal.
@@ -157,8 +158,7 @@ class JournalChannel implements Closeable {
         this.configuration = configuration;
 
         File fn = new File(journalDirectory, Long.toHexString(logId) + ".txn");
-        FileChannelProvider provider;
-        provider = FileChannelProvider.newProvider(configuration.getJournalChannelProvider());
+        FileChannelProvider provider = FileChannelProvider.newProvider(configuration.getJournalChannelProvider());
         channel = provider.open(fn, configuration);
 
         if (formatVersionToWrite < V4) {
