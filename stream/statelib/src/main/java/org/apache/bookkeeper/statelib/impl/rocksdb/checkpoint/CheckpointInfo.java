@@ -142,7 +142,7 @@ public class CheckpointInfo implements Comparable<CheckpointInfo> {
     public CheckpointMetadata restore(String dbName, File dbPath, CheckpointStore store)
         throws StateStoreException, TimeoutException {
 
-        return restore(dbName, dbPath, store, Duration.ofMillis(5));
+        return restore(dbName, dbPath, store, Duration.ofMinutes(1));
     }
 
     public CheckpointMetadata restore(String dbName, File dbPath, CheckpointStore store, Duration maxIdle)
