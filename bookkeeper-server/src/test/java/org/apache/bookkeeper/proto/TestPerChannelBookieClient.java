@@ -326,7 +326,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 Mockito.mock(PerChannelBookieClientPool.class), BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
         // Verify that the configured value has not been set in the channel if does not exist in config.
-        assertEquals(channelDefault.connect().channel().config().getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(), 0);
+        assertEquals(channelDefault.connect().channel().config()
+                .getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(), 0);
 
         // Create a new channel with new TCP user timeout set.
         conf.setTcpUserTimeoutMillis(tcpUserTimeout);
@@ -335,8 +336,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 Mockito.mock(PerChannelBookieClientPool.class), BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
         // Verify that the configured value has been set.
-        assertEquals(channelConfigured.connect().channel().config().getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(),
-                tcpUserTimeout);
+        assertEquals(channelConfigured.connect().channel().config()
+                        .getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(), tcpUserTimeout);
 
         channelDefault.close();
         channelConfigured.close();
