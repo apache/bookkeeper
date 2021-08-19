@@ -22,6 +22,7 @@ package org.apache.bookkeeper.proto;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.protobuf.ExtensionRegistry;
@@ -306,23 +307,39 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      */
     @Test
     public void testEpollChannelTcpUserTimeout() throws Exception {
+        EventLoopGroup eventLoopGroup;
+        try {
+            eventLoopGroup = new EpollEventLoopGroup();
+            assertNotNull(eventLoopGroup);
+        } catch (Exception e) {
+            // Epoll not available in this environment.
+            return;
+        }
         OrderedExecutor executor = getOrderedSafeExecutor();
-        EventLoopGroup eventLoopGroup = new EpollEventLoopGroup();
         ClientConfiguration conf = new ClientConfiguration();
         int tcpUserTimeout = 1234;
-        conf.setTcpUserTimeoutMillis(tcpUserTimeout);
         BookieId addr = getBookie(0);
 
         // Pass to the PerChannelBookieClient object the client configuration with TCP user timeout.
-        PerChannelBookieClient channel = new PerChannelBookieClient(conf, executor, eventLoopGroup,
+        PerChannelBookieClient channelDefault = new PerChannelBookieClient(conf, executor, eventLoopGroup,
+                addr, Mockito.mock(StatsLogger.class), authProvider, extRegistry,
+                Mockito.mock(PerChannelBookieClientPool.class), BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+
+        // Verify that the configured value has not been set in the channel if does not exist in config.
+        assertEquals(channelDefault.connect().channel().config().getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(), 0);
+
+        // Create a new channel with new TCP user timeout set.
+        conf.setTcpUserTimeoutMillis(tcpUserTimeout);
+        PerChannelBookieClient channelConfigured = new PerChannelBookieClient(conf, executor, eventLoopGroup,
                 addr, Mockito.mock(StatsLogger.class), authProvider, extRegistry,
                 Mockito.mock(PerChannelBookieClientPool.class), BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
         // Verify that the configured value has been set.
-        assertEquals(channel.connect().channel().config().getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(),
+        assertEquals(channelConfigured.connect().channel().config().getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(),
                 tcpUserTimeout);
 
-        channel.close();
+        channelDefault.close();
+        channelConfigured.close();
         eventLoopGroup.shutdownGracefully();
         executor.shutdown();
     }

@@ -532,12 +532,13 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Get client netty TCP user timeout in millis (only for Epoll channels).
+     * Get client netty TCP user timeout in millis (only for Epoll channels). The
+     * negative default value represents that the value has not been set.
      *
      * @return client netty Epoll user tcp timeout in millis.
      */
     public int getTcpUserTimeoutMillis() {
-        return getInt(CLIENT_TCP_USER_TIMEOUT_MILLIS, 10000);
+        return getInt(CLIENT_TCP_USER_TIMEOUT_MILLIS, Integer.MIN_VALUE);
     }
 
     /**

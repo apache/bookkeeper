@@ -39,6 +39,6 @@ public class NoSystemPropertiesConfigurationTest {
     public void testUseSystemProperty() {
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         assertEquals(5000, clientConfiguration.getThrottleValue());
-        assertEquals(10000, clientConfiguration.getTcpUserTimeoutMillis());
+        assertEquals(Integer.MIN_VALUE, clientConfiguration.getTcpUserTimeoutMillis());
     }
 }
