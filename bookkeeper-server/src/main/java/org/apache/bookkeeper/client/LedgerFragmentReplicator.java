@@ -24,10 +24,10 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_BYTES_READ;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_BYTES_WRITTEN;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_READ;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_WRITTEN;
-import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
-
+import static org.apache.bookkeeper.replication.ReplicationStats.READ_DATA_LATENCY;;
+import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;;
+import static org.apache.bookkeeper.replication.ReplicationStats.WRITE_DATA_LATENCY;
 import io.netty.buffer.Unpooled;
-
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -35,11 +35,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -53,6 +53,7 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.ByteBufList;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +91,17 @@ public class LedgerFragmentReplicator {
         help = "The distribution of size of entries written by the replicator"
     )
     private final OpStatsLogger numBytesWritten;
+    @StatsDoc(
+            name = READ_DATA_LATENCY,
+            help = "The distribution of latency of read entries by the replicator"
+    )
+    private final OpStatsLogger readDataLatency;
+    @StatsDoc(
+            name = WRITE_DATA_LATENCY,
+            help = "The distribution of latency of write entries by the replicator"
+    )
+    private final OpStatsLogger writeDataLatency;
+
 
     public LedgerFragmentReplicator(BookKeeper bkc, StatsLogger statsLogger) {
         this.bkc = bkc;
@@ -98,6 +110,8 @@ public class LedgerFragmentReplicator {
         numBytesRead = this.statsLogger.getOpStatsLogger(NUM_BYTES_READ);
         numEntriesWritten = this.statsLogger.getCounter(NUM_ENTRIES_WRITTEN);
         numBytesWritten = this.statsLogger.getOpStatsLogger(NUM_BYTES_WRITTEN);
+        readDataLatency = this.statsLogger.getOpStatsLogger(READ_DATA_LATENCY);
+        writeDataLatency = this.statsLogger.getOpStatsLogger(WRITE_DATA_LATENCY);
     }
 
     public LedgerFragmentReplicator(BookKeeper bkc) {
@@ -334,6 +348,8 @@ public class LedgerFragmentReplicator {
                 }
             }
         };
+
+        long startReadEntryTime = MathUtils.nowInNano();
         /*
          * Read the ledger entry using the LedgerHandle. This will allow us to
          * read the entry from one of the other replicated bookies other than
@@ -350,6 +366,10 @@ public class LedgerFragmentReplicator {
                     ledgerFragmentEntryMcb.processResult(rc, null, null);
                     return;
                 }
+
+                readDataLatency.registerSuccessfulEvent(MathUtils.elapsedNanos(startReadEntryTime),
+                        TimeUnit.NANOSECONDS);
+
                 /*
                  * Now that we've read the ledger entry, write it to the new
                  * bookie we've selected.
@@ -364,10 +384,13 @@ public class LedgerFragmentReplicator {
                                 lh.getLastAddConfirmed(), entry.getLength(),
                                 Unpooled.wrappedBuffer(data, 0, data.length));
                 for (BookieId newBookie : newBookies) {
+                    long startWriteEntryTime = MathUtils.nowInNano();
                     bkc.getBookieClient().addEntry(newBookie, lh.getId(),
                             lh.getLedgerKey(), entryId, ByteBufList.clone(toSend),
                             multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD,
                             false, WriteFlag.NONE);
+                    writeDataLatency.registerSuccessfulEvent(
+                           MathUtils.elapsedNanos(startWriteEntryTime), TimeUnit.NANOSECONDS);
                 }
                 toSend.release();
             }
