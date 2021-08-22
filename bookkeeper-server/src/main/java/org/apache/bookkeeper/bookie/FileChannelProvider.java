@@ -35,7 +35,7 @@ public interface FileChannelProvider {
     static FileChannelProvider newProvider(String providerClassName) throws IOException {
         try {
             Class<?> providerClass = Class.forName(providerClassName);
-            Object obj = providerClass.getDeclaredConstructor().newInstance();
+            Object obj = providerClass.getConstructor().newInstance();
             return (FileChannelProvider) obj;
         } catch (Exception e) {
             throw new IOException(e);
@@ -51,4 +51,6 @@ public interface FileChannelProvider {
      * @throws IOException
      */
     BookieFileChannel open(File file, ServerConfiguration configuration) throws IOException;
+
+    void close(BookieFileChannel bookieFileChannel) throws IOException;
 }

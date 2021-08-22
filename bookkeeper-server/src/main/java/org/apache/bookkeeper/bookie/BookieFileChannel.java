@@ -51,4 +51,9 @@ interface BookieFileChannel {
      * @throws IOException
      */
     FileDescriptor getFD() throws IOException;
+
+    /**
+     * Close file channel and release all resources.
+     */
+    void close() throws IOException;
 }

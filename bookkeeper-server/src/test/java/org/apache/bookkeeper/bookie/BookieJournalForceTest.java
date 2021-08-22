@@ -35,6 +35,11 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -377,6 +382,23 @@ public class BookieJournalForceTest {
         assertTrue(lastLogMarkAfterForceWrite.getCurMark().compare(lastLogMarkBeforeWrite) > 0);
 
         journal.shutdown();
+    }
+
+    @Test
+    public void testFileChannelProvider() throws Exception {
+        File bookieFileDirectory = tempDir.newFile();
+        ServerConfiguration config =TestBKConfiguration.newServerConfiguration();
+        config.setJournalChannelProvider("org.apache.bookkeeper.bookie.DefaultFileChannelProvider");
+
+        DefaultFileChannel defaultFileChannel = spy(new DefaultFileChannel(bookieFileDirectory, config));
+        whenNew(DefaultFileChannel.class).withAnyArguments().thenReturn(defaultFileChannel);
+        when(defaultFileChannel.getFileChannel()).thenCallRealMethod();
+        FileChannelProvider provider = FileChannelProvider.newProvider(config.getJournalChannelProvider());
+        log.info("Journal Channel Provider: " + config.getJournalChannelProvider());
+
+        // Open should return spied DefaultFileChannel here.
+        FileChannel fileChannel = provider.open(null, null).getFileChannel();
+        verify(defaultFileChannel,atLeast(1)).getFileChannel();
     }
 
 }
