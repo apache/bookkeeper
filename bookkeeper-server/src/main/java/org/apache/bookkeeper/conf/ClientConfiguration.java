@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENS
 
 import io.netty.buffer.ByteBuf;
 
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -532,13 +533,13 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Get client netty TCP user timeout in millis (only for Epoll channels). The
-     * negative default value represents that the value has not been set.
+     * Get client netty TCP user timeout in millis (only for Epoll channels).
      *
      * @return client netty Epoll user tcp timeout in millis.
+     * @throws NoSuchElementException if the property is not set.
      */
     public int getTcpUserTimeoutMillis() {
-        return getInt(CLIENT_TCP_USER_TIMEOUT_MILLIS, Integer.MIN_VALUE);
+        return getInt(CLIENT_TCP_USER_TIMEOUT_MILLIS);
     }
 
     /**

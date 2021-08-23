@@ -21,6 +21,8 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import java.util.NoSuchElementException;
+
 /**
  * Test Configuration API.
  *
@@ -35,10 +37,11 @@ public class NoSystemPropertiesConfigurationTest {
         System.setProperty(ClientConfiguration.CLIENT_TCP_USER_TIMEOUT_MILLIS, "20000");
     }
 
-    @Test
+    @Test(expected = NoSuchElementException.class)
     public void testUseSystemProperty() {
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         assertEquals(5000, clientConfiguration.getThrottleValue());
-        assertEquals(Integer.MIN_VALUE, clientConfiguration.getTcpUserTimeoutMillis());
+        // This should throw NoSuchElementException if the property has not been set.
+        clientConfiguration.getTcpUserTimeoutMillis();
     }
 }

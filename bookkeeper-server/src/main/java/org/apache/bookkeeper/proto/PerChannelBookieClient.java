@@ -71,6 +71,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -541,9 +542,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         bootstrap.group(eventLoopGroup);
         if (eventLoopGroup instanceof EpollEventLoopGroup) {
             bootstrap.channel(EpollSocketChannel.class);
-            // For Epoll channels, configure the TCP user timeout only if it is set.
-            if (conf.getTcpUserTimeoutMillis() > 0) {
+            try {
+                // For Epoll channels, configure the TCP user timeout.
                 bootstrap.option(EpollChannelOption.TCP_USER_TIMEOUT, conf.getTcpUserTimeoutMillis());
+            } catch (NoSuchElementException e) {
+                // Property not set, so keeping default value.
             }
         } else if (eventLoopGroup instanceof DefaultEventLoopGroup) {
             bootstrap.channel(LocalChannel.class);
