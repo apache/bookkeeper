@@ -19,9 +19,8 @@ package org.apache.bookkeeper.conf;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-
 import java.util.NoSuchElementException;
+import org.junit.Test;
 
 /**
  * Test Configuration API.
