@@ -67,7 +67,7 @@ class DefaultFileChannel implements BookieFileChannel {
     @Override
     public void close() throws IOException {
         synchronized (this) {
-            if(randomAccessFile != null) {
+            if (randomAccessFile != null) {
                 randomAccessFile.close();
             }
         }

@@ -35,11 +35,6 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -68,7 +63,7 @@ import org.powermock.reflect.Whitebox;
  * Test the bookie journal.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({JournalChannel.class, Journal.class})
+@PrepareForTest({JournalChannel.class, Journal.class, DefaultFileChannel.class})
 @Slf4j
 public class BookieJournalForceTest {
 
@@ -387,18 +382,23 @@ public class BookieJournalForceTest {
     @Test
     public void testFileChannelProvider() throws Exception {
         File bookieFileDirectory = tempDir.newFile();
-        ServerConfiguration config =TestBKConfiguration.newServerConfiguration();
-        config.setJournalChannelProvider("org.apache.bookkeeper.bookie.DefaultFileChannelProvider");
+        ServerConfiguration config = TestBKConfiguration.newServerConfiguration();
 
         DefaultFileChannel defaultFileChannel = spy(new DefaultFileChannel(bookieFileDirectory, config));
-        whenNew(DefaultFileChannel.class).withAnyArguments().thenReturn(defaultFileChannel);
-        when(defaultFileChannel.getFileChannel()).thenCallRealMethod();
-        FileChannelProvider provider = FileChannelProvider.newProvider(config.getJournalChannelProvider());
-        log.info("Journal Channel Provider: " + config.getJournalChannelProvider());
 
+        FileChannelProvider provider = spy(DefaultFileChannelProvider.class);
+        when(provider.open(bookieFileDirectory, config)).thenReturn(defaultFileChannel);
+        log.info("Journal Channel Provider: " + config.getJournalChannelProvider());
         // Open should return spied DefaultFileChannel here.
-        FileChannel fileChannel = provider.open(null, null).getFileChannel();
-        verify(defaultFileChannel,atLeast(1)).getFileChannel();
+        BookieFileChannel bookieFileChannel = provider.open(bookieFileDirectory, config);
+        bookieFileChannel.getFileChannel();
+        verify(defaultFileChannel, times (1)).getFileChannel();
+        bookieFileChannel.getFD();
+        verify(defaultFileChannel, times (1)).getFD();
+        bookieFileChannel.fileExists(bookieFileDirectory);
+        verify(defaultFileChannel, times (1)).fileExists(bookieFileDirectory);
+        provider.close(bookieFileChannel);
+        verify(defaultFileChannel, times (1)).close();
     }
 
 }
