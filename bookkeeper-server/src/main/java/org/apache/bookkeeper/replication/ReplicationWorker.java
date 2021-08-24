@@ -375,13 +375,6 @@ public class ReplicationWorker implements Runnable {
                     foundOpenFragments = true;
                     continue;
                 }
-                List<BookieId> currentEnsemble = ledgerFragment.getEnsemble();
-                Collection<BookieId> available = admin.getAvailableBookies();
-                if (available.containsAll(currentEnsemble)) {
-                    LOG.info("Ignore replicating ledger, cause bookie is online now");
-                    continue;
-                }
-
                 if (!tryReadingFaultyEntries(lh, ledgerFragment)) {
                     LOG.error("Failed to read faulty entries, so giving up replicating ledgerFragment {}",
                             ledgerFragment);

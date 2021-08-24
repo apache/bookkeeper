@@ -21,11 +21,13 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -37,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -56,10 +59,16 @@ import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.Watcher;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -93,6 +102,8 @@ public class DbLedgerStorage implements LedgerStorage {
 
     protected ByteBufAllocator allocator;
 
+    private ServerConfiguration conf;
+
     @Override
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
             LedgerDirsManager indexDirsManager, StateManager stateManager, CheckpointSource checkpointSource,
@@ -104,6 +115,7 @@ public class DbLedgerStorage implements LedgerStorage {
 
         this.allocator = allocator;
         this.numberOfDirs = ledgerDirsManager.getAllLedgerDirs().size();
+        this.conf = conf;
 
         log.info("Started Db Ledger Storage");
         log.info(" - Number of directories: {}", numberOfDirs);
@@ -155,6 +167,37 @@ public class DbLedgerStorage implements LedgerStorage {
     @Override
     public void start() {
         ledgerStorageList.forEach(LedgerStorage::start);
+        markLedgerReplicatedOnStart();
+    }
+
+    public void markLedgerReplicatedOnStart() {
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("MarkLedgerReplicatedOnStartup"));
+        try {
+            LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory
+                    .newLedgerManagerFactory(
+                            conf,
+                            new BookKeeper(new ClientConfiguration(conf)).getMetadataClientDriver().getLayoutManager());
+            LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
+            executorService.submit(safeRun(() -> {
+                try {
+                    NavigableSet<Long> bkActiveLedgers = Sets.newTreeSet(getActiveLedgersInRange(0, Long.MAX_VALUE));
+                    for (Long ledgerId : bkActiveLedgers) {
+                        log.info("On startup markLedgerReplicated(ledgerId={})", ledgerId);
+                        underreplicationManager.markLedgerReplicated(ledgerId);
+                    }
+                } catch (IOException | ReplicationException e) {
+                    log.error("Failed to mark ledger replicated while ledgerStorage startup", e);
+                }
+            }));
+        } catch (Exception e) {
+            log.error("Failed to mark ledger replicated while ledgerStorage startup", e);
+
+        } finally {
+            if(!executorService.isShutdown()) {
+                executorService.shutdown();
+            }
+
+        }
     }
 
     @Override

@@ -30,9 +30,11 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENT
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGES_SCANNED;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGE_RETRIES;
+import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 
 import io.netty.buffer.ByteBuf;
@@ -45,12 +47,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.Cleanup;
 import lombok.Getter;
 
@@ -58,10 +64,16 @@ import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.common.util.Watcher;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -125,6 +137,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private OpStatsLogger getEntryStats;
     private OpStatsLogger pageScanStats;
     private Counter retryCounter;
+    private ServerConfiguration conf;
 
     @VisibleForTesting
     public InterleavedLedgerStorage() {
@@ -194,6 +207,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         this.entryLogger.addListener(this);
         this.checkpointSource = checkpointSource;
         this.checkpointer = checkpointer;
+        this.conf = conf;
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger.scope("gc"));
@@ -277,6 +291,38 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public void start() {
         gcThread.start();
+        markLedgerReplicatedOnStart();
+    }
+
+    public void markLedgerReplicatedOnStart() {
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("MarkLedgerReplicatedOnStartup"));
+        try {
+            LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory
+                    .newLedgerManagerFactory(
+                            conf,
+                            new BookKeeper(new ClientConfiguration(conf)).getMetadataClientDriver().getLayoutManager());
+            LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
+            executorService.submit(safeRun(() -> {
+                try {
+                    NavigableSet<Long> bkActiveLedgers = Sets.newTreeSet(getActiveLedgersInRange(0, Long.MAX_VALUE));
+                    for (Long ledgerId : bkActiveLedgers) {
+                        LOG.info("On startup markLedgerReplicated(ledgerId={})", ledgerId);
+                        underreplicationManager.markLedgerReplicated(ledgerId);
+                    }
+                } catch (ReplicationException e) {
+                    LOG.error("Failed to mark ledger replicated while ledgerStorage startup", e);
+                }
+            }));
+        } catch (Exception e) {
+            LOG.error("Failed to mark ledger replicated while ledgerStorage startup", e);
+
+        } finally {
+            if(!executorService.isShutdown()) {
+                executorService.shutdown();
+            }
+
+        }
+
     }
 
     @Override
