@@ -76,7 +76,7 @@ public class Main {
         BK_OPTS.addOption("z", "zkserver", true, "Zookeeper Server");
         BK_OPTS.addOption("m", "zkledgerpath", true, "Zookeeper ledgers root path");
         BK_OPTS.addOption("p", "bookieport", true, "bookie port exported");
-        BK_OPTS.addOption("httpport", true, "bookie http port exported");
+        BK_OPTS.addOption("hp", "httpport", true, "bookie http port exported");
         BK_OPTS.addOption("j", "journal", true, "bookie journal directory");
         Option indexDirs = new Option ("i", "indexdirs", true, "bookie index directories");
         indexDirs.setArgs(10);
