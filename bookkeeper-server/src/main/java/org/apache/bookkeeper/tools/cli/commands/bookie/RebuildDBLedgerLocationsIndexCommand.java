@@ -43,14 +43,14 @@ public class RebuildDBLedgerLocationsIndexCommand extends BookieCommand<CliFlags
 
     @Override
     public boolean apply(ServerConfiguration conf, CliFlags cmdFlags) {
-        LOG.info("=== Rebuilding bookie index ===");
+        LOG.info("=== Rebuilding DBStorage locations index ===");
         ServerConfiguration serverConfiguration = new ServerConfiguration(conf);
         try {
             new LocationsIndexRebuildOp(serverConfiguration).initiate();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        LOG.info("-- Done rebuilding bookie index --");
+        LOG.info("-- Done rebuilding DBStorage locations index --");
         return true;
     }
 }
