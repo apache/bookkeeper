@@ -145,8 +145,17 @@ def get_milestones():
     return get_json("https://api.github.com/repos/%s/%s/milestones?state=open&sort=due_on&direction=asc" % (GITHUB_USER, PROJECT_NAME))
 
 def get_all_labels():
-    result = get_json("https://api.github.com/repos/%s/%s/labels?per_page=%s" % (GITHUB_USER, PROJECT_NAME, GITHUB_PAGE_SIZE))
-    return list(map(lambda x: x['name'], result))
+    collected_labels = [];
+    page = 1;
+    while True:
+       url = "https://api.github.com/repos/%s/%s/labels?per_page=%s&page=%s" % (GITHUB_USER, PROJECT_NAME, GITHUB_PAGE_SIZE, page);
+       result = get_json(url);
+       parsed = list(map(lambda x: x['name'], result))
+       collected_labels = collected_labels + parsed
+       page = page + 1;
+       if len(parsed) == 0:
+        break
+    return collected_labels;
 
 # merge the requested PR and return the merge hash
 def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc):
