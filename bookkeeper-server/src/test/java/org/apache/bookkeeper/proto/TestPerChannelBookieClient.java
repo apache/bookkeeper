@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -28,6 +29,9 @@ import com.google.protobuf.ExtensionRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollChannelOption;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.io.IOException;
@@ -48,9 +52,12 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.PerChannelBookieClient.ConnectionState;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.junit.Assume;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -292,6 +299,44 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
 
         assertTrue("Request should have completed", completion.await(5, TimeUnit.SECONDS));
 
+        eventLoopGroup.shutdownGracefully();
+        executor.shutdown();
+    }
+
+    /**
+     * Test that TCP user timeout is correctly set in EpollEventLoopGroup.
+     */
+    @Test
+    public void testEpollChannelTcpUserTimeout() throws Exception {
+        // Epoll is needed for this test to work.
+        Assume.assumeTrue(Epoll.isAvailable());
+
+        EventLoopGroup eventLoopGroup = new EpollEventLoopGroup();
+        OrderedExecutor executor = getOrderedSafeExecutor();
+        ClientConfiguration conf = new ClientConfiguration();
+        int tcpUserTimeout = 1234;
+        BookieId addr = getBookie(0);
+
+        // Pass to the PerChannelBookieClient object the client configuration with TCP user timeout.
+        PerChannelBookieClient channel = new PerChannelBookieClient(conf, executor, eventLoopGroup,
+                addr, Mockito.mock(StatsLogger.class), authProvider, extRegistry,
+                Mockito.mock(PerChannelBookieClientPool.class), BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+
+        // Verify that the configured value has not been set in the channel if does not exist in config.
+        assertEquals(channel.connect().channel().config()
+                .getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(), 0);
+        channel.close();
+
+        // Create a new channel with new TCP user timeout set.
+        conf.setTcpUserTimeoutMillis(tcpUserTimeout);
+        channel = new PerChannelBookieClient(conf, executor, eventLoopGroup,
+                addr, Mockito.mock(StatsLogger.class), authProvider, extRegistry,
+                Mockito.mock(PerChannelBookieClientPool.class), BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+
+        // Verify that the configured value has been set.
+        assertEquals(channel.connect().channel().config()
+                        .getOption(EpollChannelOption.TCP_USER_TIMEOUT).intValue(), tcpUserTimeout);
+        channel.close();
         eventLoopGroup.shutdownGracefully();
         executor.shutdown();
     }

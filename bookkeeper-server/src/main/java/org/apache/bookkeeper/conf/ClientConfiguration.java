@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENS
 
 import io.netty.buffer.ByteBuf;
 
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -96,6 +97,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String CLIENT_WRITEBUFFER_LOW_WATER_MARK = "clientWriteBufferLowWaterMark";
     protected static final String CLIENT_WRITEBUFFER_HIGH_WATER_MARK = "clientWriteBufferHighWaterMark";
     protected static final String CLIENT_CONNECT_TIMEOUT_MILLIS = "clientConnectTimeoutMillis";
+    protected static final String CLIENT_TCP_USER_TIMEOUT_MILLIS = "clientTcpUserTimeoutMillis";
     protected static final String NUM_CHANNELS_PER_BOOKIE = "numChannelsPerBookie";
     protected static final String USE_V2_WIRE_PROTOCOL = "useV2WireProtocol";
     protected static final String NETTY_USE_POOLED_BUFFERS = "nettyUsePooledBuffers";
@@ -527,6 +529,28 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setClientConnectTimeoutMillis(int connectTimeoutMillis) {
         setProperty(CLIENT_CONNECT_TIMEOUT_MILLIS, connectTimeoutMillis);
+        return this;
+    }
+
+    /**
+     * Get client netty TCP user timeout in millis (only for Epoll channels).
+     *
+     * @return client netty Epoll user tcp timeout in millis.
+     * @throws NoSuchElementException if the property is not set.
+     */
+    public int getTcpUserTimeoutMillis() {
+        return getInt(CLIENT_TCP_USER_TIMEOUT_MILLIS);
+    }
+
+    /**
+     * Set client netty TCP user timeout in millis (only for Epoll channels).
+     *
+     * @param tcpUserTimeoutMillis
+     *          client netty TCP user timeout in millis.
+     * @return client configuration.
+     */
+    public ClientConfiguration setTcpUserTimeoutMillis(int tcpUserTimeoutMillis) {
+        setProperty(CLIENT_TCP_USER_TIMEOUT_MILLIS, tcpUserTimeoutMillis);
         return this;
     }
 
