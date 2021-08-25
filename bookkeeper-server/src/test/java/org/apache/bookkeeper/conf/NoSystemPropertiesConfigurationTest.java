@@ -19,6 +19,7 @@ package org.apache.bookkeeper.conf;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.NoSuchElementException;
 import org.junit.Test;
 
 /**
@@ -32,11 +33,14 @@ public class NoSystemPropertiesConfigurationTest {
         // this property is read when AbstractConfiguration class is loaded.
         // this test will work as expected only using a new JVM (or classloader) for the test
         System.setProperty(ClientConfiguration.THROTTLE, "10");
+        System.setProperty(ClientConfiguration.CLIENT_TCP_USER_TIMEOUT_MILLIS, "20000");
     }
 
-    @Test
+    @Test(expected = NoSuchElementException.class)
     public void testUseSystemProperty() {
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         assertEquals(5000, clientConfiguration.getThrottleValue());
+        // This should throw NoSuchElementException if the property has not been set.
+        clientConfiguration.getTcpUserTimeoutMillis();
     }
 }
