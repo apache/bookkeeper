@@ -39,6 +39,7 @@ import com.google.common.util.concurrent.RateLimiter;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,7 +57,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.Cleanup;
 import lombok.Getter;
 
@@ -295,7 +295,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     public void markLedgerReplicatedOnStart() {
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("MarkLedgerReplicatedOnStartup"));
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(
+                new DefaultThreadFactory("MarkLedgerReplicatedOnStartup"));
         try {
             LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory
                     .newLedgerManagerFactory(
@@ -317,7 +318,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             LOG.error("Failed to mark ledger replicated while ledgerStorage startup", e);
 
         } finally {
-            if(!executorService.isShutdown()) {
+            if (!executorService.isShutdown()) {
                 executorService.shutdown();
             }
 

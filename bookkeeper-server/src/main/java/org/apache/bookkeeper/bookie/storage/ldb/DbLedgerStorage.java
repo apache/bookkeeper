@@ -171,7 +171,8 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     public void markLedgerReplicatedOnStart() {
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("MarkLedgerReplicatedOnStartup"));
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(
+                new DefaultThreadFactory("MarkLedgerReplicatedOnStartup"));
         try {
             LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory
                     .newLedgerManagerFactory(
@@ -193,7 +194,7 @@ public class DbLedgerStorage implements LedgerStorage {
             log.error("Failed to mark ledger replicated while ledgerStorage startup", e);
 
         } finally {
-            if(!executorService.isShutdown()) {
+            if (!executorService.isShutdown()) {
                 executorService.shutdown();
             }
 
