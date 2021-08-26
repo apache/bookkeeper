@@ -47,6 +47,7 @@ class JournalChannel implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
 
     static final long MB = 1024 * 1024L;
+    final FileChannelProvider fileChannelProvider;
     final BookieFileChannel channel;
     final int fd;
     final FileChannel fc;
@@ -158,8 +159,8 @@ class JournalChannel implements Closeable {
         this.configuration = configuration;
 
         File fn = new File(journalDirectory, Long.toHexString(logId) + ".txn");
-        FileChannelProvider provider = FileChannelProvider.newProvider(configuration.getJournalChannelProvider());
-        channel = provider.open(fn, configuration);
+        fileChannelProvider = FileChannelProvider.newProvider(configuration.getJournalChannelProvider());
+        channel = fileChannelProvider.open(fn, configuration);
 
         if (formatVersionToWrite < V4) {
             throw new IOException("Invalid journal format to write : version = " + formatVersionToWrite);
@@ -274,6 +275,9 @@ class JournalChannel implements Closeable {
     public void close() throws IOException {
         if (bc != null) {
             bc.close();
+        }
+        if(fileChannelProvider != null) {
+            fileChannelProvider.close();
         }
     }
 

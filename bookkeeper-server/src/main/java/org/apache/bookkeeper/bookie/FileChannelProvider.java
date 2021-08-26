@@ -19,6 +19,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -26,7 +27,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 /**
  * An interface of the FileChannelProvider.
  */
-public interface FileChannelProvider extends AutoCloseable{
+public interface FileChannelProvider extends Closeable {
     /**
      *
      * @param providerClassName Provided class name for file channel.
