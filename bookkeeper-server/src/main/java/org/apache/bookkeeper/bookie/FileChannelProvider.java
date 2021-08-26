@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.bookkeeper.bookie;
 
 import java.io.File;
@@ -25,12 +26,12 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 /**
  * An interface of the FileChannelProvider.
  */
-public interface FileChannelProvider {
+public interface FileChannelProvider extends AutoCloseable{
     /**
      *
      * @param providerClassName Provided class name for file channel.
      * @return FileChannelProvider. A file channel provider loaded from providerClassName
-     * @throws IOException
+     * @throws IOException Possible IOException.
      */
     static FileChannelProvider newProvider(String providerClassName) throws IOException {
         try {
@@ -45,12 +46,17 @@ public interface FileChannelProvider {
     /**
      * Get the BookieFileChannel with the given file and configuration.
      *
-     * @param file
-     * @param configuration
+     * @param file File path related to bookie.
+     * @param configuration Server configuration.
      * @return BookieFileChannel related to file parameter.
-     * @throws IOException
+     * @throws IOException Possible IOException.
      */
     BookieFileChannel open(File file, ServerConfiguration configuration) throws IOException;
 
+    /**
+     * Close bookieFileChannel.
+     * @param bookieFileChannel The bookieFileChannel to be closed.
+     * @throws IOException Possible IOException.
+     */
     void close(BookieFileChannel bookieFileChannel) throws IOException;
 }

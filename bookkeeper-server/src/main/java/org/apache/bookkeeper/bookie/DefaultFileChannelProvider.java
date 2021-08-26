@@ -39,4 +39,8 @@ public class DefaultFileChannelProvider implements FileChannelProvider{
         bookieFileChannel.close();
     }
 
+    @Override
+    public void close() throws Exception {
+
+    }
 }
