@@ -276,7 +276,7 @@ class JournalChannel implements Closeable {
         if (bc != null) {
             bc.close();
         }
-        if(fileChannelProvider != null) {
+        if (fileChannelProvider != null) {
             fileChannelProvider.close();
         }
     }
