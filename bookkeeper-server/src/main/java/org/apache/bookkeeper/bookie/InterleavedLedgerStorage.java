@@ -291,7 +291,9 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public void start() {
         gcThread.start();
-        markLedgerReplicatedOnStart();
+        if (conf.getSkipReplicateLedgersOnStartup()) {
+            markLedgerReplicatedOnStart();
+        }
     }
 
     public void markLedgerReplicatedOnStart() {

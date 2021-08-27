@@ -167,7 +167,9 @@ public class DbLedgerStorage implements LedgerStorage {
     @Override
     public void start() {
         ledgerStorageList.forEach(LedgerStorage::start);
-        markLedgerReplicatedOnStart();
+        if (conf.getSkipReplicateLedgersOnStartup()) {
+            markLedgerReplicatedOnStart();
+        }
     }
 
     public void markLedgerReplicatedOnStart() {

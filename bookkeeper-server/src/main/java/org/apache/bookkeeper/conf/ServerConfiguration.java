@@ -202,6 +202,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD =
             "underreplicatedLedgerRecoveryGracePeriod";
     protected static final String AUDITOR_REPLICAS_CHECK_INTERVAL = "auditorReplicasCheckInterval";
+    protected static final String SKIP_REPLICATE_LEDGERS_ON_STARTUP = "skipReplcateLedgersOnStartup";
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -3555,6 +3556,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setAuthorizedRoles(String roles) {
         this.setProperty(AUTHORIZED_ROLES, roles);
+        return this;
+    }
+
+    /**
+     * Get whether to skip replicate ledgers when bookie start up.
+     *
+     * @return skip replicate ledgers on startup
+     */
+    public boolean getSkipReplicateLedgersOnStartup() {
+        return this.getBoolean(SKIP_REPLICATE_LEDGERS_ON_STARTUP, false);
+    }
+
+    /**
+     * Set whether to skip replicate ledgers when bookie start up.
+     * @param skipReplicateLedgersOnStartup
+     * @return server configuration
+     */
+    public ServerConfiguration setSkipReplicateLedgersOnStartup(boolean skipReplicateLedgersOnStartup) {
+        this.setProperty(SKIP_REPLICATE_LEDGERS_ON_STARTUP, skipReplicateLedgersOnStartup);
         return this;
     }
 }
