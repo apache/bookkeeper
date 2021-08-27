@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
@@ -44,7 +45,7 @@ public class RocksCheckpointer implements AutoCloseable {
     public static CheckpointMetadata restore(String dbName,
                                              File dbPath,
                                              CheckpointStore checkpointStore)
-        throws StateStoreException {
+        throws StateStoreException, TimeoutException {
         CheckpointInfo checkpoint = getLatestCheckpoint(dbName, checkpointStore);
         return restore(checkpoint, dbName, dbPath, checkpointStore);
     }
@@ -53,7 +54,7 @@ public class RocksCheckpointer implements AutoCloseable {
                                              String dbName,
                                              File dbPath,
                                              CheckpointStore checkpointStore)
-        throws StateStoreException {
+        throws StateStoreException, TimeoutException {
         checkpoint.restore(dbName, dbPath, checkpointStore);
         // after successfully restore from remote checkpoints, cleanup other unused checkpoints
         cleanupLocalCheckpoints(dbPath, checkpoint.getId());

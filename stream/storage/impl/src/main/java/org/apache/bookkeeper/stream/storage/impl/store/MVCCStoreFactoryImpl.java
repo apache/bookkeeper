@@ -212,6 +212,8 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             .checkpointChecksumEnable(storageConf.getCheckpointChecksumEnable())
             .checkpointChecksumCompatible(storageConf.getCheckpointChecksumCompatible())
             .localStorageCleanupEnable(storageConf.getLocalStorageCleanupEnable())
+            .checkpointRestoreIdleLimit(
+                Duration.ofMillis(storageConf.getCheckpointRestoreIdleLimitMs()))
             .build();
 
 
