@@ -51,10 +51,18 @@ dependencies {
     testImplementation depLibs.hamcrest
     testImplementation depLibs.snappy
     testImplementation depLibs.zookeeperTest
-
-
+    testImplementation depLibs. metricsCore
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
+}
+
+test {
+    maxHeapSize = '4G'
+    forkEvery = 1
+    jvmArgs("-Djunit.timeout.test=600000",
+            "-Djunit.max.retry=3",
+            "-Djava.net.preferIPv4Stack=true",
+            "-Dio.netty.leakDetection.level=paranoid")
 }
 
 jar {
