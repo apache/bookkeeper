@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import lombok.Getter;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
@@ -586,9 +587,11 @@ public class GarbageCollectorThread extends SafeRunnable {
         // Extract it for every entry log except for the current one.
         // Entry Log ID's are just a long value that starts at 0 and increments
         // by 1 when the log fills up and we roll to a new one.
-        long curLogId = entryLogger.getLeastUnflushedLogId();
+        Supplier<Long> finalEntryLog = () -> conf.isEntryLogPerLedgerEnabled() ? entryLogger.getLastLogId() :
+                entryLogger.getLeastUnflushedLogId();
         boolean hasExceptionWhenScan = false;
-        for (long entryLogId = scannedLogId; entryLogId < curLogId; entryLogId++) {
+        boolean increaseScannedLogId = true;
+        for (long entryLogId = scannedLogId; entryLogId < finalEntryLog.get(); entryLogId++) {
             // Comb the current entry log file if it has not already been extracted.
             if (entryLogMetaMap.containsKey(entryLogId)) {
                 continue;
@@ -597,6 +600,15 @@ public class GarbageCollectorThread extends SafeRunnable {
             // check whether log file exists or not
             // if it doesn't exist, this log file might have been garbage collected.
             if (!entryLogger.logExists(entryLogId)) {
+                continue;
+            }
+
+            // If entryLogPerLedgerEnabled is true, we will look for entry log files beyond getLeastUnflushedLogId()
+            // that have been explicitly rotated or below getLeastUnflushedLogId().
+            if (conf.isEntryLogPerLedgerEnabled() && !entryLogger.isFlushedEntryLog(entryLogId)) {
+                LOG.info("Entry log {} not flushed (entryLogPerLedgerEnabled). Starting next iteration at this point.",
+                        entryLogId);
+                increaseScannedLogId = false;
                 continue;
             }
 
@@ -620,7 +632,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             // if scan failed on some entry log, we don't move 'scannedLogId' to next id
             // if scan succeed, we don't need to scan it again during next gc run,
             // we move 'scannedLogId' to next id
-            if (!hasExceptionWhenScan) {
+            if (!hasExceptionWhenScan && (!conf.isEntryLogPerLedgerEnabled() || increaseScannedLogId)) {
                 ++scannedLogId;
             }
         }
