@@ -48,6 +48,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -160,7 +161,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         return this.name;
     }
 
-    private void loadRocksdbFromCheckpointStore(StateStoreSpec spec) {
+    private void loadRocksdbFromCheckpointStore(StateStoreSpec spec) throws StateStoreException {
         checkNotNull(spec.getCheckpointIOScheduler(),
             "checkpoint io scheduler is not configured");
         checkNotNull(spec.getCheckpointDuration(),
@@ -172,12 +173,15 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         List<CheckpointInfo> checkpoints = RocksCheckpointer.getCheckpoints(dbName, spec.getCheckpointStore());
         for (CheckpointInfo cpi : checkpoints) {
             try {
-                cpi.restore(dbName, localStorePath, spec.getCheckpointStore());
+                cpi.restore(dbName, localStorePath, spec.getCheckpointStore(), spec.getCheckpointRestoreIdleLimit());
                 openRocksdb(spec);
                 checkpoints.stream()
                     .filter(cp -> cp != cpi) // ignore the current restored checkpoint
                     .forEach(cp -> cp.remove(localStorePath)); // delete everything else
                 break;
+            } catch (TimeoutException e) {
+                log.error("Timeout waiting for checkpoint restore: {}", cpi, e);
+                throw new StateStoreException("Failed to restore checkpoint: " + cpi.getId(), e);
             } catch (StateStoreException e) {
                 // Got an exception. Log and try the next checkpoint
                 log.error("Failed to restore checkpoint: {}", cpi, e);
