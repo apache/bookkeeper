@@ -210,6 +210,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         "auditorMaxNumberOfConcurrentOpenLedgerOperations";
     protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC =
         "auditorAcquireConcurrentOpenLedgerOperationsTimeOutMSec";
+    protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -3662,6 +3663,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setAuthorizedRoles(String roles) {
         this.setProperty(AUTHORIZED_ROLES, roles);
+        return this;
+    }
+
+    /**
+     * Get the bytes rate of re-replication.
+     * Default value is -1 which it means entries will replicated without any throttling activity.
+     *
+     * @return bytes rate of re-replication.
+     */
+    public int getReplicationRateByBytes() {
+        return getInt(REPLICATION_RATE_BY_BYTES, -1);
+    }
+
+    /**
+     * Set the rate of re-replication.
+     *
+     * @param rate bytes rate of re-replication.
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setReplicationRateByBytes(int rate) {
+        setProperty(REPLICATION_RATE_BY_BYTES, rate);
         return this;
     }
 }
