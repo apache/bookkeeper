@@ -584,9 +584,10 @@ public class GarbageCollectorThread extends SafeRunnable {
      * @throws IOException
      */
     protected Map<Long, EntryLogMetadata> extractMetaFromEntryLogs(Map<Long, EntryLogMetadata> entryLogMetaMap) {
-        // Extract it for every entry log except for the current one.
-        // Entry Log ID's are just a long value that starts at 0 and increments
-        // by 1 when the log fills up and we roll to a new one.
+        // Entry Log ID's are just a long value that starts at 0 and increments by 1 when the log fills up and we roll
+        // to a new one. We scan entry logs as follows:
+        // - entryLogPerLedgerEnabled is false: Extract it for every entry log except for the current one (un-flushed).
+        // - entryLogPerLedgerEnabled is true: Scan all flushed entry logs up to the highest known id.
         Supplier<Long> finalEntryLog = () -> conf.isEntryLogPerLedgerEnabled() ? entryLogger.getLastLogId() :
                 entryLogger.getLeastUnflushedLogId();
         boolean hasExceptionWhenScan = false;
@@ -631,7 +632,8 @@ public class GarbageCollectorThread extends SafeRunnable {
 
             // if scan failed on some entry log, we don't move 'scannedLogId' to next id
             // if scan succeed, we don't need to scan it again during next gc run,
-            // we move 'scannedLogId' to next id
+            // we move 'scannedLogId' to next id (unless entryLogPerLedgerEnabled is true
+            // and we have found and un-flushed entry log already).
             if (!hasExceptionWhenScan && (!conf.isEntryLogPerLedgerEnabled() || increaseScannedLogId)) {
                 ++scannedLogId;
             }

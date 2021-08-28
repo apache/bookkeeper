@@ -545,6 +545,59 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testMinorCompactionWithEntryLogPerLedgerEnabled() throws Exception {
+        // restart bookies
+        restartBookies(c-> {
+            c.setMajorCompactionThreshold(0.0f);
+            c.setGcWaitTime(60000);
+            c.setMinorCompactionInterval(120000);
+            c.setMajorCompactionInterval(240000);
+            c.setForceAllowCompaction(true);
+            c.setEntryLogPerLedgerEnabled(true);
+            return c;
+        });
+
+        // prepare data
+        LedgerHandle[] lhs = prepareData(3, false);
+
+        for (LedgerHandle lh : lhs) {
+            lh.close();
+        }
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertTrue(getGCThread().enableMinorCompaction);
+
+        // remove ledgers 1 and 2
+        bkc.deleteLedger(lhs[1].getId());
+        bkc.deleteLedger(lhs[2].getId());
+
+        LOG.info("Finished deleting the ledgers contains most entries.");
+        getGCThread().triggerGC(true, false, false).get();
+
+        assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
+
+        // At this point, we have the following state of ledgers end entry logs:
+        // L0 (not deleted) -> E0 (un-flushed): Entry log should exist.
+        // L1 (deleted) -> E1 (un-flushed): Entry log should exist as un-flushed entry logs are not considered for GC.
+        // L2 (deleted) -> E2 (flushed): Entry log should have been garbage collected.
+        //                 E3 (flushed): Entry log should have been garbage collected.
+        //                 E4 (un-flushed): Entry log should exist as un-flushed entry logs are not considered for GC.
+        assertTrue("Entry log file 0.log is not available, which is not expected " + tmpDirs.get(0),
+                TestUtils.hasLogFiles(tmpDirs.get(0), false, 0));
+        assertTrue("Entry log file 1.log is not available, which is not expected " + tmpDirs.get(0),
+                TestUtils.hasLogFiles(tmpDirs.get(0), false, 1));
+        assertTrue("Entry log file 4.log is not available, which is not expected " + tmpDirs.get(0),
+                TestUtils.hasLogFiles(tmpDirs.get(0), false, 4));
+        assertFalse("Entry log file 2.log is available, which is not expected" + tmpDirs.get(0),
+                TestUtils.hasLogFiles(tmpDirs.get(0), false, 2));
+        assertFalse("Entry log file 3.log is available, which is not expected" + tmpDirs.get(0),
+                TestUtils.hasLogFiles(tmpDirs.get(0), false, 3));
+    }
+
+    @Test
     public void testMinorCompactionWithNoWritableLedgerDirs() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
