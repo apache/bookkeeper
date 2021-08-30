@@ -50,7 +50,7 @@ public final class TestUtils {
     }
 
     public static boolean hasLogFiles(File ledgerDirectory, boolean partial, Integer... logsId) {
-        boolean result = partial ? false : true;
+        boolean result = !partial;
         Set<Integer> logs = new HashSet<Integer>();
         for (File file : BookieImpl.getCurrentDirectory(ledgerDirectory).listFiles()) {
             if (file.isFile()) {

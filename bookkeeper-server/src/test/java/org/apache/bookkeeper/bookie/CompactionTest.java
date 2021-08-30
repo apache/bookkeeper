@@ -587,14 +587,15 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         //                 E4 (un-flushed): Entry log should exist as un-flushed entry logs are not considered for GC.
         assertTrue("Entry log file 0.log is not available, which is not expected " + tmpDirs.get(0),
                 TestUtils.hasLogFiles(tmpDirs.get(0), false, 0));
+        verifyLedger(lhs[0].getId(), 0, lhs[0].getLastAddConfirmed());
         assertTrue("Entry log file 1.log is not available, which is not expected " + tmpDirs.get(0),
                 TestUtils.hasLogFiles(tmpDirs.get(0), false, 1));
         assertTrue("Entry log file 4.log is not available, which is not expected " + tmpDirs.get(0),
                 TestUtils.hasLogFiles(tmpDirs.get(0), false, 4));
-        assertFalse("Entry log file 2.log is available, which is not expected" + tmpDirs.get(0),
-                TestUtils.hasLogFiles(tmpDirs.get(0), false, 2));
-        assertFalse("Entry log file 3.log is available, which is not expected" + tmpDirs.get(0),
-                TestUtils.hasLogFiles(tmpDirs.get(0), false, 3));
+        for (File ledgerDirectory : tmpDirs) {
+            assertFalse("Found entry log files [2, 3].log that should have been compacted in ledgerDirectory: "
+                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 2, 3));
+        }
     }
 
     @Test
