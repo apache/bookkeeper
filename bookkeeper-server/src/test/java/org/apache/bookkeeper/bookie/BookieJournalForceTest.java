@@ -63,7 +63,7 @@ import org.powermock.reflect.Whitebox;
  * Test the bookie journal.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({JournalChannel.class, Journal.class})
+@PrepareForTest({JournalChannel.class, Journal.class, DefaultFileChannel.class})
 @Slf4j
 public class BookieJournalForceTest {
 
@@ -377,6 +377,28 @@ public class BookieJournalForceTest {
         assertTrue(lastLogMarkAfterForceWrite.getCurMark().compare(lastLogMarkBeforeWrite) > 0);
 
         journal.shutdown();
+    }
+
+    @Test
+    public void testFileChannelProvider() throws Exception {
+        File bookieFileDirectory = tempDir.newFile();
+        ServerConfiguration config = TestBKConfiguration.newServerConfiguration();
+
+        DefaultFileChannel defaultFileChannel = spy(new DefaultFileChannel(bookieFileDirectory, config));
+
+        FileChannelProvider provider = spy(DefaultFileChannelProvider.class);
+        when(provider.open(bookieFileDirectory, config)).thenReturn(defaultFileChannel);
+        log.info("Journal Channel Provider: " + config.getJournalChannelProvider());
+        // Open should return spied DefaultFileChannel here.
+        BookieFileChannel bookieFileChannel = provider.open(bookieFileDirectory, config);
+        bookieFileChannel.getFileChannel();
+        verify(defaultFileChannel, times (1)).getFileChannel();
+        bookieFileChannel.getFD();
+        verify(defaultFileChannel, times (1)).getFD();
+        bookieFileChannel.fileExists(bookieFileDirectory);
+        verify(defaultFileChannel, times (1)).fileExists(bookieFileDirectory);
+        provider.close(bookieFileChannel);
+        verify(defaultFileChannel, times (1)).close();
     }
 
 }
