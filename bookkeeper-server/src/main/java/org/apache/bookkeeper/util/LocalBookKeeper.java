@@ -123,9 +123,7 @@ public class LocalBookKeeper {
 
         boolean b = waitForServerUp(InetAddress.getLoopbackAddress().getHostAddress() + ":" + zookeeperPort,
           CONNECTION_TIMEOUT);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("ZooKeeper server up: {}", b);
-        }
+        LOG.debug("ZooKeeper server up: {}", b);
         return server;
     }
 
@@ -497,27 +495,16 @@ public class LocalBookKeeper {
         String host = split[0];
         int port = Integer.parseInt(split[1]);
         while (true) {
-            try {
-                Socket sock = new Socket(host, port);
-                BufferedReader reader = null;
-                try {
-                    OutputStream outstream = sock.getOutputStream();
-                    outstream.write("stat".getBytes(UTF_8));
-                    outstream.flush();
+            try (Socket sock = new Socket(host, port);
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream(), UTF_8))) {
+                OutputStream outstream = sock.getOutputStream();
+                outstream.write("stat".getBytes(UTF_8));
+                outstream.flush();
 
-                    reader =
-                        new BufferedReader(
-                                new InputStreamReader(sock.getInputStream(), UTF_8));
-                    String line = reader.readLine();
-                    if (line != null && line.startsWith("Zookeeper version:")) {
-                        LOG.info("Server UP");
-                        return true;
-                    }
-                } finally {
-                    sock.close();
-                    if (reader != null) {
-                        reader.close();
-                    }
+                String line = reader.readLine();
+                if (line != null && line.startsWith("Zookeeper version:")) {
+                    LOG.info("Server UP");
+                    return true;
                 }
             } catch (IOException e) {
                 // ignore as this is expected
