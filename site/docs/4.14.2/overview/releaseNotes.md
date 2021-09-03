@@ -26,7 +26,7 @@ The technical details of this release are summarized below.
 
 - [https://github.com/apache/bookkeeper/pull/2734] Upgrade Freebuilder version and fix the dependency
 
-  - Freebuilder 1.14.9 contains an outdate jquery js file which causes the library to be flagged as vulnerable with the highest threat level in Sonatype IQ vulnerability scanner. This also flags Bookkeeper and Pulsar as vulnerable with the highest threat level although it is a false positive and not an actual threat.
+  - Freebuilder 1.14.9 contains an outdate jquery js file which causes the library to be flagged as vulnerable with the highest threat level in Sonatype IQ vulnerability scanner. This also flags Bookkeeper as vulnerable with the highest threat level although it is a false positive and not an actual threat.
 
   - Freebuilder shouldn't be exposed as a transitive dependency
     - it's an annotation processor which should be defined
