@@ -90,6 +90,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     protected boolean enforceMinNumRacksPerWriteQuorum;
     protected boolean ignoreLocalNodeInPlacementPolicy;
 
+    public static final String ADVERTISED_ADDRESS = "advertisedAddress";
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
 
@@ -134,6 +135,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     protected Gauge<Integer> numWritableBookiesInDefaultRack;
 
     private String defaultRack = NetworkTopology.DEFAULT_RACK;
+
+    // local host/ip
+    private String advertisedAddress;
 
     RackawareEnsemblePlacementPolicyImpl() {
         this(false);
@@ -206,7 +210,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         BookieNode bn = null;
         if (!ignoreLocalNodeInPlacementPolicy) {
             try {
-                bn = createDummyLocalBookieNode(InetAddress.getLocalHost().getHostAddress());
+                InetAddress address = this.advertisedAddress == null ? InetAddress.getLocalHost() :
+                        InetAddress.getByName(this.advertisedAddress);
+                bn = createDummyLocalBookieNode(address.getHostAddress());
             } catch (IOException e) {
                 LOG.error("Failed to get local host address : ", e);
             }
@@ -253,6 +259,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                                            StatsLogger statsLogger,
                                                            BookieAddressResolver bookieAddressResolver) {
         this.bookieAddressResolver = bookieAddressResolver;
+        this.advertisedAddress = conf.getString(ADVERTISED_ADDRESS, null);
         DNSToSwitchMapping dnsResolver;
         if (optionalDnsResolver.isPresent()) {
             dnsResolver = optionalDnsResolver.get();
