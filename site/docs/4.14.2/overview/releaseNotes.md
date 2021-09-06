@@ -20,6 +20,22 @@ The technical details of this release are summarized below.
 
   The current libthrift version 0.12.0 has multiple vulnerabilities: CVE-2019-0205 , CVE-2019-0210 , CVE-2020-13949
 
+- [https://github.com/apache/bookkeeper/pull/2735] Exclude grpc-okhttp dependency
+
+  The okhttp dependency version 2.7.4 is old and vulnerable. This dependency isn't needed and it causes Bookkeeper to be flagged for security vulnerabilities.
+
+- [https://github.com/apache/bookkeeper/pull/2734] Upgrade Freebuilder version and fix the dependency
+
+  - Freebuilder 1.14.9 contains an outdate jquery js file which causes the library to be flagged as vulnerable with the highest threat level in Sonatype IQ vulnerability scanner. This also flags Bookkeeper as vulnerable with the highest threat level although it is a false positive and not an actual threat.
+
+  - Freebuilder shouldn't be exposed as a transitive dependency
+    - it's an annotation processor which should be defined
+      - [optional in maven](https://github.com/inferred/FreeBuilder#maven)
+      - [compileOnly in gradle](https://github.com/inferred/FreeBuilder#gradle)
+
+- [https://github.com/apache/bookkeeper/pull/2693] Upgrade vertx to 3.9.8, addresses CVE-2018-12541
+
+  The current vertx version is 3.5.3 which has a vulnerability, CVE-2018-12541 .
 
 ## Details
 
