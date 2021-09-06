@@ -38,6 +38,7 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDERREPLIC
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS;
 import static org.apache.bookkeeper.replication.ReplicationStats.PLACEMENT_POLICY_CHECK_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICAS_CHECK_TIME;
+import static org.apache.bookkeeper.replication.ReplicationStats.UNDER_REPLICATED_LEDGERS_TOTAL_SIZE;
 import static org.apache.bookkeeper.replication.ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE;
 import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 
@@ -71,6 +72,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -170,6 +172,12 @@ public class Auditor implements AutoCloseable {
         help = "the distribution of num under_replicated ledgers on each auditor run"
     )
     private final OpStatsLogger numUnderReplicatedLedger;
+
+    @StatsDoc(
+            name = UNDER_REPLICATED_LEDGERS_TOTAL_SIZE,
+            help = "the distribution of under_replicated ledgers total size on each auditor run"
+    )
+    private final OpStatsLogger underReplicatedLedgerTotalSize;
     @StatsDoc(
         name = URL_PUBLISH_TIME_FOR_LOST_BOOKIE,
         help = "the latency distribution of publishing under replicated ledgers for lost bookies"
@@ -341,6 +349,7 @@ public class Auditor implements AutoCloseable {
         this.numLedgersFoundHavingLessThanWQReplicasOfAnEntry = new AtomicInteger(0);
 
         numUnderReplicatedLedger = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
+        underReplicatedLedgerTotalSize = this.statsLogger.getOpStatsLogger(UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);
         uRLPublishTimeForLostBookies = this.statsLogger
                 .getOpStatsLogger(ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE);
         bookieToLedgersMapCreationTime = this.statsLogger
@@ -1131,6 +1140,17 @@ public class Auditor implements AutoCloseable {
         }
         LOG.info("Following ledgers: {} of bookie: {} are identified as underreplicated", ledgers, missingBookies);
         numUnderReplicatedLedger.registerSuccessfulValue(ledgers.size());
+        LongAdder underReplicatedSize = new LongAdder();
+        FutureUtils.processList(
+                Lists.newArrayList(ledgers),
+                ledgerId ->
+                    ledgerManager.readLedgerMetadata(ledgerId).whenComplete((metadata, exception) -> {
+                        if (exception == null) {
+                            underReplicatedSize.add(metadata.getValue().getLength());
+                        }
+                    }), null);
+        underReplicatedLedgerTotalSize.registerSuccessfulValue(underReplicatedSize.longValue());
+
         return FutureUtils.processList(
             Lists.newArrayList(ledgers),
             ledgerId -> ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId, missingBookies),
