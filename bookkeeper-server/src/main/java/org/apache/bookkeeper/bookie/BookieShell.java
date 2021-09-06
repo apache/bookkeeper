@@ -47,6 +47,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.QueryAutoRecoveryStatusCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.TriggerAuditCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.WhoIsAuditorCommand;
@@ -155,6 +156,7 @@ public class BookieShell implements Tool {
     static final String CMD_CONVERT_TO_INTERLEAVED_STORAGE = "convert-to-interleaved-storage";
     static final String CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX = "rebuild-db-ledger-locations-index";
     static final String CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE = "regenerate-interleaved-storage-index-file";
+    static final String CMD_QUERY_AUTORECOVERY_STATUS = "queryrecoverystatus";
 
     // cookie commands
     static final String CMD_CREATE_COOKIE = "cookie_create";
@@ -1344,6 +1346,43 @@ public class BookieShell implements Tool {
         }
     }
 
+
+    /**
+     * Command to query autorecovery status.
+     */
+    class QueryAutoRecoveryStatusCmd extends MyCommand {
+        Options opts = new Options();
+
+        public QueryAutoRecoveryStatusCmd() {
+            super(CMD_QUERY_AUTORECOVERY_STATUS);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Query the autorecovery status";
+        }
+
+        @Override
+        String getUsage() {
+            return "queryautorecoverystatus";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            final boolean verbose = cmdLine.hasOption("verbose");
+            QueryAutoRecoveryStatusCommand.QFlags flags = new QueryAutoRecoveryStatusCommand.QFlags()
+                                                            .verbose(verbose);
+            QueryAutoRecoveryStatusCommand cmd = new QueryAutoRecoveryStatusCommand();
+            cmd.apply(bkConf, flags);
+            return 0;
+        }
+    }
+
     /**
      * Setter and Getter for LostBookieRecoveryDelay value (in seconds) in metadata store.
      */
@@ -2153,6 +2192,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_READJOURNAL, new ReadJournalCmd());
         commands.put(CMD_LASTMARK, new LastMarkCmd());
         commands.put(CMD_AUTORECOVERY, new AutoRecoveryCmd());
+        commands.put(CMD_QUERY_AUTORECOVERY_STATUS, new QueryAutoRecoveryStatusCmd());
         commands.put(CMD_LISTBOOKIES, new ListBookiesCmd());
         commands.put(CMD_LISTFILESONDISC, new ListDiskFilesCmd());
         commands.put(CMD_UPDATECOOKIE, new UpdateCookieCmd());
