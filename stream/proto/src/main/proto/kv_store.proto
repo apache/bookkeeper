@@ -40,6 +40,8 @@ message KeyMeta {
     int64 version               = 3;
     // value type
     ValueType value_type        = 4;
+    // time in milliseconds when the record expires (0 for none)
+    int64 expireTime           = 5;
 
 }
 

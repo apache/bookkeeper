@@ -120,7 +120,7 @@ public class MVCCStoreFactoryImplTest {
         long rangeId = streamId + 1;
 
         try (MVCCAsyncStore<byte[], byte[]> store = FutureUtils.result(
-            factory.openStore(scId, streamId, rangeId))) {
+            factory.openStore(scId, streamId, rangeId, 0))) {
 
             log.info("Open store (scId = {}, streamId = {}, rangeId = {}) to test",
                 scId, streamId, rangeId);

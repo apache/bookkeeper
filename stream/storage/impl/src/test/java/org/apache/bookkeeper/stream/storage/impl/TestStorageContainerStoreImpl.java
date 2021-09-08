@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createGetNam
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createGetStreamRequest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -215,7 +216,7 @@ public class TestStorageContainerStoreImpl {
         // create the client manager
         MVCCStoreFactory storeFactory = mock(MVCCStoreFactory.class);
         MVCCAsyncStore<byte[], byte[]> store = mock(MVCCAsyncStore.class);
-        when(storeFactory.openStore(anyLong(), anyLong(), anyLong()))
+        when(storeFactory.openStore(anyLong(), anyLong(), anyLong(), anyInt()))
             .thenReturn(FutureUtils.value(store));
         when(storeFactory.closeStores(anyLong()))
             .thenReturn(FutureUtils.Void());

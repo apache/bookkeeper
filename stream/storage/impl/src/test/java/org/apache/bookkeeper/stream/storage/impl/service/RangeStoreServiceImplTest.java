@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_STREA
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
@@ -32,9 +33,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
+import org.apache.bookkeeper.stream.proto.StreamProperties;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
@@ -94,6 +97,8 @@ public class RangeStoreServiceImplTest {
     private TableStore trStore;
     private MVCCAsyncStore<byte[], byte[]> trMvccStore;
 
+    private StorageServerClientManager clientManager;
+
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
@@ -110,10 +115,13 @@ public class RangeStoreServiceImplTest {
         this.mrMvccStore = mock(MVCCAsyncStore.class);
         this.trMvccStore = mock(MVCCAsyncStore.class);
 
+        this.clientManager = mock(StorageServerClientManager.class);
+
         this.container = new RangeStoreServiceImpl(
             SCID,
             scheduler,
             mvccStoreFactory,
+            clientManager,
             rrStoreFactory,
             mrStoreFactory,
             tableStoreFactory);
@@ -132,18 +140,21 @@ public class RangeStoreServiceImplTest {
         when(mvccStoreFactory.openStore(
             eq(ROOT_STORAGE_CONTAINER_ID),
             eq(ROOT_STREAM_ID),
-            eq(ROOT_RANGE_ID))
+            eq(ROOT_RANGE_ID),
+            eq(0))
         ).thenReturn(FutureUtils.value(rrMvccStore));
         when(mvccStoreFactory.openStore(
             eq(scId),
             eq(CONTAINER_META_STREAM_ID),
-            eq(CONTAINER_META_RANGE_ID))
+            eq(CONTAINER_META_RANGE_ID),
+            eq(0))
         ).thenReturn(FutureUtils.value(mrMvccStore));
         when(mvccStoreFactory.openStore(
             eq(scId),
             eq(STREAM_ID),
-            eq(RANGE_ID)
-        )).thenReturn(FutureUtils.value(trMvccStore));
+            eq(RANGE_ID),
+            anyInt())
+        ).thenReturn(FutureUtils.value(trMvccStore));
         this.rrStore = mock(RootRangeStore.class);
         when(rrStoreFactory.createStore(eq(rrMvccStore)))
             .thenReturn(rrStore);
@@ -153,6 +164,8 @@ public class RangeStoreServiceImplTest {
         this.trStore = mock(TableStore.class);
         when(tableStoreFactory.createStore(eq(trMvccStore)))
             .thenReturn(trStore);
+        when(clientManager.getStreamProperties(eq(STREAM_ID)))
+            .thenReturn(FutureUtils.value(StreamProperties.getDefaultInstance()));
     }
 
     @Test
@@ -163,13 +176,13 @@ public class RangeStoreServiceImplTest {
 
         // root range is not started because it is not the root container
         verify(mvccStoreFactory, times(0))
-            .openStore(eq(ROOT_STORAGE_CONTAINER_ID), eq(ROOT_STREAM_ID), eq(ROOT_RANGE_ID));
+            .openStore(eq(ROOT_STORAGE_CONTAINER_ID), eq(ROOT_STREAM_ID), eq(ROOT_RANGE_ID), eq(0));
         verify(rrStoreFactory, times(0))
             .createStore(eq(rrMvccStore));
 
         // meta range should be started
         verify(mvccStoreFactory, times(1))
-            .openStore(eq(SCID), eq(CONTAINER_META_STREAM_ID), eq(CONTAINER_META_RANGE_ID));
+            .openStore(eq(SCID), eq(CONTAINER_META_STREAM_ID), eq(CONTAINER_META_RANGE_ID), eq(0));
         verify(mrStoreFactory, times(1))
             .createStore(eq(mrMvccStore));
     }
@@ -182,6 +195,7 @@ public class RangeStoreServiceImplTest {
             ROOT_STORAGE_CONTAINER_ID,
             scheduler,
             mvccStoreFactory,
+            clientManager,
             rrStoreFactory,
             mrStoreFactory,
             tableStoreFactory);
@@ -189,13 +203,13 @@ public class RangeStoreServiceImplTest {
 
         // root range is not started because it is not the root container
         verify(mvccStoreFactory, times(1))
-            .openStore(eq(ROOT_STORAGE_CONTAINER_ID), eq(ROOT_STREAM_ID), eq(ROOT_RANGE_ID));
+            .openStore(eq(ROOT_STORAGE_CONTAINER_ID), eq(ROOT_STREAM_ID), eq(ROOT_RANGE_ID), eq(0));
         verify(rrStoreFactory, times(1))
             .createStore(eq(rrMvccStore));
 
         // meta range should be started
         verify(mvccStoreFactory, times(1))
-            .openStore(eq(ROOT_STORAGE_CONTAINER_ID), eq(CONTAINER_META_STREAM_ID), eq(CONTAINER_META_RANGE_ID));
+            .openStore(eq(ROOT_STORAGE_CONTAINER_ID), eq(CONTAINER_META_STREAM_ID), eq(CONTAINER_META_RANGE_ID), eq(0));
         verify(mrStoreFactory, times(1))
             .createStore(eq(mrMvccStore));
     }

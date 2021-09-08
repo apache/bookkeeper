@@ -42,6 +42,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
 
     private static final MVCCRecordCoder INSTANCE = new MVCCRecordCoder();
 
+
     @Override
     public byte[] encode(MVCCRecord record) {
         KeyMeta meta = KeyMeta.newBuilder()
@@ -49,6 +50,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
             .setModRevision(record.getModRev())
             .setVersion(record.getVersion())
             .setValueType(record.getValueType())
+            .setExpireTime(record.getExpireTime())
             .build();
         int metaLen = meta.getSerializedSize();
         int valLen = record.getValue().readableBytes();
@@ -91,6 +93,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
             .setModRevision(record.getModRev())
             .setVersion(record.getVersion())
             .setValueType(record.getValueType())
+            .setExpireTime(record.getExpireTime())
             .build();
         int metaLen = meta.getSerializedSize();
         int valLen = record.getValue().readableBytes();
@@ -121,6 +124,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
         record.setCreateRev(meta.getCreateRevision());
         record.setModRev(meta.getModRevision());
         record.setVersion(meta.getVersion());
+        record.setExpireTime(meta.getExpireTime());
         record.setValue(valBuf, meta.getValueType());
         return record;
     }

@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -69,9 +70,9 @@ public class TableStoreCacheTest {
         assertTrue(storeCache.getTableStoresOpening().isEmpty());
 
         MVCCAsyncStore<byte[], byte[]> mvccStore = mock(MVCCAsyncStore.class);
-        when(factory.openStore(eq(SCID), eq(RID.getStreamId()), eq(RID.getRangeId())))
+        when(factory.openStore(eq(SCID), eq(RID.getStreamId()), eq(RID.getRangeId()), anyInt()))
             .thenReturn(FutureUtils.value(mvccStore));
-        TableStore store = FutureUtils.result(storeCache.openTableStore(SCID, RID));
+        TableStore store = FutureUtils.result(storeCache.openTableStore(SCID, RID, 0));
         assertEquals(1, storeCache.getTableStores().size());
         assertEquals(0, storeCache.getTableStoresOpening().size());
         assertTrue(storeCache.getTableStores().containsKey(RID));
@@ -85,10 +86,10 @@ public class TableStoreCacheTest {
         assertTrue(storeCache.getTableStoresOpening().isEmpty());
 
         Exception cause = new Exception("Failure");
-        when(factory.openStore(eq(SCID), eq(RID.getStreamId()), eq(RID.getRangeId())))
+        when(factory.openStore(eq(SCID), eq(RID.getStreamId()), eq(RID.getRangeId()), anyInt()))
             .thenReturn(FutureUtils.exception(cause));
         try {
-            FutureUtils.result(storeCache.openTableStore(SCID, RID));
+            FutureUtils.result(storeCache.openTableStore(SCID, RID, 0));
             fail("Should fail to open table if the underlying factory fails to open a local store");
         } catch (Exception ee) {
             assertSame(cause, ee);
@@ -103,7 +104,7 @@ public class TableStoreCacheTest {
         storeCache.getTableStores().put(RID, store);
 
         assertSame(store, storeCache.getTableStore(RID));
-        assertSame(store, FutureUtils.result(storeCache.openTableStore(SCID, RID)));
+        assertSame(store, FutureUtils.result(storeCache.openTableStore(SCID, RID, 0)));
     }
 
     @SuppressWarnings("unchecked")
@@ -113,16 +114,16 @@ public class TableStoreCacheTest {
         MVCCAsyncStore<byte[], byte[]> mvccStore2 = mock(MVCCAsyncStore.class);
         CompletableFuture<MVCCAsyncStore<byte[], byte[]>> future1 = FutureUtils.createFuture();
         CompletableFuture<MVCCAsyncStore<byte[], byte[]>> future2 = FutureUtils.createFuture();
-        when(factory.openStore(eq(SCID), eq(RID.getStreamId()), eq(RID.getRangeId())))
+        when(factory.openStore(eq(SCID), eq(RID.getStreamId()), eq(RID.getRangeId()), anyInt()))
             .thenReturn(future1)
             .thenReturn(future2);
 
         CompletableFuture<TableStore> openFuture1 =
-            storeCache.openTableStore(SCID, RID);
+            storeCache.openTableStore(SCID, RID, 0);
         assertEquals(0, storeCache.getTableStores().size());
         assertEquals(1, storeCache.getTableStoresOpening().size());
         CompletableFuture<TableStore> openFuture2 =
-            storeCache.openTableStore(SCID, RID);
+            storeCache.openTableStore(SCID, RID, 0);
         assertEquals(0, storeCache.getTableStores().size());
         assertEquals(1, storeCache.getTableStoresOpening().size());
         assertSame(openFuture1, openFuture2);
@@ -138,7 +139,7 @@ public class TableStoreCacheTest {
         assertSame(store1, storeCache.getTableStores().get(RID));
 
         verify(factory, times(1))
-            .openStore(eq(SCID), eq(RID.getStreamId()), eq(RID.getRangeId()));
+            .openStore(eq(SCID), eq(RID.getStreamId()), eq(RID.getRangeId()), anyInt());
     }
 
 }
