@@ -260,6 +260,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             String dnsResolverName = conf.getString(REPP_DNS_RESOLVER_CLASS, ScriptBasedMapping.class.getName());
             try {
                 dnsResolver = ReflectionUtils.newInstance(dnsResolverName, DNSToSwitchMapping.class);
+                dnsResolver.setBookieAddressResolver(bookieAddressResolver);
                 if (dnsResolver instanceof Configurable) {
                     ((Configurable) dnsResolver).setConf(conf);
                 }
@@ -269,9 +270,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
             } catch (RuntimeException re) {
                 if (!conf.getEnforceMinNumRacksPerWriteQuorum()) {
-                    LOG.error("Failed to initialize DNS Resolver {}, used default subnet resolver : {} {}",
-                            dnsResolverName, re, re.getMessage());
+                    LOG.error("Failed to initialize DNS Resolver {}, used default subnet resolver ",
+                            dnsResolverName, re);
                     dnsResolver = new DefaultResolver(this::getDefaultRack);
+                    dnsResolver.setBookieAddressResolver(bookieAddressResolver);
                 } else {
                     /*
                      * if minNumRacksPerWriteQuorum is enforced, then it
@@ -281,9 +283,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     throw re;
                 }
             }
-        }
-        if (dnsResolver != null) {
-            dnsResolver.setBookieAddressResolver(bookieAddressResolver);
         }
         slowBookies = CacheBuilder.newBuilder()
             .expireAfterWrite(conf.getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)

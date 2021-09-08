@@ -43,13 +43,16 @@ import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdher
 import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble;
 import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.EnsembleForReplacementWithNoConstraints;
 import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.TruePredicate;
+import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.AbstractDNSToSwitchMapping;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.Node;
+import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -144,6 +147,17 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostName(), rack);
         StaticDNSResolver.addNodeToRack("127.0.0.1", rack);
         StaticDNSResolver.addNodeToRack("localhost", rack);
+    }
+
+    @Test
+    public void testInitalize() throws Exception{
+        String dnsResolverName = conf.getString(REPP_DNS_RESOLVER_CLASS, ScriptBasedMapping.class.getName());
+        DNSToSwitchMapping dnsResolver = ReflectionUtils.newInstance(dnsResolverName, DNSToSwitchMapping.class);
+        AbstractDNSToSwitchMapping tmp = (AbstractDNSToSwitchMapping) dnsResolver;
+        assertNull(tmp.getBookieAddressResolver());
+
+        dnsResolver.setBookieAddressResolver(repp.bookieAddressResolver);
+        assertNotNull(tmp.getBookieAddressResolver());
     }
 
     @Test
