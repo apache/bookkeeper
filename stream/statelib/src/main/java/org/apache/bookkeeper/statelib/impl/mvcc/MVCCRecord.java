@@ -57,6 +57,7 @@ public class MVCCRecord implements Recycled, Predicate<RangeOption<?>> {
     private long modRev;
     private long version;
     private ValueType valueType = ValueType.BYTES;
+    private long expireTime;
 
     private MVCCRecord(Recycler.Handle<MVCCRecord> handle) {
         this.handle = handle;
@@ -70,6 +71,7 @@ public class MVCCRecord implements Recycled, Predicate<RangeOption<?>> {
         record.valueType = valueType;
         record.value = value.retainedSlice();
         record.number = number;
+        record.expireTime = expireTime;
         return record;
     }
 
@@ -94,6 +96,10 @@ public class MVCCRecord implements Recycled, Predicate<RangeOption<?>> {
         if (ValueType.NUMBER == valueType) {
             this.number = buf.getLong(0);
         }
+    }
+
+    public boolean expired() {
+        return expireTime != 0 && expireTime > System.currentTimeMillis();
     }
 
     private void reset() {

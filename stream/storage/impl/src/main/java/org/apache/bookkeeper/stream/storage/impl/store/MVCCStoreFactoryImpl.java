@@ -157,16 +157,17 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
     }
 
     @Override
-    public CompletableFuture<MVCCAsyncStore<byte[], byte[]>> openStore(long scId, long streamId, long rangeId) {
+    public CompletableFuture<MVCCAsyncStore<byte[], byte[]>> openStore(long scId, long streamId, long rangeId,
+                                                                       int ttlSeconds) {
         MVCCAsyncStore<byte[], byte[]> store = getStore(scId, streamId, rangeId);
         if (null == store) {
-            return newStore(scId, streamId, rangeId);
+            return newStore(scId, streamId, rangeId, ttlSeconds);
         } else {
             return FutureUtils.value(store);
         }
     }
 
-    CompletableFuture<MVCCAsyncStore<byte[], byte[]>> newStore(long scId, long streamId, long rangeId) {
+    CompletableFuture<MVCCAsyncStore<byte[], byte[]>> newStore(long scId, long streamId, long rangeId, int ttlSeconds) {
         synchronized (this) {
             if (closed) {
                 return FutureUtils.exception(new ObjectClosedException("MVCCStoreFactory"));
@@ -214,6 +215,7 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             .localStorageCleanupEnable(storageConf.getLocalStorageCleanupEnable())
             .checkpointRestoreIdleLimit(
                 Duration.ofMillis(storageConf.getCheckpointRestoreIdleLimitMs()))
+            .ttlSeconds(ttlSeconds)
             .build();
 
 
