@@ -196,8 +196,28 @@ class LedgerOpenOp {
                     if (rc == BKException.Code.OK) {
                         openComplete(BKException.Code.OK, lh);
                     } else if (rc == BKException.Code.UnauthorizedAccessException) {
+                        try {
+                            if (lh != null) {
+                                lh.close();
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            LOG.info("InterruptedException while closing ledger {}", ledgerId, e);
+                        } catch (BKException e) {
+                            LOG.warn("BKException while closing ledger {} ", ledgerId, e);
+                        }
                         openComplete(BKException.Code.UnauthorizedAccessException, null);
                     } else {
+                        try {
+                            if (lh != null) {
+                                lh.close();
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            LOG.info("InterruptedException while closing ledger {}", ledgerId, e);
+                        } catch (BKException e) {
+                            LOG.warn("BKException while closing ledger {} ", ledgerId, e);
+                        }
                         openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
                     }
                 }
@@ -212,6 +232,16 @@ class LedgerOpenOp {
                 public void readLastConfirmedComplete(int rc,
                         long lastConfirmed, Object ctx) {
                     if (rc != BKException.Code.OK) {
+                        try {
+                            if (lh != null) {
+                                lh.close();
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            LOG.info("InterruptedException while closing ledger {}", ledgerId, e);
+                        } catch (BKException e) {
+                            LOG.warn("BKException while closing ledger {} ", ledgerId, e);
+                        }
                         openComplete(bk.getReturnRc(BKException.Code.ReadException), null);
                     } else {
                         lh.lastAddConfirmed = lh.lastAddPushed = lastConfirmed;
