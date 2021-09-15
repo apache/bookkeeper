@@ -67,6 +67,7 @@ Ocelli project by Netflix Inc. (https://github.com/Netflix/ocelli/).
 - lib/org.eclipse.jetty-jetty-server-9.4.43.v20210629.jar
 - lib/org.eclipse.jetty-jetty-servlet-9.4.43.v20210629.jar
 - lib/org.eclipse.jetty-jetty-util-9.4.43.v20210629.jar
+- lib/org.eclipse.jetty-jetty-util-ajax-9.4.43.v20210629.jar
 
 ==============================================================
  Jetty Web Container

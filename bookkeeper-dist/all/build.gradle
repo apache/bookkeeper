@@ -71,7 +71,7 @@ def depLicences = [
         "scala-library-2.11.7/LICENSE.md",
         "scala-parser-combinators_2.11-1.0.4/LICENSE.md",
         "scala-reflect-2.11.8/LICENSE.md",
-        "slf4j-1.7.25/LICENSE.txt",
+        "slf4j-1.7.32/LICENSE.txt",
 ]
 
 distributions {

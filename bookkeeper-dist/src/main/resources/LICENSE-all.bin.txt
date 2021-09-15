@@ -254,6 +254,7 @@ Apache Software License, Version 2.
 - lib/org.eclipse.jetty-jetty-server-9.4.43.v20210629.jar [22]
 - lib/org.eclipse.jetty-jetty-servlet-9.4.43.v20210629.jar [22]
 - lib/org.eclipse.jetty-jetty-util-9.4.43.v20210629.jar [22]
+- lib/org.eclipse.jetty-jetty-util-ajax-9.4.43.v20210629.jar [22]
 - lib/org.rocksdb-rocksdbjni-6.22.1.1.jar [23]
 - lib/com.beust-jcommander-1.78.jar [24]
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
@@ -634,12 +635,12 @@ Bundled as lib/javax.servlet-javax.servlet-api-4.0.0.jar
 Source available at https://github.com/javaee/servlet-spec/tree/4.0.0
 ------------------------------------------------------------------------------------
 This product bundles Simple Logging Facade for Java, which is available under a
-MIT license. For details, see deps/slf4j-1.7.25/LICENSE.txt.
+MIT license. For details, see deps/slf4j-1.7.32/LICENSE.txt.
 
 Bundled as
-  - lib/org.slf4j-slf4j-api-1.7.25.jar
-  - lib/org.slf4j-slf4j-log4j12-1.7.25.jar
-Source available at https://github.com/qos-ch/slf4j/tree/v_1.7.25
+  - lib/org.slf4j-slf4j-api-1.7.32.jar
+  - lib/org.slf4j-slf4j-log4j12-1.7.32.jar
+Source available at https://github.com/qos-ch/slf4j/tree/v_1.7.32
 ------------------------------------------------------------------------------------
 This product bundles the Google Auth Library, which is available under a "3-clause BSD"
 license. For details, see deps/google-auth-library-credentials-0.20.0/LICENSE
