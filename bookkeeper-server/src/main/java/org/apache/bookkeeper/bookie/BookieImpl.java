@@ -286,7 +286,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         // we are checking all possibilities here, so we don't need to fail if we can only get
         // loopback address. it will fail anyway when the bookie attempts to listen on loopback address.
         try {
-	     if (null != conf.getBookieId()) {
+            if (null != conf.getBookieId()) {
                 addresses.add(BookieId.parse(conf.getBookieId()));
             } else {
                 // ip address
