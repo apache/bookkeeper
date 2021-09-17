@@ -111,8 +111,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String GC_WAIT_TIME = "gcWaitTime";
     protected static final String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
     protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
-    protected static final String GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_ZK_REQUESTS =
-            "gcOverreplicatedLedgerMaxConcurrentZkRequests";
+    protected static final String GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_REQUESTS =
+            "gcOverreplicatedLedgerMaxConcurrentRequests";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
     // Scrub Parameters
@@ -421,24 +421,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Max number of concurrent requests to zk in garbage collection of overreplicated ledgers.
+     * Max number of concurrent requests in garbage collection of overreplicated ledgers.
      *
-     * @return max number of concurrent requests to zk
+     * @return max number of concurrent requests
      */
-    public int getGcOverreplicatedLedgerMaxConcurrentZkRequests() {
-        return this.getInt(GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_ZK_REQUESTS, 1000);
+    public int getGcOverreplicatedLedgerMaxConcurrentRequests() {
+        return this.getInt(GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_REQUESTS, 1000);
     }
 
     /**
-     * Max number of concurrent requests to zk in garbage collection of overreplicated ledgers. Default: 1000
+     * Max number of concurrent requests in garbage collection of overreplicated ledgers. Default: 1000
      *
-     * @param gcOverreplicatedLedgerMaxConcurrentZkRequests
+     * @param gcOverreplicatedLedgerMaxConcurrentRequests
      * @return server configuration
      */
-    public ServerConfiguration setGcOverreplicatedLedgerMaxConcurrentZkRequests(
-            int gcOverreplicatedLedgerMaxConcurrentZkRequests) {
-        this.setProperty(GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_ZK_REQUESTS,
-                Integer.toString(gcOverreplicatedLedgerMaxConcurrentZkRequests));
+    public ServerConfiguration setGcOverreplicatedLedgerMaxConcurrentRequests(
+            int gcOverreplicatedLedgerMaxConcurrentRequests) {
+        this.setProperty(GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_REQUESTS,
+                Integer.toString(gcOverreplicatedLedgerMaxConcurrentRequests));
         return this;
     }
 

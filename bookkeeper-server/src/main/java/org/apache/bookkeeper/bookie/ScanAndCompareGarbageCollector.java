@@ -84,7 +84,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
     private final boolean verifyMetadataOnGc;
     private int activeLedgerCounter;
     private StatsLogger statsLogger;
-    private final int maxConcurrentZkRequests;
+    private final int maxConcurrentRequests;
 
     public ScanAndCompareGarbageCollector(LedgerManager ledgerManager, CompactableLedgerStorage ledgerStorage,
             ServerConfiguration conf, StatsLogger statsLogger) throws IOException {
@@ -99,9 +99,9 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         if (gcOverReplicatedLedgerIntervalMillis > 0) {
             this.enableGcOverReplicatedLedger = true;
         }
-        this.maxConcurrentZkRequests = conf.getGcOverreplicatedLedgerMaxConcurrentZkRequests();
-        LOG.info("Over Replicated Ledger Deletion : enabled={}, interval={}, maxConcurrentZkRequest={}",
-                enableGcOverReplicatedLedger, gcOverReplicatedLedgerIntervalMillis, maxConcurrentZkRequests);
+        this.maxConcurrentRequests = conf.getGcOverreplicatedLedgerMaxConcurrentRequests();
+        LOG.info("Over Replicated Ledger Deletion : enabled={}, interval={}, maxConcurrentRequest={}",
+                enableGcOverReplicatedLedger, gcOverReplicatedLedgerIntervalMillis, maxConcurrentRequests);
 
         verifyMetadataOnGc = conf.getVerifyMetadataOnGC();
 
@@ -220,7 +220,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
     private Set<Long> removeOverReplicatedledgers(Set<Long> bkActiveledgers, final GarbageCleaner garbageCleaner)
             throws Exception {
         final Set<Long> overReplicatedLedgers = Sets.newHashSet();
-        final Semaphore semaphore = new Semaphore(this.maxConcurrentZkRequests);
+        final Semaphore semaphore = new Semaphore(this.maxConcurrentRequests);
         final CountDownLatch latch = new CountDownLatch(bkActiveledgers.size());
         // instantiate zookeeper client to initialize ledger manager
 
