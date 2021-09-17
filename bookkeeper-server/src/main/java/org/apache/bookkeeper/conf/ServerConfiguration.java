@@ -111,7 +111,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String GC_WAIT_TIME = "gcWaitTime";
     protected static final String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
     protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
-    protected static final String GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_ZK_REQUESTS = "gcOverreplicatedLedgerMaxConcurrentZkRequests";
+    protected static final String GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_ZK_REQUESTS =
+            "gcOverreplicatedLedgerMaxConcurrentZkRequests";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
     // Scrub Parameters
@@ -434,8 +435,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @param gcOverreplicatedLedgerMaxConcurrentZkRequests
      * @return server configuration
      */
-    public ServerConfiguration setGcOverreplicatedLedgerMaxConcurrentZkRequests(int gcOverreplicatedLedgerMaxConcurrentZkRequests) {
-        this.setProperty(GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_ZK_REQUESTS, Integer.toString(gcOverreplicatedLedgerMaxConcurrentZkRequests));
+    public ServerConfiguration setGcOverreplicatedLedgerMaxConcurrentZkRequests(
+            int gcOverreplicatedLedgerMaxConcurrentZkRequests) {
+        this.setProperty(GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_ZK_REQUESTS,
+                Integer.toString(gcOverreplicatedLedgerMaxConcurrentZkRequests));
         return this;
     }
 
