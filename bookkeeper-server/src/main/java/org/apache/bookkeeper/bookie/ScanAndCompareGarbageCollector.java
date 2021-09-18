@@ -100,13 +100,12 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             this.enableGcOverReplicatedLedger = true;
         }
         this.maxConcurrentRequests = conf.getGcOverreplicatedLedgerMaxConcurrentRequests();
-        LOG.info("Over Replicated Ledger Deletion : enabled={}, interval={}, maxConcurrentRequest={}",
+        LOG.info("Over Replicated Ledger Deletion : enabled={}, interval={}, maxConcurrentRequests={}",
                 enableGcOverReplicatedLedger, gcOverReplicatedLedgerIntervalMillis, maxConcurrentRequests);
 
         verifyMetadataOnGc = conf.getVerifyMetadataOnGC();
 
         this.activeLedgerCounter = 0;
-
     }
 
     public int getNumActiveLedgers() {
