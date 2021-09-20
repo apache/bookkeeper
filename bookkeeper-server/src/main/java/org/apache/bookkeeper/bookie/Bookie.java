@@ -55,6 +55,11 @@ public interface Bookie {
     long getTotalDiskSpace() throws IOException;
     long getTotalFreeSpace() throws IOException;
 
+    // start dirs monitoring if it's not started yet
+    void startDirsMonitoring();
+    // shutdowns dirs monitoring if it's not shutdown yet
+    void shutdownDirsMonitoring();
+
     // TODO: Shouldn't this be async?
     ByteBuf readEntry(long ledgerId, long entryId)
             throws IOException, NoLedgerException;

@@ -188,7 +188,11 @@ class LedgerDirsMonitor {
     }
 
     // start the daemon for disk monitoring
-    public void start() {
+    public synchronized void start() {
+        if (this.executor != null) {
+            LOG.info("LedgerDirsMonitor is already started");
+            return;
+        }
         this.executor = Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder()
                 .setNameFormat("LedgerDirsMonitorThread")
@@ -198,15 +202,17 @@ class LedgerDirsMonitor {
     }
 
     // shutdown disk monitoring daemon
-    public void shutdown() {
+    public synchronized void shutdown() {
         LOG.info("Shutting down LedgerDirsMonitor");
         if (null != checkTask) {
             if (checkTask.cancel(true)) {
                 LOG.debug("Failed to cancel check task in LedgerDirsMonitor");
             }
+            checkTask = null;
         }
         if (null != executor) {
             executor.shutdown();
+            executor = null;
         }
     }
 
