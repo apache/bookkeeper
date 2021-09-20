@@ -1249,16 +1249,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         return this.exitCode;
     }
 
-    @Override
-    public void startDirsMonitoring() {
-        this.dirsMonitor.start();
-    }
-
-    @Override
-    public void shutdownDirsMonitoring() {
-        this.dirsMonitor.shutdown();
-    }
-
     /**
      * Retrieve the ledger descriptor for the ledger which entry should be added to.
      * The LedgerDescriptor returned from this method should be eventually freed with

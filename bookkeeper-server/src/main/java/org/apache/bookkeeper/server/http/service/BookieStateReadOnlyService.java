@@ -35,10 +35,6 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
  * The PUT method will change the current readOnly state of the bookie if the desired state is
  * different from the current. The request body could be {"readOnly":true/false}. The current
  * or the updated state will be included in the response.
- *
- * The Dirs monitoring will be shutdown when the state is updated to readOnly to avoid the state
- * from being updated to writable automatically, and will be started when the stated is updated
- * to writable.
  */
 public class BookieStateReadOnlyService implements HttpEndpointService {
     private final Bookie bookie;
@@ -56,9 +52,7 @@ public class BookieStateReadOnlyService implements HttpEndpointService {
             ReadOnlyState inState = JsonUtil.fromJson(request.getBody(), ReadOnlyState.class);
             if (stateManager.isReadOnly() && !inState.isReadOnly()) {
                 stateManager.transitionToWritableMode().get();
-                this.bookie.startDirsMonitoring();
             } else if (!stateManager.isReadOnly() && inState.isReadOnly()) {
-                this.bookie.shutdownDirsMonitoring();
                 stateManager.transitionToReadOnlyMode().get();
             }
         } else if (!HttpServer.Method.GET.equals(request.getMethod())) {
