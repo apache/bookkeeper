@@ -18,6 +18,7 @@
  */
 plugins {
     id 'java'
+    id 'com.adarshr.test-logger'
 }
 
 dependencies {
