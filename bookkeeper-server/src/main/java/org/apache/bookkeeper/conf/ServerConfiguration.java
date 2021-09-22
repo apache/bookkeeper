@@ -204,6 +204,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD =
             "underreplicatedLedgerRecoveryGracePeriod";
     protected static final String AUDITOR_REPLICAS_CHECK_INTERVAL = "auditorReplicasCheckInterval";
+    protected static final String AUDITOR_GET_LEDGER_SEMAPHORE = "auditorGetLedgerSemaphore";
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -2523,6 +2524,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public long getAuditorPeriodicReplicasCheckInterval() {
         return getLong(AUDITOR_REPLICAS_CHECK_INTERVAL, 0);
     }
+
+    /**
+     * Get the semaphore limit value of getting ledger from zookeeper in auto recovery.
+     *
+     * @return The semaphore value. By default it is 500.
+     */
+    public int getAuditorGetLedgerSemaphore() {
+        return getInt(AUDITOR_GET_LEDGER_SEMAPHORE, 500);
+    }
+
+    /**
+     * Set the semaphore limit value for getting ledger from zookeeper in auto recovery.
+     * @param semaphore
+     */
+    public void setAuditorGetLedgerSemaphore(int semaphore) {
+        setProperty(AUDITOR_GET_LEDGER_SEMAPHORE, semaphore);
+    }
+
 
     /**
      * Set what percentage of a ledger (fragment)'s entries will be verified.

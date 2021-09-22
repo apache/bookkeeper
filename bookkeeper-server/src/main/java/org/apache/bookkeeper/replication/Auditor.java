@@ -165,6 +165,7 @@ public class Auditor implements AutoCloseable {
     private final AtomicInteger numLedgersFoundHavingLessThanWQReplicasOfAnEntry;
     private final long underreplicatedLedgerRecoveryGracePeriod;
     private final int zkOpTimeoutMs;
+    private final Semaphore semaphore;
 
     private final StatsLogger statsLogger;
     @StatsDoc(
@@ -347,6 +348,7 @@ public class Auditor implements AutoCloseable {
         this.numLedgersFoundHavingLessThanAQReplicasOfAnEntry = new AtomicInteger(0);
         this.numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue = new AtomicInteger(0);
         this.numLedgersFoundHavingLessThanWQReplicasOfAnEntry = new AtomicInteger(0);
+        this.semaphore = new Semaphore(conf.getAuditorGetLedgerSemaphore());
 
         numUnderReplicatedLedger = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
         underReplicatedLedgerTotalSize = this.statsLogger.getOpStatsLogger(UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);
@@ -1230,7 +1232,16 @@ public class Auditor implements AutoCloseable {
                     return;
                 }
 
+                try {
+                    semaphore.acquire();
+                } catch (InterruptedException e) {
+                    LOG.error("Unable to acquire open ledger operation semaphore ", e);
+                    FutureUtils.complete(processFuture, null);
+                    return;
+                }
+
                 localAdmin.asyncOpenLedgerNoRecovery(ledgerId, (rc, lh, ctx) -> {
+                    semaphore.release();
                     if (Code.OK == rc) {
                         checker.checkLedger(lh,
                                 // the ledger handle will be closed after checkLedger is done.

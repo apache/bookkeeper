@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -74,8 +75,10 @@ import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.internal.matchers.Null;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -363,6 +366,36 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             t.join();
             assertFalse("Shouldn't have thrown exception", exceptionCaught.get());
         }
+    }
+
+    @Test
+    public void testGetLedgerFromZookeeperThrottled() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+
+        final int numberLedgers = 100;
+        // write ledgers into bookkeeper cluster
+        for (int i = 0; i < numberLedgers; ++i) {
+            LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
+            for (int j = 0; j < 5; j++) {
+                lh.addEntry("testdata".getBytes());
+            }
+            lh.close();
+        }
+
+        // create auditor and call `checkAllLedgers`
+        ServerConfiguration configuration = confByIndex(0);
+        configuration.setAuditorGetLedgerSemaphore(5);
+        try (final Auditor auditor = new Auditor(
+            BookieImpl.getBookieId(configuration).toString(),
+            configuration, NullStatsLogger.INSTANCE)) {
+            auditor.checkAllLedgers();
+        } catch (Exception e) {
+            LOG.error("Caught exception while checking all ledgers ", e);
+            Assert.fail();
+        }
+
     }
 
     @Test
