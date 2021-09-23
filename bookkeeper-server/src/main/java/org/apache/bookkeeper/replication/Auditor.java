@@ -358,8 +358,8 @@ public class Auditor implements AutoCloseable {
 
         if (conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutSec() < 0) {
             LOG.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutSec should be greater than or equal to 0");
-            throw new UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutSec " +
-                "should be greater than or equal to 0");
+            throw new UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutSec "
+                + "should be greater than or equal to 0");
         }
         this.openLedgerNoRecoverySemaphoreWaitTimeoutSec =
             conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutSec();
