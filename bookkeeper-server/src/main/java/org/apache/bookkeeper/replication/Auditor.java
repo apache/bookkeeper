@@ -1271,9 +1271,10 @@ public class Auditor implements AutoCloseable {
                         TimeUnit.MILLISECONDS)) {
                         LOG.warn("Failed to acquire semaphore for {} ms, ledgerId: {}",
                             openLedgerNoRecoverySemaphoreWaitTimeoutMSec, ledgerId);
-                        throw new BKAuditException("Timeout while waiting for acquiring semaphore");
+                        FutureUtils.complete(processFuture, null);
+                        return;
                     }
-                } catch (InterruptedException | BKAuditException e) {
+                } catch (InterruptedException e) {
                     LOG.error("Unable to acquire open ledger operation semaphore ", e);
                     Thread.currentThread().interrupt();
                     FutureUtils.complete(processFuture, null);
