@@ -117,7 +117,8 @@ public class LedgersIndexRebuildOp {
         // replace the existing index
         try {
             Path prevPath = FileSystems.getDefault().getPath(basePath, LedgersSubPath + ".PREV-" + timestamp);
-            LOG.info("Moving original index from original location: {} up to back-up location: {}", currentPath, prevPath);
+            LOG.info("Moving original index from original location: {} up to back-up location: {}",
+                    currentPath, prevPath);
             Files.move(currentPath, prevPath);
             LOG.info("Moving rebuilt index from: {} to: {}", tempPath, currentPath);
             Files.move(tempPath, currentPath);
