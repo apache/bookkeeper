@@ -58,6 +58,7 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.SubTreeCache;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.zookeeper.AddWatchMode;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
@@ -847,6 +848,28 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             return Integer.parseInt(new String(data, UTF_8));
         } catch (KeeperException ke) {
             LOG.error("Error while getting LostBookieRecoveryDelay ", ke);
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb) throws UnavailableException {
+        LOG.debug("notifyUnderReplicationLedgerChanged()");
+        Watcher w = new Watcher() {
+            @Override
+            public void process(WatchedEvent e) {
+                if (e.getPath().contains("urL") && e.getType() == Event.EventType.NodeDeleted) {
+                    cb.operationComplete(0, null);
+                }
+            }
+        };
+        try {
+            zkc.addWatch(urLedgerPath, w, AddWatchMode.PERSISTENT_RECURSIVE);
+        } catch (KeeperException ke) {
+            LOG.error("Error while checking the state of underReplicated ledgers", ke);
             throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
