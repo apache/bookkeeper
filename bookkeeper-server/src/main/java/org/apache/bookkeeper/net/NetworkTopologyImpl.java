@@ -412,7 +412,8 @@ public class NetworkTopologyImpl implements NetworkTopology {
         netlock.writeLock().lock();
         try {
             if ((depthOfAllLeaves != -1) && (depthOfAllLeaves != newDepth)) {
-                LOG.error("Error: can't add leaf node {} at depth {} to topology:\n{}", node, newDepth, oldTopoStr);
+                LOG.error("Error: can't add leaf node {} at depth {} to topology:{}{}",
+                        node, newDepth, System.lineSeparator(), oldTopoStr);
                 throw new InvalidTopologyException("Invalid network topology. "
                         + "You cannot have a rack and a non-rack node at the same level of the network topology.");
             }
@@ -434,7 +435,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("NetworkTopology became:\n" + this.toString());
+                LOG.debug("NetworkTopology became:{}{}", System.lineSeparator(), this.toString());
             }
         } finally {
             netlock.writeLock().unlock();
@@ -505,7 +506,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("NetworkTopology became:\n" + this.toString());
+                LOG.debug("NetworkTopology became:{}{}", System.lineSeparator(), this.toString());
             }
         } finally {
             netlock.writeLock().unlock();
@@ -831,16 +832,16 @@ public class NetworkTopologyImpl implements NetworkTopology {
         StringBuilder tree = new StringBuilder();
         tree.append("Number of racks: ");
         tree.append(numOfRacks);
-        tree.append("\n");
+        tree.append(System.lineSeparator());
         // print the number of leaves
         int numOfLeaves = getNumOfLeaves();
         tree.append("Expected number of leaves:");
         tree.append(numOfLeaves);
-        tree.append("\n");
+        tree.append(System.lineSeparator());
         // print nodes
         for (int i = 0; i < numOfLeaves; i++) {
             tree.append(NodeBase.getPath(clusterMap.getLeaf(i, null)));
-            tree.append("\n");
+            tree.append(System.lineSeparator());
         }
         return tree.toString();
     }

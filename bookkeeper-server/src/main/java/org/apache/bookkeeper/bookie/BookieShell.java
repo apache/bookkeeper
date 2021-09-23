@@ -1526,9 +1526,9 @@ public class BookieShell implements Tool {
         @Override
         String getDescription() {
             return "Command to update cookie"
-                    + "bookieId - Update bookie id in cookie\n"
+                    + "bookieId - Update bookie id in cookie" + System.lineSeparator()
                     + "expandstorage - Add new empty ledger/index directories."
-                    + " Update the directories info in the conf file before running the command\n"
+                    + "Update the directories info in the conf file before running the command" + System.lineSeparator()
                     + "list - list the local cookie files path and ZK cookiePath "
                     + "delete - Delete cookies locally and in zookeeper";
         }

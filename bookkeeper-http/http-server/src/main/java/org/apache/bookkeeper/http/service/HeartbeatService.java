@@ -27,7 +27,7 @@ import org.apache.bookkeeper.http.HttpServer;
  */
 public class HeartbeatService implements HttpEndpointService {
 
-    public static final String HEARTBEAT = "OK\n";
+    public static final String HEARTBEAT = "OK" + System.lineSeparator();
 
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) {

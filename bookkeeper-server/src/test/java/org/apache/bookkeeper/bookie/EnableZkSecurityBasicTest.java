@@ -55,15 +55,15 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
         System.setProperty("zookeeper.authProvider.1", "org.apache.zookeeper.server.auth.SASLAuthenticationProvider");
         File tmpJaasDir = Files.createTempDirectory("jassTmpDir").toFile();
         File tmpJaasFile = new File(tmpJaasDir, "jaas.conf");
-        String jassFileContent = "Server {\n"
-            + "       org.apache.zookeeper.server.auth.DigestLoginModule required\n"
-            + "       user_foo=\"bar\";\n"
-            + "};\n"
-            + "\n"
-            + "Client {\n"
-            + "       org.apache.zookeeper.server.auth.DigestLoginModule required\n"
-            + "       username=\"foo\"\n"
-            + "       password=\"bar\";\n"
+        String jassFileContent = "Server {" + System.lineSeparator()
+            + "       org.apache.zookeeper.server.auth.DigestLoginModule required" + System.lineSeparator()
+            + "       user_foo=\"bar\";" + System.lineSeparator()
+            + "};" + System.lineSeparator()
+            + System.lineSeparator()
+            + "Client {" + System.lineSeparator()
+            + "       org.apache.zookeeper.server.auth.DigestLoginModule required" + System.lineSeparator()
+            + "       username=\"foo\"" + System.lineSeparator()
+            + "       password=\"bar\";" + System.lineSeparator()
             + "};";
         Files.write(tmpJaasFile.toPath(), jassFileContent.getBytes(StandardCharsets.UTF_8));
         System.setProperty("java.security.auth.login.config", tmpJaasFile.getAbsolutePath());

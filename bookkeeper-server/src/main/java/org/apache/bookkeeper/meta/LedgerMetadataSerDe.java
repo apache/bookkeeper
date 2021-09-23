@@ -84,7 +84,7 @@ public class LedgerMetadataSerDe {
     // for pulling the version
     private static final int MAX_VERSION_DIGITS = 10;
     private static final byte[] VERSION_KEY_BYTES = "BookieMetadataFormatVersion\t".getBytes(UTF_8);
-    private static final String LINE_SPLITTER = "\n";
+    private static final String LINE_SPLITTER = System.lineSeparator();
     private static final byte[] LINE_SPLITTER_BYTES = LINE_SPLITTER.getBytes(UTF_8);
     private static final String FIELD_SPLITTER = "\t";
 

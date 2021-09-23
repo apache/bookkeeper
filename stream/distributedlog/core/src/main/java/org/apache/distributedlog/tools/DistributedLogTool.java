@@ -598,7 +598,7 @@ import org.slf4j.LoggerFactory;
             }
             for (Map.Entry<String, List<Pair<LogSegmentMetadata,
                     List<String>>>> entry : corruptedCandidates.entrySet()) {
-                System.out.println(entry.getKey() + " : \n");
+                System.out.println(entry.getKey() + " : " + System.lineSeparator());
                 for (Pair<LogSegmentMetadata, List<String>> pair : entry.getValue()) {
                     System.out.println("\t - " + pair.getLeft());
                     if (printInprogressOnly && dumpEntries) {

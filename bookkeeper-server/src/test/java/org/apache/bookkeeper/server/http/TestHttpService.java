@@ -101,7 +101,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
           .provideHttpEndpointService(HttpServer.ApiType.HEARTBEAT);
         HttpServiceResponse response = heartbeatService.handle(null);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response.getStatusCode());
-        assertEquals("OK\n", response.getBody());
+        assertEquals("OK" + System.lineSeparator(), response.getBody());
     }
 
     @Test

@@ -42,7 +42,7 @@ public class LedgerLayout {
     public static final int LAYOUT_FORMAT_VERSION = 2;
 
     private static final String splitter = ":";
-    private static final String lSplitter = "\n";
+    private static final String lSplitter = System.lineSeparator();
 
     // ledger manager factory class
     private final String managerFactoryClass;

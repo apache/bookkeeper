@@ -291,7 +291,7 @@ public class ConfigDefTest {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             configDef.save(baos);
             readConf = baos.toString();
-            log.info("\n{}", readConf);
+            log.info("{}{}", System.lineSeparator(), readConf);
         }
 
         assertEquals(new String(confData, UTF_8), readConf);

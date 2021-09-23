@@ -101,43 +101,43 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
 
         File jaasFile = new File(kerberosWorkDir.getRoot(), "jaas.conf");
         try (FileWriter writer = new FileWriter(jaasFile)) {
-            writer.write("\n"
-                + "Bookie {\n"
-                + "  com.sun.security.auth.module.Krb5LoginModule required debug=true\n"
-                + "  useKeyTab=true\n"
-                + "  keyTab=\"" + keytabServer.getAbsolutePath() + "\n"
-                + "  storeKey=true\n"
-                + "  useTicketCache=false\n" // won't test useTicketCache=true on JUnit tests
-                + "  principal=\"" + principalServer + "\";\n"
-                + "};\n"
-                + "\n"
-                + "\n"
-                + "\n"
-                + "BookKeeper {\n"
-                + "  com.sun.security.auth.module.Krb5LoginModule required debug=true\n"
-                + "  useKeyTab=true\n"
-                + "  keyTab=\"" + keytabClient.getAbsolutePath() + "\n"
-                + "  storeKey=true\n"
-                + "  useTicketCache=false\n"
-                + "  principal=\"" + principalClient + "\";\n"
-                + "};\n"
+            writer.write(System.lineSeparator()
+                + "Bookie {" + System.lineSeparator()
+                + "  com.sun.security.auth.module.Krb5LoginModule required debug=true" + System.lineSeparator()
+                + "  useKeyTab=true" + System.lineSeparator()
+                + "  keyTab=\"" + keytabServer.getAbsolutePath() + System.lineSeparator()
+                + "  storeKey=true" + System.lineSeparator()
+                + "  useTicketCache=false" + System.lineSeparator() // won't test useTicketCache=true on JUnit tests
+                + "  principal=\"" + principalServer + "\";" + System.lineSeparator()
+                + "};" + System.lineSeparator()
+                + System.lineSeparator()
+                + System.lineSeparator()
+                + System.lineSeparator()
+                + "BookKeeper {" + System.lineSeparator()
+                + "  com.sun.security.auth.module.Krb5LoginModule required debug=true" + System.lineSeparator()
+                + "  useKeyTab=true" + System.lineSeparator()
+                + "  keyTab=\"" + keytabClient.getAbsolutePath() + System.lineSeparator()
+                + "  storeKey=true" + System.lineSeparator()
+                + "  useTicketCache=false" + System.lineSeparator()
+                + "  principal=\"" + principalClient + "\";" + System.lineSeparator()
+                + "};" + System.lineSeparator()
             );
 
         }
 
         File krb5file = new File(kerberosWorkDir.getRoot(), "krb5.conf");
         try (FileWriter writer = new FileWriter(krb5file)) {
-            String conf = "[libdefaults]\n"
-                + " default_realm = " + kdc.getRealm() + "\n"
-                + " udp_preference_limit = 1\n" // force use TCP
-                + "\n"
-                + "\n"
-                + "[realms]\n"
-                + " " + kdc.getRealm() + "  = {\n"
-                + "  kdc = " + kdc.getHost() + ":" + kdc.getPort() + "\n"
+            String conf = "[libdefaults]" + System.lineSeparator()
+                + " default_realm = " + kdc.getRealm() + System.lineSeparator()
+                + " udp_preference_limit = 1" + System.lineSeparator() // force use TCP
+                + System.lineSeparator()
+                + System.lineSeparator()
+                + "[realms]" + System.lineSeparator()
+                + " " + kdc.getRealm() + "  = {" + System.lineSeparator()
+                + "  kdc = " + kdc.getHost() + ":" + kdc.getPort() + System.lineSeparator()
                 + " }";
             writer.write(conf);
-            LOG.info("krb5.conf:\n" + conf);
+            LOG.info("krb5.conf:{}{}", System.lineSeparator(), conf);
         }
 
         System.setProperty("java.security.auth.login.config", jaasFile.getAbsolutePath());

@@ -164,17 +164,17 @@ public class Cookie {
             builder.setInstanceId(instanceId);
         }
         StringBuilder b = new StringBuilder();
-        b.append(CURRENT_COOKIE_LAYOUT_VERSION).append("\n");
+        b.append(CURRENT_COOKIE_LAYOUT_VERSION).append(System.lineSeparator());
         b.append(builder.build().toString());
         return b.toString();
     }
 
     private String toStringVersion3() {
         StringBuilder b = new StringBuilder();
-        b.append(CURRENT_COOKIE_LAYOUT_VERSION).append("\n")
-            .append(bookieId).append("\n")
-            .append(journalDirs).append("\n")
-            .append(ledgerDirs).append("\n");
+        b.append(CURRENT_COOKIE_LAYOUT_VERSION).append(System.lineSeparator())
+            .append(bookieId).append(System.lineSeparator())
+            .append(journalDirs).append(System.lineSeparator())
+            .append(ledgerDirs).append(System.lineSeparator());
         return b.toString();
     }
 

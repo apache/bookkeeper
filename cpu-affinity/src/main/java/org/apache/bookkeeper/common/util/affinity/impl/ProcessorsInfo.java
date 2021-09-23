@@ -62,11 +62,11 @@ class ProcessorsInfo {
     static ProcessorsInfo parseCpuInfo(String cpuInfoString) {
         ProcessorsInfo pi = new ProcessorsInfo();
 
-        for (String cpu : cpuInfoString.split("\n\n")) {
+        for (String cpu : cpuInfoString.split(System.lineSeparator() + System.lineSeparator())) {
             int cpuId = -1;
             int coreId = -1;
 
-            for (String line : cpu.split("\n")) {
+            for (String line : cpu.split(System.lineSeparator())) {
                 String[] parts = line.split(":", 2);
                 String key = StringUtils.trim(parts[0]);
                 String value = StringUtils.trim(parts[1]);

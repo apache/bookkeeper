@@ -248,7 +248,7 @@ public class AutoRecoveryMain {
      */
     private static void printUsage() {
         HelpFormatter hf = new HelpFormatter();
-        hf.printHelp("AutoRecoveryMain [options]\n", opts);
+        hf.printHelp("AutoRecoveryMain [options]" + System.lineSeparator(), opts);
     }
 
     /*

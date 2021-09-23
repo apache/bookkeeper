@@ -563,7 +563,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             && !conf.getAllowLoopback()) {
             throw new UnknownHostException("Trying to listen on loopback address, "
                     + addr + " but this is forbidden by default "
-                    + "(see ServerConfiguration#getAllowLoopback()).\n"
+                    + "(see ServerConfiguration#getAllowLoopback())." + System.lineSeparator()
                     + "If this happen, you can consider specifying the network interface"
                     + " to listen on (e.g. listeningInterface=eth0) or specifying the"
                     + " advertised address (e.g. advertisedAddress=172.x.y.z)");

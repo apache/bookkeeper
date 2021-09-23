@@ -227,7 +227,7 @@ public class BookieStatus {
         builder.append(getBookieMode());
         builder.append(",");
         builder.append(System.currentTimeMillis());
-        builder.append("\n");
+        builder.append(System.lineSeparator());
         return builder.toString();
     }
 

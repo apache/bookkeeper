@@ -95,7 +95,8 @@ class IsolatedProcessors {
                 .parseInt(StringUtils.trim(new String(Files.readAllBytes(cpuPath), ENCODING))) != 0;
 
         if (currentState != enable) {
-            Files.write(cpuPath, (enable ? "1\n" : "0\n").getBytes(ENCODING), StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(cpuPath, (enable ? "1" + System.lineSeparator() : "0" + System.lineSeparator())
+                            .getBytes(ENCODING), StandardOpenOption.TRUNCATE_EXISTING);
             log.info("{} CPU {}", enable ? "Enabled" : "Disabled", cpu);
         }
     }

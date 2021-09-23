@@ -160,13 +160,13 @@ public class InitClusterCommand extends BKCommand<Flags> {
             String ledgersUri = rootUri.toString() + ledgersPath;
             String dlogUri = rootUri.toString() + dlogPath;
 
-            log.info("Initializing cluster {} : \n"
-                + "\tledgers : path = {}, uri = {}\n"
-                + "\tdlog: path = {}, uri = {}\n"
+            log.info("Initializing cluster {} : {}"
+                + "\tledgers : path = {}, uri = {}{}"
+                + "\tdlog: path = {}, uri = {}{}"
                 + "\tstream storage: path = {}, num_storage_containers = {}",
-                clusterName,
-                ledgersPath, ledgersUri,
-                dlogPath, dlogUri,
+                clusterName, System.lineSeparator(),
+                ledgersPath, ledgersUri, System.lineSeparator(),
+                dlogPath, dlogUri, System.lineSeparator(),
                 StorageConstants.ZK_METADATA_ROOT_PATH, cmdFlags.numStorageContainers);
 
             // create the cluster root path

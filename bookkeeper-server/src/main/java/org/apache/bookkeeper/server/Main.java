@@ -91,15 +91,15 @@ public class Main {
      */
     private static void printUsage() {
         HelpFormatter hf = new HelpFormatter();
-        String header = "\n"
+        String header = System.lineSeparator()
             + "BookieServer provide an interface to start a bookie with configuration file and/or arguments."
-            + "The settings in configuration file will be overwrite by provided arguments.\n"
-            + "Options including:\n";
-        String footer = "Here is an example:\n"
+            + "The settings in configuration file will be overwrite by provided arguments." + System.lineSeparator()
+            + "Options including:" + System.lineSeparator();
+        String footer = "Here is an example:" + System.lineSeparator()
             + "\tBookieServer -c bookie.conf -z localhost:2181 -m /bookkeeper/ledgers "
             + "-p 3181 -j /mnt/journal -i \"/mnt/index1 /mnt/index2\""
-            + " -l \"/mnt/ledger1 /mnt/ledger2 /mnt/ledger3\"\n";
-        hf.printHelp("BookieServer [options]\n", header, BK_OPTS, footer, true);
+            + " -l \"/mnt/ledger1 /mnt/ledger2 /mnt/ledger3\"" + System.lineSeparator();
+        hf.printHelp("BookieServer [options]" + System.lineSeparator(), header, BK_OPTS, footer, true);
     }
 
     private static void loadConfFile(ServerConfiguration conf, String confFile)

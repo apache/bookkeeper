@@ -35,10 +35,10 @@ public class PrometheusTextFormatUtil {
         // # TYPE bookie_storage_entries_count gauge
         // bookie_storage_entries_count 519
         try {
-            w.append("# TYPE ").append(name).append(" gauge\n");
+            w.append("# TYPE ").append(name).append(" gauge").append(System.lineSeparator());
             w.append(name);
             writeLabels(w, gauge.getLabels());
-            w.append(' ').append(gauge.getSample().toString()).append('\n');
+            w.append(' ').append(gauge.getSample().toString()).append(System.lineSeparator());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -49,10 +49,10 @@ public class PrometheusTextFormatUtil {
         // # TYPE jvm_threads_started_total counter
         // jvm_threads_started_total 59
         try {
-            w.append("# TYPE ").append(name).append(" counter\n");
+            w.append("# TYPE ").append(name).append(" counter").append(System.lineSeparator());
             w.append(name);
             writeLabels(w, counter.getLabels());
-            w.append(' ').append(counter.get().toString()).append('\n');
+            w.append(' ').append(counter.get().toString()).append(System.lineSeparator());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -80,7 +80,7 @@ public class PrometheusTextFormatUtil {
         // bookie_journal_JOURNAL_ADD_ENTRY_count{success="true",} 658.0
         // bookie_journal_JOURNAL_ADD_ENTRY_sum{success="true",} 1265.0800000000002
         try {
-            w.append("# TYPE ").append(name).append(" summary\n");
+            w.append("# TYPE ").append(name).append(" summary").append(System.lineSeparator());
             writeQuantile(w, opStat, name, false, 0.5);
             writeQuantile(w, opStat, name, false, 0.75);
             writeQuantile(w, opStat, name, false, 0.95);
@@ -145,7 +145,7 @@ public class PrometheusTextFormatUtil {
             writeLabelsNoBraces(w, opStat.getLabels());
         }
         w.append("} ")
-                .append(Double.toString(opStat.getQuantileValue(success, quantile))).append('\n');
+                .append(Double.toString(opStat.getQuantileValue(success, quantile))).append(System.lineSeparator());
     }
 
     private static void writeCount(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success)
@@ -156,7 +156,7 @@ public class PrometheusTextFormatUtil {
             writeLabelsNoBraces(w, opStat.getLabels());
         }
         w.append("} ")
-                .append(Long.toString(opStat.getCount(success))).append('\n');
+                .append(Long.toString(opStat.getCount(success))).append(System.lineSeparator());
     }
 
     private static void writeSum(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success)
@@ -167,7 +167,7 @@ public class PrometheusTextFormatUtil {
             writeLabelsNoBraces(w, opStat.getLabels());
         }
         w.append("} ")
-                .append(Double.toString(opStat.getSum(success))).append('\n');
+                .append(Double.toString(opStat.getSum(success))).append(System.lineSeparator());
     }
 
     static void writeMetricsCollectedByPrometheusClient(Writer w, CollectorRegistry registry) throws IOException {
@@ -191,7 +191,7 @@ public class PrometheusTextFormatUtil {
 
                 w.write("} ");
                 w.write(Collector.doubleToGoString(sample.value));
-                w.write('\n');
+                w.write(System.lineSeparator());
             }
         }
     }

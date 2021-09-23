@@ -182,7 +182,7 @@ public class TestPrometheusFormatter {
                 + "\\s(-?[\\d\\w\\.]+)(\\s(\\d+))?$");
         Pattern tagsPattern = Pattern.compile("(\\w+)=\"([^\"]+)\"(,\\s?)?");
 
-        Splitter.on("\n").split(metrics).forEach(line -> {
+        Splitter.on(System.lineSeparator()).split(metrics).forEach(line -> {
             if (line.isEmpty() || line.startsWith("#")) {
                 return;
             }

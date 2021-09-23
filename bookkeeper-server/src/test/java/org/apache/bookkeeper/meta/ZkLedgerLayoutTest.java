@@ -115,7 +115,7 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
                 + BookKeeperConstants.LAYOUT_ZNODE;
         // write bad format ledger layout
         StringBuilder sb = new StringBuilder();
-        sb.append(LedgerLayout.LAYOUT_FORMAT_VERSION).append("\n");
+        sb.append(LedgerLayout.LAYOUT_FORMAT_VERSION).append(System.lineSeparator());
         zkc.create(ledgersLayout, sb.toString().getBytes(),
                                  Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         ZkLayoutManager zkLayoutManager = new ZkLayoutManager(
@@ -137,7 +137,7 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
                 + BookKeeperConstants.LAYOUT_ZNODE;
         // write bad format ledger layout
         StringBuilder sb = new StringBuilder();
-        sb.append(LedgerLayout.LAYOUT_FORMAT_VERSION).append("\n")
+        sb.append(LedgerLayout.LAYOUT_FORMAT_VERSION).append(System.lineSeparator())
           .append(HierarchicalLedgerManagerFactory.class.getName());
         zkc.create(ledgersLayout, sb.toString().getBytes(),
                                  Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);

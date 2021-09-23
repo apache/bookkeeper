@@ -26,7 +26,7 @@ import org.apache.bookkeeper.http.HttpServer;
  * HttpEndpointService that return fixed content.
  */
 public class NullHttpService implements HttpEndpointService {
-    public static final String CONTENT = "NullHttpService\n";
+    public static final String CONTENT = "NullHttpService" + System.lineSeparator();
 
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) {

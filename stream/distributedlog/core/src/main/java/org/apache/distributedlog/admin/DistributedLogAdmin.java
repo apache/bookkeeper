@@ -475,7 +475,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
                 System.out.println("");
                 System.out.println(bkdlConfig.toString());
                 System.out.println("");
-                if (!force && !IOUtils.confirmPrompt("Do you want to unbind " + uri + " :\n")) {
+                if (!force && !IOUtils.confirmPrompt("Do you want to unbind " + uri + " :" + System.lineSeparator())) {
                     return 0;
                 }
             }
@@ -609,7 +609,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
                             return 0;
                         } else {
                             if (!force && !IOUtils.confirmPrompt("Do you want to bind " + uri
-                                        + " with new bookkeeper instance :\n" + newBKDLConfig)) {
+                                        + " with new bookkeeper instance :" + System.lineSeparator() + newBKDLConfig)) {
                                 return 0;
                             }
                         }

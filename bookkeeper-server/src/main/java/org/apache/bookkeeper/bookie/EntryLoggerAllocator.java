@@ -190,7 +190,7 @@ class EntryLoggerAllocator {
         fos = new FileOutputStream(new File(dir, "lastId"));
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos, UTF_8));
         try {
-            bw.write(Long.toHexString(logId) + "\n");
+            bw.write(Long.toHexString(logId) + System.lineSeparator());
             bw.flush();
         } catch (IOException e) {
             log.warn("Failed write lastId file");

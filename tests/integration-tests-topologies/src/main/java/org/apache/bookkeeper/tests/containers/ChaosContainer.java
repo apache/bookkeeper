@@ -105,8 +105,10 @@ public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends Generic
         ExecResult result = execInContainer(cmd);
 
         log.info("Docker.exec({}:{}): Done", this.getContainerId(), cmdString);
-        log.info("Docker.exec({}:{}): Stdout -\n{}", this.getContainerId(), cmdString, result.getStdout());
-        log.info("Docker.exec({}:{}): Stderr -\n{}", this.getContainerId(), cmdString, result.getStderr());
+        log.info("Docker.exec({}:{}): Stdout -{}{}", this.getContainerId(), cmdString,
+                System.lineSeparator(), result.getStdout());
+        log.info("Docker.exec({}:{}): Stderr -{}{}", this.getContainerId(), cmdString,
+                System.lineSeparator(), result.getStderr());
 
         return result;
     }
