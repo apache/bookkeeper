@@ -206,8 +206,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUDITOR_REPLICAS_CHECK_INTERVAL = "auditorReplicasCheckInterval";
     protected static final String AUDITOR_MAX_NUMBER_OF_CONCURRENT_OPEN_LEDGER_OPERATIONS =
         "auditorMaxNumberOfConcurrentOpenLedgerOperations";
-    protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_SEC =
-        "auditorAcquireConcurrentOpenLedgerOperationsTimeOutSec";
+    protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC =
+        "auditorAcquireConcurrentOpenLedgerOperationsTimeOutMSec";
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -2548,18 +2548,18 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Get the acquire concurrent open ledger operations timeout.
      *
-     * @return The timeout values. By default it is 30s
+     * @return The timeout values. By default it is 120000ms
      */
-    public int getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutSec() {
-        return getInt(AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_SEC, 120);
+    public int getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec() {
+        return getInt(AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC, 120000);
     }
 
     /**
      * Set the acquire concurrent open ledger operations timeout.
      * @param timeoutMs
      */
-    public void setAuditorAcquireConcurrentOpenLedgerOperationsTimeoutSec(int timeoutMs) {
-        setProperty(AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_SEC, timeoutMs);
+    public void setAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec(int timeoutMs) {
+        setProperty(AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC, timeoutMs);
     }
 
 

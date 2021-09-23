@@ -166,7 +166,7 @@ public class Auditor implements AutoCloseable {
     private final long underreplicatedLedgerRecoveryGracePeriod;
     private final int zkOpTimeoutMs;
     private final Semaphore openLedgerNoRecoverySemaphore;
-    private final int openLedgerNoRecoverySemaphoreWaitTimeoutSec;
+    private final int openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
 
     private final StatsLogger statsLogger;
     @StatsDoc(
@@ -356,13 +356,13 @@ public class Auditor implements AutoCloseable {
         }
         this.openLedgerNoRecoverySemaphore = new Semaphore(conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations());
 
-        if (conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutSec() < 0) {
-            LOG.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutSec should be greater than or equal to 0");
-            throw new UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutSec "
+        if (conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec() < 0) {
+            LOG.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec should be greater than or equal to 0");
+            throw new UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec "
                 + "should be greater than or equal to 0");
         }
-        this.openLedgerNoRecoverySemaphoreWaitTimeoutSec =
-            conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutSec();
+        this.openLedgerNoRecoverySemaphoreWaitTimeoutMSec =
+            conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec();
 
         numUnderReplicatedLedger = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
         underReplicatedLedgerTotalSize = this.statsLogger.getOpStatsLogger(UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);
@@ -1267,10 +1267,10 @@ public class Auditor implements AutoCloseable {
                 }
 
                 try {
-                    if (!openLedgerNoRecoverySemaphore.tryAcquire(openLedgerNoRecoverySemaphoreWaitTimeoutSec,
-                        TimeUnit.SECONDS)) {
-                        LOG.warn("Failed to acquire semaphore for {} s, ledgerId: {}",
-                            openLedgerNoRecoverySemaphoreWaitTimeoutSec, ledgerId);
+                    if (!openLedgerNoRecoverySemaphore.tryAcquire(openLedgerNoRecoverySemaphoreWaitTimeoutMSec,
+                        TimeUnit.MILLISECONDS)) {
+                        LOG.warn("Failed to acquire semaphore for {} ms, ledgerId: {}",
+                            openLedgerNoRecoverySemaphoreWaitTimeoutMSec, ledgerId);
                         throw new BKAuditException("Timeout while waiting for acquiring semaphore");
                     }
                 } catch (InterruptedException | BKAuditException e) {
