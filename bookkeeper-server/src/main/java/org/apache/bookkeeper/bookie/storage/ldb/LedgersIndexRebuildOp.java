@@ -90,24 +90,24 @@ public class LedgersIndexRebuildOp {
             LOG.info("Scan complete, found {} ledgers. "
                     + "Starting to build a new ledgers index", ledgers.size());
 
-            KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(
-                    basePath, tempLedgersSubPath, DbConfigType.Small, conf);
-            LOG.info("Created ledgers index at temp location {}", tempPath);
+            try (KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(
+                    basePath, tempLedgersSubPath, DbConfigType.Small, conf)) {
+                LOG.info("Created ledgers index at temp location {}", tempPath);
 
-            for (Long ledgerId : ledgers) {
-                DbLedgerStorageDataFormats.LedgerData ledgerData =
-                        DbLedgerStorageDataFormats.LedgerData.newBuilder()
-                                .setExists(true)
-                                .setFenced(true)
-                                .setMasterKey(ByteString.EMPTY).build();
+                for (Long ledgerId : ledgers) {
+                    DbLedgerStorageDataFormats.LedgerData ledgerData =
+                            DbLedgerStorageDataFormats.LedgerData.newBuilder()
+                                    .setExists(true)
+                                    .setFenced(true)
+                                    .setMasterKey(ByteString.EMPTY).build();
 
-                byte[] ledgerArray = new byte[16];
-                ArrayUtil.setLong(ledgerArray, 0, ledgerId);
-                newIndex.put(ledgerArray, ledgerData.toByteArray());
+                    byte[] ledgerArray = new byte[16];
+                    ArrayUtil.setLong(ledgerArray, 0, ledgerId);
+                    newIndex.put(ledgerArray, ledgerData.toByteArray());
+                }
+
+                newIndex.sync();
             }
-
-            newIndex.sync();
-            newIndex.close();
         } catch (Throwable t) {
             LOG.error("Error during rebuild, the original index remains unchanged", t);
             delete(tempPath);
@@ -117,12 +117,15 @@ public class LedgersIndexRebuildOp {
         // replace the existing index
         try {
             Path prevPath = FileSystems.getDefault().getPath(basePath, LedgersSubPath + ".PREV-" + timestamp);
+            LOG.info("Moving original index from original location: {} up to back-up location: {}", currentPath, prevPath);
             Files.move(currentPath, prevPath);
+            LOG.info("Moving rebuilt index from: {} to: {}", tempPath, currentPath);
             Files.move(tempPath, currentPath);
             LOG.info("Original index has been replaced with the new index. "
                     + "The original index has been moved to {}", prevPath);
         } catch (IOException e) {
-            LOG.error("Could not replace the existing index", e);
+            LOG.error("Could not replace original index with rebuilt index. "
+                    + "To return to the original state, ensure the original index is in its original location", e);
             return false;
         }
 

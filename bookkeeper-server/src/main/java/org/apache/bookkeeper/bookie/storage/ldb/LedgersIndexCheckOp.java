@@ -71,7 +71,8 @@ public class LedgersIndexCheckOp {
                     DbLedgerStorageDataFormats.LedgerData ledgerData =
                             DbLedgerStorageDataFormats.LedgerData.parseFrom(entry.getValue());
                     if (verbose) {
-                        LOG.info("Ledger {}, exists: {}, isFenced: {}, masterKey: {}, explicitLAC: {}",
+                        LOG.info("Scanned: {}, ledger: {}, exists: {}, isFenced: {}, masterKey: {}, explicitLAC: {}",
+                                ctr,
                                 ledgerId,
                                 (ledgerData.hasExists() ? ledgerData.getExists() : "-"),
                                 (ledgerData.hasFenced() ? ledgerData.getFenced() : "-"),
