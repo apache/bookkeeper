@@ -204,7 +204,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD =
             "underreplicatedLedgerRecoveryGracePeriod";
     protected static final String AUDITOR_REPLICAS_CHECK_INTERVAL = "auditorReplicasCheckInterval";
-    protected static final String AUDITOR_GET_LEDGER_SEMAPHORE = "auditorGetLedgerSemaphore";
+    protected static final String AUDITOR_MAX_NUMBER_OF_CONCURRENT_OPEN_LEDGER_OPERATIONS =
+        "auditorMaxNumberOfConcurrentOpenLedgerOperations";
+    protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_SEC =
+        "auditorAcquireConcurrentOpenLedgerOperationsTimeOutSec";
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -2530,16 +2533,33 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @return The semaphore value. By default it is 500.
      */
-    public int getAuditorGetLedgerSemaphore() {
-        return getInt(AUDITOR_GET_LEDGER_SEMAPHORE, 500);
+    public int getAuditorMaxNumberOfConcurrentOpenLedgerOperations() {
+        return getInt(AUDITOR_MAX_NUMBER_OF_CONCURRENT_OPEN_LEDGER_OPERATIONS, 500);
     }
 
     /**
      * Set the semaphore limit value for getting ledger from zookeeper in auto recovery.
      * @param semaphore
      */
-    public void setAuditorGetLedgerSemaphore(int semaphore) {
-        setProperty(AUDITOR_GET_LEDGER_SEMAPHORE, semaphore);
+    public void setAuditorMaxNumberOfConcurrentOpenLedgerOperations(int semaphore) {
+        setProperty(AUDITOR_MAX_NUMBER_OF_CONCURRENT_OPEN_LEDGER_OPERATIONS, semaphore);
+    }
+
+    /**
+     * Get the acquire concurrent open ledger operations timeout.
+     *
+     * @return The timeout values. By default it is 30s
+     */
+    public int getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutSec() {
+        return getInt(AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_SEC, 120);
+    }
+
+    /**
+     * Set the acquire concurrent open ledger operations timeout.
+     * @param timeoutMs
+     */
+    public void setAuditorAcquireConcurrentOpenLedgerOperationsTimeoutSec(int timeoutMs) {
+        setProperty(AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_SEC, timeoutMs);
     }
 
 

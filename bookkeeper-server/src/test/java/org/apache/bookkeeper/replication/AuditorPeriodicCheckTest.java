@@ -26,6 +26,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.netty.buffer.ByteBuf;
 
@@ -52,12 +61,14 @@ import org.apache.bookkeeper.bookie.BookieAccessor;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
+import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
@@ -77,6 +88,8 @@ import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -368,32 +381,47 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testGetLedgerFromZookeeperThrottled() throws Exception {
-        for (AuditorElector e : auditorElectors.values()) {
-            e.shutdown();
-        }
+        final int numberLedgers = 30;
 
-        final int numberLedgers = 100;
         // write ledgers into bookkeeper cluster
-        for (int i = 0; i < numberLedgers; ++i) {
-            LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
-            for (int j = 0; j < 5; j++) {
-                lh.addEntry("testdata".getBytes());
+        try {
+            for (AuditorElector e : auditorElectors.values()) {
+                e.shutdown();
             }
-            lh.close();
+
+            for (int i = 0; i < numberLedgers; ++i) {
+                LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
+                for (int j = 0; j < 5; j++) {
+                    lh.addEntry("testdata".getBytes());
+                }
+                lh.close();
+            }
+        } catch (InterruptedException | BKException e) {
+            LOG.error("Failed to shutdown auditor elector or write data to ledgers ", e);
+            fail();
         }
 
         // create auditor and call `checkAllLedgers`
         ServerConfiguration configuration = confByIndex(0);
-        configuration.setAuditorGetLedgerSemaphore(5);
-        try (final Auditor auditor = new Auditor(
-            BookieImpl.getBookieId(configuration).toString(),
-            configuration, NullStatsLogger.INSTANCE)) {
+        configuration.setAuditorMaxNumberOfConcurrentOpenLedgerOperations(10);
+
+        Auditor auditor1 = new Auditor(BookieImpl.getBookieId(configuration).toString(),
+            configuration, NullStatsLogger.INSTANCE);
+        Auditor auditor = Mockito.spy(auditor1);
+
+        BookKeeper bookKeeper = Mockito.spy(auditor.getBookKeeper(configuration));
+        BookKeeperAdmin admin = Mockito.spy(auditor.getBookKeeperAdmin(bookKeeper));
+        when(auditor.getBookKeeper(configuration)).thenReturn(bookKeeper);
+        when(auditor.getBookKeeperAdmin(bookKeeper)).thenReturn(admin);
+
+        try {
             auditor.checkAllLedgers();
+            verify(admin, times(numberLedgers)).asyncOpenLedgerNoRecovery(anyLong(),
+                any(AsyncCallback.OpenCallback.class), eq(null));
         } catch (Exception e) {
             LOG.error("Caught exception while checking all ledgers ", e);
             fail();
         }
-
     }
 
     @Test

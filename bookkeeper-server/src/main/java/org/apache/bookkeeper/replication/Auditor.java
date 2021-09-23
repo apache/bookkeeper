@@ -165,7 +165,8 @@ public class Auditor implements AutoCloseable {
     private final AtomicInteger numLedgersFoundHavingLessThanWQReplicasOfAnEntry;
     private final long underreplicatedLedgerRecoveryGracePeriod;
     private final int zkOpTimeoutMs;
-    private final Semaphore semaphore;
+    private final Semaphore openLedgerNoRecoverySemaphore;
+    private final int openLedgerNoRecoverySemaphoreWaitTimeoutSec;
 
     private final StatsLogger statsLogger;
     @StatsDoc(
@@ -348,7 +349,20 @@ public class Auditor implements AutoCloseable {
         this.numLedgersFoundHavingLessThanAQReplicasOfAnEntry = new AtomicInteger(0);
         this.numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue = new AtomicInteger(0);
         this.numLedgersFoundHavingLessThanWQReplicasOfAnEntry = new AtomicInteger(0);
-        this.semaphore = new Semaphore(conf.getAuditorGetLedgerSemaphore());
+
+        if (conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations() <= 0) {
+            LOG.error("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
+            throw new UnavailableException("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
+        }
+        this.openLedgerNoRecoverySemaphore = new Semaphore(conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations());
+
+        if (conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutSec() < 0) {
+            LOG.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutSec should be greater than or equal to 0");
+            throw new UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutSec " +
+                "should be greater than or equal to 0");
+        }
+        this.openLedgerNoRecoverySemaphoreWaitTimeoutSec =
+            conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutSec();
 
         numUnderReplicatedLedger = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
         underReplicatedLedgerTotalSize = this.statsLogger.getOpStatsLogger(UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);
@@ -1207,12 +1221,32 @@ public class Auditor implements AutoCloseable {
     }
 
     /**
+     * Get BookKeeper client according to configuration.
+     * @param conf
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    BookKeeper getBookKeeper(ServerConfiguration conf) throws IOException, InterruptedException {
+        return createBookKeeperClient(conf);
+    }
+
+    /**
+     * Get BookKeeper admin according to bookKeeper client.
+     * @param bookKeeper
+     * @return
+     */
+    BookKeeperAdmin getBookKeeperAdmin(final BookKeeper bookKeeper) {
+        return new BookKeeperAdmin(bookKeeper, statsLogger);
+    }
+
+    /**
      * List all the ledgers and check them individually. This should not
      * be run very often.
      */
     void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
-        final BookKeeper localClient = createBookKeeperClient(conf);
-        final BookKeeperAdmin localAdmin = new BookKeeperAdmin(localClient, statsLogger);
+        final BookKeeper localClient = getBookKeeper(conf);
+        final BookKeeperAdmin localAdmin = getBookKeeperAdmin(localClient);
 
         try {
             final LedgerChecker checker = new LedgerChecker(localClient);
@@ -1233,15 +1267,21 @@ public class Auditor implements AutoCloseable {
                 }
 
                 try {
-                    semaphore.acquire();
-                } catch (InterruptedException e) {
+                    if (!openLedgerNoRecoverySemaphore.tryAcquire(openLedgerNoRecoverySemaphoreWaitTimeoutSec,
+                        TimeUnit.SECONDS)) {
+                        LOG.warn("Failed to acquire semaphore for {} s, ledgerId: {}",
+                            openLedgerNoRecoverySemaphoreWaitTimeoutSec, ledgerId);
+                        throw new BKAuditException("Timeout while waiting for acquiring semaphore");
+                    }
+                } catch (InterruptedException | BKAuditException e) {
                     LOG.error("Unable to acquire open ledger operation semaphore ", e);
+                    Thread.currentThread().interrupt();
                     FutureUtils.complete(processFuture, null);
                     return;
                 }
 
                 localAdmin.asyncOpenLedgerNoRecovery(ledgerId, (rc, lh, ctx) -> {
-                    semaphore.release();
+                    openLedgerNoRecoverySemaphore.release();
                     if (Code.OK == rc) {
                         checker.checkLedger(lh,
                                 // the ledger handle will be closed after checkLedger is done.
