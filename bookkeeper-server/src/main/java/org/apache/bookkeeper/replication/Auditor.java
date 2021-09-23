@@ -34,8 +34,10 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_HAV
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_HAVING_NO_REPLICA_OF_AN_ENTRY;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_REPLICATED_LEDGERS;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDERREPLICATED_LEDGERS_ELAPSED_RECOVERY_GRACE_PERIOD;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS_GUAGE;
 import static org.apache.bookkeeper.replication.ReplicationStats.PLACEMENT_POLICY_CHECK_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICAS_CHECK_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.UNDER_REPLICATED_LEDGERS_TOTAL_SIZE;
@@ -45,6 +47,7 @@ import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
@@ -163,6 +166,7 @@ public class Auditor implements AutoCloseable {
     private final AtomicInteger numLedgersFoundHavingLessThanAQReplicasOfAnEntry;
     private final AtomicInteger numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue;
     private final AtomicInteger numLedgersFoundHavingLessThanWQReplicasOfAnEntry;
+    private final AtomicInteger underReplicatedLedgersGuageValue;
     private final long underreplicatedLedgerRecoveryGracePeriod;
     private final int zkOpTimeoutMs;
     private final Semaphore openLedgerNoRecoverySemaphore;
@@ -236,6 +240,11 @@ public class Auditor implements AutoCloseable {
     )
     private final Counter numDelayedBookieAuditsCancelled;
     @StatsDoc(
+            name = NUM_REPLICATED_LEDGERS,
+            help = "the number of replicated ledgers"
+    )
+    private final Counter numReplicatedLedgers;
+    @StatsDoc(
             name = NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY,
             help = "Gauge for number of ledgers not adhering to placement policy found in placement policy check"
     )
@@ -267,6 +276,11 @@ public class Auditor implements AutoCloseable {
                     + ", this doesn't include ledgers counted towards numLedgersHavingLessThanAQReplicasOfAnEntry"
     )
     private final Gauge<Integer> numLedgersHavingLessThanWQReplicasOfAnEntry;
+    @StatsDoc(
+            name = NUM_UNDER_REPLICATED_LEDGERS_GUAGE,
+            help = "Gauge for num of underreplicated ledgers"
+    )
+    private final Gauge<Integer> numUnderReplicatedLedgers;
 
     static BookKeeper createBookKeeperClient(ServerConfiguration conf) throws InterruptedException, IOException {
         return createBookKeeperClient(conf, NullStatsLogger.INSTANCE);
@@ -364,6 +378,7 @@ public class Auditor implements AutoCloseable {
         this.openLedgerNoRecoverySemaphoreWaitTimeoutMSec =
             conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec();
 
+        this.underReplicatedLedgersGuageValue = new AtomicInteger(0);
         numUnderReplicatedLedger = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
         underReplicatedLedgerTotalSize = this.statsLogger.getOpStatsLogger(UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);
         uRLPublishTimeForLostBookies = this.statsLogger
@@ -380,6 +395,7 @@ public class Auditor implements AutoCloseable {
         numBookieAuditsDelayed = this.statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
         numDelayedBookieAuditsCancelled = this.statsLogger
                 .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
+        numReplicatedLedgers = this.statsLogger.getCounter(NUM_REPLICATED_LEDGERS);
         numLedgersNotAdheringToPlacementPolicy = new Gauge<Integer>() {
             @Override
             public Integer getDefaultValue() {
@@ -460,6 +476,18 @@ public class Auditor implements AutoCloseable {
         };
         this.statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_HAVING_LESS_THAN_WQ_REPLICAS_OF_AN_ENTRY,
                 numLedgersHavingLessThanWQReplicasOfAnEntry);
+        numUnderReplicatedLedgers = new Gauge<Integer>() {
+            @Override
+            public Integer getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Integer getSample() {
+                return underReplicatedLedgersGuageValue.get();
+            }
+        };
+        this.statsLogger.registerGauge(NUM_UNDER_REPLICATED_LEDGERS_GUAGE, numUnderReplicatedLedgers);
 
         this.bkc = bkc;
         this.ownBkc = ownBkc;
@@ -703,6 +731,15 @@ public class Auditor implements AutoCloseable {
                         .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
             } catch (UnavailableException ue) {
                 LOG.error("Exception while registering for LostBookieRecoveryDelay change notification, so exiting",
+                        ue);
+                submitShutdownTask();
+            }
+
+            try {
+                this.ledgerUnderreplicationManager.notifyUnderReplicationLedgerChanged(
+                        new UnderReplicatedLedgersChangedCb());
+            } catch (UnavailableException ue) {
+                LOG.error("Exception while registering for under-replicated ledgers change notification, so exiting",
                         ue);
                 submitShutdownTask();
             }
@@ -1012,6 +1049,16 @@ public class Auditor implements AutoCloseable {
                 }
             }
         }), initialDelay, interval, TimeUnit.SECONDS);
+    }
+
+    private class UnderReplicatedLedgersChangedCb implements GenericCallback<Void> {
+        @Override
+        public void operationComplete(int rc, Void result) {
+            Iterator<UnderreplicatedLedger> underreplicatedLedgersInfo = ledgerUnderreplicationManager
+                    .listLedgersToRereplicate(null);
+            underReplicatedLedgersGuageValue.set(Iterators.size(underreplicatedLedgersInfo));
+            numReplicatedLedgers.inc();
+        }
     }
 
     private class LostBookieRecoveryDelayChangedCb implements GenericCallback<Void> {
