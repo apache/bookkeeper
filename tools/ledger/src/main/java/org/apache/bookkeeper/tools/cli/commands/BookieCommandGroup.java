@@ -21,6 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands;
 import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
 
 import org.apache.bookkeeper.tools.cli.BKCtl;
+import org.apache.bookkeeper.tools.cli.commands.bookie.CheckDBLedgersIndexCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FlipBookieIdCommand;
@@ -36,6 +37,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgerLocationsIndexCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgersIndexCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStorageIndexFileCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.EndpointInfoCommand;
@@ -68,6 +70,8 @@ public class BookieCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new ConvertToInterleavedStorageCommand())
         .addCommand(new ReadJournalCommand())
         .addCommand(new RebuildDBLedgerLocationsIndexCommand())
+        .addCommand(new RebuildDBLedgersIndexCommand())
+        .addCommand(new CheckDBLedgersIndexCommand())
         .addCommand(new ReadLedgerCommand())
         .addCommand(new ReadLogCommand())
         .addCommand(new ReadLogMetadataCommand())

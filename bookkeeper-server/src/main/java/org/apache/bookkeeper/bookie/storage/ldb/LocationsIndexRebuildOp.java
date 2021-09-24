@@ -46,7 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Scan all entries in the entry log and rebuild the ledgerStorageIndex.
+ * Scan all entries in the entry log and rebuild the locations index.
  */
 public class LocationsIndexRebuildOp {
     private final ServerConfiguration conf;
@@ -56,7 +56,7 @@ public class LocationsIndexRebuildOp {
     }
 
     public void initiate() throws IOException {
-        LOG.info("Starting index rebuilding");
+        LOG.info("Starting locations index rebuilding");
 
         // Move locations index to a backup directory
         String basePath = BookieImpl.getCurrentDirectory(conf.getLedgerDirs()[0]).toString();
