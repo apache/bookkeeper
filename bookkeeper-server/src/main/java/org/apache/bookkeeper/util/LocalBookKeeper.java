@@ -123,7 +123,9 @@ public class LocalBookKeeper {
 
         boolean b = waitForServerUp(InetAddress.getLoopbackAddress().getHostAddress() + ":" + zookeeperPort,
           CONNECTION_TIMEOUT);
-        LOG.debug("ZooKeeper server up: {}", b);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("ZooKeeper server up: {}", b);
+        }
         return server;
     }
 
