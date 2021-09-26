@@ -20,7 +20,9 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.common.util.JsonUtil;
@@ -61,16 +63,17 @@ public class BookieStateReadOnlyService implements HttpEndpointService {
             return response;
         }
 
-        ReadOnlyState outState = new ReadOnlyState();
-        outState.setReadOnly(stateManager.isReadOnly());
+        ReadOnlyState outState = new ReadOnlyState(stateManager.isReadOnly());
         response.setBody(JsonUtil.toJson(outState));
         response.setCode(HttpServer.StatusCode.OK);
 
         return response;
     }
 
-    @Data
-    static class ReadOnlyState {
-        boolean readOnly;
+    @Data()
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ReadOnlyState {
+        private boolean readOnly;
     }
 }
