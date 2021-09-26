@@ -70,9 +70,12 @@ public class BookieStateReadOnlyService implements HttpEndpointService {
         return response;
     }
 
-    @Data()
+    /**
+     * The object represent the readOnly state.
+     */
     @AllArgsConstructor
     @NoArgsConstructor
+    @Data
     public static class ReadOnlyState {
         private boolean readOnly;
     }
