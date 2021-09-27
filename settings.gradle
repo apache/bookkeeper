@@ -23,6 +23,8 @@ pluginManagement {
         id "com.github.johnrengelman.shadow" version "${shadowPluginVersion}"
         id "com.github.hierynomus.license" version "${licenseGradlePluginVersion}"
         id "com.github.spotbugs" version "${spotbugsPlugin}"
+        id "com.adarshr.test-logger" version  "${testLogger}"
+        id "org.gradle.test-retry" version "${testRetry}"
     }
 }
 

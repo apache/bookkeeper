@@ -18,6 +18,8 @@
  */
 plugins {
     id 'java'
+    id 'com.adarshr.test-logger'
+    id 'org.gradle.test-retry'
 }
 
 dependencies {
@@ -74,6 +76,11 @@ dependencies {
 }
 
 test {
+    retry {
+        maxFailures = 200
+        maxRetries = 5
+    }
+
     maxHeapSize = '2G'
     forkEvery = 1
 }
