@@ -29,10 +29,6 @@ on:
       - 'site/**'
     workflow_dispatch:
 
-
-env:
-  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
-
 jobs:
   test:
 
@@ -50,14 +46,5 @@ jobs:
         with:
           java-version: 1.8
 
-      - name: Maven build bookkeeper-server
-        run: mvn -B -nsu -am -pl bookkeeper-server clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
-
-      - name: Run EntryLogTests
-        run: mvn -B -nsu -pl bookkeeper-server test -Dtest="org.apache.bookkeeper.bookie.TestEntryLog" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
-
-      - name: Run InterleavedLedgerStorageTest
-        run: mvn -B -nsu -pl bookkeeper-server test -Dtest="org.apache.bookkeeper.bookie.TestInterleavedLederStorage" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
-
-      - name: Run bookie tests
-        run: mvn -B -nsu -pl bookkeeper-server test -Dtest="org.apache.bookkeeper.bookie.*Test" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+      - name: Run bookie test
+        run: ./gradlew bookkeeper-server:test --tests="org.apache.bookkeeper.bookie.*" -Dtestlogger.theme=plain
