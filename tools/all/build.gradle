@@ -26,7 +26,6 @@ dependencies {
 
     implementation project(':bookkeeper-tools-ledger')
     implementation project(':bookkeeper-tools-stream')
-
     compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations
 

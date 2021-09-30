@@ -22,11 +22,12 @@ plugins {
 
 dependencies {
     implementation depLibs.grpc
-    implementation depLibs.lombok
+    testImplementation depLibs.googleHTTPClient
+    compileOnly depLibs.lombok
     implementation depLibs.slf4j
-
+    compileOnly depLibs.jsr305
     annotationProcessor depLibs.lombok
-    implementation depLibs.javaAnnotations
+    compileOnly depLibs.javaAnnotations
 }
 
 protobuf {

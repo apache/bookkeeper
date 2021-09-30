@@ -18,6 +18,7 @@
  */
 plugins {
     id 'java'
+    id 'com.adarshr.test-logger'
 }
 
 dependencies {
@@ -33,7 +34,9 @@ dependencies {
     implementation depLibs.jcommander
     implementation depLibs.slf4j
     implementation depLibs.zookeeper
-
+    implementation depLibs.nettyCodecHTTP2
+    implementation depLibs.nettyCodecHTTP
+    implementation depLibs.nettyProxy
     testImplementation project(":bookkeeper-stats")
     testCompileOnly depLibs.lombok
     testImplementation depLibs.junit

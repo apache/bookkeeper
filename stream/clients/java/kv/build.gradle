@@ -23,14 +23,16 @@ dependencies {
     implementation project(':stream:common')
     implementation project(':stream:proto')
     implementation depLibs.grpc
+    runtimeOnly depLibs.googleHTTPClient
     implementation depLibs.guava
-    implementation depLibs.lombok
+    compileOnly depLibs.lombok
     implementation depLibs.nettyBuffer
     implementation depLibs.protobuf
     implementation depLibs.slf4j
-
+    compileOnly depLibs.jsr305
     testImplementation project(path: ':stream:clients:java:base', configuration: 'testArtifacts')
     testImplementation depLibs.mockito
-
+    testImplementation depLibs.junit
+    testImplementation depLibs.lombok
     annotationProcessor depLibs.lombok
 }

@@ -23,19 +23,28 @@ dependencies {
     implementation project(':stream:proto')
 
     implementation depLibs.commonsLang2
-    compileOnly depLibs.freebuilder
+    implementation depLibs.freebuilder
+    compileOnly depLibs.jsr305
     implementation depLibs.grpc
-    implementation depLibs.lombok
+    runtimeOnly depLibs.googleHTTPClient
+    compileOnly depLibs.lombok
     implementation depLibs.slf4j
 
     testImplementation depLibs.mockito
 
+    testImplementation depLibs.freebuilder
+    testImplementation depLibs.junit
+    testImplementation depLibs.lombok
     annotationProcessor depLibs.freebuilder
     annotationProcessor depLibs.lombok
 }
 
 configurations {
     testCompile.exclude group:'io.grpc', module: 'grpc-netty-shaded'
+}
+
+jar {
+    archiveBaseName = 'stream-storage-java-client-base'
 }
 
 publishing {

@@ -18,6 +18,7 @@
  */
 plugins {
     id 'java'
+    id 'com.adarshr.test-logger'
 }
 
 dependencies {
@@ -52,4 +53,12 @@ dependencies {
 
 jar {
     archiveBaseName = 'stream-storage-cli'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'stream-storage-cli'
+        }
+    }
 }
