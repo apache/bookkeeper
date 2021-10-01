@@ -50,4 +50,4 @@ jobs:
       - name: Build with Maven
         run: mvn -B -nsu clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
       - name: Run StreamStorage tests
-        run: mvn -B -nsu -f stream/pom.xml verify -DstreamTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: ./gradlew build -x bookkeeper-server:test -x checkstyleMain -x checkstyleTest -x spotbugsTest -x spotbugsMain -x rat -x signDistTar -Dtestlogger.theme=plain

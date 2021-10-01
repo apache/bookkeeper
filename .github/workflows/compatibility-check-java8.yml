@@ -48,5 +48,5 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Build with Maven
-        run: mvn clean package -B -nsu spotbugs:check -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+      - name: Build with gradle
+        run: ./gradlew test -x tests:integration:cluster:test -x tests:integration:smoke:test -x tests:integration:standalone:test -Dtestlogger.theme=plain
