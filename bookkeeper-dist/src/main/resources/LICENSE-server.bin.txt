@@ -217,21 +217,21 @@ Apache Software License, Version 2.
 - lib/commons-io-commons-io-2.4.jar [8]
 - lib/commons-lang-commons-lang-2.6.jar [9]
 - lib/commons-logging-commons-logging-1.1.1.jar [10]
-- lib/io.netty-netty-buffer-4.1.63.Final.jar [11]
-- lib/io.netty-netty-codec-4.1.63.Final.jar [11]
-- lib/io.netty-netty-codec-dns-4.1.63.Final.jar [11]
-- lib/io.netty-netty-codec-http-4.1.63.Final.jar [11]
-- lib/io.netty-netty-codec-http2-4.1.63.Final.jar [11]
-- lib/io.netty-netty-codec-socks-4.1.63.Final.jar [11]
-- lib/io.netty-netty-common-4.1.63.Final.jar [11]
-- lib/io.netty-netty-handler-4.1.63.Final.jar [11]
-- lib/io.netty-netty-handler-proxy-4.1.63.Final.jar [11]
-- lib/io.netty-netty-resolver-4.1.63.Final.jar [11]
-- lib/io.netty-netty-resolver-dns-4.1.63.Final.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.38.Final.jar [11]
-- lib/io.netty-netty-transport-4.1.63.Final.jar [11]
-- lib/io.netty-netty-transport-native-epoll-4.1.63.Final-linux-x86_64.jar [11]
-- lib/io.netty-netty-transport-native-unix-common-4.1.63.Final.jar [11]
+- lib/io.netty-netty-buffer-4.1.68.Final.jar [11]
+- lib/io.netty-netty-codec-4.1.68.Final.jar [11]
+- lib/io.netty-netty-codec-dns-4.1.68.Final.jar [11]
+- lib/io.netty-netty-codec-http-4.1.68.Final.jar [11]
+- lib/io.netty-netty-codec-http2-4.1.68.Final.jar [11]
+- lib/io.netty-netty-codec-socks-4.1.68.Final.jar [11]
+- lib/io.netty-netty-common-4.1.68.Final.jar [11]
+- lib/io.netty-netty-handler-4.1.68.Final.jar [11]
+- lib/io.netty-netty-handler-proxy-4.1.68.Final.jar [11]
+- lib/io.netty-netty-resolver-4.1.68.Final.jar [11]
+- lib/io.netty-netty-resolver-dns-4.1.68.Final.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.42.Final.jar [11]
+- lib/io.netty-netty-transport-4.1.68.Final.jar [11]
+- lib/io.netty-netty-transport-native-epoll-4.1.68.Final-linux-x86_64.jar [11]
+- lib/io.netty-netty-transport-native-unix-common-4.1.68.Final.jar [11]
 - lib/io.prometheus-simpleclient-0.8.1.jar [12]
 - lib/io.prometheus-simpleclient_common-0.8.1.jar [12]
 - lib/io.prometheus-simpleclient_hotspot-0.8.1.jar [12]
@@ -309,7 +309,7 @@ Apache Software License, Version 2.
 [8] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-io.git;a=tag;h=603579
 [9] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=375459
 [10] Source available at http://svn.apache.org/viewvc/commons/proper/logging/tags/commons-logging-1.1.1/
-[11] Source available at https://github.com/netty/netty/tree/netty-4.1.63.Final
+[11] Source available at https://github.com/netty/netty/tree/netty-4.1.68.Final
 [12] Source available at https://github.com/prometheus/client_java/tree/parent-0.8.1
 [13] Source available at https://github.com/vert-x3/vertx-auth/tree/3.9.8
 [14] Source available at https://github.com/vert-x3/vertx-bridge-common/tree/3.9.8
@@ -348,229 +348,229 @@ Apache Software License, Version 2.
 [50] Source available at https://github.com/google/snappy/releases/tag/1.1.7
 
 ------------------------------------------------------------------------------------
-lib/io.netty-netty-codec-4.1.63.Final.jar bundles some 3rd party dependencies
+lib/io.netty-netty-codec-4.1.68.Final.jar bundles some 3rd party dependencies
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains the extensions to Java Collections Framework which has
+lib/io.netty-netty-codec-4.1.68.Final.jar contains the extensions to Java Collections Framework which has
 been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.jsr166y.txt (Public Domain)
+    * deps/netty-4.1.68.Final/LICENSE.jsr166y.txt (Public Domain)
   * HOMEPAGE:
     * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
     * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified version of Robert Harder's Public Domain
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified version of Robert Harder's Public Domain
 Base64 Encoder and Decoder, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.base64.txt (Public Domain)
+    * deps/netty-4.1.68.Final/LICENSE.base64.txt (Public Domain)
   * HOMEPAGE:
     * http://iharder.sourceforge.net/current/java/base64/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified portion of 'Webbit', an event based
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified portion of 'Webbit', an event based
 WebSocket and HTTP server, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.webbit.txt (BSD License)
+    * deps/netty-4.1.68.Final/LICENSE.webbit.txt (BSD License)
   * HOMEPAGE:
     * https://github.com/joewalnes/webbit
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified portion of 'SLF4J', a simple logging
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified portion of 'SLF4J', a simple logging
 facade for Java, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.slf4j.txt (MIT License)
+    * deps/netty-4.1.68.Final/LICENSE.slf4j.txt (MIT License)
   * HOMEPAGE:
     * http://www.slf4j.org/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified portion of 'Apache Harmony', an open source
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified portion of 'Apache Harmony', an open source
 Java SE, which can be obtained at:
 
   * NOTICE:
-    * deps/netty-4.1.63.Final/NOTICE.harmony.txt
+    * deps/netty-4.1.68.Final/NOTICE.harmony.txt
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.harmony.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.harmony.txt (Apache License 2.0)
   * HOMEPAGE:
     * http://archive.apache.org/dist/harmony/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
 and decompression library written by Matthew J. Francis. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.jbzip2.txt (MIT License)
+    * deps/netty-4.1.68.Final/LICENSE.jbzip2.txt (MIT License)
   * HOMEPAGE:
     * https://code.google.com/p/jbzip2/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
 the suffix array and the Burrows-Wheeler transformed string for any input string of
 a constant-size alphabet written by Yuta Mori. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.libdivsufsort.txt (MIT License)
+    * deps/netty-4.1.68.Final/LICENSE.libdivsufsort.txt (MIT License)
   * HOMEPAGE:
     * https://github.com/y-256/libdivsufsort
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified portion of Nitsan Wakart's 'JCTools',
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified portion of Nitsan Wakart's 'JCTools',
 Java Concurrency Tools for the JVM, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.jctools.txt (ASL2 License)
+    * deps/netty-4.1.68.Final/LICENSE.jctools.txt (ASL2 License)
   * HOMEPAGE:
     * https://github.com/JCTools/JCTools
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'JZlib', a re-implementation of zlib in
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'JZlib', a re-implementation of zlib in
 pure Java, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.jzlib.txt (BSD style License)
+    * deps/netty-4.1.68.Final/LICENSE.jzlib.txt (BSD style License)
   * HOMEPAGE:
     * http://www.jcraft.com/jzlib/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'Compress-LZF', a Java library for encoding and
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'Compress-LZF', a Java library for encoding and
 decoding data in LZF format, written by Tatu Saloranta. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.compress-lzf.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.compress-lzf.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/ning/compress
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'lz4', a LZ4 Java compression
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'lz4', a LZ4 Java compression
 and decompression library written by Adrien Grand. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.lz4.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.lz4.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/jpountz/lz4-java
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'lzma-java', a LZMA Java compression
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'lzma-java', a LZMA Java compression
 and decompression library, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.lzma-java.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.lzma-java.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/jponge/lzma-java
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
 and decompression library written by William Kinney. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.jfastlz.txt (MIT License)
+    * deps/netty-4.1.68.Final/LICENSE.jfastlz.txt (MIT License)
   * HOMEPAGE:
     * https://code.google.com/p/jfastlz/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers',
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers',
 Google's data interchange format, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.protobuf.txt (New BSD License)
+    * deps/netty-4.1.68.Final/LICENSE.protobuf.txt (New BSD License)
   * HOMEPAGE:
     * https://github.com/google/protobuf
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'Bouncy Castle Crypto APIs' to generate
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'Bouncy Castle Crypto APIs' to generate
 a temporary self-signed X.509 certificate when the JVM does not provide the
 equivalent functionality.  It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.bouncycastle.txt (MIT License)
+    * deps/netty-4.1.68.Final/LICENSE.bouncycastle.txt (MIT License)
   * HOMEPAGE:
     * http://www.bouncycastle.org/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'Snappy', a compression library produced
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'Snappy', a compression library produced
 by Google Inc, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.snappy.txt (New BSD License)
+    * deps/netty-4.1.68.Final/LICENSE.snappy.txt (New BSD License)
   * HOMEPAGE:
     * https://github.com/google/snappy
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'JBoss Marshalling', an alternative Java
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'JBoss Marshalling', an alternative Java
 serialization API, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.jboss-marshalling.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.jboss-marshalling.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/jboss-remoting/jboss-marshalling
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'Caliper', Google's micro-
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'Caliper', Google's micro-
 benchmarking framework, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.caliper.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.caliper.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/google/caliper
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'Apache Commons Logging', a logging
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'Apache Commons Logging', a logging
 framework, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.commons-logging.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.commons-logging.txt (Apache License 2.0)
   * HOMEPAGE:
     * http://commons.apache.org/logging/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'Apache Log4J', a logging framework, which
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'Apache Log4J', a logging framework, which
 can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.log4j.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.log4j.txt (Apache License 2.0)
   * HOMEPAGE:
     * http://logging.apache.org/log4j/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar optionally depends on 'Aalto XML', an ultra-high performance
+lib/io.netty-netty-codec-4.1.68.Final.jar optionally depends on 'Aalto XML', an ultra-high performance
 non-blocking XML processor, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.aalto-xml.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.aalto-xml.txt (Apache License 2.0)
   * HOMEPAGE:
     * http://wiki.fasterxml.com/AaltoHome
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified version of 'HPACK', a Java implementation of
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified version of 'HPACK', a Java implementation of
 the HTTP/2 HPACK algorithm written by Twitter. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.hpack.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.hpack.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/twitter/hpack
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified version of 'HPACK', a Java implementation of
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified version of 'HPACK', a Java implementation of
 the HTTP/2 HPACK algorithm written by Cory Benfield. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.hyper-hpack.txt (MIT License)
+    * deps/netty-4.1.68.Final/LICENSE.hyper-hpack.txt (MIT License)
   * HOMEPAGE:
     * https://github.com/python-hyper/hpack/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified version of 'HPACK', a Java implementation of
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified version of 'HPACK', a Java implementation of
 the HTTP/2 HPACK algorithm written by Tatsuhiro Tsujikawa. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.nghttp2-hpack.txt (MIT License)
+    * deps/netty-4.1.68.Final/LICENSE.nghttp2-hpack.txt (MIT License)
   * HOMEPAGE:
     * https://github.com/nghttp2/nghttp2/
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains a modified portion of 'Apache Commons Lang', a Java library
+lib/io.netty-netty-codec-4.1.68.Final.jar contains a modified portion of 'Apache Commons Lang', a Java library
 provides utilities for the java.lang API, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.commons-lang.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.commons-lang.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://commons.apache.org/proper/commons-lang/
 
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains the Maven wrapper scripts from 'Maven Wrapper',
+lib/io.netty-netty-codec-4.1.68.Final.jar contains the Maven wrapper scripts from 'Maven Wrapper',
 that provides an easy way to ensure a user has everything necessary to run the Maven build.
 
   * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.mvn-wrapper.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.mvn-wrapper.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/takari/maven-wrapper
 
-lib/io.netty-netty-codec-4.1.63.Final.jar contains the dnsinfo.h header file,
+lib/io.netty-netty-codec-4.1.68.Final.jar contains the dnsinfo.h header file,
 that provides a way to retrieve the system DNS configuration on MacOS.
 This private header is also used by Apple's open source
  mDNSResponder (https://opensource.apple.com/tarballs/mDNSResponder/).
 
  * LICENSE:
-    * deps/netty-4.1.63.Final/LICENSE.dnsinfo.txt (Apache License 2.0)
+    * deps/netty-4.1.68.Final/LICENSE.dnsinfo.txt (Apache License 2.0)
   * HOMEPAGE:
     * http://www.opensource.apple.com/source/configd/configd-453.19/dnsinfo/dnsinfo.h
 
