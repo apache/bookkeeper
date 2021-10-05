@@ -215,9 +215,17 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
 
     private Set<Long> removeOverReplicatedledgers(Set<Long> bkActiveledgers, final GarbageCleaner garbageCleaner)
             throws Exception {
+        // Check ledger ensembles before creating lock nodes.
+        // This is to reduce the number of lock node creations and deletions in ZK.
+        // The ensemble check is done again after the lock node is created.
+        final Set<Long> candidateOverReplicatedLedgers = preCheckOverReplicatedLedgers(bkActiveledgers);
+        if (candidateOverReplicatedLedgers.isEmpty()) {
+            return candidateOverReplicatedLedgers;
+        }
+
         final Set<Long> overReplicatedLedgers = Sets.newHashSet();
         final Semaphore semaphore = new Semaphore(MAX_CONCURRENT_METADATA_REQUESTS);
-        final CountDownLatch latch = new CountDownLatch(bkActiveledgers.size());
+        final CountDownLatch latch = new CountDownLatch(candidateOverReplicatedLedgers.size());
         // instantiate zookeeper client to initialize ledger manager
 
         @Cleanup
@@ -229,7 +237,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         @Cleanup
         LedgerUnderreplicationManager lum = lmf.newLedgerUnderreplicationManager();
 
-        for (final Long ledgerId : bkActiveledgers) {
+        for (final Long ledgerId : candidateOverReplicatedLedgers) {
             try {
                 // check if the ledger is being replicated already by the replication worker
                 if (lum.isLedgerBeingReplicated(ledgerId)) {
@@ -245,23 +253,12 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                     .whenComplete((metadata, exception) -> {
                             try {
                                 if (exception == null) {
-                                    // do not delete a ledger that is not closed, since the ensemble might
-                                    // change again and include the current bookie while we are deleting it
-                                    if (!metadata.getValue().isClosed()) {
-                                        return;
+                                    if (isNotBookieIncludedInLedgerEnsembles(metadata)) {
+                                        // this bookie is not supposed to have this ledger,
+                                        // thus we can delete this ledger now
+                                        overReplicatedLedgers.add(ledgerId);
+                                        garbageCleaner.clean(ledgerId);
                                     }
-                                    SortedMap<Long, ? extends List<BookieId>> ensembles =
-                                        metadata.getValue().getAllEnsembles();
-                                    for (List<BookieId> ensemble : ensembles.values()) {
-                                        // check if this bookie is supposed to have this ledger
-                                        if (ensemble.contains(selfBookieAddress)) {
-                                            return;
-                                        }
-                                    }
-                                    // this bookie is not supposed to have this ledger,
-                                    // thus we can delete this ledger now
-                                    overReplicatedLedgers.add(ledgerId);
-                                    garbageCleaner.clean(ledgerId);
                                 }
                             } finally {
                                 semaphore.release();
@@ -302,4 +299,54 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         }
     }
 
+    private Set<Long> preCheckOverReplicatedLedgers(Set<Long> bkActiveLedgers) throws InterruptedException {
+        final Set<Long> candidateOverReplicatedLedgers = Sets.newHashSet();
+        final Semaphore semaphore = new Semaphore(MAX_CONCURRENT_METADATA_REQUESTS);
+        final CountDownLatch latch = new CountDownLatch(bkActiveLedgers.size());
+
+        for (final Long ledgerId : bkActiveLedgers) {
+            try {
+                semaphore.acquire();
+                ledgerManager.readLedgerMetadata(ledgerId)
+                        .whenComplete((metadata, exception) -> {
+                            try {
+                                if (exception == null) {
+                                    if (isNotBookieIncludedInLedgerEnsembles(metadata)) {
+                                        candidateOverReplicatedLedgers.add(ledgerId);
+                                    }
+                                }
+                            } finally {
+                                semaphore.release();
+                                latch.countDown();
+                            }
+                        });
+            } catch (Throwable t) {
+                LOG.error("Exception when iterating through the ledgers to pre-check for over-replication", t);
+                latch.countDown();
+            }
+        }
+        latch.await();
+        LOG.info("Finished pre-check over-replicated ledgers. candidateOverReplicatedLedgersSize={}",
+                candidateOverReplicatedLedgers.size());
+        return candidateOverReplicatedLedgers;
+    }
+
+    private boolean isNotBookieIncludedInLedgerEnsembles(Versioned<LedgerMetadata> metadata) {
+        // do not delete a ledger that is not closed, since the ensemble might
+        // change again and include the current bookie while we are deleting it
+        if (!metadata.getValue().isClosed()) {
+            return false;
+        }
+
+        SortedMap<Long, ? extends List<BookieId>> ensembles =
+                metadata.getValue().getAllEnsembles();
+        for (List<BookieId> ensemble : ensembles.values()) {
+            // check if this bookie is supposed to have this ledger
+            if (ensemble.contains(selfBookieAddress)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
