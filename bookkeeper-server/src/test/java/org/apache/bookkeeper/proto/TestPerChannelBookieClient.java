@@ -314,7 +314,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         EventLoopGroup eventLoopGroup = new EpollEventLoopGroup();
         OrderedExecutor executor = getOrderedSafeExecutor();
         ClientConfiguration conf = new ClientConfiguration();
-        int tcpUserTimeout = 1234;
+        int tcpUserTimeout = 1236; // this value may be rounded on some Linux implementations
         BookieId addr = getBookie(0);
 
         // Pass to the PerChannelBookieClient object the client configuration with TCP user timeout.
