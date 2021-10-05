@@ -568,9 +568,11 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 MultiCallback mcb = new MultiCallback(zkActiveLedgers.size(), finalCb, ctx,
                                                       successRc, failureRc);
                 // start loop over all ledgers
-                for (Long ledger : zkActiveLedgers) {
-                    processor.process(ledger, mcb);
-                }
+                scheduler.submit(() -> {
+                    for (Long ledger : zkActiveLedgers) {
+                        processor.process(ledger, mcb);
+                    }
+                });
             }
         });
     }
