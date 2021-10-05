@@ -101,6 +101,7 @@ allprojects {
                     '**/out/**',
                     '**/generated/**',
                     '**/build/**',
+                    '**/target/**',
                     '**/.idea/**',
                     '.git/**/*',
                     '.github/**/*',
