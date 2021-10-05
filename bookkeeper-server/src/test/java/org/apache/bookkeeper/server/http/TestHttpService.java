@@ -855,6 +855,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response1 = bookieStateServer.handle(request1);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        assertEquals("OK", response1.getBody());
 
         // Try using POST instead of GET
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
