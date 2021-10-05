@@ -36,7 +36,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 /**
  * A test base for testing cookie commands.
  */
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({ MetadataDrivers.class })
 public class CookieCommandTestBase extends CommandTestBase {
 
