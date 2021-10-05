@@ -71,7 +71,7 @@ public class MathUtils {
      * the only conversion happens when computing the elapsed time.
      *
      * @param startNanoTime the start of the interval that we are measuring
-     * @return elapsed time in milliseconds.
+     * @return elapsed time in microseconds.
      */
     public static long elapsedMicroSec(long startNanoTime) {
         return TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - startNanoTime);
@@ -82,7 +82,7 @@ public class MathUtils {
      * the only conversion happens when computing the elapsed time.
      *
      * @param startNanoTime the start of the interval that we are measuring
-     * @return elapsed time in milliseconds.
+     * @return elapsed time in nanoseconds.
      */
     public static long elapsedNanos(long startNanoTime) {
        return System.nanoTime() - startNanoTime;
