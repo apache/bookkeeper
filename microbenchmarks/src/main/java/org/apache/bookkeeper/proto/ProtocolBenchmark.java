@@ -45,7 +45,6 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.slf4j.MDC;
 
 /**
  * Benchmarking serialization and deserialization.

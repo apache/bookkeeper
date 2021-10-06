@@ -143,7 +143,6 @@ import org.apache.bookkeeper.util.collections.SynchronizedHashMultiMap;
 import org.apache.logging.log4j.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 /**
  * This class manages all details of connection to a particular bookie. It also

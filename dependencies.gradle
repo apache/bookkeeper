@@ -150,6 +150,7 @@ depLibs = [
     reflections: "org.reflections:reflections:${depVersions.reflections}",
     rocksDb: "org.rocksdb:rocksdbjni:${depVersions.rocksDb}",
     slf4j: "org.slf4j:slf4j-api:${depVersions.slf4j}",
+    slf4jSimple: "org.slf4j:slf4j-simple:${depVersions.slf4j}",
     slf4jLog4jImpl: "org.apache.logging.log4j:log4j-slf4j-impl:${depVersions.log4j}",
     slf4jLog4j: "org.apache.logging.log4j:log4j-1.2-api:${depVersions.log4j}",
     log4jCore: "org.apache.logging.log4j:log4j-core:${depVersions.log4j}",

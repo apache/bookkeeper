@@ -466,7 +466,7 @@ public class OrderedExecutor implements ExecutorService {
     }
 
     /**
-     * Flag describing executor's expectation in regards of ThreadContext (formerlly named MDC).
+     * Flag describing executor's expectation in regards of ThreadContext (formerly named MDC).
      * All tasks submitted through executor's submit/execute methods will automatically respect this.
      *
      * @return true if runnable/callable is expected to preserve MDC, false otherwise.

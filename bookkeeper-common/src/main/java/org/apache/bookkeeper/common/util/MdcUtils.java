@@ -24,7 +24,6 @@ package org.apache.bookkeeper.common.util;
 import java.util.Map;
 
 import org.apache.logging.log4j.ThreadContext;
-import org.slf4j.MDC;
 
 /**
  * Utils for work with Slf4j ThreadContext (formerly named MDC).
