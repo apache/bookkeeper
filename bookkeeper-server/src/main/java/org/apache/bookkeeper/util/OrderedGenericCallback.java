@@ -24,6 +24,7 @@ import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.logging.log4j.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -47,7 +48,7 @@ public abstract class OrderedGenericCallback<T> implements GenericCallback<T> {
     public OrderedGenericCallback(OrderedExecutor executor, long orderingKey) {
         this.executor = executor;
         this.orderingKey = orderingKey;
-        this.mdcContextMap = executor.preserveMdc() ? MDC.getCopyOfContextMap() : null;
+        this.mdcContextMap = executor.preserveMdc() ? ThreadContext.getContext() : null;
     }
 
     @Override
@@ -80,7 +81,7 @@ public abstract class OrderedGenericCallback<T> implements GenericCallback<T> {
                 }
             }
         } finally {
-            MDC.clear();
+            ThreadContext.clearAll();
         }
     }
 

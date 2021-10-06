@@ -23,18 +23,19 @@ package org.apache.bookkeeper.common.util;
 
 import java.util.Map;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.slf4j.MDC;
 
 /**
- * Utils for work with Slf4j MDC.
+ * Utils for work with Slf4j ThreadContext (formerly named MDC).
  */
 public class MdcUtils {
 
     public static void restoreContext(Map<String, String> mdcContextMap) {
         if (mdcContextMap == null || mdcContextMap.isEmpty()) {
-            MDC.clear();
+            ThreadContext.clearAll();
         } else {
-            MDC.setContextMap(mdcContextMap);
+            ThreadContext.putAll(mdcContextMap);
         }
     }
 }

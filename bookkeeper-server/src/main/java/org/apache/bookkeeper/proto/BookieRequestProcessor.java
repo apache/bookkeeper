@@ -57,6 +57,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
+import org.apache.logging.log4j.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -357,7 +358,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                         break;
                 }
             } finally {
-                MDC.clear();
+                ThreadContext.clearAll();
             }
         } else {
             BookieProtocol.Request r = (BookieProtocol.Request) msg;
@@ -395,9 +396,9 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     private void restoreMdcContextFromRequest(BookkeeperProtocol.Request req) {
         if (preserveMdcForTaskExecution) {
-            MDC.clear();
+            ThreadContext.clearAll();
             for (BookkeeperProtocol.ContextPair pair: req.getRequestContextList()) {
-                MDC.put(pair.getKey(), pair.getValue());
+                ThreadContext.put(pair.getKey(), pair.getValue());
             }
         }
     }

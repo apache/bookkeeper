@@ -26,19 +26,22 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
 import static org.mockito.AdditionalAnswers.answerVoid;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Appender;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
 import org.apache.log4j.MDC;
 import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.NullAppender;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +56,7 @@ public class TestOrderedExecutorDecorators {
     private static final Logger log = LoggerFactory.getLogger(TestOrderedExecutorDecorators.class);
     private static final String MDC_KEY = "mdc-key";
 
-    private Appender mockAppender;
+    private NullAppender mockAppender;
     private final Queue<String> capturedEvents = new ConcurrentLinkedQueue<>();
 
     public static String mdcFormat(Object mdc, String message) {
@@ -62,24 +65,28 @@ public class TestOrderedExecutorDecorators {
 
     @Before
     public void setUp() throws Exception {
-        MDC.clear();
-        mockAppender = mock(Appender.class);
-        when(mockAppender.getName()).thenReturn("MockAppender");
+        ThreadContext.clearAll();
+        LoggerContext lc = (LoggerContext) org.apache.logging.log4j.LogManager.getContext(false);
+        mockAppender = spy(NullAppender.createAppender(UUID.randomUUID().toString()));
+        mockAppender.start();
+        lc.getConfiguration().addAppender(mockAppender);
+        lc.getRootLogger().addAppender(lc.getConfiguration().getAppender(mockAppender.getName()));
+        lc.getConfiguration().getRootLogger().setLevel(Level.INFO);
+        lc.updateLoggers();
 
-        LogManager.getRootLogger().addAppender(mockAppender);
-        LogManager.getRootLogger().setLevel(Level.INFO);
-
-        doAnswer(answerVoid((LoggingEvent event) -> {
-                    capturedEvents.add(mdcFormat(event.getMDC(MDC_KEY),
-                                                 event.getRenderedMessage()));
-                })).when(mockAppender).doAppend(any());
+        doAnswer(answerVoid((LogEvent event) -> {
+                    capturedEvents.add(mdcFormat(event.getContextData().getValue(MDC_KEY),
+                                                 event.getMessage().getFormattedMessage()));
+                })).when(mockAppender).append(any());
     }
 
     @After
     public void tearDown() throws Exception {
-        LogManager.getRootLogger().removeAppender(mockAppender);
+        LoggerContext lc = (LoggerContext) org.apache.logging.log4j.LogManager.getContext(false);
+        lc.getRootLogger().removeAppender(lc.getConfiguration().getAppender(mockAppender.getName()));
+        lc.updateLoggers();
         capturedEvents.clear();
-        MDC.clear();
+        ThreadContext.clearAll();
     }
 
     @Test
@@ -88,7 +95,7 @@ public class TestOrderedExecutorDecorators {
             .name("test").numThreads(20).preserveMdcForTaskExecution(true).build();
 
         try {
-            MDC.put(MDC_KEY, "testMDCInvokeOrdered");
+            ThreadContext.put(MDC_KEY, "testMDCInvokeOrdered");
             executor.submitOrdered(10, () -> {
                     log.info("foobar");
                     return 10;
@@ -106,7 +113,7 @@ public class TestOrderedExecutorDecorators {
             .name("test").numThreads(20).preserveMdcForTaskExecution(true).build();
 
         try {
-            MDC.put(MDC_KEY, "testMDCInvokeOrdered");
+            ThreadContext.put(MDC_KEY, "testMDCInvokeOrdered");
             executor.chooseThread(10).submit(() -> {
                     log.info("foobar");
                     return 10;
@@ -126,7 +133,7 @@ public class TestOrderedExecutorDecorators {
             .name("test").numThreads(20).preserveMdcForTaskExecution(true).build();
 
         try {
-            MDC.put(MDC_KEY, "testMDCInvokeOrdered");
+            ThreadContext.put(MDC_KEY, "testMDCInvokeOrdered");
             scheduler.scheduleOrdered(10, safeRun(() -> {
                         log.info("foobar");
                     }), 0, TimeUnit.DAYS).get();
@@ -143,7 +150,7 @@ public class TestOrderedExecutorDecorators {
             .name("test").numThreads(20).preserveMdcForTaskExecution(true).build();
 
         try {
-            MDC.put(MDC_KEY, "testMDCInvokeOrdered");
+            ThreadContext.put(MDC_KEY, "testMDCInvokeOrdered");
             scheduler.chooseThread(10).schedule(safeRun(() -> {
                         log.info("foobar");
                     }), 0, TimeUnit.DAYS).get();

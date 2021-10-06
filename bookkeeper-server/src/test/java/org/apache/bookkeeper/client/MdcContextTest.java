@@ -28,11 +28,11 @@ import static org.junit.Assert.fail;
 import static org.mockito.AdditionalAnswers.answerVoid;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.spy;
 
 import java.io.File;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import lombok.extern.slf4j.Slf4j;
@@ -43,12 +43,10 @@ import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.MDC;
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.NullAppender;
 import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Assert;
@@ -69,9 +67,8 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     BookKeeper bkc;
     LedgerHandle lh;
 
-    private Appender mockAppender;
+    private NullAppender mockAppender;
     private Queue<String> capturedEvents;
-    private Logger rootLogger = LogManager.getRootLogger();
 
     public MdcContextTest() {
         super(3);
@@ -110,39 +107,44 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
                 .setMetadataServiceUri(zkUtil.getMetadataServiceUri())
                 .setPreserveMdcForTaskExecution(true);
 
-        MDC.clear();
+        ThreadContext.clearAll();
         bkc = new BookKeeper(conf);
 
-        MDC.put(MDC_REQUEST_ID, "ledger_create");
+        ThreadContext.put(MDC_REQUEST_ID, "ledger_create");
         log.info("creating ledger");
         lh = bkc.createLedgerAdv(3, 3, 3, BookKeeper.DigestType.CRC32, new byte[] {});
-        MDC.clear();
+        ThreadContext.clearAll();
 
-        mockAppender = mock(Appender.class);
-        when(mockAppender.getName()).thenReturn("MockAppender");
+        LoggerContext lc = (LoggerContext) org.apache.logging.log4j.LogManager.getContext(false);
+        mockAppender = spy(NullAppender.createAppender(UUID.randomUUID().toString()));
+        mockAppender.start();
+        lc.getConfiguration().addAppender(mockAppender);
+        lc.getRootLogger().addAppender(lc.getConfiguration().getAppender(mockAppender.getName()));
+        lc.getConfiguration().getRootLogger().setLevel(org.apache.logging.log4j.Level.INFO);
+        lc.updateLoggers();
 
-        rootLogger.addAppender(mockAppender);
-        rootLogger.setLevel(Level.INFO);
         capturedEvents = new ConcurrentLinkedQueue<>();
 
-        doAnswer(answerVoid((LoggingEvent event) -> capturedEvents.add(
-                    mdcFormat(event.getMDC(MDC_REQUEST_ID), event.getRenderedMessage())
-            ))).when(mockAppender).doAppend(any());
+        doAnswer(answerVoid((LogEvent event) -> capturedEvents.add(
+                    mdcFormat(event.getContextData().getValue(MDC_REQUEST_ID), event.getMessage().getFormattedMessage())
+            ))).when(mockAppender).append(any());
     }
 
     @After
     public void tearDown() throws Exception {
         lh.close();
         bkc.close();
-        rootLogger.removeAppender(mockAppender);
+        LoggerContext lc = (LoggerContext) org.apache.logging.log4j.LogManager.getContext(false);
+        lc.getRootLogger().removeAppender(lc.getConfiguration().getAppender(mockAppender.getName()));
+        lc.updateLoggers();
         capturedEvents = null;
-        MDC.clear();
+        ThreadContext.clearAll();
         super.tearDown();
     }
 
     @Test
     public void testLedgerCreateFails() throws Exception {
-        MDC.put(MDC_REQUEST_ID, "ledger_create_fail");
+        ThreadContext.put(MDC_REQUEST_ID, "ledger_create_fail");
         try {
             bkc.createLedgerAdv(99, 3, 2, BookKeeper.DigestType.CRC32, new byte[]{});
             Assert.fail("should not get here");
@@ -154,7 +156,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testSimpleAdd() throws Exception {
-        MDC.put(MDC_REQUEST_ID, "ledger_add_entry");
+        ThreadContext.put(MDC_REQUEST_ID, "ledger_add_entry");
         lh.addEntry(0, entry);
 
         // client msg
@@ -169,7 +171,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
         startNewBookie();
         killBookie(0);
 
-        MDC.put(MDC_REQUEST_ID, "ledger_add_entry");
+        ThreadContext.put(MDC_REQUEST_ID, "ledger_add_entry");
         lh.addEntry(1, entry);
         assertLogWithMdc("ledger_add_entry", "Could not connect to bookie");
         assertLogWithMdc("ledger_add_entry", "Failed to write entry");
@@ -187,7 +189,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
             ledgerDirsManager.addToFilledDirs(new File(ledgerDirs[0], "current"));
         }
 
-        MDC.put(MDC_REQUEST_ID, "ledger_add_entry");
+        ThreadContext.put(MDC_REQUEST_ID, "ledger_add_entry");
         try {
             lh.addEntry(0, entry);
             Assert.fail("should not get here");
@@ -207,7 +209,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     public void testAddFailsDuplicateEntry() throws Exception {
         lh.addEntry(0, entry);
 
-        MDC.put(MDC_REQUEST_ID, "ledger_add_duplicate_entry");
+        ThreadContext.put(MDC_REQUEST_ID, "ledger_add_duplicate_entry");
         try {
             lh.addEntry(0, entry);
             Assert.fail("should not get here");
@@ -221,7 +223,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testReadEntryBeyondLac() throws Exception {
-        MDC.put(MDC_REQUEST_ID, "ledger_read_entry");
+        ThreadContext.put(MDC_REQUEST_ID, "ledger_read_entry");
 
         try {
             lh.readEntries(100, 100);
@@ -238,7 +240,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
         lh.close();
         bkc.deleteLedger(lh.ledgerId);
 
-        MDC.put(MDC_REQUEST_ID, "ledger_read_entry");
+        ThreadContext.put(MDC_REQUEST_ID, "ledger_read_entry");
 
         try {
             lh.readEntries(100, 100);

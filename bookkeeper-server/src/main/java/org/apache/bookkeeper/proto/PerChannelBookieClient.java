@@ -140,6 +140,7 @@ import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.apache.bookkeeper.util.collections.SynchronizedHashMultiMap;
+import org.apache.logging.log4j.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -1589,7 +1590,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             this.startTime = MathUtils.nowInNano();
             this.opLogger = opLogger;
             this.timeoutOpLogger = timeoutOpLogger;
-            this.mdcContextMap = preserveMdcForTaskExecution ? MDC.getCopyOfContextMap() : null;
+            this.mdcContextMap = preserveMdcForTaskExecution ? ThreadContext.getContext() : null;
         }
 
         private long latency() {
@@ -2380,7 +2381,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     static Request.Builder appendRequestContext(Request.Builder builder) {
-        final Map<String, String> mdcContextMap = MDC.getCopyOfContextMap();
+        final Map<String, String> mdcContextMap = ThreadContext.getContext();
         if (mdcContextMap == null || mdcContextMap.isEmpty()) {
             return builder;
         }
@@ -2407,7 +2408,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         ContextPreservingFutureListener(ChannelFutureListener listener) {
             this.listener = listener;
-            this.mdcContextMap = MDC.getCopyOfContextMap();
+            this.mdcContextMap = ThreadContext.getContext();
         }
 
         @Override
@@ -2416,7 +2417,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             try {
                 listener.operationComplete(future);
             } finally {
-                MDC.clear();
+                ThreadContext.clearAll();
             }
         }
     }
