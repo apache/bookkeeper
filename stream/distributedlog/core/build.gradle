@@ -49,6 +49,7 @@ dependencies {
     testImplementation project(path: ':stream:distributedlog:common', configuration: 'testArtifacts')
     testImplementation depLibs.junit
     testImplementation depLibs.mockito
+    implementation depLibs.javaAnnotations
 
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok

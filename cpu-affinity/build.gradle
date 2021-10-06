@@ -16,29 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 plugins {
     id 'java'
 }
 
 dependencies {
-    compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations
     implementation depLibs.commonsLang3
     implementation depLibs.guava
     implementation depLibs.slf4j
     testImplementation depLibs.junit
-
+    compileOnly depLibs.lombok
     annotationProcessor depLibs.lombok
+    testCompileOnly depLibs.lombok
+    testAnnotationProcessor depLibs.lombok
 }
 
-task generateJniHeaders(type:Exec) {
+task generateJniHeaders(type: JavaCompile) {
     ext {
         javahOutputDir = "$buildDir/javahGenerated"
     }
-    dependsOn classes
-    def classpath = sourceSets.main.output.classesDirs.join(":")
-    commandLine("javah", "-d", javahOutputDir, "-classpath",
-                classpath, "org.apache.bookkeeper.common.util.affinity.impl.CpuAffinityJni")
+    classpath = sourceSets.main.compileClasspath
+    destinationDir file("${buildDir}/javahGenerated")
+    source = sourceSets.main.java
+    options.compilerArgs += [
+            '-h', file("${buildDir}/javahGenerated"),
+    ]
+
+    options.annotationProcessorPath = configurations.annotationProcessor
 }
 
 jar {

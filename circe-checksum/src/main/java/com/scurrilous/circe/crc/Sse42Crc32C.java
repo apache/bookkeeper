@@ -18,6 +18,7 @@ package com.scurrilous.circe.crc;
 import static com.scurrilous.circe.utils.NativeUtils.loadLibraryFromJar;
 import static com.scurrilous.circe.utils.NativeUtils.libType;
 
+import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import com.scurrilous.circe.IncrementalIntHash;
 import com.scurrilous.circe.impl.AbstractIncrementalIntHash;
@@ -54,6 +55,23 @@ public final class Sse42Crc32C extends AbstractIncrementalIntHash implements Inc
         config = 0;
     }
 
+    // A cleaner similar to a finalizer(deprecated in java11)
+    private static final Cleaner cleaner = Cleaner.create();
+
+    static class State implements Runnable {
+        private final long config;
+        State(long config) {
+            // initialize State needed for cleaning action
+            this.config = config;
+        }
+
+        public void run() {
+            // cleanup action accessing State, executed at most once
+            if (this.config != 0)
+                freeConfig(this.config);
+        }
+    }
+
     public Sse42Crc32C(int[] chunkWords) {
         if (chunkWords.length == 0) {
             config = 0;
@@ -62,12 +80,7 @@ public final class Sse42Crc32C extends AbstractIncrementalIntHash implements Inc
             if (config == 0)
                 throw new RuntimeException("CRC32C configuration allocation failed");
         }
-    }
-
-    @Override
-    protected void finalize() {
-        if (config != 0)
-            freeConfig(config);
+        cleaner.register(config, new State(config));
     }
 
     @Override
