@@ -60,7 +60,7 @@ page at http://checkstyle.sourceforge.net/config.html -->
         <property name="checkFormat" value="$1"/>
     </module>
     <module name="SuppressionFilter">
-        <property name="file" value="${checkstyle.suppressions.file}" default="./buildtools/src/main/resources/bookkeeper/suppressions.xml" />
+        <property name="file" value="${config_loc}/suppressions.xml" default="./buildtools/src/main/resources/bookkeeper/suppressions.xml" />
     </module>
 
     <!-- Check that every module has a package-info.java -->

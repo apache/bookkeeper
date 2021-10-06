@@ -34,8 +34,8 @@ task generateJniHeaders(type:Exec) {
     }
     dependsOn classes
     def classpath = sourceSets.main.output.classesDirs.join(":")
-    commandLine("javah", "-d", javahOutputDir, "-classpath",
-                classpath, "com.scurrilous.circe.crc.Sse42Crc32C")
+    commandLine("javac", "-h", javahOutputDir, "-classpath",
+                classpath, "./src/main/java/com/scurrilous/circe/crc/Sse42Crc32C.java")
 }
 
 jar {

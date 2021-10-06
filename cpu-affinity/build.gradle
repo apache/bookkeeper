@@ -16,19 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 plugins {
     id 'java'
 }
 
 dependencies {
-    compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations
     implementation depLibs.commonsLang3
     implementation depLibs.guava
     implementation depLibs.slf4j
     testImplementation depLibs.junit
-
+    compileOnly depLibs.lombok
     annotationProcessor depLibs.lombok
+    testCompileOnly depLibs.lombok
+    testAnnotationProcessor depLibs.lombok
 }
 
 task generateJniHeaders(type:Exec) {
@@ -37,8 +39,8 @@ task generateJniHeaders(type:Exec) {
     }
     dependsOn classes
     def classpath = sourceSets.main.output.classesDirs.join(":")
-    commandLine("javah", "-d", javahOutputDir, "-classpath",
-                classpath, "org.apache.bookkeeper.common.util.affinity.impl.CpuAffinityJni")
+    commandLine("javac", "-h", javahOutputDir, "-classpath",
+            classpath, "./src/main/java/org/apache/bookkeeper/common/util/affinity/impl/CpuAffinityJni.java")
 }
 
 jar {
