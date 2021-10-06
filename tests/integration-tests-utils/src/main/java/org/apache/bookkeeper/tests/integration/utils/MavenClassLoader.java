@@ -78,10 +78,9 @@ public class MavenClassLoader implements AutoCloseable {
         List<MavenDependency> deps = Lists.newArrayList(
                 MavenDependencies.createDependency(
                         mainArtifact, ScopeType.COMPILE, false,
-                        MavenDependencies.createExclusion("org.slf4j:slf4j-log4j12"),
                         MavenDependencies.createExclusion("log4j:log4j")));
         if (slf4jVersion.isPresent()) {
-            deps.add(MavenDependencies.createDependency("org.slf4j:slf4j-api:" + slf4jVersion.get(),
+            deps.add(MavenDependencies.createDependency("org.slf4j:slf4j-simple:" + slf4jVersion.get(),
                                                         ScopeType.COMPILE, false));
         }
 
