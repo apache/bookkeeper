@@ -326,8 +326,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             }
         }
         latch.await();
-        LOG.info("Finished pre-check over-replicated ledgers. candidateOverReplicatedLedgersSize={}",
-                candidateOverReplicatedLedgers.size());
+        LOG.info("Finished pre-check over-replicated ledgers. Over-replicated ledgers pre-check count: {}/{}",
+                candidateOverReplicatedLedgers.size(), bkActiveLedgers.size());
         return candidateOverReplicatedLedgers;
     }
 
