@@ -52,7 +52,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.ThreadContext;
+import org.slf4j.MDC;
 
 /**
  * This class provides 2 things over the java {@link ExecutorService}.
@@ -250,7 +250,7 @@ public class OrderedExecutor implements ExecutorService {
 
         ContextPreservingRunnable(Runnable runnable) {
             this.runnable = runnable;
-            this.mdcContextMap = ThreadContext.getContext();
+            this.mdcContextMap = MDC.getCopyOfContextMap();
         }
 
         @Override
@@ -259,7 +259,7 @@ public class OrderedExecutor implements ExecutorService {
             try {
                 runnable.run();
             } finally {
-                ThreadContext.clearAll();
+                MDC.clear();
             }
         }
     }
@@ -273,7 +273,7 @@ public class OrderedExecutor implements ExecutorService {
 
         ContextPreservingCallable(Callable<T> callable) {
             this.callable = callable;
-            this.mdcContextMap = ThreadContext.getContext();
+            this.mdcContextMap = MDC.getCopyOfContextMap();
         }
 
         @Override
@@ -282,7 +282,7 @@ public class OrderedExecutor implements ExecutorService {
             try {
                 return callable.call();
             } finally {
-                ThreadContext.clearAll();
+                MDC.clear();
             }
         }
     }
@@ -466,7 +466,7 @@ public class OrderedExecutor implements ExecutorService {
     }
 
     /**
-     * Flag describing executor's expectation in regards of ThreadContext (formerly named MDC).
+     * Flag describing executor's expectation in regards of MDC.
      * All tasks submitted through executor's submit/execute methods will automatically respect this.
      *
      * @return true if runnable/callable is expected to preserve MDC, false otherwise.

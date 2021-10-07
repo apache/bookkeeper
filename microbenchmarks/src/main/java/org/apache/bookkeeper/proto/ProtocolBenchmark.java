@@ -36,7 +36,6 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.apache.logging.log4j.ThreadContext;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
@@ -45,6 +44,7 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.slf4j.MDC;
 
 /**
  * Benchmarking serialization and deserialization.
@@ -126,8 +126,8 @@ public class ProtocolBenchmark {
 
     @Benchmark
     public void testAddEntryV3WithMdc() throws Exception {
-        ThreadContext.put("parent_id", "LetsPutSomeLongParentRequestIdHere");
-        ThreadContext.put("request_id", "LetsPutSomeLongRequestIdHere");
+        MDC.put("parent_id", "LetsPutSomeLongParentRequestIdHere");
+        MDC.put("request_id", "LetsPutSomeLongRequestIdHere");
         // Build the request and calculate the total size to be included in the packet.
         BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
                 .setVersion(ProtocolVersion.VERSION_THREE)
@@ -151,7 +151,7 @@ public class ProtocolBenchmark {
 
         Object res = this.reqEnDeV3.encode(request, ByteBufAllocator.DEFAULT);
         ReferenceCountUtil.release(res);
-        ThreadContext.clearAll();
+        MDC.clear();
     }
 
     static Request.Builder appendRequestContextNoMdc(Request.Builder builder) {

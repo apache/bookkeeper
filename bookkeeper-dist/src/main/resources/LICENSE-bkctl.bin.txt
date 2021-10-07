@@ -568,7 +568,6 @@ MIT license. For details, see deps/slf4j-1.7.32/LICENSE.txt.
 
 Bundled as
   - lib/org.slf4j-slf4j-api-1.7.32.jar
-  - lib/org.slf4j-slf4j-log4j12-1.7.32.jar
 Source available at https://github.com/qos-ch/slf4j/tree/v_1.7.32
 ------------------------------------------------------------------------------------
 This product bundles the Google Auth Library, which is available under a "3-clause BSD"

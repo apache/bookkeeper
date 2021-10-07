@@ -140,9 +140,9 @@ import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.apache.bookkeeper.util.collections.SynchronizedHashMultiMap;
-import org.apache.logging.log4j.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -1589,7 +1589,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             this.startTime = MathUtils.nowInNano();
             this.opLogger = opLogger;
             this.timeoutOpLogger = timeoutOpLogger;
-            this.mdcContextMap = preserveMdcForTaskExecution ? ThreadContext.getContext() : null;
+            this.mdcContextMap = preserveMdcForTaskExecution ? MDC.getCopyOfContextMap() : null;
         }
 
         private long latency() {
@@ -2380,7 +2380,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     static Request.Builder appendRequestContext(Request.Builder builder) {
-        final Map<String, String> mdcContextMap = ThreadContext.getContext();
+        final Map<String, String> mdcContextMap = MDC.getCopyOfContextMap();
         if (mdcContextMap == null || mdcContextMap.isEmpty()) {
             return builder;
         }
@@ -2407,7 +2407,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         ContextPreservingFutureListener(ChannelFutureListener listener) {
             this.listener = listener;
-            this.mdcContextMap = ThreadContext.getContext();
+            this.mdcContextMap = MDC.getCopyOfContextMap();
         }
 
         @Override
@@ -2416,7 +2416,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             try {
                 listener.operationComplete(future);
             } finally {
-                ThreadContext.clearAll();
+                MDC.clear();
             }
         }
     }
