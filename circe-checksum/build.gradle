@@ -28,14 +28,18 @@ dependencies {
     testImplementation depLibs.mockito
 }
 
-task generateJniHeaders(type:Exec) {
+task generateJniHeaders(type: JavaCompile) {
     ext {
         javahOutputDir = "$buildDir/javahGenerated"
     }
-    dependsOn classes
-    def classpath = sourceSets.main.output.classesDirs.join(":")
-    commandLine("javac", "-h", javahOutputDir, "-classpath",
-                classpath, "./src/main/java/com/scurrilous/circe/crc/Sse42Crc32C.java")
+    classpath = sourceSets.main.compileClasspath
+    destinationDir file("${buildDir}/javahGenerated")
+    source = sourceSets.main.java
+    options.compilerArgs += [
+            '-h', file("${buildDir}/javahGenerated"),
+    ]
+
+    options.annotationProcessorPath = configurations.annotationProcessor
 }
 
 jar {
