@@ -33,18 +33,8 @@ dependencies {
     testAnnotationProcessor depLibs.lombok
 }
 
-task generateJniHeaders(type: JavaCompile) {
-    ext {
-        javahOutputDir = "$buildDir/javahGenerated"
-    }
-    classpath = sourceSets.main.compileClasspath
-    destinationDir file("${buildDir}/javahGenerated")
-    source = sourceSets.main.java
-    options.compilerArgs += [
-            '-h', file("${buildDir}/javahGenerated"),
-    ]
-
-    options.annotationProcessorPath = configurations.annotationProcessor
+compileJava {
+    options.headerOutputDirectory = file("${buildDir}/javahGenerated")
 }
 
 jar {
