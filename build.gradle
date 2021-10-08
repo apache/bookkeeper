@@ -73,6 +73,7 @@ allprojects {
         checkstyle {
             toolVersion "${checkStyleVersion}"
             configFile file("$rootDir/buildtools/src/main/resources/bookkeeper/checkstyle.xml")
+            configDirectory = file("$rootDir/buildtools/src/main/resources/bookkeeper")
             checkstyleMain {
                 source ='src/main/java'
             }

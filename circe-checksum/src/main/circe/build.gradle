@@ -27,9 +27,9 @@ library {
 
     binaries.configureEach { CppBinary binary ->
         def compileTask = binary.compileTask.get()
-        compileTask.dependsOn project(':circe-checksum').generateJniHeaders
+        compileTask.dependsOn project(':circe-checksum').compileJava
         compileTask.includes.from("${Jvm.current().javaHome}/include",
-                                  project(':circe-checksum').generateJniHeaders.javahOutputDir)
+                                  project(':circe-checksum').compileJava.options.headerOutputDirectory)
 
         def osFamily = binary.targetPlatform.targetMachine.operatingSystemFamily
 

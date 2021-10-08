@@ -26,6 +26,7 @@ dependencies {
     implementation depLibs.slf4j
 
     annotationProcessor depLibs.lombok
+    implementation depLibs.javaAnnotations
 }
 
 protobuf {
