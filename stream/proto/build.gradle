@@ -25,6 +25,7 @@ dependencies {
     implementation depLibs.lombok
     implementation depLibs.grpc
     implementation depLibs.commonsLang3
+    implementation depLibs.javaAnnotations
 
     annotationProcessor depLibs.lombok
 }

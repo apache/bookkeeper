@@ -55,6 +55,7 @@ dependencies {
     runtimeOnly depLibs.vertxCore
     runtimeOnly depLibs.vertxWeb
     testImplementation depLibs.mockito
+    implementation depLibs.javaAnnotations
 
     annotationProcessor depLibs.lombok
 }

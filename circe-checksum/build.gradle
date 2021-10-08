@@ -28,14 +28,8 @@ dependencies {
     testImplementation depLibs.mockito
 }
 
-task generateJniHeaders(type:Exec) {
-    ext {
-        javahOutputDir = "$buildDir/javahGenerated"
-    }
-    dependsOn classes
-    def classpath = sourceSets.main.output.classesDirs.join(":")
-    commandLine("javah", "-d", javahOutputDir, "-classpath",
-                classpath, "com.scurrilous.circe.crc.Sse42Crc32C")
+compileJava {
+    options.headerOutputDirectory = file("${buildDir}/javahGenerated")
 }
 
 jar {
