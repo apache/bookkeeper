@@ -192,8 +192,11 @@ class EntryLoggerAllocator {
                 if (bufferedLogChannel != null) {
                     bufferedLogChannel.close();
                 }
-            } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
-                log.warn("release preAllocator log failed, ignore error");
+            } catch (InterruptedException e) {
+                log.warn("interrupted while release preAllocate log");
+                Thread.currentThread().interrupt();
+            } catch (IOException | ExecutionException | TimeoutException e) {
+                log.warn("release preAllocate log failed, ignore error");
             }
         }
     }
