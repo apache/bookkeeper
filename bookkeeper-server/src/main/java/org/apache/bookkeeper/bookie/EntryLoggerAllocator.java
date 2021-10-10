@@ -183,6 +183,21 @@ class EntryLoggerAllocator {
         return logChannel;
     }
 
+
+    private synchronized void closePreAllocateLog() {
+        if (preallocatedLogId != -1) {
+            // if preallocate new log success, release the file channel
+            try {
+                BufferedLogChannel bufferedLogChannel = getPreallocationFuture().get(3, TimeUnit.SECONDS);
+                if (bufferedLogChannel != null) {
+                    bufferedLogChannel.close();
+                }
+            } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
+                log.warn("release preAllocator log failed, ignore error");
+            }
+        }
+    }
+
     /**
      * writes the given id to the "lastId" file in the given directory.
      */
@@ -209,6 +224,7 @@ class EntryLoggerAllocator {
      */
     void stop() {
         // wait until the preallocation finished.
+        allocatorExecutor.execute(this::closePreAllocateLog);
         allocatorExecutor.shutdown();
         try {
             if (!allocatorExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -219,17 +235,6 @@ class EntryLoggerAllocator {
             Thread.currentThread().interrupt();
         }
         allocatorExecutor.shutdownNow();
-        if (preallocatedLogId != -1) {
-            // if preallocate new log success, release the file channel
-            try {
-                BufferedLogChannel bufferedLogChannel = getPreallocationFuture().get(3, TimeUnit.SECONDS);
-                if (bufferedLogChannel != null) {
-                    bufferedLogChannel.close();
-                }
-            } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
-                log.warn("release preAllocator log failed, ignore error");
-            }
-        }
         log.info("Stopped entry logger preallocator.");
     }
 
