@@ -42,6 +42,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
@@ -218,7 +219,17 @@ class EntryLoggerAllocator {
             Thread.currentThread().interrupt();
         }
         allocatorExecutor.shutdownNow();
-
+        if (preallocatedLogId != -1) {
+            // if preallocate new log success, release the file channel
+            try {
+                BufferedLogChannel bufferedLogChannel = getPreallocationFuture().get(3, TimeUnit.SECONDS);
+                if (bufferedLogChannel != null) {
+                    bufferedLogChannel.close();
+                }
+            } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
+                log.warn("release preAllocator log failed, ignore error");
+            }
+        }
         log.info("Stopped entry logger preallocator.");
     }
 
