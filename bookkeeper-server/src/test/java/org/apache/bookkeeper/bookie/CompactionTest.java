@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -542,6 +543,75 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                 getStatsProvider(0)
                         .getCounter("bookie.gc." + RECLAIMED_DELETION_SPACE_BYTES)
                         .get().intValue() > 0);
+    }
+
+    @Test
+    public void testMinorCompactionWithEntryLogPerLedgerEnabled() throws Exception {
+        // restart bookies
+        restartBookies(c-> {
+            c.setMajorCompactionThreshold(0.0f);
+            c.setGcWaitTime(60000);
+            c.setMinorCompactionInterval(120000);
+            c.setMajorCompactionInterval(240000);
+            c.setForceAllowCompaction(true);
+            c.setEntryLogPerLedgerEnabled(true);
+            return c;
+        });
+
+        // prepare data
+        LedgerHandle[] lhs = prepareData(3, false);
+
+        for (LedgerHandle lh : lhs) {
+            lh.close();
+        }
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertTrue(getGCThread().enableMinorCompaction);
+
+        // remove ledgers 1 and 2
+        bkc.deleteLedger(lhs[1].getId());
+        bkc.deleteLedger(lhs[2].getId());
+
+        // Need to wait until entry log 3 gets flushed before initiating GC to satisfy assertions.
+        while (!getGCThread().entryLogger.isFlushedEntryLog(3L)) {
+            TimeUnit.MILLISECONDS.sleep(100);
+        }
+
+        LOG.info("Finished deleting the ledgers contains most entries.");
+        getGCThread().triggerGC(true, false, false).get();
+
+        assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
+
+        // At this point, we have the following state of ledgers end entry logs:
+        // L0 (not deleted) -> E0 (un-flushed): Entry log should exist.
+        // L1 (deleted) -> E1 (un-flushed): Entry log should exist as un-flushed entry logs are not considered for GC.
+        // L2 (deleted) -> E2 (flushed): Entry log should have been garbage collected.
+        //                 E3 (flushed): Entry log should have been garbage collected.
+        //                 E4 (un-flushed): Entry log should exist as un-flushed entry logs are not considered for GC.
+        assertTrue("Not found entry log files [0, 1, 4].log that should not have been compacted in: "
+                + tmpDirs.get(0), TestUtils.hasAllLogFiles(tmpDirs.get(0), 0, 1, 4));
+        assertTrue("Found entry log files [2, 3].log that should have been compacted in ledgerDirectory: "
+                + tmpDirs.get(0), TestUtils.hasNoneLogFiles(tmpDirs.get(0), 2, 3));
+
+        // Now, let's mark E1 as flushed, as its ledger L1 has been deleted already. In this case, the GC algorithm
+        // should consider it for deletion.
+        getGCThread().entryLogger.recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(1L);
+        getGCThread().triggerGC(true, false, false).get();
+        assertTrue("Found entry log file 1.log that should have been compacted in ledgerDirectory: "
+                + tmpDirs.get(0), TestUtils.hasNoneLogFiles(tmpDirs.get(0), 1));
+
+        // Once removed the ledger L0, then deleting E0 is fine (only if it has been flushed).
+        bkc.deleteLedger(lhs[0].getId());
+        getGCThread().triggerGC(true, false, false).get();
+        assertTrue("Found entry log file 0.log that should not have been compacted in ledgerDirectory: "
+                + tmpDirs.get(0), TestUtils.hasAllLogFiles(tmpDirs.get(0), 0));
+        getGCThread().entryLogger.recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(0L);
+        getGCThread().triggerGC(true, false, false).get();
+        assertTrue("Found entry log file 0.log that should have been compacted in ledgerDirectory: "
+                + tmpDirs.get(0), TestUtils.hasNoneLogFiles(tmpDirs.get(0), 0));
     }
 
     @Test
