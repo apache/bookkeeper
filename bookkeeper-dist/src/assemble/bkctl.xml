@@ -70,7 +70,7 @@
         <include>bouncycastle-1.0.2/LICENSE.html</include>
         <include>protobuf-3.14.0/LICENSE</include>
         <include>protobuf-3.12.0/LICENSE</include>
-        <include>slf4j-1.7.25/LICENSE.txt</include>
+        <include>slf4j-1.7.32/LICENSE.txt</include>
       </includes>
       <fileMode>644</fileMode>
     </fileSet>
