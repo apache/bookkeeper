@@ -1614,4 +1614,40 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             // ok
         }
     }
+
+    @Test
+    public void testBookieIdSetting() throws Exception {
+        String customBookieId = "customId";
+        // If BookieID is set, it takes precedence over network info.
+        final ServerConfiguration conf = newServerConfiguration().setBookieId(customBookieId);
+        BookieServer server = new MockBookieServer(conf);
+        server.start();
+        assertEquals(customBookieId, server.getBookieId().toString());
+        server.shutdown();
+    }
+
+    @Test
+    public void testBookieIdChange() throws Exception {
+        // By default, network info is set as Bookie Id and it is stored in the Cookie.
+        final ServerConfiguration conf = newServerConfiguration();
+        BookieServer server = new MockBookieServer(conf);
+        server.start();
+        assertNotNull(server.getBookieId().toString());
+        server.shutdown();
+
+        // If BookieID is set, it takes precedence over network info. Because of that, the new Bookie start
+        // should fail with an InvalidCookieException, as now the custom BookieID takes precedence.
+        String customBookieId = "customId";
+        conf.setBookieId(customBookieId);
+        try {
+            server = new MockBookieServer(conf);
+        } catch (BookieException.InvalidCookieException e) {
+            // This is the expected case, as the customBookieId prevails over the default one.
+        } catch (Exception e) {
+            // Unexpected exception, failing.
+            Assert.fail();
+        }
+        assertEquals(customBookieId, server.getBookieId().toString());
+        server.shutdown();
+    }
 }
