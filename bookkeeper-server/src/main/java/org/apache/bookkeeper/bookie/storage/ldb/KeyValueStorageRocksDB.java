@@ -65,6 +65,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     private final WriteOptions optionSync;
     private final WriteOptions optionDontSync;
+    private final Cache cache;
 
     private final ReadOptions optionCache;
     private final ReadOptions optionDontCache;
@@ -139,7 +140,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 options.setTargetFileSizeBase(sstSizeMB * 1024 * 1024);
                 options.setDeleteObsoleteFilesPeriodMicros(TimeUnit.HOURS.toMicros(1));
 
-                final Cache cache = new LRUCache(blockCacheSize);
+                this.cache = new LRUCache(blockCacheSize);
                 BlockBasedTableConfig tableOptions = new BlockBasedTableConfig();
                 tableOptions.setBlockSize(blockSize);
                 tableOptions.setBlockCache(cache);
@@ -154,6 +155,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 options.setLevelCompactionDynamicLevelBytes(true);
 
                 options.setTableFormatConfig(tableOptions);
+            } else {
+                this.cache = null;
             }
 
             // Configure file path
@@ -210,6 +213,9 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     @Override
     public void close() throws IOException {
         db.close();
+        if (cache != null) {
+            cache.close();
+        }
         optionSync.close();
         optionDontSync.close();
         optionCache.close();
