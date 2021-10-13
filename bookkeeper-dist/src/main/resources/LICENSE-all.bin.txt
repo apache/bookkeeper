@@ -214,7 +214,7 @@ Apache Software License, Version 2.
 - lib/commons-cli-commons-cli-1.2.jar [5]
 - lib/commons-codec-commons-codec-1.6.jar [6]
 - lib/commons-configuration-commons-configuration-1.10.jar [7]
-- lib/commons-io-commons-io-2.4.jar [8]
+- lib/commons-io-commons-io-2.7.jar [8]
 - lib/commons-lang-commons-lang-2.6.jar [9]
 - lib/commons-logging-commons-logging-1.1.1.jar [10]
 - lib/io.netty-netty-buffer-4.1.68.Final.jar [11]
@@ -248,12 +248,13 @@ Apache Software License, Version 2.
 - lib/org.apache.zookeeper-zookeeper-3.6.2.jar [21]
 - lib/org.apache.zookeeper-zookeeper-jute-3.6.2.jar [21]
 - lib/org.apache.zookeeper-zookeeper-3.6.2-tests.jar [21]
-- lib/org.eclipse.jetty-jetty-http-9.4.33.v20201020.jar [22]
-- lib/org.eclipse.jetty-jetty-io-9.4.33.v20201020.jar [22]
-- lib/org.eclipse.jetty-jetty-security-9.4.33.v20201020.jar [22]
-- lib/org.eclipse.jetty-jetty-server-9.4.33.v20201020.jar [22]
-- lib/org.eclipse.jetty-jetty-servlet-9.4.33.v20201020.jar [22]
-- lib/org.eclipse.jetty-jetty-util-9.4.33.v20201020.jar [22]
+- lib/org.eclipse.jetty-jetty-http-9.4.43.v20210629.jar [22]
+- lib/org.eclipse.jetty-jetty-io-9.4.43.v20210629.jar [22]
+- lib/org.eclipse.jetty-jetty-security-9.4.43.v20210629.jar [22]
+- lib/org.eclipse.jetty-jetty-server-9.4.43.v20210629.jar [22]
+- lib/org.eclipse.jetty-jetty-servlet-9.4.43.v20210629.jar [22]
+- lib/org.eclipse.jetty-jetty-util-9.4.43.v20210629.jar [22]
+- lib/org.eclipse.jetty-jetty-util-ajax-9.4.43.v20210629.jar [22]
 - lib/org.rocksdb-rocksdbjni-6.22.1.1.jar [23]
 - lib/com.beust-jcommander-1.78.jar [24]
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
@@ -322,7 +323,7 @@ Apache Software License, Version 2.
 [19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
 [20] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
 [21] Source available at https://github.com/apache/zookeeper/tree/release-3.6.2
-[22] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.33.v20201020
+[22] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.43.v20210629
 [23] Source available at https://github.com/facebook/rocksdb/tree/v6.22.1
 [24] Source available at https://github.com/cbeust/jcommander/tree/1.78
 [25] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
@@ -634,12 +635,12 @@ Bundled as lib/javax.servlet-javax.servlet-api-4.0.0.jar
 Source available at https://github.com/javaee/servlet-spec/tree/4.0.0
 ------------------------------------------------------------------------------------
 This product bundles Simple Logging Facade for Java, which is available under a
-MIT license. For details, see deps/slf4j-1.7.25/LICENSE.txt.
+MIT license. For details, see deps/slf4j-1.7.32/LICENSE.txt.
 
 Bundled as
-  - lib/org.slf4j-slf4j-api-1.7.25.jar
-  - lib/org.slf4j-slf4j-log4j12-1.7.25.jar
-Source available at https://github.com/qos-ch/slf4j/tree/v_1.7.25
+  - lib/org.slf4j-slf4j-api-1.7.32.jar
+  - lib/org.slf4j-slf4j-log4j12-1.7.32.jar
+Source available at https://github.com/qos-ch/slf4j/tree/v_1.7.32
 ------------------------------------------------------------------------------------
 This product bundles the Google Auth Library, which is available under a "3-clause BSD"
 license. For details, see deps/google-auth-library-credentials-0.20.0/LICENSE
