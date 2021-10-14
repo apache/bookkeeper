@@ -223,7 +223,7 @@ public class EtcdWatchClient implements AutoCloseable {
         }
 
         Status status = Status.fromThrowable(t);
-        if (this.isHaltError(status) || this.isNoLeaderError(status)) {
+        if (EtcdWatchClient.isHaltError(status) || EtcdWatchClient.isNoLeaderError(status)) {
             this.notifyWatchers(toEtcdException(status));
             this.closeGrpcWatchStreamObserver();
             this.cancelSet.clear();
@@ -291,7 +291,7 @@ public class EtcdWatchClient implements AutoCloseable {
     private Optional<WatchRequest> nextResume() {
         EtcdWatcher pendingWatcher = this.pendingWatchers.peek();
         if (pendingWatcher != null) {
-            return Optional.of(this.toWatchCreateRequest(pendingWatcher));
+            return Optional.of(EtcdWatchClient.toWatchCreateRequest(pendingWatcher));
         }
         return Optional.empty();
     }

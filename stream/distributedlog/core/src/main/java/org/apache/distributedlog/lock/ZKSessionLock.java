@@ -924,7 +924,7 @@ class ZKSessionLock implements SessionLock {
     private void unlockInternal(final CompletableFuture<Void> promise) {
 
         // already closed or expired, nothing to cleanup
-        this.epochUpdater.incrementAndGet(this);
+        ZKSessionLock.epochUpdater.incrementAndGet(this);
         if (null != watcher) {
             this.zkClient.unregister(watcher);
         }
