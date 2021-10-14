@@ -81,6 +81,7 @@ public class ZKNamespaceWatcher extends NamespaceWatcher
         }
     }
 
+    @Override
     public void watchNamespaceChanges() {
         if (!namespaceWatcherSet.compareAndSet(false, true)) {
             return;

@@ -450,6 +450,7 @@ class BKDistributedLogManager implements DistributedLogManager {
      *
      * @return the writer interface to generate log records
      */
+    @Override
     public AppendOnlyStreamWriter getAppendOnlyStreamWriter() throws IOException {
         long position;
         try {
@@ -471,6 +472,7 @@ class BKDistributedLogManager implements DistributedLogManager {
      *
      * @return the writer interface to generate log records
      */
+    @Override
     public AppendOnlyStreamReader getAppendOnlyStreamReader() throws IOException {
         return new AppendOnlyStreamReader(this);
     }

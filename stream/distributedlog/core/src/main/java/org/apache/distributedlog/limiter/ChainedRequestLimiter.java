@@ -68,6 +68,7 @@ public class ChainedRequestLimiter<Request> implements RequestLimiter<Request> {
         this.applyTime = statsLogger.getOpStatsLogger("apply");
     }
 
+    @Override
     public void apply(Request request) throws OverCapacityException {
         Stopwatch stopwatch = Stopwatch.createStarted();
         try {

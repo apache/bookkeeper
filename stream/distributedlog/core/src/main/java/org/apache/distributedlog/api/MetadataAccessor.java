@@ -47,6 +47,7 @@ public interface MetadataAccessor extends Closeable, AsyncCloseable {
     /**
      * Close the distributed log metadata, freeing any resources it may hold.
      */
+    @Override
     void close() throws IOException;
 
 }

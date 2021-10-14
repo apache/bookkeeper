@@ -580,10 +580,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         return indexDirsManager;
     }
 
+    @Override
     public long getTotalDiskSpace() throws IOException {
         return getLedgerDirsManager().getTotalDiskSpace(ledgerDirsManager.getAllLedgerDirs());
     }
 
+    @Override
     public long getTotalFreeSpace() throws IOException {
         return getLedgerDirsManager().getTotalFreeSpace(ledgerDirsManager.getAllLedgerDirs());
     }
@@ -1125,10 +1127,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
      *
      * @return true if the bookie is able to take high priority writes.
      */
+    @Override
     public boolean isAvailableForHighPriorityWrites() {
         return stateManager.isAvailableForHighPriorityWrites();
     }
 
+    @Override
     public boolean isRunning() {
         return stateManager.isRunning();
     }
@@ -1620,6 +1624,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
      *
      * @return {@link ExitCode}
      */
+    @Override
     public int getExitCode() {
         return exitCode;
     }
@@ -1643,6 +1648,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         }
     }
 
+    @Override
     public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException, NoLedgerException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;

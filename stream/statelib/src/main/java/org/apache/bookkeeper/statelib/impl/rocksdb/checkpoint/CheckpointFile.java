@@ -94,6 +94,7 @@ public class CheckpointFile {
         return file;
     }
 
+    @Override
     public String toString() {
         return String.format("CheckpointFile: %s", file.getName());
     }

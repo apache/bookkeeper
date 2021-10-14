@@ -226,6 +226,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
         readLock.checkOwnership();
     }
 
+    @Override
     public CompletableFuture<Void> asyncClose() {
         DistributedLock lockToClose;
         synchronized (this) {
