@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DockerUtils {
     private static final Logger LOG = LoggerFactory.getLogger(DockerUtils.class);
+    private static final Pattern pattern = Pattern.compile("^arq.cube.docker.([^.]*).ip$");
 
     private static File getTargetDirectory(String containerId) {
         String base = System.getProperty("maven.buildDirectory");
@@ -223,7 +224,6 @@ public class DockerUtils {
     }
 
     public static Set<String> cubeIdsMatching(String needle) {
-        Pattern pattern = Pattern.compile("^arq.cube.docker.([^.]*).ip$");
         return System.getProperties().keySet().stream()
             .map(k -> pattern.matcher(k.toString()))
             .filter(m -> m.matches())
