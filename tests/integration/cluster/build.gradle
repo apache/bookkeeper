@@ -37,7 +37,7 @@ dependencies {
     testImplementation project(':stream:clients:java:kv')
 
     testCompileOnly depLibs.lombok
-    testImplementation depLibs.slf4jLog4j
+    testImplementation depLibs.log4j12api
     testImplementation depLibs.testcontainers
     testImplementation depLibs.commonsConfiguration
     testAnnotationProcessor depLibs.lombok

@@ -33,7 +33,7 @@ dependencies {
     implementation depLibs.jacksonAnnotations
     implementation depLibs.jcommander
     implementation depLibs.reflections
-    implementation depLibs.slf4jLog4j
+    implementation depLibs.log4j12api
     implementation depLibs.snakeyaml
 
 

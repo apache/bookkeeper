@@ -71,14 +71,13 @@ public class MavenClassLoader implements AutoCloseable {
         Optional<String> slf4jVersion = Arrays.stream(resolver.resolve(mainArtifact)
                                                       .withTransitivity().asResolvedArtifact())
             .filter((a) -> a.getCoordinate().getGroupId().equals("org.slf4j")
-                    && a.getCoordinate().getArtifactId().equals("slf4j-log4j12"))
+                    && a.getCoordinate().getArtifactId().equals("slf4j-1.2-api"))
             .map((a) -> a.getCoordinate().getVersion())
             .findFirst();
 
         List<MavenDependency> deps = Lists.newArrayList(
                 MavenDependencies.createDependency(
                         mainArtifact, ScopeType.COMPILE, false,
-                        MavenDependencies.createExclusion("org.slf4j:slf4j-log4j12"),
                         MavenDependencies.createExclusion("log4j:log4j")));
         if (slf4jVersion.isPresent()) {
             deps.add(MavenDependencies.createDependency("org.slf4j:slf4j-simple:" + slf4jVersion.get(),
