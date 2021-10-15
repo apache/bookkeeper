@@ -21,16 +21,18 @@
 package org.apache.bookkeeper.util;
 
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.apache.log4j.Appender;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.NullAppender;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -44,13 +46,13 @@ import org.slf4j.event.LoggingEvent;
  */
 public class LoggerOutput implements TestRule {
 
-    private Appender logAppender;
-    private ArgumentCaptor<org.apache.log4j.spi.LoggingEvent> logEventCaptor;
-    private List<Consumer<List<LoggingEvent>>> logEventExpectations = new ArrayList<>();
+    private NullAppender logAppender;
+    private ArgumentCaptor<LogEvent> logEventCaptor;
+    private final List<Consumer<List<LoggingEvent>>> logEventExpectations = new ArrayList<>();
 
     public void expect(Consumer<List<LoggingEvent>> expectation) {
         if (logEventCaptor == null) {
-            logEventCaptor = ArgumentCaptor.forClass(org.apache.log4j.spi.LoggingEvent.class);
+            logEventCaptor = ArgumentCaptor.forClass(LogEvent.class);
         }
         logEventExpectations.add(expectation);
     }
@@ -61,13 +63,16 @@ public class LoggerOutput implements TestRule {
 
             @Override
             public void evaluate() throws Throwable {
-                logAppender = mock(Appender.class);
-                Logger rootLogger = LogManager.getRootLogger();
-                rootLogger.addAppender(logAppender);
+                LoggerContext lc = (LoggerContext) LogManager.getContext(false);
+                logAppender = spy(NullAppender.createAppender(UUID.randomUUID().toString()));
+                logAppender.start();
+                lc.getConfiguration().addAppender(logAppender);
+                lc.getRootLogger().addAppender(lc.getConfiguration().getAppender(logAppender.getName()));
+                lc.updateLoggers();
                 try {
                     base.evaluate();
                     if (!logEventExpectations.isEmpty()) {
-                        verify(logAppender, atLeastOnce()).doAppend(logEventCaptor.capture());
+                        verify(logAppender, atLeastOnce()).append(logEventCaptor.capture());
                         List<LoggingEvent> logEvents = logEventCaptor.getAllValues().stream()
                                 .map(LoggerOutput::toSlf4j)
                                 .collect(Collectors.toList());
@@ -76,7 +81,8 @@ public class LoggerOutput implements TestRule {
                         }
                     }
                 } finally {
-                    rootLogger.removeAppender(logAppender);
+                    lc.getRootLogger().removeAppender(lc.getConfiguration().getAppender(logAppender.getName()));
+                    lc.updateLoggers();
                     logEventExpectations.clear();
                     logEventCaptor = null;
                 }
@@ -84,7 +90,7 @@ public class LoggerOutput implements TestRule {
         };
     }
 
-    private static LoggingEvent toSlf4j(org.apache.log4j.spi.LoggingEvent log4jEvent) {
+    private static LoggingEvent toSlf4j(LogEvent log4jEvent) {
         return new LoggingEvent() {
             @Override
             public Level getLevel() {
@@ -113,7 +119,7 @@ public class LoggerOutput implements TestRule {
 
             @Override
             public String getMessage() {
-                return log4jEvent.getRenderedMessage();
+                return log4jEvent.getMessage().getFormattedMessage();
             }
 
             @Override
@@ -128,7 +134,7 @@ public class LoggerOutput implements TestRule {
 
             @Override
             public long getTimeStamp() {
-                return log4jEvent.getTimeStamp();
+                return log4jEvent.getTimeMillis();
             }
 
             @Override

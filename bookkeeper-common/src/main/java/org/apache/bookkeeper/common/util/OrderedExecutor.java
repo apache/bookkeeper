@@ -410,7 +410,7 @@ public class OrderedExecutor implements ExecutorService {
                         try {
                             CpuAffinity.acquireCore();
                         } catch (Throwable t) {
-                            log.warn("Failed to acquire CPU core for thread {}", Thread.currentThread().getName(),
+                            log.warn("Failed to acquire CPU core for thread {}: {}", Thread.currentThread().getName(),
                                     t.getMessage(), t);
                         }
                     }

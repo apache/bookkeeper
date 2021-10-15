@@ -50,7 +50,7 @@ dependencies {
     implementation depLibs.zookeeper
     runtimeOnly depLibs.metricsCore
     runtimeOnly depLibs.snappy
-    runtimeOnly depLibs.slf4jLog4j
+    runtimeOnly depLibs.log4j12api
     runtimeOnly depLibs.commonsBeanutils
     runtimeOnly depLibs.vertxCore
     runtimeOnly depLibs.vertxWeb

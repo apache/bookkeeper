@@ -40,7 +40,7 @@ dependencies {
     compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations
 
-    implementation depLibs.slf4jLog4j
+    implementation depLibs.log4j12api
 
 
     testCompileOnly depLibs.lombok
