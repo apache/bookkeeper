@@ -794,7 +794,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throws ReplicationException  {
         try {
             acquireUnderreplicatedLedgerLock(zkc, getUrLedgerLockZnode(urLockPath, ledgerId), ledgerId,
-                    Collections.emptyList());
+                    ZkUtils.getACLs(conf));
         } catch (Exception e) {
             throw new ReplicationException.UnavailableException("Failed to acquire underreplicated ledger lock", e);
         }
