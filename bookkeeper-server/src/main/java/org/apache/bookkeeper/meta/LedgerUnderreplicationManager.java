@@ -28,6 +28,8 @@ import java.util.function.Predicate;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooKeeper;
 
 /**
  * Interface for marking ledgers which need to be rereplicated.
@@ -43,6 +45,11 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
             markLedgerUnderreplicatedAsync(
                 ledgerId, Lists.newArrayList(missingReplica)), ReplicationException.EXCEPTION_HANDLER);
     }
+
+    /**
+     * Check whether the ledger is being replicated by any bookie.
+     */
+    boolean isLedgerBeingReplicated(long ledgerId) throws ReplicationException;
 
     /**
      * Mark a ledger as underreplicated with missing bookies. The replication should then
@@ -105,6 +112,7 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
     long pollLedgerToRereplicate()
             throws ReplicationException.UnavailableException;
 
+    void acquireUnderreplicatedLedger(long ledgerId) throws ReplicationException;
 
     /**
      * Release a previously acquired ledger. This allows others to acquire the ledger.
