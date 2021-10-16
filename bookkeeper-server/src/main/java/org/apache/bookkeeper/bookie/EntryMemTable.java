@@ -320,6 +320,9 @@ public class EntryMemTable implements AutoCloseable{
             try {
                 EntryKeyValue toAdd = cloneWithAllocator(ledgerId, entryId, entry);
                 size = internalAdd(toAdd);
+                if (size == 0) {
+                    skipListSemaphore.release(len);
+                }
             } finally {
                 this.lock.readLock().unlock();
             }
