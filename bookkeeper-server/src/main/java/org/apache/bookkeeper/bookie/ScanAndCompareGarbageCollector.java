@@ -284,7 +284,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         return overReplicatedLedgers;
     }
 
-    private static MetadataBookieDriver instantiateMetadataDriver(ServerConfiguration conf, StatsLogger statsLogger) throws BookieException {
+    private static MetadataBookieDriver instantiateMetadataDriver(ServerConfiguration conf, StatsLogger statsLogger)
+            throws BookieException {
         try {
             String metadataServiceUriStr = conf.getMetadataServiceUri();
             MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(URI.create(metadataServiceUriStr));
