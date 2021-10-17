@@ -221,7 +221,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         // instantiate zookeeper client to initialize ledger manager
 
         @Cleanup
-        MetadataBookieDriver metadataDriver = instantiateMetadataDriver(conf);
+        MetadataBookieDriver metadataDriver = instantiateMetadataDriver(conf, statsLogger);
 
         @Cleanup
         LedgerManagerFactory lmf = metadataDriver.getLedgerManagerFactory();
@@ -284,7 +284,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         return overReplicatedLedgers;
     }
 
-    private MetadataBookieDriver instantiateMetadataDriver(ServerConfiguration conf) throws BookieException {
+    private static MetadataBookieDriver instantiateMetadataDriver(ServerConfiguration conf, StatsLogger statsLogger) throws BookieException {
         try {
             String metadataServiceUriStr = conf.getMetadataServiceUri();
             MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(URI.create(metadataServiceUriStr));
