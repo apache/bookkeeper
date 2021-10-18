@@ -235,8 +235,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                 // this is to reduce the number of lock node creations and deletions in ZK.
                 // the ensemble check is done again after the lock node is created.
                 // also, check if the ledger is being replicated already by the replication worker
-                if (!isNotBookieIncludedInLedgerEnsembles(ledgerManager.readLedgerMetadata(ledgerId).get())
-                        || lum.isLedgerBeingReplicated(ledgerId)) {
+                Versioned<LedgerMetadata> preCheckMetadata = ledgerManager.readLedgerMetadata(ledgerId).get();
+                if (!isNotBookieIncludedInLedgerEnsembles(preCheckMetadata) || lum.isLedgerBeingReplicated(ledgerId)) {
                     latch.countDown();
                     continue;
                 }
