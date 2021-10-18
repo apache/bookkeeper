@@ -771,10 +771,13 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     /**
      * Check whether the ledger is being replicated by any bookie.
      */
-    public static boolean isLedgerBeingReplicated(ZooKeeper zkc, String zkLedgersRootPath, long ledgerId)
-            throws KeeperException,
-            InterruptedException {
-        return zkc.exists(getUrLedgerLockZnode(getUrLockPath(zkLedgersRootPath), ledgerId), false) != null;
+    @Override
+    public boolean isLedgerBeingReplicated(long ledgerId) throws ReplicationException {
+        try {
+            return zkc.exists(getUrLedgerLockZnode(urLockPath, ledgerId), false) != null;
+        } catch (Exception e) {
+            throw new ReplicationException.UnavailableException("Failed to check ledger lock", e);
+        }
     }
 
     /**
@@ -787,13 +790,15 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 LOCK_DATA, zkAcls, CreateMode.EPHEMERAL);
     }
 
-    /**
-     * Release the underreplicated ledger lock if it exists.
-     */
-    public static void releaseUnderreplicatedLedgerLock(ZooKeeper zkc, String zkLedgersRootPath, long ledgerId)
-            throws InterruptedException, KeeperException {
-        if (isLedgerBeingReplicated(zkc, zkLedgersRootPath, ledgerId)) {
-            zkc.delete(getUrLedgerLockZnode(getUrLockPath(zkLedgersRootPath), ledgerId), -1);
+    @Override
+    public void acquireUnderreplicatedLedger(long ledgerId)
+            throws ReplicationException  {
+        try {
+            acquireUnderreplicatedLedgerLock(zkc, getUrLedgerLockZnode(urLockPath, ledgerId), ledgerId,
+                    ZkUtils.getACLs(conf));
+        } catch (Exception e) {
+            throw new ReplicationException.UnavailableException(
+                    "Failed to acquire underreplicated ledger lock for " + ledgerId, e);
         }
     }
 

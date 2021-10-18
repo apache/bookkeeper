@@ -45,6 +45,11 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
     }
 
     /**
+     * Check whether the ledger is being replicated by any bookie.
+     */
+    boolean isLedgerBeingReplicated(long ledgerId) throws ReplicationException;
+
+    /**
      * Mark a ledger as underreplicated with missing bookies. The replication should then
      * check which fragements are underreplicated and rereplicate them.
      *
@@ -105,6 +110,7 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
     long pollLedgerToRereplicate()
             throws ReplicationException.UnavailableException;
 
+    void acquireUnderreplicatedLedger(long ledgerId) throws ReplicationException;
 
     /**
      * Release a previously acquired ledger. This allows others to acquire the ledger.
