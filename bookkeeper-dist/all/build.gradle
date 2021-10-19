@@ -41,7 +41,8 @@ dependencies {
     compileOnly depLibs.spotbugsAnnotations
 
     implementation depLibs.log4j12api
-
+    implementation depLibs.log4jCore
+    implementation depLibs.log4jSlf4jImpl
 
     testCompileOnly depLibs.lombok
 

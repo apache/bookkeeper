@@ -41,9 +41,7 @@ dependencies {
     testImplementation depLibs.commonsLang3
     testImplementation depLibs.hamcrest
     testImplementation depLibs.junit
-    testImplementation depLibs.log4jSlf4jImpl
     testImplementation depLibs.log4j12api
-    testImplementation depLibs.log4jCore
     testImplementation depLibs.mockito
 
     annotationProcessor depLibs.lombok
