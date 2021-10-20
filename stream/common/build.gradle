@@ -16,17 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+plugins {
+    id 'com.adarshr.test-logger'
+    id 'org.gradle.test-retry'
+}
+
 dependencies {
     implementation project(':bookkeeper-common')
     implementation project(':bookkeeper-stats')
     implementation depLibs.grpc
+    runtimeOnly depLibs.googleHTTPClient
     implementation depLibs.guava
-    implementation depLibs.jsr305
-    implementation depLibs.lombok
+    compileOnly depLibs.jsr305
+    compileOnly depLibs.lombok
     implementation depLibs.slf4j
+    testImplementation depLibs.junit
     testImplementation depLibs.mockito
     testImplementation project(':stream:tests-common')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
+    testImplementation depLibs.lombok
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
 }
@@ -41,4 +50,14 @@ publishing {
             artifactId = 'stream-storage-common'
         }
     }
+}
+
+test {
+    retry {
+        maxFailures = 10
+        maxRetries = 2
+    }
+
+    maxHeapSize = '2G'
+    forkEvery = 1
 }

@@ -20,7 +20,7 @@ dependencies {
     implementation project(':tests:integration-tests-utils')
     implementation depLibs.testcontainers
     implementation depLibs.junit
-    implementation depLibs.lombok
+    compileOnly depLibs.lombok
     implementation depLibs.slf4j
     implementation depLibs.guava
     implementation depLibs.commonsLang2

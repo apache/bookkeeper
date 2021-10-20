@@ -21,12 +21,12 @@ plugins {
 }
 
 dependencies {
-    compileOnly project(":bookkeeper-common")
-    compileOnly project(":bookkeeper-server")
-    compileOnly project(":bookkeeper-stats-providers:codahale-metrics-provider")
-    compileOnly project(":bookkeeper-stats-providers:prometheus-metrics-provider")
-    compileOnly project(":bookkeeper-stats")
-    compileOnly project(":bookkeeper-proto")
+    implementation project(":bookkeeper-stats-providers:codahale-metrics-provider")
+    implementation project(":bookkeeper-stats-providers:prometheus-metrics-provider")
+    implementation project(":bookkeeper-common")
+    implementation project(":bookkeeper-server")
+    implementation project(":bookkeeper-stats")
+    implementation project(":bookkeeper-proto")
     compileOnly depLibs.metricsCore
     compileOnly depLibs.protobuf
     compileOnly depLibs.nettyBuffer

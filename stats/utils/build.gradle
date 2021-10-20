@@ -33,9 +33,8 @@ dependencies {
     implementation depLibs.jacksonAnnotations
     implementation depLibs.jcommander
     implementation depLibs.reflections
-    implementation depLibs.log4j12api
+    implementation depLibs.slf4j
     implementation depLibs.snakeyaml
-
 
     testCompileOnly depLibs.lombok
 

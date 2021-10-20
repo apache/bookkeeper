@@ -43,7 +43,6 @@ LICENSEPATH=$(${TAR} -tf $TARBALL  | awk '/^[^\/]*\/LICENSE/')
 LICENSE=$(${TAR} -O -xf $TARBALL "$LICENSEPATH")
 NOTICEPATH=$(${TAR} -tf $TARBALL  | awk '/^[^\/]*\/NOTICE/')
 NOTICE=$(${TAR} -O -xf $TARBALL $NOTICEPATH)
-
 LICENSEJARS=$(echo "$LICENSE" | sed -nE 's!.*lib/(.*\.jar).*!\1!gp')
 NOTICEJARS=$(echo "$NOTICE" | sed -nE 's!.*lib/(.*\.jar).*!\1!gp')
 
@@ -66,6 +65,21 @@ for J in $JARS; do
     fi
 
     echo $J | grep -q "org.apache.distributedlog"
+    if [ $? == 0 ]; then
+        continue
+    fi
+
+    echo $J | grep -q "bookkeeper-dist-server"
+    if [ $? == 0 ]; then
+        continue
+    fi
+
+    echo $J | grep -q "bookkeeper-dist-all"
+    if [ $? == 0 ]; then
+        continue
+    fi
+
+    echo $J | grep -q "bookkeeper-dist-bkctl"
     if [ $? == 0 ]; then
         continue
     fi

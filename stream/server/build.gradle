@@ -19,6 +19,13 @@
 plugins {
     id 'application'
     id 'distribution'
+    id 'com.adarshr.test-logger'
+}
+
+configurations {
+    runtimeClasspath {
+        resolutionStrategy.force depLibs.jacksonAnnotations
+    }
 }
 
 dependencies {
@@ -44,18 +51,19 @@ dependencies {
     implementation depLibs.commonsLang3
     implementation depLibs.curatorFramework
     implementation depLibs.grpc
+    runtimeOnly depLibs.googleHTTPClient
     implementation depLibs.guava
     implementation depLibs.jcommander
-    implementation depLibs.lombok
+    compileOnly depLibs.lombok
     implementation depLibs.zookeeper
-    runtimeOnly depLibs.metricsCore
-    runtimeOnly depLibs.snappy
-    runtimeOnly depLibs.log4j12api
-    runtimeOnly depLibs.commonsBeanutils
-    runtimeOnly depLibs.vertxCore
-    runtimeOnly depLibs.vertxWeb
+    implementation depLibs.metricsCore
+    implementation depLibs.snappy
+    implementation depLibs.log4j12api
+    implementation depLibs.vertxCore
+    implementation depLibs.vertxWeb
     testImplementation depLibs.mockito
-    implementation depLibs.javaAnnotations
+    testImplementation depLibs.junit
+    compileOnly depLibs.javaAnnotations
 
     annotationProcessor depLibs.lombok
 }
@@ -67,6 +75,10 @@ application {
 task writeClasspath {
     buildDir.mkdirs()
     new File(buildDir, "classpath.txt").text = sourceSets.main.runtimeClasspath.collect { it.absolutePath }.join(':') + "\n"
+}
+
+jar {
+    archiveBaseName = 'stream-storage-server'
 }
 
 publishing {

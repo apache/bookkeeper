@@ -16,19 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+plugins {
+    id 'com.adarshr.test-logger'
+    id 'org.gradle.test-retry'
+}
+
 dependencies {
     implementation project(':stream:distributedlog:common')
     implementation depLibs.commonsCodec
     implementation depLibs.guava
-    implementation depLibs.jsr305
-    implementation depLibs.lombok
+    compileOnly depLibs.jsr305
+    compileOnly depLibs.lombok
     implementation depLibs.nettyBuffer
     implementation depLibs.slf4j
 
     testImplementation project(':bookkeeper-common')
     testImplementation depLibs.junit
-
+    testImplementation depLibs.lombok
     annotationProcessor depLibs.lombok
+}
+
+jar {
+    archiveBaseName = 'distributedlog-protocol'
 }
 
 publishing {
@@ -38,4 +48,14 @@ publishing {
             artifactId = 'distributedlog-protocol'
         }
     }
+}
+
+test {
+    retry {
+        maxFailures = 20
+        maxRetries = 3
+    }
+
+    maxHeapSize = '2G'
+    forkEvery = 1
 }

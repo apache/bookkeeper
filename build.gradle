@@ -102,6 +102,7 @@ allprojects {
                     '**/out/**',
                     '**/generated/**',
                     '**/build/**',
+                    '**/target/**',
                     '**/.idea/**',
                     '.git/**/*',
                     '.github/**/*',
@@ -201,17 +202,24 @@ allprojects {
             }
         }
         test {
-            String testGroup = System.properties['testGroup']
-            if (testGroup == 'client') {
-                include '**/client/*'
-            } else if (testGroup == 'bookie') {
-                include '**/bookie/*'
-            } else if (testGroup == 'other') {
-                exclude '**/client/*'
-                exclude '**/bookie/*'
-            }
-            if (project.hasProperty('excludeTests')) {
-                exclude project.property('excludeTests')
+            filter {
+                String testGroup = System.properties['testGroup']
+                if (testGroup == 'client') {
+                    include '**/client/*'
+                } else if (testGroup == 'bookie') {
+                    include '**/bookie/*'
+                } else if (testGroup == 'other') {
+                    exclude '**/client/*'
+                    exclude '**/bookie/*'
+                }
+                if (project.hasProperty('excludeTests')) {
+                    String excludeTests = project.property('excludeTests');
+                    ArrayList<String> tests = excludeTests.split(',');
+                    tests.forEach({it
+                        String exclude = it.trim();
+                        excludeTestsMatching exclude;
+                    });
+                }
             }
         }
     }

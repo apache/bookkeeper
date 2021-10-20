@@ -26,8 +26,8 @@ depVersions = [
     arquillianJunit: "1.6.0.Final",
     bcFips: "1.0.2",
     bouncycastle: "1.69",
-    commonsCli: "1.4",
-    commonsCodec: "1.14",
+    commonsCli: "1.2",
+    commonsCodec: "1.6",
     commonsCollections4: "4.1",
     commonsCompress: "1.19",
     commonsConfiguration: "1.10",
@@ -38,16 +38,18 @@ depVersions = [
     curator: "5.1.0",
     dockerJava: "3.2.5",
     dropwizard: "3.2.5",
-    errorprone: "2.1.2",
+    errorprone: "2.4.0",
     freebuilder: "2.7.0",
+    googleHTTPClient: "1.34.0",
     gradleTooling: "4.0.1",
     grpc: "1.33.0",
     groovy: "2.5.8",
-    guava: "30.1-jre",
+    guava: "30.0-jre",
     hamcrest: "1.3",
-    hdrhistogram: "2.1.4",
+    hdrhistogram: "2.1.10",
     httpclient: "4.5.13",
-    jackson: "2.11.1",
+    jackson: "2.11.0",
+    javaxServlet: "4.0.0",
     javaAnnotations:"1.3.2",
     jcommander: "1.78",
     jctools: "2.1.2",
@@ -66,19 +68,19 @@ depVersions = [
     netty: "4.1.68.Final",
     nettyTcnativeBoringSsl: "2.0.42.Final",
     powermock: "2.0.2",
-    prometheus: "0.0.21",
+    prometheus: "0.8.1",
     protobuf: "3.14.0",
     reflections: "0.9.11",
     rocksDb: "6.22.1.1",
-    slf4j: "1.7.30",
-    snakeyaml: "1.27",
+    slf4j: "1.7.32",
+    snakeyaml: "1.19",
     spotbugsAnnotations: "3.1.8",
     protocGenGrpcJava: "1.12.0",
     shrinkwrap:"3.1.4",
-    snappy: "1.1.7.7",
+    snappy: "1.1.7",
     thrift: "0.14.2",
     testcontainers: "1.15.1",
-    vertx: "3.9.2",
+    vertx: "3.9.8",
     yahooDatasketches: "0.8.3",
     zookeeper: "3.6.2",
 ]
@@ -99,25 +101,57 @@ depLibs = [
     commonsLang2: "commons-lang:commons-lang:${depVersions.commonsLang2}",
     commonsLang3: "org.apache.commons:commons-lang3:${depVersions.commonsLang3}",
     commonsBeanutils: "commons-beanutils:commons-beanutils:${depVersions.commonsBeanutils}",
-    curatorFramework: "org.apache.curator:curator-framework:${depVersions.curator}",
-    curatorRecipes: "org.apache.curator:curator-recipes:${depVersions.curator}",
+    curatorFramework: dependencies.create("org.apache.curator:curator-framework:${depVersions.curator}") {
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
+        exclude group: 'io.netty', module: 'netty-transport-native-epoll'
+        exclude group: 'log4j', module: 'log4j'
+    },
+
+    curatorRecipes:  dependencies.create("org.apache.curator:curator-recipes:${depVersions.curator}") {
+        exclude group: 'org.apache.curator', module: 'curator-framework'
+    },
     dockerJava: "com.github.docker-java:docker-java:${depVersions.dockerJava}",
     errorprone: "com.google.errorprone:error_prone_annotations:${depVersions.errorprone}",
     freebuilder: "org.inferred:freebuilder:${depVersions.freebuilder}",
+    googleHTTPClient: dependencies.create("com.google.http-client:google-http-client:${depVersions.googleHTTPClient}") {
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
+        exclude group: 'commons-codec', module: 'commons-codec'
+        exclude group: 'commons-logging', module: 'commons-logging'
+        exclude group: 'org.apache.httpcomponents', module: 'httpcore'
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    },
     gradleTooling: "org.gradle:gradle-tooling-api:${depVersions.gradleTooling}",
-    grpc: "io.grpc:grpc-all:${depVersions.grpc}",
+    grpc: dependencies.create("io.grpc:grpc-all:${depVersions.grpc}") {
+        exclude group: 'com.google.http-client', module: 'google-http-client'
+        exclude group: 'com.squareup.okhttp', module: 'okhttp'
+        exclude group: 'com.squareup.okio', module: 'okio'
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
+        exclude group: 'io.grpc', module: 'grpc-netty-shaded'
+        exclude group: 'io.grpc', module: 'grpc-okhttp'
+        exclude group: 'junit', module: 'junit'
+        exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
+        exclude group: 'org.codehaus.mojo', module: 'animal-sniffer-annotations'
+    },
     groovy: "org.codehaus.groovy:groovy-all:${depVersions.groovy}",
-    guava: "com.google.guava:guava:${depVersions.guava}",
+    guava: dependencies.create("com.google.guava:guava:${depVersions.guava}"){
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    },
     hdrHistogram: "org.hdrhistogram:HdrHistogram:${depVersions.hdrhistogram}",
     hamcrest: "org.hamcrest:hamcrest-all:${depVersions.hamcrest}",
-    httpclient: "org.apache.httpcomponents:httpclient:${depVersions.httpclient}",
+    httpclient: dependencies.create("org.apache.httpcomponents:httpclient:${depVersions.httpclient}") {
+        exclude group: 'commons-codec', module: 'commons-codec'
+        exclude group: 'commons-logging', module: 'commons-logging'
+    },
     jacksonAnnotations: "com.fasterxml.jackson.core:jackson-annotations:${depVersions.jackson}",
     javaAnnotations: "javax.annotation:javax.annotation-api:${depVersions.javaAnnotations}",
     jacksonCore: "com.fasterxml.jackson.core:jackson-core:${depVersions.jackson}",
     jacksonDatabind: "com.fasterxml.jackson.core:jackson-databind:${depVersions.jackson}",
+    javaxServlet: "javax.servlet:javax.servlet-api:${depVersions.javaxServlet}",
     jcommander: "com.beust:jcommander:${depVersions.jcommander}",
     jctools: "org.jctools:jctools-core:${depVersions.jctools}",
-    jettyServlet: "org.eclipse.jetty:jetty-servlet:${depVersions.jetty}",
+    jettyServlet: dependencies.create("org.eclipse.jetty:jetty-servlet:${depVersions.jetty}") {
+        exclude group: 'javax.servlet', module: 'javax.servlet-api'
+    },
     jmock: "org.jmock:jmock:${depVersions.jmock}",
     jmhCore: "org.openjdk.jmh:jmh-core:${depVersions.jmh}",
     jmhGeneratorAnnprocess: "org.openjdk.jmh:jmh-generator-annprocess:${depVersions.jmh}",
@@ -140,7 +174,12 @@ depLibs = [
     nettyHandler: "io.netty:netty-handler:${depVersions.netty}",
     nettyTcnativeBoringSsl: "io.netty:netty-tcnative-boringssl-static:${depVersions.nettyTcnativeBoringSsl}",
     nettyTransport: "io.netty:netty-transport:${depVersions.netty}",
-    nettyTransportNativeEpoll: "io.netty:netty-transport-native-epoll:${depVersions.netty}",
+    nettyTransportNativeEpoll: "io.netty:netty-transport-native-epoll:${depVersions.netty}:linux-x86_64",
+    nettyProxy: "io.netty:netty-handler-proxy:${depVersions.netty}",
+    nettyCodecHTTP: "io.netty:netty-codec-http:${depVersions.netty}",
+    nettyCodecHTTP2: "io.netty:netty-codec-http2:${depVersions.netty}",
+    nettyResolver: "io.netty:netty-resolver:${depVersions.netty}",
+    nettyResolverDNS: "io.netty:netty-resolver-dns:${depVersions.netty}",
     powermockJunit: "org.powermock:powermock-module-junit4:${depVersions.powermock}",
     powermockMockito: "org.powermock:powermock-api-mockito2:${depVersions.powermock}",
     prometheusSimpleClient: "io.prometheus:simpleclient:${depVersions.prometheus}",
@@ -157,15 +196,34 @@ depLibs = [
     shrinkwrapApi: "org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api:${depVersions.shrinkwrap}",
     snappy: "org.xerial.snappy:snappy-java:${depVersions.snappy}",
     snakeyaml: "org.yaml:snakeyaml:${depVersions.snakeyaml}",
-    spotbugsAnnotations: "com.github.spotbugs:spotbugs-annotations:${depVersions.spotbugsAnnotations}",
+    spotbugsAnnotations: dependencies.create("com.github.spotbugs:spotbugs-annotations:${depVersions.spotbugsAnnotations}") {
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    },
     thrift: dependencies.create("org.apache.thrift:libthrift:${depVersions.thrift}") {
         exclude group: 'org.apache.tomcat.embed', module: 'tomcat-embed-core'
         exclude group: 'javax.annotation', module: 'javax.annotation-api'
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+        exclude group: 'org.apache.httpcomponents', module: 'httpcore'
+        exclude group: 'org.slf4j', module: 'slf4j-api'
     },
     testcontainers: "org.testcontainers:testcontainers:${depVersions.testcontainers}",
-    vertxCore: "io.vertx:vertx-core:${depVersions.vertx}",
-    vertxWeb: "io.vertx:vertx-web:${depVersions.vertx}",
+    vertxCore: dependencies.create("io.vertx:vertx-core:${depVersions.vertx}") {
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
+        exclude group: 'io.netty'
+    },
+    vertxWeb: dependencies.create("io.vertx:vertx-web:${depVersions.vertx}") {
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
+        exclude group: 'io.netty'
+    },
     yahooDatasketches: "com.yahoo.datasketches:sketches-core:${depVersions.yahooDatasketches}",
-    zookeeper: "org.apache.zookeeper:zookeeper:${depVersions.zookeeper}",
+    zookeeper: dependencies.create("org.apache.zookeeper:zookeeper:${depVersions.zookeeper}") {
+        exclude group: 'io.netty', module: 'netty-transport-native-epoll'
+        exclude group: 'log4j', module: 'log4j'
+        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    },
     zookeeperTest: "org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests"
 ]

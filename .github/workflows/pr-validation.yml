@@ -29,8 +29,6 @@ on:
       - 'site/**'
     workflow_dispatch:
 
-env:
-  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
 
 jobs:
   check:
@@ -48,7 +46,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Validate pull request style
-        run: mvn clean -B -nsu apache-rat:check checkstyle:check package -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+      - name: Validate pull request
+        run: ./gradlew build -x microbenchmarks:checkstyleMain -x spotbugsTest -x signDistTar -x test
       - name: Check license files
-        run: dev/check-all-licenses
+        run: dev/check-all-licenses-gradle

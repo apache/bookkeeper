@@ -16,6 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+plugins {
+    id 'java'
+    id 'com.adarshr.test-logger'
+}
+
 dependencies {
     implementation project(':bookkeeper-common')
     implementation project(':bookkeeper-server')
@@ -32,20 +38,29 @@ dependencies {
     implementation depLibs.commonsConfiguration
     implementation depLibs.commonsLang3
     implementation depLibs.curatorRecipes
+    implementation depLibs.curatorFramework
     implementation depLibs.grpc
+    runtimeOnly depLibs.googleHTTPClient
     implementation depLibs.guava
-    implementation depLibs.lombok
+    compileOnly depLibs.lombok
     implementation depLibs.slf4j
-
+    compileOnly depLibs.jsr305
     testImplementation project(':stream:distributedlog:common')
     testImplementation project(':stream:distributedlog:protocol')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
     testImplementation project(path: ':stream:clients:java:base', configuration: 'testArtifacts')
     testImplementation project(path: ':stream:distributedlog:core', configuration: 'testArtifacts')
     testImplementation depLibs.mockito
-
+    testImplementation depLibs.junit
+    testImplementation depLibs.lombok
+    testImplementation depLibs.metricsCore
+    testImplementation depLibs.snappy
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
+}
+
+jar {
+    archiveBaseName = 'stream-storage-service-impl'
 }
 
 publishing {

@@ -25,7 +25,6 @@ plugins {
 description = 'Apache BookKeeper :: Dist (All)'
 
 dependencies {
-
     implementation project(':bookkeeper-benchmark')
     implementation project(':bookkeeper-http:http-server')
     implementation project(':bookkeeper-http:vertx-http-server')
@@ -36,18 +35,13 @@ dependencies {
     implementation project(':stream:distributedlog:core')
     implementation project(':stream:server')
     implementation project(':bookkeeper-tools')
-
-    compileOnly depLibs.lombok
-    compileOnly depLibs.spotbugsAnnotations
-
-    implementation depLibs.log4j12api
-
-
-    testCompileOnly depLibs.lombok
-
-
-    annotationProcessor depLibs.lombok
-    testAnnotationProcessor depLibs.lombok
+    implementation depLibs.jsr305
+    runtimeOnly depLibs.log4j12api
+    implementation (depLibs.zookeeperTest) {
+        exclude group: "io.netty", module: "netty-transport-native-epoll"
+        exclude group: 'log4j', module: 'log4j'
+        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
 }
 
 jar {
@@ -116,7 +110,11 @@ distributions {
                             } else {
                                 // External dependencies
                                 def id = dep.moduleVersion.id
-                                archiveName = "${id.group}-${id.name}-${id.version}.jar"
+                                if (dep.classifier != null) {
+                                    archiveName = "${id.group}-${id.name}-${id.version}-${dep.classifier}.jar"
+                                } else {
+                                    archiveName = "${id.group}-${id.name}-${id.version}.jar"
+                                }
                             }
                             rename {archiveName}
                         }

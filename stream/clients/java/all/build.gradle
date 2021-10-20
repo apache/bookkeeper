@@ -25,13 +25,15 @@ dependencies {
     implementation project(':stream:proto')
 
     implementation depLibs.grpc
-    implementation depLibs.lombok
+    runtimeOnly depLibs.googleHTTPClient
+    compileOnly depLibs.lombok
     implementation depLibs.slf4j
 
     testImplementation project(path: ':stream:clients:java:base', configuration: 'testArtifacts')
     testImplementation depLibs.mockito
     testImplementation depLibs.powermockJunit
     testImplementation depLibs.powermockMockito
+    testImplementation depLibs.lombok
 
     annotationProcessor depLibs.lombok
 }

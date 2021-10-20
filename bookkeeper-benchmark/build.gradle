@@ -18,6 +18,8 @@
  */
 plugins {
     id 'java-library'
+    id 'com.adarshr.test-logger'
+    id 'org.gradle.test-retry'
 }
 
 description = 'Apache BookKeeper :: Benchmark'
@@ -39,7 +41,7 @@ dependencies {
     implementation depLibs.nettyBuffer
     implementation depLibs.nettyTransportNativeEpoll
     implementation depLibs.zookeeper
-
+    implementation depLibs.log4j12api
 
     testImplementation project(':bookkeeper-server')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
@@ -57,6 +59,11 @@ dependencies {
 }
 
 test {
+    retry {
+        maxFailures = 10
+        maxRetries = 3
+    }
+
     maxHeapSize = '4G'
     forkEvery = 1
     jvmArgs("-Djunit.timeout.test=600000",

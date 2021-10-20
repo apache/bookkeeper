@@ -18,6 +18,8 @@
  */
 plugins {
     id 'com.google.protobuf'
+    id 'com.adarshr.test-logger'
+    id 'org.gradle.test-retry'
 }
 
 dependencies {
@@ -32,8 +34,8 @@ dependencies {
     implementation depLibs.commonsLang2
     implementation depLibs.commonsLang3
     implementation depLibs.guava
-    implementation depLibs.jsr305
-    implementation depLibs.lombok
+    compileOnly depLibs.jsr305
+    compileOnly depLibs.lombok
     implementation depLibs.nettyBuffer
     implementation depLibs.nettyCommon
     implementation depLibs.protobuf
@@ -47,7 +49,7 @@ dependencies {
     testImplementation depLibs.metricsCore
     testImplementation depLibs.snappy
     testImplementation depLibs.slf4jSimple
-    runtimeOnly depLibs.commonsBeanutils
+    testImplementation depLibs.lombok
     testImplementation project(path: ':stream:distributedlog:core', configuration: 'testArtifacts')
 
     annotationProcessor depLibs.lombok
@@ -73,6 +75,11 @@ protobuf {
 }
 
 test {
+    retry {
+        maxFailures = 200
+        maxRetries = 5
+    }
+
     maxHeapSize = '2G'
     forkEvery = 1
 }

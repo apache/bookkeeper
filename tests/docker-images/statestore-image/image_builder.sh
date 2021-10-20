@@ -27,7 +27,7 @@ mkdir "${BASE_DIR}"/tests/docker-images/statestore-image/scripts
 mkdir "${BASE_DIR}"/tests/docker-images/statestore-image/temp_conf
 mkdir "${BASE_DIR}"/tests/docker-images/statestore-image/temp_bin
 
-cp "${BASE_DIR}"/stream/server/build/distributions/server.tar "${BASE_DIR}"/tests/docker-images/statestore-image/dist
+cp "${BASE_DIR}"/stream/server/build/distributions/server.tar.gz "${BASE_DIR}"/tests/docker-images/statestore-image/dist
 cp "${BASE_DIR}"/docker/scripts/* "${BASE_DIR}"/tests/docker-images/statestore-image/scripts
 cp "${BASE_DIR}"/conf/* "${BASE_DIR}"/tests/docker-images/statestore-image/temp_conf
 cp "${BASE_DIR}"/bin/* "${BASE_DIR}"/tests/docker-images/statestore-image/temp_bin
