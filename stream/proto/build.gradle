@@ -18,15 +18,18 @@
  */
 plugins {
     id 'com.google.protobuf'
+    id 'com.adarshr.test-logger'
 }
 
 dependencies {
     implementation project(':stream:common')
-    implementation depLibs.lombok
+    compileOnly depLibs.lombok
     implementation depLibs.grpc
+    runtimeOnly depLibs.googleHTTPClient
     implementation depLibs.commonsLang3
-    implementation depLibs.javaAnnotations
-
+    compileOnly depLibs.jsr305
+    testImplementation depLibs.junit
+    compileOnly depLibs.javaAnnotations
     annotationProcessor depLibs.lombok
 }
 
@@ -46,6 +49,10 @@ protobuf {
             grpc {}
         }
     }
+}
+
+jar {
+    archiveBaseName = 'stream-storage-proto'
 }
 
 publishing {

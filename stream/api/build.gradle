@@ -21,7 +21,7 @@ dependencies {
     implementation project(':stream:common')
 
     implementation depLibs.guava
-    implementation depLibs.lombok
+    compileOnly depLibs.lombok
     implementation depLibs.nettyBuffer
     implementation depLibs.nettyCommon
 

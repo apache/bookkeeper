@@ -18,6 +18,8 @@
  */
 plugins {
     id 'java'
+    id 'com.adarshr.test-logger'
+    id 'org.gradle.test-retry'
 }
 
 dependencies {
@@ -32,30 +34,36 @@ dependencies {
     implementation depLibs.commonsIO
     implementation depLibs.commonsLang3
     implementation depLibs.guava
-    implementation depLibs.jsr305
-    implementation depLibs.lombok
+    compileOnly depLibs.jsr305
+    compileOnly depLibs.lombok
     implementation depLibs.nettyBuffer
     implementation depLibs.nettyTransportNativeEpoll
     implementation depLibs.slf4j
     implementation depLibs.thrift
+    runtimeOnly depLibs.httpclient
     implementation depLibs.zookeeper
 
     testRuntimeOnly depLibs.metricsCore
     testRuntimeOnly depLibs.snappy
-    testRuntimeOnly depLibs.commonsBeanutils
-
 
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
     testImplementation project(path: ':stream:distributedlog:common', configuration: 'testArtifacts')
     testImplementation depLibs.junit
     testImplementation depLibs.mockito
-    implementation depLibs.javaAnnotations
+    testImplementation depLibs.lombok
+    testCompileOnly depLibs.jsr305
+    compileOnly depLibs.javaAnnotations
 
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
 }
 
 test {
+    retry {
+        maxFailures = 20
+        maxRetries = 2
+    }
+
     maxHeapSize = '4G'
     forkEvery = 1
 }
@@ -63,6 +71,10 @@ test {
 test.doFirst {
     jvmArgs("-Djunit.timeout.test=600000", "-Djunit.max.retry=3",
             "-Djava.net.preferIPv4Stack=true", "-Dio.netty.leakDetection.level=paranoid")
+}
+
+jar {
+    archiveBaseName = 'distributedlog-core'
 }
 
 publishing {
