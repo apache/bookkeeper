@@ -86,6 +86,16 @@ public interface LedgerManagerFactory extends AutoCloseable {
     LedgerUnderreplicationManager newLedgerUnderreplicationManager()
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException;
 
+
+    /**
+     * Return a ledger auditor manager, which is used to
+     * coordinate the auto-recovery process.
+     *
+     * @return ledger auditor manager
+     * @see LedgerAuditorManager
+     */
+    LedgerAuditorManager newLedgerAuditorManager() throws IOException, InterruptedException;
+
     /**
      * Format the ledger metadata for LedgerManager.
      *
