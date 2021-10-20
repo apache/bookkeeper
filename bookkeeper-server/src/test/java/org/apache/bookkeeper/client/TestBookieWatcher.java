@@ -32,6 +32,7 @@ import lombok.Cleanup;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
@@ -160,7 +161,7 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(metadataServiceUri);
 
-        try (BookKeeper bkc = new BookKeeper(conf, zk)) {
+        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf, zk)) {
 
             LedgerHandle lh;
             try {

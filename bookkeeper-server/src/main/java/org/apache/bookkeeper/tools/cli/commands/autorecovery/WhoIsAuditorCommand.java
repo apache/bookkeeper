@@ -21,18 +21,15 @@ package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
-import java.net.URI;
+import lombok.Cleanup;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,26 +61,17 @@ public class WhoIsAuditorCommand extends BookieCommand<CliFlags> {
     }
 
     private boolean getAuditor(ServerConfiguration conf)
-        throws ConfigurationException, InterruptedException, IOException, KeeperException {
-        ZooKeeper zk = null;
-        try {
-            String metadataServiceUri = conf.getMetadataServiceUri();
-            String zkServers = ZKMetadataDriverBase.getZKServersFromServiceUri(URI.create(metadataServiceUri));
-            zk = ZooKeeperClient.newBuilder()
-                                .connectString(zkServers)
-                                .sessionTimeoutMs(conf.getZkTimeout())
-                                .build();
-            BookieId bookieId = AuditorElector.getCurrentAuditor(conf, zk);
-            if (bookieId == null) {
-                LOG.info("No auditor elected");
-                return false;
-            }
-            LOG.info("Auditor: " + bookieId);
-        } finally {
-            if (zk != null) {
-                zk.close();
-            }
+            throws BKException, InterruptedException, IOException {
+        ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
+
+        @Cleanup
+        BookKeeperAdmin bka = new BookKeeperAdmin(clientConfiguration);
+        BookieId bookieId = bka.getCurrentAuditor();
+        if (bookieId == null) {
+            LOG.info("No auditor elected");
+            return false;
         }
+        LOG.info("Auditor: " + bookieId);
         return true;
     }
 }

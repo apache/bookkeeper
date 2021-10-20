@@ -20,6 +20,7 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
@@ -41,12 +42,12 @@ public class WhoIsAuditorService implements HttpEndpointService {
     static final Logger LOG = LoggerFactory.getLogger(WhoIsAuditorService.class);
 
     protected ServerConfiguration conf;
-    protected ZooKeeper zk;
+    protected BookKeeperAdmin bka;
 
-    public WhoIsAuditorService(ServerConfiguration conf, ZooKeeper zk) {
+    public WhoIsAuditorService(ServerConfiguration conf, BookKeeperAdmin bka) {
         checkNotNull(conf);
         this.conf = conf;
-        this.zk = zk;
+        this.bka = bka;
     }
 
     /*
@@ -57,9 +58,9 @@ public class WhoIsAuditorService implements HttpEndpointService {
         HttpServiceResponse response = new HttpServiceResponse();
 
         if (HttpServer.Method.GET == request.getMethod()) {
-            BookieId bookieId = null;
+            BookieId bookieId;
             try {
-                bookieId = AuditorElector.getCurrentAuditor(conf, zk);
+                bookieId = bka.getCurrentAuditor();
 
                 if (bookieId == null) {
                     response.setCode(HttpServer.StatusCode.NOT_FOUND);

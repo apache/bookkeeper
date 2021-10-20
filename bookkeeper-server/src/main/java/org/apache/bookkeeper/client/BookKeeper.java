@@ -81,7 +81,6 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
-import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
@@ -636,6 +635,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     @VisibleForTesting
+    public LedgerManagerFactory getLedgerManagerFactory() {
+        return ledgerManagerFactory;
+    }
+
+    @VisibleForTesting
     LedgerManager getUnderlyingLedgerManager() {
         return ((CleanupLedgerManager) ledgerManager).getUnderlying();
     }
@@ -741,10 +745,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     throw new IllegalArgumentException("Unable to convert digest type " + this);
             }
         }
-    }
-
-    ZooKeeper getZkHandle() {
-        return ((ZKMetadataClientDriver) metadataDriver).getZk();
     }
 
     protected ClientConfiguration getConf() {
