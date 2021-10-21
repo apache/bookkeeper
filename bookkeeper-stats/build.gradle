@@ -25,6 +25,10 @@ dependencies {
     implementation depLibs.slf4j
 }
 
+jar {
+    archiveBaseName = 'bookkeeper-stats-api'
+}
+
 publishing {
     publications {
         maven(MavenPublication) {

@@ -18,6 +18,7 @@
  */
 plugins {
     id 'java'
+    id 'com.adarshr.test-logger'
 }
 
 dependencies {
@@ -25,6 +26,7 @@ dependencies {
     implementation depLibs.commonsConfiguration
     implementation depLibs.guava
     implementation depLibs.jettyServlet
+    implementation depLibs.javaxServlet
     implementation depLibs.nettyCommon
     implementation depLibs.prometheusSimpleClient
     implementation depLibs.prometheusSimpleClientHotspot

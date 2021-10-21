@@ -29,10 +29,17 @@ dependencies {
     implementation depLibs.jcommander
     implementation depLibs.slf4j
     testImplementation depLibs.junit
-
     annotationProcessor depLibs.lombok
 }
 
 jar {
     archiveBaseName = 'bookkeeper-tools-framework'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'bookkeeper-tools-framework'
+        }
+    }
 }

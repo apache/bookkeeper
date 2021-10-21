@@ -22,21 +22,17 @@ package org.apache.bookkeeper.tools.cli.helpers;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-
 import java.util.function.Function;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.junit.Before;
-import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * A test base for testing cookie commands.
  */
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({ MetadataDrivers.class })
 public class CookieCommandTestBase extends CommandTestBase {
 
