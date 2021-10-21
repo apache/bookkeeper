@@ -197,6 +197,16 @@ public class TestStatsProvider implements StatsProvider {
 
         @Override
         public void removeScope(String name, StatsLogger statsLogger) {}
+
+        @Override
+        public OpStatsLogger getThreadScopedOpStatsLogger(String name) {
+            return getOpStatsLogger(name);
+        }
+
+        @Override
+        public Counter getThreadScopedCounter(String name) {
+            return getCounter(name);
+        }
     }
 
     @Override

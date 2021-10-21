@@ -82,6 +82,10 @@ public class PrometheusMetricsProvider implements StatsProvider {
     final ConcurrentMap<ScopeContext, LongAdderCounter> counters = new ConcurrentHashMap<>();
     final ConcurrentMap<ScopeContext, SimpleGauge<? extends Number>> gauges = new ConcurrentHashMap<>();
     final ConcurrentMap<ScopeContext, DataSketchesOpStatsLogger> opStats = new ConcurrentHashMap<>();
+    final ConcurrentMap<ScopeContext, ThreadScopedDataSketchesStatsLogger> threadScopedOpStats =
+            new ConcurrentHashMap<>();
+    final ConcurrentMap<ScopeContext, ThreadScopedLongAdderCounter> threadScopedCounters =
+            new ConcurrentHashMap<>();
 
     public PrometheusMetricsProvider() {
         this(CollectorRegistry.defaultRegistry);
