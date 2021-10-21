@@ -233,6 +233,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         } else {
             String dnsResolverName = conf.getString(REPP_DNS_RESOLVER_CLASS, ScriptBasedMapping.class.getName());
             actualDNSResolver = ReflectionUtils.newInstance(dnsResolverName, DNSToSwitchMapping.class);
+            actualDNSResolver.setBookieAddressResolver(bookieAddressResolver);
             if (actualDNSResolver instanceof Configurable) {
                 ((Configurable) actualDNSResolver).setConf(conf);
             }
