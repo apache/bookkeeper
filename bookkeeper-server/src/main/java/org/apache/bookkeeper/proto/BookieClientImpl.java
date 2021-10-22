@@ -655,7 +655,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
                 new DefaultThreadFactory("BookKeeperClientScheduler"));
         BookieClientImpl bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
-                null, executor, scheduler, NullStatsLogger.INSTANCE, b -> BookieSocketAddress.class.cast(b));
+                null, executor, scheduler, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         BookieId addr = new BookieSocketAddress(args[0], Integer.parseInt(args[1])).toBookieId();
 
         for (int i = 0; i < 100000; i++) {
