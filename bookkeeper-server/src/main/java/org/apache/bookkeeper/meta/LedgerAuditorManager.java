@@ -27,7 +27,7 @@ import org.apache.bookkeeper.net.BookieId;
 public interface LedgerAuditorManager extends AutoCloseable {
 
     /**
-     * Events that can be triggered by the LedgerAuditorManager
+     * Events that can be triggered by the LedgerAuditorManager.
      */
     enum AuditorEvent {
         SessionLost,
