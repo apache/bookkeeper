@@ -56,6 +56,8 @@ dependencies {
     implementation depLibs.log4jSlf4jImpl
     implementation depLibs.log4j12api
     implementation depLibs.log4jCore
+    runtimeOnly depLibs.metricsCore
+    runtimeOnly depLibs.snappy
 
     testImplementation project(':bookkeeper-stats-providers:prometheus-metrics-provider')
     testImplementation project(':bookkeeper-http:vertx-http-server')
@@ -75,6 +77,11 @@ dependencies {
     testImplementation depLibs.zookeeperTest
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
+}
+
+task writeClasspath {
+    buildDir.mkdirs()
+    new File(buildDir, "classpath.txt").text = sourceSets.main.runtimeClasspath.collect { it.absolutePath }.join(':') + "\n"
 }
 
 test {
