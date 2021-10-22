@@ -231,8 +231,12 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
 
         for (final Long ledgerId : bkActiveledgers) {
             try {
-                // check if the ledger is being replicated already by the replication worker
-                if (lum.isLedgerBeingReplicated(ledgerId)) {
+                // check ledger ensembles before creating lock nodes.
+                // this is to reduce the number of lock node creations and deletions in ZK.
+                // the ensemble check is done again after the lock node is created.
+                // also, check if the ledger is being replicated already by the replication worker
+                Versioned<LedgerMetadata> preCheckMetadata = ledgerManager.readLedgerMetadata(ledgerId).get();
+                if (!isNotBookieIncludedInLedgerEnsembles(preCheckMetadata) || lum.isLedgerBeingReplicated(ledgerId)) {
                     latch.countDown();
                     continue;
                 }
@@ -245,23 +249,12 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                     .whenComplete((metadata, exception) -> {
                             try {
                                 if (exception == null) {
-                                    // do not delete a ledger that is not closed, since the ensemble might
-                                    // change again and include the current bookie while we are deleting it
-                                    if (!metadata.getValue().isClosed()) {
-                                        return;
+                                    if (isNotBookieIncludedInLedgerEnsembles(metadata)) {
+                                        // this bookie is not supposed to have this ledger,
+                                        // thus we can delete this ledger now
+                                        overReplicatedLedgers.add(ledgerId);
+                                        garbageCleaner.clean(ledgerId);
                                     }
-                                    SortedMap<Long, ? extends List<BookieId>> ensembles =
-                                        metadata.getValue().getAllEnsembles();
-                                    for (List<BookieId> ensemble : ensembles.values()) {
-                                        // check if this bookie is supposed to have this ledger
-                                        if (ensemble.contains(selfBookieAddress)) {
-                                            return;
-                                        }
-                                    }
-                                    // this bookie is not supposed to have this ledger,
-                                    // thus we can delete this ledger now
-                                    overReplicatedLedgers.add(ledgerId);
-                                    garbageCleaner.clean(ledgerId);
                                 }
                             } finally {
                                 semaphore.release();
@@ -302,4 +295,22 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         }
     }
 
+    private boolean isNotBookieIncludedInLedgerEnsembles(Versioned<LedgerMetadata> metadata) {
+        // do not delete a ledger that is not closed, since the ensemble might
+        // change again and include the current bookie while we are deleting it
+        if (!metadata.getValue().isClosed()) {
+            return false;
+        }
+
+        SortedMap<Long, ? extends List<BookieId>> ensembles =
+                metadata.getValue().getAllEnsembles();
+        for (List<BookieId> ensemble : ensembles.values()) {
+            // check if this bookie is supposed to have this ledger
+            if (ensemble.contains(selfBookieAddress)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
