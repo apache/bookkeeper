@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jetty.server.Server;
@@ -158,6 +159,8 @@ public class PrometheusMetricsProvider implements StatsProvider {
                 server.stop();
             } catch (Exception e) {
                 log.warn("Failed to shutdown Jetty server", e);
+            } finally {
+                ThreadRegistry.clear();
             }
         }
     }

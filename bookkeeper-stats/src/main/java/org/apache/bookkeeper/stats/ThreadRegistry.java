@@ -45,6 +45,13 @@ public class ThreadRegistry {
     }
 
     /*
+        Clears all stored thread state.
+     */
+    public static void clear() {
+        threadPoolMap.clear();
+    }
+
+    /*
         Retrieves the registered ThreadPoolThread (if registered) for the calling thread.
      */
     public static ThreadPoolThread get() {
@@ -54,10 +61,10 @@ public class ThreadRegistry {
     /**
      * Stores the thread pool and ordinal.
      */
-    public static class ThreadPoolThread {
-        String threadPool;
-        int ordinal;
-        long threadId;
+    public static final class ThreadPoolThread {
+        final String threadPool;
+        final int ordinal;
+        final long threadId;
 
         public ThreadPoolThread(String threadPool, int ordinal, long threadId) {
             this.threadPool = threadPool;
