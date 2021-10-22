@@ -21,7 +21,9 @@
 package org.apache.bookkeeper.replication;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import java.io.IOException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieId;
@@ -97,9 +99,22 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          */
         ZKMetadataClientDriver zkMetadataClientDriver1 = startAutoRecoveryMain(main1);
         ZooKeeper zk1 = zkMetadataClientDriver1.getZk();
-        Auditor auditor1 = main1.auditorElector.getAuditor();
 
+        // Wait until auditor gets elected
+        for (int i = 0; i < 10; i++) {
+            try {
+                if (main1.auditorElector.getCurrentAuditor() != null) {
+                    break;
+                } else {
+                    Thread.sleep(1000);
+                }
+            } catch (IOException e) {
+                Thread.sleep(1000);
+            }
+        }
         BookieId currentAuditor = main1.auditorElector.getCurrentAuditor();
+        assertNotNull(currentAuditor);
+        Auditor auditor1 = main1.auditorElector.getAuditor();
         assertTrue("Current Auditor should be AR1", currentAuditor.equals(BookieImpl.getBookieId(confByIndex(0))));
         assertTrue("Auditor of AR1 should be running", auditor1.isRunning());
 

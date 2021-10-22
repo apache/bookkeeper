@@ -18,6 +18,8 @@
 package org.apache.bookkeeper.meta;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
+import static org.apache.bookkeeper.replication.ReplicationStats.ELECTION_ATTEMPTS;
 import com.google.protobuf.TextFormat;
 import java.io.IOException;
 import java.io.Serializable;
@@ -30,8 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
-import static org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
-import static org.apache.bookkeeper.replication.ReplicationStats.ELECTION_ATTEMPTS;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
@@ -45,6 +45,9 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 
+/**
+ * ZK based implementation of LedgerAuditorManager.
+ */
 @Slf4j
 public class ZkLedgerAuditorManager implements LedgerAuditorManager {
 

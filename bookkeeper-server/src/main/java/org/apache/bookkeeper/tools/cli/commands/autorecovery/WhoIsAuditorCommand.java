@@ -43,12 +43,19 @@ public class WhoIsAuditorCommand extends BookieCommand<CliFlags> {
     private static final String NAME = "whoisauditor";
     private static final String DESC = "Print the node which holds the auditor lock.";
 
+    private BookKeeperAdmin bka;
+
     public WhoIsAuditorCommand() {
+        this(null);
+    }
+
+    public WhoIsAuditorCommand(BookKeeperAdmin bka) {
         super(CliSpec.newBuilder()
                      .withName(NAME)
                      .withDescription(DESC)
                      .withFlags(new CliFlags())
                      .build());
+        this.bka = bka;
     }
 
     @Override
@@ -64,9 +71,14 @@ public class WhoIsAuditorCommand extends BookieCommand<CliFlags> {
             throws BKException, InterruptedException, IOException {
         ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
 
-        @Cleanup
-        BookKeeperAdmin bka = new BookKeeperAdmin(clientConfiguration);
-        BookieId bookieId = bka.getCurrentAuditor();
+        BookieId bookieId;
+        if (this.bka != null) {
+            bookieId = bka.getCurrentAuditor();
+        } else {
+            @Cleanup
+            BookKeeperAdmin bka = new BookKeeperAdmin(clientConfiguration);
+            bookieId = bka.getCurrentAuditor();
+        }
         if (bookieId == null) {
             LOG.info("No auditor elected");
             return false;

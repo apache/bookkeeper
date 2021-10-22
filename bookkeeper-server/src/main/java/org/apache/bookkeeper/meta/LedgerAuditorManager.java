@@ -18,13 +18,17 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.DataFormats;
 
+/**
+ * Interface to handle the ledger auditor election.
+ */
 public interface LedgerAuditorManager extends AutoCloseable {
 
+    /**
+     * Events that can be triggered by the LedgerAuditorManager
+     */
     enum AuditorEvent {
         SessionLost,
         VoteWasDeleted,
@@ -41,7 +45,7 @@ public interface LedgerAuditorManager extends AutoCloseable {
     void tryToBecomeAuditor(String bookieId, Consumer<AuditorEvent> listener) throws IOException, InterruptedException;
 
     /**
-     * Return the information regarding the current auditor
+     * Return the information regarding the current auditor.
      * @return
      */
     BookieId getCurrentAuditor() throws IOException, InterruptedException;
