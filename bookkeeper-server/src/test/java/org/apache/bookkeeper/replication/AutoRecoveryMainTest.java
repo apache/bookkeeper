@@ -21,13 +21,13 @@
 package org.apache.bookkeeper.replication;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import java.io.IOException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 
@@ -97,9 +97,22 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          */
         ZKMetadataClientDriver zkMetadataClientDriver1 = startAutoRecoveryMain(main1);
         ZooKeeper zk1 = zkMetadataClientDriver1.getZk();
-        Auditor auditor1 = main1.auditorElector.getAuditor();
 
-        BookieId currentAuditor = AuditorElector.getCurrentAuditor(confByIndex(0), zk1);
+        // Wait until auditor gets elected
+        for (int i = 0; i < 10; i++) {
+            try {
+                if (main1.auditorElector.getCurrentAuditor() != null) {
+                    break;
+                } else {
+                    Thread.sleep(1000);
+                }
+            } catch (IOException e) {
+                Thread.sleep(1000);
+            }
+        }
+        BookieId currentAuditor = main1.auditorElector.getCurrentAuditor();
+        assertNotNull(currentAuditor);
+        Auditor auditor1 = main1.auditorElector.getAuditor();
         assertTrue("Current Auditor should be AR1", currentAuditor.equals(BookieImpl.getBookieId(confByIndex(0))));
         assertTrue("Auditor of AR1 should be running", auditor1.isRunning());
 
@@ -142,18 +155,9 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
         }
 
         /*
-         * since zk1 and zk2 sessions are expired, the 'myVote' ephemeral nodes
-         * of AR1 and AR2 should not be existing anymore.
-         */
-        assertTrue("AR1's vote node should not be existing",
-                zk3.exists(main1.auditorElector.getMyVote(), false) == null);
-        assertTrue("AR2's vote node should not be existing",
-                zk3.exists(main2.auditorElector.getMyVote(), false) == null);
-
-        /*
          * the AR3 should be current auditor.
          */
-        currentAuditor = AuditorElector.getCurrentAuditor(confByIndex(2), zk3);
+        currentAuditor = main3.auditorElector.getCurrentAuditor();
         assertTrue("Current Auditor should be AR3", currentAuditor.equals(BookieImpl.getBookieId(confByIndex(2))));
         auditor3 = main3.auditorElector.getAuditor();
         assertTrue("Auditor of AR3 should be running", auditor3.isRunning());
@@ -180,29 +184,12 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
      * start autoRecoveryMain and make sure all its components are running and
      * myVote node is existing
      */
-    ZKMetadataClientDriver startAutoRecoveryMain(AutoRecoveryMain autoRecoveryMain)
-            throws InterruptedException, KeeperException, UnavailableException {
+    ZKMetadataClientDriver startAutoRecoveryMain(AutoRecoveryMain autoRecoveryMain) {
         autoRecoveryMain.start();
         ZKMetadataClientDriver metadataClientDriver = (ZKMetadataClientDriver) autoRecoveryMain.bkc
                 .getMetadataClientDriver();
-        ZooKeeper zk = metadataClientDriver.getZk();
-        String myVote;
-        for (int i = 0; i < 10; i++) {
-            if (autoRecoveryMain.auditorElector.isRunning() && autoRecoveryMain.replicationWorker.isRunning()
-                    && autoRecoveryMain.isAutoRecoveryRunning()) {
-                myVote = autoRecoveryMain.auditorElector.getMyVote();
-                if (myVote != null) {
-                    if (null != zk.exists(myVote, false)) {
-                        break;
-                    }
-                }
-            }
-            Thread.sleep(100);
-        }
         assertTrue("autoRecoveryMain components should be running", autoRecoveryMain.auditorElector.isRunning()
                 && autoRecoveryMain.replicationWorker.isRunning() && autoRecoveryMain.isAutoRecoveryRunning());
-        assertTrue("autoRecoveryMain's vote node should be existing",
-                zk.exists(autoRecoveryMain.auditorElector.getMyVote(), false) != null);
         return metadataClientDriver;
     }
 }

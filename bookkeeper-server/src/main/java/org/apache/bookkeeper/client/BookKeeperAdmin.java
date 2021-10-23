@@ -64,6 +64,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
+import org.apache.bookkeeper.meta.LedgerAuditorManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -75,7 +76,6 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
-import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.BookieLedgerIndexer;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -112,6 +112,8 @@ public class BookKeeperAdmin implements AutoCloseable {
      * getter (getUnderreplicationManager) so that it can be lazy-initialized
      */
     private LedgerUnderreplicationManager underreplicationManager;
+
+    private LedgerAuditorManager ledgerAuditorManager;
 
     /**
      * Constructor that takes in a ZooKeeper servers connect string so we know
@@ -197,6 +199,14 @@ public class BookKeeperAdmin implements AutoCloseable {
     public void close() throws InterruptedException, BKException {
         if (ownsBK) {
             bkc.close();
+        }
+
+        if (ledgerAuditorManager != null) {
+            try {
+                ledgerAuditorManager.close();
+            } catch (Exception e) {
+                throw new BKException.MetaStoreException(e);
+            }
         }
     }
 
@@ -1401,6 +1411,14 @@ public class BookKeeperAdmin implements AutoCloseable {
         return underreplicationManager;
     }
 
+    private LedgerAuditorManager getLedgerAuditorManager()
+            throws IOException, InterruptedException {
+        if (ledgerAuditorManager == null) {
+            ledgerAuditorManager = mFactory.newLedgerAuditorManager();
+        }
+        return ledgerAuditorManager;
+    }
+
     /**
      * Setter for LostBookieRecoveryDelay value (in seconds) in Zookeeper.
      *
@@ -1452,8 +1470,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             throw new UnavailableException("Autorecovery is disabled. So giving up!");
         }
 
-        BookieId auditorId =
-            AuditorElector.getCurrentAuditor(new ServerConfiguration(bkc.getConf()), bkc.getZkHandle());
+        BookieId auditorId = getLedgerAuditorManager().getCurrentAuditor();
         if (auditorId == null) {
             LOG.error("No auditor elected, though Autorecovery is enabled. So giving up.");
             throw new UnavailableException("No auditor elected, though Autorecovery is enabled. So giving up.");
@@ -1705,5 +1722,9 @@ public class BookKeeperAdmin implements AutoCloseable {
     public CompletableFuture<AvailabilityOfEntriesOfLedger> asyncGetListOfEntriesOfLedger(BookieId address,
             long ledgerId) {
         return bkc.getBookieClient().getListOfEntriesOfLedger(address, ledgerId);
+    }
+
+    public BookieId getCurrentAuditor() throws IOException, InterruptedException {
+        return getLedgerAuditorManager().getCurrentAuditor();
     }
 }
