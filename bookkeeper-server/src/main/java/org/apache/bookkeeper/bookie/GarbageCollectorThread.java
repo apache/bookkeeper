@@ -474,7 +474,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                 end = System.currentTimeMillis();
                 timeDiff = end - start;
             }
-            if (meta.getUsage() >= threshold || (maxTimeMillis > 0 && timeDiff > maxTimeMillis) || !running) {
+            if (meta.getUsage() >= threshold || (maxTimeMillis > 0 && timeDiff >= maxTimeMillis) || !running) {
                 // We allow the usage limit calculation to continue so that we get a accurate
                 // report of where the usage was prior to running compaction.
                 continue;
