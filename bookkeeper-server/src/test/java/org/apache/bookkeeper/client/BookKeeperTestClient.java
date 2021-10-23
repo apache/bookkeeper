@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
+import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -53,13 +54,20 @@ public class BookKeeperTestClient extends BookKeeper {
         this.statsProvider = statsProvider;
     }
 
+    public BookKeeperTestClient(ClientConfiguration conf, ZooKeeper zkc)
+            throws IOException, InterruptedException, BKException {
+        super(conf, zkc, null, new UnpooledByteBufAllocator(false),
+                NullStatsLogger.INSTANCE, null, null, null);
+        this.statsProvider = statsProvider;
+    }
+
     public BookKeeperTestClient(ClientConfiguration conf)
             throws InterruptedException, BKException, IOException {
-        this(conf, null);
+        this(conf, (TestStatsProvider) null);
     }
 
     public ZooKeeper getZkHandle() {
-        return super.getZkHandle();
+        return ((ZKMetadataClientDriver) metadataDriver).getZk();
     }
 
     public ClientConfiguration getConf() {

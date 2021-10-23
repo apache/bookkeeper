@@ -55,11 +55,6 @@ public class MockBookKeeper extends BookKeeper {
     final ZooKeeper zkc;
 
     @Override
-    public ZooKeeper getZkHandle() {
-        return zkc;
-    }
-
-    @Override
     public ClientConfiguration getConf() {
         return super.getConf();
     }

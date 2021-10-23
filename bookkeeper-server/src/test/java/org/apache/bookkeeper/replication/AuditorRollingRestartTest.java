@@ -24,9 +24,11 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerMa
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerAuditorManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieId;
@@ -77,7 +79,9 @@ public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
                      underReplicationManager.pollLedgerToRereplicate(), -1);
         underReplicationManager.disableLedgerReplication();
 
-        BookieId auditor = AuditorElector.getCurrentAuditor(baseConf, zkc);
+        @Cleanup
+        LedgerAuditorManager lam = mFactory.newLedgerAuditorManager();
+        BookieId auditor = lam.getCurrentAuditor();
         ServerConfiguration conf = killBookie(auditor);
         Thread.sleep(2000);
         startBookie(conf);

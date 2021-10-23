@@ -160,7 +160,7 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(metadataServiceUri);
 
-        try (BookKeeper bkc = new BookKeeper(conf, zk)) {
+        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf, zk)) {
 
             LedgerHandle lh;
             try {

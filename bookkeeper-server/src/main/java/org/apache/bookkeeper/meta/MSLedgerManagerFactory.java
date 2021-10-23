@@ -42,6 +42,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.metastore.MSException;
 import org.apache.bookkeeper.metastore.MSWatchedEvent;
@@ -60,6 +61,7 @@ import org.apache.bookkeeper.metastore.Value;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -814,5 +816,11 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         log.info("Successfully nuked existing cluster, ZKServers: {} ledger root path: {}",
                 zkServers, zkLedgersRootPath);
         return true;
+    }
+
+    @Override
+    public LedgerAuditorManager newLedgerAuditorManager() {
+        ServerConfiguration serverConfiguration = new ServerConfiguration(conf);
+        return new ZkLedgerAuditorManager(zk, serverConfiguration, NullStatsLogger.INSTANCE);
     }
 }

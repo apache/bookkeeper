@@ -36,7 +36,6 @@ import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -64,16 +63,12 @@ import org.apache.bookkeeper.server.http.service.TriggerAuditService;
 import org.apache.bookkeeper.server.http.service.TriggerGCService;
 import org.apache.bookkeeper.server.http.service.WhoIsAuditorService;
 import org.apache.bookkeeper.stats.StatsProvider;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 
 /**
  * Bookkeeper based implementation of HttpServiceProvider,
  * which provide bookkeeper services to handle http requests
  * from different http endpoints.
- *
- * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1332}
  */
 @Slf4j
 public class BKHttpServiceProvider implements HttpServiceProvider {
@@ -82,7 +77,6 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     private final BookieServer bookieServer;
     private final AutoRecoveryMain autoRecovery;
     private final ServerConfiguration serverConf;
-    private final ZooKeeper zk;
     private final BookKeeperAdmin bka;
     private final ExecutorService executor;
 
@@ -95,12 +89,6 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
         this.autoRecovery = autoRecovery;
         this.serverConf = serverConf;
         this.statsProvider = statsProvider;
-        String zkServers = ZKMetadataDriverBase.resolveZkServers(serverConf);
-        this.zk = ZooKeeperClient.newBuilder()
-          .connectString(zkServers)
-          .sessionTimeoutMs(serverConf.getZkTimeout())
-          .build();
-
         ClientConfiguration clientConfiguration = new ClientConfiguration(serverConf);
         this.bka = new BookKeeperAdmin(clientConfiguration);
 
@@ -114,9 +102,6 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             executor.shutdown();
             if (bka != null) {
                 bka.close();
-            }
-            if (zk != null) {
-                zk.close();
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
@@ -236,7 +221,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             case LIST_UNDER_REPLICATED_LEDGER:
                 return new ListUnderReplicatedLedgerService(configuration, bookieServer);
             case WHO_IS_AUDITOR:
-                return new WhoIsAuditorService(configuration, zk);
+                return new WhoIsAuditorService(configuration, bka);
             case TRIGGER_AUDIT:
                 return new TriggerAuditService(configuration, bka);
             case LOST_BOOKIE_RECOVERY_DELAY:
