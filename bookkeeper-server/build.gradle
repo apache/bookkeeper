@@ -74,6 +74,7 @@ dependencies {
     testImplementation depLibs.powermockJunit
     testImplementation depLibs.powermockMockito
     testImplementation depLibs.snappy
+    testImplementation depLibs.zookeeper
     testImplementation depLibs.zookeeperTest
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok

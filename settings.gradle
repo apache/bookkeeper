@@ -96,6 +96,7 @@ include(':bookkeeper-benchmark',
         'tests:integration:standalone',
         'tests:scripts',
         'tests:shaded:bookkeeper-server-shaded-test',
+        'tests:shaded:bookkeeper-server-tests-shaded-test',
         'tests:shaded:distributedlog-core-shaded-test',
         'tools:framework')
 
