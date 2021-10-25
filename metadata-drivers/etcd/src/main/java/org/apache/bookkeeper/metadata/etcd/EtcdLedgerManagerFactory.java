@@ -25,6 +25,7 @@ import java.io.IOException;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager;
+import org.apache.bookkeeper.meta.LedgerAuditorManager;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -89,6 +90,11 @@ class EtcdLedgerManagerFactory implements LedgerManagerFactory {
     public LedgerUnderreplicationManager newLedgerUnderreplicationManager()
         throws KeeperException, InterruptedException, CompatibilityException {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public LedgerAuditorManager newLedgerAuditorManager() throws IOException, InterruptedException {
+        return null;
     }
 
     @Override
