@@ -93,7 +93,6 @@ depLibs = [
     commonsCli: "commons-cli:commons-cli:${depVersions.commonsCli}",
     arquillianCubeDocker: "org.arquillian.cube:arquillian-cube-docker:${depVersions.arquillianCubeDocker}",
     arquillianJunitContainer: "org.jboss.arquillian.junit:arquillian-junit-container:${depVersions.arquillianJunit}",
-    arquillianJunitCore: "org.jboss.arquillian.junit:arquillian-junit-core:${depVersions.arquillianJunit}",
     arquillianJunitStandalone: "org.jboss.arquillian.junit:arquillian-junit-standalone:${depVersions.arquillianJunit}",
     commonsCodec: "commons-codec:commons-codec:${depVersions.commonsCodec}",
     commonsCollections4: "org.apache.commons:commons-collections4:${depVersions.commonsCollections4}",

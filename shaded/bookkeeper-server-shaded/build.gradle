@@ -30,7 +30,6 @@ dependencies {
 
 shadowJar {
     dependencies {
-
     }
     relocate 'com.google', 'org.apache.bookkeeper.shaded.com.google'
     archiveBaseName.set("bookkeeper-server-shaded")

@@ -61,7 +61,7 @@ else
   JAVA=${JAVA_HOME}/bin/java
 fi
 
-PROJECT_TARGET_DIR=${PROJECT_TARGET_DIR:-target}
+PROJECT_TARGET_DIR=${PROJECT_TARGET_DIR:-build}
 BINDIR=${BK_BINDIR:-"`dirname "$0"`"}
 BK_HOME=${BK_HOME:-"`cd ${BINDIR}/..;pwd`"}
 BK_CONFDIR=${BK_HOME}/conf
