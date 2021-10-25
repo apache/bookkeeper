@@ -26,7 +26,7 @@ plugins {
 description = 'Apache BookKeeper :: Shaded :: distributedlog-core-shaded'
 
 dependencies {
-    implementation project(':stream:distributedlog:core')
+     project(':stream:distributedlog:core')
 }
 
 shadowJar {

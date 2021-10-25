@@ -18,21 +18,16 @@
  */
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow'
-    id 'com.github.hierynomus.license'
+    id 'com.adarshr.test-logger'
 }
-
-description = 'Apache BookKeeper :: Shaded :: bookkeeper-server-shaded'
 
 dependencies {
-    implementation project(':bookkeeper-server')
+    testImplementation depLibs.slf4j
+    testImplementation depLibs.junit
+    testImplementation depLibs.mockito
+    testImplementation depLibs.powermockMockito
+    testImplementation depLibs.powermockJunit
+    testImplementation depLibs.commonsConfiguration
+    testImplementation fileTree(dir: '../../../shaded/distributedlog-core-shaded/', include: ['**/*.jar'])
 }
 
-shadowJar {
-    dependencies {
-
-    }
-    relocate 'com.google', 'org.apache.bookkeeper.shaded.com.google'
-    archiveBaseName.set("bookkeeper-server-shaded")
-    archiveClassifier.set("")
-}

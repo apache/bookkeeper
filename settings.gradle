@@ -95,6 +95,8 @@ include(':bookkeeper-benchmark',
         'tests:integration:smoke',
         'tests:integration:standalone',
         'tests:scripts',
+        'tests:shaded:bookkeeper-server-shaded-test',
+        'tests:shaded:distributedlog-core-shaded-test',
         'tools:framework')
 
 project(':bookkeeper-tools').projectDir = file('tools/all')
