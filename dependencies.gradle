@@ -156,6 +156,7 @@ depLibs = [
     jettyServlet: dependencies.create("org.eclipse.jetty:jetty-servlet:${depVersions.jetty}") {
         exclude group: 'javax.servlet', module: 'javax.servlet-api'
     },
+    jettyWebapp: "org.eclipse.jetty:jetty-webapp:${depVersions.jetty}",
     jmock: "org.jmock:jmock:${depVersions.jmock}",
     jmhCore: "org.openjdk.jmh:jmh-core:${depVersions.jmh}",
     jmhGeneratorAnnprocess: "org.openjdk.jmh:jmh-generator-annprocess:${depVersions.jmh}",
