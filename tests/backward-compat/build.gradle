@@ -17,5 +17,28 @@
  * under the License.
  */
 
+plugins {
+    id 'groovy'
+    id 'com.adarshr.test-logger'
+}
+
+subprojects {
+    if (project.name == "bc-non-fips") {
+        return
+    }
+
+    apply plugin: 'groovy'
+    apply plugin: 'com.adarshr.test-logger'
 
 
+    dependencies {
+        testImplementation 'org.codehaus.groovy:groovy-all:2.4.15'
+        testImplementation project(":tests:integration-tests-utils")
+        testImplementation project(":tests:integration-tests-topologies")
+        testImplementation depLibs.arquillianJunitContainer
+        testImplementation depLibs.junit
+        testImplementation depLibs.slf4j
+        testImplementation depLibs.arquillianCubeDocker
+    }
+
+}

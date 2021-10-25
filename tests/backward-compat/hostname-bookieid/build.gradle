@@ -17,21 +17,3 @@
  * under the License.
  */
 
-plugins {
-    id 'java'
-    id 'com.adarshr.test-logger'
-}
-
-dependencies {
-
-    testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
-    testImplementation project(path: ':bookkeeper-server', configuration: 'testArtifacts')
-    testImplementation depLibs.junit
-    testImplementation depLibs.slf4j
-    testImplementation depLibs.bcpkixJdk15on
-    testImplementation depLibs.bcproveExtJdk15on
-
-    testCompileOnly depLibs.lombok
-    testAnnotationProcessor depLibs.lombok
-}
-

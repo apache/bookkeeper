@@ -16,8 +16,3 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-plugins {
-    id 'java'
-    id 'com.adarshr.test-logger'
-}
