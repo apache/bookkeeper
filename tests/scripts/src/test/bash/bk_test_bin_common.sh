@@ -123,7 +123,7 @@ testFindModuleJar() {
   TEST_FILES=(
     "${MODULE}-${VERSION}.jar"
     "lib/${MODULE}-${VERSION}.jar"
-    "${MODULE_PATH}/target/${MODULE}-${VERSION}.jar"
+    "${MODULE_PATH}/${PROJECT_TARGET_DIR}/${MODULE}-${VERSION}.jar"
   )
   count=0
   while [ "x${TEST_FILES[count]}" != "x" ]
@@ -187,8 +187,8 @@ testSetModuleClasspath() {
 
   MODULE_PATH="testmodule"
 
-  mkdir -p ${BK_HOME}/${MODULE_PATH}/target
-  echo "test-classpath" > ${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt
+  mkdir -p ${BK_HOME}/${MODULE_PATH}/${PROJECT_TARGET_DIR}
+  echo "test-classpath" > ${BK_HOME}/${MODULE_PATH}/${PROJECT_TARGET_DIR}/cached_classpath.txt
 
   local result=$(set_module_classpath ${MODULE_PATH})
   assertEquals "test-classpath" ${result}

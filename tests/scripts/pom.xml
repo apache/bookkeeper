@@ -66,6 +66,9 @@
               <skip>${skipTests}</skip>
               <workingDirectory>${project.basedir}/src/test/bash</workingDirectory>
               <executable>${project.basedir}/src/test/bash/bk_test.sh</executable>
+              <arguments>
+                <argument>target</argument>
+              </arguments>
             </configuration>
           </execution>
         </executions>

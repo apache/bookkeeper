@@ -94,6 +94,7 @@ include(':bookkeeper-benchmark',
         'tests:integration:cluster',
         'tests:integration:smoke',
         'tests:integration:standalone',
+        'tests:scripts',
         'tools:framework')
 
 project(':bookkeeper-tools').projectDir = file('tools/all')
