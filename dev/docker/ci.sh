@@ -50,8 +50,7 @@ BOOKKEEPER_ROOT=${SCRIPT_DIR}/../..
 
 pushd ${BOOKKEEPER_ROOT}
 
-docker run \
-  --rm=true \
+docker run \  --rm=true \
   -w ${BOOKKEEPER_ROOT} \
   -u "${USER}" \
   -v "${BOOKKEEPER_ROOT}:${BOOKKEEPER_ROOT}" \
