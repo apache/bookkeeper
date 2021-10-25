@@ -94,7 +94,7 @@ class EtcdLedgerManagerFactory implements LedgerManagerFactory {
 
     @Override
     public LedgerAuditorManager newLedgerAuditorManager() throws IOException, InterruptedException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
