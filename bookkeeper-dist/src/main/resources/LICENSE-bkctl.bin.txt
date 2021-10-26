@@ -232,6 +232,8 @@ Apache Software License, Version 2.
 - lib/io.netty-netty-transport-native-unix-common-4.1.68.Final.jar [11]
 - lib/org.apache.logging.log4j-log4j-1.2-api-2.14.1.jar [16]
 - lib/org.apache.logging.log4j-log4j-api-2.14.1.jar [16]
+- lib/org.apache.logging.log4j-log4j-core-2.14.1.jar [16]
+- lib/org.apache.logging.log4j-log4j-slf4j-impl-2.14.1.jar [16]
 - lib/net.java.dev.jna-jna-3.2.7.jar [17]
 - lib/org.apache.commons-commons-collections4-4.1.jar [18]
 - lib/org.apache.commons-commons-lang3-3.6.jar [19]
