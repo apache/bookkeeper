@@ -51,14 +51,17 @@ import org.openjdk.jmh.annotations.Warmup;
 @Measurement(iterations = 3, time = 10, timeUnit = TimeUnit.SECONDS)
 public class OrderedExecutorBenchmark {
 
-    private static Map<String, Supplier<ExecutorService>> providers = ImmutableMap.of( //
+    private static Map<String, Supplier<ExecutorService>> providers = ImmutableMap.of(
             "JDK-ThreadPool", () -> Executors.newFixedThreadPool(1),
-            "OrderedExecutor", () -> OrderedExecutor.newBuilder().numThreads(1).build(), //
+            "OrderedExecutor", () -> OrderedExecutor.newBuilder().numThreads(1).build(),
             "OrderedScheduler", () -> OrderedScheduler.newSchedulerBuilder().numThreads(1).build());
 
+    /**
+     * State holder of the test.
+    */
     @State(Scope.Benchmark)
     public static class TestState {
-        @Param({ "JDK-ThreadPool", "OrderedExecutor", "OrderedScheduler" })
+        @Param({"JDK-ThreadPool", "OrderedExecutor", "OrderedScheduler"})
         private String executorName;
 
         private ExecutorService executor;

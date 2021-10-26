@@ -47,6 +47,6 @@ jobs:
         with:
           java-version: 1.8
       - name: Validate pull request
-        run: ./gradlew build -x microbenchmarks:checkstyleMain -x spotbugsTest -x signDistTar -x test
+        run: ./gradlew build -x spotbugsTest -x signDistTar -x test
       - name: Check license files
         run: dev/check-all-licenses-gradle
