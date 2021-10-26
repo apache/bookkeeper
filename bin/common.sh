@@ -61,7 +61,6 @@ else
   JAVA=${JAVA_HOME}/bin/java
 fi
 
-PROJECT_TARGET_DIR=${PROJECT_TARGET_DIR:-build}
 BINDIR=${BK_BINDIR:-"`dirname "$0"`"}
 BK_HOME=${BK_HOME:-"`cd ${BINDIR}/..;pwd`"}
 BK_CONFDIR=${BK_HOME}/conf
@@ -197,7 +196,7 @@ find_module_jar() {
   fi
 
   if [ -z "${MODULE_JAR}" ]; then
-    BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/${PROJECT_TARGET_DIR} ${MODULE_NAME})
+    BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
     if [ -z "${BUILT_JAR}" ]; then
       echo "Couldn't find module '${MODULE_NAME}' jar." >&2
       read -p "Do you want me to run \`mvn package -DskipTests\` for you ? (y|n) " answer
@@ -213,7 +212,7 @@ find_module_jar() {
           ;;
       esac
 
-      BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/${PROJECT_TARGET_DIR} ${MODULE_NAME})
+      BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
     fi
     if [ -n "${BUILT_JAR}" ]; then
       MODULE_JAR=${BUILT_JAR}
@@ -238,12 +237,13 @@ add_maven_deps_to_classpath() {
   # Need to generate classpath from maven pom. This is costly so generate it
   # and cache it. Save the file into our target dir so a mvn clean will get
   # clean it up and force us create a new one.
-  f="${BK_HOME}/${MODULE_PATH}/${PROJECT_TARGET_DIR}/cached_classpath.txt"
-  output="${BK_HOME}/${MODULE_PATH}/${PROJECT_TARGET_DIR}/build_classpath.out"
+  f="${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt"
+  output="${BK_HOME}/${MODULE_PATH}/target/build_classpath.out"
+
   if [ ! -f ${f} ]; then
     echo "the classpath of module '${MODULE_PATH}' is not found, generating it ..." >&2
     echo "see output at ${output} for the progress ..." >&2
-    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${PROJECT_TARGET_DIR}/cached_classpath.txt" &> ${output}
+    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> ${output}
     echo "the classpath of module '${MODULE_PATH}' is generated at '${f}'." >&2
   fi
 }
@@ -258,7 +258,7 @@ set_module_classpath() {
     echo ${BK_CLASSPATH}
   else
     add_maven_deps_to_classpath ${MODULE_PATH} >&2
-    cat ${BK_HOME}/${MODULE_PATH}/${PROJECT_TARGET_DIR}/cached_classpath.txt
+    cat ${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt
   fi
   return
 }

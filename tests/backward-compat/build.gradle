@@ -30,7 +30,6 @@ subprojects {
     apply plugin: 'groovy'
     apply plugin: 'com.adarshr.test-logger'
 
-
     dependencies {
         testImplementation 'org.codehaus.groovy:groovy-all:2.4.15'
         testImplementation project(":tests:integration-tests-utils")

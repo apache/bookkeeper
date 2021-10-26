@@ -31,13 +31,13 @@ task downloadShunit2(type: Download) {
 
 task extractShunit2(dependsOn: downloadShunit2, type: Copy) {
     from zipTree(downloadShunit2.dest)
-    into new File(buildDir, "lib")
+    into new File(buildDir, "libs/lib")
 }
 
 task executeShTests(dependsOn: extractShunit2, type: Exec) {
 
     workingDir "src/test/bash"
     commandLine "./bk_test.sh"
-    args "build"
+    args "-e PROJECT_BUILD_SYSTEM=gradle"
 }
 tasks.test.dependsOn("executeShTests")

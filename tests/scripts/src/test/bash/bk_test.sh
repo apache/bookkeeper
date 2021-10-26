@@ -21,7 +21,6 @@
 # */
 
 ARGV0=`basename "$0"`
-export PROJECT_TARGET_DIR="build"
 PREFIX="bk_test_"
 SHELLS="/bin/sh /bin/bash"
 
