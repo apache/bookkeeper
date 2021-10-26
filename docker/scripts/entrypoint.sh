@@ -45,7 +45,7 @@ function run_command() {
         exit
     else
         echo "Run command '$@'"
-        exec $@
+        exec "$@"
     fi
 }
 
