@@ -397,10 +397,10 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         }
 
         // create auditor and call `checkAllLedgers`
-        ServerConfiguration configuration = confByIndex(0);
+        ServerConfiguration configuration = bsConfs.get(0);
         configuration.setAuditorMaxNumberOfConcurrentOpenLedgerOperations(10);
 
-        Auditor auditor1 = new Auditor(BookieImpl.getBookieId(configuration).toString(),
+        Auditor auditor1 = new Auditor(Bookie.getBookieId(configuration).toString(),
             configuration, NullStatsLogger.INSTANCE);
         Auditor auditor = Mockito.spy(auditor1);
 
