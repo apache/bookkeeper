@@ -59,6 +59,13 @@ releaseParams { // ReleaseExtension
 }
 
 allprojects {
+
+    configurations.all {
+        resolutionStrategy {
+            failOnVersionConflict()
+        }
+    }
+
     apply from: "$rootDir/dependencies.gradle"
     if (it.path != ':circe-checksum:src:main:circe'
         && it.path != ':cpu-affinity:src:main:affinity'
@@ -82,7 +89,7 @@ allprojects {
                 source ='src/test/java'
             }
         }
- 
+
         spotbugs {
             toolVersion = '3.1.8'
             excludeFilter = file("$rootDir/buildtools/src/main/resources/bookkeeper/findbugsExclude.xml")
