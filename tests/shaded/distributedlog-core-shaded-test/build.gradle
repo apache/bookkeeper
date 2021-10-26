@@ -28,6 +28,6 @@ dependencies {
     testImplementation depLibs.powermockMockito
     testImplementation depLibs.powermockJunit
     testImplementation depLibs.commonsConfiguration
-    testImplementation fileTree(dir: '../../../shaded/distributedlog-core-shaded/', include: ['**/*.jar'])
+    testImplementation project(path: ':shaded:distributedlog-core-shaded', configuration: 'shadow')
 }
 

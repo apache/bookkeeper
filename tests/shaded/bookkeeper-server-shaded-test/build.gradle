@@ -24,6 +24,6 @@ plugins {
 dependencies {
     testImplementation depLibs.slf4j
     testImplementation depLibs.junit
-    testImplementation fileTree(dir: '../../../shaded/bookkeeper-server-shaded/', include: ['**/*.jar'])
+    testImplementation project(path: ':shaded:bookkeeper-server-shaded', configuration: 'shadow')
 }
 
