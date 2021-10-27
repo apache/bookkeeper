@@ -83,7 +83,8 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
                 traceTaskExecution,
                 preserveMdcForTaskExecution,
                 warnTimeMicroSec,
-                maxTasksInQueue);
+                maxTasksInQueue,
+                enableThreadScopedMetrics);
         }
     }
 
@@ -112,9 +113,11 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
                                boolean traceTaskExecution,
                                boolean preserveMdcForTaskExecution,
                                long warnTimeMicroSec,
-                               int maxTasksInQueue) {
+                               int maxTasksInQueue,
+                               boolean enableThreadScopedMetrics) {
         super(baseName, numThreads, threadFactory, statsLogger, traceTaskExecution,
-                preserveMdcForTaskExecution, warnTimeMicroSec, maxTasksInQueue, false /* enableBusyWait */);
+                preserveMdcForTaskExecution, warnTimeMicroSec, maxTasksInQueue,
+                false /* enableBusyWait */, enableThreadScopedMetrics);
     }
 
     @Override
