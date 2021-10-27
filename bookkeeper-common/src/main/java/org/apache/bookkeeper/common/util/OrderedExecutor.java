@@ -423,7 +423,8 @@ public class OrderedExecutor implements ExecutorService {
             }
 
             // Register gauges
-            statsLogger.registerGauge(String.format("%s-queue-%d", name, idx), new Gauge<Number>() {
+            statsLogger.scopeLabel("thread", String.valueOf(idx))
+                    .registerGauge(String.format("%s-queue", name), new Gauge<Number>() {
                 @Override
                 public Number getDefaultValue() {
                     return 0;
@@ -434,7 +435,8 @@ public class OrderedExecutor implements ExecutorService {
                     return thread.getQueue().size();
                 }
             });
-            statsLogger.registerGauge(String.format("%s-completed-tasks-%d", name, idx), new Gauge<Number>() {
+            statsLogger.scopeLabel("thread", String.valueOf(idx))
+                    .registerGauge(String.format("%s-completed-tasks", name), new Gauge<Number>() {
                 @Override
                 public Number getDefaultValue() {
                     return 0;
@@ -445,7 +447,8 @@ public class OrderedExecutor implements ExecutorService {
                     return thread.getCompletedTaskCount();
                 }
             });
-            statsLogger.registerGauge(String.format("%s-total-tasks-%d", name, idx), new Gauge<Number>() {
+            statsLogger.scopeLabel("thread", String.valueOf(idx))
+                    .registerGauge(String.format("%s-total-tasks", name), new Gauge<Number>() {
                 @Override
                 public Number getDefaultValue() {
                     return 0;
