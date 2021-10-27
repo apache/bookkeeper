@@ -167,6 +167,22 @@ public class BroadCastStatsLogger {
             first.removeScope(scope, another.first);
             second.removeScope(scope, another.second);
         }
+
+        /**
+         Thread-scoped stats not currently supported.
+         */
+        @Override
+        public OpStatsLogger getThreadScopedOpStatsLogger(String name) {
+            return getOpStatsLogger(name);
+        }
+
+        /**
+         Thread-scoped stats not currently supported.
+         */
+        @Override
+        public Counter getThreadScopedCounter(String name) {
+            return getCounter(name);
+        }
     }
 
     /**

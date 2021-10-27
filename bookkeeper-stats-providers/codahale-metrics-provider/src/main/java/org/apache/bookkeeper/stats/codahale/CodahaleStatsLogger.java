@@ -109,4 +109,20 @@ public class CodahaleStatsLogger implements StatsLogger {
     public void removeScope(String name, StatsLogger statsLogger) {
         // no-op. the codahale stats logger doesn't have the references for stats logger.
     }
+
+    /**
+        Thread-scoped stats not currently supported.
+     */
+    @Override
+    public OpStatsLogger getThreadScopedOpStatsLogger(String name) {
+        return getOpStatsLogger(name);
+    }
+
+    /**
+        Thread-scoped stats not currently supported.
+     */
+    @Override
+    public Counter getThreadScopedCounter(String name) {
+        return getCounter(name);
+    }
 }

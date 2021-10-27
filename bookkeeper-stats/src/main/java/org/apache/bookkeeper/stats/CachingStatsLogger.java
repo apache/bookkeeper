@@ -102,4 +102,20 @@ public class CachingStatsLogger implements StatsLogger {
     public void removeScope(String name, StatsLogger statsLogger) {
         scopeStatsLoggers.remove(name, statsLogger);
     }
+
+    /**
+     Thread-scoped stats not currently supported.
+     */
+    @Override
+    public OpStatsLogger getThreadScopedOpStatsLogger(String name) {
+        return getOpStatsLogger(name);
+    }
+
+    /**
+     Thread-scoped stats not currently supported.
+     */
+    @Override
+    public Counter getThreadScopedCounter(String name) {
+        return getCounter(name);
+    }
 }
