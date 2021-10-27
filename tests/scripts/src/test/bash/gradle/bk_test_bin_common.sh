@@ -20,7 +20,7 @@
 # * limitations under the License.
 # */
 # load test helpers
-. ./bk_test_helpers_gradle
+. ./bk_test_helpers
 
 #------------------------------------------------------------------------------
 # suite tests

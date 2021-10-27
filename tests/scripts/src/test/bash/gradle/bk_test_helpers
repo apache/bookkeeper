@@ -24,13 +24,13 @@
 BK_ARGV0=`basename "$0"`
 
 # path to shUnit2 library. can be overridden by setting BK_SHUNIT_INC.
-BK_SHUNIT=${BK_SHUNIT_INC:-../../../build/libs/lib/shunit2-2.1.7/shunit2}
+BK_SHUNIT=${BK_SHUNIT_INC:-../../../../build/libs/lib/shunit2-2.1.7/shunit2}
 
 # path to bk bin directory.
 TESTDIR=`dirname "$0"`
-BK_BINDIR=`cd ${TESTDIR}/../../../../../bin;pwd`
-BK_HOMEDIR=`cd ${TESTDIR}/../../../../..;pwd`
-BK_CONFDIR=`cd ${TESTDIR}/../../../../../conf;pwd`
+BK_BINDIR=`cd ${TESTDIR}/../../../../../../bin;pwd`
+BK_HOMEDIR=`cd ${TESTDIR}/../../../../../..;pwd`
+BK_CONFDIR=`cd ${TESTDIR}/../../../../../../conf;pwd`
 
 #
 # test helper functions

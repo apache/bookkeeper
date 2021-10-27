@@ -155,7 +155,7 @@ is_released_binary() {
 find_module_jar_at() {
   DIR=$1
   MODULE=$2
-  REGEX="^${MODULE}.jar$"
+  REGEX="^${MODULE}-[0-9\\.]*((-[a-zA-Z]*(-[0-9]*)?)|(-SNAPSHOT))?.jar$"
   if [ -d ${DIR} ]; then
     cd ${DIR}
     for f in *.jar; do
