@@ -47,8 +47,19 @@ public class PrometheusStatsLogger implements StatsLogger {
     }
 
     @Override
+    public OpStatsLogger getThreadScopedOpStatsLogger(String name) {
+        return provider.threadScopedOpStats.computeIfAbsent(scopeContext(name),
+                x -> new ThreadScopedDataSketchesStatsLogger(provider, x, labels));
+    }
+
+    @Override
     public Counter getCounter(String name) {
         return provider.counters.computeIfAbsent(scopeContext(name), x -> new LongAdderCounter(labels));
+    }
+
+    public Counter getThreadScopedCounter(String name) {
+        return provider.threadScopedCounters.computeIfAbsent(scopeContext(name),
+                x -> new ThreadScopedLongAdderCounter(provider, x, labels));
     }
 
     @Override

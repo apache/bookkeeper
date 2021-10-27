@@ -30,7 +30,10 @@ import org.apache.bookkeeper.stats.Counter;
 public class LongAdderCounter implements Counter {
     private final LongAdder counter = new LongAdder();
 
-    private final Map<String, String> labels;
+    private Map<String, String> labels;
+
+    // used for lazy registration for thread scoped metric
+    private boolean threadInitialized;
 
     public LongAdderCounter(Map<String, String> labels) {
         this.labels = labels;
@@ -63,5 +66,14 @@ public class LongAdderCounter implements Counter {
 
     public Map<String, String> getLabels() {
         return labels;
+    }
+
+    public boolean isThreadInitialized() {
+        return threadInitialized;
+    }
+
+    public void initializeThread(Map<String, String> labels) {
+        this.labels = labels;
+        this.threadInitialized = true;
     }
 }

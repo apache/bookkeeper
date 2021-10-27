@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,6 +135,7 @@ public class CodahaleMetricsProvider implements StatsProvider {
         if (jmx != null) {
             jmx.stop();
         }
+        ThreadRegistry.clear();
     }
 
     @Override
