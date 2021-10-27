@@ -36,8 +36,10 @@ dependencies {
     runtimeOnly (project(':bookkeeper-stats-providers:codahale-metrics-provider')) {
        exclude group: "io.dropwizard.metrics", module: "metrics-graphite"
        exclude group: "io.dropwizard.metrics", module: "metrics-jvm"
-   }
+    }
     runtimeOnly depLibs.snappy
+    runtimeOnly depLibs.log4jCore
+    runtimeOnly depLibs.log4jSlf4jImpl
 }
 
 releaseArtifacts {

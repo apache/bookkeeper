@@ -59,6 +59,8 @@ dependencies {
     implementation depLibs.metricsCore
     implementation depLibs.snappy
     implementation depLibs.log4j12api
+    implementation depLibs.log4jSlf4jImpl
+    implementation depLibs.log4jCore
     implementation depLibs.vertxCore
     implementation depLibs.vertxWeb
     testImplementation depLibs.mockito

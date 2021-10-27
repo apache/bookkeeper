@@ -53,9 +53,6 @@ dependencies {
     implementation depLibs.protobuf
     implementation depLibs.rocksDb
     implementation depLibs.zookeeper
-    implementation depLibs.log4jSlf4jImpl
-    implementation depLibs.log4j12api
-    implementation depLibs.log4jCore
     runtimeOnly depLibs.metricsCore
     runtimeOnly depLibs.snappy
 
@@ -77,6 +74,9 @@ dependencies {
     testImplementation depLibs.zookeeperTest
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
+    testImplementation depLibs.log4jSlf4jImpl
+    testImplementation depLibs.log4j12api
+    testImplementation depLibs.log4jCore
 }
 
 task writeClasspath {

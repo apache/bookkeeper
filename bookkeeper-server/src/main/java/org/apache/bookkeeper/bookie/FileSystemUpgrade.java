@@ -52,7 +52,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.ConsoleAppender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -335,13 +334,6 @@ public class FileSystemUpgrade {
     }
 
     public static void main(String[] args) throws Exception {
-        org.apache.log4j.Logger root = org.apache.log4j.Logger.getRootLogger();
-        ConsoleAppender console = new org.apache.log4j.ConsoleAppender();
-        console.setLayout(new org.apache.log4j.PatternLayout("%-5p [%t]: %m%n"));
-        root.addAppender(console);
-        root.setLevel(org.apache.log4j.Level.ERROR);
-        org.apache.log4j.Logger.getLogger(FileSystemUpgrade.class).setLevel(
-                org.apache.log4j.Level.INFO);
 
         final Options opts = new Options();
         opts.addOption("c", "conf", true, "Configuration for Bookie");
