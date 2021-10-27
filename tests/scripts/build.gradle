@@ -31,9 +31,8 @@ task extractShunit2(dependsOn: downloadShunit2, type: Copy) {
 }
 
 task executeShTests(dependsOn: extractShunit2, type: Exec) {
-    workingDir "src/test/bash"
+    workingDir "src/test/bash/gradle"
     commandLine "./bk_test.sh"
-    args "-e PROJECT_BUILD_SYSTEM=gradle"
 }
 
 tasks.test.dependsOn("executeShTests")

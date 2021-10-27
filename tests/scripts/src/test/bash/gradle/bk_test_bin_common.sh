@@ -19,16 +19,15 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 # */
-
 # load test helpers
-. ./bk_test_helpers
+. ./bk_test_helpers_gradle
 
 #------------------------------------------------------------------------------
 # suite tests
 #
 
 testDefaultVariables() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
   assertEquals "BINDIR is not set correctly" "${BK_BINDIR}" "${BINDIR}"
   assertEquals "BK_HOME is not set correctly" "${BK_HOMEDIR}" "${BK_HOME}"
   assertEquals "DEFAULT_LOG_CONF is not set correctly" "${BK_CONFDIR}/log4j.properties" "${DEFAULT_LOG_CONF}"
@@ -49,7 +48,7 @@ testDefaultVariables() {
 }
 
 testFindModuleJarAt() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   MODULE="test-module"
 
@@ -114,7 +113,7 @@ testFindModuleJar() {
   echo "" > ${BK_HOME}/conf/bkenv.sh
   echo "" > ${BK_HOME}/conf/bk_cli_env.sh
 
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   MODULE="test-module"
   MODULE_PATH="testmodule"
@@ -123,7 +122,7 @@ testFindModuleJar() {
   TEST_FILES=(
     "${MODULE}-${VERSION}.jar"
     "lib/${MODULE}-${VERSION}.jar"
-    "${MODULE_PATH}/target/${MODULE}-${VERSION}.jar"
+    "${MODULE_PATH}/build/libs/${MODULE}-${VERSION}.jar"
   )
   count=0
   while [ "x${TEST_FILES[count]}" != "x" ]
@@ -159,8 +158,8 @@ testLoadEnvfiles() {
   echo "BOOKIE_MAX_HEAP_MEMORY=2048M" > ${BK_HOME}/conf/bkenv.sh
   echo "CLI_MAX_HEAP_MEMORY=2048M" > ${BK_HOME}/conf/bk_cli_env.sh
 
-  # load the common.sh
-  source ${BK_BINDIR}/common.sh
+  # load the common_gradle.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   assertEquals "NETTY_LEAK_DETECTION_LEVEL is not set correctly" "enabled" "${NETTY_LEAK_DETECTION_LEVEL}"
   assertEquals "BOOKIE_MAX_HEAP_MEMORY is not set correctly" "2048M" "${BOOKIE_MAX_HEAP_MEMORY}"
@@ -172,30 +171,8 @@ testLoadEnvfiles() {
   unset BK_HOME
 }
 
-testSetModuleClasspath() {
-  TEST_DIR=${BK_TMPDIR}/test_set_module_classpath
-  mkdir -p ${TEST_DIR}
-  BK_HOME=${TEST_DIR}
-
-  # prepare the env files
-  mkdir -p ${BK_HOME}/conf
-  echo "" > ${BK_HOME}/conf/nettyenv.sh
-  echo "" > ${BK_HOME}/conf/bkenv.sh
-  echo "" > ${BK_HOME}/conf/bk_cli_env.sh
-
-  source ${BK_BINDIR}/common.sh
-
-  MODULE_PATH="testmodule"
-
-  mkdir -p ${BK_HOME}/${MODULE_PATH}/target
-  echo "test-classpath" > ${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt
-
-  local result=$(set_module_classpath ${MODULE_PATH})
-  assertEquals "test-classpath" ${result}
-}
-
 testBuildBookieJVMOpts() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   TEST_LOG_DIR=${BK_TMPDIR}/logdir
   TEST_GC_LOG_FILENAME="test-gc.log"
@@ -210,7 +187,7 @@ testBuildBookieJVMOpts() {
 }
 
 testBuildCLIJVMOpts() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   TEST_LOG_DIR=${BK_TMPDIR}/logdir
   TEST_GC_LOG_FILENAME="test-gc.log"
@@ -225,7 +202,7 @@ testBuildCLIJVMOpts() {
 }
 
 testBuildNettyOpts() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   ACTUAL_NETTY_OPTS=$(build_netty_opts)
   EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled \
@@ -236,7 +213,7 @@ testBuildNettyOpts() {
 }
 
 testBuildBookieOpts() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   ACTUAL_OPTS=$(build_bookie_opts)
   EXPECTED_OPTS="-Djava.net.preferIPv4Stack=true"

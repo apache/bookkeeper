@@ -155,7 +155,7 @@ is_released_binary() {
 find_module_jar_at() {
   DIR=$1
   MODULE=$2
-  REGEX="^${MODULE}-[0-9\\.]*((-[a-zA-Z]*(-[0-9]*)?)|(-SNAPSHOT))?.jar$"
+  REGEX="^${MODULE}.jar$"
   if [ -d ${DIR} ]; then
     cd ${DIR}
     for f in *.jar; do
@@ -222,7 +222,7 @@ add_maven_deps_to_classpath() {
   # Need to generate classpath from maven pom. This is costly so generate it
   # and cache it. Save the file into our target dir so a mvn clean will get
   # clean it up and force us create a new one.
-  f="${BK_HOME}/${MODULE_PATH}/build/cached_classpath.txt"
+  f="${BK_HOME}/${MODULE_PATH}/build/classpath.txt"
   if [ ! -f ${f} ]; then
     echo "the classpath of module '${MODULE_PATH}' is not found, generating it ..." >&2
     ${BK_HOME}/gradlew ${MODULE_PATH}:jar
@@ -240,7 +240,7 @@ set_module_classpath() {
     echo ${BK_CLASSPATH}
   else
     add_maven_deps_to_classpath ${MODULE_PATH} >&2
-    cat ${BK_HOME}/${MODULE_PATH}/build/cached_classpath.txt
+    cat ${BK_HOME}/${MODULE_PATH}/build/classpath.txt
   fi
   return
 }
