@@ -586,7 +586,7 @@ public class OrderedExecutor implements ExecutorService {
      */
     @Override
     public <T> Future<T> submit(Callable<T> task) {
-        return chooseThread().submit(timedCallable(task));
+        return chooseThread().submit(task);
     }
 
     /**
@@ -611,7 +611,7 @@ public class OrderedExecutor implements ExecutorService {
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
         throws InterruptedException {
-        return chooseThread().invokeAll(timedCallables(tasks));
+        return chooseThread().invokeAll(tasks);
     }
 
     /**
@@ -622,7 +622,7 @@ public class OrderedExecutor implements ExecutorService {
                                          long timeout,
                                          TimeUnit unit)
         throws InterruptedException {
-        return chooseThread().invokeAll(timedCallables(tasks), timeout, unit);
+        return chooseThread().invokeAll(tasks, timeout, unit);
     }
 
     /**
@@ -631,7 +631,7 @@ public class OrderedExecutor implements ExecutorService {
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
         throws InterruptedException, ExecutionException {
-        return chooseThread().invokeAny(timedCallables(tasks));
+        return chooseThread().invokeAny(tasks);
     }
 
     /**
@@ -640,7 +640,7 @@ public class OrderedExecutor implements ExecutorService {
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
-        return chooseThread().invokeAny(timedCallables(tasks), timeout, unit);
+        return chooseThread().invokeAny(tasks, timeout, unit);
     }
 
     /**
@@ -648,7 +648,7 @@ public class OrderedExecutor implements ExecutorService {
      */
     @Override
     public void execute(Runnable command) {
-        chooseThread().execute(timedRunnable(command));
+        chooseThread().execute(command);
     }
 
 
