@@ -68,6 +68,7 @@ import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
@@ -449,8 +450,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
          * 2) DbLedgerStorage
          */
         if (entryLogPerLedgerEnabled || isDbLedgerStorage) {
-            syncThread =
-                new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource) {
+            syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource, statsLogger) {
                 @Override
                 public void startCheckpoint(Checkpoint checkpoint) {
                     /*
@@ -469,7 +469,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 }
             };
         } else {
-            syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource);
+            syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource, statsLogger);
         }
 
         ledgerStorage.setStateManager(stateManager);
@@ -621,6 +621,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     @Override
     public synchronized void start() {
         setDaemon(true);
+        ThreadRegistry.register("BookieThread", 0);
         if (LOG.isDebugEnabled()) {
             LOG.debug("I'm starting a bookie with journal directories {}",
                     journalDirectories.stream().map(File::getName).collect(Collectors.joining(", ")));
