@@ -37,6 +37,8 @@ dependencies {
     implementation project(':bookkeeper-tools')
     implementation depLibs.jsr305
     runtimeOnly depLibs.log4j12api
+    runtimeOnly depLibs.log4jSlf4jImpl
+    runtimeOnly depLibs.log4jCore
     implementation (depLibs.zookeeperTest) {
         exclude group: "io.netty", module: "netty-transport-native-epoll"
         exclude group: 'log4j', module: 'log4j'
