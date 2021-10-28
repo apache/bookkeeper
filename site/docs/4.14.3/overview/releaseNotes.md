@@ -8,34 +8,26 @@ found in 4.14.0.
 Apache BookKeeper users are encouraged to upgrade to 4.14.3. 
 The technical details of this release are summarized below.
 
-### Bugs
+## Highlights
 
-- [https://github.com/apache/bookkeeper/pull/2740] Fix Bouncy Castle fips incompatible issue
+### Improvements
 
-  In #2631, the default BouncyCastle was changed from non-fips into fips version. But the default version of BouncyCastle in Pulsar is the non-fips one(aimed to make it compatible with the old version of Pulsar).
+- [https://github.com/apache/bookkeeper/pull/2768] Add metrics and internal command for AutoRecovery
+- [https://github.com/apache/bookkeeper/pull/2788] Fix npe when pulsar ZkBookieRackAffinityMapping getBookieAddressResolver
+- [https://github.com/apache/bookkeeper/pull/2794] Heap memory leak problem when ledger replication failed
+- [https://github.com/apache/bookkeeper/pull/2802] Add auditor get ledger throttle to avoid auto recovery zk session expire
+- [https://github.com/apache/bookkeeper/pull/2813] Add ensemble check to over-replicated ledger GC
+- [https://github.com/apache/bookkeeper/pull/2832] Fix semaphore leak when EntryMemTable#addEntry accepts the same entries
+- [https://github.com/apache/bookkeeper/pull/2833] Eliminate direct ZK access in ScanAndCompareGarbageCollector
+- [https://github.com/apache/bookkeeper/pull/2842] Remove direct ZK access for Auditor
+- [https://github.com/apache/bookkeeper/pull/2844] Add error handling to readLedgerMetadata in over-replicated ledger GC
+- [https://github.com/apache/bookkeeper/pull/2845] A empty implmentation of newLedgerAuditorManager in EtcdLedgerManagerFactory to fix build
 
-  Bouncy Castle provides both FIPS and non-FIPS versions, but in a JVM, it can not include both of the 2 versions(non-Fips and Fips), and we have to exclude the current version before including the other. This makes the backward compatible a little hard, and that's why Pulsar has to involve an individual module for Bouncy Castle.
+### Dependency updates
 
-- [https://github.com/apache/bookkeeper/pull/2762] Upgrade libthrift to 0.14.2 to address multiple CVEs
-
-  The current libthrift version 0.12.0 has multiple vulnerabilities: CVE-2019-0205 , CVE-2019-0210 , CVE-2020-13949
-
-- [https://github.com/apache/bookkeeper/pull/2735] Exclude grpc-okhttp dependency
-
-  The okhttp dependency version 2.7.4 is old and vulnerable. This dependency isn't needed and it causes Bookkeeper to be flagged for security vulnerabilities.
-
-- [https://github.com/apache/bookkeeper/pull/2734] Upgrade Freebuilder version and fix the dependency
-
-  - Freebuilder 1.14.9 contains an outdate jquery js file which causes the library to be flagged as vulnerable with the highest threat level in Sonatype IQ vulnerability scanner. This also flags Bookkeeper as vulnerable with the highest threat level although it is a false positive and not an actual threat.
-
-  - Freebuilder shouldn't be exposed as a transitive dependency
-    - it's an annotation processor which should be defined
-      - [optional in maven](https://github.com/inferred/FreeBuilder#maven)
-      - [compileOnly in gradle](https://github.com/inferred/FreeBuilder#gradle)
-
-- [https://github.com/apache/bookkeeper/pull/2693] Upgrade vertx to 3.9.8, addresses CVE-2018-12541
-
-  The current vertx version is 3.5.3 which has a vulnerability, CVE-2018-12541 .
+- [https://github.com/apache/bookkeeper/pull/2792] Upgraded dependencies with CVEs
+- [https://github.com/apache/bookkeeper/pull/2793] Upgrade httpclient from 4.5.5 to 4.5.13 to address CVE-2020-13956
+- [https://github.com/apache/bookkeeper/pull/2811] Upgrade Netty to 4.1.68.Final
 
 ## Details
 
