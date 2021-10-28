@@ -29,9 +29,6 @@ on:
       - 'site/**'
     workflow_dispatch:
 
-env:
-  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
-
 jobs:
   test:
 
@@ -49,8 +46,6 @@ jobs:
         with:
           java-version: 1.8
 
-      - name: Build tar
-        run: ./gradlew stream:server:build -x test
       - name: run cluster integration test
         run: ./gradlew :tests:integration:cluster:test -Dtestlogger.theme=plain
       - name: run smoke test
