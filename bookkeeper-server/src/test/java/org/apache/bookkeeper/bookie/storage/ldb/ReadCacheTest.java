@@ -26,10 +26,9 @@ import static org.junit.Assert.assertNull;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import java.io.IOException;
 
 import org.junit.Test;
-
-import java.io.IOException;
 
 /**
  * Unit test for {@link ReadCache}.
