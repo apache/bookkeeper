@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.metadata.etcd;
 
-import com.beust.jcommander.internal.Lists;
+import com.google.common.collect.Lists;
 import io.etcd.jetcd.Client;
 import java.io.IOException;
 import java.util.List;

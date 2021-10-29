@@ -239,6 +239,7 @@ add_maven_deps_to_classpath() {
   # clean it up and force us create a new one.
   f="${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt"
   output="${BK_HOME}/${MODULE_PATH}/target/build_classpath.out"
+
   if [ ! -f ${f} ]; then
     echo "the classpath of module '${MODULE_PATH}' is not found, generating it ..." >&2
     echo "see output at ${output} for the progress ..." >&2

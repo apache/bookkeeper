@@ -155,7 +155,7 @@ is_released_binary() {
 find_module_jar_at() {
   DIR=$1
   MODULE=$2
-  REGEX="^${MODULE}.jar$"
+  REGEX="^${MODULE}[-0-9\\.]*((-[a-zA-Z]*(-[0-9]*)?)|(-SNAPSHOT))?.jar$"
   if [ -d ${DIR} ]; then
     cd ${DIR}
     for f in *.jar; do
@@ -213,17 +213,12 @@ find_module_jar() {
     echo "Could not find module '${MODULE_JAR}' jar." >&2
     exit 1
   fi
-  ##echo ${MODULE_JAR}
+  echo "${MODULE_JAR}"
   return
 }
 
 add_maven_deps_to_classpath() {
   MODULE_PATH=$1
-  MVN="mvn"
-  if [ "$MAVEN_HOME" != "" ]; then
-    MVN=${MAVEN_HOME}/bin/mvn
-  fi
-
   # Need to generate classpath from maven pom. This is costly so generate it
   # and cache it. Save the file into our target dir so a mvn clean will get
   # clean it up and force us create a new one.
