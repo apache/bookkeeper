@@ -33,11 +33,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap.LongPair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 /**
  * Read cache implementation.
@@ -63,8 +61,7 @@ public class ReadCache implements Closeable {
 
     private ByteBufAllocator allocator;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private Boolean isStorageShutdown;
-    private static final Logger LOG = LoggerFactory.getLogger(Bookie.class);
+    private volatile boolean isStorageShutdown;
 
     public ReadCache(ByteBufAllocator allocator, long maxCacheSize) {
         this(allocator, maxCacheSize, DEFAULT_MAX_SEGMENT_SIZE);
@@ -87,8 +84,13 @@ public class ReadCache implements Closeable {
 
     @Override
     public void close() {
-        cacheSegments.forEach(ByteBuf::release);
-        isStorageShutdown = true;
+        lock.writeLock().lock();
+        try {
+            isStorageShutdown = true;
+            cacheSegments.forEach(ByteBuf::release);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     public void put(long ledgerId, long entryId, ByteBuf entry) throws IOException {
@@ -97,8 +99,7 @@ public class ReadCache implements Closeable {
 
         lock.readLock().lock();
         if (isStorageShutdown) {
-            LOG.error("Read cache has shutdown, not allowing put cache operation");
-            throw new IOException();
+            throw new IOException("Read cache has shutdown, not allowing put cache operation");
         }
 
         try {
@@ -116,12 +117,11 @@ public class ReadCache implements Closeable {
             lock.readLock().unlock();
         }
 
-        // We could not insert in segment, we to get the write lock and roll-over to
+        // We could not insert in segment, we need to get the write lock and roll-over to
         // next segment
         lock.writeLock().lock();
         if (isStorageShutdown) {
-            LOG.error("Read cache has shutdown, not allowing put cache operation");
-            throw new IOException();
+            throw new IOException("Read cache has shutdown, not allowing put cache operation");
         }
         try {
             int offset = currentSegmentOffset.getAndAdd(entrySize);
@@ -145,8 +145,7 @@ public class ReadCache implements Closeable {
         lock.readLock().lock();
 
         if (isStorageShutdown) {
-            LOG.error("Read cache has shutdown, not allowing read cache operation");
-            throw new IOException();
+            throw new IOException("Read cache has shutdown, not allowing get cache operation");
         }
         try {
             // We need to check all the segments, starting from the current one and looking

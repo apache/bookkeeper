@@ -53,6 +53,7 @@ public class DbLedgerStorageTest {
     private DbLedgerStorage storage;
     private File tmpDir;
     private LedgerDirsManager ledgerDirsManager;
+    private boolean isStorageShutdown;
 
     @Before
     public void setup() throws Exception {
@@ -71,11 +72,14 @@ public class DbLedgerStorageTest {
 
         ledgerDirsManager = bookie.getLedgerDirsManager();
         storage = (DbLedgerStorage) bookie.getLedgerStorage();
+        isStorageShutdown = false;
     }
 
     @After
     public void teardown() throws Exception {
-        storage.shutdown();
+        if (!isStorageShutdown) {
+            storage.shutdown();
+        }
         tmpDir.delete();
     }
 
@@ -239,15 +243,18 @@ public class DbLedgerStorageTest {
         assertEquals(newEntry3, res);
     }
 
-    @Test
+    @Test(expected = IOException.class)
     public void testReadsOpAfterShutdown() throws Exception {
         SingleDirectoryDbLedgerStorage singleDirStorage = ((DbLedgerStorage) storage).getLedgerStorageList().get(0);
+        ByteBuf entry1 = Unpooled.buffer(64);
+        entry1.writeLong(1); // ledger id
+        entry1.writeLong(1); // entry id
+        entry1.writeBytes("e".getBytes());
+        singleDirStorage.addEntry(entry1);
+        entry1.release();
         singleDirStorage.shutdown();
-        try {
-            ByteBuf res = singleDirStorage.getEntry(4, 3);
-        } catch (IOException e) {
-            // This will pass the test since it is expected to throw IOException
-        }
+        isStorageShutdown = true;
+        singleDirStorage.getEntry(1, 1);
     }
 
     @Test
