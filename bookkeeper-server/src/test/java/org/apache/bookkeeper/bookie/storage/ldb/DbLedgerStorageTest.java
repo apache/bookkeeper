@@ -41,6 +41,7 @@ import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.eclipse.jetty.util.IO;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -237,6 +238,17 @@ public class DbLedgerStorageTest {
         System.out.println("res:       " + ByteBufUtil.hexDump(res));
         System.out.println("newEntry3: " + ByteBufUtil.hexDump(newEntry3));
         assertEquals(newEntry3, res);
+    }
+
+    @Test
+    public void testReadsOpAfterShutdown() throws Exception {
+        SingleDirectoryDbLedgerStorage singleDirStorage = ((DbLedgerStorage) storage).getLedgerStorageList().get(0);
+        singleDirStorage.shutdown();
+        try {
+            ByteBuf res = singleDirStorage.getEntry(4, 3);
+        } catch (IOException e) {
+            // This will pass the test since it is expected to throw IOException
+        }
     }
 
     @Test
