@@ -269,8 +269,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                                         overReplicatedLedgers.add(ledgerId);
                                         garbageCleaner.clean(ledgerId);
                                     }
-                                } else if (!(exception instanceof
-                                        BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
+                                } else if (!(exception
+                                        instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
                                     LOG.warn("Failed to get metadata for ledger {}. {}: {}",
                                             ledgerId, exception.getClass().getName(), exception.getMessage());
                                 }
