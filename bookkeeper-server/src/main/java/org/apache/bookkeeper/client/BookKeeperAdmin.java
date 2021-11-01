@@ -835,13 +835,20 @@ public class BookKeeperAdmin implements AutoCloseable {
                         @Override
                         public void openComplete(int newrc, final LedgerHandle newlh, Object newctx) {
                             if (newrc != BKException.Code.OK) {
-                                LOG.error("BK error close ledger: {}", lId, BKException.create(newrc));
-                                finalLedgerIterCb.processResult(newrc, null, null);
+                                if (skipUnrecoverableLedgers) {
+                                    LOG.warn("BK error opening ledger: {}, skip recover it.",
+                                        lId, BKException.create(newrc));
+                                    finalLedgerIterCb.processResult(BKException.Code.OK, null, null);
+                                } else {
+                                    LOG.error("BK error close ledger: {}", lId, BKException.create(newrc));
+                                    finalLedgerIterCb.processResult(newrc, null, null);
+                                }
                                 return;
                             }
                             bkc.mainWorkerPool.submit(() -> {
                                 // do recovery
-                                recoverLedger(bookiesSrc, lId, dryrun, skipOpenLedgers, finalLedgerIterCb);
+                                recoverLedger(bookiesSrc, lId, dryrun, skipOpenLedgers,
+                                    skipUnrecoverableLedgers, finalLedgerIterCb);
                             });
                         }
                     }, null);
@@ -852,7 +859,13 @@ public class BookKeeperAdmin implements AutoCloseable {
                     @Override
                     public void processResult(int rc, String path, Object ctx) {
                         if (BKException.Code.OK != rc) {
-                            LOG.error("Failed to recover ledger {} : {}", lId, BKException.codeLogger(rc));
+                            if (skipUnrecoverableLedgers) {
+                                LOG.warn("Failed to recover ledger: {} : {}, skip recover it.", lId,
+                                    BKException.codeLogger(rc));
+                                rc = BKException.Code.OK;
+                            } else {
+                                LOG.error("Failed to recover ledger {} : {}", lId, BKException.codeLogger(rc));
+                            }
                         } else {
                             LOG.info("Recovered ledger {}.", lId);
                         }
