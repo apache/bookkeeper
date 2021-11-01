@@ -45,7 +45,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Build with gradle
+      - |
+        name: Build with gradle
         run: ./gradlew test -x bookkeeper-server:test
         -x tests:integration:cluster:test
         -x tests:integration:smoke:test
