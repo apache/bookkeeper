@@ -212,12 +212,13 @@ allprojects {
                     exclude '**/client/*'
                     exclude '**/bookie/*'
                 }
+
                 if (project.hasProperty('excludeTests')) {
                     String excludeTests = project.property('excludeTests');
                     ArrayList<String> tests = excludeTests.split(',');
                     tests.forEach({it
-                        String exclude = it.trim();
-                        excludeTestsMatching exclude;
+                        String excludeStr = it.trim();
+                        exclude excludeStr
                     });
                 }
             }
