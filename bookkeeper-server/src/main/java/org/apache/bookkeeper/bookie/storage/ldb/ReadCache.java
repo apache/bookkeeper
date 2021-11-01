@@ -99,6 +99,10 @@ public class ReadCache implements Closeable {
 
         lock.readLock().lock();
         if (isStorageShutdown) {
+            // This is a hack. Ideally, we should be returning from here as a no-op or,
+            // the higher layers must no-op read/ writes after shutdown()
+            // Since the other lower layers like locationIndex, logEntry also need to handle the shutdown scenario,
+            // the IOException is thrown from here so that it bypasses other lower layers.
             throw new IOException("Read cache has shutdown, not allowing put cache operation");
         }
 
@@ -121,6 +125,10 @@ public class ReadCache implements Closeable {
         // next segment
         lock.writeLock().lock();
         if (isStorageShutdown) {
+            // This is a hack. Ideally, we should be returning from here as a no-op or,
+            // the higher layers must no-op read/ writes after shutdown()
+            // Since the other lower layers like locationIndex, logEntry also need to handle the shutdown scenario,
+            // the IOException is thrown from here so that it bypasses other lower layers.
             throw new IOException("Read cache has shutdown, not allowing put cache operation");
         }
         try {
@@ -145,6 +153,10 @@ public class ReadCache implements Closeable {
         lock.readLock().lock();
 
         if (isStorageShutdown) {
+            // This is a hack. Ideally, we should be returning from here as a no-op or,
+            // the higher layers must no-op read/ writes after shutdown()
+            // Since the other lower layers like locationIndex, logEntry also need to handle the shutdown scenario,
+            // the IOException is thrown from here so that it bypasses other lower layers.
             throw new IOException("Read cache has shutdown, not allowing get cache operation");
         }
         try {
