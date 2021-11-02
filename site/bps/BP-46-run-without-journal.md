@@ -1,5 +1,5 @@
 ---
-title: "BP-44: Running without the journal"
+title: "BP-46: Running without the journal"
 issue: https://github.com/apache/bookkeeper/2705
 state: "Under Discussion"
 release: "N/A"
