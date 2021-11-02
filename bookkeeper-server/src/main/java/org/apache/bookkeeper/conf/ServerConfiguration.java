@@ -27,6 +27,7 @@ import io.netty.util.internal.PlatformDependent;
 // CHECKSTYLE.ON: IllegalImport
 import java.io.File;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.bookie.FileChannelProvider;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
@@ -146,6 +147,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_QUEUE_SIZE = "journalQueueSize";
     protected static final String JOURNAL_MAX_MEMORY_SIZE_MB = "journalMaxMemorySizeMb";
     protected static final String JOURNAL_PAGECACHE_FLUSH_INTERVAL_MSEC = "journalPageCacheFlushIntervalMSec";
+    protected static final String JOURNAL_CHANNEL_PROVIDER = "journalChannelProvider";
     // backpressure control
     protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
     protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
@@ -202,6 +204,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD =
             "underreplicatedLedgerRecoveryGracePeriod";
     protected static final String AUDITOR_REPLICAS_CHECK_INTERVAL = "auditorReplicasCheckInterval";
+    protected static final String AUDITOR_MAX_NUMBER_OF_CONCURRENT_OPEN_LEDGER_OPERATIONS =
+        "auditorMaxNumberOfConcurrentOpenLedgerOperations";
+    protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC =
+        "auditorAcquireConcurrentOpenLedgerOperationsTimeOutMSec";
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -866,6 +872,26 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getJournalPageCacheFlushIntervalMSec() {
         return this.getLong(JOURNAL_PAGECACHE_FLUSH_INTERVAL_MSEC, 1000);
+    }
+
+    /**
+     * Set JournalChannelProvider classname.
+     * @param journalChannelProvider
+     *          The JournalChannelProvider classname. The class must implements {@link FileChannelProvider} and
+     *          no args constructor is needed.
+     * @return
+     */
+    public ServerConfiguration setJournalChannelProvider(String journalChannelProvider) {
+        this.setProperty(JOURNAL_CHANNEL_PROVIDER, journalChannelProvider);
+        return this;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public String getJournalChannelProvider() {
+        return this.getString(JOURNAL_CHANNEL_PROVIDER, "org.apache.bookkeeper.bookie.DefaultFileChannelProvider");
     }
 
     /**
@@ -2501,6 +2527,41 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public long getAuditorPeriodicReplicasCheckInterval() {
         return getLong(AUDITOR_REPLICAS_CHECK_INTERVAL, 0);
     }
+
+    /**
+     * Get the semaphore limit value of getting ledger from zookeeper in auto recovery.
+     *
+     * @return The semaphore value. By default it is 500.
+     */
+    public int getAuditorMaxNumberOfConcurrentOpenLedgerOperations() {
+        return getInt(AUDITOR_MAX_NUMBER_OF_CONCURRENT_OPEN_LEDGER_OPERATIONS, 500);
+    }
+
+    /**
+     * Set the semaphore limit value for getting ledger from zookeeper in auto recovery.
+     * @param semaphore
+     */
+    public void setAuditorMaxNumberOfConcurrentOpenLedgerOperations(int semaphore) {
+        setProperty(AUDITOR_MAX_NUMBER_OF_CONCURRENT_OPEN_LEDGER_OPERATIONS, semaphore);
+    }
+
+    /**
+     * Get the acquire concurrent open ledger operations timeout.
+     *
+     * @return The timeout values. By default it is 120000ms
+     */
+    public int getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec() {
+        return getInt(AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC, 120000);
+    }
+
+    /**
+     * Set the acquire concurrent open ledger operations timeout.
+     * @param timeoutMs
+     */
+    public void setAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec(int timeoutMs) {
+        setProperty(AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC, timeoutMs);
+    }
+
 
     /**
      * Set what percentage of a ledger (fragment)'s entries will be verified.

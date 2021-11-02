@@ -18,6 +18,8 @@
  */
 plugins {
     id 'java'
+    id 'com.adarshr.test-logger'
+    id 'org.gradle.test-retry'
 }
 
 dependencies {
@@ -51,6 +53,8 @@ dependencies {
     implementation depLibs.protobuf
     implementation depLibs.rocksDb
     implementation depLibs.zookeeper
+    runtimeOnly depLibs.metricsCore
+    runtimeOnly depLibs.snappy
 
     testImplementation project(':bookkeeper-stats-providers:prometheus-metrics-provider')
     testImplementation project(':bookkeeper-http:vertx-http-server')
@@ -70,10 +74,22 @@ dependencies {
     testImplementation depLibs.zookeeperTest
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
-    testImplementation depLibs.slf4jLog4j
+    testImplementation depLibs.log4jSlf4jImpl
+    testImplementation depLibs.log4j12api
+    testImplementation depLibs.log4jCore
+}
+
+task writeClasspath {
+    buildDir.mkdirs()
+    new File(buildDir, "classpath.txt").text = sourceSets.main.runtimeClasspath.collect { it.absolutePath }.join(':') + "\n"
 }
 
 test {
+    retry {
+        maxFailures = 200
+        maxRetries = 5
+    }
+
     maxHeapSize = '2G'
     forkEvery = 1
 }

@@ -334,12 +334,6 @@ public class FileSystemUpgrade {
     }
 
     public static void main(String[] args) throws Exception {
-        org.apache.log4j.Logger root = org.apache.log4j.Logger.getRootLogger();
-        root.addAppender(new org.apache.log4j.ConsoleAppender(
-                                 new org.apache.log4j.PatternLayout("%-5p [%t]: %m%n")));
-        root.setLevel(org.apache.log4j.Level.ERROR);
-        org.apache.log4j.Logger.getLogger(FileSystemUpgrade.class).setLevel(
-                org.apache.log4j.Level.INFO);
 
         final Options opts = new Options();
         opts.addOption("c", "conf", true, "Configuration for Bookie");

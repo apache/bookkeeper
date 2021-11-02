@@ -18,7 +18,7 @@
  */
 plugins {
     id 'java'
-    id 'com.adarshr.test-logger' version '2.0.0'
+    id 'com.adarshr.test-logger'
 }
 
 dependencies {
@@ -37,9 +37,10 @@ dependencies {
     testImplementation project(':stream:clients:java:kv')
 
     testCompileOnly depLibs.lombok
-    testImplementation depLibs.slf4jLog4j
+    testImplementation depLibs.log4j12api
     testImplementation depLibs.testcontainers
     testImplementation depLibs.commonsConfiguration
+    testImplementation depLibs.googleHTTPClient
     testAnnotationProcessor depLibs.lombok
 }
 

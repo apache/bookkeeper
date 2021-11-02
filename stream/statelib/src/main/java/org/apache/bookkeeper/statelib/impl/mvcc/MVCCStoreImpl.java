@@ -419,6 +419,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             record.getValue().writerIndex(0);
             record.getValue().writeLong(newAmount);
             record.setModRev(revision);
+            record.setExpireTime(System.currentTimeMillis() + (ttlSeconds * 1000));
 
             // write the mvcc record back
             batch.put(dataCfHandle, rawKey, recordCoder.encode(record));
@@ -522,6 +523,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             }
             record.setValue(rawValBuf, ValueType.BYTES);
             record.setModRev(revision);
+            record.setExpireTime(System.currentTimeMillis() + (ttlSeconds * 1000));
 
             // write the mvcc record back
             batch.put(dataCfHandle, rawKey, recordCoder.encode(record));
@@ -886,6 +888,10 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                     break;
                 }
                 MVCCRecord val = recordCoder.decode(iter.value());
+                if (val.expired()) {
+                    val.recycle();
+                    continue;
+                }
 
                 processRecord(key, val, resultKeys, resultValues, numKvs, rangeOption, countOnly);
 
@@ -930,7 +936,12 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             if (null == valBytes) {
                 return null;
             }
-            return recordCoder.decode(valBytes);
+            MVCCRecord record = recordCoder.decode(valBytes);
+            if (record.expired()) {
+                record.recycle();
+                record = null;
+            }
+            return record;
         } catch (RocksDBException e) {
             throw new StateStoreRuntimeException("Error while getting value for key "
                 + key + " from state store " + name, e);

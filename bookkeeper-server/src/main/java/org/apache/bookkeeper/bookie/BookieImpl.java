@@ -286,26 +286,27 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         // we are checking all possibilities here, so we don't need to fail if we can only get
         // loopback address. it will fail anyway when the bookie attempts to listen on loopback address.
         try {
-            // ip address
-            addresses.add(getBookieAddress(
-                new ServerConfiguration(conf)
-                    .setUseHostNameAsBookieID(false)
-                    .setAdvertisedAddress(null)
-                    .setAllowLoopback(true)
-            ).toBookieId());
-            // host name
-            addresses.add(getBookieAddress(
-                new ServerConfiguration(conf)
-                    .setUseHostNameAsBookieID(true)
-                    .setAdvertisedAddress(null)
-                    .setAllowLoopback(true)
-            ).toBookieId());
-            // advertised address
-            if (null != conf.getAdvertisedAddress()) {
-                addresses.add(getBookieAddress(conf).toBookieId());
-            }
             if (null != conf.getBookieId()) {
                 addresses.add(BookieId.parse(conf.getBookieId()));
+            } else {
+                // ip address
+                addresses.add(getBookieAddress(
+                    new ServerConfiguration(conf)
+                        .setUseHostNameAsBookieID(false)
+                        .setAdvertisedAddress(null)
+                        .setAllowLoopback(true)
+                ).toBookieId());
+                // host name
+                addresses.add(getBookieAddress(
+                    new ServerConfiguration(conf)
+                        .setUseHostNameAsBookieID(true)
+                        .setAdvertisedAddress(null)
+                        .setAllowLoopback(true)
+                ).toBookieId());
+                // advertised address
+                if (null != conf.getAdvertisedAddress()) {
+                    addresses.add(getBookieAddress(conf).toBookieId());
+                }
             }
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);

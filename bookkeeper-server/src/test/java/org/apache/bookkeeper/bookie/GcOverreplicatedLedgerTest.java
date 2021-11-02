@@ -23,11 +23,13 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
+import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -36,11 +38,16 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerTestCase;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.Assert;
 import org.junit.Before;
@@ -81,6 +88,16 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
 
         BookieId bookieNotInEnsemble = getBookieNotInEnsemble(newLedgerMetadata);
         ServerConfiguration bkConf = getBkConf(bookieNotInEnsemble);
+
+        @Cleanup
+        final MetadataBookieDriver metadataDriver = instantiateMetadataDriver(bkConf);
+        @Cleanup
+        final LedgerManagerFactory lmf = metadataDriver.getLedgerManagerFactory();
+        @Cleanup
+        final LedgerUnderreplicationManager lum = lmf.newLedgerUnderreplicationManager();
+
+        Assert.assertFalse(lum.isLedgerBeingReplicated(lh.getId()));
+
         bkConf.setGcOverreplicatedLedgerWaitTime(10, TimeUnit.MILLISECONDS);
 
         lh.close();
@@ -102,7 +119,22 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
             }
         });
 
+        Assert.assertFalse(lum.isLedgerBeingReplicated(lh.getId()));
         Assert.assertFalse(activeLedgers.containsKey(lh.getId()));
+    }
+
+    private static MetadataBookieDriver instantiateMetadataDriver(ServerConfiguration conf)
+            throws BookieException {
+        try {
+            final String metadataServiceUriStr = conf.getMetadataServiceUri();
+            final MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(URI.create(metadataServiceUriStr));
+            driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+            return driver;
+        } catch (MetadataException me) {
+            throw new BookieException.MetadataStoreException("Failed to initialize metadata bookie driver", me);
+        } catch (ConfigurationException e) {
+            throw new BookieException.BookieIllegalOpException(e);
+        }
     }
 
     @Test

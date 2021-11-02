@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jetty.server.Server;
@@ -82,6 +83,10 @@ public class PrometheusMetricsProvider implements StatsProvider {
     final ConcurrentMap<ScopeContext, LongAdderCounter> counters = new ConcurrentHashMap<>();
     final ConcurrentMap<ScopeContext, SimpleGauge<? extends Number>> gauges = new ConcurrentHashMap<>();
     final ConcurrentMap<ScopeContext, DataSketchesOpStatsLogger> opStats = new ConcurrentHashMap<>();
+    final ConcurrentMap<ScopeContext, ThreadScopedDataSketchesStatsLogger> threadScopedOpStats =
+            new ConcurrentHashMap<>();
+    final ConcurrentMap<ScopeContext, ThreadScopedLongAdderCounter> threadScopedCounters =
+            new ConcurrentHashMap<>();
 
     public PrometheusMetricsProvider() {
         this(CollectorRegistry.defaultRegistry);
@@ -154,6 +159,8 @@ public class PrometheusMetricsProvider implements StatsProvider {
                 server.stop();
             } catch (Exception e) {
                 log.warn("Failed to shutdown Jetty server", e);
+            } finally {
+                ThreadRegistry.clear();
             }
         }
     }

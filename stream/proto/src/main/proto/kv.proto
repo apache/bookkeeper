@@ -37,6 +37,8 @@ message KeyValue {
   bytes value = 5;
   bool is_number = 6;
   int64 number_value = 7;
+  // time in milliseconds when the record expires (0 for none)
+  int64 expire_time = 8;
 }
 
 message Event {

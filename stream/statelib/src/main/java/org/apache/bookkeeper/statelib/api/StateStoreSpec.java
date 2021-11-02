@@ -58,4 +58,11 @@ public class StateStoreSpec {
 
     @Default
     private boolean localStorageCleanupEnable = false;
+
+    @Default
+    // Max idle time while waiting to restore from a checkpoint.
+    private Duration checkpointRestoreIdleLimit = Duration.ofMinutes(5);
+
+    @Default
+    private int ttlSeconds = 0;
 }

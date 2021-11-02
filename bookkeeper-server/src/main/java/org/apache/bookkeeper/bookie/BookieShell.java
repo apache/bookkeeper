@@ -47,9 +47,11 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.QueryAutoRecoveryStatusCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.TriggerAuditCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.WhoIsAuditorCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.CheckDBLedgersIndexCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToDBStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ConvertToInterleavedStorageCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.FlipBookieIdCommand;
@@ -66,6 +68,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgerLocationsIndexCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgersIndexCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStorageIndexFileCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.UpdateBookieInLedgerCommand;
@@ -154,7 +157,10 @@ public class BookieShell implements Tool {
     static final String CMD_CONVERT_TO_DB_STORAGE = "convert-to-db-storage";
     static final String CMD_CONVERT_TO_INTERLEAVED_STORAGE = "convert-to-interleaved-storage";
     static final String CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX = "rebuild-db-ledger-locations-index";
+    static final String CMD_REBUILD_DB_LEDGERS_INDEX = "rebuild-db-ledgers-index";
+    static final String CMD_CHECK_DB_LEDGERS_INDEX = "check-db-ledgers-index";
     static final String CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE = "regenerate-interleaved-storage-index-file";
+    static final String CMD_QUERY_AUTORECOVERY_STATUS = "queryrecoverystatus";
 
     // cookie commands
     static final String CMD_CREATE_COOKIE = "cookie_create";
@@ -1344,6 +1350,43 @@ public class BookieShell implements Tool {
         }
     }
 
+
+    /**
+     * Command to query autorecovery status.
+     */
+    class QueryAutoRecoveryStatusCmd extends MyCommand {
+        Options opts = new Options();
+
+        public QueryAutoRecoveryStatusCmd() {
+            super(CMD_QUERY_AUTORECOVERY_STATUS);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Query the autorecovery status";
+        }
+
+        @Override
+        String getUsage() {
+            return "queryautorecoverystatus";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            final boolean verbose = cmdLine.hasOption("verbose");
+            QueryAutoRecoveryStatusCommand.QFlags flags = new QueryAutoRecoveryStatusCommand.QFlags()
+                                                            .verbose(verbose);
+            QueryAutoRecoveryStatusCommand cmd = new QueryAutoRecoveryStatusCommand();
+            cmd.apply(bkConf, flags);
+            return 0;
+        }
+    }
+
     /**
      * Setter and Getter for LostBookieRecoveryDelay value (in seconds) in metadata store.
      */
@@ -2069,6 +2112,87 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Rebuild DbLedgerStorage ledgers index.
+     */
+    class RebuildDbLedgersIndexCmd extends MyCommand {
+        Options opts = new Options();
+
+        public RebuildDbLedgersIndexCmd() {
+            super(CMD_REBUILD_DB_LEDGERS_INDEX);
+        }
+
+        @Override
+        Options getOptions() {
+            opts.addOption("v", "verbose", false, "Verbose logging, print the ledgers added to the new index");
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Rebuild DbLedgerStorage ledgers index by scanning "
+                + "the journal and entry logs (sets all ledgers to fenced)";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_REBUILD_DB_LEDGERS_INDEX;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            RebuildDBLedgersIndexCommand.RebuildLedgersIndexFlags flags =
+                    new RebuildDBLedgersIndexCommand.RebuildLedgersIndexFlags();
+            flags.verbose(cmdLine.hasOption("v"));
+            RebuildDBLedgersIndexCommand cmd = new RebuildDBLedgersIndexCommand();
+            if (cmd.apply(bkConf, flags)) {
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+    }
+
+    /**
+     * Rebuild DbLedgerStorage ledgers index.
+     */
+    class CheckDbLedgersIndexCmd extends MyCommand {
+        Options opts = new Options();
+
+        public CheckDbLedgersIndexCmd() {
+            super(CMD_CHECK_DB_LEDGERS_INDEX);
+        }
+
+        @Override
+        Options getOptions() {
+            opts.addOption("v", "verbose", false, "Verbose logging, print the ledger data in the index.");
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Check DbLedgerStorage ledgers index by performing a read scan";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_CHECK_DB_LEDGERS_INDEX;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            CheckDBLedgersIndexCommand.CheckLedgersIndexFlags flags =
+                    new CheckDBLedgersIndexCommand.CheckLedgersIndexFlags();
+            flags.verbose(cmdLine.hasOption("v"));
+            CheckDBLedgersIndexCommand cmd = new CheckDBLedgersIndexCommand();
+            if (cmd.apply(bkConf, flags)) {
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+    }
+
+    /**
      * Regenerate an index file for interleaved storage.
      */
     class RegenerateInterleavedStorageIndexFile extends MyCommand {
@@ -2153,6 +2277,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_READJOURNAL, new ReadJournalCmd());
         commands.put(CMD_LASTMARK, new LastMarkCmd());
         commands.put(CMD_AUTORECOVERY, new AutoRecoveryCmd());
+        commands.put(CMD_QUERY_AUTORECOVERY_STATUS, new QueryAutoRecoveryStatusCmd());
         commands.put(CMD_LISTBOOKIES, new ListBookiesCmd());
         commands.put(CMD_LISTFILESONDISC, new ListDiskFilesCmd());
         commands.put(CMD_UPDATECOOKIE, new UpdateCookieCmd());
@@ -2165,6 +2290,8 @@ public class BookieShell implements Tool {
         commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());
         commands.put(CMD_CONVERT_TO_INTERLEAVED_STORAGE, new ConvertToInterleavedStorageCmd());
         commands.put(CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX, new RebuildDbLedgerLocationsIndexCmd());
+        commands.put(CMD_REBUILD_DB_LEDGERS_INDEX, new RebuildDbLedgersIndexCmd());
+        commands.put(CMD_CHECK_DB_LEDGERS_INDEX, new CheckDbLedgersIndexCmd());
         commands.put(CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE, new RegenerateInterleavedStorageIndexFile());
         commands.put(CMD_HELP, new HelpCmd());
         commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());

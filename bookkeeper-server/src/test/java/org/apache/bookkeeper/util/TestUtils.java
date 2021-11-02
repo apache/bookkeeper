@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.util;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -49,9 +50,31 @@ public final class TestUtils {
         return bookieId.toString().replace('.', '_').replace('-', '_').replace(":", "_");
     }
 
+    public static boolean hasAllLogFiles(File ledgerDirectory, Integer... logsId) {
+        Set<Integer> logs = findEntryLogFileIds(ledgerDirectory);
+        return logs.containsAll(Arrays.asList(logsId));
+    }
+
+    public static boolean hasNoneLogFiles(File ledgerDirectory, Integer... logsId) {
+        Set<Integer> logs = findEntryLogFileIds(ledgerDirectory);
+        return Arrays.stream(logsId).noneMatch(logs::contains);
+    }
+
     public static boolean hasLogFiles(File ledgerDirectory, boolean partial, Integer... logsId) {
-        boolean result = partial ? false : true;
-        Set<Integer> logs = new HashSet<Integer>();
+        boolean result = !partial;
+        Set<Integer> logs = findEntryLogFileIds(ledgerDirectory);
+        for (Integer logId : logsId) {
+            boolean exist = logs.contains(logId);
+            if ((partial && exist)
+                    || (!partial && !exist)) {
+                return !result;
+            }
+        }
+        return result;
+    }
+
+    private static Set<Integer> findEntryLogFileIds(File ledgerDirectory) {
+        Set<Integer> logs = new HashSet<>();
         for (File file : BookieImpl.getCurrentDirectory(ledgerDirectory).listFiles()) {
             if (file.isFile()) {
                 String name = file.getName();
@@ -61,14 +84,7 @@ public final class TestUtils {
                 logs.add(Integer.parseInt(name.split("\\.")[0], 16));
             }
         }
-        for (Integer logId : logsId) {
-            boolean exist = logs.contains(logId);
-            if ((partial && exist)
-                    || (!partial && !exist)) {
-                return !result;
-            }
-        }
-        return result;
+        return logs;
     }
 
     public static void waitUntilLacUpdated(ReadHandle rh, long newLac) throws Exception {

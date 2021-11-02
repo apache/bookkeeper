@@ -16,12 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+plugins {
+    id 'java'
+    id 'com.adarshr.test-logger'
+}
+
 dependencies {
     implementation project(':bookkeeper-common')
     implementation project(':stream:common')
     implementation project(':stream:proto')
     implementation depLibs.commonsConfiguration
     implementation depLibs.grpc
+    runtimeOnly depLibs.googleHTTPClient
+    testImplementation depLibs.junit
 }
 
 jar {

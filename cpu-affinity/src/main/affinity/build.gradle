@@ -25,9 +25,9 @@ plugins {
 library {
     binaries.configureEach { CppBinary binary ->
         def compileTask = binary.compileTask.get()
-        compileTask.dependsOn project(':cpu-affinity').generateJniHeaders
+        compileTask.dependsOn project(':cpu-affinity').compileJava
         compileTask.includes.from("${Jvm.current().javaHome}/include",
-                                  project(':cpu-affinity').generateJniHeaders.javahOutputDir)
+                                  project(':cpu-affinity').compileJava.options.headerOutputDirectory)
 
         def osFamily = binary.targetPlatform.targetMachine.operatingSystemFamily
 

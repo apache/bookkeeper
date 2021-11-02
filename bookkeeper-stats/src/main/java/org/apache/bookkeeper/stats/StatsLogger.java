@@ -31,9 +31,27 @@ public interface StatsLogger {
     /**
      * @param name
      *          Stats Name
+     * @return Get the logger for an OpStat described by the <i>name</i> with extra
+     * labels for the threadpool/threadname and thread no. Lone threads always
+     * have 0 as their thread no.
+     */
+    OpStatsLogger getThreadScopedOpStatsLogger(String name);
+
+    /**
+     * @param name
+     *          Stats Name
      * @return Get the logger for a simple stat described by the <i>name</i>
      */
     Counter getCounter(String name);
+
+    /**
+     * @param name
+     *          Stats Name
+     * @return Get the logger for a simple stat described by the <i>name</i> with extra
+     * labels for the threadpool/threadname and thread no. Lone threads always
+     * have 0 as their thread no.
+     */
+    Counter getThreadScopedCounter(String name);
 
     /**
      * Register given <i>gauge</i> as name <i>name</i>.

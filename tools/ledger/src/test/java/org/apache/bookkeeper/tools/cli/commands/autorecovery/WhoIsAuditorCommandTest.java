@@ -27,6 +27,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 import java.net.URI;
 import java.util.UUID;
+import lombok.Cleanup;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
@@ -75,10 +77,6 @@ public class WhoIsAuditorCommandTest extends BookieCommandTestBase {
 
         BookieId bookieId = BookieId.parse(UUID.randomUUID().toString());
 
-        PowerMockito.mockStatic(AuditorElector.class);
-        PowerMockito.when(AuditorElector.getCurrentAuditor(eq(conf), eq(zk)))
-                    .thenReturn(bookieId);
-
         PowerMockito.mockStatic(CommandHelpers.class);
         PowerMockito.when(CommandHelpers
                 .getBookieSocketAddrStringRepresentation(
@@ -86,8 +84,11 @@ public class WhoIsAuditorCommandTest extends BookieCommandTestBase {
     }
 
     @Test
-    public void testCommand() {
-        WhoIsAuditorCommand cmd = new WhoIsAuditorCommand();
+    public void testCommand() throws Exception {
+        @Cleanup
+        BookKeeperAdmin bka = mock(BookKeeperAdmin.class);
+        when(bka.getCurrentAuditor()).thenReturn(BookieId.parse("127.0.0.1:3181"));
+        WhoIsAuditorCommand cmd = new WhoIsAuditorCommand(bka);
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
     }
 }

@@ -59,14 +59,14 @@
         <include>javax.servlet-api-4.0.0/CDDL+GPL-1.1</include>
         <include>bouncycastle-1.0.2/LICENSE.html</include>
         <include>jsr-305/LICENSE</include>
-        <include>netty-4.1.63.Final/*</include>
+        <include>netty-4.1.68.Final/*</include>
         <include>paranamer-2.8/LICENSE.txt</include>
         <include>protobuf-3.14.0/LICENSE</include>
         <include>protobuf-3.12.0/LICENSE</include>
         <include>scala-library-2.11.7/LICENSE.md</include>
         <include>scala-parser-combinators_2.11-1.0.4/LICENSE.md</include>
         <include>scala-reflect-2.11.8/LICENSE.md</include>
-        <include>slf4j-1.7.25/LICENSE.txt</include>
+        <include>slf4j-1.7.32/LICENSE.txt</include>
       </includes>
       <fileMode>644</fileMode>
     </fileSet>

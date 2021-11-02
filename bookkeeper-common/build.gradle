@@ -19,13 +19,15 @@
 plugins {
     id 'java-library'
     id "java-test-fixtures"
+    id 'com.adarshr.test-logger'
+    id 'org.gradle.test-retry'
 }
 
 dependencies {
     implementation project(":bookkeeper-stats")
     implementation project(":cpu-affinity")
 
-    compileOnly depLibs.errorprone
+    implementation depLibs.errorprone
     compileOnly depLibs.jsr305
     compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations
@@ -41,11 +43,21 @@ dependencies {
     testImplementation depLibs.commonsLang3
     testImplementation depLibs.hamcrest
     testImplementation depLibs.junit
-    testImplementation depLibs.log4j
+    testImplementation depLibs.log4jSlf4jImpl
+    testImplementation depLibs.log4j12api
+    testImplementation depLibs.log4jCore
     testImplementation depLibs.mockito
-    testImplementation depLibs.slf4jLog4j
 
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
 }
 
+test {
+    retry {
+        maxFailures = 20
+        maxRetries = 3
+    }
+
+    maxHeapSize = '3G'
+    forkEvery = 1
+}

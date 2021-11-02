@@ -75,6 +75,7 @@ import org.apache.bookkeeper.stream.storage.impl.metadata.RootRangeStoreFactory;
 import org.apache.bookkeeper.stream.storage.impl.metadata.RootRangeStoreImpl;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
 
+
 /**
  * The service implementation running in a storage container.
  */
@@ -101,6 +102,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     @Getter(value = AccessLevel.PACKAGE)
     private final TableStoreFactory tableStoreFactory;
 
+    private final StorageServerClientManager clientManager;
+
     RangeStoreServiceImpl(long scId,
                           StorageContainerPlacementPolicy rangePlacementPolicy,
                           OrderedScheduler scheduler,
@@ -110,6 +113,7 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
             scId,
             scheduler,
             storeFactory,
+            clientManager,
             store -> new RootRangeStoreImpl(
                 store, rangePlacementPolicy, scheduler.chooseThread(scId)),
             store -> new MetaRangeStoreImpl(store, rangePlacementPolicy, scheduler.chooseThread(scId), clientManager),
@@ -119,6 +123,7 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     RangeStoreServiceImpl(long scId,
                           OrderedScheduler scheduler,
                           MVCCStoreFactory storeFactory,
+                          StorageServerClientManager clientManager,
                           RootRangeStoreFactory rrStoreFactory,
                           MetaRangeStoreFactory mrStoreFactory,
                           TableStoreFactory tableStoreFactory) {
@@ -128,10 +133,17 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         this.rootRange = failRequestStorageContainer;
         this.mgStore = failRequestStorageContainer;
         this.storeFactory = storeFactory;
+        this.clientManager = clientManager;
         this.rrStoreFactory = rrStoreFactory;
         this.mrStoreFactory = mrStoreFactory;
         this.tableStoreFactory = tableStoreFactory;
         this.tableStoreCache = new TableStoreCache(storeFactory, tableStoreFactory);
+    }
+
+    private CompletableFuture<Integer> getStreamTtl(long streamId) {
+        return (streamId == ROOT_STREAM_ID || streamId == CONTAINER_META_STREAM_ID)
+            ? FutureUtils.value(0)
+            : clientManager.getStreamProperties(streamId).thenApply(r -> r.getStreamConf().getTtlSeconds());
     }
 
     //
@@ -149,7 +161,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         return storeFactory.openStore(
             ROOT_STORAGE_CONTAINER_ID,
             ROOT_STREAM_ID,
-            ROOT_RANGE_ID
+            ROOT_RANGE_ID,
+            0
         ).thenApply(store -> {
             rootRange = rrStoreFactory.createStore(store);
             return null;
@@ -160,7 +173,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         return storeFactory.openStore(
             scId,
             CONTAINER_META_STREAM_ID,
-            CONTAINER_META_RANGE_ID
+            CONTAINER_META_RANGE_ID,
+            0
         ).thenApply(store -> {
             mgStore = mrStoreFactory.createStore(store);
             return null;
@@ -241,13 +255,23 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     // Table API
     //
 
+    private CompletableFuture<TableStore> getTableStore(long scId, final RangeId rid) {
+        final TableStore store = tableStoreCache.getTableStore(rid);
+
+        if (store != null) {
+            return FutureUtils.value(store);
+        }
+
+        return getStreamTtl(rid.getStreamId())
+                .thenCompose(ttl -> tableStoreCache.openTableStore(scId, rid, ttl));
+    }
 
     @Override
     public CompletableFuture<RangeResponse> range(RangeRequest request) {
         RoutingHeader header = request.getHeader();
 
         if (header.getRangeId() <= 0L) {
-            return CompletableFuture.completedFuture(RangeResponse.newBuilder()
+            return FutureUtils.value(RangeResponse.newBuilder()
                 .setHeader(ResponseHeader.newBuilder()
                     .setCode(StatusCode.BAD_REQUEST)
                     .setRoutingHeader(request.getHeader())
@@ -256,13 +280,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
-        TableStore store = tableStoreCache.getTableStore(rid);
-        if (null != store) {
-            return store.range(request);
-        } else {
-            return tableStoreCache.openTableStore(scId, rid)
+        return getTableStore(scId, rid)
                 .thenCompose(s -> s.range(request));
-        }
     }
 
     @Override
@@ -279,13 +298,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
-        TableStore store = tableStoreCache.getTableStore(rid);
-        if (null != store) {
-            return store.put(request);
-        } else {
-            return tableStoreCache.openTableStore(scId, rid)
+        return getTableStore(scId, rid)
                 .thenCompose(s -> s.put(request));
-        }
     }
 
     @Override
@@ -302,13 +316,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
-        TableStore store = tableStoreCache.getTableStore(rid);
-        if (null != store) {
-            return store.delete(request);
-        } else {
-            return tableStoreCache.openTableStore(scId, rid)
-                .thenCompose(s -> s.delete(request));
-        }
+        return getTableStore(scId, rid)
+            .thenCompose(s -> s.delete(request));
     }
 
     @Override
@@ -325,13 +334,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
-        TableStore store = tableStoreCache.getTableStore(rid);
-        if (null != store) {
-            return store.txn(request);
-        } else {
-            return tableStoreCache.openTableStore(scId, rid)
-                .thenCompose(s -> s.txn(request));
-        }
+        return getTableStore(scId, rid)
+            .thenCompose(s -> s.txn(request));
     }
 
     @Override
@@ -348,13 +352,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
-        TableStore store = tableStoreCache.getTableStore(rid);
-        if (null != store) {
-            return store.incr(request);
-        } else {
-            return tableStoreCache.openTableStore(scId, rid)
-                .thenCompose(s -> s.incr(request));
-        }
+        return getTableStore(scId, rid)
+            .thenCompose(s -> s.incr(request));
     }
 
 }

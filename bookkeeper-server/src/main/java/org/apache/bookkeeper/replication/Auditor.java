@@ -38,6 +38,7 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDERREPLIC
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS;
 import static org.apache.bookkeeper.replication.ReplicationStats.PLACEMENT_POLICY_CHECK_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICAS_CHECK_TIME;
+import static org.apache.bookkeeper.replication.ReplicationStats.UNDER_REPLICATED_LEDGERS_TOTAL_SIZE;
 import static org.apache.bookkeeper.replication.ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE;
 import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 
@@ -71,6 +72,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -163,6 +165,8 @@ public class Auditor implements AutoCloseable {
     private final AtomicInteger numLedgersFoundHavingLessThanWQReplicasOfAnEntry;
     private final long underreplicatedLedgerRecoveryGracePeriod;
     private final int zkOpTimeoutMs;
+    private final Semaphore openLedgerNoRecoverySemaphore;
+    private final int openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
 
     private final StatsLogger statsLogger;
     @StatsDoc(
@@ -170,6 +174,12 @@ public class Auditor implements AutoCloseable {
         help = "the distribution of num under_replicated ledgers on each auditor run"
     )
     private final OpStatsLogger numUnderReplicatedLedger;
+
+    @StatsDoc(
+            name = UNDER_REPLICATED_LEDGERS_TOTAL_SIZE,
+            help = "the distribution of under_replicated ledgers total size on each auditor run"
+    )
+    private final OpStatsLogger underReplicatedLedgerTotalSize;
     @StatsDoc(
         name = URL_PUBLISH_TIME_FOR_LOST_BOOKIE,
         help = "the latency distribution of publishing under replicated ledgers for lost bookies"
@@ -340,7 +350,22 @@ public class Auditor implements AutoCloseable {
         this.numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue = new AtomicInteger(0);
         this.numLedgersFoundHavingLessThanWQReplicasOfAnEntry = new AtomicInteger(0);
 
+        if (conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations() <= 0) {
+            LOG.error("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
+            throw new UnavailableException("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
+        }
+        this.openLedgerNoRecoverySemaphore = new Semaphore(conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations());
+
+        if (conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec() < 0) {
+            LOG.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec should be greater than or equal to 0");
+            throw new UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec "
+                + "should be greater than or equal to 0");
+        }
+        this.openLedgerNoRecoverySemaphoreWaitTimeoutMSec =
+            conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec();
+
         numUnderReplicatedLedger = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
+        underReplicatedLedgerTotalSize = this.statsLogger.getOpStatsLogger(UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);
         uRLPublishTimeForLostBookies = this.statsLogger
                 .getOpStatsLogger(ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE);
         bookieToLedgersMapCreationTime = this.statsLogger
@@ -1131,6 +1156,17 @@ public class Auditor implements AutoCloseable {
         }
         LOG.info("Following ledgers: {} of bookie: {} are identified as underreplicated", ledgers, missingBookies);
         numUnderReplicatedLedger.registerSuccessfulValue(ledgers.size());
+        LongAdder underReplicatedSize = new LongAdder();
+        FutureUtils.processList(
+                Lists.newArrayList(ledgers),
+                ledgerId ->
+                    ledgerManager.readLedgerMetadata(ledgerId).whenComplete((metadata, exception) -> {
+                        if (exception == null) {
+                            underReplicatedSize.add(metadata.getValue().getLength());
+                        }
+                    }), null);
+        underReplicatedLedgerTotalSize.registerSuccessfulValue(underReplicatedSize.longValue());
+
         return FutureUtils.processList(
             Lists.newArrayList(ledgers),
             ledgerId -> ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId, missingBookies),
@@ -1185,12 +1221,32 @@ public class Auditor implements AutoCloseable {
     }
 
     /**
+     * Get BookKeeper client according to configuration.
+     * @param conf
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    BookKeeper getBookKeeper(ServerConfiguration conf) throws IOException, InterruptedException {
+        return createBookKeeperClient(conf);
+    }
+
+    /**
+     * Get BookKeeper admin according to bookKeeper client.
+     * @param bookKeeper
+     * @return
+     */
+    BookKeeperAdmin getBookKeeperAdmin(final BookKeeper bookKeeper) {
+        return new BookKeeperAdmin(bookKeeper, statsLogger);
+    }
+
+    /**
      * List all the ledgers and check them individually. This should not
      * be run very often.
      */
     void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
-        final BookKeeper localClient = createBookKeeperClient(conf);
-        final BookKeeperAdmin localAdmin = new BookKeeperAdmin(localClient, statsLogger);
+        final BookKeeper localClient = getBookKeeper(conf);
+        final BookKeeperAdmin localAdmin = getBookKeeperAdmin(localClient);
 
         try {
             final LedgerChecker checker = new LedgerChecker(localClient);
@@ -1210,7 +1266,23 @@ public class Auditor implements AutoCloseable {
                     return;
                 }
 
+                try {
+                    if (!openLedgerNoRecoverySemaphore.tryAcquire(openLedgerNoRecoverySemaphoreWaitTimeoutMSec,
+                        TimeUnit.MILLISECONDS)) {
+                        LOG.warn("Failed to acquire semaphore for {} ms, ledgerId: {}",
+                            openLedgerNoRecoverySemaphoreWaitTimeoutMSec, ledgerId);
+                        FutureUtils.complete(processFuture, null);
+                        return;
+                    }
+                } catch (InterruptedException e) {
+                    LOG.error("Unable to acquire open ledger operation semaphore ", e);
+                    Thread.currentThread().interrupt();
+                    FutureUtils.complete(processFuture, null);
+                    return;
+                }
+
                 localAdmin.asyncOpenLedgerNoRecovery(ledgerId, (rc, lh, ctx) -> {
+                    openLedgerNoRecoverySemaphore.release();
                     if (Code.OK == rc) {
                         checker.checkLedger(lh,
                                 // the ledger handle will be closed after checkLedger is done.

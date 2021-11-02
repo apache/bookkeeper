@@ -37,6 +37,8 @@ public class StorageConfiguration extends ComponentConfiguration {
 
     private static final String LOCAL_STORAGE_CLEANUP_ENABLE = "local.storage.cleanup.enable";
 
+    private static final String CHECKPOINT_RESTORE_IDLE_LIMIT_MS = "checkpoint.restore.idle.limit.ms";
+
     public StorageConfiguration(CompositeConfiguration conf) {
         super(conf, COMPONENT_PREFIX);
     }
@@ -105,5 +107,9 @@ public class StorageConfiguration extends ComponentConfiguration {
 
     public boolean getLocalStorageCleanupEnable() {
         return getBoolean(LOCAL_STORAGE_CLEANUP_ENABLE, true);
+    }
+
+    public long getCheckpointRestoreIdleLimitMs() {
+        return getLong(CHECKPOINT_RESTORE_IDLE_LIMIT_MS, TimeUnit.MINUTES.toMillis(5));
     }
 }

@@ -21,15 +21,21 @@
 package org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint;
 
 import com.google.common.hash.Hashing;
+import com.google.common.io.CountingInputStream;
 import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
@@ -205,14 +211,45 @@ public class CheckpointFile {
 
     public void copyFromRemote(CheckpointStore checkpointStore,
                                String dbPrefix,
-                               String checkpointId) throws IOException {
+                               String checkpointId,
+                               Duration idleWait) throws IOException, TimeoutException {
         String remoteFilePath = getRemotePath(dbPrefix, checkpointId, true);
+        CountingInputStream cis = new CountingInputStream(
+            checkpointStore.openInputStream(remoteFilePath)
+        );
+        CompletableFuture<Long> copyFuture = CompletableFuture.supplyAsync(() -> {
+            try {
+                return java.nio.file.Files.copy(
+                    cis, Paths.get(getFile().getAbsolutePath()),
+                    StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw new CompletionException(e);
+            }
+        });
 
-        try (InputStream is = checkpointStore.openInputStream(remoteFilePath)) {
-            java.nio.file.Files.copy(
-                is,
-                Paths.get(file.getAbsolutePath()),
-                StandardCopyOption.REPLACE_EXISTING);
+        long startMs = System.currentTimeMillis();
+
+        while (!copyFuture.isDone()) {
+            long lastCount = cis.getCount();
+            try {
+                // Wait of at most `idleWait` time for this to finish. If it is not done, we will get a
+                // TimeoutException. While handling the exception we will check if there was any progress. If there
+                // was some progress, we will try again.
+                copyFuture.get(idleWait.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException | ExecutionException e) {
+                throw new IOException("Failed to copy file from remote checkpoint: " + remoteFilePath, e);
+            } catch (TimeoutException e) {
+                // Check if we made any progress
+                long endMs = System.currentTimeMillis();
+                long newCount = cis.getCount();
+                log.info("Timeout waiting for copy: {} last-read {} current-read {} runtime(ms) {} ",
+                    remoteFilePath, lastCount, newCount, endMs - startMs);
+                if (lastCount == newCount) {
+                    throw new TimeoutException("No progress reading: " + remoteFilePath
+                        + " read " + lastCount + " runtime(ms) " + (endMs - startMs)
+                    );
+                }
+            }
         }
     }
 

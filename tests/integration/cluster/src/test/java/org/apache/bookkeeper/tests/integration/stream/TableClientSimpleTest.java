@@ -242,4 +242,39 @@ public class TableClientSimpleTest extends StreamClusterTestBase {
             assertEquals(100L * (j + 1), number);
         }
     }
+
+    public void testTableTtl() throws Exception {
+        final String ns = namespace + "_ttl";
+        final int ttlSeconds = 5;
+
+        result(adminClient.createNamespace(ns, NamespaceConfiguration.newBuilder()
+                .setDefaultStreamConf(DEFAULT_STREAM_CONF)
+                .build()));
+
+        final String streamName = testName.getMethodName() + "_stream";
+        result(adminClient.createStream(ns, streamName, StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
+                        .setStorageType(StorageType.TABLE)
+                        .setTtlSeconds(ttlSeconds)
+                        .build()));
+
+        final PTable<ByteBuf, ByteBuf> table = result(storageClient.openPTable(streamName));
+
+        // put first key
+        final byte[] rKey = "rKey".getBytes(UTF_8);
+        final byte[] lKey = "lKey".getBytes(UTF_8);
+        final byte[] val = "val".getBytes(UTF_8);
+
+        final ByteBuf rKeyBuf = Unpooled.wrappedBuffer(rKey);
+        final ByteBuf lKeyBuf = Unpooled.wrappedBuffer(lKey);
+        final ByteBuf valBuf = Unpooled.wrappedBuffer(val);
+
+        result(table.put(rKeyBuf, lKeyBuf, valBuf));
+
+        // Ensure we can read the value back.  this may be flaky if the test gets suspended for too long.
+        assertArrayEquals(val, ByteBufUtil.getBytes(result(table.get(rKeyBuf, lKeyBuf))));
+
+        // Wait for the value to expire, and ensure we can't read it.
+        Thread.sleep(ttlSeconds + 1);
+        assertNull(ByteBufUtil.getBytes(result(table.get(rKeyBuf, lKeyBuf))));
+    }
 }

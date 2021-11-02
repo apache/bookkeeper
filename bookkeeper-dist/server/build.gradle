@@ -28,28 +28,21 @@ releaseArtifacts {
     artifact(tasks.named("distTar"))
 }
 
-//    implementation project(':bookkeeper-http:vertx-http-server')
 dependencies {
-
-    implementation project(':bookkeeper-http:http-server')
     implementation project(':bookkeeper-server')
     implementation project(':bookkeeper-stats-providers:prometheus-metrics-provider')
     implementation project(':bookkeeper-stats')
     implementation project(':stream:distributedlog:core')
     implementation project(':stream:server')
     implementation project(':bookkeeper-tools')
-
-    compileOnly depLibs.lombok
-    compileOnly depLibs.spotbugsAnnotations
-
-    implementation depLibs.slf4jLog4j
-
-
-    testCompileOnly depLibs.lombok
-
-
-    annotationProcessor depLibs.lombok
-    testAnnotationProcessor depLibs.lombok
+    runtimeOnly depLibs.log4j12api
+    runtimeOnly depLibs.log4jSlf4jImpl
+    runtimeOnly depLibs.log4jCore
+    runtimeOnly (depLibs.zookeeperTest) {
+        exclude group: "io.netty", module: "netty-transport-native-epoll"
+        exclude group: 'log4j', module: 'log4j'
+        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
 }
 
 jar {
@@ -60,11 +53,11 @@ def depLicences = [
         "checker-qual-3.5.0/LICENSE",
         "google-auth-library-credentials-0.20.0/LICENSE",
         "javax.servlet-api-4.0.0/CDDL+GPL-1.1",
-        "netty-4.1.63.Final/*",
+        "netty-4.1.68.Final/*",
         "bouncycastle-1.0.2/LICENSE.html",
         "protobuf-3.14.0/LICENSE",
         "protobuf-3.12.0/LICENSE",
-        "slf4j-1.7.25/LICENSE.txt",
+        "slf4j-1.7.32/LICENSE.txt",
 ]
 distributions {
     main {
@@ -106,13 +99,26 @@ distributions {
                             } else {
                                 // External dependencies
                                 def id = dep.moduleVersion.id
-                                archiveName = "${id.group}-${id.name}-${id.version}.jar"
+                                if (dep.classifier != null) {
+                                    archiveName = "${id.group}-${id.name}-${id.version}-${dep.classifier}.jar"
+                                } else {
+                                    archiveName = "${id.group}-${id.name}-${id.version}.jar"
+                                }
                             }
                             rename {archiveName}
                         }
                 }
                 from jar
             }
+        }
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.apache.bookkeeper'
+            artifactId = 'bookkeeper-dist-server'
         }
     }
 }

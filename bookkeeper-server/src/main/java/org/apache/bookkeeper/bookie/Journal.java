@@ -103,7 +103,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * @param filter journal id filter
      * @return list of filtered ids
      */
-    static List<Long> listJournalIds(File journalDir, JournalIdFilter filter) {
+    public static List<Long> listJournalIds(File journalDir, JournalIdFilter filter) {
         File[] logFiles = journalDir.listFiles();
         if (logFiles == null || logFiles.length == 0) {
             return Collections.emptyList();
@@ -782,10 +782,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         throws IOException {
         JournalChannel recLog;
         if (journalPos <= 0) {
-            recLog = new JournalChannel(journalDirectory, journalId, journalPreAllocSize, journalWriteBufferSize);
+            recLog = new JournalChannel(journalDirectory, journalId, journalPreAllocSize, journalWriteBufferSize, conf);
         } else {
             recLog = new JournalChannel(journalDirectory, journalId, journalPreAllocSize, journalWriteBufferSize,
-                    journalPos);
+                    journalPos, conf);
         }
         int journalVersion = recLog.getFormatVersion();
         try {
@@ -960,7 +960,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     journalCreationWatcher.reset().start();
                     logFile = new JournalChannel(journalDirectory, logId, journalPreAllocSize, journalWriteBufferSize,
                                         journalAlignmentSize, removePagesFromCache,
-                                        journalFormatVersionToWrite, getBufferedChannelBuilder());
+                                        journalFormatVersionToWrite, getBufferedChannelBuilder(), conf);
 
                     journalStats.getJournalCreationStats().registerSuccessfulEvent(
                             journalCreationWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
