@@ -24,8 +24,8 @@ package org.apache.bookkeeper.bookie;
 import com.google.common.collect.Lists;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
