@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,9 +95,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     private static class Lock {
         private final String lockZNode;
-        private final int ledgerZNodeVersion;
+        private final Optional<Integer> ledgerZNodeVersion;
 
-        Lock(String lockZNode, int ledgerZNodeVersion) {
+        Lock(String lockZNode, Optional<Integer> ledgerZNodeVersion) {
             this.lockZNode = lockZNode;
             this.ledgerZNodeVersion = ledgerZNodeVersion;
         }
@@ -105,13 +106,14 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             return lockZNode;
         }
 
-        int getLedgerZNodeVersion() {
+        Optional<Integer> getLedgerZNodeVersion() {
             return ledgerZNodeVersion;
         }
     }
     private final Map<Long, Lock> heldLocks = new ConcurrentHashMap<Long, Lock>();
     private final Pattern idExtractionPattern;
 
+    private final String rootPath;
     private final String basePath;
     private final String urLedgerPath;
     private final String urLockPath;
@@ -127,7 +129,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     public ZkLedgerUnderreplicationManager(AbstractConfiguration conf, ZooKeeper zkc)
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
         this.conf = conf;
-        basePath = getBasePath(ZKMetadataDriverBase.resolveZkLedgersRootPath(conf));
+        rootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
+        basePath = getBasePath(rootPath);
         layoutZNode = basePath + '/' + BookKeeperConstants.LAYOUT_ZNODE;
         urLedgerPath = basePath
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
@@ -390,24 +393,27 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         try {
             Lock l = heldLocks.get(ledgerId);
             if (l != null) {
-                zkc.delete(getUrLedgerZnode(ledgerId), l.getLedgerZNodeVersion());
+                final Optional<Integer> ledgerZNodeVersion = l.getLedgerZNodeVersion();
+                if (ledgerZNodeVersion.isPresent()) {
+                    zkc.delete(getUrLedgerZnode(ledgerId), ledgerZNodeVersion.get());
 
-                try {
-                    // clean up the hierarchy
-                    String[] parts = getUrLedgerZnode(ledgerId).split("/");
-                    for (int i = 1; i <= 4; i++) {
-                        String[] p = Arrays.copyOf(parts, parts.length - i);
-                        String path = Joiner.on("/").join(p);
-                        Stat s = zkc.exists(path, null);
-                        if (s != null) {
-                            zkc.delete(path, s.getVersion());
+                    try {
+                        // clean up the hierarchy
+                        String[] parts = getUrLedgerZnode(ledgerId).split("/");
+                        for (int i = 1; i <= 4; i++) {
+                            String[] p = Arrays.copyOf(parts, parts.length - i);
+                            String path = Joiner.on("/").join(p);
+                            Stat s = zkc.exists(path, null);
+                            if (s != null) {
+                                zkc.delete(path, s.getVersion());
+                            }
                         }
+                    } catch (KeeperException.NotEmptyException nee) {
+                        // This can happen when cleaning up the hierarchy.
+                        // It's safe to ignore, it simply means another
+                        // ledger in the same hierarchy has been marked as
+                        // underreplicated.
                     }
-                } catch (KeeperException.NotEmptyException nee) {
-                    // This can happen when cleaning up the hierarchy.
-                    // It's safe to ignore, it simply means another
-                    // ledger in the same hierarchy has been marked as
-                    // underreplicated.
                 }
             }
         } catch (KeeperException.NoNodeException nne) {
@@ -529,7 +535,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                     String lockPath = urLockPath + "/" + tryChild;
                     long ledgerId = getLedgerId(tryChild);
                     zkc.create(lockPath, LOCK_DATA, zkAcls, CreateMode.EPHEMERAL);
-                    heldLocks.put(ledgerId, new Lock(lockPath, stat.getVersion()));
+                    heldLocks.put(ledgerId, new Lock(lockPath, Optional.of(stat.getVersion())));
                     return ledgerId;
                 } catch (KeeperException.NodeExistsException nee) {
                     children.remove(tryChild);
@@ -783,19 +789,20 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     /**
      * Acquire the underreplicated ledger lock.
      */
-    public static void acquireUnderreplicatedLedgerLock(ZooKeeper zkc, String zkLedgersRootPath,
+    public static String acquireUnderreplicatedLedgerLock(ZooKeeper zkc, String zkLedgersRootPath,
         long ledgerId, List<ACL> zkAcls)
             throws KeeperException, InterruptedException {
-        ZkUtils.createFullPathOptimistic(zkc, getUrLedgerLockZnode(getUrLockPath(zkLedgersRootPath), ledgerId),
-                LOCK_DATA, zkAcls, CreateMode.EPHEMERAL);
+        final String lockPath = getUrLedgerLockZnode(getUrLockPath(zkLedgersRootPath), ledgerId);
+        ZkUtils.createFullPathOptimistic(zkc, lockPath, LOCK_DATA, zkAcls, CreateMode.EPHEMERAL);
+        return lockPath;
     }
 
     @Override
     public void acquireUnderreplicatedLedger(long ledgerId)
             throws ReplicationException  {
         try {
-            acquireUnderreplicatedLedgerLock(zkc, getUrLedgerLockZnode(urLockPath, ledgerId), ledgerId,
-                    ZkUtils.getACLs(conf));
+            final String lockPath = acquireUnderreplicatedLedgerLock(zkc, rootPath, ledgerId, ZkUtils.getACLs(conf));
+            heldLocks.put(ledgerId, new Lock(lockPath, Optional.empty()));
         } catch (Exception e) {
             throw new ReplicationException.UnavailableException(
                     "Failed to acquire underreplicated ledger lock for " + ledgerId, e);
