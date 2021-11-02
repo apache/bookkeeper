@@ -42,6 +42,8 @@ dependencies {
     implementation depLibs.nettyTransportNativeEpoll
     implementation depLibs.zookeeper
     implementation depLibs.log4j12api
+    implementation depLibs.log4jCore
+    implementation depLibs.log4jSlf4jImpl
 
     testImplementation project(':bookkeeper-server')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
@@ -63,7 +65,6 @@ test {
         maxFailures = 10
         maxRetries = 3
     }
-
     maxHeapSize = '4G'
     forkEvery = 1
     jvmArgs("-Djunit.timeout.test=600000",
