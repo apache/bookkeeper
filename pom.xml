@@ -893,7 +893,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
-          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid</argLine>
+          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid
+            ${test.additional.args}
+          </argLine>
           <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           <forkCount>${forkCount.variable}</forkCount>
           <reuseForks>false</reuseForks>
@@ -1128,6 +1130,10 @@
       <activation>
         <jdk>[11,)</jdk>
       </activation>
+      <properties>
+        <!-- required for running tests on JDK11+ -->
+        <test.additional.args> --add-opens java.base/jdk.internal.loader=ALL-UNNAMED </test.additional.args>
+      </properties>
       <build>
         <plugins>
            <plugin>
