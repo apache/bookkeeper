@@ -280,7 +280,7 @@ public class BookieShellTest {
     public void testRecoverCmdRecoverDefault() throws Exception {
         // default behavior
         testRecoverCmdRecover(
-            false, false, false,
+            false, false, false, false,
             "-force", "127.0.0.1:3181");
     }
 
@@ -288,7 +288,7 @@ public class BookieShellTest {
     public void testRecoverCmdRecoverDeleteCookie() throws Exception {
         // dryrun
         testRecoverCmdRecover(
-            false, false, true,
+            false, false, true, false,
             "-force", "-deleteCookie", "127.0.0.1:3181");
     }
 
@@ -296,7 +296,7 @@ public class BookieShellTest {
     public void testRecoverCmdRecoverSkipOpenLedgersDeleteCookie() throws Exception {
         // dryrun
         testRecoverCmdRecover(
-            false, true, true,
+            false, true, true, false,
             "-force", "-deleteCookie", "-skipOpenLedgers", "127.0.0.1:3181");
     }
 
@@ -304,7 +304,7 @@ public class BookieShellTest {
     public void testRecoverCmdRecoverDryrun() throws Exception {
         // dryrun
         testRecoverCmdRecover(
-            true, false, false,
+            true, false, false, false,
             "-force", "-dryrun", "127.0.0.1:3181");
     }
 
@@ -312,14 +312,23 @@ public class BookieShellTest {
     public void testRecoverCmdRecoverDryrunDeleteCookie() throws Exception {
         // dryrun & removeCookie : removeCookie should be false
         testRecoverCmdRecover(
-            true, false, false,
+            true, false, false, false,
             "-force", "-dryrun", "-deleteCookie", "127.0.0.1:3181");
+    }
+
+    @Test
+    public void testRecoverCmdRecoverSkipUnrecoverableLedgers() throws Exception {
+        // skipUnrecoverableLedgers
+        testRecoverCmdRecover(
+            false, false, false, true,
+            "-force", "-sku", "127.0.0.1:3181");
     }
 
     @SuppressWarnings("unchecked")
     void testRecoverCmdRecover(boolean dryrun,
                                boolean skipOpenLedgers,
                                boolean removeCookies,
+                               boolean skipUnrecoverableLedgers,
                                String... args) throws Exception {
         RecoverCmd cmd = (RecoverCmd) shell.commands.get("recover");
         CommandLine cmdLine = parseCommandLine(cmd, args);
@@ -328,7 +337,7 @@ public class BookieShellTest {
             .verifyNew(BookKeeperAdmin.class, times(1))
             .withArguments(any(ClientConfiguration.class));
         verify(admin, times(1))
-            .recoverBookieData(any(Set.class), eq(dryrun), eq(skipOpenLedgers));
+            .recoverBookieData(any(Set.class), eq(dryrun), eq(skipOpenLedgers), eq(skipUnrecoverableLedgers));
         verify(admin, times(1)).close();
         if (removeCookies) {
             PowerMockito.verifyStatic(MetadataDrivers.class);
