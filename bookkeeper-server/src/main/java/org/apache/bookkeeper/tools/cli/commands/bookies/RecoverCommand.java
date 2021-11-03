@@ -100,6 +100,9 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
 
         @Parameter(names = { "-bs", "--bokiesrc" }, description = "Bookie address")
         private String bookieAddress;
+
+        @Parameter(names = {"-sku", "--skipunrecoverableledgers"}, description = "Skip unrecoverable ledgers")
+        private boolean skipUnrecoverableLedgers;
     }
 
     @Override
@@ -118,6 +121,7 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
         boolean force = flags.force;
         boolean skipOpenLedgers = flags.skipOpenLedgers;
         boolean removeCookies = !dryrun && flags.deleteCookie;
+        boolean skipUnrecoverableLedgers = flags.skipUnrecoverableLedgers;
 
         Long ledgerId = flags.ledger;
 
@@ -153,7 +157,7 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
             if (DEFAULT_ID != ledgerId) {
                 return bkRecoveryLedger(admin, ledgerId, bookieAddrs, dryrun, skipOpenLedgers, removeCookies);
             }
-            return bkRecovery(admin, bookieAddrs, dryrun, skipOpenLedgers, removeCookies);
+            return bkRecovery(admin, bookieAddrs, dryrun, skipOpenLedgers, removeCookies, skipUnrecoverableLedgers);
         } finally {
             admin.close();
         }
@@ -259,9 +263,10 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
                            Set<BookieId> bookieAddrs,
                            boolean dryrun,
                            boolean skipOpenLedgers,
-                           boolean removeCookies)
+                           boolean removeCookies,
+                           boolean skipUnrecoverableLedgers)
         throws InterruptedException, BKException {
-        bkAdmin.recoverBookieData(bookieAddrs, dryrun, skipOpenLedgers);
+        bkAdmin.recoverBookieData(bookieAddrs, dryrun, skipOpenLedgers, skipUnrecoverableLedgers);
         if (removeCookies) {
             deleteCookies(bkAdmin.getConf(), bookieAddrs);
         }
