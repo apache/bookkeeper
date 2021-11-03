@@ -131,7 +131,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             if (logger.isDebugEnabled()) {
                 logger.debug("Operation rejected while writing {}", request, e);
             }
-            status = StatusCode.EIO;
+            status = StatusCode.ETOOMANYREQUESTS;
         } catch (IOException e) {
             logger.error("Error writing entry:{} to ledger:{}",
                     entryId, ledgerId, e);

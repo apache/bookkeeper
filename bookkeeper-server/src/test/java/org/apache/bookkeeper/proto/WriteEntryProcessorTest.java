@@ -34,9 +34,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.DefaultChannelPromise;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.proto.BookieProtocol.ParsedAddRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -218,4 +221,34 @@ public class WriteEntryProcessorTest {
         response.recycle();
     }
 
+    @Test
+    public void testWritesCacheFlushTimeout() throws Exception {
+        when(bookie.isReadOnly()).thenReturn(false);
+        when(channel.voidPromise()).thenReturn(mock(ChannelPromise.class));
+        when(channel.writeAndFlush(any())).thenReturn(mock(ChannelPromise.class));
+        doAnswer(invocationOnMock -> {
+            throw new BookieException.OperationRejectedException();
+        }).when(bookie).addEntry(
+                any(ByteBuf.class), eq(false), same(processor), same(channel), eq(new byte[0]));
+
+        ChannelPromise promise = new DefaultChannelPromise(channel);
+        AtomicReference<Object> writtenObject = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(invocationOnMock -> {
+            writtenObject.set(invocationOnMock.getArgument(0));
+            latch.countDown();
+            return promise;
+        }).when(channel).writeAndFlush(any(), any(ChannelPromise.class));
+
+        processor.run();
+
+        verify(bookie, times(1))
+                .addEntry(any(ByteBuf.class), eq(false), same(processor), same(channel), eq(new byte[0]));
+        verify(channel, times(1)).writeAndFlush(any(Response.class), any(ChannelPromise.class));
+
+        latch.await();
+        assertTrue(writtenObject.get() instanceof Response);
+        Response response = (Response) writtenObject.get();
+        assertEquals(BookieProtocol.ETOOMANYREQUESTS, response.getErrorCode());
+    }
 }
