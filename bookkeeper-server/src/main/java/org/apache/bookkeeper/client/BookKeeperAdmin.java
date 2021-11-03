@@ -574,10 +574,15 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     public void recoverBookieData(final Set<BookieId> bookiesSrc, boolean dryrun, boolean skipOpenLedgers)
-            throws InterruptedException, BKException {
+        throws InterruptedException, BKException {
+        recoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, false);
+    }
+
+    public void recoverBookieData(final Set<BookieId> bookiesSrc, boolean dryrun, boolean skipOpenLedgers,
+                                  boolean skipUnrecoverableLedgers) throws InterruptedException, BKException {
         SyncObject sync = new SyncObject();
         // Call the async method to recover bookie data.
-        asyncRecoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, new RecoverCallback() {
+        asyncRecoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, new RecoverCallback() {
             @Override
             public void recoverComplete(int rc, Object ctx) {
                 LOG.info("Recover bookie operation completed with rc: {}", BKException.codeLogger(rc));
@@ -657,12 +662,13 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     public void asyncRecoverBookieData(final Set<BookieId> bookieSrc,
                                        final RecoverCallback cb, final Object context) {
-        asyncRecoverBookieData(bookieSrc, false, false, cb, context);
+        asyncRecoverBookieData(bookieSrc, false, false, false, cb, context);
     }
 
     public void asyncRecoverBookieData(final Set<BookieId> bookieSrc, boolean dryrun,
-                                       final boolean skipOpenLedgers, final RecoverCallback cb, final Object context) {
-        getActiveLedgers(bookieSrc, dryrun, skipOpenLedgers, cb, context);
+                                       final boolean skipOpenLedgers, final boolean skipUnrecoverableLedgers,
+                                       final RecoverCallback cb, final Object context) {
+        getActiveLedgers(bookieSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, cb, context);
     }
 
     /**
@@ -709,7 +715,8 @@ public class BookKeeperAdmin implements AutoCloseable {
      *            Context for the RecoverCallback to call.
      */
     private void getActiveLedgers(final Set<BookieId> bookiesSrc, final boolean dryrun,
-                                  final boolean skipOpenLedgers, final RecoverCallback cb, final Object context) {
+                                  final boolean skipOpenLedgers, final boolean skipUnrecoverableLedgers,
+                                  final RecoverCallback cb, final Object context) {
         // Wrapper class around the RecoverCallback so it can be used
         // as the final VoidCallback to process ledgers
         class RecoverCallbackWrapper implements AsyncCallback.VoidCallback {
@@ -728,7 +735,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         Processor<Long> ledgerProcessor = new Processor<Long>() {
             @Override
             public void process(Long ledgerId, AsyncCallback.VoidCallback iterCallback) {
-                recoverLedger(bookiesSrc, ledgerId, dryrun, skipOpenLedgers, iterCallback);
+                recoverLedger(bookiesSrc, ledgerId, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, iterCallback);
             }
         };
         bkc.getLedgerManager().asyncProcessLedgers(
@@ -755,6 +762,31 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     private void recoverLedger(final Set<BookieId> bookiesSrc, final long lId, final boolean dryrun,
                                final boolean skipOpenLedgers, final AsyncCallback.VoidCallback finalLedgerIterCb) {
+        recoverLedger(bookiesSrc, lId, dryrun, skipOpenLedgers, false, finalLedgerIterCb);
+    }
+
+    /**
+     * This method asynchronously recovers a given ledger if any of the ledger
+     * entries were stored on the failed bookie.
+     *
+     * @param bookiesSrc
+     *            Source bookies that had a failure. We want to replicate the
+     *            ledger fragments that were stored there.
+     * @param lId
+     *            Ledger id we want to recover.
+     * @param dryrun
+     *            printing the recovery plan without actually recovering bookies
+     * @param skipOpenLedgers
+     *            Skip recovering open ledgers.
+     * @param skipUnrecoverableLedgers
+     *            Skip unrecoverable ledgers.
+     * @param finalLedgerIterCb
+     *            IterationCallback to invoke once we've recovered the current
+     *            ledger.
+     */
+    private void recoverLedger(final Set<BookieId> bookiesSrc, final long lId, final boolean dryrun,
+                               final boolean skipOpenLedgers, final boolean skipUnrecoverableLedgers,
+                               final AsyncCallback.VoidCallback finalLedgerIterCb) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Recovering ledger : {}", lId);
         }
@@ -763,8 +795,13 @@ public class BookKeeperAdmin implements AutoCloseable {
             @Override
             public void openComplete(int rc, final LedgerHandle lh, Object ctx) {
                 if (rc != BKException.Code.OK) {
-                    LOG.error("BK error opening ledger: " + lId, BKException.create(rc));
-                    finalLedgerIterCb.processResult(rc, null, null);
+                    if (skipUnrecoverableLedgers) {
+                        LOG.warn("BK error opening ledger: {}, skip recover it.", lId, BKException.create(rc));
+                        finalLedgerIterCb.processResult(BKException.Code.OK, null, null);
+                    } else {
+                        LOG.error("BK error opening ledger: {}", lId, BKException.create(rc));
+                        finalLedgerIterCb.processResult(rc, null, null);
+                    }
                     return;
                 }
 
@@ -798,13 +835,20 @@ public class BookKeeperAdmin implements AutoCloseable {
                         @Override
                         public void openComplete(int newrc, final LedgerHandle newlh, Object newctx) {
                             if (newrc != BKException.Code.OK) {
-                                LOG.error("BK error close ledger: " + lId, BKException.create(newrc));
-                                finalLedgerIterCb.processResult(newrc, null, null);
+                                if (skipUnrecoverableLedgers) {
+                                    LOG.warn("BK error opening ledger: {}, skip recover it.",
+                                        lId, BKException.create(newrc));
+                                    finalLedgerIterCb.processResult(BKException.Code.OK, null, null);
+                                } else {
+                                    LOG.error("BK error close ledger: {}", lId, BKException.create(newrc));
+                                    finalLedgerIterCb.processResult(newrc, null, null);
+                                }
                                 return;
                             }
                             bkc.mainWorkerPool.submit(() -> {
                                 // do recovery
-                                recoverLedger(bookiesSrc, lId, dryrun, skipOpenLedgers, finalLedgerIterCb);
+                                recoverLedger(bookiesSrc, lId, dryrun, skipOpenLedgers,
+                                    skipUnrecoverableLedgers, finalLedgerIterCb);
                             });
                         }
                     }, null);
@@ -815,7 +859,13 @@ public class BookKeeperAdmin implements AutoCloseable {
                     @Override
                     public void processResult(int rc, String path, Object ctx) {
                         if (BKException.Code.OK != rc) {
-                            LOG.error("Failed to recover ledger {} : {}", lId, BKException.codeLogger(rc));
+                            if (skipUnrecoverableLedgers) {
+                                LOG.warn("Failed to recover ledger: {} : {}, skip recover it.", lId,
+                                    BKException.codeLogger(rc));
+                                rc = BKException.Code.OK;
+                            } else {
+                                LOG.error("Failed to recover ledger {} : {}", lId, BKException.codeLogger(rc));
+                            }
                         } else {
                             LOG.info("Recovered ledger {}.", lId);
                         }
