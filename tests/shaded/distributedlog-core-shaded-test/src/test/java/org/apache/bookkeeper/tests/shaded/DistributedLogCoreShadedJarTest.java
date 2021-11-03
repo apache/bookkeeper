@@ -59,7 +59,7 @@ public class DistributedLogCoreShadedJarTest {
 
     @Test
     public void testProtobufShadedPath() throws Exception {
-        Class.forName("dlshade.com.google.protobuf.Message");
+        Class.forName("org.apache.bookkeeper.shaded.com.google.protobuf.Message");
     }
 
     @Test(expected = ClassNotFoundException.class)
@@ -69,7 +69,7 @@ public class DistributedLogCoreShadedJarTest {
 
     @Test
     public void testGuavaShadedPath() throws Exception {
-        Class.forName("dlshade.com.google.common.cache.Cache");
+        Class.forName("org.apache.bookkeeper.shaded.com.google.common.cache.Cache");
         assertTrue(true);
     }
 
@@ -119,19 +119,19 @@ public class DistributedLogCoreShadedJarTest {
 
     @Test
     public void testDistributedLogCommon() throws Exception {
-        Class.forName("org.apache.distributedlog.common.concurrent.AsyncSemaphore");
+        Class.forName("dlshade.org.apache.distributedlog.common.concurrent.AsyncSemaphore");
         assertTrue(true);
     }
 
     @Test
     public void testDistributedLogProto() throws Exception {
-        Class.forName("org.apache.distributedlog.DLSN");
+        Class.forName("dlshade.org.apache.distributedlog.DLSN");
         assertTrue(true);
     }
 
     @Test
     public void testDistributedLogCore() throws Exception {
-        Class.forName("org.apache.distributedlog.api.AsyncLogReader");
+        Class.forName("dlshade.org.apache.distributedlog.api.AsyncLogReader");
         assertTrue(true);
     }
 
