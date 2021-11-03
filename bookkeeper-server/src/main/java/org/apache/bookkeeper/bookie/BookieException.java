@@ -186,7 +186,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * Signals that a ledger has been fenced in a bookie. No more entries can be appended to that ledger.
+     * Signals that a ledger's operation has been rejected by an internal component because of the resource saturation.
      */
     public static class OperationRejectedException extends BookieException {
         public OperationRejectedException() {
