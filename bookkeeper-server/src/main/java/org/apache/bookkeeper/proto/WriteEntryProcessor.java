@@ -86,7 +86,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Operation rejected while writing {}", request, e);
             }
-            rc = BookieProtocol.EIO;
+            rc = BookieProtocol.ETOOMANYREQUESTS;
         } catch (IOException e) {
             LOG.error("Error writing {}", request, e);
             rc = BookieProtocol.EIO;
