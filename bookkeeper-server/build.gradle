@@ -99,4 +99,7 @@ test.doFirst {
         .resolvedArtifacts.find { it.name == 'junit-foundation' }
     jvmArgs("-Djunit.timeout.test=600000", "-Djunit.max.retry=3",
             "-Djava.net.preferIPv4Stack=true", "-Dio.netty.leakDetection.level=paranoid")
+    if (JavaVersion.current() > JavaVersion.VERSION_1_8) {
+        jvmArgs("--add-opens", "java.base/jdk.internal.loader=ALL-UNNAMED")
+    }
 }
