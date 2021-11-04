@@ -50,7 +50,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.bookie.BookieImpl;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException.BKLedgerClosedException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -1495,7 +1495,7 @@ public class BookieWriteLedgerTest extends
         }
     }
 
-    static class CorruptReadBookie extends BookieImpl {
+    static class CorruptReadBookie extends TestBookieImpl {
 
         static final Logger LOG = LoggerFactory.getLogger(CorruptReadBookie.class);
         ByteBuf localBuf;

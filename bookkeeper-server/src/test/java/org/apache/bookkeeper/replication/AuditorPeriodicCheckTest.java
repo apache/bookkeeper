@@ -58,6 +58,7 @@ import org.apache.bookkeeper.bookie.BookieAccessor;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
@@ -283,7 +284,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         final AtomicInteger numReads = new AtomicInteger(0);
         ServerConfiguration conf = killBookie(0);
 
-        Bookie deadBookie = new BookieImpl(conf) {
+        Bookie deadBookie = new TestBookieImpl(conf) {
             @Override
             public ByteBuf readEntry(long ledgerId, long entryId)
                     throws IOException, NoLedgerException {
@@ -772,7 +773,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         LOG.info("Killing bookie " + addressByIndex(bookieIdx));
         ServerConfiguration conf = killBookie(bookieIdx);
-        Bookie writeFailingBookie = new BookieImpl(conf) {
+        Bookie writeFailingBookie = new TestBookieImpl(conf) {
             @Override
             public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb,
                              Object ctx, byte[] masterKey)

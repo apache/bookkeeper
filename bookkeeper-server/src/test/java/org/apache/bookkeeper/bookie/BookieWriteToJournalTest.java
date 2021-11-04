@@ -63,7 +63,7 @@ public class BookieWriteToJournalTest {
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
-    class NoOpJournalReplayBookie extends BookieImpl {
+    class NoOpJournalReplayBookie extends TestBookieImpl {
 
         public NoOpJournalReplayBookie(ServerConfiguration conf)
                 throws IOException, InterruptedException, BookieException {
@@ -158,7 +158,7 @@ public class BookieWriteToJournalTest {
         conf.setJournalDirName(journalDir.getPath())
                 .setLedgerDirNames(new String[]{ledgerDir.getPath()});
 
-        Bookie b = new BookieImpl(conf);
+        Bookie b = new TestBookieImpl(conf);
         b.start();
 
         long ledgerId = 1;

@@ -71,7 +71,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         assertEquals(bkAddress, BookieImpl.getBookieAddress(conf));
         assertEquals(bkAddress.toBookieId(), BookieImpl.getBookieId(conf));
 
-        Bookie b = new BookieImpl(conf);
+        Bookie b = new TestBookieImpl(conf);
         b.start();
 
         BookKeeperAdmin bka = new BookKeeperAdmin(baseClientConf);
@@ -123,7 +123,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         assertEquals(bkAddress, BookieImpl.getBookieAddress(conf));
         assertEquals(uuid, BookieImpl.getBookieId(conf).getId());
 
-        Bookie b = new BookieImpl(conf);
+        Bookie b = new TestBookieImpl(conf);
         b.start();
 
         BookKeeperAdmin bka = new BookKeeperAdmin(baseClientConf);

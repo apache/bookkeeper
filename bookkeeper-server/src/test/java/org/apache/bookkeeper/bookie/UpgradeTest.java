@@ -154,7 +154,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
             .setBookiePort(bookiePort);
         Bookie b = null;
         try {
-            b = new BookieImpl(conf);
+            b = new TestBookieImpl(conf);
             fail("Shouldn't have been able to start");
         } catch (BookieException.InvalidCookieException e) {
             // correct behaviour
@@ -162,14 +162,14 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         }
 
         FileSystemUpgrade.upgrade(conf); // should work fine
-        b = new BookieImpl(conf);
+        b = new TestBookieImpl(conf);
         b.start();
         b.shutdown();
         b = null;
 
         FileSystemUpgrade.rollback(conf);
         try {
-            b = new BookieImpl(conf);
+            b = new TestBookieImpl(conf);
             fail("Shouldn't have been able to start");
         } catch (BookieException.InvalidCookieException e) {
             // correct behaviour
@@ -178,7 +178,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
 
         FileSystemUpgrade.upgrade(conf);
         FileSystemUpgrade.finalizeUpgrade(conf);
-        b = new BookieImpl(conf);
+        b = new TestBookieImpl(conf);
         b.start();
         b.shutdown();
         b = null;
@@ -211,7 +211,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
             .setBookiePort(bookiePort)
             .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         FileSystemUpgrade.upgrade(conf); // should work fine with current directory
-        Bookie b = new BookieImpl(conf);
+        Bookie b = new TestBookieImpl(conf);
         b.start();
         b.shutdown();
     }
