@@ -34,10 +34,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -76,7 +76,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         });
     }
 
-    static class FakeBookie extends BookieImpl {
+    static class FakeBookie extends TestBookieImpl {
 
         final long expectedEntryToFail;
         final boolean stallOrRespondNull;
@@ -173,7 +173,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         assertEquals(BKException.Code.OK, rcHolder.get());
     }
 
-    static class SlowReadLacBookie extends BookieImpl {
+    static class SlowReadLacBookie extends TestBookieImpl {
 
         private final long lacToSlowRead;
         private final CountDownLatch readLatch;

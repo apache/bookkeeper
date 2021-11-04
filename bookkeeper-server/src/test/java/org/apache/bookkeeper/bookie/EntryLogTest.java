@@ -307,7 +307,7 @@ public class EntryLogTest {
         conf.setJournalDirName(ledgerDir1.toString());
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(),
                 ledgerDir2.getAbsolutePath() });
-        BookieImpl bookie = new BookieImpl(conf);
+        BookieImpl bookie = new TestBookieImpl(conf);
         EntryLogger entryLogger = new EntryLogger(conf,
                 bookie.getLedgerDirsManager());
         InterleavedLedgerStorage ledgerStorage =
@@ -687,7 +687,7 @@ public class EntryLogTest {
         conf.setLedgerDirNames(new String[] { ledgerDir.getAbsolutePath()});
         conf.setLedgerStorageClass(ledgerStorageClass);
         conf.setEntryLogPerLedgerEnabled(entryLogPerLedgerEnabled);
-        BookieImpl bookie = new BookieImpl(conf);
+        BookieImpl bookie = new TestBookieImpl(conf);
         CompactableLedgerStorage ledgerStorage = (CompactableLedgerStorage) bookie.ledgerStorage;
         Random rand = new Random(0);
 

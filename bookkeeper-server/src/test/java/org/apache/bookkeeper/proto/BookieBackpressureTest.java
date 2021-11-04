@@ -38,6 +38,7 @@ import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.SlowBufferedChannel;
 import org.apache.bookkeeper.bookie.SlowInterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.SlowSortedLedgerStorage;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
@@ -122,7 +123,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
 
     private Bookie bookieWithMockedJournal(ServerConfiguration conf,
                                            long getDelay, long addDelay, long flushDelay) throws Exception {
-        Bookie bookie = new BookieImpl(conf);
+        Bookie bookie = new TestBookieImpl(conf);
         if (getDelay <= 0 && addDelay <= 0 && flushDelay <= 0) {
             return bookie;
         }
@@ -145,7 +146,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
 
     @SuppressWarnings("unchecked")
     private List<Journal> getJournals(Bookie bookie) throws NoSuchFieldException, IllegalAccessException {
-        Field f = bookie.getClass().getDeclaredField("journals");
+        Field f = BookieImpl.class.getDeclaredField("journals");
         f.setAccessible(true);
 
         return (List<Journal>) f.get(bookie);
