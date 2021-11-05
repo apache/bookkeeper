@@ -27,7 +27,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,7 +34,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap.LongPair;
-
 
 /**
  * Read cache implementation.
@@ -61,7 +59,6 @@ public class ReadCache implements Closeable {
 
     private ByteBufAllocator allocator;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private volatile boolean isStorageShutdown;
 
     public ReadCache(ByteBufAllocator allocator, long maxCacheSize) {
         this(allocator, maxCacheSize, DEFAULT_MAX_SEGMENT_SIZE);
@@ -79,32 +76,18 @@ public class ReadCache implements Closeable {
             cacheSegments.add(Unpooled.directBuffer(segmentSize, segmentSize));
             cacheIndexes.add(new ConcurrentLongLongPairHashMap(4096, 2 * Runtime.getRuntime().availableProcessors()));
         }
-        isStorageShutdown = false;
     }
 
     @Override
     public void close() {
-        lock.writeLock().lock();
-        try {
-            isStorageShutdown = true;
-            cacheSegments.forEach(ByteBuf::release);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        cacheSegments.forEach(ByteBuf::release);
     }
 
-    public void put(long ledgerId, long entryId, ByteBuf entry) throws IOException {
+    public void put(long ledgerId, long entryId, ByteBuf entry) {
         int entrySize = entry.readableBytes();
         int alignedSize = align64(entrySize);
 
         lock.readLock().lock();
-        if (isStorageShutdown) {
-            // This is a hack. Ideally, we should be returning from here as a no-op or,
-            // the higher layers must no-op read/ writes after shutdown()
-            // Since the other lower layers like locationIndex, logEntry also need to handle the shutdown scenario,
-            // the IOException is thrown from here so that it bypasses other lower layers.
-            throw new IOException("Read cache has shutdown, not allowing put cache operation");
-        }
 
         try {
             int offset = currentSegmentOffset.getAndAdd(alignedSize);
@@ -121,16 +104,10 @@ public class ReadCache implements Closeable {
             lock.readLock().unlock();
         }
 
-        // We could not insert in segment, we need to get the write lock and roll-over to
+        // We could not insert in segment, we to get the write lock and roll-over to
         // next segment
         lock.writeLock().lock();
-        if (isStorageShutdown) {
-            // This is a hack. Ideally, we should be returning from here as a no-op or,
-            // the higher layers must no-op read/ writes after shutdown()
-            // Since the other lower layers like locationIndex, logEntry also need to handle the shutdown scenario,
-            // the IOException is thrown from here so that it bypasses other lower layers.
-            throw new IOException("Read cache has shutdown, not allowing put cache operation");
-        }
+
         try {
             int offset = currentSegmentOffset.getAndAdd(entrySize);
             if (offset + entrySize > segmentSize) {
@@ -149,16 +126,9 @@ public class ReadCache implements Closeable {
         }
     }
 
-    public ByteBuf get(long ledgerId, long entryId) throws IOException {
+    public ByteBuf get(long ledgerId, long entryId) {
         lock.readLock().lock();
 
-        if (isStorageShutdown) {
-            // This is a hack. Ideally, we should be returning from here as a no-op or,
-            // the higher layers must no-op read/ writes after shutdown()
-            // Since the other lower layers like locationIndex, logEntry also need to handle the shutdown scenario,
-            // the IOException is thrown from here so that it bypasses other lower layers.
-            throw new IOException("Read cache has shutdown, not allowing get cache operation");
-        }
         try {
             // We need to check all the segments, starting from the current one and looking
             // backward to minimize the

@@ -243,7 +243,8 @@ public class DbLedgerStorageTest {
         assertEquals(newEntry3, res);
     }
 
-    @Test(expected = IOException.class)
+//    @Test(expected = IOException.class)
+    @Test
     public void testReadsOpAfterShutdown() throws Exception {
         SingleDirectoryDbLedgerStorage singleDirStorage = ((DbLedgerStorage) storage).getLedgerStorageList().get(0);
         ByteBuf entry1 = Unpooled.buffer(64);
@@ -254,7 +255,22 @@ public class DbLedgerStorageTest {
         entry1.release();
         singleDirStorage.shutdown();
         isStorageShutdown = true;
-        singleDirStorage.getEntry(1, 1);
+        ByteBuf res = singleDirStorage.getEntry(1, 1);
+        assertEquals(null, res);
+    }
+
+    @Test
+    public void testWriteOpAfterShutdown() throws Exception {
+        SingleDirectoryDbLedgerStorage singleDirStorage = ((DbLedgerStorage) storage).getLedgerStorageList().get(0);
+        singleDirStorage.shutdown();
+        isStorageShutdown = true;
+        ByteBuf entry1 = Unpooled.buffer(64);
+        entry1.writeLong(1); // ledger id
+        entry1.writeLong(1); // entry id
+        entry1.writeBytes("e".getBytes());
+        long res = singleDirStorage.addEntry(entry1);
+        entry1.release();
+        assertEquals(-1, res);
     }
 
     @Test

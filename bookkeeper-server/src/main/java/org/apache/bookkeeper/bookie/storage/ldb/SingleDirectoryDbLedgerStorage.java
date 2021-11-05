@@ -43,6 +43,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -136,6 +137,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private final long maxReadAheadBytesSize;
 
+    private boolean isShutdown;
+    private ReentrantReadWriteLock shutdownLock;
+
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
             LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StateManager stateManager,
             CheckpointSource checkpointSource, Checkpointer checkpointer, StatsLogger statsLogger,
@@ -186,6 +190,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             () -> readCache.count()
         );
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+        isShutdown = false;
+        shutdownLock = new ReentrantReadWriteLock();
     }
 
     @Override
@@ -228,6 +234,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public void shutdown() throws InterruptedException {
         try {
+            isShutdown = true;
+            shutdownLock.writeLock().lock();
             flush();
 
             gcThread.shutdown();
@@ -246,6 +254,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         } catch (IOException e) {
             log.error("Error closing db storage", e);
+        } finally {
+            shutdownLock.writeLock().unlock();
         }
     }
 
@@ -315,33 +325,41 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             log.debug("Add entry. {}@{}, lac = {}", ledgerId, entryId, lac);
         }
 
-        // First we try to do an optimistic locking to get access to the current write cache.
-        // This is based on the fact that the write cache is only being rotated (swapped) every 1 minute. During the
-        // rest of the time, we can have multiple thread using the optimistic lock here without interfering.
-        long stamp = writeCacheRotationLock.tryOptimisticRead();
-        boolean inserted = false;
-
-        inserted = writeCache.put(ledgerId, entryId, entry);
-        if (!writeCacheRotationLock.validate(stamp)) {
-            // The write cache was rotated while we were inserting. We need to acquire the proper read lock and repeat
-            // the operation because we might have inserted in a write cache that was already being flushed and cleared,
-            // without being sure about this last entry being flushed or not.
-            stamp = writeCacheRotationLock.readLock();
-            try {
-                inserted = writeCache.put(ledgerId, entryId, entry);
-            } finally {
-                writeCacheRotationLock.unlockRead(stamp);
+        try {
+            shutdownLock.readLock().lock();
+            if (isShutdown) {
+                return -1;
             }
+            // First we try to do an optimistic locking to get access to the current write cache.
+            // This is based on the fact that the write cache is only being rotated (swapped) every 1 minute. During the
+            // rest of the time, we can have multiple thread using the optimistic lock here without interfering.
+            long stamp = writeCacheRotationLock.tryOptimisticRead();
+            boolean inserted = false;
+
+            inserted = writeCache.put(ledgerId, entryId, entry);
+            if (!writeCacheRotationLock.validate(stamp)) {
+                // The write cache was rotated while we were inserting. We need to acquire the proper read lock and repeat
+                // the operation because we might have inserted in a write cache that was already being flushed and cleared,
+                // without being sure about this last entry being flushed or not.
+                stamp = writeCacheRotationLock.readLock();
+                try {
+                    inserted = writeCache.put(ledgerId, entryId, entry);
+                } finally {
+                    writeCacheRotationLock.unlockRead(stamp);
+                }
+            }
+
+            if (!inserted) {
+                triggerFlushAndAddEntry(ledgerId, entryId, entry);
+            }
+
+            // after successfully insert the entry, update LAC and notify the watchers
+            updateCachedLacIfNeeded(ledgerId, lac);
+
+            recordSuccessfulEvent(dbLedgerStorageStats.getAddEntryStats(), startTime);
+        } finally {
+            shutdownLock.readLock().unlock();
         }
-
-        if (!inserted) {
-            triggerFlushAndAddEntry(ledgerId, entryId, entry);
-        }
-
-        // after successfully insert the entry, update LAC and notify the watchers
-        updateCachedLacIfNeeded(ledgerId, lac);
-
-        recordSuccessfulEvent(dbLedgerStorageStats.getAddEntryStats(), startTime);
         return entryId;
     }
 
@@ -397,73 +415,81 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             log.debug("Get Entry: {}@{}", ledgerId, entryId);
         }
 
-        if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
-            return getLastEntry(ledgerId);
-        }
-
-        // We need to try to read from both write caches, since recent entries could be found in either of the two. The
-        // write caches are already thread safe on their own, here we just need to make sure we get references to both
-        // of them. Using an optimistic lock since the read lock is always free, unless we're swapping the caches.
-        long stamp = writeCacheRotationLock.tryOptimisticRead();
-        WriteCache localWriteCache = writeCache;
-        WriteCache localWriteCacheBeingFlushed = writeCacheBeingFlushed;
-        if (!writeCacheRotationLock.validate(stamp)) {
-            // Fallback to regular read lock approach
-            stamp = writeCacheRotationLock.readLock();
-            try {
-                localWriteCache = writeCache;
-                localWriteCacheBeingFlushed = writeCacheBeingFlushed;
-            } finally {
-                writeCacheRotationLock.unlockRead(stamp);
-            }
-        }
-
-        // First try to read from the write cache of recent entries
-        ByteBuf entry = localWriteCache.get(ledgerId, entryId);
-        if (entry != null) {
-            recordSuccessfulEvent(dbLedgerStorageStats.getReadCacheHitStats(), startTime);
-            recordSuccessfulEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
-            return entry;
-        }
-
-        // If there's a flush going on, the entry might be in the flush buffer
-        entry = localWriteCacheBeingFlushed.get(ledgerId, entryId);
-        if (entry != null) {
-            recordSuccessfulEvent(dbLedgerStorageStats.getReadCacheHitStats(), startTime);
-            recordSuccessfulEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
-            return entry;
-        }
-
-        // Try reading from read-ahead cache
-        entry = readCache.get(ledgerId, entryId);
-        if (entry != null) {
-            recordSuccessfulEvent(dbLedgerStorageStats.getReadCacheHitStats(), startTime);
-            recordSuccessfulEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
-            return entry;
-        }
-
-        // Read from main storage
-        long entryLocation;
         try {
-            entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
-            if (entryLocation == 0) {
-                throw new NoEntryException(ledgerId, entryId);
+            shutdownLock.readLock().lock();
+            if (isShutdown) {
+                return null;
             }
-            entry = entryLogger.readEntry(ledgerId, entryId, entryLocation);
-        } catch (NoEntryException e) {
-            recordFailedEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
-            throw e;
+            if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
+                return getLastEntry(ledgerId);
+            }
+
+            // We need to try to read from both write caches, since recent entries could be found in either of the two. The
+            // write caches are already thread safe on their own, here we just need to make sure we get references to both
+            // of them. Using an optimistic lock since the read lock is always free, unless we're swapping the caches.
+            long stamp = writeCacheRotationLock.tryOptimisticRead();
+            WriteCache localWriteCache = writeCache;
+            WriteCache localWriteCacheBeingFlushed = writeCacheBeingFlushed;
+            if (!writeCacheRotationLock.validate(stamp)) {
+                // Fallback to regular read lock approach
+                stamp = writeCacheRotationLock.readLock();
+                try {
+                    localWriteCache = writeCache;
+                    localWriteCacheBeingFlushed = writeCacheBeingFlushed;
+                } finally {
+                    writeCacheRotationLock.unlockRead(stamp);
+                }
+            }
+
+            // First try to read from the write cache of recent entries
+            ByteBuf entry = localWriteCache.get(ledgerId, entryId);
+            if (entry != null) {
+                recordSuccessfulEvent(dbLedgerStorageStats.getReadCacheHitStats(), startTime);
+                recordSuccessfulEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
+                return entry;
+            }
+
+            // If there's a flush going on, the entry might be in the flush buffer
+            entry = localWriteCacheBeingFlushed.get(ledgerId, entryId);
+            if (entry != null) {
+                recordSuccessfulEvent(dbLedgerStorageStats.getReadCacheHitStats(), startTime);
+                recordSuccessfulEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
+                return entry;
+            }
+
+            // Try reading from read-ahead cache
+            entry = readCache.get(ledgerId, entryId);
+            if (entry != null) {
+                recordSuccessfulEvent(dbLedgerStorageStats.getReadCacheHitStats(), startTime);
+                recordSuccessfulEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
+                return entry;
+            }
+
+            // Read from main storage
+            long entryLocation;
+            try {
+                entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
+                if (entryLocation == 0) {
+                    throw new NoEntryException(ledgerId, entryId);
+                }
+                entry = entryLogger.readEntry(ledgerId, entryId, entryLocation);
+            } catch (NoEntryException e) {
+                recordFailedEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
+                throw e;
+            }
+
+            readCache.put(ledgerId, entryId, entry);
+
+            // Try to read more entries
+            long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
+            fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
+
+            recordSuccessfulEvent(dbLedgerStorageStats.getReadCacheMissStats(), startTime);
+            recordSuccessfulEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
+            return entry;
+        } finally {
+            shutdownLock.readLock().unlock();
         }
-
-        readCache.put(ledgerId, entryId, entry);
-
-        // Try to read more entries
-        long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
-        fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
-
-        recordSuccessfulEvent(dbLedgerStorageStats.getReadCacheMissStats(), startTime);
-        recordSuccessfulEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
-        return entry;
     }
 
     private void fillReadAheadCache(long orginalLedgerId, long firstEntryId, long firstEntryLocation) {
