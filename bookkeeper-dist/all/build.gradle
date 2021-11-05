@@ -126,3 +126,13 @@ distributions {
         }
     }
 }
+
+if (project.hasProperty("dev")) {
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                artifact distTar
+            }
+        }
+    }
+}
