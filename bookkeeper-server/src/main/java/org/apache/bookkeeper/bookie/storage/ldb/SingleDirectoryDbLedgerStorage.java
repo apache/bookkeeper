@@ -338,8 +338,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             inserted = writeCache.put(ledgerId, entryId, entry);
             if (!writeCacheRotationLock.validate(stamp)) {
-                // The write cache was rotated while we were inserting. We need to acquire the proper read lock and repeat
-                // the operation because we might have inserted in a write cache that was already being flushed and cleared,
+                // The write cache was rotated while we were inserting.
+                // We need to acquire the proper read lock and repeat the operation because we might have inserted in a
+                // write cache that was already being flushed and cleared,
                 // without being sure about this last entry being flushed or not.
                 stamp = writeCacheRotationLock.readLock();
                 try {
@@ -424,9 +425,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 return getLastEntry(ledgerId);
             }
 
-            // We need to try to read from both write caches, since recent entries could be found in either of the two. The
-            // write caches are already thread safe on their own, here we just need to make sure we get references to both
-            // of them. Using an optimistic lock since the read lock is always free, unless we're swapping the caches.
+            // We need to try to read from both write caches, since recent entries could be found in either of the two.
+            // The write caches are already thread safe on their own, here we just need to make sure we get references
+            // to both of them.
+            // Using an optimistic lock since the read lock is always free, unless we're swapping the caches.
             long stamp = writeCacheRotationLock.tryOptimisticRead();
             WriteCache localWriteCache = writeCache;
             WriteCache localWriteCacheBeingFlushed = writeCacheBeingFlushed;
