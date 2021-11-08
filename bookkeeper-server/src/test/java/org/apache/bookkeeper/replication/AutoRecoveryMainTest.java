@@ -28,6 +28,7 @@ import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.TestUtils;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 
@@ -184,12 +185,13 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
      * start autoRecoveryMain and make sure all its components are running and
      * myVote node is existing
      */
-    ZKMetadataClientDriver startAutoRecoveryMain(AutoRecoveryMain autoRecoveryMain) {
+    ZKMetadataClientDriver startAutoRecoveryMain(AutoRecoveryMain autoRecoveryMain) throws Exception {
         autoRecoveryMain.start();
         ZKMetadataClientDriver metadataClientDriver = (ZKMetadataClientDriver) autoRecoveryMain.bkc
                 .getMetadataClientDriver();
-        assertTrue("autoRecoveryMain components should be running", autoRecoveryMain.auditorElector.isRunning()
-                && autoRecoveryMain.replicationWorker.isRunning() && autoRecoveryMain.isAutoRecoveryRunning());
+        TestUtils.assertEventuallyTrue("autoRecoveryMain components should be running",
+                () -> autoRecoveryMain.auditorElector.isRunning()
+                        && autoRecoveryMain.replicationWorker.isRunning() && autoRecoveryMain.isAutoRecoveryRunning());
         return metadataClientDriver;
     }
 }
