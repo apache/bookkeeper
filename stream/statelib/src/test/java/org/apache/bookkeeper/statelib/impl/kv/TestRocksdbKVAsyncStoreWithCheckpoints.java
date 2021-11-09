@@ -29,6 +29,8 @@ import static org.mockito.Mockito.mock;
 
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
@@ -40,7 +42,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -122,7 +123,7 @@ public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBa
 
         // initialize the scheduler
         realWriteExecutor = Executors.newSingleThreadExecutor(
-                new ThreadFactoryBuilder().setNameFormat( THREAD_NAME_PREFIX + "%d").build());
+                new ThreadFactoryBuilder().setNameFormat(THREAD_NAME_PREFIX + "%d").build());
         mockWriteExecutor = mock(ScheduledExecutorService.class);
         writeExecutorController = new MockExecutorController(realWriteExecutor)
             .controlExecute(mockWriteExecutor)
