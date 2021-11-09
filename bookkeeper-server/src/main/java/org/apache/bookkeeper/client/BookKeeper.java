@@ -44,6 +44,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
@@ -113,6 +114,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 
+    //mark the bookkeeper is rotating to restart the upgrade
+    AtomicBoolean upgrading;
 
     final EventLoopGroup eventLoopGroup;
     private final ByteBufAllocator allocator;
@@ -585,6 +588,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
     }
 
+    //Provide an interface to mark the bookkeeper is rotating to restart the upgrade
+    public void setUpgrading(AtomicBoolean upgrading){
+        this.upgrading = upgrading;
+    }
+
     int getReturnRc(int rc) {
         return getReturnRc(bookieClient, rc);
     }
@@ -617,7 +625,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     void checkForFaultyBookies() {
         List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
         for (BookieId faultyBookie : faultyBookies) {
-            if (Math.random() <= bookieQuarantineRatio) {
+            if (!upgrading.get() && Math.random() <= bookieQuarantineRatio) {
                 bookieWatcher.quarantineBookie(faultyBookie);
                 statsLogger.getCounter(BookKeeperServerStats.BOOKIE_QUARANTINE).inc();
             } else {
