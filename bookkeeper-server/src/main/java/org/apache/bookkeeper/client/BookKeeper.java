@@ -593,6 +593,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.upgrading = upgrading;
     }
 
+    public boolean isUpgrading() {
+        return upgrading != null && upgrading.get();
+    }
+
     int getReturnRc(int rc) {
         return getReturnRc(bookieClient, rc);
     }
@@ -625,7 +629,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     void checkForFaultyBookies() {
         List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
         for (BookieId faultyBookie : faultyBookies) {
-            if (!upgrading.get() && Math.random() <= bookieQuarantineRatio) {
+            if (!isUpgrading() && Math.random() <= bookieQuarantineRatio) {
                 bookieWatcher.quarantineBookie(faultyBookie);
                 statsLogger.getCounter(BookKeeperServerStats.BOOKIE_QUARANTINE).inc();
             } else {
