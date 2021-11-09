@@ -20,6 +20,7 @@ package org.apache.bookkeeper.statelib.impl.kv;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
+import static org.apache.bookkeeper.statelib.testing.executors.MockExecutorController.THREAD_NAME_PREFIX;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -39,6 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -119,7 +121,8 @@ public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBa
         checkpointStore = new FSCheckpointManager(remoteDir);
 
         // initialize the scheduler
-        realWriteExecutor = Executors.newSingleThreadExecutor();
+        realWriteExecutor = Executors.newSingleThreadExecutor(
+                new ThreadFactoryBuilder().setNameFormat( THREAD_NAME_PREFIX + "%d").build());
         mockWriteExecutor = mock(ScheduledExecutorService.class);
         writeExecutorController = new MockExecutorController(realWriteExecutor)
             .controlExecute(mockWriteExecutor)
