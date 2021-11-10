@@ -294,7 +294,7 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     private void shutdownExecutor(OrderedExecutor service) {
         if (null != service) {
-            service.shutdown();
+            service.forceShutdown(1000, TimeUnit.SECONDS);
         }
     }
 

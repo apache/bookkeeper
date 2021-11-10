@@ -216,12 +216,12 @@ public class BookieServer {
 
     public synchronized void shutdown() {
         LOG.info("Shutting down BookieServer");
-        this.nettyServer.shutdown();
         if (!running) {
             return;
         }
-        exitCode = bookie.shutdown();
+        this.nettyServer.shutdown();
         this.requestProcessor.close();
+        exitCode = bookie.shutdown();
         running = false;
     }
 
