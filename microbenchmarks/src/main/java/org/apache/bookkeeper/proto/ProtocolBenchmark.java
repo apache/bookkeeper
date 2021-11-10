@@ -27,6 +27,7 @@ import io.netty.util.ReferenceCountUtil;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.proto.BookieProtoEncoding.EnDecoder;
 import org.apache.bookkeeper.proto.BookieProtoEncoding.RequestEnDeCoderPreV3;
 import org.apache.bookkeeper.proto.BookieProtoEncoding.RequestEnDecoderV3;
@@ -49,12 +50,12 @@ import org.slf4j.MDC;
 /**
  * Benchmarking serialization and deserialization.
  */
-@BenchmarkMode({ Mode.Throughput })
+@BenchmarkMode({Mode.Throughput})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 public class ProtocolBenchmark {
 
-    @Param({ "10", "100", "1000", "10000" })
+    @Param({"10", "100", "1000", "10000"})
     int size;
 
     byte[] masterKey;
