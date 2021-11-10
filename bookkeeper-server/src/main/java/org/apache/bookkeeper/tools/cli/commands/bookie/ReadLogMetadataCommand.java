@@ -79,10 +79,10 @@ public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> 
     public static class ReadLogMetadataFlags extends CliFlags {
 
         @Parameter(names = { "-l", "--logid" }, description = "Entry log id")
-        private long logId;
+        private long logId = DEFAULT_LOGID;
 
         @Parameter(names = { "-f", "--filename" }, description = "Entry log filename")
-        private String logFilename;
+        private String logFilename = DEFAULT_FILENAME;
 
         @Parameter(names = { "-lf", "--ledgeridformatter" }, description = "Set ledger id formatter")
         private String ledgerIdFormatter = DEFAULT;
