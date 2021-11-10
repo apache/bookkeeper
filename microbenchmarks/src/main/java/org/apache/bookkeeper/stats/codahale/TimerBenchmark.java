@@ -74,12 +74,12 @@ public class TimerBenchmark {
         public void doSetup() throws Exception {
             StatsLogger logger = null;
             switch (timerType) {
-            case CodahaleTimer:
-                logger = new CodahaleMetricsProvider().getStatsLogger("test");
-                break;
-            case FastTimer:
-                logger = new FastCodahaleMetricsProvider().getStatsLogger("test");
-                break;
+                case CodahaleTimer:
+                    logger = new CodahaleMetricsProvider().getStatsLogger("test");
+                    break;
+                case FastTimer:
+                    logger = new FastCodahaleMetricsProvider().getStatsLogger("test");
+                    break;
             }
 
             synchronized (MyState.class) {
@@ -168,12 +168,16 @@ public class TimerBenchmark {
     /**
      * Test routing for manual testing of memory footprint of default Codahale Timer vs. improved FastTimer.
      * JMH can't do that, so we have a small stand-alone test routine here.
-     * Run with: java -Xmx1g -cp target/benchmarks.jar org.apache.bookkeeper.stats.codahale.TimerBenchmark <codahale|fast>
+     * Run with:
+     * <code>
+     *  java -Xmx1g -cp target/benchmarks.jar \
+     *     org.apache.bookkeeper.stats.codahale.TimerBenchmark &lt;codahale|fast&gt;
+     * </code>
      * @param args
      */
     public static void main(String[] args) {
-        if (args.length != 1 ||
-                (!args[0].equalsIgnoreCase("codahale") && !args[0].equalsIgnoreCase("fast"))) {
+        if (args.length != 1
+                || (!args[0].equalsIgnoreCase("codahale") && !args[0].equalsIgnoreCase("fast"))) {
             System.out.println("usage: " + TimerBenchmark.class.getCanonicalName() + " <codahale|fast>");
             System.exit(1);
         }
@@ -186,24 +190,24 @@ public class TimerBenchmark {
         System.out.println("Using " + logger.getClass().getCanonicalName());
         System.out.println("Creating 1000 OpStatsLoggers (2000 Timers) and updating each of them 1000 times ...");
         OpStatsLogger[] timers = new OpStatsLogger[1000];
-        for (int i=0; i<timers.length; i++) {
+        for (int i = 0; i < timers.length; i++) {
             timers[i] = logger.getOpStatsLogger("test-timer-" + i);
         }
         long[] times = new long[199]; // 199 is prime, so each timer will get each time
         for (int i = 0; i < times.length; i++) {
             times[i] = Math.abs(ThreadLocalRandom.current().nextLong() % 1000);
         }
-        for (int i=0; i<1000 * timers.length; i++) {
+        for (int i = 0; i < 1000 * timers.length; i++) {
             timers[i % timers.length].registerSuccessfulEvent(times[i % times.length], TimeUnit.MILLISECONDS);
             timers[i % timers.length].registerFailedEvent(times[i % times.length], TimeUnit.MILLISECONDS);
         }
         times = null; // let it become garbage
         System.out.println("Done.");
         System.out.println("Now run 'jmap -histo:live <pid>' on this JVM to get a heap histogram, then kill this JVM.");
-        while(true) {
+        while (true) {
             try {
                 TimeUnit.MILLISECONDS.sleep(1000);
-            } catch(Exception e) {
+            } catch (Exception e) {
                 // ignore
             }
         }

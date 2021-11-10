@@ -56,9 +56,12 @@ public class StatsLoggerBenchmark {
         providers.put("FastCodahale", FastCodahaleMetricsProvider::new);
     }
 
+    /**
+     * State holder of the logger.
+     */
     @State(Scope.Benchmark)
     public static class LoggerState {
-        @Param({ "Prometheus", "Codahale", "FastCodahale", "Twitter", "Ostrich" })
+        @Param({"Prometheus", "Codahale", "FastCodahale", "Twitter", "Ostrich"})
         private String statsProvider;
 
         private Counter counter;
@@ -75,7 +78,7 @@ public class StatsLoggerBenchmark {
         }
     }
 
-     @Benchmark
+    @Benchmark
     public void counterIncrement(LoggerState s) {
         s.counter.inc();
     }
