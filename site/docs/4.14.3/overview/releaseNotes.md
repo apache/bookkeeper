@@ -2,7 +2,7 @@
 title: Apache BookKeeper 4.14.3 Release Notes
 ---
 
-Release 4.14.3 includes multiple stability, performance, and security fixes alone with the fix for Prometheus metrics.
+Release 4.14.3 includes multiple stability, performance, and security fixes along with the fix for Prometheus metrics.
 
 Apache BookKeeper users are encouraged to upgrade to 4.14.3. 
 The technical details of this release are summarized below.
