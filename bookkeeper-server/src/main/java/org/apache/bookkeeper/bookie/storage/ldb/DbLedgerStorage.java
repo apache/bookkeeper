@@ -166,56 +166,56 @@ public class DbLedgerStorage implements LedgerStorage {
 
     @Override
     public boolean ledgerExists(long ledgerId) throws IOException {
-        return getLedgerSorage(ledgerId).ledgerExists(ledgerId);
+        return getLedgerStorage(ledgerId).ledgerExists(ledgerId);
     }
 
     @Override
     public boolean setFenced(long ledgerId) throws IOException {
-        return getLedgerSorage(ledgerId).setFenced(ledgerId);
+        return getLedgerStorage(ledgerId).setFenced(ledgerId);
     }
 
     @Override
     public boolean isFenced(long ledgerId) throws IOException {
-        return getLedgerSorage(ledgerId).isFenced(ledgerId);
+        return getLedgerStorage(ledgerId).isFenced(ledgerId);
     }
 
     @Override
     public void setMasterKey(long ledgerId, byte[] masterKey) throws IOException {
-        getLedgerSorage(ledgerId).setMasterKey(ledgerId, masterKey);
+        getLedgerStorage(ledgerId).setMasterKey(ledgerId, masterKey);
     }
 
     @Override
     public byte[] readMasterKey(long ledgerId) throws IOException, BookieException {
-        return getLedgerSorage(ledgerId).readMasterKey(ledgerId);
+        return getLedgerStorage(ledgerId).readMasterKey(ledgerId);
     }
 
     @Override
     public long addEntry(ByteBuf entry) throws IOException, BookieException {
         long ledgerId = entry.getLong(entry.readerIndex());
-        return getLedgerSorage(ledgerId).addEntry(entry);
+        return getLedgerStorage(ledgerId).addEntry(entry);
     }
 
     @Override
     public ByteBuf getEntry(long ledgerId, long entryId) throws IOException {
-        return getLedgerSorage(ledgerId).getEntry(ledgerId, entryId);
+        return getLedgerStorage(ledgerId).getEntry(ledgerId, entryId);
     }
 
     @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
-        return getLedgerSorage(ledgerId).getLastAddConfirmed(ledgerId);
+        return getLedgerStorage(ledgerId).getLastAddConfirmed(ledgerId);
     }
 
     @Override
     public boolean waitForLastAddConfirmedUpdate(long ledgerId, long previousLAC,
             Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
-        return getLedgerSorage(ledgerId).waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
+        return getLedgerStorage(ledgerId).waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
     }
 
     @Override
     public void cancelWaitForLastAddConfirmedUpdate(long ledgerId,
                                                     Watcher<LastAddConfirmedUpdateNotification> watcher)
             throws IOException {
-        getLedgerSorage(ledgerId).cancelWaitForLastAddConfirmedUpdate(ledgerId, watcher);
+        getLedgerStorage(ledgerId).cancelWaitForLastAddConfirmedUpdate(ledgerId, watcher);
     }
 
     @Override
@@ -234,7 +234,7 @@ public class DbLedgerStorage implements LedgerStorage {
 
     @Override
     public void deleteLedger(long ledgerId) throws IOException {
-        getLedgerSorage(ledgerId).deleteLedger(ledgerId);
+        getLedgerStorage(ledgerId).deleteLedger(ledgerId);
     }
 
     @Override
@@ -244,28 +244,28 @@ public class DbLedgerStorage implements LedgerStorage {
 
     @Override
     public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
-        getLedgerSorage(ledgerId).setExplicitLac(ledgerId, lac);
+        getLedgerStorage(ledgerId).setExplicitLac(ledgerId, lac);
     }
 
     @Override
     public ByteBuf getExplicitLac(long ledgerId) throws IOException {
-        return getLedgerSorage(ledgerId).getExplicitLac(ledgerId);
+        return getLedgerStorage(ledgerId).getExplicitLac(ledgerId);
     }
 
     public long addLedgerToIndex(long ledgerId, boolean isFenced, byte[] masterKey,
                                  LedgerCache.PageEntriesIterable pages) throws Exception {
-        return getLedgerSorage(ledgerId).addLedgerToIndex(ledgerId, isFenced, masterKey, pages);
+        return getLedgerStorage(ledgerId).addLedgerToIndex(ledgerId, isFenced, masterKey, pages);
     }
 
     public long getLastEntryInLedger(long ledgerId) throws IOException {
-        return getLedgerSorage(ledgerId).getEntryLocationIndex().getLastEntryInLedger(ledgerId);
+        return getLedgerStorage(ledgerId).getEntryLocationIndex().getLastEntryInLedger(ledgerId);
     }
 
     public long getLocation(long ledgerId, long entryId) throws IOException {
-        return getLedgerSorage(ledgerId).getEntryLocationIndex().getLocation(ledgerId, entryId);
+        return getLedgerStorage(ledgerId).getEntryLocationIndex().getLocation(ledgerId, entryId);
     }
 
-    private SingleDirectoryDbLedgerStorage getLedgerSorage(long ledgerId) {
+    private SingleDirectoryDbLedgerStorage getLedgerStorage(long ledgerId) {
         return ledgerStorageList.get(MathUtils.signSafeMod(ledgerId, numberOfDirs));
     }
 
@@ -279,7 +279,7 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     public ByteBuf getLastEntry(long ledgerId) throws IOException {
-        return getLedgerSorage(ledgerId).getLastEntry(ledgerId);
+        return getLedgerStorage(ledgerId).getLastEntry(ledgerId);
     }
 
     @VisibleForTesting
