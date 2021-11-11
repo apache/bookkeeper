@@ -111,6 +111,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String GC_WAIT_TIME = "gcWaitTime";
     protected static final String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
     protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
+    protected static final String GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_REQUESTS =
+            "gcOverreplicatedLedgerMaxConcurrentRequests";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
     // Scrub Parameters
@@ -415,6 +417,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setGcOverreplicatedLedgerWaitTime(long gcWaitTime, TimeUnit unit) {
         this.setProperty(GC_OVERREPLICATED_LEDGER_WAIT_TIME, Long.toString(unit.toMillis(gcWaitTime)));
+        return this;
+    }
+
+    /**
+     * Max number of concurrent requests in garbage collection of overreplicated ledgers.
+     *
+     * @return max number of concurrent requests
+     */
+    public int getGcOverreplicatedLedgerMaxConcurrentRequests() {
+        return this.getInt(GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_REQUESTS, 1000);
+    }
+
+    /**
+     * Max number of concurrent requests in garbage collection of overreplicated ledgers. Default: 1000
+     *
+     * @param gcOverreplicatedLedgerMaxConcurrentRequests
+     * @return server configuration
+     */
+    public ServerConfiguration setGcOverreplicatedLedgerMaxConcurrentRequests(
+            int gcOverreplicatedLedgerMaxConcurrentRequests) {
+        this.setProperty(GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_REQUESTS,
+                Integer.toString(gcOverreplicatedLedgerMaxConcurrentRequests));
         return this;
     }
 

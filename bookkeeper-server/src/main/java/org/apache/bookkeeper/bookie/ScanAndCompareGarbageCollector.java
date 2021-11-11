@@ -73,7 +73,6 @@ import org.slf4j.LoggerFactory;
 public class ScanAndCompareGarbageCollector implements GarbageCollector {
 
     static final Logger LOG = LoggerFactory.getLogger(ScanAndCompareGarbageCollector.class);
-    static final int MAX_CONCURRENT_METADATA_REQUESTS = 1000;
 
     private final LedgerManager ledgerManager;
     private final CompactableLedgerStorage ledgerStorage;
@@ -85,6 +84,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
     private final boolean verifyMetadataOnGc;
     private int activeLedgerCounter;
     private StatsLogger statsLogger;
+    private final int maxConcurrentRequests;
 
     public ScanAndCompareGarbageCollector(LedgerManager ledgerManager, CompactableLedgerStorage ledgerStorage,
             ServerConfiguration conf, StatsLogger statsLogger) throws IOException {
@@ -99,8 +99,9 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         if (gcOverReplicatedLedgerIntervalMillis > 0) {
             this.enableGcOverReplicatedLedger = true;
         }
-        LOG.info("Over Replicated Ledger Deletion : enabled=" + enableGcOverReplicatedLedger + ", interval="
-                + gcOverReplicatedLedgerIntervalMillis);
+        this.maxConcurrentRequests = conf.getGcOverreplicatedLedgerMaxConcurrentRequests();
+        LOG.info("Over Replicated Ledger Deletion : enabled={}, interval={}, maxConcurrentRequests={}",
+                enableGcOverReplicatedLedger, gcOverReplicatedLedgerIntervalMillis, maxConcurrentRequests);
 
         verifyMetadataOnGc = conf.getVerifyMetadataOnGC();
 
@@ -129,6 +130,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             boolean checkOverreplicatedLedgers = (enableGcOverReplicatedLedger && curTime
                     - lastOverReplicatedLedgerGcTimeMillis > gcOverReplicatedLedgerIntervalMillis);
             if (checkOverreplicatedLedgers) {
+                LOG.info("Start removing over-replicated ledgers. activeLedgerCounter={}", activeLedgerCounter);
+
                 // remove all the overreplicated ledgers from the local bookie
                 Set<Long> overReplicatedLedgers = removeOverReplicatedledgers(bkActiveLedgers, garbageCleaner);
                 if (overReplicatedLedgers.isEmpty()) {
@@ -216,7 +219,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
     private Set<Long> removeOverReplicatedledgers(Set<Long> bkActiveledgers, final GarbageCleaner garbageCleaner)
             throws Exception {
         final Set<Long> overReplicatedLedgers = Sets.newHashSet();
-        final Semaphore semaphore = new Semaphore(MAX_CONCURRENT_METADATA_REQUESTS);
+        final Semaphore semaphore = new Semaphore(this.maxConcurrentRequests);
         final CountDownLatch latch = new CountDownLatch(bkActiveledgers.size());
         // instantiate zookeeper client to initialize ledger manager
 
