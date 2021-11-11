@@ -380,6 +380,9 @@ groups:
   - param: gcOverreplicatedLedgerWaitTime
     description: How long the interval to trigger next garbage collection of overreplicated ledgers, in milliseconds. This should not be run very frequently since we read the metadata for all the ledgers on the bookie from zk.
     default: 86400000
+  - param: gcOverreplicatedLedgerMaxConcurrentRequests
+    description: Max number of concurrent requests in garbage collection of overreplicated ledgers.
+    default: 1000
   - param: isForceGCAllowWhenNoSpace
     description: Whether force compaction is allowed when the disk is full or almost full. Forcing GC may get some space back, but may also fill up disk space more quickly. This is because new log files are created before GC, while old garbage log files are deleted after GC.
     default: 'false'
