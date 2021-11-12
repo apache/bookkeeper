@@ -73,7 +73,7 @@ public class TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogBase.class);
 
     @Rule
-    public Timeout globalTimeout = Timeout.seconds(120);
+    public Timeout globalTimeout = Timeout.seconds(1200);
 
     static {
         // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words
