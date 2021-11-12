@@ -37,6 +37,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -69,6 +71,7 @@ import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
 import org.apache.distributedlog.metadata.MetadataUpdater;
 import org.apache.distributedlog.util.Utils;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -78,6 +81,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Test Cases for {@link DistributedLogManager}.
  */
+@Slf4j
 public class TestBKDistributedLogManager extends TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestBKDistributedLogManager.class);
 
@@ -1248,6 +1252,40 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             dlm.delete();
         } catch (IOException ioe) {
             fail("Delete log twice should not throw any exception");
+        }
+        dlm.close();
+    }
+
+    @Test
+    public void testLoopLogWrites() throws Exception {
+
+        DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
+        confLocal.addConfiguration(conf);
+        //confLocal.setEnableReadAhead(false);
+        //confLocal.setLogSegmentCacheEnabled(false);
+        confLocal.setOutputBufferSize(0);
+        confLocal.setWriteLockEnabled(false);
+
+        for (int i = 0; i < 100; i++) {
+            log.error("ATTEMPT {}", i);
+            // moving createNewDLM/dlm.close out of the loop results in no OODME
+            BKDistributedLogManager dlm = createNewDLM(confLocal, "distrlog-loop-as-" + i);
+            AsyncLogWriter async = dlm.openAsyncLogWriter().get();
+            // removing the write result in no OODME
+            Utils.ioResult(async.write(new LogRecord(1, new byte[]{1})));
+            // close, doesn't matter how
+            //Utils.ioResult(((BKAsyncLogWriter)async).asyncCloseAndComplete());
+            Utils.ioResult(async.asyncClose());
+
+            // can skip reads, the writes are enough to get OODME
+            LogReader reader = dlm.getInputStream(1);
+            LogRecordWithDLSN r = reader.readNext(false);
+            Assert.assertEquals(1, r.getTransactionId());
+            reader.close();
+
+            // dlm.delete or not, does not matter for OODME
+            //dlm.delete();
+            dlm.close();
         }
     }
 
