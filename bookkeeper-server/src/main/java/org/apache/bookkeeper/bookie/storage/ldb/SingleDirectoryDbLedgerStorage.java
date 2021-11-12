@@ -149,8 +149,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         log.info("Creating single directory db ledger storage on {}", baseDir);
 
         this.writeCacheMaxSize = writeCacheSize;
-        this.writeCache = new WriteCache(allocator, writeCacheMaxSize / 2);
-        this.writeCacheBeingFlushed = new WriteCache(allocator, writeCacheMaxSize / 2);
+        this.writeCache = new WriteCache(allocator, writeCacheMaxSize / 2,
+                conf.getFlushEntrySortBufferInitSize());
+        this.writeCacheBeingFlushed = new WriteCache(allocator, writeCacheMaxSize / 2,
+                conf.getFlushEntrySortBufferInitSize());
 
         this.checkpointSource = checkpointSource;
 

@@ -29,6 +29,7 @@ import static org.junit.Assert.fail;
 import com.google.common.collect.Sets;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
@@ -1824,4 +1825,50 @@ public class EntryLogTest {
         }
     }
 
+
+    /**
+     * testcase for createtimestamp of header
+     */
+    @Test
+    public void testCreatTimestamp() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setLedgerDirNames(createAndGetLedgerDirs(1));
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        long timestamp = System.currentTimeMillis();
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForSingleEntryLog entryLogManager =
+                (EntryLogManagerForSingleEntryLog) entryLogger.getEntryLogManager();
+
+        long entry0Position = entryLogger.addEntry(0L, generateEntry(0, 1));
+        long entry1Position = entryLogger.addEntry(1L, generateEntry(1, 1));
+        long entry2Position = entryLogger.addEntry(2L, generateEntry(2, 1));
+
+        BufferedLogChannel bufferedLogChannel = entryLogManager.getCurrentLogForLedger(0);
+
+        entryLogger.flush();
+        bufferedLogChannel.appendLedgersMap();
+
+        // Allocate buffer to read (version, ledgersMapOffset, ledgerCount)
+        ByteBuf headers = ByteBufAllocator.DEFAULT.buffer(1024);
+        bufferedLogChannel.read(headers, 0);
+
+        // Skip marker string "BKLO"
+        headers.readInt();
+        headers.readInt();
+
+        headers.readLong();
+        int ledgersCount = headers.readInt();
+        long createTimestampFile = headers.readLong();
+
+        //verify headers
+        assertEquals(3, ledgersCount);
+        assertTrue(timestamp - createTimestampFile < 4);
+
+        //verify entry
+        assertEquals(0, generateEntry(0, 1).compareTo(entryLogger.readEntry(0, 1, entry0Position)));
+        assertEquals(0, generateEntry(1, 1).compareTo(entryLogger.readEntry(1, 1, entry1Position)));
+        assertEquals(0, generateEntry(2, 1).compareTo(entryLogger.readEntry(2, 1, entry2Position)));
+    }
 }

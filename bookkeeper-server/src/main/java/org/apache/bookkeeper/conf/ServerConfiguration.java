@@ -115,12 +115,14 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
             "gcOverreplicatedLedgerMaxConcurrentRequests";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
+    protected static final String EXTRACT_META_DELAY_TIME_SECONDS = "extractMetaDelayTimeSeconds";
     // Scrub Parameters
     protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
     protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
     // Sync Parameters
     protected static final String FLUSH_INTERVAL = "flushInterval";
     protected static final String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
+    protected static final String FLUSH_ENTRY_SORT_BUFFER_INIT_SIZE = "flushEntrySortBufferInitSize";
     // Bookie death watch interval
     protected static final String DEATH_WATCH_INTERVAL = "bookieDeathWatchInterval";
     // Ledger Cache Parameters
@@ -279,7 +281,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String ENTRY_LOG_PER_LEDGER_ENABLED = "entryLogPerLedgerEnabled";
     // In the case of multipleentrylogs, multiple threads can be used to flush the memtable parallelly.
     protected static final String NUMBER_OF_MEMTABLE_FLUSH_THREADS = "numOfMemtableFlushThreads";
-
+    //ledgers map concurrency of entry log meta data
+    protected static final String ENTRY_LOG_LEDGER_MAP_CONCURRENCY = "entryLogLedgerMapConcurrency";
 
     /*
      * config specifying if the entrylog per ledger is enabled, then the amount
@@ -481,6 +484,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Get extract meta delay time. In delay time, meta data will not load, to reduce memory usage.
+     * If the retention time of all the entry is the same and ledger count is very large, the delay time can
+     * be set to the retention time.
+     * @return meta extracting delay time in second
+     */
+    public long getExtractMetaDelayTimeSeconds(){
+        return this.getLong(EXTRACT_META_DELAY_TIME_SECONDS, 0);
+    }
+
+    /**
+     * Set extract meta delay time.
+     *
+     * @param delayTimeSeconds
+     * @return server configuration
+     */
+    public ServerConfiguration setExtractMetaDelayTimeSeconds(long delayTimeSeconds){
+        this.setProperty(EXTRACT_META_DELAY_TIME_SECONDS, delayTimeSeconds);
+        return this;
+    }
+
+    /**
      * Get whether local scrub is enabled.
      *
      * @return Whether local scrub is enabled.
@@ -573,6 +597,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
+    /**
+     * Get entry sorted buffer init size.
+     *
+     * <p>Default is 0. Greater than 1, will pre-allocated buffer to reduce the probability of allocation failure.
+     *
+     * @return entry sorted buffer init size
+     */
+
+    public int getFlushEntrySortBufferInitSize() {
+        return this.getInt(FLUSH_ENTRY_SORT_BUFFER_INIT_SIZE, 0);
+    }
+
+    /**
+     * Set flush entry sorted buffer init size
+     *
+     * @param initSize
+     * @return server configuration
+     */
+    public ServerConfiguration SetFlushEntrySortBufferInitSize(int initSize) {
+        this.setProperty(FLUSH_ENTRY_SORT_BUFFER_INIT_SIZE, Integer.toString(initSize));
+        return this;
+    }
 
     /**
      * Get bookie death watch interval.
@@ -3558,6 +3604,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setNumOfMemtableFlushThreads(int numOfMemtableFlushThreads) {
         this.setProperty(NUMBER_OF_MEMTABLE_FLUSH_THREADS, Integer.toString(numOfMemtableFlushThreads));
+        return this;
+    }
+
+    /**
+     * Get ledger map concurrency of entry log. It should be set greater than 1 to avoid allocating a large contiguous
+     * memory, if there are many ledgers in a entry log.
+     *
+     * @return ledger map concurrency.
+     */
+    public int getEntryLogLedgerMapConcurrency() {
+        return this.getInt(ENTRY_LOG_LEDGER_MAP_CONCURRENCY, 1);
+    }
+
+    /**
+     * Set ledger map concurrency of entry log.
+     *
+     * @param concurrency
+     *          map concurrency level
+     * @return client configuration.
+     */
+    public ServerConfiguration setEntryLogLedgerMapConcurrency(int concurrency) {
+        this.setProperty(ENTRY_LOG_LEDGER_MAP_CONCURRENCY, Integer.toString(concurrency));
         return this;
     }
 

@@ -35,10 +35,13 @@ public class EntryLogMetadata {
     private final ConcurrentLongLongHashMap ledgersMap;
 
     public EntryLogMetadata(long logId) {
+        this(logId, 1);
+    }
+    public EntryLogMetadata(long logId, int concurrencyLevel) {
         this.entryLogId = logId;
 
         totalSize = remainingSize = 0;
-        ledgersMap = new ConcurrentLongLongHashMap(256, 1);
+        ledgersMap = new ConcurrentLongLongHashMap(256, concurrencyLevel);
     }
 
     public void addLedgerSize(long ledgerId, long size) {

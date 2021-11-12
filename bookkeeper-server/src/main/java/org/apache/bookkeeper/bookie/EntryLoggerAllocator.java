@@ -84,6 +84,8 @@ class EntryLoggerAllocator {
         // this header buffer is cleared before writing it into the new logChannel.
         logfileHeader.writeBytes("BKLO".getBytes(UTF_8));
         logfileHeader.writeInt(EntryLogger.HEADER_CURRENT_VERSION);
+        logfileHeader.writerIndex(EntryLogger.CREATE_TIMESTAMP_POSITION);
+        logfileHeader.writeLong(System.currentTimeMillis());
         logfileHeader.writerIndex(EntryLogger.LOGFILE_HEADER_SIZE);
 
     }
@@ -167,7 +169,12 @@ class EntryLoggerAllocator {
         FileChannel channel = new RandomAccessFile(newLogFile, "rw").getChannel();
 
         BufferedLogChannel logChannel = new BufferedLogChannel(byteBufAllocator, channel, conf.getWriteBufferBytes(),
-                conf.getReadBufferBytes(), preallocatedLogId, newLogFile, conf.getFlushIntervalInBytes());
+                conf.getReadBufferBytes(), preallocatedLogId, newLogFile, conf.getFlushIntervalInBytes(),
+                conf.getEntryLogLedgerMapConcurrency());
+        //update create timestamp
+        logfileHeader.writerIndex(EntryLogger.CREATE_TIMESTAMP_POSITION);
+        logfileHeader.writeLong(System.currentTimeMillis());
+        logfileHeader.writerIndex(EntryLogger.LOGFILE_HEADER_SIZE);
         logfileHeader.readerIndex(0);
         logChannel.write(logfileHeader);
 

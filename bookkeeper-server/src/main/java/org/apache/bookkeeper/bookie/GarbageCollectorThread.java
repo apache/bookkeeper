@@ -613,6 +613,10 @@ public class GarbageCollectorThread extends SafeRunnable {
                 continue;
             }
 
+            if (!isNeedExtractMeta(entryLogId)) {
+                LOG.debug("entry log:{} do not need to extract meta");
+                continue;
+            }
             LOG.info("Extracting entry log meta from entryLogId: {}", entryLogId);
 
             try {
@@ -639,6 +643,21 @@ public class GarbageCollectorThread extends SafeRunnable {
             }
         }
         return entryLogMetaMap;
+    }
+
+    private boolean isNeedExtractMeta(long entryLogId) {
+        try {
+            if (conf.getExtractMetaDelayTimeSeconds() > 0) {
+                long createTimestamp = entryLogger.getCreateTimestampForLogId(entryLogId);
+                if (createTimestamp > 0 && System.currentTimeMillis() - createTimestamp
+                        < conf.getExtractMetaDelayTimeSeconds() * 1000) {
+                    return false;
+                }
+            }
+        } catch (Exception ex) {
+            LOG.warn("Failed to get create timestamp from: {}.log : {}", entryLogId, ex.getMessage());
+        }
+        return true;
     }
 
     CompactableLedgerStorage getLedgerStorage() {

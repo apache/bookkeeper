@@ -84,10 +84,15 @@ public class WriteCache implements Closeable {
 
     public WriteCache(ByteBufAllocator allocator, long maxCacheSize) {
         // Default maxSegmentSize set to 1Gb
-        this(allocator, maxCacheSize, 1 * 1024 * 1024 * 1024);
+        this(allocator, maxCacheSize, 1 * 1024 * 1024 * 1024, 0);
     }
 
-    public WriteCache(ByteBufAllocator allocator, long maxCacheSize, int maxSegmentSize) {
+    public WriteCache(ByteBufAllocator allocator, long maxCacheSize, int entrySortBufferInitSize) {
+        // Default maxSegmentSize set to 1Gb
+        this(allocator, maxCacheSize, 1 * 1024 * 1024 * 1024, entrySortBufferInitSize);
+    }
+
+    public WriteCache(ByteBufAllocator allocator, long maxCacheSize, int maxSegmentSize, int entrySortBufferInitSize) {
         checkArgument(maxSegmentSize > 0);
 
         long alignedMaxSegmentSize = alignToPowerOfTwo(maxSegmentSize);
@@ -110,6 +115,11 @@ public class WriteCache implements Closeable {
 
         int lastSegmentSize = (int) (maxCacheSize % maxSegmentSize);
         cacheSegments[segmentsCount - 1] = Unpooled.directBuffer(lastSegmentSize, lastSegmentSize);
+
+        if (entrySortBufferInitSize > 8) {
+            int bufferSize = entrySortBufferInitSize / 8;
+            sortedEntries = new long[bufferSize];
+        }
     }
 
     public void clear() {

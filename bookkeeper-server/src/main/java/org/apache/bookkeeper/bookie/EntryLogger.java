@@ -89,9 +89,13 @@ public class EntryLogger {
 
         public BufferedLogChannel(ByteBufAllocator allocator, FileChannel fc, int writeCapacity, int readCapacity,
                 long logId, File logFile, long unpersistedBytesBound) throws IOException {
+            this(allocator, fc, writeCapacity, readCapacity, logId, logFile, unpersistedBytesBound, 1);
+        }
+        public BufferedLogChannel(ByteBufAllocator allocator, FileChannel fc, int writeCapacity, int readCapacity,
+                                  long logId, File logFile, long unpersistedBytesBound, int logMetaMapConcurrency) throws IOException {
             super(allocator, fc, writeCapacity, readCapacity, unpersistedBytesBound);
             this.logId = logId;
-            this.entryLogMetadata = new EntryLogMetadata(logId);
+            this.entryLogMetadata = new EntryLogMetadata(logId, logMetaMapConcurrency);
             this.logFile = logFile;
         }
         public long getLogId() {
@@ -229,11 +233,13 @@ public class EntryLogger {
         final int version;
         final long ledgersMapOffset;
         final int ledgersCount;
+        final long createTimestamp;
 
-        Header(int version, long ledgersMapOffset, int ledgersCount) {
+        Header(int version, long ledgersMapOffset, int ledgersCount, long createTimestamp) {
             this.version = version;
             this.ledgersMapOffset = ledgersMapOffset;
             this.ledgersCount = ledgersCount;
+            this.createTimestamp = createTimestamp;
         }
     }
 
@@ -254,6 +260,7 @@ public class EntryLogger {
 
     static final int HEADER_VERSION_POSITION = 4;
     static final int LEDGERS_MAP_OFFSET_POSITION = HEADER_VERSION_POSITION + 4;
+    static final int CREATE_TIMESTAMP_POSITION = LEDGERS_MAP_OFFSET_POSITION + 8 + 4;
 
     /**
      * Ledgers map is composed of multiple parts that can be split into separated entries. Each of them is composed of:
@@ -357,6 +364,8 @@ public class EntryLogger {
         // this header buffer is cleared before writing it into the new logChannel.
         logfileHeader.writeBytes("BKLO".getBytes(UTF_8));
         logfileHeader.writeInt(HEADER_CURRENT_VERSION);
+        logfileHeader.writerIndex(CREATE_TIMESTAMP_POSITION);
+        logfileHeader.writeLong(System.currentTimeMillis());
         logfileHeader.writerIndex(LOGFILE_HEADER_SIZE);
 
         // Find the largest logId
@@ -902,10 +911,15 @@ public class EntryLogger {
 
             long ledgersMapOffset = headers.readLong();
             int ledgersCount = headers.readInt();
-            return new Header(headerVersion, ledgersMapOffset, ledgersCount);
+            long createTimestamp = headers.readLong();
+            return new Header(headerVersion, ledgersMapOffset, ledgersCount, createTimestamp);
         } finally {
             headers.release();
         }
+    }
+    public long getCreateTimestampForLogId(long entryLogId) throws IOException {
+        Header header = getHeaderForLogId(entryLogId);
+        return header.createTimestamp;
     }
 
     private BufferedReadChannel getChannelForLogId(long entryLogId) throws IOException {
@@ -1087,7 +1101,7 @@ public class EntryLogger {
 
         // There can be multiple entries containing the various components of the serialized ledgers map
         long offset = header.ledgersMapOffset;
-        EntryLogMetadata meta = new EntryLogMetadata(entryLogId);
+        EntryLogMetadata meta = new EntryLogMetadata(entryLogId, conf.getEntryLogLedgerMapConcurrency());
 
         final int maxMapSize = LEDGERS_MAP_HEADER_SIZE + LEDGERS_MAP_ENTRY_SIZE * LEDGERS_MAP_MAX_BATCH_SIZE;
         ByteBuf ledgersMap = allocator.directBuffer(maxMapSize);
@@ -1151,7 +1165,7 @@ public class EntryLogger {
     }
 
     private EntryLogMetadata extractEntryLogMetadataByScanning(long entryLogId) throws IOException {
-        final EntryLogMetadata meta = new EntryLogMetadata(entryLogId);
+        final EntryLogMetadata meta = new EntryLogMetadata(entryLogId, conf.getEntryLogLedgerMapConcurrency());
 
         // Read through the entry log file and extract the entry log meta
         scanEntryLog(entryLogId, new EntryLogScanner() {
