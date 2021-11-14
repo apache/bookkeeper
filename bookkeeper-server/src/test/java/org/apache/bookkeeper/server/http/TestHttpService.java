@@ -333,7 +333,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         //3,  delete first ledger, should return OK, and should only get 3 ledgers after delete.
         HashMap<String, String> params = Maps.newHashMap();
-        Long ledgerId = Long.valueOf(lh[0].getId());
+        Long ledgerId = lh[0].getId();
         params.put("ledger_id", ledgerId.toString());
         HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.DELETE, params);
         HttpServiceResponse response3 = deleteLedgerService.handle(request3);
@@ -382,7 +382,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         //2,  parameters for GET first ledger, should return OK, and contains metadata
         HashMap<String, String> params = Maps.newHashMap();
-        Long ledgerId = Long.valueOf(lh[0].getId());
+        Long ledgerId = lh[0].getId();
         params.put("ledger_id", ledgerId.toString());
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
         HttpServiceResponse response2 = getLedgerMetaService.handle(request2);
@@ -431,7 +431,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         //2,  parameters for GET first ledger, should return OK
         // no start/end entry id, so return all the 100 entries.
         HashMap<String, String> params = Maps.newHashMap();
-        Long ledgerId = Long.valueOf(lh[0].getId());
+        Long ledgerId = lh[0].getId();
         params.put("ledger_id", ledgerId.toString());
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
         HttpServiceResponse response2 = readLedgerEntryService.handle(request2);

@@ -169,8 +169,7 @@ public class Main {
             if (cmdLine.hasOption('p')) {
                 String sPort = cmdLine.getOptionValue('p');
                 log.info("Get cmdline bookie port: {}", sPort);
-                Integer iPort = Integer.parseInt(sPort);
-                conf.setBookiePort(iPort.intValue());
+                conf.setBookiePort(Integer.parseInt(sPort));
             }
 
             if (cmdLine.hasOption('j')) {

@@ -139,7 +139,7 @@ public class SortedLedgerStorageTest {
             entriesOfLedger.forEachRemaining(addMethod);
             assertEquals("Number of entries", numWrites, arrayList.size());
             assertTrue("Entries of Ledger", IntStream.range(0, arrayList.size()).allMatch(i -> {
-                return arrayList.get(i).longValue() == (i * entriesPerWrite);
+                return arrayList.get(i) == (i * entriesPerWrite);
             }));
         }
 
@@ -187,7 +187,7 @@ public class SortedLedgerStorageTest {
             entriesOfLedger.forEachRemaining(addMethod);
             assertEquals("Number of entries", moreNumOfWrites, arrayList.size());
             assertTrue("Entries of Ledger", IntStream.range(0, arrayList.size()).allMatch(i -> {
-                return arrayList.get(i).longValue() == (i * entriesPerWrite);
+                return arrayList.get(i) == (i * entriesPerWrite);
             }));
         }
     }

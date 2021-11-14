@@ -84,7 +84,7 @@ public class CheckpointInfo implements Comparable<CheckpointInfo> {
             }
             // for proper sorting
             public Long getCreatedAt() {
-                return Long.valueOf(0);
+                return 0L;
             }
         };
     }

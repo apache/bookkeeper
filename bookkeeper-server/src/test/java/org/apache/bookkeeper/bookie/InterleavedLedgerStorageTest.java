@@ -208,7 +208,7 @@ public class InterleavedLedgerStorageTest {
             entriesOfLedger.forEachRemaining(addMethod);
             assertEquals("Number of entries", numWrites, arrayList.size());
             assertTrue("Entries of Ledger", IntStream.range(0, arrayList.size()).allMatch(i -> {
-                return arrayList.get(i).longValue() == (i * entriesPerWrite);
+                return arrayList.get(i) == (i * entriesPerWrite);
             }));
         }
 
@@ -240,7 +240,7 @@ public class InterleavedLedgerStorageTest {
             entriesOfLedger.forEachRemaining(addMethod);
             assertEquals("Number of entries", moreNumOfWrites, arrayList.size());
             assertTrue("Entries of Ledger", IntStream.range(0, arrayList.size()).allMatch(i -> {
-                return arrayList.get(i).longValue() == (i * entriesPerWrite);
+                return arrayList.get(i) == (i * entriesPerWrite);
             }));
         }
     }
@@ -372,13 +372,13 @@ public class InterleavedLedgerStorageTest {
 
                 Matcher sizeMatcher = sizePattern.matcher(s);
                 if (sizeMatcher.matches()) {
-                    size = Long.valueOf(sizeMatcher.group(1));
+                    size = Long.parseLong(sizeMatcher.group(1));
                     return;
                 }
 
                 Matcher entriesMatcher = entriesPattern.matcher(s);
                 if (entriesMatcher.matches()) {
-                    entries = Long.valueOf(entriesMatcher.group(1));
+                    entries = Long.parseLong(entriesMatcher.group(1));
                     return;
                 }
 
@@ -417,7 +417,7 @@ public class InterleavedLedgerStorageTest {
                         Assert.assertTrue((curEntry.get() % entriesPerWrite) == 0);
                         Assert.assertTrue(curEntry.get() <= numWrites * entriesPerWrite);
                         if (someEntryLogger.get() == -1) {
-                            someEntryLogger.set(Long.valueOf(logId));
+                            someEntryLogger.set(Long.parseLong(logId));
                         }
                     } else {
                         Assert.assertEquals(matcher.group("logid"), null);
