@@ -116,7 +116,7 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
 
                 @Override
                 public void onCompleted() {
-                    log.info("{} lease completed! leaseId {}", leaseId);
+                    log.info("lease completed! leaseId {}", leaseId);
                     keepAliveFuture.cancel(true);
                 }
             });
@@ -133,7 +133,7 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
                 newLeaseIfNeeded();
                 nextWaitTimeMs = 100L;
             } catch (MetadataStoreException e) {
-                log.error("Failed to grant a new lease for leaseId", leaseId, e);
+                log.error("Failed to grant a new lease for leaseId {}", leaseId, e);
                 try {
                     TimeUnit.MILLISECONDS.sleep(nextWaitTimeMs);
                     nextWaitTimeMs *= 2;

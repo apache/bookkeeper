@@ -23,6 +23,7 @@ package org.apache.bookkeeper.test;
 
 
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import com.google.common.base.Stopwatch;
 import io.netty.buffer.ByteBufAllocator;
@@ -113,7 +114,7 @@ public abstract class BookKeeperClusterTestCase {
         try {
             c.run();
         } catch (Throwable e) {
-            LOG.error("Captured error: {}", e);
+            LOG.error("Captured error: ", e);
             asyncExceptions.add(e);
         }
     }
@@ -174,10 +175,10 @@ public abstract class BookKeeperClusterTestCase {
     public void tearDown() throws Exception {
         boolean failed = false;
         for (Throwable e : asyncExceptions) {
-            LOG.error("Got async exception: {}", e);
+            LOG.error("Got async exception: ", e);
             failed = true;
         }
-        assertTrue("Async failure", !failed);
+        assertFalse("Async failure", failed);
         Stopwatch sw = Stopwatch.createStarted();
         LOG.info("TearDown");
         Exception tearDownException = null;
