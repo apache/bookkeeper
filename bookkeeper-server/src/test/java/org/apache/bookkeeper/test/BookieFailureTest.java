@@ -223,7 +223,7 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
                 Integer retrEntry = result.getInt();
                 LOG.debug("Retrieved entry: " + i);
                 assertTrue("Checking entry " + i + " for equality", origEntry.equals(retrEntry));
-                assertTrue("Checking entry " + i + " for size", entry.length == entriesSize.get(i).intValue());
+                assertTrue("Checking entry " + i + " for size", entry.length == entriesSize.get(i));
                 i++;
             }
 

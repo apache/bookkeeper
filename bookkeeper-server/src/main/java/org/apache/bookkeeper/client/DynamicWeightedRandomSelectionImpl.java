@@ -115,7 +115,7 @@ class DynamicWeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T
                     if ((weightMap.containsKey(node))) {
                         weight = weightMap.get(node).getWeight();
                     }
-                    return Long.valueOf(weight);
+                    return weight;
                 };
                 ArrayList<Long> weightList = selectedNodes.stream().map(weightFunc)
                         .collect(Collectors.toCollection(ArrayList::new));

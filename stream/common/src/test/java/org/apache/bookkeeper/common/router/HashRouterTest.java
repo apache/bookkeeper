@@ -62,11 +62,11 @@ public class HashRouterTest {
         assertEquals(hash128[0], guavaHash128);
 
         ByteBufHashRouter router = ByteBufHashRouter.of();
-        long routingHash = router.getRoutingKey(key).longValue();
+        long routingHash = router.getRoutingKey(key);
         log.info("Routing hash = {}", routingHash);
         assertEquals(hash128[0], routingHash);
         BytesHashRouter bytesRouter = BytesHashRouter.of();
-        long bytesRoutingHash = bytesRouter.getRoutingKey(keyBytes).longValue();
+        long bytesRoutingHash = bytesRouter.getRoutingKey(keyBytes);
         assertEquals(hash128[0], bytesRoutingHash);
     }
 

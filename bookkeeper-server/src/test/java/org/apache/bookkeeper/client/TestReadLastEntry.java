@@ -105,7 +105,7 @@ public class TestReadLastEntry extends BookKeeperClusterTestCase {
             public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
                 rcStore.set(rc);
                 LedgerEntry entry = seq.nextElement();
-                lastByteStore.set(Integer.valueOf(entry.getEntry()[1023]));
+                lastByteStore.set(entry.getEntry()[1023]);
                 latch1.countDown();
             }
         }, null);
