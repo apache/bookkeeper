@@ -403,7 +403,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                         dbDir.getAbsolutePath(),
                         Lists.newArrayList(metaDesc, dataDesc),
                         cfHandles,
-                        Lists.newArrayList(Integer.valueOf(0), Integer.valueOf(ttlSeconds)),
+                        Lists.newArrayList(0, ttlSeconds),
                         false)
                     : RocksDB.open(
                         options,

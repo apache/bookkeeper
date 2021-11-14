@@ -282,7 +282,7 @@ public class LedgerCacheTest {
         // Create ledger index file
         ledgerStorage.setMasterKey(1, "key".getBytes());
 
-        CachedFileInfo fileInfo = ledgerCache.getIndexPersistenceManager().getFileInfo(Long.valueOf(1), null);
+        CachedFileInfo fileInfo = ledgerCache.getIndexPersistenceManager().getFileInfo(1L, null);
 
         // Add entries
         ledgerStorage.addEntry(generateEntry(1, 1));

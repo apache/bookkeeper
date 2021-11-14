@@ -295,7 +295,7 @@ public class AvailabilityOfEntriesOfLedgerTest {
         for (int i = 0; i < bitSetOfAvailability.length(); i++) {
             long entryId = startEntryId + i;
             if (bitSetOfAvailability.get(i)) {
-                assertTrue("Unavailable entry", unavailableEntries.contains(Long.valueOf(entryId)));
+                assertTrue("Unavailable entry", unavailableEntries.contains(entryId));
             }
         }
     }

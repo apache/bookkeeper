@@ -251,7 +251,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                 Integer retrEntry = result.getInt();
                 LOG.debug("Retrieved entry: " + retrEntry);
                 assertTrue("Checking entry " + i + " for equality", origEntry.equals(retrEntry));
-                assertTrue("Checking entry " + i + " for size", entry.length == entriesSize.get(i).intValue());
+                assertTrue("Checking entry " + i + " for size", entry.length == entriesSize.get(i));
                 i++;
             }
             assertTrue("Checking number of read entries", i == numEntriesToWrite);

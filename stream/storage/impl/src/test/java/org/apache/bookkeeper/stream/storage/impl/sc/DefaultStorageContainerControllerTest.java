@@ -155,7 +155,7 @@ public class DefaultStorageContainerControllerTest {
         assertTrue(Sets.difference(currentCluster, assignedServers).isEmpty());
         // all containers should be assigned
         Set<Long> expectedContainers = LongStream.range(0L, NUM_STORAGE_CONTAINERS)
-            .mapToObj(scId -> Long.valueOf(scId))
+            .boxed()
             .collect(Collectors.toSet());
         assertTrue(Sets.difference(expectedContainers, assignedContainers).isEmpty());
     }
@@ -200,7 +200,7 @@ public class DefaultStorageContainerControllerTest {
         assertTrue(Sets.difference(currentCluster, assignedServers).isEmpty());
         // all containers should be assigned
         Set<Long> expectedContainers = LongStream.range(0L, NUM_STORAGE_CONTAINERS)
-            .mapToObj(scId -> Long.valueOf(scId))
+            .boxed()
             .collect(Collectors.toSet());
         assertTrue(Sets.difference(expectedContainers, assignedContainers).isEmpty());
     }

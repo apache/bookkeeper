@@ -161,7 +161,7 @@ public class TestDistributedLogTool extends TestDistributedLogBase {
         DumpCommand cmd = new DumpCommand();
         cmd.setUri(defaultUri);
         cmd.setStreamName("DefaultStream");
-        cmd.setFromTxnId(Long.valueOf(0));
+        cmd.setFromTxnId(0L);
         assertEquals(0, cmd.runCmd());
     }
 

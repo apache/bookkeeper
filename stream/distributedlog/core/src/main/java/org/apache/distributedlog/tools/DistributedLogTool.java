@@ -1039,7 +1039,7 @@ import org.slf4j.LoggerFactory;
             long eidFirst = 0;
             for (SortedMap.Entry<Long, ? extends List<BookieId>>
                     entry : LedgerReader.bookiesForLedger(lh).entrySet()) {
-                long eidLast = entry.getKey().longValue();
+                long eidLast = entry.getKey();
                 long count = eidLast - eidFirst + 1;
                 for (BookieId bookie : entry.getValue()) {
                     merge(stats, bookie, (int) count);
@@ -1051,7 +1051,7 @@ import org.slf4j.LoggerFactory;
 
         void merge(Map<BookieId, Integer> m, BookieId bookie, Integer count) {
             if (m.containsKey(bookie)) {
-                m.put(bookie, count + m.get(bookie).intValue());
+                m.put(bookie, count + m.get(bookie));
             } else {
                 m.put(bookie, count);
             }
@@ -1147,7 +1147,7 @@ import org.slf4j.LoggerFactory;
         }
 
         long countToLastRecord(DistributedLogManager dlm) throws Exception {
-            return FutureUtils.result(dlm.getLogRecordCountAsync(startDLSN)).longValue();
+            return FutureUtils.result(dlm.getLogRecordCountAsync(startDLSN));
         }
 
         @Override

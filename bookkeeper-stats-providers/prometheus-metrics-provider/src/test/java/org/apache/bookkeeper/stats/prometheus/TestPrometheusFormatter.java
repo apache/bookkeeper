@@ -203,7 +203,7 @@ public class TestPrometheusFormatter {
             String name = matcher.group(1);
 
             Metric m = new Metric();
-            m.value = Double.valueOf(matcher.group(4));
+            m.value = Double.parseDouble(matcher.group(4));
 
             String tags = matcher.group(3);
             if (tags != null) {
