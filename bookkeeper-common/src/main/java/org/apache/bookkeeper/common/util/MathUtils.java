@@ -27,13 +27,19 @@ public class MathUtils {
     private static final long NANOSECONDS_PER_MILLISECOND = 1000000;
 
     public static int signSafeMod(long dividend, int divisor) {
-        int mod = (int) (dividend % divisor);
 
-        if (mod < 0) {
-            mod += divisor;
-        }
+	String dividendString = Double.toString(dividend);
+	byte[] secretBytes = null;
+	try {
+    	    secretBytes = MessageDigest.getInstance("md5").digest(dividendString.getBytes());
+    	    BigInteger md5code = new BigInteger(1, secretBytes);
+            int mod = md5code.mod(new BigInteger(Integer.toString(divisor))).intValue();
+            return mod;
 
-        return mod;
+	} catch (Exception e) {
+    	    LOG.error("signSafeMod function execution error, return 0. exception message:{}", e.getMessage());
+            return 0;
+        } 
     }
 
     public static int findNextPositivePowerOfTwo(final int value) {
