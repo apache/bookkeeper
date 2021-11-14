@@ -24,7 +24,6 @@ package org.apache.bookkeeper.test;
 
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import com.google.common.base.Stopwatch;
 import io.netty.buffer.ByteBufAllocator;
 import java.io.File;
