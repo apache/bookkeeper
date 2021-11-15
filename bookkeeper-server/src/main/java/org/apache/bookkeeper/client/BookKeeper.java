@@ -696,8 +696,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return scheduler;
     }
 
-    @VisibleForTesting
-    EnsemblePlacementPolicy getPlacementPolicy() {
+    public EnsemblePlacementPolicy getPlacementPolicy() {
         return placementPolicy;
     }
 

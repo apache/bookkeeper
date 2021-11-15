@@ -1137,7 +1137,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
     }
 
-    private void replicateLedgerFragment(LedgerHandle lh,
+    public void replicateLedgerFragment(LedgerHandle lh,
             final LedgerFragment ledgerFragment,
             final Map<Integer, BookieId> targetBookieAddresses,
             final BiConsumer<Long, Long> onReadEntryFailureCallback)

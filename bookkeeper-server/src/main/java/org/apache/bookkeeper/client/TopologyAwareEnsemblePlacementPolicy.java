@@ -802,12 +802,16 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     protected Set<Node> convertBookiesToNodes(Collection<BookieId> excludeBookies) {
         Set<Node> nodes = new HashSet<Node>();
         for (BookieId addr : excludeBookies) {
-            BookieNode bn = knownBookies.get(addr);
-            if (null == bn) {
-                bn = createBookieNode(addr);
-            }
-            nodes.add(bn);
+            nodes.add(convertBookieToNode(addr));
         }
         return nodes;
+    }
+
+    protected BookieNode convertBookieToNode(BookieId addr) {
+        BookieNode bn = knownBookies.get(addr);
+        if (null == bn) {
+            bn = createBookieNode(addr);
+        }
+        return bn;
     }
 }

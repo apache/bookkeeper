@@ -71,6 +71,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgersIndexComm
 import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStorageIndexFileCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.UpdateBookieInLedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.CorrectEnsemblePlacementCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.DecommissionCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.EndpointInfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
@@ -160,6 +161,7 @@ public class BookieShell implements Tool {
     static final String CMD_CHECK_DB_LEDGERS_INDEX = "check-db-ledgers-index";
     static final String CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE = "regenerate-interleaved-storage-index-file";
     static final String CMD_QUERY_AUTORECOVERY_STATUS = "queryrecoverystatus";
+    static final String CMD_CORRECT_ENSEMBLE_PLACEMENT = "correct-ensemble-placement";
 
     // cookie commands
     static final String CMD_CREATE_COOKIE = "cookie_create";
@@ -2257,6 +2259,58 @@ public class BookieShell implements Tool {
         }
     }
 
+    class CorrectEnsemblePlacementCmd extends MyCommand {
+        final Options opts = new Options();
+
+        public CorrectEnsemblePlacementCmd() {
+            super(CMD_CORRECT_ENSEMBLE_PLACEMENT);
+            Option ledgerOption = new Option("l", "ledgerids", true,
+                    "Target ledger IDs to relocate."
+                            + " Multiple can be specified, comma separated.");
+            ledgerOption.setRequired(true);
+            ledgerOption.setValueSeparator(',');
+            ledgerOption.setArgs(Option.UNLIMITED_VALUES);
+
+            opts.addOption(ledgerOption);
+            opts.addOption("dr", "dryrun", false,
+                    "Printing the relocation plan w/o doing actual relocation");
+            opts.addOption("f", "force", false,
+                    "Force relocation without confirmation");
+            opts.addOption("sk", "skipOpenLedgers", false,
+                    "Skip relocating open ledgers");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Relocate ledgers to adhere ensemble placement policy.";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_CORRECT_ENSEMBLE_PLACEMENT
+                    + " --ledgerids <ledgerId[,ledgerId,...]> [--dryrun] [--force] [--skipOpenLedgers]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            final CorrectEnsemblePlacementCommand cmd = new CorrectEnsemblePlacementCommand();
+            final CorrectEnsemblePlacementCommand.CorrectEnsemblePlacementFlags
+                    flags = new CorrectEnsemblePlacementCommand.CorrectEnsemblePlacementFlags();
+            final List<Long> ledgerIds = Arrays.stream(cmdLine.getOptionValues("ledgerids")).map(Long::parseLong)
+                    .collect(Collectors.toList());
+            flags.ledgerIds(ledgerIds);
+            flags.dryRun(cmdLine.hasOption("dryrun"));
+            flags.force(cmdLine.hasOption("force"));
+            flags.skipOpenLedgers(cmdLine.hasOption("skipOpenLedgers"));
+            return cmd.apply(bkConf, flags) ? 0 : 1;
+        }
+    }
+
     final Map<String, Command> commands = new HashMap<>();
 
     {
@@ -2302,6 +2356,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());
         commands.put(CMD_TRIGGERAUDIT, new TriggerAuditCmd());
         commands.put(CMD_FORCEAUDITCHECKS, new ForceAuditorChecksCmd());
+        commands.put(CMD_CORRECT_ENSEMBLE_PLACEMENT, new CorrectEnsemblePlacementCmd());
         // cookie related commands
         commands.put(CMD_CREATE_COOKIE,
             new CreateCookieCommand().asShellCommand(CMD_CREATE_COOKIE, bkConf));

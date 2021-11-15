@@ -46,6 +46,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
@@ -69,6 +71,7 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1070,5 +1073,176 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             readLock.unlock();
         }
         return rackCounter.size() >= minWriteQuorumNumRacksPerWriteQuorum;
+    }
+
+    @Override
+    public PlacementResult<List<BookieId>> replaceToAdherePlacementPolicy(
+            int ensembleSize,
+            int writeQuorumSize,
+            int ackQuorumSize,
+            Set<BookieId> excludeBookies,
+            List<BookieId> currentEnsemble) {
+        rwLock.readLock().lock();
+        try {
+            final List<BookieNode> provisionalEnsembleNodes = currentEnsemble.stream()
+                    .map(this::convertBookieToNode).collect(Collectors.toList());
+            final Set<Node> excludeNodes = convertBookiesToNodes(
+                    addDefaultRackBookiesIfMinNumRacksIsEnforced(excludeBookies));
+            int minNumRacksPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
+            final RRTopologyAwareCoverageEnsemble ensemble =
+                    new RRTopologyAwareCoverageEnsemble(
+                            ensembleSize,
+                            writeQuorumSize,
+                            ackQuorumSize,
+                            RACKNAME_DISTANCE_FROM_LEAVES,
+                            null,
+                            null,
+                            minNumRacksPerWriteQuorumForThisEnsemble);
+
+            int numRacks = topology.getNumOfRacks();
+            // only one rack or less than minNumRacksPerWriteQuorumForThisEnsemble, stop calculation to skip relocation
+            if (numRacks < 2 || numRacks < minNumRacksPerWriteQuorumForThisEnsemble) {
+                LOG.warn("Skip ensemble relocation because the cluster has only {} rack.", numRacks);
+                return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
+            }
+
+            BookieNode prevNode = null;
+            final BookieNode firstNode = provisionalEnsembleNodes.get(0);
+            // use same bookie at first to reduce ledger replication
+            if (!excludeNodes.contains(firstNode) && ensemble.apply(firstNode, ensemble)
+                    && ensemble.addNode(firstNode)) {
+                excludeNodes.add(firstNode);
+                prevNode = firstNode;
+            }
+
+            for (int i = prevNode == null ? 0 : 1; i < ensembleSize; i++) {
+                final String curRack;
+                if (null == prevNode) {
+                    if ((null == localNode) || defaultRack.equals(localNode.getNetworkLocation())) {
+                        curRack = NodeBase.ROOT;
+                    } else {
+                        curRack = localNode.getNetworkLocation();
+                    }
+                } else {
+                    curRack = "~" + prevNode.getNetworkLocation();
+                }
+
+                try {
+                    prevNode = replaceToAdherePlacementPolicyInternal(
+                            curRack, excludeNodes, ensemble, ensemble,
+                            provisionalEnsembleNodes, i, ensembleSize, minNumRacksPerWriteQuorumForThisEnsemble);
+                    // replace to newer node
+                    provisionalEnsembleNodes.set(i, prevNode);
+                } catch (BKNotEnoughBookiesException e) {
+                    LOG.warn("Skip ensemble relocation because the cluster has not enough bookies.");
+                    return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
+                }
+            }
+            List<BookieId> bookieList = ensemble.toList();
+            if (ensembleSize != bookieList.size()) {
+                LOG.warn("Not enough {} bookies are available to form an ensemble : {}.",
+                        ensembleSize, bookieList);
+                return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
+            }
+            return PlacementResult.of(bookieList,
+                    isEnsembleAdheringToPlacementPolicy(
+                            bookieList, writeQuorumSize, ackQuorumSize));
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
+    private BookieNode replaceToAdherePlacementPolicyInternal(
+            String netPath, Set<Node> excludeBookies, Predicate<BookieNode> predicate,
+            Ensemble<BookieNode> ensemble, List<BookieNode> provisionalEnsembleNodes, int ensembleIndex,
+            int ensembleSize, int minNumRacksPerWriteQuorumForThisEnsemble) throws BKNotEnoughBookiesException {
+        final BookieNode currentNode = provisionalEnsembleNodes.get(ensembleIndex);
+        // if the current bookie could be applied to the ensemble, apply it to minify the number of bookies replaced
+        if (!excludeBookies.contains(currentNode) && predicate.apply(currentNode, ensemble)) {
+            if (ensemble.addNode(currentNode)) {
+                // add the candidate to exclude set
+                excludeBookies.add(currentNode);
+            }
+            return currentNode;
+        }
+
+        final List<Pair<String, List<BookieNode>>> conditionList = new ArrayList<>();
+        final Set<String> preExcludeRacks = new HashSet<>();
+        final Set<String> postExcludeRacks = new HashSet<>();
+        for (int i = 0; i < minNumRacksPerWriteQuorumForThisEnsemble - 1; i++) {
+            preExcludeRacks.add(provisionalEnsembleNodes.get(Math.floorMod((ensembleIndex - i - 1), ensembleSize))
+                    .getNetworkLocation());
+            postExcludeRacks.add(provisionalEnsembleNodes.get(Math.floorMod((ensembleIndex + i + 1), ensembleSize))
+                    .getNetworkLocation());
+        }
+        // adhere minNumRacksPerWriteQuorum by preExcludeRacks
+        // avoid additional replace from write quorum candidates by preExcludeRacks and postExcludeRacks
+        // avoid to use first candidate bookies for election by provisionalEnsembleNodes
+        conditionList.add(Pair.of(
+                "~" + String.join(",",
+                        Stream.concat(preExcludeRacks.stream(), postExcludeRacks.stream()).collect(Collectors.toSet())),
+                provisionalEnsembleNodes
+                ));
+        // avoid to use same rack between previous index by netPath
+        // avoid to use first candidate bookies for election by provisionalEnsembleNodes
+        conditionList.add(Pair.of(netPath, provisionalEnsembleNodes));
+        // avoid to use same rack between previous index by netPath
+        conditionList.add(Pair.of(netPath, Collections.emptyList()));
+
+        for (Pair<String, List<BookieNode>> condition : conditionList) {
+            WeightedRandomSelection<BookieNode> wRSelection = null;
+
+            final List<Node> leaves = new ArrayList<>(topology.getLeaves(condition.getLeft()));
+            if (!isWeighted) {
+                Collections.shuffle(leaves);
+            } else {
+                if (CollectionUtils.subtract(leaves, excludeBookies).size() < 1) {
+                    throw new BKNotEnoughBookiesException();
+                }
+                wRSelection = prepareForWeightedSelection(leaves);
+                if (wRSelection == null) {
+                    throw new BKNotEnoughBookiesException();
+                }
+            }
+
+            final Iterator<Node> it = leaves.iterator();
+            final Set<Node> bookiesSeenSoFar = new HashSet<>();
+            while (true) {
+                Node n;
+                if (isWeighted) {
+                    if (bookiesSeenSoFar.size() == leaves.size()) {
+                        // Don't loop infinitely.
+                        break;
+                    }
+                    n = wRSelection.getNextRandom();
+                    bookiesSeenSoFar.add(n);
+                } else {
+                    if (it.hasNext()) {
+                        n = it.next();
+                    } else {
+                        break;
+                    }
+                }
+                if (excludeBookies.contains(n)) {
+                    continue;
+                }
+                if (!(n instanceof BookieNode) || !predicate.apply((BookieNode) n, ensemble)) {
+                    continue;
+                }
+                // additional excludeBookies
+                if (condition.getRight().contains(n)) {
+                    continue;
+                }
+                BookieNode bn = (BookieNode) n;
+                // got a good candidate
+                if (ensemble.addNode(bn)) {
+                    // add the candidate to exclude set
+                    excludeBookies.add(bn);
+                }
+                return bn;
+            }
+        }
+
+        throw new BKNotEnoughBookiesException();
     }
 }

@@ -40,7 +40,7 @@ public class LedgerFragment {
     private final DistributionSchedule schedule;
     private final boolean isLedgerClosed;
 
-    LedgerFragment(LedgerHandle lh,
+    public LedgerFragment(LedgerHandle lh,
                    long firstEntryId,
                    long lastKnownEntryId,
                    Set<Integer> bookieIndexes) {
@@ -56,7 +56,7 @@ public class LedgerFragment {
                 || !ensemble.equals(ensembles.get(ensembles.lastKey()));
     }
 
-    LedgerFragment(LedgerFragment lf, Set<Integer> subset) {
+    public LedgerFragment(LedgerFragment lf, Set<Integer> subset) {
         this.ledgerId = lf.ledgerId;
         this.firstEntryId = lf.firstEntryId;
         this.lastKnownEntryId = lf.lastKnownEntryId;
