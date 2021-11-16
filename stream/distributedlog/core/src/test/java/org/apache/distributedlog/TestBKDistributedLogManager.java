@@ -117,6 +117,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         writer.flush();
         writer.commit();
         writer.close();
+        assertEquals(txid - 1, dlm.getLastTxId());
 
         LogReader reader = dlm.getInputStream(1);
         long numTrans = 0;
@@ -131,6 +132,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         reader.close();
         assertEquals((txid - 1), numTrans);
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -148,6 +150,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         assertNotNull(zkc.exists(blplm.completedLedgerZNode(1, 100,
                 perStreamLogWriter.getLogSegmentSequenceNumber()), false));
         Utils.ioResult(blplm.asyncClose());
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -161,7 +164,10 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         out.closeAndComplete();
 
-        long numTrans = DLMTestUtil.getNumberofLogRecords(createNewDLM(conf, name), 1);
+        dlm.close();
+        dlm = createNewDLM(conf, name);
+
+        long numTrans = DLMTestUtil.getNumberofLogRecords(dlm, 1);
         assertEquals(100, numTrans);
         dlm.close();
     }
@@ -196,6 +202,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         out.flush();
         out.commit();
         out.close();
+
+        assertEquals(txid - 1, dlm.getLastTxId());
         dlm.close();
 
         dlm = createNewDLM(conf, name);
@@ -273,18 +281,20 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         dlm.close();
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 90000)
     public void testTwoWritersOnLockDisabled() throws Exception {
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
         confLocal.addConfiguration(conf);
         confLocal.setOutputBufferSize(0);
         confLocal.setWriteLockEnabled(false);
         String name = "distrlog-two-writers-lock-disabled";
-        DistributedLogManager manager = createNewDLM(confLocal, name);
+        BKDistributedLogManager manager = createNewDLM(confLocal, name);
         AsyncLogWriter writer1 = Utils.ioResult(manager.openAsyncLogWriter());
         Utils.ioResult(writer1.write(DLMTestUtil.getLogRecordInstance(1L)));
+        Assert.assertEquals(1L, writer1.getLastTxId());
         AsyncLogWriter writer2 = Utils.ioResult(manager.openAsyncLogWriter());
         Utils.ioResult(writer2.write(DLMTestUtil.getLogRecordInstance(2L)));
+        Assert.assertEquals(2L, writer2.getLastTxId());
 
         // write a record to writer 1 again
         try {
@@ -293,6 +303,9 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         } catch (BKTransmitException bkte) {
             assertEquals(BKException.Code.LedgerFencedException, bkte.getBKResultCode());
         }
+        Utils.ioResult(writer1.asyncClose());
+        Utils.ioResult(writer2.asyncClose());
+        manager.close();
     }
 
     @Test(timeout = 60000)
@@ -306,8 +319,11 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             out.write(op);
         }
         out.closeAndComplete();
+        dlm.close();
 
-        assertEquals(numTransactions, DLMTestUtil.getNumberofLogRecords(createNewDLM(conf, name), 1));
+        dlm = createNewDLM(conf, name);
+
+        assertEquals(numTransactions, DLMTestUtil.getNumberofLogRecords(dlm, 1));
         dlm.close();
     }
 
@@ -338,10 +354,16 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         out.flush();
         out.commit();
-        out.close();
+        out.closeAndComplete();
 
-        long numTrans = DLMTestUtil.getNumberofLogRecords(createNewDLM(conf, name), 1);
+        assertEquals(txid - 1, dlm.getLastTxId());
+        dlm.close();
+
+        dlm = createNewDLM(conf, name);
+
+        long numTrans = DLMTestUtil.getNumberofLogRecords(dlm, 1);
         assertEquals((txid - 1), numTrans);
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -355,6 +377,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
                 LogRecord op = DLMTestUtil.getLogRecordInstance(txid++);
                 out.write(op);
             }
+            out.flush();
+            out.commit();
             out.closeAndComplete();
         }
 
@@ -365,7 +389,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         out.flush();
         out.commit();
-        out.close();
+        out.closeAndComplete();
+        assertEquals(txid - 1, dlm.getLastTxId());
         dlm.close();
 
         dlm = createNewDLM(conf, name);
@@ -385,6 +410,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         reader.close();
         assertEquals((txid - 1), numTrans);
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -422,7 +448,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         out.flush();
         out.commit();
-        out.close();
+        out.closeAndComplete();
+        assertEquals(txid - 1, dlm.getLastTxId());
         dlm.close();
 
         dlm = createNewDLM(conf, name);
@@ -474,6 +501,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         writer.flush();
         writer.commit();
         writer.close();
+        assertEquals(txid - 1, dlm.getLastTxId());
         dlm.close();
 
         URI uri = createDLMURI("/" + name);
@@ -593,11 +621,13 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
                 Utils.ioResult(blplm.asyncClose());
             } else {
                 writer.markEndOfStream();
+                writer.closeAndComplete();
                 BKLogWriteHandler blplm = ((BKDistributedLogManager) (dlm)).createWriteHandler(true);
                 assertNotNull(zkc.exists(blplm.completedLedgerZNode(start, DistributedLogConstants.MAX_TXID,
                         perStreamLogWriter.getLogSegmentSequenceNumber()), false));
                 Utils.ioResult(blplm.asyncClose());
             }
+            ((BKDistributedLogManager) dlm).getScheduler().submit(() -> {}).get();
         }
         return txid;
     }
@@ -638,6 +668,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         assertTrue(exceptionEncountered);
         reader.close();
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -666,6 +697,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         writer.close();
         assertTrue(exceptionEncountered);
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -686,6 +718,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
 
         BKSyncLogWriter writer = (BKSyncLogWriter) dlm.startLogSegmentNonPartitioned();
         writer.markEndOfStream();
+        writer.closeAndComplete();
 
         LogReader reader = dlm.getInputStream(1);
         long numTrans = 0;
@@ -713,6 +746,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         assertTrue(exceptionEncountered);
         reader.close();
+        dlm.close();
     }
 
     @Test(timeout = 60000, expected = LogRecordTooLongException.class)
@@ -721,6 +755,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
         Utils.ioResult(writer.write(new LogRecord(1L, DLMTestUtil.repeatString(
                                 DLMTestUtil.repeatString("abcdefgh", 256), 512).getBytes())));
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -799,6 +834,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         assertTrue(exceptionEncountered);
         reader.close();
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -871,7 +907,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         final AtomicReference<Collection<LogSegmentMetadata>> receivedStreams =
                 new AtomicReference<Collection<LogSegmentMetadata>>();
 
-        BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
+        BKDistributedLogManager dlm = createNewDLM(conf, name);
 
         Utils.ioResult(dlm.getWriterMetadataStore().getLog(dlm.getUri(), name, true, true));
         dlm.registerListener(new LogSegmentListener() {
@@ -1213,6 +1249,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             Utils.close(reader);
         }
 
+        dlm.close();
         zookeeperClient.close();
     }
 
@@ -1256,39 +1293,6 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         dlm.close();
     }
 
-    @Test
-    public void testLoopLogWrites() throws Exception {
-
-        DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
-        confLocal.addConfiguration(conf);
-        //confLocal.setEnableReadAhead(false);
-        //confLocal.setLogSegmentCacheEnabled(false);
-        confLocal.setOutputBufferSize(0);
-        confLocal.setWriteLockEnabled(false);
-
-        for (int i = 0; i < 100; i++) {
-            log.error("ATTEMPT {}", i);
-            // moving createNewDLM/dlm.close out of the loop results in no OODME
-            BKDistributedLogManager dlm = createNewDLM(confLocal, "distrlog-loop-as-" + i);
-            AsyncLogWriter async = dlm.openAsyncLogWriter().get();
-            // removing the write result in no OODME
-            Utils.ioResult(async.write(new LogRecord(1, new byte[]{1})));
-            // close, doesn't matter how
-            //Utils.ioResult(((BKAsyncLogWriter)async).asyncCloseAndComplete());
-            Utils.ioResult(async.asyncClose());
-
-            // can skip reads, the writes are enough to get OODME
-            LogReader reader = dlm.getInputStream(1);
-            LogRecordWithDLSN r = reader.readNext(false);
-            Assert.assertEquals(1, r.getTransactionId());
-            reader.close();
-
-            // dlm.delete or not, does not matter for OODME
-            //dlm.delete();
-            dlm.close();
-        }
-    }
-
     @Test(timeout = 60000)
     public void testSyncLogWithLedgerMetadata() throws Exception {
 
@@ -1312,6 +1316,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         assertEquals(custom, new String(customMeta.get("custom"), UTF_8));
 
         sync.closeAndComplete();
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -1321,7 +1326,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         confLocal.setOutputBufferSize(0);
         confLocal.setWriteLockEnabled(false);
 
-        BKDistributedLogManager dlm = createNewDLM(confLocal, "distrlog-writemetadata");
+        BKDistributedLogManager dlm = createNewDLM(confLocal, "distrlog-writemetadata-async");
 
         String application = "myapplication";
         String custom = "mycustommetadata";
@@ -1337,5 +1342,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         assertEquals(application, new String(customMeta.get("application"), UTF_8));
         assertNull(customMeta.get("component"));
         assertEquals(custom, new String(customMeta.get("custom"), UTF_8));
+
+        Utils.ioResult(async.asyncClose());
+        dlm.close();
     }
 }

@@ -73,13 +73,15 @@ public class TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogBase.class);
 
     @Rule
-    public Timeout globalTimeout = Timeout.seconds(1200);
+    public Timeout globalTimeout = Timeout.seconds(120);
 
     static {
         // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words
         // are disabled by default due to security reasons
         System.setProperty("zookeeper.4lw.commands.whitelist", "*");
     }
+
+    protected static int numBookies = 1;
 
     // Num worker threads should be one, since the exec service is used for the ordered
     // future pool in test cases, and setting to > 1 will therefore result in unordered
@@ -93,13 +95,17 @@ public class TestDistributedLogBase {
                 .setNumWorkerThreads(1)
                 .setReadAheadNoSuchLedgerExceptionOnReadLACErrorThresholdMillis(20)
                 .setSchedulerShutdownTimeoutMs(0)
+                .setEnsembleSize(numBookies)
+                .setAckQuorumSize(numBookies)
+                .setWriteQuorumSize(numBookies)
+                .setLockTimeout(120)
+                .setZKSessionTimeoutSeconds(60)
                 .setDLLedgerMetadataLayoutVersion(LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION);
     protected ZooKeeper zkc;
     protected static LocalDLMEmulator bkutil;
     protected static ZooKeeperServerShim zks;
     protected static String zkServers;
     protected static int zkPort;
-    protected static int numBookies = 3;
     protected static final List<File> TMP_DIRS = new ArrayList<File>();
 
     @BeforeClass
