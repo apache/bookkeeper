@@ -77,7 +77,7 @@ public class StorageServerChannelManager implements AutoCloseable {
 
             StorageServerChannel oldChannel = channels.putIfAbsent(endpoint, channel);
             if (null != oldChannel) {
-                log.debug("KeyRange server ({}) already existed in the channel manager.");
+                log.debug("KeyRange server ({}) already existed in the channel manager.", endpoint);
                 channel.close();
                 return false;
             } else {
@@ -131,7 +131,7 @@ public class StorageServerChannelManager implements AutoCloseable {
                 }
             }
             if (null == channelRemoved) {
-                log.debug("No channel associated with endpoint {} to be removed.");
+                log.debug("No channel associated with endpoint {} to be removed.", endpoint);
             } else {
                 log.info("Removed channel {} for range server {} successfully",
                     channelRemoved, endpoint);

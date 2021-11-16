@@ -403,7 +403,7 @@ public class JournalWriter implements Runnable {
                             recorder.recordValue(latencyMicros);
                             cumulativeRecorder.recordValue(latencyMicros);
                         } else {
-                            log.warn("Error at writing records : {}", BookieException.create(rc));
+                            log.warn("Error at writing records : ", BookieException.create(rc));
                             Runtime.getRuntime().exit(-1);
                         }
                     },

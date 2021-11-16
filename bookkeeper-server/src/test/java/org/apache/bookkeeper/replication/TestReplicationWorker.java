@@ -1007,7 +1007,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
          * 2, we should be able to replicate to the other bookie.
          */
         BookieId replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
-        LOG.info("Killing Bookie", replicaToKill);
+        LOG.info("Killing Bookie id {}", replicaToKill);
         killBookie(replicaToKill);
 
         /*
