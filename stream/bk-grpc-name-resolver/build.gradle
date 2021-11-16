@@ -40,6 +40,8 @@ dependencies {
     testImplementation project(path: ':bookkeeper-server', configuration: 'testArtifacts')
     testImplementation depLibs.junit
     testImplementation depLibs.zookeeper
+    testImplementation depLibs.zookeeperTest
+    testImplementation depLibs.log4jSlf4jImpl
 
     testCompileOnly depLibs.lombok
     testAnnotationProcessor depLibs.lombok
