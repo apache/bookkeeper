@@ -72,6 +72,7 @@ import org.apache.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
 import org.apache.distributedlog.metadata.MetadataUpdater;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -87,10 +88,22 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
 
     private static final Random RAND = new Random(System.currentTimeMillis());
 
+    protected static int numBookies = 1;
+    static {
+        conf.setEnsembleSize(numBookies)
+            .setAckQuorumSize(numBookies)
+            .setWriteQuorumSize(numBookies);
+    }
+
     @Rule
     public TestName testNames = new TestName();
 
     private static final long DEFAULT_SEGMENT_SIZE = 1000;
+
+    @BeforeClass
+    public static void setupCluster() throws Exception {
+        setupCluster(numBookies);
+    }
 
     private void testNonPartitionedWritesInternal(String name, DistributedLogConfiguration conf) throws Exception {
         BKDistributedLogManager dlm = createNewDLM(conf, name);
