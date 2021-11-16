@@ -48,7 +48,7 @@ public class StorageContainerManager implements AutoCloseable {
         synchronized (storageContainers) {
             StorageContainerInfo oldGroupInfo = storageContainers.get(groupId);
             if (null == oldGroupInfo || oldGroupInfo.getRevision() < groupInfo.getRevision()) {
-                log.info("Updated the storage container info for group {} : ", groupId, groupInfo);
+                log.info("Updated the storage container info for group {} : {}", groupId, groupInfo);
                 storageContainers.put(groupId, groupInfo);
                 return true;
             }

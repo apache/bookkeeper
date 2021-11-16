@@ -158,7 +158,7 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
             DLMTestUtil.verifyLargeLogRecord(value);
         } catch (Exception exc) {
             LOG.error("Exception encountered when verifying received log record {} for reader {} :",
-                value.getDlsn(), exc, readerName);
+                value.getDlsn(), readerName, exc);
             errorsFound.set(true);
             completionLatch.countDown();
             return;

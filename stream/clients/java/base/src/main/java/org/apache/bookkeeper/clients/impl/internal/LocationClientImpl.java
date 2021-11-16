@@ -84,7 +84,7 @@ public class LocationClientImpl implements LocationClient {
         cause -> shouldRetryOnException(cause);
 
     private static boolean shouldRetryOnException(Throwable cause) {
-        log.error("Not able to locate storage container {}", cause);
+        log.error("Not able to locate storage container ", cause);
         if (cause instanceof StatusRuntimeException || cause instanceof StatusException) {
             Status status;
             if (cause instanceof StatusException) {
