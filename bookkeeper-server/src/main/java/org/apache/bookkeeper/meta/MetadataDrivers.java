@@ -370,7 +370,11 @@ public final class MetadataDrivers {
                                                            Function<RegistrationManager, T> function)
             throws MetadataException, ExecutionException {
         return runFunctionWithMetadataBookieDriver(
-                conf, driver -> function.apply(driver.createRegistrationManager()));
+                conf, driver -> {
+                    try (RegistrationManager rm = driver.createRegistrationManager()) {
+                        return function.apply(rm);
+                    }
+                });
     }
 
     /**

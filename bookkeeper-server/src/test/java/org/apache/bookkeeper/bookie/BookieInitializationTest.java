@@ -316,8 +316,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         BookieId bookieId = BookieImpl.getBookieId(conf);
         MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
                 conf, NullStatsLogger.INSTANCE);
-        RegistrationManager rm = metadataDriver.createRegistrationManager();
-        try (StateManager manager = new BookieStateManager(conf, rm)) {
+        try (RegistrationManager rm = metadataDriver.createRegistrationManager();
+             StateManager manager = new BookieStateManager(conf, rm)) {
             manager.registerBookie(true).get();
             assertTrue(
                 "Bookie registration node doesn't exists!",
@@ -348,8 +348,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
                 conf, NullStatsLogger.INSTANCE);
         metadataDriver.initialize(conf, NullStatsLogger.INSTANCE);
-        RegistrationManager rm = metadataDriver.createRegistrationManager();
-        try (StateManager manager = new BookieStateManager(conf, rm)) {
+
+        try (RegistrationManager rm = metadataDriver.createRegistrationManager();
+             StateManager manager = new BookieStateManager(conf, rm)) {
             manager.registerBookie(true).get();
         }
         Stat bkRegNode1 = zkc.exists(bkRegPath, false);
@@ -372,8 +373,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                         LOG.error("Failed to delete the znode :" + bkRegPath, e);
                     }
                 }).start();
-                RegistrationManager newRm = newDriver.createRegistrationManager();
-                try (StateManager newMgr = new BookieStateManager(conf, newRm)) {
+
+                try (RegistrationManager newRm = newDriver.createRegistrationManager();
+                     StateManager newMgr = new BookieStateManager(conf, newRm)) {
                     newMgr.registerBookie(true).get();
                 } catch (IOException e) {
                     Throwable t = e.getCause();
@@ -408,8 +410,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
                 conf, NullStatsLogger.INSTANCE);
-        RegistrationManager rm = metadataDriver.createRegistrationManager();
-        try (StateManager manager = new BookieStateManager(conf, rm)) {
+
+        try (RegistrationManager rm = metadataDriver.createRegistrationManager();
+             StateManager manager = new BookieStateManager(conf, rm)) {
             manager.registerBookie(true).get();
             assertTrue("Bookie registration node doesn't exists!",
                 rm.isBookieRegistered(bookieId));
@@ -428,8 +431,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             + ":" + conf.getBookiePort());
         MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
                 conf, NullStatsLogger.INSTANCE);
-        RegistrationManager rm = metadataDriver.createRegistrationManager();
-        try (StateManager manager = new BookieStateManager(conf, rm)) {
+
+        try (RegistrationManager rm = metadataDriver.createRegistrationManager();
+             StateManager manager = new BookieStateManager(conf, rm)) {
             manager.registerBookie(true).get();
             assertTrue("Bookie registration node doesn't exists!",
                 rm.isBookieRegistered(bookieId));
@@ -453,8 +457,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
                 conf, NullStatsLogger.INSTANCE);
-        RegistrationManager rm = metadataDriver.createRegistrationManager();
-        try (StateManager manager = new BookieStateManager(conf, rm)) {
+
+        try (RegistrationManager rm = metadataDriver.createRegistrationManager();
+             StateManager manager = new BookieStateManager(conf, rm)) {
             manager.registerBookie(true).get();
             assertTrue("Bookie registration node doesn't exists!",
                 rm.isBookieRegistered(bookieId));
@@ -467,8 +472,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // zkclient and doing the registration.
         try (MetadataBookieDriver newDriver = new ZKMetadataBookieDriver()) {
             newDriver.initialize(conf, NullStatsLogger.INSTANCE);
-            RegistrationManager newRm = newDriver.createRegistrationManager();
-            try (StateManager newMgr = new BookieStateManager(conf, newRm)) {
+
+            try (RegistrationManager newRm = newDriver.createRegistrationManager();
+                 StateManager newMgr = new BookieStateManager(conf, newRm)) {
                 newMgr.registerBookie(true).get();
                 fail("Should throw NodeExistsException as the znode is not getting expired");
             } catch (ExecutionException ee) {
@@ -513,7 +519,6 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
                 conf, NullStatsLogger.INSTANCE);
-        RegistrationManager rm = metadataDriver.createRegistrationManager();
 
         Endpoint endpoint = new Endpoint("test", 1281, "localhost", "bookie-rpc",
                 Collections.emptyList(), Collections.emptyList());
@@ -523,7 +528,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(
                 conf, conf.getLedgerDirs(), diskChecker);
-        try (StateManager manager = new BookieStateManager(conf,
+        try (RegistrationManager rm = metadataDriver.createRegistrationManager();
+             StateManager manager = new BookieStateManager(conf,
                 NullStatsLogger.INSTANCE,
                 rm, ledgerDirsManager, supplier)) {
             manager.registerBookie(true).get();
@@ -770,19 +776,19 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         BookieConfiguration bkConf = new BookieConfiguration(conf);
         MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
                 conf, NullStatsLogger.INSTANCE);
-        RegistrationManager rm = metadataDriver.createRegistrationManager();
-
-        /*
-         * create cookie and write it to JournalDir/LedgerDir.
-         */
-        Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
-        Cookie cookie = cookieBuilder.build();
-        cookie.writeToDirectory(new File(journalDir, "current"));
-        cookie.writeToDirectory(new File(ledgerDir, "current"));
-        Versioned<byte[]> newCookie = new Versioned<>(
-                cookie.toString().getBytes(UTF_8), Version.NEW
-        );
-        rm.writeCookie(BookieImpl.getBookieId(conf), newCookie);
+        try (RegistrationManager rm = metadataDriver.createRegistrationManager()) {
+            /*
+             * create cookie and write it to JournalDir/LedgerDir.
+             */
+            Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
+            Cookie cookie = cookieBuilder.build();
+            cookie.writeToDirectory(new File(journalDir, "current"));
+            cookie.writeToDirectory(new File(ledgerDir, "current"));
+            Versioned<byte[]> newCookie = new Versioned<>(
+                    cookie.toString().getBytes(UTF_8), Version.NEW
+            );
+            rm.writeCookie(BookieImpl.getBookieId(conf), newCookie);
+        }
 
         /*
          * Create LifecycleComponent for BookieServer and start it.
