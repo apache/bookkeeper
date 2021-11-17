@@ -82,16 +82,14 @@ public class LocalBookKeeper {
     }
 
     public LocalBookKeeper(int numberOfBookies) {
-        this(numberOfBookies, 5000, new ServerConfiguration(), defaultLocalBookiesConfigDir);
+        this(numberOfBookies, new ServerConfiguration(), defaultLocalBookiesConfigDir);
     }
 
     public LocalBookKeeper(
             int numberOfBookies,
-            int initialPort,
             ServerConfiguration baseConf,
             String localBookiesConfigDirName) {
         this.numberOfBookies = numberOfBookies;
-        this.initialPort = initialPort;
         this.localBookiesConfigDir = new File(localBookiesConfigDirName);
         this.baseConf = baseConf;
         LOG.info("Running {} bookie(s) on zk ensemble = '{}:{}'.", this.numberOfBookies,
@@ -101,13 +99,11 @@ public class LocalBookKeeper {
     private static String zooKeeperDefaultHost = "127.0.0.1";
     private static int zooKeeperDefaultPort = 2181;
     private static int zkSessionTimeOut = 5000;
-    private static Integer bookieDefaultInitialPort = 5000;
     private static String defaultLocalBookiesConfigDir = "/tmp/localbookies-config";
 
     //BookKeeper variables
     LocalBookie[] bookies;
     ByteBufAllocatorWithOomHandler allocator;
-    Integer initialPort = 5000;
     private ServerConfiguration baseConf;
 
     File localBookiesConfigDir;
@@ -241,14 +237,7 @@ public class LocalBookKeeper {
             }
             ServerConfiguration conf = new ServerConfiguration((ServerConfiguration) baseConf.clone());
 
-            // If the caller specified ephemeral ports then use ephemeral ports for all
-            // the bookies else use numBookie ports starting at initialPort
-            PortManager.initPort(initialPort);
-            if (0 == initialPort) {
-                conf.setBookiePort(0);
-            } else {
-                conf.setBookiePort(PortManager.nextFreePort());
-            }
+            conf.setBookiePort(PortManager.nextFreePort());
 
             if (null == baseConf.getMetadataServiceUriUnchecked()) {
                 conf.setMetadataServiceUri(baseConf.getMetadataServiceUri());
@@ -287,38 +276,35 @@ public class LocalBookKeeper {
     public static void startLocalBookies(String zkHost,
                                          int zkPort,
                                          int numBookies,
-                                         boolean shouldStartZK,
-                                         int initialBookiePort)
+                                         boolean shouldStartZK)
             throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
         startLocalBookiesInternal(
                 conf, zkHost, zkPort, numBookies, shouldStartZK,
-                initialBookiePort, true, "test", null, defaultLocalBookiesConfigDir);
+                true, "test", null, defaultLocalBookiesConfigDir);
     }
 
     public static void startLocalBookies(String zkHost,
                                          int zkPort,
                                          int numBookies,
                                          boolean shouldStartZK,
-                                         int initialBookiePort,
                                          ServerConfiguration conf)
             throws Exception {
         startLocalBookiesInternal(
                 conf, zkHost, zkPort, numBookies, shouldStartZK,
-                initialBookiePort, true, "test", null, defaultLocalBookiesConfigDir);
+                true, "test", null, defaultLocalBookiesConfigDir);
     }
 
     public static void startLocalBookies(String zkHost,
                                          int zkPort,
                                          int numBookies,
                                          boolean shouldStartZK,
-                                         int initialBookiePort,
                                          String dirSuffix)
             throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
         startLocalBookiesInternal(
                 conf, zkHost, zkPort, numBookies, shouldStartZK,
-                initialBookiePort, true, dirSuffix, null, defaultLocalBookiesConfigDir);
+                true, dirSuffix, null, defaultLocalBookiesConfigDir);
     }
 
     @SuppressWarnings("deprecation")
@@ -327,7 +313,6 @@ public class LocalBookKeeper {
                                           int zkPort,
                                           int numBookies,
                                           boolean shouldStartZK,
-                                          int initialBookiePort,
                                           boolean stopOnExit,
                                           String dirSuffix,
                                           String zkDataDir,
@@ -339,7 +324,7 @@ public class LocalBookKeeper {
                         zkPort,
                         conf.getLedgerManagerLayoutStringFromFactoryClass(),
                         conf.getZkLedgersRootPath()));
-        LocalBookKeeper lb = new LocalBookKeeper(numBookies, initialBookiePort, conf, localBookiesConfigDirName);
+        LocalBookKeeper lb = new LocalBookKeeper(numBookies, conf, localBookiesConfigDirName);
         ZooKeeperServerShim zks = null;
         File zkTmpDir = null;
         List<File> bkTmpDirs = null;
@@ -467,7 +452,7 @@ public class LocalBookKeeper {
             }
 
             startLocalBookiesInternal(conf, zooKeeperDefaultHost, zooKeeperDefaultPort, numBookies, true,
-                    bookieDefaultInitialPort, false, "test", zkDataDir, localBookiesConfigDirName);
+                    false, "test", zkDataDir, localBookiesConfigDirName);
         } catch (Exception e) {
             LOG.error("Exiting LocalBookKeeper because of exception in main method", e);
             /*
