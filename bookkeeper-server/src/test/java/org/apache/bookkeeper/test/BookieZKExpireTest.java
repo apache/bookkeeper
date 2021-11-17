@@ -32,10 +32,9 @@ import java.util.HashSet;
 
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.util.PortManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.util.PortManager;
 import org.junit.Test;
 
 /**

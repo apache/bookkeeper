@@ -31,7 +31,6 @@ import org.apache.bookkeeper.bookie.BookieException.Code;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.meta.NullMetadataBookieDriver;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

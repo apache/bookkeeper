@@ -916,13 +916,12 @@ public abstract class BookKeeperClusterTestCase {
             if (lmFactory != null) {
                 lmFactory.close();
             }
-            if (registrationManager != null ) {
+            if (registrationManager != null) {
                 registrationManager.close();
             }
             if (metadataDriver != null) {
                 metadataDriver.close();
             }
-
 
             if (autoRecovery != null) {
                 LOG.debug("Shutdown auto recovery for bookieserver: {}", address);

@@ -33,14 +33,10 @@ import java.io.IOException;
 
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieResources;
-import java.util.function.Supplier;
-
-import org.apache.bookkeeper.bookie.CookieValidation;
 import org.apache.bookkeeper.bookie.LegacyCookieValidation;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.NullMetadataBookieDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -86,7 +82,8 @@ public class TestMain {
         PowerMockito.mockStatic(BookieResources.class);
         when(BookieResources.createMetadataDriver(any(), any()))
             .thenReturn(new NullMetadataBookieDriver());
-        when(BookieResources.createAllocator(any())).thenReturn(PowerMockito.mock(ByteBufAllocatorWithOomHandler.class));
+        when(BookieResources.createAllocator(any())).thenReturn(
+                PowerMockito.mock(ByteBufAllocatorWithOomHandler.class));
 
         ServerConfiguration serverConf = new ServerConfiguration()
             .setAutoRecoveryDaemonEnabled(false)

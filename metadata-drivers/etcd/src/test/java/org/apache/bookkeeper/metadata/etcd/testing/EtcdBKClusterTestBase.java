@@ -30,7 +30,6 @@ import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.metadata.etcd.EtcdMetadataBookieDriver;
 import org.apache.bookkeeper.metadata.etcd.EtcdMetadataClientDriver;

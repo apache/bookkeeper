@@ -26,8 +26,8 @@ import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
-import org.apache.bookkeeper.proto.SimpleBookieServiceInfoProvider;
 import org.apache.bookkeeper.meta.NullMetadataBookieDriver;
+import org.apache.bookkeeper.proto.SimpleBookieServiceInfoProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 
@@ -82,6 +82,9 @@ public class TestBookieImpl extends BookieImpl {
         return ret;
     }
 
+    /**
+     * Manages bookie resources including their cleanup.
+     */
     public static class Resources {
         private final ServerConfiguration conf;
         private final MetadataBookieDriver metadataDriver;
@@ -133,6 +136,9 @@ public class TestBookieImpl extends BookieImpl {
         }
     }
 
+    /**
+     * Builder for resources.
+     */
     public static class ResourceBuilder {
         private final ServerConfiguration conf;
         private MetadataBookieDriver metadataBookieDriver;
