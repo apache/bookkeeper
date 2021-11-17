@@ -76,7 +76,6 @@ public class LocalDLMEmulator {
         private int numBookies = DEFAULT_NUM_BOOKIES;
         private String zkHost = DEFAULT_ZK_HOST;
         private int zkPort = DEFAULT_ZK_PORT;
-        private int initialBookiePort = DEFAULT_BOOKIE_INITIAL_PORT;
         private boolean shouldStartZK = true;
         private Optional<ServerConfiguration> serverConf = Optional.empty();
 
@@ -94,10 +93,6 @@ public class LocalDLMEmulator {
         }
         public Builder zkTimeoutSec(int zkTimeoutSec) {
             this.zkTimeoutSec = zkTimeoutSec;
-            return this;
-        }
-        public Builder initialBookiePort(int initialBookiePort) {
-            this.initialBookiePort = initialBookiePort;
             return this;
         }
         public Builder shouldStartZK(boolean shouldStartZK) {
@@ -122,7 +117,7 @@ public class LocalDLMEmulator {
             newConf.setAllowLoopback(true);
 
             return new LocalDLMEmulator(numBookies, shouldStartZK, zkHost, zkPort,
-                initialBookiePort, zkTimeoutSec, newConf);
+                zkTimeoutSec, newConf);
         }
     }
 
@@ -131,7 +126,7 @@ public class LocalDLMEmulator {
     }
 
     private LocalDLMEmulator(final int numBookies, final boolean shouldStartZK,
-                             final String zkHost, final int zkPort, final int initialBookiePort,
+                             final String zkHost, final int zkPort,
                              final int zkTimeoutSec, final ServerConfiguration serverConf) throws Exception {
         this.numBookies = numBookies;
         this.zkHost = zkHost;
@@ -144,7 +139,7 @@ public class LocalDLMEmulator {
                 try {
                     LOG.info("Starting {} bookies : allowLoopback = {}", numBookies, serverConf.getAllowLoopback());
                     LocalBookKeeper.startLocalBookies(zkHost, zkPort,
-                            numBookies, shouldStartZK, initialBookiePort, serverConf);
+                            numBookies, shouldStartZK, serverConf);
                     LOG.info("{} bookies are started.", numBookies);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
