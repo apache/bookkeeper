@@ -33,6 +33,7 @@ import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,6 +59,11 @@ public class ZKMetadataBookieDriverTest extends ZKMetadataDriverTestBase {
         driver = new ZKMetadataBookieDriver();
     }
 
+    @After
+    public void teardown() {
+        driver.close();
+    }
+
     @Test
     public void testGetRegManager() throws Exception {
         RegistrationListener listener = mock(RegistrationListener.class);
@@ -76,15 +82,14 @@ public class ZKMetadataBookieDriverTest extends ZKMetadataDriverTestBase {
                 any(ZooKeeper.class))
             .thenReturn(mockRegManager);
 
-        RegistrationManager manager = driver.createRegistrationManager();
-        assertSame(mockRegManager, manager);
+        try (RegistrationManager manager = driver.createRegistrationManager()) {
+            assertSame(mockRegManager, manager);
 
-        PowerMockito.verifyNew(ZKRegistrationManager.class, times(1))
-            .withArguments(
-                same(conf),
-                same(mockZkc));
-
-        driver.close();
+            PowerMockito.verifyNew(ZKRegistrationManager.class, times(1))
+                    .withArguments(
+                            same(conf),
+                            same(mockZkc));
+        }
     }
 
 }

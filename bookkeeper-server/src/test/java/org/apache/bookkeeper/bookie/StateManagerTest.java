@@ -83,28 +83,28 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
     @Test
     public void testNormalBookieTransitions() throws Exception {
         driver.initialize(conf, NullStatsLogger.INSTANCE);
-        RegistrationManager rm = driver.createRegistrationManager();
-        BookieStateManager stateManager = new BookieStateManager(conf, rm);
-        rm.addRegistrationListener(() -> {
+        try (RegistrationManager rm = driver.createRegistrationManager();
+             BookieStateManager stateManager = new BookieStateManager(conf, rm)) {
+            rm.addRegistrationListener(() -> {
                 stateManager.forceToUnregistered();
                 // schedule a re-register operation
                 stateManager.registerBookie(false);
             });
-        stateManager.initState();
-        stateManager.registerBookie(true).get();
+            stateManager.initState();
+            stateManager.registerBookie(true).get();
 
-        assertTrue(stateManager.isRunning());
-        assertTrue(stateManager.isRegistered());
+            assertTrue(stateManager.isRunning());
+            assertTrue(stateManager.isRegistered());
 
-        stateManager.transitionToReadOnlyMode().get();
-        assertTrue(stateManager.isReadOnly());
+            stateManager.transitionToReadOnlyMode().get();
+            assertTrue(stateManager.isReadOnly());
 
-        stateManager.transitionToWritableMode().get();
-        assertTrue(stateManager.isRunning());
-        assertFalse(stateManager.isReadOnly());
-
-        stateManager.close();
-        assertFalse(stateManager.isRunning());
+            stateManager.transitionToWritableMode().get();
+            assertTrue(stateManager.isRunning());
+            assertFalse(stateManager.isReadOnly());
+            stateManager.close();
+            assertFalse(stateManager.isRunning());
+        }
     }
 
     @Test

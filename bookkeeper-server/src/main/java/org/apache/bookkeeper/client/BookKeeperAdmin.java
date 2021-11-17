@@ -1232,33 +1232,34 @@ public class BookKeeperAdmin implements AutoCloseable {
             boolean isInteractive, boolean force) throws Exception {
         return runFunctionWithMetadataBookieDriver(conf, driver -> {
             try {
-                RegistrationManager regManager = driver.createRegistrationManager();
-                boolean ledgerRootExists = regManager.prepareFormat();
+                try (RegistrationManager regManager = driver.createRegistrationManager()) {
+                    boolean ledgerRootExists = regManager.prepareFormat();
 
-                // If old data was there then confirm with admin.
-                boolean doFormat = true;
-                if (ledgerRootExists) {
-                    if (!isInteractive) {
-                        // If non interactive and force is set, then delete old data.
-                        doFormat = force;
-                    } else {
-                        // Confirm with the admin.
-                        doFormat = IOUtils
-                            .confirmPrompt("Ledger root already exists. "
-                                + "Are you sure to format bookkeeper metadata? "
-                                + "This may cause data loss.");
+                    // If old data was there then confirm with admin.
+                    boolean doFormat = true;
+                    if (ledgerRootExists) {
+                        if (!isInteractive) {
+                            // If non interactive and force is set, then delete old data.
+                            doFormat = force;
+                        } else {
+                            // Confirm with the admin.
+                            doFormat = IOUtils
+                                    .confirmPrompt("Ledger root already exists. "
+                                            + "Are you sure to format bookkeeper metadata? "
+                                            + "This may cause data loss.");
+                        }
                     }
+
+                    if (!doFormat) {
+                        return false;
+                    }
+
+                    driver.getLedgerManagerFactory().format(
+                            conf,
+                            driver.getLayoutManager());
+
+                    return regManager.format();
                 }
-
-                if (!doFormat) {
-                    return false;
-                }
-
-                driver.getLedgerManagerFactory().format(
-                    conf,
-                    driver.getLayoutManager());
-
-                return regManager.format();
             } catch (Exception e) {
                 throw new UncheckedExecutionException(e.getMessage(), e);
             }

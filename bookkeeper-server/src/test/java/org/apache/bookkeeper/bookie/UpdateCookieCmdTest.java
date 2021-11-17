@@ -77,6 +77,9 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
+        if (rm != null) {
+            rm.close();
+        }
         if (driver != null) {
             driver.close();
         }
