@@ -36,7 +36,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
 import org.apache.bookkeeper.meta.MetadataDrivers.MetadataBookieDriverInfo;
 import org.apache.bookkeeper.meta.MetadataDrivers.MetadataClientDriverInfo;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;

@@ -66,7 +66,8 @@ public class ListLedgerServiceTest extends BookKeeperClusterTestCase {
         super.setUp();
         StatsProvider provider = new TestStatsProvider();
         listLedgerService = new ListLedgerService(confByIndex(0),
-                BookieResources.createMetadataDriver(confByIndex(0), provider.getStatsLogger("")).getLedgerManagerFactory());
+                BookieResources.createMetadataDriver(confByIndex(0),
+                        provider.getStatsLogger("")).getLedgerManagerFactory());
     }
 
     @Test

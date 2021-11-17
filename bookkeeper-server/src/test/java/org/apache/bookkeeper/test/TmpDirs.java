@@ -20,13 +20,15 @@
  */
 package org.apache.bookkeeper.test;
 
-import org.apache.bookkeeper.util.IOUtils;
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import org.apache.bookkeeper.util.IOUtils;
+import org.apache.commons.io.FileUtils;
 
+/**
+ * Utility class for managing tmp directories in tests.
+ */
 public class TmpDirs {
     private final List<File> tmpDirs = new LinkedList<>(); // retained to delete files
 
