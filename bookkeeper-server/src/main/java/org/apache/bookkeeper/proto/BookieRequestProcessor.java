@@ -272,6 +272,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
         shutdownExecutor(highPriorityThreadPool);
         requestTimer.stop();
+        LOG.info("Closed RequestProcessor");
     }
 
     private OrderedExecutor createExecutor(
