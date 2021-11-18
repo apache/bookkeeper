@@ -66,7 +66,9 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
     }
 
     protected void sendResponse(int rc, Object response, OpStatsLogger statsLogger) {
-        channel.writeAndFlush(response, channel.voidPromise());
+        if (channel.isActive()) {
+            channel.writeAndFlush(response, channel.voidPromise());
+        }
         if (BookieProtocol.EOK == rc) {
             statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         } else {
