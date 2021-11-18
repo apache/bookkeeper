@@ -701,6 +701,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     // Expose Stats
     private final JournalStats journalStats;
 
+    private JournalAliveListener journalAliveListener;
+
     public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager) {
         this(journalIndex, journalDirectory, conf, ledgerDirsManager, NullStatsLogger.INSTANCE,
@@ -780,6 +782,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         // Expose Stats
         this.journalStats = new JournalStats(journalStatsLogger, journalMaxMemory,
                 () -> memoryLimitController.currentUsage());
+    }
+
+    public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
+                   LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger,
+                   ByteBufAllocator allocator, JournalAliveListener journalAliveListener) {
+        this(journalIndex, journalDirectory, conf, ledgerDirsManager, statsLogger, allocator);
+        this.journalAliveListener = journalAliveListener;
     }
 
     JournalStats getJournalStats() {
@@ -1253,6 +1262,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             // close will flush the file system cache making any previous
             // cached writes durable so this is fine as well.
             IOUtils.close(LOG, bc);
+            if (journalAliveListener != null) {
+                journalAliveListener.onJournalExit();
+            }
         }
         LOG.info("Journal exited loop!");
     }

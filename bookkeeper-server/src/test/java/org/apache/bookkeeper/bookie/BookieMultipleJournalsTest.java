@@ -21,8 +21,10 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -30,7 +32,9 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 
 /**
@@ -54,6 +58,43 @@ public class BookieMultipleJournalsTest extends BookKeeperClusterTestCase {
         conf.setJournalDirsName(journalDirs);
 
         return conf;
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testJournalExit() throws Exception {
+
+        LedgerHandle ledgerHandle = bkc.createLedger(1, 1, DigestType.CRC32, new byte[0]);
+        for (int i = 0; i < 10; i++) {
+            ledgerHandle.addEntry(("entry-" + i).getBytes());
+        }
+
+        BookieServer bookieServer = serverByIndex(0);
+        BookieImpl bookie = (BookieImpl) bookieServer.getBookie();
+        Field journalList = bookie.getClass().getDeclaredField("journals");
+        journalList.setAccessible(true);
+        List<Journal> journals = (List<Journal>) journalList.get(bookie);
+        journals.get(0).interrupt();
+        Awaitility.await().untilAsserted(() -> assertFalse(bookie.isRunning()));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testJournalExitAndShutdown() throws Exception {
+
+        LedgerHandle ledgerHandle = bkc.createLedger(1, 1, DigestType.CRC32, new byte[0]);
+        for (int i = 0; i < 10; i++) {
+            ledgerHandle.addEntry(("entry-" + i).getBytes());
+        }
+
+        BookieServer bookieServer = serverByIndex(0);
+        BookieImpl bookie = (BookieImpl) bookieServer.getBookie();
+        Field journalList = bookie.getClass().getDeclaredField("journals");
+        journalList.setAccessible(true);
+        List<Journal> journals = (List<Journal>) journalList.get(bookie);
+        journals.get(0).interrupt();
+        bookie.shutdown(ExitCode.OK);
+        Awaitility.await().untilAsserted(() -> assertFalse(bookie.isRunning()));
     }
 
     @Test
