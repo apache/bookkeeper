@@ -83,7 +83,8 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
                 traceTaskExecution,
                 preserveMdcForTaskExecution,
                 warnTimeMicroSec,
-                maxTasksInQueue);
+                maxTasksInQueue,
+                enableThreadScopedMetrics);
         }
     }
 
@@ -112,9 +113,11 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
                                boolean traceTaskExecution,
                                boolean preserveMdcForTaskExecution,
                                long warnTimeMicroSec,
-                               int maxTasksInQueue) {
+                               int maxTasksInQueue,
+                               boolean enableThreadScopedMetrics) {
         super(baseName, numThreads, threadFactory, statsLogger, traceTaskExecution,
-                preserveMdcForTaskExecution, warnTimeMicroSec, maxTasksInQueue, false /* enableBusyWait */);
+                preserveMdcForTaskExecution, warnTimeMicroSec, maxTasksInQueue,
+                false /* enableBusyWait */, enableThreadScopedMetrics);
     }
 
     @Override
@@ -168,7 +171,7 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
      *         will return null upon completion
      */
     public ScheduledFuture<?> schedule(SafeRunnable command, long delay, TimeUnit unit) {
-        return chooseThread().schedule(timedRunnable(command), delay, unit);
+        return chooseThread().schedule(command, delay, unit);
     }
 
     /**
@@ -199,7 +202,7 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
      * method will throw an exception upon cancellation
      */
     public ScheduledFuture<?> scheduleAtFixedRate(SafeRunnable command, long initialDelay, long period, TimeUnit unit) {
-        return chooseThread().scheduleAtFixedRate(timedRunnable(command), initialDelay, period, unit);
+        return chooseThread().scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     /**
@@ -237,7 +240,7 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
      */
     public ScheduledFuture<?> scheduleWithFixedDelay(SafeRunnable command, long initialDelay, long delay,
             TimeUnit unit) {
-        return chooseThread().scheduleWithFixedDelay(timedRunnable(command), initialDelay, delay, unit);
+        return chooseThread().scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
     /**
@@ -270,7 +273,7 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
      */
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return chooseThread().schedule(timedRunnable(command), delay, unit);
+        return chooseThread().schedule(command, delay, unit);
     }
 
     /**
@@ -278,7 +281,7 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
      */
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        return chooseThread().schedule(timedCallable(callable), delay, unit);
+        return chooseThread().schedule(callable, delay, unit);
     }
 
     /**
@@ -287,7 +290,7 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
                                                   long initialDelay, long period, TimeUnit unit) {
-        return chooseThread().scheduleAtFixedRate(timedRunnable(command), initialDelay, period, unit);
+        return chooseThread().scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     /**
@@ -296,7 +299,7 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
                                                      long initialDelay, long delay, TimeUnit unit) {
-        return chooseThread().scheduleWithFixedDelay(timedRunnable(command), initialDelay, delay, unit);
+        return chooseThread().scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
     class OrderedSchedulerDecoratedThread extends ForwardingListeningExecutorService
