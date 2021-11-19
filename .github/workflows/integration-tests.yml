@@ -56,4 +56,4 @@ jobs:
       - name: run smoke test
         run: ./gradlew tests:integration:smoke:test -Dtestlogger.theme=plain
       - name: run standalone test
-        run: ./gradlew tests:integration:standalone:test -Dtestlogger.theme=plain
+        run: ./gradlew tests:integration:standalone:test -Dtestlogger.theme=plain --stacktrace
