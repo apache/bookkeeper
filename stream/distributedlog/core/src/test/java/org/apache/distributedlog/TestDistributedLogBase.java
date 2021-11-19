@@ -81,6 +81,8 @@ public class TestDistributedLogBase {
         System.setProperty("zookeeper.4lw.commands.whitelist", "*");
     }
 
+    protected static int numBookies = 3;
+
     // Num worker threads should be one, since the exec service is used for the ordered
     // future pool in test cases, and setting to > 1 will therefore result in unordered
     // write ops.
@@ -93,24 +95,29 @@ public class TestDistributedLogBase {
                 .setNumWorkerThreads(1)
                 .setReadAheadNoSuchLedgerExceptionOnReadLACErrorThresholdMillis(20)
                 .setSchedulerShutdownTimeoutMs(0)
+                .setLockTimeout(120)
+                .setZKSessionTimeoutSeconds(60)
                 .setDLLedgerMetadataLayoutVersion(LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION);
     protected ZooKeeper zkc;
     protected static LocalDLMEmulator bkutil;
     protected static ZooKeeperServerShim zks;
     protected static String zkServers;
     protected static int zkPort;
-    protected static int numBookies = 3;
     protected static final List<File> TMP_DIRS = new ArrayList<File>();
 
     @BeforeClass
     public static void setupCluster() throws Exception {
+        setupCluster(numBookies);
+    }
+
+    protected static void setupCluster(int nBookies) throws Exception {
         File zkTmpDir = IOUtils.createTempDir("zookeeper", "distrlog");
         TMP_DIRS.add(zkTmpDir);
         Pair<ZooKeeperServerShim, Integer> serverAndPort = LocalDLMEmulator.runZookeeperOnAnyPort(zkTmpDir);
         zks = serverAndPort.getLeft();
         zkPort = serverAndPort.getRight();
         bkutil = LocalDLMEmulator.newBuilder()
-                .numBookies(numBookies)
+                .numBookies(nBookies)
                 .zkHost("127.0.0.1")
                 .zkPort(zkPort)
                 .serverConf(DLMTestUtil.loadTestBkConf())
