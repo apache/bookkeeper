@@ -21,8 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_MEMORY_MAX;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_MEMORY_USED;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
@@ -82,10 +80,8 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
@@ -145,18 +141,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     private final ByteBufAllocator allocator;
 
     private final boolean writeDataToJournal;
-
-    @StatsDoc(
-            name = JOURNAL_MEMORY_MAX,
-            help = "The max amount of memory in bytes that can be used by the bookie journal"
-    )
-    private final Gauge<Long> journalMemoryMaxStats;
-
-    @StatsDoc(
-            name = JOURNAL_MEMORY_USED,
-            help = "The actual amount of memory in bytes currently used by the bookie journal"
-    )
-    private final Gauge<Long> journalMemoryUsedStats;
 
     // Write Callback do nothing
     static class NopWriteCallback implements WriteCallback {
@@ -780,38 +764,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         handles = new HandleFactoryImpl(ledgerStorage);
 
         // Expose Stats
-        this.bookieStats = new BookieStats(statsLogger);
-        journalMemoryMaxStats = new Gauge<Long>() {
-            final long journalMaxMemory = conf.getJournalMaxMemorySizeMb() * 1024 * 1024;
-
-            @Override
-            public Long getDefaultValue() {
-                return journalMaxMemory;
-            }
-
-            @Override
-            public Long getSample() {
-                return journalMaxMemory;
-            }
-        };
-        statsLogger.scope(JOURNAL_SCOPE).registerGauge(JOURNAL_MEMORY_MAX, journalMemoryMaxStats);
-
-        journalMemoryUsedStats = new Gauge<Long>() {
-            @Override
-            public Long getDefaultValue() {
-                return -1L;
-            }
-
-            @Override
-            public Long getSample() {
-                long totalMemory = 0L;
-                for (int i = 0; i < journals.size(); i++) {
-                    totalMemory += journals.get(i).getMemoryUsage();
-                }
-                return totalMemory;
-            }
-        };
-        statsLogger.scope(JOURNAL_SCOPE).registerGauge(JOURNAL_MEMORY_USED, journalMemoryUsedStats);
+        this.bookieStats = new BookieStats(statsLogger, journalDirectories.size(), conf.getJournalQueueSize());
     }
 
     StateManager initializeStateManager() throws IOException {

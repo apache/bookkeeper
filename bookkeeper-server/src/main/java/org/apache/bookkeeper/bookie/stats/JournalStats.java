@@ -32,6 +32,8 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_W
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_ENQUEUE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_GROUPING_COUNT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_QUEUE_SIZE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_MEMORY_MAX;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_MEMORY_USED;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_NUM_FLUSH_EMPTY_QUEUE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_NUM_FLUSH_MAX_OUTSTANDING_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_NUM_FLUSH_MAX_WAIT;
@@ -42,9 +44,12 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SYNC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_WRITE_BYTES;
 
+import java.util.function.Supplier;
+
 import lombok.Getter;
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
@@ -162,8 +167,19 @@ public class JournalStats {
         help = "The number of bytes appended to the journal"
     )
     private final Counter journalWriteBytes;
+    @StatsDoc(
+            name = JOURNAL_MEMORY_MAX,
+            help = "The max amount of memory in bytes that can be used by the bookie journal"
+    )
+    private final Gauge<Long> journalMemoryMaxStats;
+    @StatsDoc(
+            name = JOURNAL_MEMORY_USED,
+            help = "The actual amount of memory in bytes currently used by the bookie journal"
+    )
+    private final Gauge<Long> journalMemoryUsedStats;
 
-    public JournalStats(StatsLogger statsLogger) {
+    public JournalStats(StatsLogger statsLogger, final long maxJournalMemoryBytes,
+                        Supplier<Long> currentJournalMemoryBytes) {
         journalAddEntryStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_ADD_ENTRY);
         journalForceLedgerStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FORCE_LEDGER);
         journalSyncStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_SYNC);
@@ -185,6 +201,32 @@ public class JournalStats {
                 statsLogger.getCounter(BookKeeperServerStats.JOURNAL_NUM_FLUSH_MAX_OUTSTANDING_BYTES);
         flushEmptyQueueCounter = statsLogger.getCounter(BookKeeperServerStats.JOURNAL_NUM_FLUSH_EMPTY_QUEUE);
         journalWriteBytes = statsLogger.getCounter(BookKeeperServerStats.JOURNAL_WRITE_BYTES);
+
+        journalMemoryMaxStats = new Gauge<Long>() {
+            @Override
+            public Long getDefaultValue() {
+                return maxJournalMemoryBytes;
+            }
+
+            @Override
+            public Long getSample() {
+                return maxJournalMemoryBytes;
+            }
+        };
+        statsLogger.registerGauge(JOURNAL_MEMORY_MAX, journalMemoryMaxStats);
+
+        journalMemoryUsedStats = new Gauge<Long>() {
+            @Override
+            public Long getDefaultValue() {
+                return -1L;
+            }
+
+            @Override
+            public Long getSample() {
+                return currentJournalMemoryBytes.get();
+            }
+        };
+        statsLogger.registerGauge(JOURNAL_MEMORY_USED, journalMemoryUsedStats);
     }
 
 }

@@ -31,7 +31,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
-import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,6 +45,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -60,6 +60,7 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
@@ -307,11 +308,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         OpStatsLogger journalAddEntryStats;
         Counter journalCbQueueSize;
-
+        Counter callbackTime;
 
         static QueueEntry create(ByteBuf entry, boolean ackBeforeSync, long ledgerId, long entryId,
                 WriteCallback cb, Object ctx, long enqueueTime, OpStatsLogger journalAddEntryStats,
-                Counter journalCbQueueSize) {
+                Counter journalCbQueueSize, Counter callbackTime) {
             QueueEntry qe = RECYCLER.get();
             qe.entry = entry;
             qe.ackBeforeSync = ackBeforeSync;
@@ -322,11 +323,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             qe.enqueueTime = enqueueTime;
             qe.journalAddEntryStats = journalAddEntryStats;
             qe.journalCbQueueSize = journalCbQueueSize;
+            qe.callbackTime = callbackTime;
             return qe;
         }
 
         @Override
         public void run() {
+            long startTime = System.nanoTime();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
             }
@@ -334,6 +337,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
             recycle();
+            callbackTime.add(MathUtils.elapsedNanos(startTime));
         }
 
         private final Handle<QueueEntry> recyclerHandle;
@@ -467,15 +471,19 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         Thread threadToNotifyOnEx;
         // should we group force writes
         private final boolean enableGroupForceWrites;
-        // make flush interval as a parameter
-        public ForceWriteThread(Thread threadToNotifyOnEx, boolean enableGroupForceWrites) {
+        private final Counter forceWriteThreadTime;
+        public ForceWriteThread(Thread threadToNotifyOnEx,
+                                boolean enableGroupForceWrites,
+                                StatsLogger statsLogger) {
             super("ForceWriteThread");
             this.threadToNotifyOnEx = threadToNotifyOnEx;
             this.enableGroupForceWrites = enableGroupForceWrites;
+            this.forceWriteThreadTime = statsLogger.getThreadScopedCounter("force-write-thread-time");
         }
         @Override
         public void run() {
             LOG.info("ForceWrite Thread started");
+            ThreadRegistry.register(super.getName(), 0);
 
             if (conf.isBusyWaitEnabled()) {
                 try {
@@ -487,10 +495,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
             boolean shouldForceWrite = true;
             int numReqInLastForceWrite = 0;
+            long busyStartTime = System.nanoTime();
             while (running) {
                 ForceWriteRequest req = null;
                 try {
+                    forceWriteThreadTime.add(MathUtils.elapsedNanos(busyStartTime));
                     req = forceWriteRequests.take();
+                    busyStartTime = System.nanoTime();
                     // Force write the file and then notify the write completions
                     //
                     if (!req.isMarker) {
@@ -553,6 +564,18 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             running = false;
             this.interrupt();
             this.join();
+        }
+    }
+
+    private class CbThreadFactory implements ThreadFactory {
+        private int counter = 0;
+        private String threadBaseName = "bookie-journal-callback";
+
+        public Thread newThread(Runnable r) {
+            int threadOrdinal = counter++;
+            Thread t = new Thread(r, threadBaseName + "-" + threadOrdinal);
+            ThreadRegistry.register(threadBaseName, threadOrdinal, t.getId());
+            return t;
         }
     }
 
@@ -625,6 +648,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      */
     private final ExecutorService cbThreadPool;
 
+    private final Counter callbackTime;
+    private final Counter journalTime;
+    private static String journalThreadName = "BookieJournal";
+
     // journal entry queue to commit
     final BlockingQueue<QueueEntry> queue;
     final BlockingQueue<ForceWriteRequest> forceWriteRequests;
@@ -645,8 +672,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger, ByteBufAllocator allocator) {
-        super("BookieJournal-" + conf.getBookiePort());
+        super(journalThreadName + "-" + conf.getBookiePort());
         this.allocator = allocator;
+
+        StatsLogger journalStatsLogger = statsLogger.scopeLabel("journalIndex", String.valueOf(journalIndex));
 
         if (conf.isBusyWaitEnabled()) {
             // To achieve lower latency, use busy-wait blocking queue implementation
@@ -668,7 +697,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.journalWriteBufferSize = conf.getJournalWriteBufferSizeKB() * KB;
         this.syncData = conf.getJournalSyncData();
         this.maxBackupJournals = conf.getMaxBackupJournals();
-        this.forceWriteThread = new ForceWriteThread(this, conf.getJournalAdaptiveGroupWrites());
+        this.forceWriteThread = new ForceWriteThread(this, conf.getJournalAdaptiveGroupWrites(),
+                journalStatsLogger);
         this.maxGroupWaitInNanos = TimeUnit.MILLISECONDS.toNanos(conf.getJournalMaxGroupWaitMSec());
         this.bufferedWritesThreshold = conf.getJournalBufferedWritesThreshold();
         this.bufferedEntriesThreshold = conf.getJournalBufferedEntriesThreshold();
@@ -677,10 +707,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.journalPageCacheFlushIntervalMSec = conf.getJournalPageCacheFlushIntervalMSec();
         if (conf.getNumJournalCallbackThreads() > 0) {
             this.cbThreadPool = Executors.newFixedThreadPool(conf.getNumJournalCallbackThreads(),
-                                                         new DefaultThreadFactory("bookie-journal-callback"));
+                                                        new CbThreadFactory());
+            this.callbackTime = journalStatsLogger.getThreadScopedCounter("callback-thread-time");
         } else {
             this.cbThreadPool = MoreExecutors.newDirectExecutorService();
+            this.callbackTime = journalStatsLogger.getThreadScopedCounter("callback-time");
         }
+
+        this.journalTime = journalStatsLogger.getThreadScopedCounter("journal-thread-time");
 
         // Unless there is a cap on the max wait (which requires group force writes)
         // we cannot skip flushing for queue empty
@@ -699,7 +733,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
 
         // Expose Stats
-        this.journalStats = new JournalStats(statsLogger);
+        this.journalStats = new JournalStats(journalStatsLogger, journalMaxMemory,
+                () -> memoryLimitController.currentUsage());
     }
 
     JournalStats getJournalStats() {
@@ -876,7 +911,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         queue.put(QueueEntry.create(
                 entry, ackBeforeSync,  ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalAddEntryStats(),
-                journalStats.getJournalCbQueueSize()));
+                journalStats.getJournalCbQueueSize(),
+                callbackTime));
     }
 
     void forceLedger(long ledgerId, WriteCallback cb, Object ctx) {
@@ -884,7 +920,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 null, false /* ackBeforeSync */, ledgerId,
                 BookieImpl.METAENTRY_ID_FORCE_LEDGER, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalForceLedgerStats(),
-                journalStats.getJournalCbQueueSize()));
+                journalStats.getJournalCbQueueSize(),
+                callbackTime));
         // Increment afterwards because the add operation could fail.
         journalStats.getJournalQueueSize().inc();
         journalStats.getJournalCbQueueSize().inc();
@@ -917,6 +954,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     @Override
     public void run() {
         LOG.info("Starting journal on {}", journalDirectory);
+        ThreadRegistry.register(journalThreadName, 0);
 
         if (conf.isBusyWaitEnabled()) {
             try {
@@ -950,6 +988,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             long dequeueStartTime = 0L;
             long lastFlushTimeMs = System.currentTimeMillis();
 
+            long busyStartTime = System.nanoTime();
             QueueEntry qe = null;
             while (true) {
                 // new journal file to write
@@ -977,8 +1016,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     }
 
                     if (numEntriesToFlush == 0) {
+                        journalTime.add(MathUtils.elapsedNanos(busyStartTime));
                         qe = queue.take();
                         dequeueStartTime = MathUtils.nowInNano();
+                        busyStartTime = dequeueStartTime;
                         journalStats.getJournalQueueSize().dec();
                         journalStats.getJournalQueueStats()
                             .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);

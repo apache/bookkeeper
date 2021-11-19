@@ -30,12 +30,15 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_RECOVERY
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_LIST_OF_ENTRIES_OF_LEDGER;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_DIRS;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_QUEUE_MAX_SIZE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 
 import lombok.Getter;
 import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
@@ -85,8 +88,12 @@ public class BookieStats {
     private final OpStatsLogger addBytesStats;
     @StatsDoc(name = BOOKIE_READ_ENTRY_BYTES, help = "bytes stats of ReadEntry on a bookie")
     private final OpStatsLogger readBytesStats;
+    @StatsDoc(name = JOURNAL_DIRS, help = "number of configured journal directories")
+    private final Gauge<Integer> journalDirsGauge;
+    @StatsDoc(name = JOURNAL_QUEUE_MAX_SIZE, help = "maximum length of a journal queue")
+    private final Gauge<Integer> journalQueueMaxQueueSizeGauge;
 
-    public BookieStats(StatsLogger statsLogger) {
+    public BookieStats(StatsLogger statsLogger, int numJournalDirs, int maxJournalQueueSize) {
         this.statsLogger = statsLogger;
         writeBytes = statsLogger.getCounter(WRITE_BYTES);
         readBytes = statsLogger.getCounter(READ_BYTES);
@@ -97,6 +104,30 @@ public class BookieStats {
         getListOfEntriesOfLedgerStats = statsLogger.getOpStatsLogger(BOOKIE_GET_LIST_OF_ENTRIES_OF_LEDGER);
         addBytesStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY_BYTES);
         readBytesStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY_BYTES);
+        journalDirsGauge = new Gauge<Integer>() {
+            @Override
+            public Integer getDefaultValue() {
+                return numJournalDirs;
+            }
+
+            @Override
+            public Integer getSample() {
+                return numJournalDirs;
+            }
+        };
+        statsLogger.registerGauge(JOURNAL_DIRS, journalDirsGauge);
+        journalQueueMaxQueueSizeGauge = new Gauge<Integer>() {
+            @Override
+            public Integer getDefaultValue() {
+                return maxJournalQueueSize;
+            }
+
+            @Override
+            public Integer getSample() {
+                return maxJournalQueueSize;
+            }
+        };
+        statsLogger.registerGauge(JOURNAL_QUEUE_MAX_SIZE, journalQueueMaxQueueSizeGauge);
     }
 
 

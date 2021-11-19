@@ -114,9 +114,9 @@ public class OpStatTest extends BookKeeperClusterTestCase {
             assertTrue(average <= elapsed);
         });
         validateNonMonotonicCounterGauges(stats, new String[]{
-                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + "." + JOURNAL_CB_QUEUE_SIZE,
-                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + "." + JOURNAL_FORCE_WRITE_QUEUE_SIZE,
-                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + "." + JOURNAL_QUEUE_SIZE
+                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + ".journalIndex_0." + JOURNAL_CB_QUEUE_SIZE,
+                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + ".journalIndex_0." + JOURNAL_FORCE_WRITE_QUEUE_SIZE,
+                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + ".journalIndex_0." + JOURNAL_QUEUE_SIZE
         }, (value, max) -> {
             assertTrue(max > 0);
         });
