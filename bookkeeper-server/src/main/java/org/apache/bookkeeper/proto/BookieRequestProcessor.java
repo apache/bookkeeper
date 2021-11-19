@@ -288,6 +288,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     .preserveMdcForTaskExecution(serverCfg.getPreserveMdcForTaskExecution())
                     .statsLogger(statsLogger)
                     .maxTasksInQueue(maxTasksInQueue)
+                    .enableThreadScopedMetrics(true)
                     .build();
         }
     }
