@@ -93,6 +93,7 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
         final RateLimiter limiter = RateLimiter.create(1000);
 
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
+        confLocal.loadConf(conf);
         confLocal.setOutputBufferSize(0);
         confLocal.setImmediateFlushEnabled(true);
 
