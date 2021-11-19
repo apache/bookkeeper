@@ -157,12 +157,12 @@ public class BookieRequestProcessor implements RequestProcessor {
             }
             this.longPollThreadPool = createExecutor(
                 numThreads,
-                "BookieLongPollThread-" + serverCfg.getBookiePort(),
+                "BookieLongPollThread",
                 OrderedExecutor.NO_TASK_LIMIT, statsLogger);
         }
         this.highPriorityThreadPool = createExecutor(
                 this.serverCfg.getNumHighPriorityWorkerThreads(),
-                "BookieHighPriorityThread-" + serverCfg.getBookiePort(),
+                "BookieHighPriorityThread",
                 OrderedExecutor.NO_TASK_LIMIT, statsLogger);
         this.shFactory = shFactory;
         if (shFactory != null) {
