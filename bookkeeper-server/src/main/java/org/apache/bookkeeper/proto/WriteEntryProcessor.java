@@ -80,6 +80,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                 requestProcessor.getBookie().addEntry(addData, false, this, channel, request.getMasterKey());
             }
         } catch (OperationRejectedException e) {
+            requestProcessor.getRequestStats().getAddEntryRejectedCounter().inc();
             // Avoid to log each occurence of this exception as this can happen when the ledger storage is
             // unable to keep up with the write rate.
             if (LOG.isDebugEnabled()) {

@@ -126,6 +126,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             }
             status = StatusCode.EOK;
         } catch (OperationRejectedException e) {
+            requestProcessor.getRequestStats().getAddEntryRejectedCounter().inc();
             // Avoid to log each occurence of this exception as this can happen when the ledger storage is
             // unable to keep up with the write rate.
             if (logger.isDebugEnabled()) {
