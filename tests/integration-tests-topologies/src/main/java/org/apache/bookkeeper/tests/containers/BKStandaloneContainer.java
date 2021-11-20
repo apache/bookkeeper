@@ -58,6 +58,7 @@ public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> e
         );
         for (int i = 0; i < numBookies; i++) {
             addExposedPort(BOOKIE_BASE_PORT + i);
+            withExposedPorts(BOOKIE_BASE_PORT + i, BOOKIE_BASE_PORT + i);
         }
         setCommand(
             "standalone",
