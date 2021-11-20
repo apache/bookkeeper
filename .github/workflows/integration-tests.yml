@@ -51,9 +51,5 @@ jobs:
 
       - name: Build tar
         run: ./gradlew stream:server:build -x test
-      - name: run cluster integration test
-        run: ./gradlew :tests:integration:cluster:test -Dtestlogger.theme=plain
-      - name: run smoke test
-        run: ./gradlew tests:integration:smoke:test -Dtestlogger.theme=plain
       - name: run standalone test
-        run: ./gradlew tests:integration:standalone:test -Dtestlogger.theme=plain --stacktrace --debug
+        run: ./gradlew tests:integration:standalone:test -Dtestlogger.theme=plain
