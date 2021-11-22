@@ -59,7 +59,7 @@ public class DistributedLogCoreShadedJarTest {
 
     @Test
     public void testProtobufShadedPath() throws Exception {
-        Class.forName("org.apache.bookkeeper.shaded.com.google.protobuf.Message");
+        Class.forName("dlshade.com.google.protobuf.Message");
     }
 
     @Test(expected = ClassNotFoundException.class)
@@ -69,7 +69,7 @@ public class DistributedLogCoreShadedJarTest {
 
     @Test
     public void testGuavaShadedPath() throws Exception {
-        Class.forName("org.apache.bookkeeper.shaded.com.google.common.cache.Cache");
+        Class.forName("dlshade.com.google.common.cache.Cache");
         assertTrue(true);
     }
 

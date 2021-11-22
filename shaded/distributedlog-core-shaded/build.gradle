@@ -32,7 +32,6 @@ dependencies {
 shadowJar {
     dependencies {
     }
-    relocate 'com.google', 'org.apache.bookkeeper.shaded.com.google'
     relocate 'org.apache.commons.cli', 'dlshade.org.apache.commons.cli'
     relocate 'org.apache.commons.codec', 'dlshade.org.apache.commons.codec'
     relocate 'org.apache.commons.collections4', 'dlshade.org.apache.commons.collections4'
