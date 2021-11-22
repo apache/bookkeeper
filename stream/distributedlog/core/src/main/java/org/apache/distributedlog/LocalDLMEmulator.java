@@ -67,6 +67,7 @@ public class LocalDLMEmulator {
     private final String zkHost;
     private final int zkPort;
     private final int numBookies;
+    private final LocalBookKeeper lb;
 
     /**
      * Builder to build LocalDLMEmulator.
@@ -134,13 +135,21 @@ public class LocalDLMEmulator {
         this.zkEnsemble = zkHost + ":" + zkPort;
         this.uri = URI.create("distributedlog://" + zkEnsemble + DLOG_NAMESPACE);
         this.zkTimeoutSec = zkTimeoutSec;
+        this.lb = LocalBookKeeper.getLocalBookies(zkHost, zkPort,
+                numBookies, shouldStartZK, serverConf);
         this.bkStartupThread = new Thread() {
             public void run() {
                 try {
-                    LOG.info("Starting {} bookies : allowLoopback = {}", numBookies, serverConf.getAllowLoopback());
-                    LocalBookKeeper.startLocalBookies(zkHost, zkPort,
-                            numBookies, shouldStartZK, serverConf);
-                    LOG.info("{} bookies are started.", numBookies);
+                    try {
+                        LOG.info("Starting {} bookies : allowLoopback = {}", numBookies, serverConf.getAllowLoopback());
+                        lb.start();
+                        LOG.info("{} bookies are started.", numBookies);
+                        while (true) {
+                            Thread.sleep(1000);
+                        }
+                    } finally {
+                        lb.close();
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     // go away quietly
@@ -222,6 +231,14 @@ public class LocalDLMEmulator {
         } finally {
             zkc.close();
         }
+    }
+
+    public void addBookie() throws Exception {
+        lb.addBookie();
+    }
+
+    public void removeBookie() throws Exception {
+        lb.removeBookie();
     }
 
     public static String getBkLedgerPath() {

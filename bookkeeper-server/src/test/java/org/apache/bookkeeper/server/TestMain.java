@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -120,7 +119,7 @@ public class TestMain {
     @Test
     public void testIgnoreExtraServerComponentsStartupFailures() throws Exception {
         PowerMockito.mockStatic(BookieResources.class);
-        when(BookieResources.createMetadataDriver(anyObject(), anyObject()))
+        when(BookieResources.createMetadataDriver(any(), any()))
             .thenReturn(new NullMetadataBookieDriver());
 
         ServerConfiguration serverConf = new ServerConfiguration()
@@ -158,7 +157,7 @@ public class TestMain {
     @Test
     public void testExtraServerComponentsStartupFailures() throws Exception {
         PowerMockito.mockStatic(BookieResources.class);
-        when(BookieResources.createMetadataDriver(anyObject(), anyObject()))
+        when(BookieResources.createMetadataDriver(any(), any()))
             .thenReturn(new NullMetadataBookieDriver());
 
         ServerConfiguration serverConf = new ServerConfiguration()
