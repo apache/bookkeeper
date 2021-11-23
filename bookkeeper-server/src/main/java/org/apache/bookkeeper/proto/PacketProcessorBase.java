@@ -68,6 +68,8 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
     protected void sendResponse(int rc, Object response, OpStatsLogger statsLogger) {
         if (channel.isActive()) {
             channel.writeAndFlush(response, channel.voidPromise());
+        } else {
+            LOGGER.info("Netty channel is inactive, hence bypassing netty channel writeAndFlush during sendResponse");
         }
         if (BookieProtocol.EOK == rc) {
             statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
