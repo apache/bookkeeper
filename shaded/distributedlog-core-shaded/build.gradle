@@ -32,7 +32,6 @@ dependencies {
 shadowJar {
     dependencies {
     }
-    relocate 'com.google', 'org.apache.bookkeeper.shaded.com.google'
     relocate 'org.apache.commons.cli', 'dlshade.org.apache.commons.cli'
     relocate 'org.apache.commons.codec', 'dlshade.org.apache.commons.codec'
     relocate 'org.apache.commons.collections4', 'dlshade.org.apache.commons.collections4'
@@ -53,7 +52,7 @@ shadowJar {
     relocate 'org.rocksdb', 'dlshade.org.rocksdb'
     relocate 'com.scurrilous.circe', 'dlshade.com.scurrilous.circe'
     relocate 'org.apache.bookkeeper', 'dlshade.org.apache.bookkeeper'
-    relocate 'org.apache.distributedlog', 'dhshade.org.apache.distributedlog'
+    relocate 'org.apache.distributedlog', 'dlshade.org.apache.distributedlog'
     archiveBaseName.set("distributedlog-core-shaded")
     archiveClassifier.set("")
 }
