@@ -81,48 +81,49 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
             serverConf.getMetadataServiceUriUnchecked(),
             Arrays.asList(serverConf.getJournalDirNames()),
             Arrays.asList(serverConf.getLedgerDirNames()));
+
+        ByteBufAllocator allocator = BookieResources.createAllocator(serverConf);
+
+        this.metadataDriver = BookieResources.createMetadataDriver(
+                serverConf, statsLogger);
+        StatsLogger bookieStats = statsLogger.scope(BOOKIE_SCOPE);
+        this.rm = this.metadataDriver.createRegistrationManager();
+        this.lmFactory = this.metadataDriver.getLedgerManagerFactory();
+        this.ledgerManager = this.lmFactory.newLedgerManager();
+
+        DiskChecker diskChecker = BookieResources.createDiskChecker(serverConf);
+        LedgerDirsManager ledgerDirsManager = BookieResources.createLedgerDirsManager(
+                serverConf, diskChecker, bookieStats.scope(LD_LEDGER_SCOPE));
+        LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
+                serverConf, diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
+        LedgerStorage storage = BookieResources.createLedgerStorage(
+                serverConf, ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
+
+        LegacyCookieValidation cookieValidation = new LegacyCookieValidation(serverConf, rm);
+        cookieValidation.checkCookies(Main.storageDirectoriesFromConf(serverConf));
+
+        Bookie bookie;
+        if (serverConf.isForceReadOnlyBookie()) {
+            bookie = new ReadOnlyBookie(serverConf, rm, storage, diskChecker,
+                    ledgerDirsManager, indexDirsManager,
+                    statsLogger.scope(BOOKIE_SCOPE),
+                    allocator, bookieServiceInfoProvider);
+        } else {
+            bookie = new BookieImpl(serverConf, rm, storage, diskChecker,
+                    ledgerDirsManager, indexDirsManager,
+                    statsLogger.scope(BOOKIE_SCOPE),
+                    allocator, bookieServiceInfoProvider);
+        }
+
+        this.bs = new BookieServer(serverConf, bookie,
+                statsLogger, allocator);
+
         log.info(hello);
     }
 
     @Override
     protected void doStart() {
         try {
-            ByteBufAllocator allocator = BookieResources.createAllocator(serverConf);
-
-            this.metadataDriver = BookieResources.createMetadataDriver(
-                    serverConf, statsLogger);
-            StatsLogger bookieStats = statsLogger.scope(BOOKIE_SCOPE);
-            this.rm = this.metadataDriver.createRegistrationManager();
-            this.lmFactory = this.metadataDriver.getLedgerManagerFactory();
-            this.ledgerManager = this.lmFactory.newLedgerManager();
-
-
-            DiskChecker diskChecker = BookieResources.createDiskChecker(serverConf);
-            LedgerDirsManager ledgerDirsManager = BookieResources.createLedgerDirsManager(
-                    serverConf, diskChecker, bookieStats.scope(LD_LEDGER_SCOPE));
-            LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
-                    serverConf, diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
-            LedgerStorage storage = BookieResources.createLedgerStorage(
-                    serverConf, ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
-
-            LegacyCookieValidation cookieValidation = new LegacyCookieValidation(serverConf, rm);
-            cookieValidation.checkCookies(Main.storageDirectoriesFromConf(serverConf));
-
-            Bookie bookie;
-            if (serverConf.isForceReadOnlyBookie()) {
-                bookie = new ReadOnlyBookie(serverConf, rm, storage, diskChecker,
-                                            ledgerDirsManager, indexDirsManager,
-                                            statsLogger.scope(BOOKIE_SCOPE),
-                                            allocator, bookieServiceInfoProvider);
-            } else {
-                bookie = new BookieImpl(serverConf, rm, storage, diskChecker,
-                                        ledgerDirsManager, indexDirsManager,
-                                        statsLogger.scope(BOOKIE_SCOPE),
-                                        allocator, bookieServiceInfoProvider);
-            }
-
-            this.bs = new BookieServer(serverConf, bookie,
-                                       statsLogger, allocator);
             bs.start();
             log.info("Started bookie server successfully.");
         } catch (Exception e) {
