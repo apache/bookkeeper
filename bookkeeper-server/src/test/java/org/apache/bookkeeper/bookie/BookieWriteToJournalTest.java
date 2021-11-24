@@ -66,7 +66,7 @@ public class BookieWriteToJournalTest {
     class NoOpJournalReplayBookie extends TestBookieImpl {
 
         public NoOpJournalReplayBookie(ServerConfiguration conf)
-                throws IOException, InterruptedException, BookieException {
+                throws Exception {
             super(conf);
         }
 

@@ -36,6 +36,7 @@ import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -76,17 +77,20 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     private final StatsProvider statsProvider;
     private final BookieServer bookieServer;
     private final AutoRecoveryMain autoRecovery;
+    private final LedgerManagerFactory ledgerManagerFactory;
     private final ServerConfiguration serverConf;
     private final BookKeeperAdmin bka;
     private final ExecutorService executor;
 
     private BKHttpServiceProvider(BookieServer bookieServer,
                                   AutoRecoveryMain autoRecovery,
+                                  LedgerManagerFactory ledgerManagerFactory,
                                   ServerConfiguration serverConf,
                                   StatsProvider statsProvider)
         throws IOException, KeeperException, InterruptedException, BKException {
         this.bookieServer = bookieServer;
         this.autoRecovery = autoRecovery;
+        this.ledgerManagerFactory = ledgerManagerFactory;
         this.serverConf = serverConf;
         this.statsProvider = statsProvider;
         ClientConfiguration clientConfiguration = new ClientConfiguration(serverConf);
@@ -132,6 +136,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
 
         BookieServer bookieServer = null;
         AutoRecoveryMain autoRecovery = null;
+        LedgerManagerFactory ledgerManagerFactory = null;
         ServerConfiguration serverConf = null;
         StatsProvider statsProvider = null;
 
@@ -155,11 +160,17 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             return this;
         }
 
+        public Builder setLedgerManagerFactory(LedgerManagerFactory ledgerManagerFactory) {
+            this.ledgerManagerFactory = ledgerManagerFactory;
+            return this;
+        }
+
         public BKHttpServiceProvider build()
             throws IOException, KeeperException, InterruptedException, BKException {
             return new BKHttpServiceProvider(
                 bookieServer,
                 autoRecovery,
+                ledgerManagerFactory,
                 serverConf,
                 statsProvider
             );
@@ -185,9 +196,9 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             case DELETE_LEDGER:
                 return new DeleteLedgerService(configuration);
             case LIST_LEDGER:
-                return new ListLedgerService(configuration, bookieServer);
+                return new ListLedgerService(configuration, ledgerManagerFactory);
             case GET_LEDGER_META:
-                return new GetLedgerMetaService(configuration, bookieServer);
+                return new GetLedgerMetaService(configuration, ledgerManagerFactory);
             case READ_LEDGER_ENTRY:
                 return new ReadLedgerEntryService(configuration, bka);
 
@@ -219,7 +230,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             case RECOVERY_BOOKIE:
                 return new RecoveryBookieService(configuration, bka, executor);
             case LIST_UNDER_REPLICATED_LEDGER:
-                return new ListUnderReplicatedLedgerService(configuration, bookieServer);
+                return new ListUnderReplicatedLedgerService(configuration, ledgerManagerFactory);
             case WHO_IS_AUDITOR:
                 return new WhoIsAuditorService(configuration, bka);
             case TRIGGER_AUDIT:

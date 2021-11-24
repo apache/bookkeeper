@@ -19,21 +19,24 @@
 
 package org.apache.bookkeeper.server;
 
-import static org.apache.bookkeeper.server.Main.buildBookieServer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.io.IOException;
 
-import java.util.function.Supplier;
+import org.apache.bookkeeper.bookie.BookieImpl;
+import org.apache.bookkeeper.bookie.BookieResources;
+import org.apache.bookkeeper.bookie.LegacyCookieValidation;
+import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.NullMetadataBookieDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
@@ -50,7 +53,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test of {@link Main}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(BookieService.class)
+@PrepareForTest({BookieService.class, BookieResources.class, Main.class})
 public class TestMain {
 
     static class TestComponent extends ServerLifecycleComponent {
@@ -75,24 +78,34 @@ public class TestMain {
 
     @Test
     public void testBuildBookieServer() throws Exception {
+        PowerMockito.mockStatic(BookieResources.class);
+        when(BookieResources.createMetadataDriver(any(), any()))
+            .thenReturn(new NullMetadataBookieDriver());
+        when(BookieResources.createAllocator(any())).thenReturn(
+                PowerMockito.mock(ByteBufAllocatorWithOomHandler.class));
+
         ServerConfiguration serverConf = new ServerConfiguration()
             .setAutoRecoveryDaemonEnabled(false)
             .setHttpServerEnabled(false)
             .setExtraServerComponents(new String[] { TestComponent.class.getName() });
         BookieConfiguration conf = new BookieConfiguration(serverConf);
 
+        whenNew(BookieImpl.class).withAnyArguments().thenReturn(PowerMockito.mock(BookieImpl.class));
+        whenNew(LegacyCookieValidation.class)
+            .withAnyArguments().thenReturn(PowerMockito.mock(LegacyCookieValidation.class));
+
         BookieServer mockServer = PowerMockito.mock(BookieServer.class);
         whenNew(BookieServer.class)
-            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class), any(Supplier.class))
+            .withAnyArguments()
             .thenReturn(mockServer);
 
         BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
         when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
         when(mockServer.getBookieId()).thenReturn(bookieAddress.toBookieId());
 
-        LifecycleComponentStack stack = buildBookieServer(conf);
-        assertEquals(3, stack.getNumComponents());
-        assertTrue(stack.getComponent(2) instanceof TestComponent);
+        LifecycleComponentStack stack = Main.buildBookieServer(conf);
+        assertEquals(7, stack.getNumComponents());
+        assertTrue(stack.getComponent(6) instanceof TestComponent);
 
         stack.start();
         verify(mockServer, times(1)).start();
@@ -105,6 +118,10 @@ public class TestMain {
 
     @Test
     public void testIgnoreExtraServerComponentsStartupFailures() throws Exception {
+        PowerMockito.mockStatic(BookieResources.class);
+        when(BookieResources.createMetadataDriver(any(), any()))
+            .thenReturn(new NullMetadataBookieDriver());
+
         ServerConfiguration serverConf = new ServerConfiguration()
             .setAutoRecoveryDaemonEnabled(false)
             .setHttpServerEnabled(false)
@@ -112,17 +129,21 @@ public class TestMain {
             .setIgnoreExtraServerComponentsStartupFailures(true);
         BookieConfiguration conf = new BookieConfiguration(serverConf);
 
+        whenNew(BookieImpl.class).withAnyArguments().thenReturn(PowerMockito.mock(BookieImpl.class));
+        whenNew(LegacyCookieValidation.class)
+            .withAnyArguments().thenReturn(PowerMockito.mock(LegacyCookieValidation.class));
+
         BookieServer mockServer = PowerMockito.mock(BookieServer.class);
         whenNew(BookieServer.class)
-            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class), any(Supplier.class))
+            .withAnyArguments()
             .thenReturn(mockServer);
 
         BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
         when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
         when(mockServer.getBookieId()).thenReturn(bookieAddress.toBookieId());
 
-        LifecycleComponentStack stack = buildBookieServer(conf);
-        assertEquals(2, stack.getNumComponents());
+        LifecycleComponentStack stack = Main.buildBookieServer(conf);
+        assertEquals(6, stack.getNumComponents());
 
         stack.start();
         verify(mockServer, times(1)).start();
@@ -135,6 +156,10 @@ public class TestMain {
 
     @Test
     public void testExtraServerComponentsStartupFailures() throws Exception {
+        PowerMockito.mockStatic(BookieResources.class);
+        when(BookieResources.createMetadataDriver(any(), any()))
+            .thenReturn(new NullMetadataBookieDriver());
+
         ServerConfiguration serverConf = new ServerConfiguration()
             .setAutoRecoveryDaemonEnabled(false)
             .setHttpServerEnabled(false)
@@ -142,9 +167,13 @@ public class TestMain {
             .setIgnoreExtraServerComponentsStartupFailures(false);
         BookieConfiguration conf = new BookieConfiguration(serverConf);
 
+        whenNew(BookieImpl.class).withAnyArguments().thenReturn(PowerMockito.mock(BookieImpl.class));
+        whenNew(LegacyCookieValidation.class)
+            .withAnyArguments().thenReturn(PowerMockito.mock(LegacyCookieValidation.class));
+
         BookieServer mockServer = PowerMockito.mock(BookieServer.class);
         whenNew(BookieServer.class)
-            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class), any(Supplier.class))
+                .withAnyArguments()
             .thenReturn(mockServer);
 
         BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
@@ -152,7 +181,7 @@ public class TestMain {
         when(mockServer.getBookieId()).thenReturn(bookieAddress.toBookieId());
 
         try {
-            buildBookieServer(conf);
+            Main.buildBookieServer(conf);
             fail("Should fail to start bookie server if `ignoreExtraServerComponentsStartupFailures` is set to false");
         } catch (RuntimeException re) {
             assertTrue(re.getCause() instanceof ClassNotFoundException);

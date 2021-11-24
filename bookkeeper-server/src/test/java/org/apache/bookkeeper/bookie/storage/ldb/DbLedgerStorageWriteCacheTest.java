@@ -31,10 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.bookie.BookieImpl;
-import org.apache.bookkeeper.bookie.CheckpointSource;
-import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
-import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -57,23 +54,21 @@ public class DbLedgerStorageWriteCacheTest {
         @Override
         protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
                 LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                StateManager stateManager, CheckpointSource checkpointSource, Checkpointer checkpointer,
                 StatsLogger statsLogger, ScheduledExecutorService gcExecutor,
                 long writeCacheSize, long readCacheSize)
                 throws IOException {
             return new MockedSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
-                    stateManager, checkpointSource, checkpointer, statsLogger, allocator, gcExecutor, writeCacheSize,
-                    readCacheSize);
+                                                            statsLogger, allocator, gcExecutor, writeCacheSize,
+                                                            readCacheSize);
         }
 
         private static class MockedSingleDirectoryDbLedgerStorage extends SingleDirectoryDbLedgerStorage {
             public MockedSingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-                    LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StateManager stateManager,
-                    CheckpointSource checkpointSource, Checkpointer checkpointer, StatsLogger statsLogger,
+                    LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StatsLogger statsLogger,
                     ByteBufAllocator allocator, ScheduledExecutorService gcExecutor, long writeCacheSize,
                     long readCacheSize) throws IOException {
-                super(conf, ledgerManager, ledgerDirsManager, indexDirsManager, stateManager, checkpointSource,
-                        checkpointer, statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize);
+                super(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
+                      statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize);
             }
 
           @Override

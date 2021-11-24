@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertEquals;
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.UUID;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -45,8 +44,8 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         super(0);
     }
 
-    private String newDirectory(boolean createCurDir) throws IOException {
-        File d = createTempDir("cookie", "tmpdir");
+    private String newDirectory(boolean createCurDir) throws Exception {
+        File d = tmpDirs.createNew("cookie", "tmpdir");
         if (createCurDir) {
             new File(d, "current").mkdirs();
         }

@@ -118,7 +118,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners = Lists
             .newCopyOnWriteArrayList();
 
-    private final CheckpointSource checkpointSource;
+    private CheckpointSource checkpointSource = CheckpointSource.DEFAULT;
     private Checkpoint lastCheckpoint = Checkpoint.MIN;
 
     private final long writeCacheMaxSize;
@@ -137,8 +137,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final long maxReadAheadBytesSize;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-            LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StateManager stateManager,
-            CheckpointSource checkpointSource, Checkpointer checkpointer, StatsLogger statsLogger,
+            LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StatsLogger statsLogger,
             ByteBufAllocator allocator, ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize)
             throws IOException {
 
@@ -151,8 +150,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         this.writeCacheMaxSize = writeCacheSize;
         this.writeCache = new WriteCache(allocator, writeCacheMaxSize / 2);
         this.writeCacheBeingFlushed = new WriteCache(allocator, writeCacheMaxSize / 2);
-
-        this.checkpointSource = checkpointSource;
 
         readCacheMaxSize = readCacheSize;
         readAheadCacheBatchSize = conf.getInt(READ_AHEAD_CACHE_BATCH_SIZE, DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE);
@@ -190,11 +187,20 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
-            LedgerDirsManager indexDirsManager, StateManager stateManager, CheckpointSource checkpointSource,
-            Checkpointer checkpointer, StatsLogger statsLogger,
+            LedgerDirsManager indexDirsManager, StatsLogger statsLogger,
             ByteBufAllocator allocator) throws IOException {
         /// Initialized in constructor
     }
+
+    @Override
+    public void setStateManager(StateManager stateManager) { }
+
+    @Override
+    public void setCheckpointSource(CheckpointSource checkpointSource) {
+        this.checkpointSource = checkpointSource;
+    }
+    @Override
+    public void setCheckpointer(Checkpointer checkpointer) { }
 
     /**
      * Evict all the ledger info object that were not used recently.

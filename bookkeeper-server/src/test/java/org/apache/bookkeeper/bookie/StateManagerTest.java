@@ -23,12 +23,10 @@ package org.apache.bookkeeper.bookie;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.io.File;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -61,7 +59,7 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         zkUtil.createBKEnsemble("/" + runtime.getMethodName());
-        File tmpDir = createTempDir("stateManger", "test");
+        File tmpDir = tmpDirs.createNew("stateManger", "test");
         conf.setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() })
                 .setJournalDirName(tmpDir.toString())
@@ -81,35 +79,41 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testNormalBookieTransitions() throws Exception {
-        BookieStateManager stateManager = new BookieStateManager(conf, driver);
-        driver.initialize(conf, () -> {
-            stateManager.forceToUnregistered();
-            // schedule a re-register operation
-            stateManager.registerBookie(false);
-        }, NullStatsLogger.INSTANCE);
+        driver.initialize(conf, NullStatsLogger.INSTANCE);
+        try (RegistrationManager rm = driver.createRegistrationManager();
+             BookieStateManager stateManager = new BookieStateManager(conf, rm)) {
+            rm.addRegistrationListener(() -> {
+                stateManager.forceToUnregistered();
+                // schedule a re-register operation
+                stateManager.registerBookie(false);
+            });
+            stateManager.initState();
+            stateManager.registerBookie(true).get();
 
-        stateManager.initState();
-        stateManager.registerBookie(true).get();
+            assertTrue(stateManager.isRunning());
+            assertTrue(stateManager.isRegistered());
 
-        assertTrue(stateManager.isRunning());
-        assertTrue(stateManager.isRegistered());
+            stateManager.transitionToReadOnlyMode().get();
+            assertTrue(stateManager.isReadOnly());
 
-        stateManager.transitionToReadOnlyMode().get();
-        assertTrue(stateManager.isReadOnly());
-
-        stateManager.transitionToWritableMode().get();
-        assertTrue(stateManager.isRunning());
-        assertFalse(stateManager.isReadOnly());
-
-        stateManager.close();
-        assertFalse(stateManager.isRunning());
+            stateManager.transitionToWritableMode().get();
+            assertTrue(stateManager.isRunning());
+            assertFalse(stateManager.isReadOnly());
+            stateManager.close();
+            assertFalse(stateManager.isRunning());
+        }
     }
 
     @Test
     public void testReadOnlyDisableBookieTransitions() throws Exception {
         conf.setReadOnlyModeEnabled(false);
         // readOnly disabled bk stateManager
-        BookieStateManager stateManager = new BookieStateManager(conf, driver);
+        driver.initialize(
+            conf,
+            NullStatsLogger.INSTANCE);
+
+        RegistrationManager rm = driver.createRegistrationManager();
+        BookieStateManager stateManager = new BookieStateManager(conf, rm);
         // simulate sync shutdown logic in bookie
         stateManager.setShutdownHandler(new StateManager.ShutdownHandler() {
             @Override
@@ -125,14 +129,11 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
                 }
             }
         });
-        driver.initialize(
-            conf,
-            () -> {
+        rm.addRegistrationListener(() -> {
                 stateManager.forceToUnregistered();
                 // schedule a re-register operation
                 stateManager.registerBookie(false);
-            },
-            NullStatsLogger.INSTANCE);
+            });
 
         stateManager.initState();
         stateManager.registerBookie(true).get();
@@ -149,15 +150,18 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
     @Test
     public void testReadOnlyBookieTransitions() throws Exception{
         // readOnlybk, which use override stateManager impl
-        File tmpDir = createTempDir("stateManger", "test-readonly");
+        File tmpDir = tmpDirs.createNew("stateManger", "test-readonly");
         final ServerConfiguration readOnlyConf = TestBKConfiguration.newServerConfiguration();
         readOnlyConf.setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() })
                 .setJournalDirName(tmpDir.toString())
                 .setMetadataServiceUri(zkUtil.getMetadataServiceUri())
                 .setForceReadOnlyBookie(true);
-        ReadOnlyBookie readOnlyBookie = new ReadOnlyBookie(readOnlyConf, NullStatsLogger.INSTANCE,
-                UnpooledByteBufAllocator.DEFAULT, BookieServiceInfo.NO_INFO);
+        driver.initialize(readOnlyConf, NullStatsLogger.INSTANCE);
+
+        ReadOnlyBookie readOnlyBookie = TestBookieImpl.buildReadOnly(
+                new TestBookieImpl.ResourceBuilder(readOnlyConf)
+                .withMetadataDriver(driver).build());
         readOnlyBookie.start();
         assertTrue(readOnlyBookie.isRunning());
         assertTrue(readOnlyBookie.isReadOnly());
@@ -175,15 +179,18 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testRegistration() throws Exception {
-        BookieStateManager stateManager = new BookieStateManager(conf, driver);
         driver.initialize(
             conf,
-            () -> {
+            NullStatsLogger.INSTANCE);
+
+        RegistrationManager rm = driver.createRegistrationManager();
+        BookieStateManager stateManager = new BookieStateManager(conf, rm);
+        rm.addRegistrationListener(() -> {
                 stateManager.forceToUnregistered();
                 // schedule a re-register operation
                 stateManager.registerBookie(false);
-            },
-            NullStatsLogger.INSTANCE);
+            });
+
         // simulate sync shutdown logic in bookie
         stateManager.setShutdownHandler(new StateManager.ShutdownHandler() {
             @Override

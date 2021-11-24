@@ -241,7 +241,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
 
         File[] ledgerDirs = new File[numOfLedgerDirs];
         for (int i = 0; i < numOfLedgerDirs; i++) {
-            File dir = createTempDir("bookie", "test");
+            File dir = tmpDirs.createNew("bookie", "test");
             ledgerDirs[i] = dir;
         }
 

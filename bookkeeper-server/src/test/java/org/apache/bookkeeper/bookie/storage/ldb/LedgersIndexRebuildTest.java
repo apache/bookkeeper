@@ -33,9 +33,6 @@ import java.util.UUID;
 
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieShell;
-import org.apache.bookkeeper.bookie.CheckpointSource;
-import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
-import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -64,29 +61,6 @@ public class LedgersIndexRebuildTest {
     private final BookieId bookieAddress = BookieId.parse(UUID.randomUUID().toString());
     private ServerConfiguration conf;
     private File tmpDir;
-
-    CheckpointSource checkpointSource = new CheckpointSource() {
-        @Override
-        public Checkpoint newCheckpoint() {
-            return Checkpoint.MAX;
-        }
-
-        @Override
-        public void checkpointComplete(Checkpoint checkpoint, boolean compact) throws IOException {
-        }
-    };
-
-    Checkpointer checkpointer = new Checkpointer() {
-        @Override
-        public void startCheckpoint(Checkpoint checkpoint) {
-            // No-op
-        }
-
-        @Override
-        public void start() {
-            // no-op
-        }
-    };
 
     @Before
     public void setUp() throws IOException {
@@ -140,7 +114,7 @@ public class LedgersIndexRebuildTest {
         ledgerStorage = new DbLedgerStorage();
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, null, checkpointSource, checkpointer,
+        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
                 NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
 
        for (long ledgerId = 0; ledgerId < ledgerCount; ledgerId++) {
@@ -165,7 +139,7 @@ public class LedgersIndexRebuildTest {
                 .thenReturn(bookieAddress);
 
         DbLedgerStorage ledgerStorage = new DbLedgerStorage();
-        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, null, checkpointSource, checkpointer,
+        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
                 NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
 
         return ledgerStorage;

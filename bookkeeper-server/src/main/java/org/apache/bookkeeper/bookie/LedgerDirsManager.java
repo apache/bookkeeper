@@ -58,12 +58,16 @@ public class LedgerDirsManager {
 
     private final DiskChecker diskChecker;
 
-    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker) {
+    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker) throws IOException {
         this(conf, dirs, diskChecker, NullStatsLogger.INSTANCE);
     }
 
-    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger) {
+    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger)
+            throws IOException {
         this.ledgerDirectories = Arrays.asList(BookieImpl.getCurrentDirectories(dirs));
+        for (File f : this.ledgerDirectories) {
+            BookieImpl.checkDirectoryStructure(f);
+        }
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
         this.filledDirs = new ArrayList<File>();
         this.listeners = new ArrayList<LedgerDirsListener>();

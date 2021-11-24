@@ -83,8 +83,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         super.setUp();
         StaticDNSResolver.reset();
         driver = MetadataDrivers.getBookieDriver(URI.create(confByIndex(0).getMetadataServiceUri()));
-        driver.initialize(confByIndex(0), () -> {
-        }, NullStatsLogger.INSTANCE);
+        driver.initialize(confByIndex(0), NullStatsLogger.INSTANCE);
     }
 
     @After
@@ -101,14 +100,14 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         int numOfBookies = 5;
         List<BookieId> bookieAddresses = new ArrayList<>();
         BookieSocketAddress bookieAddress;
-        RegistrationManager regManager = driver.getRegistrationManager();
-
-        // all the numOfBookies (5) are going to be in different racks
-        for (int i = 0; i < numOfBookies; i++) {
-            bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
-            StaticDNSResolver.addNodeToRack(bookieAddress.getHostName(), "/rack" + (i));
-            bookieAddresses.add(bookieAddress.toBookieId());
-            regManager.registerBookie(bookieAddress.toBookieId(), false, BookieServiceInfo.EMPTY);
+        try (RegistrationManager regManager = driver.createRegistrationManager()) {
+            // all the numOfBookies (5) are going to be in different racks
+            for (int i = 0; i < numOfBookies; i++) {
+                bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+                StaticDNSResolver.addNodeToRack(bookieAddress.getHostName(), "/rack" + (i));
+                bookieAddresses.add(bookieAddress.toBookieId());
+                regManager.registerBookie(bookieAddress.toBookieId(), false, BookieServiceInfo.EMPTY);
+            }
         }
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
@@ -216,12 +215,12 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         int numOfBookies = 5;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
         List<BookieId> bookieAddresses = new ArrayList<>();
-        RegistrationManager regManager = driver.getRegistrationManager();
-
-        for (int i = 0; i < numOfBookies; i++) {
-            BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
-            bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
+        try (RegistrationManager regManager = driver.createRegistrationManager()) {
+            for (int i = 0; i < numOfBookies; i++) {
+                BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
+                bookieAddresses.add(bookieAddress);
+                regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
+            }
         }
 
         // only three racks
@@ -313,12 +312,12 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         int underreplicatedLedgerRecoveryGracePeriod = timeElapsed ? 1 : 1000;
         int numOfURLedgersElapsedRecoveryGracePeriod = 0;
         List<BookieId> bookieAddresses = new ArrayList<BookieId>();
-        RegistrationManager regManager = driver.getRegistrationManager();
-
-        for (int i = 0; i < numOfBookies; i++) {
-            BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
-            bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
+        try (RegistrationManager regManager = driver.createRegistrationManager()) {
+            for (int i = 0; i < numOfBookies; i++) {
+                BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
+                bookieAddresses.add(bookieAddress);
+                regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
+            }
         }
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
@@ -432,12 +431,12 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         int numOfBookies = 7;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
         List<BookieId> bookieAddresses = new ArrayList<>();
-        RegistrationManager regManager = driver.getRegistrationManager();
-
-        for (int i = 0; i < numOfBookies; i++) {
-            BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
-            bookieAddresses.add(bookieAddress);
-            regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
+        try (RegistrationManager regManager = driver.createRegistrationManager()) {
+            for (int i = 0; i < numOfBookies; i++) {
+                BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
+                bookieAddresses.add(bookieAddress);
+                regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
+            }
         }
 
         // only three racks
@@ -537,19 +536,19 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
         int numOfLedgersSoftlyAdheringToPlacementPolicy = 0;
         List<BookieId> bookieAddresses = new ArrayList<BookieId>();
-        RegistrationManager regManager = driver.getRegistrationManager();
-
-        /*
-         * 6 bookies - 3 zones and 2 uds
-         */
-        for (int i = 0; i < numOfBookies; i++) {
-            BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
-            bookieAddresses.add(bookieAddress.toBookieId());
-            regManager.registerBookie(bookieAddress.toBookieId(), false, BookieServiceInfo.EMPTY);
-            String zone = "/zone" + (i % 3);
-            String upgradeDomain = "/ud" + (i % 2);
-            String networkLocation = zone + upgradeDomain;
-            StaticDNSResolver.addNodeToRack(bookieAddress.getHostName(), networkLocation);
+        try (RegistrationManager regManager = driver.createRegistrationManager()) {
+            /*
+             * 6 bookies - 3 zones and 2 uds
+             */
+            for (int i = 0; i < numOfBookies; i++) {
+                BookieSocketAddress bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+                bookieAddresses.add(bookieAddress.toBookieId());
+                regManager.registerBookie(bookieAddress.toBookieId(), false, BookieServiceInfo.EMPTY);
+                String zone = "/zone" + (i % 3);
+                String upgradeDomain = "/ud" + (i % 2);
+                String networkLocation = zone + upgradeDomain;
+                StaticDNSResolver.addNodeToRack(bookieAddress.getHostName(), networkLocation);
+            }
         }
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();

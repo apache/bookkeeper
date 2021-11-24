@@ -95,8 +95,8 @@ public class DbLedgerStorage implements LedgerStorage {
 
     @Override
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
-            LedgerDirsManager indexDirsManager, StateManager stateManager, CheckpointSource checkpointSource,
-            Checkpointer checkpointer, StatsLogger statsLogger, ByteBufAllocator allocator) throws IOException {
+                           LedgerDirsManager indexDirsManager, StatsLogger statsLogger, ByteBufAllocator allocator)
+            throws IOException {
         long writeCacheMaxSize = getLongVariableOrDefault(conf, WRITE_CACHE_MAX_SIZE_MB,
                 DEFAULT_WRITE_CACHE_MAX_SIZE_MB) * MB;
         long readCacheMaxSize = getLongVariableOrDefault(conf, READ_AHEAD_CACHE_MAX_SIZE_MB,
@@ -127,7 +127,7 @@ public class DbLedgerStorage implements LedgerStorage {
             dirs[0] = ledgerDir.getParentFile();
             LedgerDirsManager ldm = new LedgerDirsManager(conf, dirs, ledgerDirsManager.getDiskChecker(), statsLogger);
             ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm, indexDirsManager,
-                    stateManager, checkpointSource, checkpointer, statsLogger, gcExecutor, perDirectoryWriteCacheSize,
+                    statsLogger, gcExecutor, perDirectoryWriteCacheSize,
                     perDirectoryReadCacheSize));
             ldm.getListeners().forEach(ledgerDirsManager::addLedgerDirsListener);
         }
@@ -144,12 +144,23 @@ public class DbLedgerStorage implements LedgerStorage {
     @VisibleForTesting
     protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-            StateManager stateManager, CheckpointSource checkpointSource, Checkpointer checkpointer,
             StatsLogger statsLogger, ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize)
             throws IOException {
         return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
-                stateManager, checkpointSource, checkpointer, statsLogger, allocator, gcExecutor, writeCacheSize,
-                readCacheSize);
+                                                  statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize);
+    }
+
+    @Override
+    public void setStateManager(StateManager stateManager) {
+        ledgerStorageList.forEach(s -> s.setStateManager(stateManager));
+    }
+    @Override
+    public void setCheckpointSource(CheckpointSource checkpointSource) {
+        ledgerStorageList.forEach(s -> s.setCheckpointSource(checkpointSource));
+    }
+    @Override
+    public void setCheckpointer(Checkpointer checkpointer) {
+        ledgerStorageList.forEach(s -> s.setCheckpointer(checkpointer));
     }
 
     @Override

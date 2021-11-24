@@ -18,32 +18,33 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.util;
+package org.apache.bookkeeper.test;
 
-import java.net.ServerSocket;
+import java.io.File;
+import java.util.LinkedList;
+import java.util.List;
+import org.apache.bookkeeper.util.IOUtils;
+import org.apache.commons.io.FileUtils;
 
 /**
- * Port manager provides free ports to allows multiple instances
- * of the bookkeeper tests to run at once.
+ * Utility class for managing tmp directories in tests.
  */
-public class PortManager {
+public class TmpDirs {
+    private final List<File> tmpDirs = new LinkedList<>(); // retained to delete files
 
-    /**
-     * Return an available port.
-     *
-     * @return available port.
-     */
-    public static synchronized int nextFreePort() {
-        int exceptionCount = 0;
-        while (true) {
-            try (ServerSocket ss = new ServerSocket(0)) {
-                return ss.getLocalPort();
-            } catch (Exception e) {
-                exceptionCount++;
-                if (exceptionCount > 100) {
-                    throw new RuntimeException("Unable to allocate socket port", e);
-                }
-            }
+    public File createNew(String prefix, String suffix) throws Exception {
+        File dir = IOUtils.createTempDir(prefix, suffix);
+        tmpDirs.add(dir);
+        return dir;
+    }
+
+    public void cleanup() throws Exception {
+        for (File f : tmpDirs) {
+            FileUtils.deleteDirectory(f);
         }
+    }
+
+    public List<File> getDirs() {
+        return tmpDirs;
     }
 }

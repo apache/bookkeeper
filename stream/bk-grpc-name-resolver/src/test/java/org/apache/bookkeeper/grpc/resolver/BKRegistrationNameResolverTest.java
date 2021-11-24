@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import lombok.Cleanup;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
@@ -60,6 +61,7 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
     private final BKRegistrationNameResolverProvider resolverProvider;
 
     private MetadataBookieDriver bookieDriver;
+    private RegistrationManager regManager;
     private URI serviceUri;
 
     public BKRegistrationNameResolverTest() {
@@ -84,12 +86,14 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
         ServerConfiguration serverConf = new ServerConfiguration();
         serverConf.setMetadataServiceUri(serviceUri.toString());
         bookieDriver = MetadataDrivers.getBookieDriver(serviceUri);
-        bookieDriver.initialize(serverConf, () -> {}, NullStatsLogger.INSTANCE);
+        bookieDriver.initialize(serverConf, NullStatsLogger.INSTANCE);
+        regManager = bookieDriver.createRegistrationManager();
     }
 
     @After
     @Override
     public void tearDown() throws Exception {
+        regManager.close();
         bookieDriver.close();
 
         super.tearDown();
@@ -103,7 +107,7 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
         for (int i = 0; i < numServers; i++) {
             InetSocketAddress address = new InetSocketAddress("127.0.0.1", 3181 + i);
             addressSet.add(address);
-            bookieDriver.getRegistrationManager().registerBookie(
+            bookieDriver.createRegistrationManager().registerBookie(
                 BookieId.parse("127.0.0.1:" + (3181 + i)), false, BookieServiceInfo.EMPTY
             );
         }
@@ -138,7 +142,7 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
         for (int i = numServers; i < 2 * numServers; i++) {
             InetSocketAddress address = new InetSocketAddress("127.0.0.1", 3181 + i);
             addressSet.add(address);
-            bookieDriver.getRegistrationManager().registerBookie(
+            regManager.registerBookie(
                 BookieId.parse("127.0.0.1:" + (3181 + i)), false, BookieServiceInfo.EMPTY
             );
         }

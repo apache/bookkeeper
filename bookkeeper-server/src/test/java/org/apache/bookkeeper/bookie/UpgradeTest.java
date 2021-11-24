@@ -30,6 +30,7 @@ import io.netty.buffer.Unpooled;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
@@ -41,6 +42,9 @@ import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.PortManager;
@@ -153,55 +157,76 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
             .setLedgerDirNames(new String[] { ledgerDir })
             .setBookiePort(bookiePort);
         Bookie b = null;
-        try {
-            b = new TestBookieImpl(conf);
+
+        try (MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
+                     conf, NullStatsLogger.INSTANCE);
+             RegistrationManager rm = metadataDriver.createRegistrationManager()) {
+            TestBookieImpl.Resources resources = new TestBookieImpl.ResourceBuilder(conf)
+                .withMetadataDriver(metadataDriver).withRegistrationManager(rm).build();
+            b = new TestBookieImpl(resources);
             fail("Shouldn't have been able to start");
-        } catch (BookieException.InvalidCookieException e) {
+        } catch (IOException e) {
             // correct behaviour
             assertTrue("wrong exception", e.getMessage().contains("upgrade needed"));
         }
 
         FileSystemUpgrade.upgrade(conf); // should work fine
-        b = new TestBookieImpl(conf);
-        b.start();
-        b.shutdown();
+        try (MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
+                     conf, NullStatsLogger.INSTANCE);
+             RegistrationManager rm = metadataDriver.createRegistrationManager()) {
+            TestBookieImpl.Resources resources = new TestBookieImpl.ResourceBuilder(conf)
+                .withMetadataDriver(metadataDriver).withRegistrationManager(rm).build();
+            b = new TestBookieImpl(resources);
+            b.start();
+            b.shutdown();
+        }
         b = null;
 
         FileSystemUpgrade.rollback(conf);
-        try {
-            b = new TestBookieImpl(conf);
+        try (MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
+                     conf, NullStatsLogger.INSTANCE);
+             RegistrationManager rm = metadataDriver.createRegistrationManager()) {
+            TestBookieImpl.Resources resources = new TestBookieImpl.ResourceBuilder(conf)
+                .withMetadataDriver(metadataDriver).withRegistrationManager(rm).build();
+            b = new TestBookieImpl(resources);
             fail("Shouldn't have been able to start");
-        } catch (BookieException.InvalidCookieException e) {
+        } catch (IOException e) {
             // correct behaviour
             assertTrue("wrong exception", e.getMessage().contains("upgrade needed"));
         }
 
         FileSystemUpgrade.upgrade(conf);
         FileSystemUpgrade.finalizeUpgrade(conf);
-        b = new TestBookieImpl(conf);
-        b.start();
-        b.shutdown();
+        try (MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
+                     conf, NullStatsLogger.INSTANCE);
+             RegistrationManager rm = metadataDriver.createRegistrationManager()) {
+            TestBookieImpl.Resources resources = new TestBookieImpl.ResourceBuilder(conf)
+                .withMetadataDriver(metadataDriver).withRegistrationManager(rm).build();
+            b = new TestBookieImpl(resources);
+            b.start();
+            b.shutdown();
+        }
         b = null;
     }
 
     @Test
     public void testUpgradeV1toCurrent() throws Exception {
-        File journalDir = initV1JournalDirectory(createTempDir("bookie", "journal"));
-        File ledgerDir = initV1LedgerDirectory(createTempDir("bookie", "ledger"));
+        File journalDir = initV1JournalDirectory(tmpDirs.createNew("bookie", "journal"));
+        File ledgerDir = initV1LedgerDirectory(tmpDirs.createNew("bookie", "ledger"));
         testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
     }
 
     @Test
     public void testUpgradeV2toCurrent() throws Exception {
-        File journalDir = initV2JournalDirectory(createTempDir("bookie", "journal"));
-        File ledgerDir = initV2LedgerDirectory(createTempDir("bookie", "ledger"));
+        File journalDir = initV2JournalDirectory(tmpDirs.createNew("bookie", "journal"));
+        File ledgerDir = initV2LedgerDirectory(tmpDirs.createNew("bookie", "ledger"));
         testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
     }
 
     @Test
     public void testUpgradeCurrent() throws Exception {
-        File journalDir = initV2JournalDirectory(createTempDir("bookie", "journal"));
-        File ledgerDir = initV2LedgerDirectory(createTempDir("bookie", "ledger"));
+        File journalDir = initV2JournalDirectory(tmpDirs.createNew("bookie", "journal"));
+        File ledgerDir = initV2LedgerDirectory(tmpDirs.createNew("bookie", "ledger"));
         testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
 
         // Upgrade again
@@ -211,7 +236,13 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
             .setBookiePort(bookiePort)
             .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         FileSystemUpgrade.upgrade(conf); // should work fine with current directory
-        Bookie b = new TestBookieImpl(conf);
+        MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
+                conf, NullStatsLogger.INSTANCE);
+        RegistrationManager rm = metadataDriver.createRegistrationManager();
+
+        TestBookieImpl.Resources resources = new TestBookieImpl.ResourceBuilder(conf)
+                .withMetadataDriver(metadataDriver).withRegistrationManager(rm).build();
+        Bookie b = new TestBookieImpl(resources);
         b.start();
         b.shutdown();
     }
