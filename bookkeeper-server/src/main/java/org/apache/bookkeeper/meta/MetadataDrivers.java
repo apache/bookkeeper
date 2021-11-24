@@ -342,7 +342,7 @@ public final class MetadataDrivers {
         try (MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
             URI.create(conf.getMetadataServiceUri())
         )) {
-            driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+            driver.initialize(conf, NullStatsLogger.INSTANCE);
             try {
                 return function.apply(driver);
             } catch (Exception uee) {
@@ -369,7 +369,12 @@ public final class MetadataDrivers {
     public static <T> T runFunctionWithRegistrationManager(ServerConfiguration conf,
                                                            Function<RegistrationManager, T> function)
             throws MetadataException, ExecutionException {
-        return runFunctionWithMetadataBookieDriver(conf, driver -> function.apply(driver.getRegistrationManager()));
+        return runFunctionWithMetadataBookieDriver(
+                conf, driver -> {
+                    try (RegistrationManager rm = driver.createRegistrationManager()) {
+                        return function.apply(rm);
+                    }
+                });
     }
 
     /**

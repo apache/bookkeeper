@@ -20,12 +20,10 @@ package org.apache.bookkeeper.meta.zk;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
@@ -49,12 +47,9 @@ public class ZKMetadataBookieDriver
     }
 
     ServerConfiguration serverConf;
-    RegistrationManager regManager;
-    RegistrationListener listener;
 
     @Override
     public synchronized MetadataBookieDriver initialize(ServerConfiguration conf,
-                                                        RegistrationListener listener,
                                                         StatsLogger statsLogger)
             throws MetadataException {
         super.initialize(
@@ -64,38 +59,17 @@ public class ZKMetadataBookieDriver
                         conf.getZkRetryBackoffMaxMs(), Integer.MAX_VALUE),
             Optional.empty());
         this.serverConf = conf;
-        this.listener = listener;
         this.statsLogger = statsLogger;
         return this;
     }
 
-    @VisibleForTesting
-    public synchronized void setRegManager(RegistrationManager regManager) {
-        this.regManager = regManager;
-    }
-
     @Override
-    public synchronized RegistrationManager getRegistrationManager() {
-        if (null == regManager) {
-            regManager = new ZKRegistrationManager(
-                serverConf,
-                zk,
-                listener
-            );
-        }
-        return regManager;
+    public synchronized RegistrationManager createRegistrationManager() {
+        return new ZKRegistrationManager(serverConf, zk);
     }
 
     @Override
     public void close() {
-        RegistrationManager rmToClose;
-        synchronized (this) {
-            rmToClose = regManager;
-            regManager = null;
-        }
-        if (null != rmToClose) {
-            rmToClose.close();
-        }
         super.close();
     }
 }

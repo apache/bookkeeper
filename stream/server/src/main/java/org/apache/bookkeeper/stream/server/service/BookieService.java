@@ -13,6 +13,12 @@
  */
 package org.apache.bookkeeper.stream.server.service;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
+
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -22,14 +28,27 @@ import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieImpl;
+import org.apache.bookkeeper.bookie.BookieResources;
+import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerStorage;
+import org.apache.bookkeeper.bookie.LegacyCookieValidation;
+import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.server.Main;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.server.conf.BookieConfiguration;
+import org.apache.bookkeeper.util.DiskChecker;
 
 /**
  * A {@link org.apache.bookkeeper.common.component.LifecycleComponent} that runs
@@ -42,12 +61,18 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
     @Getter
     private final ServerConfiguration serverConf;
     private BookieServer bs;
+    private MetadataBookieDriver metadataDriver;
+    private RegistrationManager rm;
+    private LedgerManagerFactory lmFactory;
+    private LedgerManager ledgerManager;
+    private Supplier<BookieServiceInfo> bookieServiceInfoProvider;
 
     public BookieService(BookieConfiguration conf, StatsLogger statsLogger,
                          Supplier<BookieServiceInfo> bookieServiceInfoProvider) throws Exception {
         super("bookie-server", conf, statsLogger);
         this.serverConf = new ServerConfiguration();
         this.serverConf.loadConf(conf.getUnderlyingConf());
+        this.bookieServiceInfoProvider = bookieServiceInfoProvider;
         String hello = String.format(
             "Hello, I'm your bookie, bookieId is %1$s, listening on port %2$s. Metadata service uri is %3$s."
                 + " Journals are in %4$s. Ledgers are stored in %5$s.",
@@ -56,8 +81,44 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
             serverConf.getMetadataServiceUriUnchecked(),
             Arrays.asList(serverConf.getJournalDirNames()),
             Arrays.asList(serverConf.getLedgerDirNames()));
+
+        ByteBufAllocator allocator = BookieResources.createAllocator(serverConf);
+
+        this.metadataDriver = BookieResources.createMetadataDriver(
+                serverConf, statsLogger);
+        StatsLogger bookieStats = statsLogger.scope(BOOKIE_SCOPE);
+        this.rm = this.metadataDriver.createRegistrationManager();
+        this.lmFactory = this.metadataDriver.getLedgerManagerFactory();
+        this.ledgerManager = this.lmFactory.newLedgerManager();
+
+        DiskChecker diskChecker = BookieResources.createDiskChecker(serverConf);
+        LedgerDirsManager ledgerDirsManager = BookieResources.createLedgerDirsManager(
+                serverConf, diskChecker, bookieStats.scope(LD_LEDGER_SCOPE));
+        LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
+                serverConf, diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
+        LedgerStorage storage = BookieResources.createLedgerStorage(
+                serverConf, ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
+
+        LegacyCookieValidation cookieValidation = new LegacyCookieValidation(serverConf, rm);
+        cookieValidation.checkCookies(Main.storageDirectoriesFromConf(serverConf));
+
+        Bookie bookie;
+        if (serverConf.isForceReadOnlyBookie()) {
+            bookie = new ReadOnlyBookie(serverConf, rm, storage, diskChecker,
+                    ledgerDirsManager, indexDirsManager,
+                    statsLogger.scope(BOOKIE_SCOPE),
+                    allocator, bookieServiceInfoProvider);
+        } else {
+            bookie = new BookieImpl(serverConf, rm, storage, diskChecker,
+                    ledgerDirsManager, indexDirsManager,
+                    statsLogger.scope(BOOKIE_SCOPE),
+                    allocator, bookieServiceInfoProvider);
+        }
+
+        this.bs = new BookieServer(serverConf, bookie,
+                statsLogger, allocator);
+
         log.info(hello);
-        this.bs = new BookieServer(serverConf, statsLogger, bookieServiceInfoProvider);
     }
 
     @Override
@@ -74,6 +135,26 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
     protected void doStop() {
         if (null != bs) {
             bs.shutdown();
+        }
+        if (rm != null) {
+            rm.close();
+        }
+        if (ledgerManager != null) {
+            try {
+                ledgerManager.close();
+            } catch (Exception e) {
+                log.error("Error shutting down ledger manager", e);
+            }
+        }
+        if (lmFactory != null) {
+            try {
+                lmFactory.close();
+            } catch (Exception e) {
+                log.error("Error shutting down ledger manager factory", e);
+            }
+        }
+        if (null != metadataDriver) {
+            metadataDriver.close();
         }
     }
 

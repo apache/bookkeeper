@@ -23,39 +23,56 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher.EndpointInfo;
-import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * A {@link ServerLifecycleComponent} that starts the core bookie server.
  */
-@Slf4j
-public class BookieService extends ServerLifecycleComponent {
 
+public class BookieService extends ServerLifecycleComponent {
+    private static final Logger log = LoggerFactory.getLogger(BookieService.class);
     public static final String NAME = "bookie-server";
 
     private final BookieServer server;
+    private final ByteBufAllocatorWithOomHandler allocator;
 
     public BookieService(BookieConfiguration conf,
+                         Bookie bookie,
                          StatsLogger statsLogger,
-                         Supplier<BookieServiceInfo> bookieServiceInfoProvider)
+                         ByteBufAllocatorWithOomHandler allocator)
             throws Exception {
         super(NAME, conf, statsLogger);
-        this.server = new BookieServer(conf.getServerConf(), statsLogger, bookieServiceInfoProvider);
+        this.server = new BookieServer(conf.getServerConf(),
+                                       bookie,
+                                       statsLogger,
+                                       allocator);
+        this.allocator = allocator;
     }
 
     @Override
     public void setExceptionHandler(UncaughtExceptionHandler handler) {
         super.setExceptionHandler(handler);
         server.setExceptionHandler(handler);
+        allocator.setOomHandler((ex) -> {
+                try {
+                    log.error("Unable to allocate memory, exiting bookie", ex);
+                } finally {
+                    if (uncaughtExceptionHandler != null) {
+                        uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), ex);
+                    }
+                }
+            });
     }
 
     public BookieServer getServer() {

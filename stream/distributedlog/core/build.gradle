@@ -47,6 +47,7 @@ dependencies {
     testRuntimeOnly depLibs.snappy
 
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
+    testImplementation project(path: ':bookkeeper-server', configuration: 'testArtifacts')
     testImplementation project(path: ':stream:distributedlog:common', configuration: 'testArtifacts')
     testImplementation depLibs.junit
     testImplementation depLibs.mockito

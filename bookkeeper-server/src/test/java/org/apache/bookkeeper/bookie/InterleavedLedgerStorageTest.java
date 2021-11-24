@@ -161,8 +161,9 @@ public class InterleavedLedgerStorageTest {
                 conf, ledgerDirsManager, null, NullStatsLogger.INSTANCE);
         interleavedStorage.initializeWithEntryLogger(
                 conf, null, ledgerDirsManager, ledgerDirsManager,
-                null, checkpointSource, checkpointer, entryLogger,
-                statsProvider.getStatsLogger(BOOKIE_SCOPE));
+                entryLogger, statsProvider.getStatsLogger(BOOKIE_SCOPE));
+        interleavedStorage.setCheckpointer(checkpointer);
+        interleavedStorage.setCheckpointSource(checkpointSource);
 
         // Insert some ledger & entries in the interleaved storage
         for (long entryId = 0; entryId < numWrites; entryId++) {

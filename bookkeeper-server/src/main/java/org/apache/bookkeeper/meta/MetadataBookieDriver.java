@@ -20,7 +20,6 @@ package org.apache.bookkeeper.meta;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
 
@@ -33,12 +32,10 @@ public interface MetadataBookieDriver extends AutoCloseable {
      * Initialize the metadata driver.
      *
      * @param conf configuration
-     * @param listener registration listener listening on registration state changes.
      * @param statsLogger stats logger
      * @return metadata driver
      */
     MetadataBookieDriver initialize(ServerConfiguration conf,
-                                    RegistrationListener listener,
                                     StatsLogger statsLogger)
         throws MetadataException;
 
@@ -50,11 +47,11 @@ public interface MetadataBookieDriver extends AutoCloseable {
     String getScheme();
 
     /**
-     * Return the registration manager used for registering/unregistering bookies.
+     * Create the registration manager used for registering/unregistering bookies.
      *
      * @return the registration manager used for registering/unregistering bookies.
      */
-    RegistrationManager getRegistrationManager();
+    RegistrationManager createRegistrationManager();
 
     /**
      * Return the ledger manager factory used for accessing ledger metadata.

@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
  * Test the bookie journal.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(JournalChannel.class)
+@PrepareForTest({JournalChannel.class, FileChannelProvider.class})
 public class BookieJournalTest {
     private static final Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
 
@@ -821,13 +821,17 @@ public class BookieJournalTest {
                 .setMetadataServiceUri(null);
 
         Journal.JournalScanner journalScanner = new DummyJournalScan();
+        BookieFileChannel bookieFileChannel = PowerMockito.mock(BookieFileChannel.class);
         FileChannel fileChannel = PowerMockito.mock(FileChannel.class);
+        FileChannelProvider fileChannelProvider = PowerMockito.mock(FileChannelProvider.class);
 
         PowerMockito.when(fileChannel.position(Mockito.anyLong()))
                 .thenThrow(new IOException());
 
-        PowerMockito.mockStatic(JournalChannel.class);
-        PowerMockito.when(JournalChannel.openFileChannel(Mockito.any(RandomAccessFile.class))).thenReturn(fileChannel);
+        PowerMockito.mockStatic(FileChannelProvider.class);
+        PowerMockito.when(FileChannelProvider.newProvider(Mockito.any())).thenReturn(fileChannelProvider);
+        Mockito.when(fileChannelProvider.open(Mockito.any(), Mockito.any())).thenReturn(bookieFileChannel);
+        Mockito.when(bookieFileChannel.getFileChannel()).thenReturn(fileChannel);
 
         BookieImpl b = new TestBookieImpl(conf);
 

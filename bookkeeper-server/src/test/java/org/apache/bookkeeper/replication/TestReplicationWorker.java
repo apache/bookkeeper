@@ -133,7 +133,6 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             URI.create(baseConf.getMetadataServiceUri()));
         this.driver.initialize(
             baseConf,
-            () -> {},
             NullStatsLogger.INSTANCE);
         // initialize urReplicationManager
         mFactory = driver.getLedgerManagerFactory();

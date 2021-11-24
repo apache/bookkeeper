@@ -18,13 +18,11 @@
  */
 package org.apache.bookkeeper.meta.zk;
 
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -33,6 +31,7 @@ import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,41 +57,37 @@ public class ZKMetadataBookieDriverTest extends ZKMetadataDriverTestBase {
         driver = new ZKMetadataBookieDriver();
     }
 
+    @After
+    public void teardown() {
+        driver.close();
+    }
+
     @Test
     public void testGetRegManager() throws Exception {
         RegistrationListener listener = mock(RegistrationListener.class);
-        driver.initialize(conf, listener, NullStatsLogger.INSTANCE);
+        driver.initialize(conf, NullStatsLogger.INSTANCE);
 
         assertSame(conf, driver.serverConf);
-        assertSame(listener, driver.listener);
-        assertNull(driver.regManager);
 
         ZKRegistrationManager mockRegManager = PowerMockito.mock(ZKRegistrationManager.class);
 
         PowerMockito.whenNew(ZKRegistrationManager.class)
             .withParameterTypes(
                 ServerConfiguration.class,
-                ZooKeeper.class,
-                RegistrationListener.class)
+                ZooKeeper.class)
             .withArguments(
                 any(ServerConfiguration.class),
-                any(ZooKeeper.class),
-                any(RegistrationListener.class))
+                any(ZooKeeper.class))
             .thenReturn(mockRegManager);
 
-        RegistrationManager manager = driver.getRegistrationManager();
-        assertSame(mockRegManager, manager);
-        assertSame(mockRegManager, driver.regManager);
+        try (RegistrationManager manager = driver.createRegistrationManager()) {
+            assertSame(mockRegManager, manager);
 
-        PowerMockito.verifyNew(ZKRegistrationManager.class, times(1))
-            .withArguments(
-                same(conf),
-                same(mockZkc),
-                same(listener));
-
-        driver.close();
-        verify(mockRegManager, times(1)).close();
-        assertNull(driver.regManager);
+            PowerMockito.verifyNew(ZKRegistrationManager.class, times(1))
+                    .withArguments(
+                            same(conf),
+                            same(mockZkc));
+        }
     }
 
 }

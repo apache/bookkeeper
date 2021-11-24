@@ -114,9 +114,8 @@ class EtcdRegistrationManager implements RegistrationManager {
             scope,
             new EtcdBookieRegister(
                 client.getLeaseClient(),
-                ttlSeconds,
-                listener
-            ).start(),
+                ttlSeconds
+            ).addRegistrationListener(listener).start(),
             true);
     }
 
@@ -521,6 +520,11 @@ class EtcdRegistrationManager implements RegistrationManager {
     @Override
     public boolean nukeExistingCluster() throws Exception {
         return nukeExistingCluster(kvClient, scope);
+    }
+
+    @Override
+    public void addRegistrationListener(RegistrationListener listener) {
+        bkRegister.addRegistrationListener(listener);
     }
 
     static boolean nukeExistingCluster(KV kvClient, String scope) throws Exception {

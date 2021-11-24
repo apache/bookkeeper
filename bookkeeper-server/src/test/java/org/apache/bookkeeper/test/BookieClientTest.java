@@ -38,6 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
@@ -90,7 +91,9 @@ public class BookieClientTest {
             .setLedgerDirNames(new String[] { tmpDir.getPath() })
             .setMetadataServiceUri(null);
 
-        bs = new BookieServer(conf);
+        bs = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
         bs.start();
         eventLoopGroup = new NioEventLoopGroup();
         executor = OrderedExecutor.newBuilder()

@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
@@ -40,27 +39,23 @@ public class EtcdMetadataBookieDriver extends EtcdMetadataDriverBase implements 
     ServerConfiguration conf;
     EtcdBookieRegister bkRegister;
     RegistrationManager regMgr;
-    RegistrationListener listener;
 
     @Override
     public synchronized MetadataBookieDriver initialize(ServerConfiguration conf,
-                                                        RegistrationListener listener,
                                                         StatsLogger statsLogger)
             throws MetadataException {
         super.initialize(conf, statsLogger);
         this.conf = conf;
-        this.listener = listener;
         this.statsLogger = statsLogger;
         return null;
     }
 
     @Override
-    public synchronized RegistrationManager getRegistrationManager() {
+    public synchronized RegistrationManager createRegistrationManager() {
         if (null == bkRegister) {
             bkRegister = new EtcdBookieRegister(
                 client.getLeaseClient(),
-                TimeUnit.MILLISECONDS.toSeconds(conf.getZkTimeout()),
-                listener
+                TimeUnit.MILLISECONDS.toSeconds(conf.getZkTimeout())
             ).start();
         }
         if (null == regMgr) {

@@ -174,7 +174,7 @@ public class ReadJournalCommand extends BookieCommand<ReadJournalCommand.ReadJou
         return true;
     }
 
-    private synchronized List<Journal> getJournals(ServerConfiguration conf) {
+    private synchronized List<Journal> getJournals(ServerConfiguration conf) throws IOException {
         if (null == journals) {
             journals = Lists.newArrayListWithCapacity(conf.getJournalDirs().length);
             int idx = 0;

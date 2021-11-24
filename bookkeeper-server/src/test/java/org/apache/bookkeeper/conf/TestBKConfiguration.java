@@ -28,6 +28,7 @@ import java.util.Enumeration;
 
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
+import org.apache.bookkeeper.util.PortManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,8 +52,8 @@ public class TestBKConfiguration {
         confReturn.setJournalFlushWhenQueueEmpty(true);
         // enable journal format version
         confReturn.setJournalFormatVersionToWrite(5);
-        confReturn.setAllowEphemeralPorts(true);
-        confReturn.setBookiePort(0);
+        confReturn.setAllowEphemeralPorts(false);
+        confReturn.setBookiePort(PortManager.nextFreePort());
         confReturn.setGcWaitTime(1000);
         confReturn.setDiskUsageThreshold(0.999f);
         confReturn.setDiskUsageWarnThreshold(0.99f);

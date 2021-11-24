@@ -35,7 +35,6 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,13 +50,13 @@ public class ListLedgerService implements HttpEndpointService {
     static final Logger LOG = LoggerFactory.getLogger(ListLedgerService.class);
 
     protected ServerConfiguration conf;
-    protected BookieServer bookieServer;
+    protected LedgerManagerFactory ledgerManagerFactory;
     private final LedgerMetadataSerDe serDe;
 
-    public ListLedgerService(ServerConfiguration conf, BookieServer bookieServer) {
+    public ListLedgerService(ServerConfiguration conf, LedgerManagerFactory ledgerManagerFactory) {
         checkNotNull(conf);
         this.conf = conf;
-        this.bookieServer = bookieServer;
+        this.ledgerManagerFactory = ledgerManagerFactory;
         this.serDe = new LedgerMetadataSerDe();
 
     }
@@ -96,8 +95,7 @@ public class ListLedgerService implements HttpEndpointService {
             int pageIndex = (printMeta && params.containsKey("page"))
                 ? Integer.parseInt(params.get("page")) : -1;
 
-            LedgerManagerFactory mFactory = bookieServer.getBookie().getLedgerManagerFactory();
-            LedgerManager manager = mFactory.newLedgerManager();
+            LedgerManager manager = ledgerManagerFactory.newLedgerManager();
             LedgerManager.LedgerRangeIterator iter = manager.getLedgerRanges(0);
 
             // output <ledgerId: ledgerMetadata>

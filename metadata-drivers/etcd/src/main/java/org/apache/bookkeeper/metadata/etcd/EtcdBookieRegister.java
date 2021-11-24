@@ -53,7 +53,7 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
     private final Lease leaseClient;
     private final long ttlSeconds;
     private final ScheduledExecutorService executor;
-    private final RegistrationListener regListener;
+    private RegistrationListener regListener;
     private volatile CompletableFuture<Long> leaseFuture = new CompletableFuture<>();
     private volatile CompletableFuture<Void> keepAliveFuture = new CompletableFuture<>();
 
@@ -65,15 +65,18 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
     private Future<?> runFuture = null;
 
     EtcdBookieRegister(Lease leaseClient,
-                       long ttlSeconds,
-                       RegistrationListener regListener) {
-        this.regListener = regListener;
+                       long ttlSeconds) {
         this.leaseClient = leaseClient;
         this.ttlSeconds = ttlSeconds;
         this.executor = Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder()
                 .setNameFormat("bookie-etcd-keepalive-thread")
                 .build());
+    }
+
+    public EtcdBookieRegister addRegistrationListener(RegistrationListener regListener) {
+        this.regListener = regListener;
+        return this;
     }
 
     long getTtlSeconds() {

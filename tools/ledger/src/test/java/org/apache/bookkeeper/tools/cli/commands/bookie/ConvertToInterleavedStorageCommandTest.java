@@ -39,8 +39,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 import java.util.stream.LongStream;
-import org.apache.bookkeeper.bookie.CheckpointSource;
-import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -145,12 +143,10 @@ public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBas
             verifyNew(InterleavedLedgerStorage.class, times(1)).withNoArguments();
 
             verify(dbStorage, times(1)).initialize(eq(conf), eq(null), any(LedgerDirsManager.class),
-                any(LedgerDirsManager.class), eq(null), any(CheckpointSource.class),
-                any(Checkpointer.class), eq(NullStatsLogger.INSTANCE), eq(PooledByteBufAllocator.DEFAULT));
+                any(LedgerDirsManager.class), eq(NullStatsLogger.INSTANCE), eq(PooledByteBufAllocator.DEFAULT));
             verify(interleavedLedgerStorage, times(1))
                 .initialize(eq(conf), eq(null), any(LedgerDirsManager.class),
-                    any(LedgerDirsManager.class), eq(null), any(CheckpointSource.class),
-                    any(Checkpointer.class), eq(NullStatsLogger.INSTANCE), eq(PooledByteBufAllocator.DEFAULT));
+                    any(LedgerDirsManager.class), eq(NullStatsLogger.INSTANCE), eq(PooledByteBufAllocator.DEFAULT));
             verify(dbStorage, times(1)).getActiveLedgersInRange(anyLong(), anyLong());
             verify(dbStorage, times(10)).readMasterKey(anyLong());
             verify(interleavedLedgerStorage, times(10)).setMasterKey(anyLong(), any());

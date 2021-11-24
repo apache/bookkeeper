@@ -89,10 +89,10 @@ public class InterleavedStorageRegenerateIndexOp {
     public void initiate(boolean dryRun) throws IOException {
         LOG.info("Starting index rebuilding");
 
-        DiskChecker diskChecker = BookieImpl.createDiskChecker(conf);
-        LedgerDirsManager ledgerDirsManager = BookieImpl.createLedgerDirsManager(
+        DiskChecker diskChecker = BookieResources.createDiskChecker(conf);
+        LedgerDirsManager ledgerDirsManager = BookieResources.createLedgerDirsManager(
                 conf, diskChecker, NullStatsLogger.INSTANCE);
-        LedgerDirsManager indexDirsManager = BookieImpl.createIndexDirsManager(
+        LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
                 conf, diskChecker,  NullStatsLogger.INSTANCE, ledgerDirsManager);
         EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
         final LedgerCache ledgerCache;

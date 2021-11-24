@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
@@ -42,7 +41,6 @@ import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.zookeeper.KeeperException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -82,7 +80,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         final boolean stallOrRespondNull;
 
         public FakeBookie(ServerConfiguration conf, long expectedEntryToFail, boolean stallOrRespondNull)
-                throws InterruptedException, BookieException, KeeperException, IOException {
+                throws Exception {
             super(conf);
             this.expectedEntryToFail = expectedEntryToFail;
             this.stallOrRespondNull = stallOrRespondNull;
@@ -180,7 +178,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
 
         public SlowReadLacBookie(ServerConfiguration conf,
                                  long lacToSlowRead, CountDownLatch readLatch)
-                throws IOException, KeeperException, InterruptedException, BookieException {
+                throws Exception {
             super(conf);
             this.lacToSlowRead = lacToSlowRead;
             this.readLatch = readLatch;

@@ -181,7 +181,7 @@ public class LedgersIndexRebuildOp {
         }
     }
 
-    private List<Journal> getJournals(ServerConfiguration conf) {
+    private List<Journal> getJournals(ServerConfiguration conf) throws IOException {
         List<Journal> journals = Lists.newArrayListWithCapacity(conf.getJournalDirs().length);
         int idx = 0;
         for (File journalDir : conf.getJournalDirs()) {

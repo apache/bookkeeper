@@ -88,8 +88,10 @@ public class LocationsIndexRebuildTest {
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
         DbLedgerStorage ledgerStorage = new DbLedgerStorage();
-        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, null, checkpointSource, checkpointer,
-                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                                 NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        ledgerStorage.setCheckpointer(checkpointer);
+        ledgerStorage.setCheckpointSource(checkpointSource);
 
         // Insert some ledger & entries in the storage
         for (long ledgerId = 0; ledgerId < 5; ledgerId++) {
@@ -118,8 +120,10 @@ public class LocationsIndexRebuildTest {
 
         // Verify that db index has the same entries
         ledgerStorage = new DbLedgerStorage();
-        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, null, checkpointSource, checkpointer,
-                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                                 NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        ledgerStorage.setCheckpointSource(checkpointSource);
+        ledgerStorage.setCheckpointer(checkpointer);
 
         Set<Long> ledgers = Sets.newTreeSet(ledgerStorage.getActiveLedgersInRange(0, Long.MAX_VALUE));
         Assert.assertEquals(Sets.newTreeSet(Lists.newArrayList(0L, 1L, 2L, 3L, 4L)), ledgers);

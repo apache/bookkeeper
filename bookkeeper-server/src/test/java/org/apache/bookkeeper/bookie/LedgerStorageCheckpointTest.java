@@ -23,6 +23,8 @@ package org.apache.bookkeeper.bookie;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 
+import io.netty.buffer.PooledByteBufAllocator;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -53,6 +55,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.PortManager;
@@ -217,7 +220,9 @@ public class LedgerStorageCheckpointTest {
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
         // we know there is only one ledgerDir
         File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
-        BookieServer server = new BookieServer(conf);
+        BookieServer server = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -346,7 +351,9 @@ public class LedgerStorageCheckpointTest {
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
         // we know there is only one ledgerDir
         File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
-        BookieServer server = new BookieServer(conf);
+        BookieServer server = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -424,7 +431,9 @@ public class LedgerStorageCheckpointTest {
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
         // we know there is only one ledgerDir
         File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
-        BookieServer server = new BookieServer(conf);
+        BookieServer server = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -487,7 +496,9 @@ public class LedgerStorageCheckpointTest {
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
         // we know there is only one ledgerDir
         File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
-        BookieServer server = new BookieServer(conf);
+        BookieServer server = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -591,7 +602,9 @@ public class LedgerStorageCheckpointTest {
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
         // we know there is only one ledgerDir
         File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
-        BookieServer server = new BookieServer(conf);
+        BookieServer server = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -668,7 +681,9 @@ public class LedgerStorageCheckpointTest {
 
         // now we are restarting BookieServer
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
-        server = new BookieServer(conf);
+        server = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
         server.start();
         BookKeeper newBKClient = new BookKeeper(clientConf);
         // since Bookie checkpointed successfully before shutdown/crash,

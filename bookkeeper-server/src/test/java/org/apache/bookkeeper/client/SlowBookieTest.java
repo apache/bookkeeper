@@ -311,7 +311,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         BookKeeper bkc = new BookKeeper(conf);
 
         byte[] pwd = new byte[] {};
-        final LedgerHandle lh = bkc.createLedger(4, 3, 1, BookKeeper.DigestType.CRC32, pwd);
+        final LedgerHandle lh = bkc.createLedger(4, 3, 2, BookKeeper.DigestType.CRC32, pwd);
         final AtomicBoolean finished = new AtomicBoolean(false);
         final AtomicBoolean failTest = new AtomicBoolean(false);
         Thread t = new Thread() {

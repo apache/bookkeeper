@@ -612,6 +612,8 @@ public class LedgerCacheTest {
         final AtomicLong injectFlushExceptionForLedger;
         final AtomicInteger numOfTimesFlushSnapshotCalled = new AtomicInteger(0);
         static final long FORALLLEDGERS = -1;
+        ServerConfiguration conf;
+        StatsLogger statsLogger;
 
         public FlushTestSortedLedgerStorage() {
             super();
@@ -642,9 +644,6 @@ public class LedgerCacheTest {
                                LedgerManager ledgerManager,
                                LedgerDirsManager ledgerDirsManager,
                                LedgerDirsManager indexDirsManager,
-                               StateManager stateManager,
-                               CheckpointSource checkpointSource,
-                               Checkpointer checkpointer,
                                StatsLogger statsLogger,
                                ByteBufAllocator allocator) throws IOException {
             super.initialize(
@@ -652,11 +651,15 @@ public class LedgerCacheTest {
                 ledgerManager,
                 ledgerDirsManager,
                 indexDirsManager,
-                stateManager,
-                checkpointSource,
-                checkpointer,
                 statsLogger,
                 allocator);
+            this.conf = conf;
+            this.statsLogger = statsLogger;
+        }
+
+        @Override
+        public void setCheckpointSource(CheckpointSource checkpointSource) {
+            super.setCheckpointSource(checkpointSource);
             if (this.memTable instanceof EntryMemTableWithParallelFlusher) {
                 this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger) {
                     @Override

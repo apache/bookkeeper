@@ -301,11 +301,11 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                     lm,
                     dirManager,
                     dirManager,
-                    null,
-                    cp,
-                    Checkpointer.NULL,
                     NullStatsLogger.INSTANCE,
                     UnpooledByteBufAllocator.DEFAULT);
+                storage.setCheckpointSource(cp);
+                storage.setCheckpointer(Checkpointer.NULL);
+
                 storage.start();
                 long startTime = System.currentTimeMillis();
                 storage.gcThread.enableForceGC();
@@ -450,7 +450,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
 
         // entry logs ([0,1,2].log) should be compacted.
-        for (File ledgerDirectory : tmpDirs) {
+        for (File ledgerDirectory : tmpDirs.getDirs()) {
             assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
                             + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
         }
@@ -524,7 +524,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
 
         // entry logs ([0,1,2].log) should be compacted.
-        for (File ledgerDirectory : tmpDirs) {
+        for (File ledgerDirectory : tmpDirs.getDirs()) {
             assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
                     + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
         }
@@ -592,26 +592,26 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         //                 E3 (flushed): Entry log should have been garbage collected.
         //                 E4 (un-flushed): Entry log should exist as un-flushed entry logs are not considered for GC.
         assertTrue("Not found entry log files [0, 1, 4].log that should not have been compacted in: "
-                + tmpDirs.get(0), TestUtils.hasAllLogFiles(tmpDirs.get(0), 0, 1, 4));
+                + tmpDirs.getDirs().get(0), TestUtils.hasAllLogFiles(tmpDirs.getDirs().get(0), 0, 1, 4));
         assertTrue("Found entry log files [2, 3].log that should have been compacted in ledgerDirectory: "
-                + tmpDirs.get(0), TestUtils.hasNoneLogFiles(tmpDirs.get(0), 2, 3));
+                + tmpDirs.getDirs().get(0), TestUtils.hasNoneLogFiles(tmpDirs.getDirs().get(0), 2, 3));
 
         // Now, let's mark E1 as flushed, as its ledger L1 has been deleted already. In this case, the GC algorithm
         // should consider it for deletion.
         getGCThread().entryLogger.recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(1L);
         getGCThread().triggerGC(true, false, false).get();
         assertTrue("Found entry log file 1.log that should have been compacted in ledgerDirectory: "
-                + tmpDirs.get(0), TestUtils.hasNoneLogFiles(tmpDirs.get(0), 1));
+                + tmpDirs.getDirs().get(0), TestUtils.hasNoneLogFiles(tmpDirs.getDirs().get(0), 1));
 
         // Once removed the ledger L0, then deleting E0 is fine (only if it has been flushed).
         bkc.deleteLedger(lhs[0].getId());
         getGCThread().triggerGC(true, false, false).get();
         assertTrue("Found entry log file 0.log that should not have been compacted in ledgerDirectory: "
-                + tmpDirs.get(0), TestUtils.hasAllLogFiles(tmpDirs.get(0), 0));
+                + tmpDirs.getDirs().get(0), TestUtils.hasAllLogFiles(tmpDirs.getDirs().get(0), 0));
         getGCThread().entryLogger.recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(0L);
         getGCThread().triggerGC(true, false, false).get();
         assertTrue("Found entry log file 0.log that should have been compacted in ledgerDirectory: "
-                + tmpDirs.get(0), TestUtils.hasNoneLogFiles(tmpDirs.get(0), 0));
+                + tmpDirs.getDirs().get(0), TestUtils.hasNoneLogFiles(tmpDirs.getDirs().get(0), 0));
     }
 
     @Test
@@ -683,9 +683,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // We need at least 2 ledger dirs because compaction will flush ledger cache, and will
         // trigger relocateIndexFileAndFlushHeader. If we only have one ledger dir, compaction will always fail
         // when there's no writeable ledger dir.
-        File ledgerDir1 = createTempDir("ledger", "test1");
-        File ledgerDir2 = createTempDir("ledger", "test2");
-        File journalDir = createTempDir("journal", "test");
+        File ledgerDir1 = tmpDirs.createNew("ledger", "test1");
+        File ledgerDir2 = tmpDirs.createNew("ledger", "test2");
+        File journalDir = tmpDirs.createNew("journal", "test");
         String[] ledgerDirNames = new String[]{
             ledgerDir1.getPath(),
             ledgerDir2.getPath()
@@ -843,7 +843,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         assertTrue(getGCThread().lastMajorCompactionTime > lastMajorCompactionTime);
 
         // entry logs ([0,1,2].log) should be compacted
-        for (File ledgerDirectory : tmpDirs) {
+        for (File ledgerDirectory : tmpDirs.getDirs()) {
             assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
                     + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
         }
@@ -1122,7 +1122,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         final Set<Long> ledgers = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
         LedgerManager manager = getLedgerManager(ledgers);
 
-        File tmpDir = createTempDir("bkTest", ".dir");
+        File tmpDir = tmpDirs.createNew("bkTest", ".dir");
         File curDir = BookieImpl.getCurrentDirectory(tmpDir);
         BookieImpl.checkDirectoryStructure(curDir);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
@@ -1170,11 +1170,11 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             manager,
             dirs,
             dirs,
-            null,
-            checkpointSource,
-            Checkpointer.NULL,
             NullStatsLogger.INSTANCE,
             UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(Checkpointer.NULL);
+
         ledgers.add(1L);
         ledgers.add(2L);
         ledgers.add(3L);
@@ -1196,11 +1196,12 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.initialize(
             conf,
             manager,
-            dirs, dirs, null,
-            checkpointSource,
-            Checkpointer.NULL,
+            dirs, dirs,
             NullStatsLogger.INSTANCE,
             UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(Checkpointer.NULL);
+
         storage.start();
         for (int i = 0; i < 10; i++) {
             if (!log0.exists()) {
@@ -1222,11 +1223,11 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             manager,
             dirs,
             dirs,
-            null,
-            checkpointSource,
-            Checkpointer.NULL,
             NullStatsLogger.INSTANCE,
             UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(Checkpointer.NULL);
+
         storage.getEntry(1, 1); // entry should exist
     }
 
@@ -1306,7 +1307,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     public void testWhenNoLogsToCompact() throws Exception {
         tearDown(); // I dont want the test infrastructure
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        File tmpDir = createTempDir("bkTest", ".dir");
+        File tmpDir = tmpDirs.createNew("bkTest", ".dir");
         File curDir = BookieImpl.getCurrentDirectory(tmpDir);
         BookieImpl.checkDirectoryStructure(curDir);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
@@ -1334,11 +1335,10 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             manager,
             dirs,
             dirs,
-            null,
-            checkpointSource,
-            Checkpointer.NULL,
             NullStatsLogger.INSTANCE,
             UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(Checkpointer.NULL);
 
         double threshold = 0.1;
         long limit = 0;
@@ -1358,7 +1358,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                 return c;
             });
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        File tmpDir = createTempDir("bkTest", ".dir");
+        File tmpDir = tmpDirs.createNew("bkTest", ".dir");
         File curDir = BookieImpl.getCurrentDirectory(tmpDir);
         BookieImpl.checkDirectoryStructure(curDir);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
@@ -1383,8 +1383,11 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             }
         };
         InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
-        storage.initialize(conf, manager, dirs, dirs, null, checkpointSource,
-            Checkpointer.NULL, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        storage.initialize(conf, manager, dirs, dirs,
+                           NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(Checkpointer.NULL);
+
 
         for (long ledger = 0; ledger <= 10; ledger++) {
             ledgers.add(ledger);
@@ -1401,8 +1404,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.shutdown();
 
         storage = new InterleavedLedgerStorage();
-        storage.initialize(conf, manager, dirs, dirs, null, checkpointSource,
-                           Checkpointer.NULL, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        storage.initialize(conf, manager, dirs, dirs, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(Checkpointer.NULL);
 
         long startingEntriesCount = storage.gcThread.entryLogger.getLeastUnflushedLogId()
             - storage.gcThread.scannedLogId;
@@ -1476,11 +1480,11 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             lm,
             dirManager,
             dirManager,
-            null,
-            cp,
-            Checkpointer.NULL,
             stats.getStatsLogger("storage"),
             UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(cp);
+        storage.setCheckpointer(Checkpointer.NULL);
+
         storage.start();
 
         int majorCompactions = stats.getCounter("storage.gc." + MAJOR_COMPACTION_COUNT).get().intValue();

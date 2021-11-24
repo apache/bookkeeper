@@ -117,10 +117,14 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
             }
         };
 
-        dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager, null,
-            checkpointSource, checkpointer, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+        dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+                             NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+        dbStorage.setCheckpointSource(checkpointSource);
+        dbStorage.setCheckpointer(checkpointer);
         interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
-            null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+                                      NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+        interleavedStorage.setCheckpointSource(checkpointSource);
+        interleavedStorage.setCheckpointer(checkpointer);
         LedgerCache interleavedLedgerCache = interleavedStorage.getLedgerCache();
 
         int convertedLedgers = 0;

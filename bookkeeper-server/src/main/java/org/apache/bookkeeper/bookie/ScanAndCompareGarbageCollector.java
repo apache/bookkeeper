@@ -297,8 +297,6 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(URI.create(metadataServiceUriStr));
             driver.initialize(
                     conf,
-                    () -> {
-                    },
                     statsLogger);
             return driver;
         } catch (MetadataException me) {

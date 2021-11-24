@@ -151,7 +151,7 @@ public class BookieShellTest {
             .thenReturn(new Versioned<>(cookie.toString().getBytes(UTF_8), version));
 
         this.driver = mock(MetadataBookieDriver.class);
-        when(driver.getRegistrationManager())
+        when(driver.createRegistrationManager())
             .thenReturn(rm);
 
         PowerMockito.mockStatic(MetadataDrivers.class);

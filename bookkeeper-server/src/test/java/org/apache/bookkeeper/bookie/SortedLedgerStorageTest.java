@@ -107,8 +107,10 @@ public class SortedLedgerStorageTest {
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        sortedLedgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, null, checkpointSource,
-                checkpointer, statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+        sortedLedgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                                       statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+        sortedLedgerStorage.setCheckpointSource(checkpointSource);
+        sortedLedgerStorage.setCheckpointer(checkpointer);
     }
 
     @Test

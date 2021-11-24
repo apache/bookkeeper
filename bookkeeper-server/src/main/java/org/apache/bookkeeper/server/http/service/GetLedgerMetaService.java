@@ -32,7 +32,6 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,13 +44,13 @@ public class GetLedgerMetaService implements HttpEndpointService {
     static final Logger LOG = LoggerFactory.getLogger(GetLedgerMetaService.class);
 
     protected ServerConfiguration conf;
-    protected BookieServer bookieServer;
+    private final LedgerManagerFactory ledgerManagerFactory;
     private final LedgerMetadataSerDe serDe;
 
-    public GetLedgerMetaService(ServerConfiguration conf, BookieServer bookieServer) {
+    public GetLedgerMetaService(ServerConfiguration conf, LedgerManagerFactory ledgerManagerFactory) {
         checkNotNull(conf);
         this.conf = conf;
-        this.bookieServer = bookieServer;
+        this.ledgerManagerFactory = ledgerManagerFactory;
         this.serDe = new LedgerMetadataSerDe();
     }
 
@@ -63,8 +62,7 @@ public class GetLedgerMetaService implements HttpEndpointService {
         if (HttpServer.Method.GET == request.getMethod() && (params != null) && params.containsKey("ledger_id")) {
             Long ledgerId = Long.parseLong(params.get("ledger_id"));
 
-            LedgerManagerFactory mFactory = bookieServer.getBookie().getLedgerManagerFactory();
-            LedgerManager manager = mFactory.newLedgerManager();
+            LedgerManager manager = ledgerManagerFactory.newLedgerManager();
 
             // output <ledgerId: ledgerMetadata>
             Map<String, Object> output = Maps.newHashMap();

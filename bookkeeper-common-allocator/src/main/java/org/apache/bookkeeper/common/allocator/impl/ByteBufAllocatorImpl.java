@@ -26,6 +26,7 @@ import io.netty.util.ResourceLeakDetector;
 import io.netty.util.ResourceLeakDetector.Level;
 import java.util.function.Consumer;
 
+import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
 import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
@@ -35,7 +36,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Implementation of {@link ByteBufAllocator}.
  */
-public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements ByteBufAllocator {
+public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements ByteBufAllocatorWithOomHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ByteBufAllocatorImpl.class);
 
@@ -47,7 +48,7 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
     private final ByteBufAllocator unpooledAllocator;
     private final PoolingPolicy poolingPolicy;
     private final OutOfMemoryPolicy outOfMemoryPolicy;
-    private final Consumer<OutOfMemoryError> outOfMemoryListener;
+    private Consumer<OutOfMemoryError> outOfMemoryListener;
 
     ByteBufAllocatorImpl(ByteBufAllocator pooledAllocator, ByteBufAllocator unpooledAllocator,
             PoolingPolicy poolingPolicy, int poolingConcurrency, OutOfMemoryPolicy outOfMemoryPolicy,
@@ -190,5 +191,10 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
     @Override
     public boolean isDirectBufferPooled() {
         return pooledAllocator != null && pooledAllocator.isDirectBufferPooled();
+    }
+
+    @Override
+    public void setOomHandler(Consumer<OutOfMemoryError> handler) {
+        this.outOfMemoryListener = handler;
     }
 }

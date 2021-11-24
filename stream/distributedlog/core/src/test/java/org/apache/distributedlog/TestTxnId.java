@@ -17,11 +17,13 @@
  */
 package org.apache.distributedlog;
 
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.junit.Assert;
@@ -46,46 +48,41 @@ public class TestTxnId extends TestDistributedLogBase {
             .setLogSegmentRollingConcurrency(-1)
             .setMaxLogSegmentBytes(400000);
 
-        long entryId = 0;
-        List<BookieServer> extraBookies = new ArrayList<>();
-        try {
-            extraBookies.add(startExtraBookie());
-            extraBookies.add(startExtraBookie());
+        bkutil.addBookie();
+        bkutil.addBookie();
 
-            try (BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
-                 BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned()) {
-                writer.write(DLMTestUtil.getLogRecordInstance(1, 100000)).join();
-                writer.write(DLMTestUtil.getLogRecordInstance(2, 100000)).join();
+        try (BKDistributedLogManager dlm = createNewDLM(conf, name);
+             BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned()) {
+            writer.write(DLMTestUtil.getLogRecordInstance(1, 100000)).join();
+            writer.write(DLMTestUtil.getLogRecordInstance(2, 100000)).join();
 
-                extraBookies.forEach(b -> b.shutdown());
+            bkutil.removeBookie();
+            bkutil.removeBookie();
 
-                try {
-                    writer.write(DLMTestUtil.getLogRecordInstance(3, 100000)).join();
-                    Assert.fail("Shouldn't have succeeded");
-                } catch (Exception e) {
-                    // expected
-                }
-
-                writer.write(DLMTestUtil.getLogRecordInstance(4, 100000)).join();
-                Assert.fail("Shouldn't be able to write");
+            try {
+                writer.write(DLMTestUtil.getLogRecordInstance(3, 100000)).join();
+                Assert.fail("Shouldn't have succeeded");
             } catch (Exception e) {
                 // expected
             }
 
-            extraBookies.add(startExtraBookie());
-            extraBookies.add(startExtraBookie());
+            writer.write(DLMTestUtil.getLogRecordInstance(4, 100000)).join();
+            Assert.fail("Shouldn't be able to write");
+        } catch (Exception e) {
+            // expected
+        }
 
-            try (BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
-                 BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned()) {
-                long firstTxid = dlm.getLastTxId() + 1;
-                for (int i = 0; i < 20; i++) {
-                    logger.info("Writing entry {}", i);
-                    writer.write(DLMTestUtil.getLogRecordInstance(firstTxid + i, 100000)).join();
-                    Thread.sleep(100);
-                }
+        bkutil.addBookie();
+        bkutil.addBookie();
+
+        try (BKDistributedLogManager dlm = createNewDLM(conf, name);
+             BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned()) {
+            long firstTxid = dlm.getLastTxId() + 1;
+            for (int i = 0; i < 20; i++) {
+                logger.info("Writing entry {}", i);
+                writer.write(DLMTestUtil.getLogRecordInstance(firstTxid + i, 100000)).join();
+                Thread.sleep(100);
             }
-        } finally {
-            extraBookies.forEach(b -> b.shutdown());
         }
     }
 
@@ -108,8 +105,10 @@ public class TestTxnId extends TestDistributedLogBase {
         conf.setJournalDirName(journalDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
-        BookieServer server = new BookieServer(conf, new NullStatsProvider().getStatsLogger(""),
-                                               BookieServiceInfo.NO_INFO);
+        Bookie bookie = new TestBookieImpl(conf);
+        BookieServer server = new BookieServer(conf, bookie,
+                                               new NullStatsProvider().getStatsLogger(""),
+                                               UnpooledByteBufAllocator.DEFAULT);
         server.start();
 
         while (!server.isRunning()) {

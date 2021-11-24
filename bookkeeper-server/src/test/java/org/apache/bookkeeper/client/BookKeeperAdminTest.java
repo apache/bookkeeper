@@ -46,6 +46,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.BookieImpl;
+import org.apache.bookkeeper.bookie.BookieResources;
+import org.apache.bookkeeper.bookie.CookieValidation;
+import org.apache.bookkeeper.bookie.LegacyCookieValidation;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.component.ComponentStarter;
@@ -55,6 +58,8 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
@@ -64,6 +69,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.Main;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -178,18 +184,19 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testBookieInit() throws Exception {
-        int bookieindex = 0;
-        ServerConfiguration confOfExistingBookie = confByIndex(bookieindex);
-        Assert.assertFalse("initBookie shouldn't have succeeded, since bookie is still running with that configuration",
-                BookKeeperAdmin.initBookie(confOfExistingBookie));
-        killBookie(bookieindex);
-        Assert.assertFalse("initBookie shouldn't have succeeded, since previous bookie is not formatted yet",
-                BookKeeperAdmin.initBookie(confOfExistingBookie));
-
-        File[] journalDirs = confOfExistingBookie.getJournalDirs();
-        for (File journalDir : journalDirs) {
-            FileUtils.deleteDirectory(journalDir);
+        ServerConfiguration confOfExistingBookie = newServerConfiguration();
+        BookieId bookieId = BookieImpl.getBookieId(confOfExistingBookie);
+        try (MetadataBookieDriver driver = BookieResources.createMetadataDriver(
+                confOfExistingBookie, NullStatsLogger.INSTANCE);
+             RegistrationManager rm = driver.createRegistrationManager()) {
+            CookieValidation cookieValidation = new LegacyCookieValidation(confOfExistingBookie, rm);
+            cookieValidation.checkCookies(Main.storageDirectoriesFromConf(confOfExistingBookie));
+            rm.registerBookie(bookieId, false /* readOnly */, BookieServiceInfo.EMPTY);
+            Assert.assertFalse(
+                    "initBookie shouldn't have succeeded, since bookie is still running with that configuration",
+                    BookKeeperAdmin.initBookie(confOfExistingBookie));
         }
+
         Assert.assertFalse("initBookie shouldn't have succeeded, since previous bookie is not formatted yet completely",
                 BookKeeperAdmin.initBookie(confOfExistingBookie));
 
@@ -208,11 +215,10 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         }
         Assert.assertFalse("initBookie shouldn't have succeeded, since cookie in ZK is not deleted yet",
                 BookKeeperAdmin.initBookie(confOfExistingBookie));
-        String bookieId = BookieImpl.getBookieId(confOfExistingBookie).toString();
         String bookieCookiePath =
             ZKMetadataDriverBase.resolveZkLedgersRootPath(confOfExistingBookie)
                 + "/" + BookKeeperConstants.COOKIE_NODE
-                + "/" + bookieId;
+                + "/" + bookieId.toString();
         zkc.delete(bookieCookiePath, -1);
 
         Assert.assertTrue("initBookie shouldn't succeeded",
@@ -665,7 +671,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     }
 
     private void testBookieServiceInfo(boolean readonly, boolean legacy) throws Exception {
-        File tmpDir = createTempDir("bookie", "test");
+        File tmpDir = tmpDirs.createNew("bookie", "test");
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[]{tmpDir.getPath()})
@@ -690,7 +696,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             String regPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(bkConf) + "/" + AVAILABLE_NODE;
             regPath = readonly
                     ? regPath + READONLY + "/" + bookieId
-                    : regPath + "/" + bookieId;
+                    : regPath + "/" + bookieId.toString();
             // deleting the metadata, so that the bookie registration should
             // continue successfully with legacy BookieServiceInfo
             zkc.setData(regPath, new byte[]{}, -1);

@@ -39,6 +39,7 @@ import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -143,18 +144,18 @@ public class StreamCluster
 
         // format the bookkeeper cluster
         MetadataDrivers.runFunctionWithMetadataBookieDriver(newBookieConfiguration(metadataServiceUri), driver -> {
-            try {
-                boolean initialized = driver.getRegistrationManager().initNewCluster();
-                if (initialized) {
-                    log.info("Successfully initialized the segment storage");
-                } else {
-                    log.info("The segment storage was already initialized");
+                try (RegistrationManager rm = driver.createRegistrationManager()) {
+                    boolean initialized = rm.initNewCluster();
+                    if (initialized) {
+                        log.info("Successfully initialized the segment storage");
+                    } else {
+                        log.info("The segment storage was already initialized");
+                    }
+                } catch (Exception e) {
+                    throw new StorageRuntimeException("Failed to initialize the segment storage", e);
                 }
-            } catch (Exception e) {
-                throw new StorageRuntimeException("Failed to initialize the segment storage", e);
-            }
-            return null;
-        });
+                return null;
+            });
     }
 
     private LifecycleComponent startServer() throws Exception {

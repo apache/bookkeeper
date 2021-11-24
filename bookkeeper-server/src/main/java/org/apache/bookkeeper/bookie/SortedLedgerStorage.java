@@ -59,6 +59,8 @@ public class SortedLedgerStorage
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
     private StateManager stateManager;
+    private ServerConfiguration conf;
+    private StatsLogger statsLogger;
     private final InterleavedLedgerStorage interleavedLedgerStorage;
 
     public SortedLedgerStorage() {
@@ -75,37 +77,47 @@ public class SortedLedgerStorage
                            LedgerManager ledgerManager,
                            LedgerDirsManager ledgerDirsManager,
                            LedgerDirsManager indexDirsManager,
-                           StateManager stateManager,
-                           CheckpointSource checkpointSource,
-                           Checkpointer checkpointer,
                            StatsLogger statsLogger,
                            ByteBufAllocator allocator)
             throws IOException {
+        this.conf = conf;
+        this.statsLogger = statsLogger;
 
         interleavedLedgerStorage.initializeWithEntryLogListener(
             conf,
             ledgerManager,
             ledgerDirsManager,
             indexDirsManager,
-            stateManager,
-            checkpointSource,
-            checkpointer,
             // uses sorted ledger storage's own entry log listener
             // since it manages entry log rotations and checkpoints.
             this,
             statsLogger,
             allocator);
 
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(
+                new ThreadFactoryBuilder()
+                .setNameFormat("SortedLedgerStorage-%d")
+                .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
+    }
+
+    @Override
+    public void setStateManager(StateManager stateManager) {
+        interleavedLedgerStorage.setStateManager(stateManager);
+        this.stateManager = stateManager;
+    }
+    @Override
+    public void setCheckpointSource(CheckpointSource checkpointSource) {
+        interleavedLedgerStorage.setCheckpointSource(checkpointSource);
+
         if (conf.isEntryLogPerLedgerEnabled()) {
             this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger);
         } else {
             this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
         }
-        this.scheduler = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactoryBuilder()
-                .setNameFormat("SortedLedgerStorage-%d")
-                .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
-        this.stateManager = stateManager;
+    }
+    @Override
+    public void setCheckpointer(Checkpointer checkpointer) {
+        interleavedLedgerStorage.setCheckpointer(checkpointer);
     }
 
     @VisibleForTesting
