@@ -23,6 +23,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
+import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID;
+import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID_LOCK;
 
 import java.io.IOException;
 import java.net.URI;
@@ -43,12 +45,14 @@ import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 
@@ -151,6 +155,104 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return SCHEME;
     }
 
+    /**
+     * check cluster if need metaformat in the first time.
+     * */
+    public static boolean needMetaformat(AbstractConfiguration<?> conf,int zkRetryBackoffStartMs,int zkRetryBackoffMaxMs) {
+        try {
+            RetryPolicy zkRetryPolicy = new BoundExponentialBackoffRetryPolicy(zkRetryBackoffStartMs, zkRetryBackoffMaxMs, Integer.MAX_VALUE);
+            final String metadataServiceUriStr;
+            metadataServiceUriStr = conf.getMetadataServiceUri();
+            URI metadataServiceUri = URI.create(metadataServiceUriStr);
+            String ledgersRootPath = metadataServiceUri.getPath();
+            final String instanceRegistrationPath = ledgersRootPath + "/" + INSTANCEID;
+            final String zkServers;
+            zkServers = getZKServersFromServiceUri(metadataServiceUri);
+            ZooKeeper zk = ZooKeeperClient.newBuilder()
+                    .connectString(zkServers)
+                    .operationRetryPolicy(zkRetryPolicy)
+                    .sessionTimeoutMs(conf.getZkTimeout())
+                    .requestRateLimit(conf.getZkRequestRateLimit())
+                    .build();
+            if (null != zk.exists(instanceRegistrationPath, false)) {
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("Failed to check meta", e);
+        }
+        return true;
+    }
+
+    public enum CreateLockStatus {
+        created, existed
+    }
+
+    /**
+     * try to create a lock in zk
+     * */
+    public static CreateLockStatus tryCreateInstanceLock(AbstractConfiguration<?> conf,int zkRetryBackoffStartMs,int zkRetryBackoffMaxMs) throws Exception {
+        String instanceLockPath = null;
+        try {
+            RetryPolicy zkRetryPolicy = new BoundExponentialBackoffRetryPolicy(zkRetryBackoffStartMs, zkRetryBackoffMaxMs, Integer.MAX_VALUE);
+            final String metadataServiceUriStr;
+            metadataServiceUriStr = conf.getMetadataServiceUri();
+            URI metadataServiceUri = URI.create(metadataServiceUriStr);
+            String ledgersRootPath = metadataServiceUri.getPath();
+            instanceLockPath = ledgersRootPath + "/" + INSTANCEID_LOCK;
+            final String zkServers;
+            zkServers = getZKServersFromServiceUri(metadataServiceUri);
+            ZooKeeper zk = ZooKeeperClient.newBuilder()
+                    .connectString(zkServers)
+                    .operationRetryPolicy(zkRetryPolicy)
+                    .sessionTimeoutMs(conf.getZkTimeout())
+                    .requestRateLimit(conf.getZkRequestRateLimit())
+                    .build();
+            try {
+                String rs = zk.create(ledgersRootPath, EMPTY_BYTE_ARRAY, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                log.info("ledgersRootPath ({}) in zk create result is {}", ledgersRootPath, rs);
+            } catch (KeeperException.NodeExistsException e) {
+                log.info("ledgersRootPath({}) is just now created by another bookie", ledgersRootPath);
+            } catch (Exception e) {
+                log.error("try to create InstanceLock's  RootPath({}) has error", ledgersRootPath, e);
+                throw e;
+            }
+            String rs = zk.create(instanceLockPath, EMPTY_BYTE_ARRAY, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+            log.info("instanceLockPath ({}) in zk create result is {}", instanceLockPath, rs);
+            return CreateLockStatus.created;
+        } catch (KeeperException.NodeExistsException e) {
+            log.info("this node({}) is just now created by another bookie", instanceLockPath);
+            return CreateLockStatus.existed;
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    /**
+     * try to create a lock in zk
+     * */
+    public static void tryCleanInstanceLock(AbstractConfiguration<?> conf,int zkRetryBackoffStartMs,int zkRetryBackoffMaxMs) throws Exception {
+        String instanceLockPath = null;
+        RetryPolicy zkRetryPolicy = new BoundExponentialBackoffRetryPolicy(zkRetryBackoffStartMs, zkRetryBackoffMaxMs, Integer.MAX_VALUE);
+        final String metadataServiceUriStr;
+        metadataServiceUriStr = conf.getMetadataServiceUri();
+        URI metadataServiceUri = URI.create(metadataServiceUriStr);
+        String ledgersRootPath = metadataServiceUri.getPath();
+        instanceLockPath = ledgersRootPath + "/" + INSTANCEID_LOCK;
+        final String zkServers;
+        zkServers = getZKServersFromServiceUri(metadataServiceUri);
+        ZooKeeper zk = ZooKeeperClient.newBuilder()
+                .connectString(zkServers)
+                .operationRetryPolicy(zkRetryPolicy)
+                .sessionTimeoutMs(conf.getZkTimeout())
+                .requestRateLimit(conf.getZkRequestRateLimit())
+                .build();
+        try {
+            zk.delete(instanceLockPath, -1);
+        } catch (Exception e) {
+            log.warn("try to clean Instance lock({}) failed.", instanceLockPath, e);
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @SneakyThrows(InterruptedException.class)
     protected void initialize(AbstractConfiguration<?> conf,
@@ -208,14 +310,17 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
                 if (null == zk.exists(bookieReadonlyRegistrationPath, false)) {
                     try {
-                        zk.create(bookieReadonlyRegistrationPath,
-                            EMPTY_BYTE_ARRAY,
-                            acls,
-                            CreateMode.PERSISTENT);
+                        String rs = zk.create(bookieReadonlyRegistrationPath,
+                                EMPTY_BYTE_ARRAY,
+                                acls,
+                                CreateMode.PERSISTENT);
+                        log.info("bookieReadonlyRegistrationPath ({}) in zk create result is {}", bookieReadonlyRegistrationPath, rs);
                     } catch (KeeperException.NodeExistsException e) {
                         // this node is just now created by someone.
+                        log.warn("this node is just now created by someone");
                     } catch (KeeperException.NoNodeException e) {
                         // the cluster hasn't been initialized
+                        log.warn("the cluster hasn't been initialized");
                     }
                 }
             } catch (IOException | KeeperException e) {
