@@ -62,7 +62,7 @@ where command is one of:
 [service commands]
 
     bookie              Run a bookie server
-    autorecovery        Run AutoRecovery service daemon
+    autorecovery        Run AutoRecovery service
     zookeeper           Run zookeeper server
 
 [development commands]
