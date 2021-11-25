@@ -300,6 +300,7 @@ public class Main {
                     Thread.sleep(50);
                     timeCost = System.currentTimeMillis() - start;
                 }
+                throw new RuntimeException("Failed to metaformat,timeout: " +INSTANCEID_TIMEOUT+ " ms");
             }
         }
     }
