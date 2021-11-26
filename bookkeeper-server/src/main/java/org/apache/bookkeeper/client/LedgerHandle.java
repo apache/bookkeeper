@@ -571,7 +571,11 @@ public class LedgerHandle implements WriteHandle {
 
                 // error out all pending adds during closing, the callbacks shouldn't be
                 // running under any bk locks.
-                errorOutPendingAdds(rc, pendingAdds);
+                try {
+                    errorOutPendingAdds(rc, pendingAdds);
+                } catch (Exception e) {
+                    closePromise.completeExceptionally(e);
+                }
 
                 if (prevHandleState != HandleState.CLOSED) {
                     if (LOG.isDebugEnabled()) {
