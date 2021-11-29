@@ -615,7 +615,6 @@ public class BookieShell implements Tool {
 
             boolean printMsg = cmdLine.hasOption("m");
             boolean forceRecovery = cmdLine.hasOption("r");
-            final BookieId bookie;
             String bookieAddress;
             if (cmdLine.hasOption("b")) {
                 // A particular bookie was specified
