@@ -55,20 +55,20 @@ public class DbLedgerStorageWriteCacheTest {
         protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
                 LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
                 StatsLogger statsLogger, ScheduledExecutorService gcExecutor,
-                long writeCacheSize, long readCacheSize)
+                long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize)
                 throws IOException {
             return new MockedSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
                                                             statsLogger, allocator, gcExecutor, writeCacheSize,
-                                                            readCacheSize);
+                                                            readCacheSize, readAheadCacheBatchSize);
         }
 
         private static class MockedSingleDirectoryDbLedgerStorage extends SingleDirectoryDbLedgerStorage {
             public MockedSingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                     LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StatsLogger statsLogger,
                     ByteBufAllocator allocator, ScheduledExecutorService gcExecutor, long writeCacheSize,
-                    long readCacheSize) throws IOException {
+                    long readCacheSize, int readAheadCacheBatchSize) throws IOException {
                 super(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
-                      statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize);
+                      statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize, readAheadCacheBatchSize);
             }
 
           @Override

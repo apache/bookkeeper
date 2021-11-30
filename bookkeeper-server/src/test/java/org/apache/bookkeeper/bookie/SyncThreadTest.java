@@ -44,6 +44,7 @@ import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.After;
 import org.junit.Before;
@@ -118,7 +119,7 @@ public class SyncThreadTest {
                 }
             };
 
-        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
+        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
         t.startCheckpoint(Checkpoint.MAX);
         assertTrue("Checkpoint should have been called",
                    checkpointCalledLatch.await(10, TimeUnit.SECONDS));
@@ -166,7 +167,7 @@ public class SyncThreadTest {
                     checkpointCount.incrementAndGet();
                 }
             };
-        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
+        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
         t.startCheckpoint(Checkpoint.MAX);
         while (checkpointCount.get() == 0) {
             Thread.sleep(flushInterval);
@@ -216,7 +217,7 @@ public class SyncThreadTest {
                     throw new RuntimeException("Fatal error in sync thread");
                 }
             };
-        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
+        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
         t.startCheckpoint(Checkpoint.MAX);
         assertTrue("Should have called fatal error", fatalLatch.await(10, TimeUnit.SECONDS));
         t.shutdown();
@@ -248,7 +249,7 @@ public class SyncThreadTest {
                     throw new NoWritableLedgerDirException("Disk full error in sync thread");
                 }
             };
-        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
+        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
         t.startCheckpoint(Checkpoint.MAX);
         assertTrue("Should have disk full error", diskFullLatch.await(10, TimeUnit.SECONDS));
         t.shutdown();

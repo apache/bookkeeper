@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_NUM_DIRS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_WRITABLE_DIRS;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -102,6 +103,20 @@ public class LedgerDirsManager {
             @Override
             public Number getSample() {
                 return writableLedgerDirectories.size();
+            }
+        });
+
+        final int numDirs = dirs.length;
+        statsLogger.registerGauge(LD_NUM_DIRS, new Gauge<Number>() {
+
+            @Override
+            public Number getDefaultValue() {
+                return numDirs;
+            }
+
+            @Override
+            public Number getSample() {
+                return numDirs;
             }
         });
     }

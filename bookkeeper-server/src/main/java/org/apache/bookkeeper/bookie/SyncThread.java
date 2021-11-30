@@ -35,7 +35,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 
 /**
  * SyncThread is a background thread which help checkpointing ledger storage
@@ -66,15 +70,20 @@ class SyncThread implements Checkpointer {
     private final Object suspensionLock = new Object();
     private boolean suspended = false;
     private boolean disableCheckpoint = false;
+    private final Counter syncExecutorTime;
+    private static String executorName = "SyncThread";
 
     public SyncThread(ServerConfiguration conf,
                       LedgerDirsListener dirsListener,
                       LedgerStorage ledgerStorage,
-                      CheckpointSource checkpointSource) {
+                      CheckpointSource checkpointSource,
+                      StatsLogger statsLogger) {
         this.dirsListener = dirsListener;
         this.ledgerStorage = ledgerStorage;
         this.checkpointSource = checkpointSource;
-        this.executor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("SyncThread"));
+        this.executor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory(executorName));
+        this.syncExecutorTime = statsLogger.getThreadScopedCounter("sync-thread-time");
+        this.executor.submit(() -> ThreadRegistry.register(executorName, 0));
     }
 
     @Override
@@ -84,6 +93,7 @@ class SyncThread implements Checkpointer {
 
     protected void doCheckpoint(Checkpoint checkpoint) {
         executor.submit(() -> {
+            long startTime = System.nanoTime();
             try {
                 synchronized (suspensionLock) {
                     while (suspended) {
@@ -101,16 +111,21 @@ class SyncThread implements Checkpointer {
             } catch (Throwable t) {
                 log.error("Exception in SyncThread", t);
                 dirsListener.fatalError();
+            } finally {
+                syncExecutorTime.add(MathUtils.elapsedNanos(startTime));
             }
         });
     }
 
     public Future requestFlush() {
         return executor.submit(() -> {
+            long startTime = System.nanoTime();
             try {
                 flush();
             } catch (Throwable t) {
                 log.error("Exception flushing ledgers ", t);
+            } finally {
+                syncExecutorTime.add(MathUtils.elapsedNanos(startTime));
             }
         });
     }
