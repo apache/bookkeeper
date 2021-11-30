@@ -107,7 +107,8 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
                 }
             });
         } else {
-            LOGGER.info("Netty channel is inactive, hence bypassing netty channel writeAndFlush during sendResponse");
+            LOGGER.debug("Netty channel {} is inactive, "
+                    + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
         }
     }
 
