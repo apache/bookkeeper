@@ -77,6 +77,7 @@ public class ForceLedgerProcessorV3Test {
         when(requestProcessor.getBookie()).thenReturn(bookie);
         when(requestProcessor.getWaitTimeoutOnBackpressureMillis()).thenReturn(-1L);
         when(requestProcessor.getRequestStats()).thenReturn(new RequestStats(NullStatsLogger.INSTANCE));
+        when(channel.isActive()).thenReturn(true);
         processor = new ForceLedgerProcessorV3(
             request,
             channel,

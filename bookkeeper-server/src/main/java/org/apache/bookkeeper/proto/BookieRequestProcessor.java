@@ -264,6 +264,7 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     @Override
     public void close() {
+        LOG.info("Closing RequestProcessor");
         shutdownExecutor(writeThreadPool);
         shutdownExecutor(readThreadPool);
         if (serverCfg.getNumLongPollWorkerThreads() > 0 || readThreadPool == null) {
@@ -271,6 +272,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
         shutdownExecutor(highPriorityThreadPool);
         requestTimer.stop();
+        LOG.info("Closed RequestProcessor");
     }
 
     private OrderedExecutor createExecutor(
@@ -296,6 +298,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     private void shutdownExecutor(OrderedExecutor service) {
         if (null != service) {
             service.shutdown();
+            service.forceShutdown(10, TimeUnit.SECONDS);
         }
     }
 
