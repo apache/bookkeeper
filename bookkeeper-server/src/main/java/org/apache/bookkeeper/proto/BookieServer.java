@@ -185,8 +185,8 @@ public class BookieServer {
         if (!running) {
             return;
         }
-        exitCode = bookie.shutdown();
         this.requestProcessor.close();
+        exitCode = bookie.shutdown();
         running = false;
     }
 
