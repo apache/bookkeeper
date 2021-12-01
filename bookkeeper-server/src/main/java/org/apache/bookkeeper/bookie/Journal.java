@@ -75,7 +75,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     private static final RecyclableArrayList.Recycler<QueueEntry> entryListRecycler =
         new RecyclableArrayList.Recycler<QueueEntry>();
-    private static final RecyclableArrayList<QueueEntry> EMPTY_ARRAY_LIST = new RecyclableArrayList<>();
 
     /**
      * Filter to pickup journals.
