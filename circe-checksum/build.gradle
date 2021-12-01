@@ -31,6 +31,9 @@ dependencies {
 
 compileJava {
     options.headerOutputDirectory = file("${buildDir}/javahGenerated")
+    // override args and remove -Werror
+    // Object.finalize() is deprecated at java 9
+    options.compilerArgs = ["-Xlint:unchecked", "-Xlint:deprecation"]
 }
 
 jar {
