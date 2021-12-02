@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
  * Network Utilities.
  */
 public class NetUtils {
-    private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
 
     /**
      * Given a string representation of a host, return its ip address
