@@ -146,7 +146,6 @@ public class LocalBookKeeper implements AutoCloseable {
         return server;
     }
 
-    @SuppressWarnings("deprecation")
     private void initializeZookeeper() throws IOException {
         LOG.info("Instantiate ZK Client");
         //initialize the zk client with values
@@ -183,7 +182,6 @@ public class LocalBookKeeper implements AutoCloseable {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void runBookies()
             throws Exception {
         LOG.info("Starting Bookie(s)");
@@ -221,6 +219,7 @@ public class LocalBookKeeper implements AutoCloseable {
         serializeLocalBookieConfig(baseConfWithCorrectZKServers, "baseconf.conf");
     }
 
+    @SuppressWarnings("deprecation")
     private void runBookie(int bookieIndex) throws Exception {
         File journalDirs;
         if (null == baseConf.getJournalDirNameWithoutDefault()) {
@@ -295,6 +294,7 @@ public class LocalBookKeeper implements AutoCloseable {
                 true, "test", null, defaultLocalBookiesConfigDir);
     }
 
+    @SuppressWarnings("deprecation")
     private static LocalBookKeeper getLocalBookiesInternal(ServerConfiguration conf,
                                                              String zkHost,
                                                              int zkPort,

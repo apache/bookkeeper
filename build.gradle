@@ -152,6 +152,11 @@ allprojects {
                 archiveExtension = 'tar.gz'
             }
         }
+        compileJava {
+            sourceCompatibility = 1.8
+            targetCompatibility = 1.8
+            options.compilerArgs = ["-Xlint:unchecked", "-Xlint:deprecation", "-Werror"]
+        }
 
         javadoc {
             options.addBooleanOption('Xdoclint:none', true)
@@ -231,6 +236,4 @@ allprojects {
 
 }
 
-pluginManager.withPlugin('java') {
-    sourceCompatibility = targetCompatibility = 8
-}
+
