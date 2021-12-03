@@ -43,7 +43,6 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
