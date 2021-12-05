@@ -19,14 +19,9 @@
 plugins {
     id 'java'
     id 'distribution'
-    id "com.github.vlsi.stage-vote-release"
 }
 
 description = 'Apache BookKeeper :: Dist (Server)'
-
-releaseArtifacts {
-    artifact(tasks.named("distTar"))
-}
 
 dependencies {
     implementation project(':bookkeeper-server')
@@ -117,7 +112,7 @@ distributions {
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = 'org.apache.bookkeeper'
+            groupId = 'io.streamnative.bookkeeper'
             artifactId = 'bookkeeper-dist-server'
         }
     }

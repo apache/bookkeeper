@@ -25,10 +25,19 @@ buildscript {
 plugins {
     id 'com.google.protobuf'
     id 'java'
-    id "com.github.vlsi.stage-vote-release" version "1.73"
+    id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
     id 'checkstyle'
     id 'org.nosphere.apache.rat'
     id 'com.github.spotbugs'
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            username = System.getenv("SONATYPE_USERNAME")
+            password = System.getenv("SONATYPE_PASSWORD")
+        }
+    }
 }
 
 subprojects {
@@ -37,26 +46,6 @@ subprojects {
 
 apply from: "$rootDir/version.gradle"
 version = buildVersion
-
-releaseArtifacts {
-    fromProject("bookkeeper-dist")
-    fromProject("bookkeeper-dist-all")
-    fromProject("bookkeeper-dist-bkctl")
-    fromProject("bookkeeper-dist-server")
-}
-
-releaseParams { // ReleaseExtension
-    tlp.set("Bookkeeper")
-    componentName.set("Apache Bookkeeper")
-    releaseTag.set("release-$buildVersion")
-    rcTag.set(rc.map { "release-$buildVersion-rc$it" })
-
-    sitePreviewEnabled.set(false)
-
-    nexus {
-        packageGroup.set("org.apache.bookkeeper")
-    }
-}
 
 allprojects {
     apply from: "$rootDir/dependencies.gradle"
@@ -173,7 +162,7 @@ allprojects {
         publishing {
             publications {
                 maven(MavenPublication) {
-                    groupId = 'org.apache.bookkeeper'
+                    groupId = 'io.streamnative.bookkeeper'
                     artifactId = componentName
                     version = buildVersion
 

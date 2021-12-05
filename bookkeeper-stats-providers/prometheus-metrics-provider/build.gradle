@@ -42,7 +42,7 @@ dependencies {
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = 'org.apache.bookkeeper.stats'
+            groupId = 'io.streamnative.bookkeeper.stats'
         }
     }
 }

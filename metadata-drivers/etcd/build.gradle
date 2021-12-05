@@ -47,7 +47,7 @@ dependencies {
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = 'org.apache.bookkeeper.metadata.drivers'
+            groupId = 'io.streamnative.bookkeeper.metadata.drivers'
             artifactId = 'metadata-stores-etcd'
         }
     }

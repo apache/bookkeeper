@@ -44,7 +44,7 @@ jar {
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = 'org.apache.distributedlog'
+            groupId = 'io.streamnative.distributedlog'
             artifactId = 'distributedlog-protocol'
         }
     }

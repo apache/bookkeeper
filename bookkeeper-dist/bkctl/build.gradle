@@ -21,7 +21,6 @@ import org.gradle.api.artifacts.transform.TransformParameters
 plugins {
     id 'java'
     id 'distribution'
-    id "com.github.vlsi.stage-vote-release"
 }
 
 dependencies {
@@ -40,10 +39,6 @@ dependencies {
     runtimeOnly depLibs.snappy
     runtimeOnly depLibs.log4jCore
     runtimeOnly depLibs.log4jSlf4jImpl
-}
-
-releaseArtifacts {
-    artifact(tasks.named("distTar"))
 }
 
 def depLicences = [

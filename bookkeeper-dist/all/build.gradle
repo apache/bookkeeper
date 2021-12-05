@@ -19,7 +19,6 @@
 plugins {
     id 'java'
     id 'distribution'
-    id "com.github.vlsi.stage-vote-release"
 }
 
 description = 'Apache BookKeeper :: Dist (All)'
@@ -48,10 +47,6 @@ dependencies {
 
 jar {
     archiveBaseName = 'bookkeeper-dist-all'
-}
-
-releaseArtifacts {
-    artifact(tasks.named("distTar"))
 }
 
 def depLicences = [

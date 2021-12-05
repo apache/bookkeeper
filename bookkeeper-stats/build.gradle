@@ -32,7 +32,7 @@ jar {
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = 'org.apache.bookkeeper.stats'
+            groupId = 'io.streamnative.bookkeeper.stats'
             artifactId = 'bookkeeper-stats-api'
         }
     }
