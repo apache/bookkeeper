@@ -171,6 +171,7 @@ public class ReplicationWorker implements Runnable {
         this.conf = conf;
         this.bkc = bkc;
         this.ownBkc = ownBkc;
+
         this.underreplicationManager = bkc.getLedgerManagerFactory().newLedgerUnderreplicationManager();
         this.admin = new BookKeeperAdmin(bkc, statsLogger, new ClientConfiguration(conf));
         this.ledgerChecker = new LedgerChecker(bkc);

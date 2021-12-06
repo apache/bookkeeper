@@ -108,8 +108,8 @@ public class LedgerFragmentReplicator {
 
     private int averageEntrySize;
 
-    private static final int initialAvgEntriesSize = 1024;
-    private static final double averageEntriesSizeRatio = 0.8;
+    private static final int INITIAL_AVERAGE_ENTRY_SIZE = 1024;
+    private static final double AVERAGE_ENTRY_SIZE_RATIO = 0.8;
 
     public LedgerFragmentReplicator(BookKeeper bkc, StatsLogger statsLogger, ClientConfiguration conf) {
         this.bkc = bkc;
@@ -123,7 +123,7 @@ public class LedgerFragmentReplicator {
         if (conf.getReplicationRateByBytes() > 0) {
             this.replicationThrottle = new Throttler(conf.getReplicationRateByBytes());
         }
-        averageEntrySize = initialAvgEntriesSize;
+        averageEntrySize = INITIAL_AVERAGE_ENTRY_SIZE;
     }
 
     public LedgerFragmentReplicator(BookKeeper bkc, ClientConfiguration conf) {
@@ -401,10 +401,10 @@ public class LedgerFragmentReplicator {
                         .computeDigestAndPackageForSending(entryId,
                                 lh.getLastAddConfirmed(), entry.getLength(),
                                 Unpooled.wrappedBuffer(data, 0, data.length));
-                int toSendSize = toSend.readableBytes();
                 if (replicationThrottle != null) {
-                    averageEntrySize = (int) (averageEntrySize * averageEntriesSizeRatio
-                            + (1 - averageEntriesSizeRatio) * toSendSize);
+                    int toSendSize = toSend.readableBytes();
+                    averageEntrySize = (int) (averageEntrySize * AVERAGE_ENTRY_SIZE_RATIO
+                            + (1 - AVERAGE_ENTRY_SIZE_RATIO) * toSendSize);
                 }
                 for (BookieId newBookie : newBookies) {
                     long startWriteEntryTime = MathUtils.nowInNano();
