@@ -17,15 +17,6 @@
  */
 package org.apache.distributedlog;
 
-import io.netty.buffer.UnpooledByteBufAllocator;
-
-import java.io.File;
-
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.TestBookieImpl;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -84,36 +75,5 @@ public class TestTxnId extends TestDistributedLogBase {
                 Thread.sleep(100);
             }
         }
-    }
-
-    private BookieServer startExtraBookie() throws Exception {
-        File journalDir = File.createTempFile("bookie", "journal");
-        journalDir.delete();
-        journalDir.mkdir();
-        TMP_DIRS.add(journalDir);
-
-        File ledgerDir =  File.createTempFile("bookie", "ledger");
-        ledgerDir.delete();
-        ledgerDir.mkdir();
-        TMP_DIRS.add(ledgerDir);
-
-        ServerConfiguration conf = new ServerConfiguration();
-        conf.setMetadataServiceUri("zk://" + zkServers + "/ledgers");
-        conf.setBookiePort(0);
-        conf.setDiskUsageThreshold(0.99f);
-        conf.setAllowLoopback(true);
-        conf.setJournalDirName(journalDir.getPath());
-        conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
-
-        Bookie bookie = new TestBookieImpl(conf);
-        BookieServer server = new BookieServer(conf, bookie,
-                                               new NullStatsProvider().getStatsLogger(""),
-                                               UnpooledByteBufAllocator.DEFAULT);
-        server.start();
-
-        while (!server.isRunning()) {
-            Thread.sleep(10);
-        }
-        return server;
     }
 }
