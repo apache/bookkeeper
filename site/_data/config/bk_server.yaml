@@ -135,6 +135,9 @@ groups:
   - param: httpServerPort
     description: The http server port to listen on if `httpServerEnabled` is set to true.
     default: 8080
+  - param: httpServerHost
+    description: The http server host to listen on if `httpServerEnabled` is set to true.
+    default: '0.0.0.0'
 
 - name: Security settings
   params:

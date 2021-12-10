@@ -106,6 +106,11 @@ public interface HttpServer {
     boolean startServer(int port);
 
     /**
+     * Start the HTTP server on given port and host.
+     */
+    boolean startServer(int port, String host);
+
+    /**
      * Stop the HTTP server.
      */
     void stopServer();

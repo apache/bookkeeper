@@ -54,7 +54,7 @@ public class HttpService extends ServerLifecycleComponent {
 
     @Override
     protected void doStart() {
-        server.startServer(conf.getServerConf().getHttpServerPort());
+        server.startServer(conf.getServerConf().getHttpServerPort(), conf.getServerConf().getHttpServerHost());
     }
 
     @Override

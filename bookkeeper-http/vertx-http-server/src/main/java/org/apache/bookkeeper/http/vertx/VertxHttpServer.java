@@ -44,7 +44,7 @@ public class VertxHttpServer implements HttpServer {
 
     static final Logger LOG = LoggerFactory.getLogger(VertxHttpServer.class);
 
-    private Vertx vertx;
+    private final Vertx vertx;
     private boolean isRunning;
     private HttpServiceProvider httpServiceProvider;
     private int listeningPort = -1;
@@ -64,6 +64,11 @@ public class VertxHttpServer implements HttpServer {
 
     @Override
     public boolean startServer(int port) {
+        return startServer(port, "0.0.0.0");
+    }
+
+    @Override
+    public boolean startServer(int port, String host) {
         CompletableFuture<AsyncResult<io.vertx.core.http.HttpServer>> future = new CompletableFuture<>();
         VertxHttpHandlerFactory handlerFactory = new VertxHttpHandlerFactory(httpServiceProvider);
         Router router = Router.router(vertx);
@@ -82,7 +87,7 @@ public class VertxHttpServer implements HttpServer {
             @Override
             public void start() throws Exception {
                 LOG.info("Starting Vertx HTTP server on port {}", port);
-                vertx.createHttpServer().requestHandler(router).listen(port, future::complete);
+                vertx.createHttpServer().requestHandler(router).listen(port, host, future::complete);
             }
         });
         try {
