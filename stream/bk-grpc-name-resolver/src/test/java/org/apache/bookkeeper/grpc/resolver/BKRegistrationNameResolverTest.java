@@ -116,7 +116,8 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
 
 
         @Cleanup("shutdown")
-        NameResolver resolver = resolverProvider.newNameResolver(serviceUri, Attributes.EMPTY);
+        NameResolver resolver = resolverProvider.newNameResolver(serviceUri,
+                NameResolver.Args.newBuilder().setDefaultPort(0).build());
         resolver.start(new Listener() {
             @Override
             public void onAddresses(List<EquivalentAddressGroup> servers, Attributes attributes) {

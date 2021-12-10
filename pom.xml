@@ -130,7 +130,7 @@
     <freebuilder.version>2.7.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.4.0</google.errorprone.version>
-    <grpc.version>1.33.0</grpc.version>
+    <grpc.version>1.42.1</grpc.version>
     <guava.version>30.0-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
     <hadoop.version>2.10.0</hadoop.version>
