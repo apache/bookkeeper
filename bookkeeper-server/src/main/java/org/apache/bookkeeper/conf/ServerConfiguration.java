@@ -261,6 +261,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Http Server parameters
     protected static final String HTTP_SERVER_ENABLED = "httpServerEnabled";
     protected static final String HTTP_SERVER_PORT = "httpServerPort";
+    protected static final String HTTP_SERVER_HOST = "httpServerHost";
 
     // Lifecycle Components
     protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
@@ -3402,6 +3403,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setHttpServerPort(int port) {
         setProperty(HTTP_SERVER_PORT, port);
+        return this;
+    }
+
+    /**
+     * Get the http server host.
+     *
+     * @return http server host
+     */
+    public String getHttpServerHost() {
+        return getString(HTTP_SERVER_HOST, "0.0.0.0");
+    }
+
+    /**
+     * Set Http server host listening on.
+     *
+     * @param host
+     *          host to listen on
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerHost(String host) {
+        setProperty(HTTP_SERVER_HOST, host);
         return this;
     }
 

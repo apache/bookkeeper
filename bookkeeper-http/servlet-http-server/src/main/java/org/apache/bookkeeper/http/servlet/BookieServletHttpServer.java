@@ -32,6 +32,8 @@ public class BookieServletHttpServer implements HttpServer {
   static final Logger LOG = LoggerFactory.getLogger(BookieServletHttpServer.class);
   private static HttpServiceProvider bookieHttpServiceProvider;
   private static int listenPort = -1;
+  private static String listenHost = "0.0.0.0";
+
 
   public static HttpServiceProvider getBookieHttpServiceProvider(){
     return bookieHttpServiceProvider;
@@ -41,6 +43,10 @@ public class BookieServletHttpServer implements HttpServer {
    **/
   public static int getListenPort(){
     return listenPort;
+  }
+
+  public static String getListenHost() {
+    return listenHost;
   }
 
   @Override
@@ -56,9 +62,21 @@ public class BookieServletHttpServer implements HttpServer {
   public static synchronized void setPort(int port){
     listenPort = port;
   }
+
+  public static void setHost(String host) {
+    listenHost = host;
+  }
+
   @Override
   public boolean startServer(int port) {
     setPort(port);
+    return true;
+  }
+
+  @Override
+  public boolean startServer(int port, String host) {
+    setPort(port);
+    setHost(host);
     return true;
   }
 
