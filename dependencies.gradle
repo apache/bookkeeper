@@ -135,6 +135,7 @@ depLibs = [
         exclude group: 'junit', module: 'junit'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
         exclude group: 'org.codehaus.mojo', module: 'animal-sniffer-annotations'
+        exclude group: 'com.google.guava', module: 'guava'
     },
     groovy: "org.codehaus.groovy:groovy-all:${depVersions.groovy}",
     guava: dependencies.create("com.google.guava:guava:${depVersions.guava}"){
