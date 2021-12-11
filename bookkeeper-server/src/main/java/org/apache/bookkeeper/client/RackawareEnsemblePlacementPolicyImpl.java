@@ -90,7 +90,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     protected boolean enforceMinNumRacksPerWriteQuorum;
     protected boolean ignoreLocalNodeInPlacementPolicy;
 
-    public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
 
     static final int RACKNAME_DISTANCE_FROM_LEAVES = 1;
