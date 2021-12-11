@@ -25,13 +25,12 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PAR
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
-
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-
 import java.io.IOException;
+import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +45,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-
 import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException;
@@ -58,9 +56,11 @@ import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -70,6 +70,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,6 +89,7 @@ public class ReplicationWorker implements Runnable {
     private static final int REPLICATED_FAILED_LEDGERS_MAXSIZE = 2000;
     public static final int NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS = 5;
 
+    private final MetadataBookieDriver metadataBookieDriver;
     private final LedgerUnderreplicationManager underreplicationManager;
     private final ServerConfiguration conf;
     private volatile boolean workerRunning = false;
@@ -175,10 +177,16 @@ public class ReplicationWorker implements Runnable {
         this.conf = conf;
         this.bkc = bkc;
         this.ownBkc = ownBkc;
-        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory
-                .newLedgerManagerFactory(
-                    this.conf,
-                    bkc.getMetadataClientDriver().getLayoutManager());
+
+        LedgerManagerFactory mFactory;
+        try {
+            this.metadataBookieDriver = MetadataDrivers.getBookieDriver(URI.create(conf.getMetadataServiceUri()));
+            this.metadataBookieDriver.initialize(conf, NullStatsLogger.INSTANCE);
+            mFactory = metadataBookieDriver.getLedgerManagerFactory();
+        } catch (ConfigurationException | MetadataException e) {
+            throw new IOException(e);
+        }
+
         this.underreplicationManager = mFactory
                 .newLedgerUnderreplicationManager();
         this.admin = new BookKeeperAdmin(bkc, statsLogger);
@@ -645,6 +653,8 @@ public class ReplicationWorker implements Runnable {
             LOG.warn("Exception while closing the "
                     + "ZkLedgerUnderrepliationManager", e);
         }
+
+        metadataBookieDriver.close();
     }
 
     /**
