@@ -25,12 +25,10 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PAR
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
-
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,7 +44,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-
 import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException;
@@ -58,8 +55,6 @@ import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -175,12 +170,8 @@ public class ReplicationWorker implements Runnable {
         this.conf = conf;
         this.bkc = bkc;
         this.ownBkc = ownBkc;
-        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory
-                .newLedgerManagerFactory(
-                    this.conf,
-                    bkc.getMetadataClientDriver().getLayoutManager());
-        this.underreplicationManager = mFactory
-                .newLedgerUnderreplicationManager();
+
+        this.underreplicationManager = bkc.getLedgerManagerFactory().newLedgerUnderreplicationManager();
         this.admin = new BookKeeperAdmin(bkc, statsLogger);
         this.ledgerChecker = new LedgerChecker(bkc);
         this.workerThread = new BookieThread(this, "ReplicationWorker");
