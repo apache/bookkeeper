@@ -663,4 +663,4 @@ This product uses the annotations from The Checker Framework, which are licensed
 MIT License. For details, see deps/checker-qual-3.5.0/LICENSE
 
 Bundles as
-  - lib/org.checkerframework-checker-compat-qual-2.5.5.jar
+  - lib/org.checkerframework-checker-qual-3.5.0.jar
