@@ -89,7 +89,6 @@ public class ReplicationWorker implements Runnable {
     private static final int REPLICATED_FAILED_LEDGERS_MAXSIZE = 2000;
     public static final int NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS = 5;
 
-    private final MetadataBookieDriver metadataBookieDriver;
     private final LedgerUnderreplicationManager underreplicationManager;
     private final ServerConfiguration conf;
     private volatile boolean workerRunning = false;
@@ -178,17 +177,7 @@ public class ReplicationWorker implements Runnable {
         this.bkc = bkc;
         this.ownBkc = ownBkc;
 
-        LedgerManagerFactory mFactory;
-        try {
-            this.metadataBookieDriver = MetadataDrivers.getBookieDriver(URI.create(conf.getMetadataServiceUri()));
-            this.metadataBookieDriver.initialize(conf, NullStatsLogger.INSTANCE);
-            mFactory = metadataBookieDriver.getLedgerManagerFactory();
-        } catch (ConfigurationException | MetadataException e) {
-            throw new IOException(e);
-        }
-
-        this.underreplicationManager = mFactory
-                .newLedgerUnderreplicationManager();
+        this.underreplicationManager = bkc.getLedgerManagerFactory().newLedgerUnderreplicationManager();
         this.admin = new BookKeeperAdmin(bkc, statsLogger);
         this.ledgerChecker = new LedgerChecker(bkc);
         this.workerThread = new BookieThread(this, "ReplicationWorker");
@@ -653,8 +642,6 @@ public class ReplicationWorker implements Runnable {
             LOG.warn("Exception while closing the "
                     + "ZkLedgerUnderrepliationManager", e);
         }
-
-        metadataBookieDriver.close();
     }
 
     /**
