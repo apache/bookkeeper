@@ -25,6 +25,7 @@ dependencies {
     implementation project(':stream:proto')
 
     implementation depLibs.grpc
+    implementation depLibs.guava
     runtimeOnly depLibs.googleHTTPClient
     compileOnly depLibs.lombok
     implementation depLibs.slf4j
