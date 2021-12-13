@@ -192,7 +192,10 @@ public class TestPrometheusFormatter {
             Matcher formatMatcher = formatPattern.matcher(line);
             System.err.println("Matches: " + matcher.matches());
             System.err.println(matcher);
+            assertTrue(matcher.matches());
+            assertTrue(formatMatcher.matches());
 
+            assertEquals(6, matcher.groupCount());
             System.err.println("groups: " + matcher.groupCount());
             for (int i = 0; i < matcher.groupCount(); i++) {
                 System.err.println("   GROUP " + i + " -- " + matcher.group(i));
