@@ -54,6 +54,7 @@ import org.apache.bookkeeper.client.LedgerChecker;
 import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieId;
@@ -172,7 +173,7 @@ public class ReplicationWorker implements Runnable {
         this.ownBkc = ownBkc;
 
         this.underreplicationManager = bkc.getLedgerManagerFactory().newLedgerUnderreplicationManager();
-        this.admin = new BookKeeperAdmin(bkc, statsLogger);
+        this.admin = new BookKeeperAdmin(bkc, statsLogger, new ClientConfiguration(conf));
         this.ledgerChecker = new LedgerChecker(bkc);
         this.workerThread = new BookieThread(this, "ReplicationWorker");
         this.openLedgerRereplicationGracePeriod = conf

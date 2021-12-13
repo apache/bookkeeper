@@ -114,7 +114,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         public TestBookKeeperAdmin(BookKeeper bkc, StatsLogger statsLogger,
                 MultiKeyMap<String, AvailabilityOfEntriesOfLedger> returnAvailabilityOfEntriesOfLedger,
                 MultiKeyMap<String, Integer> errorReturnValueForGetAvailabilityOfEntriesOfLedger) {
-            super(bkc, statsLogger);
+            super(bkc, statsLogger, baseClientConf);
             this.returnAvailabilityOfEntriesOfLedger = returnAvailabilityOfEntriesOfLedger;
             this.errorReturnValueForGetAvailabilityOfEntriesOfLedger =
                     errorReturnValueForGetAvailabilityOfEntriesOfLedger;
