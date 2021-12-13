@@ -91,7 +91,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
 
     public void testManyLedgers(boolean useShortHostName) throws Exception {
         try (BookKeeper bk = new BookKeeper(baseClientConf, zkc);
-            BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk)) {
+            BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk, baseClientConf)) {
 
             LOG.info("Create ledger and add entries to it");
             List<LedgerHandle> ledgers = new ArrayList<LedgerHandle>();
@@ -131,7 +131,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
     @Test
     public void testLimitLessThanTotalLedgers() throws Exception {
         try (BookKeeper bk = new BookKeeper(baseClientConf, zkc);
-            BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk)) {
+            BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk, baseClientConf)) {
 
             LOG.info("Create ledger and add entries to it");
             List<LedgerHandle> ledgers = new ArrayList<LedgerHandle>();
@@ -191,7 +191,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
     public void testChangeEnsembleAfterRenaming(boolean useShortHostName) throws Exception {
 
         try (BookKeeper bk = new BookKeeper(baseClientConf, zkc);
-            BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk)) {
+            BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk, baseClientConf)) {
 
             LOG.info("Create ledger and add entries to it");
             LedgerHandle lh = createLedgerWithEntries(bk, 100);
@@ -252,7 +252,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
     @Test
     public void testRenameWhenAddEntryInProgress() throws Exception {
         try (final BookKeeper bk = new BookKeeper(baseClientConf, zkc);
-            BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk)) {
+            BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk, baseClientConf)) {
 
             LOG.info("Create ledger and add entries to it");
             final int numOfEntries = 5000;

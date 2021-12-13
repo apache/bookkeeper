@@ -428,7 +428,7 @@ public class LocalBookKeeper {
                 for (int i = 1; i < values.length; i++) {
                     concatenatedValue.append(",").append(values[i]);
                 }
-                writer.println(key + "=" + concatenatedValue.toString());
+                writer.println(key + "=" + concatenatedValue);
             }
         }
     }

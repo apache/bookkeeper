@@ -317,7 +317,7 @@ public class Auditor implements AutoCloseable {
                 conf,
                 bkc,
                 ownBkc,
-                new BookKeeperAdmin(bkc, statsLogger),
+                new BookKeeperAdmin(bkc, statsLogger, new ClientConfiguration(conf)),
                 true,
                 statsLogger);
     }
@@ -1233,7 +1233,7 @@ public class Auditor implements AutoCloseable {
      * @return
      */
     BookKeeperAdmin getBookKeeperAdmin(final BookKeeper bookKeeper) {
-        return new BookKeeperAdmin(bookKeeper, statsLogger);
+        return new BookKeeperAdmin(bookKeeper, statsLogger, new ClientConfiguration(conf));
     }
 
     /**
@@ -1243,7 +1243,6 @@ public class Auditor implements AutoCloseable {
     void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
         final BookKeeper localClient = getBookKeeper(conf);
         final BookKeeperAdmin localAdmin = getBookKeeperAdmin(localClient);
-
         try {
             final LedgerChecker checker = new LedgerChecker(localClient);
 

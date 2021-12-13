@@ -27,6 +27,7 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_WRI
 import static org.apache.bookkeeper.replication.ReplicationStats.READ_DATA_LATENCY;;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;;
 import static org.apache.bookkeeper.replication.ReplicationStats.WRITE_DATA_LATENCY;
+import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.Unpooled;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -42,6 +43,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -102,8 +104,14 @@ public class LedgerFragmentReplicator {
     )
     private final OpStatsLogger writeDataLatency;
 
+    protected Throttler replicationThrottle = null;
 
-    public LedgerFragmentReplicator(BookKeeper bkc, StatsLogger statsLogger) {
+    private int averageEntrySize;
+
+    private static final int INITIAL_AVERAGE_ENTRY_SIZE = 1024;
+    private static final double AVERAGE_ENTRY_SIZE_RATIO = 0.8;
+
+    public LedgerFragmentReplicator(BookKeeper bkc, StatsLogger statsLogger, ClientConfiguration conf) {
         this.bkc = bkc;
         this.statsLogger = statsLogger;
         numEntriesRead = this.statsLogger.getCounter(NUM_ENTRIES_READ);
@@ -112,10 +120,14 @@ public class LedgerFragmentReplicator {
         numBytesWritten = this.statsLogger.getOpStatsLogger(NUM_BYTES_WRITTEN);
         readDataLatency = this.statsLogger.getOpStatsLogger(READ_DATA_LATENCY);
         writeDataLatency = this.statsLogger.getOpStatsLogger(WRITE_DATA_LATENCY);
+        if (conf.getReplicationRateByBytes() > 0) {
+            this.replicationThrottle = new Throttler(conf.getReplicationRateByBytes());
+        }
+        averageEntrySize = INITIAL_AVERAGE_ENTRY_SIZE;
     }
 
-    public LedgerFragmentReplicator(BookKeeper bkc) {
-        this(bkc, NullStatsLogger.INSTANCE);
+    public LedgerFragmentReplicator(BookKeeper bkc, ClientConfiguration conf) {
+        this(bkc, NullStatsLogger.INSTANCE, conf);
     }
 
     private static final Logger LOG = LoggerFactory
@@ -324,6 +336,11 @@ public class LedgerFragmentReplicator {
         final long ledgerId = lh.getId();
         final AtomicInteger numCompleted = new AtomicInteger(0);
         final AtomicBoolean completed = new AtomicBoolean(false);
+
+        if (replicationThrottle != null) {
+            replicationThrottle.acquire(averageEntrySize);
+        }
+
         final WriteCallback multiWriteCallback = new WriteCallback() {
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
@@ -379,10 +396,16 @@ public class LedgerFragmentReplicator {
                 final long dataLength = data.length;
                 numEntriesRead.inc();
                 numBytesRead.registerSuccessfulValue(dataLength);
+
                 ByteBufList toSend = lh.getDigestManager()
                         .computeDigestAndPackageForSending(entryId,
                                 lh.getLastAddConfirmed(), entry.getLength(),
                                 Unpooled.wrappedBuffer(data, 0, data.length));
+                if (replicationThrottle != null) {
+                    int toSendSize = toSend.readableBytes();
+                    averageEntrySize = (int) (averageEntrySize * AVERAGE_ENTRY_SIZE_RATIO
+                            + (1 - AVERAGE_ENTRY_SIZE_RATIO) * toSendSize);
+                }
                 for (BookieId newBookie : newBookies) {
                     long startWriteEntryTime = MathUtils.nowInNano();
                     bkc.getBookieClient().addEntry(newBookie, lh.getId(),
@@ -472,5 +495,18 @@ public class LedgerFragmentReplicator {
                             null, null);
                 }
             });
+    }
+
+    static class Throttler {
+        private final RateLimiter rateLimiter;
+
+        Throttler(int throttleBytes) {
+            this.rateLimiter = RateLimiter.create(throttleBytes);
+        }
+
+        // acquire. if bybytes: bytes of this entry; if byentries: 1.
+        void acquire(int permits) {
+            rateLimiter.acquire(permits);
+        }
     }
 }
