@@ -54,7 +54,7 @@ class TestCompatUpgrade {
         def upgradedBK = upgradedCL.newBookKeeper(zookeeper)
 
         try {
-            def ledger0 = currentRunningBK.createLedger(3, 2,
+            def ledger0 = currentRunningBK.createLedger(2, 2,
                                                         currentRunningCL.digestType("CRC32"),
                                                         PASSWD)
             for (int i = 0; i < numEntries; i++) {
@@ -63,7 +63,7 @@ class TestCompatUpgrade {
             ledger0.close()
 
             // Check whether current client can write to old server
-            def ledger1 = upgradedBK.createLedger(3, 2, upgradedCL.digestType("CRC32"), PASSWD)
+            def ledger1 = upgradedBK.createLedger(2, 2, upgradedCL.digestType("CRC32"), PASSWD)
             try {
                 ledger1.addEntry("foobar".getBytes())
 
@@ -111,161 +111,43 @@ class TestCompatUpgrade {
     }
 
     @Test
-    public void test0() throws Exception {
+    public void test_000() throws Exception {
         BookKeeperClusterUtils.legacyMetadataFormat(docker)
-        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.1.0"))
+        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.8.2"))
     }
 
     @Test
-    public void test410to420() throws Exception {
-        testUpgrade("4.1.0", "4.2.0")
+    public void test_001_482to492() throws Exception {
+        testUpgrade("4.8.2", "4.9.2")
     }
 
     @Test
-    public void test420to421() throws Exception {
-        testUpgrade("4.2.0", "4.2.1")
-    }
-
-    @Test
-    public void test421to422() throws Exception {
-        testUpgrade("4.2.1", "4.2.2")
-    }
-
-    @Test
-    public void test422to423() throws Exception {
-        testUpgrade("4.2.2", "4.2.3")
-    }
-
-    @Test
-    public void test423to424() throws Exception {
-        testUpgrade("4.2.3", "4.2.4")
-    }
-
-    @Test
-    public void test424to430() throws Exception {
-        testUpgrade("4.2.4", "4.3.0", true)
-    }
-
-    @Test
-    public void test430to431() throws Exception {
-        testUpgrade("4.3.0", "4.3.1")
-    }
-
-    @Test
-    public void test431to432() throws Exception {
-        testUpgrade("4.3.1", "4.3.2")
-    }
-
-    @Test
-    public void test432to440() throws Exception {
-        testUpgrade("4.3.2", "4.4.0")
-    }
-
-    @Test
-    public void test440to450() throws Exception {
-        testUpgrade("4.4.0", "4.5.0")
-    }
-
-    @Test
-    public void test450to451() throws Exception {
-        testUpgrade("4.5.0", "4.5.1")
-    }
-
-    @Test
-    public void test451to460() throws Exception {
-        testUpgrade("4.5.1", "4.6.0")
-    }
-
-    @Test
-    public void test460to461() throws Exception {
-        testUpgrade("4.6.0", "4.6.1", false, true)
-    }
-
-    @Test
-    public void test461to462() throws Exception {
-        testUpgrade("4.6.1", "4.6.2", false, true)
-    }
-
-    @Test
-    public void test462to470() throws Exception {
-        testUpgrade("4.6.2", "4.7.0")
-    }
-
-    @Test
-    public void test470to471() throws Exception {
-        testUpgrade("4.7.0", "4.7.1")
-    }
-
-    @Test
-    public void test471to472() throws Exception {
-        testUpgrade("4.7.1", "4.7.2")
-    }
-
-    @Test
-    public void test472to480() throws Exception {
-        testUpgrade("4.7.2", "4.8.0")
-    }
-
-    @Test
-    public void test480to481() throws Exception {
-        testUpgrade("4.8.0", "4.8.1")
-    }
-
-
-    @Test
-    public void test481to482() throws Exception {
-        testUpgrade("4.8.1", "4.8.2")
-    }
-
-    @Test
-    public void test490to491() throws Exception {
-        testUpgrade("4.9.0", "4.9.1")
-    }
-
-
-    @Test
-    public void test491to492() throws Exception {
-        testUpgrade("4.9.1", "4.9.2")
-    }
-
-    @Test
-    public void test492to4100() throws Exception {
+    public void test_002_492to4100() throws Exception {
         testUpgrade("4.9.2", "4.10.0")
     }
 
     @Test
-    public void test4100to4110() throws Exception {
-        testUpgrade("4.10.0", "4.11.0")
+    public void test_003_4100to4111() throws Exception {
+        testUpgrade("4.10.0", "4.11.1")
     }
 
     @Test
-    public void test4110to4111() throws Exception {
-        testUpgrade("4.11.0", "4.11.1")
+    public void test_004_4111to4121() throws Exception {
+        testUpgrade("4.11.1", "4.12.1")
     }
 
     @Test
-    public void test4111to4120() throws Exception {
-        testUpgrade("4.11.1", "4.12.0")
-    }
-
-
-    @Test
-    public void test4120to4121() throws Exception {
-        testUpgrade("4.12.0", "4.12.1")
-    }
-
-    @Test
-    public void test4121to4130() throws Exception {
+    public void test_005_4121to4130() throws Exception {
         testUpgrade("4.12.1", "4.13.0")
     }
 
     @Test
-    public void test4130to4140() throws Exception {
-        testUpgrade("4.13.0", "4.14.0")
+    public void test_006_4130to4143() throws Exception {
+        testUpgrade("4.13.0", "4.14.3")
     }
 
     @Test
-    public void test414toCurrentMaster() throws Exception {
-        testUpgrade("4.14.0", System.getProperty("currentVersion"))
+    public void test_007_4143toCurrentMaster() throws Exception {
+        testUpgrade("4.14.3", BookKeeperClusterUtils.CURRENT_VERSION)
     }
 }
