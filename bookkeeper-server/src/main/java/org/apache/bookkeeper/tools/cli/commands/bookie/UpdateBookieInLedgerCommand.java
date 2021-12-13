@@ -148,7 +148,7 @@ public class UpdateBookieInLedgerCommand extends BookieCommand<UpdateBookieInLed
         final ClientConfiguration clientConfiguration = new ClientConfiguration();
         clientConfiguration.addConfiguration(conf);
         final BookKeeper bk = new BookKeeper(clientConfiguration);
-        final BookKeeperAdmin admin = new BookKeeperAdmin(bk);
+        final BookKeeperAdmin admin = new BookKeeperAdmin(bk, clientConfiguration);
         if (admin.getAvailableBookies().contains(srcBookieAddress)
                 || admin.getReadOnlyBookies().contains(srcBookieAddress)) {
             bk.close();
