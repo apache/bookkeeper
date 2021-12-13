@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
@@ -161,7 +162,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         // Create the BookKeeper client instance
         bkc = new BookKeeper(conf);
         ownsBK = true;
-        this.lfr = new LedgerFragmentReplicator(bkc, NullStatsLogger.INSTANCE);
+        this.lfr = new LedgerFragmentReplicator(bkc, NullStatsLogger.INSTANCE, conf);
         this.mFactory = bkc.ledgerManagerFactory;
     }
 
@@ -174,15 +175,22 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @param statsLogger
      *            - stats logger
      */
-    public BookKeeperAdmin(final BookKeeper bkc, StatsLogger statsLogger) {
+    public BookKeeperAdmin(final BookKeeper bkc, StatsLogger statsLogger, ClientConfiguration conf) {
+        Objects.requireNonNull(conf, "Client configuration cannot be null");
         this.bkc = bkc;
         ownsBK = false;
-        this.lfr = new LedgerFragmentReplicator(bkc, statsLogger);
+        this.lfr = new LedgerFragmentReplicator(bkc, statsLogger, conf);
         this.mFactory = bkc.ledgerManagerFactory;
     }
 
+    public BookKeeperAdmin(final BookKeeper bkc, ClientConfiguration conf) {
+        this(bkc, NullStatsLogger.INSTANCE, conf);
+    }
+
     public BookKeeperAdmin(final BookKeeper bkc) {
-        this(bkc, NullStatsLogger.INSTANCE);
+        this.bkc = bkc;
+        ownsBK = false;
+        this.mFactory = bkc.ledgerManagerFactory;
     }
 
     public ClientConfiguration getConf() {

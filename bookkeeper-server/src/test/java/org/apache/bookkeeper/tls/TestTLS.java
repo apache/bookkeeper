@@ -323,7 +323,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
                 LedgerEntry e = entries.nextElement();
                 assertTrue("Entry contents incorrect", Arrays.equals(e.getEntry(), testEntry));
             }
-            BookKeeperAdmin admin = new BookKeeperAdmin(client);
+            BookKeeperAdmin admin = new BookKeeperAdmin(client, baseClientConf);
             return admin.getLedgerMetadata(lh);
         }
     }
