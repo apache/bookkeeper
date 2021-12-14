@@ -27,11 +27,14 @@ import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
 import io.grpc.NameResolver.Listener;
 import io.grpc.Status;
+import io.grpc.SynchronizationContext;
+import io.grpc.internal.GrpcUtil;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
@@ -116,7 +119,18 @@ public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
 
 
         @Cleanup("shutdown")
-        NameResolver resolver = resolverProvider.newNameResolver(serviceUri, Attributes.EMPTY);
+        NameResolver resolver = resolverProvider.newNameResolver(serviceUri,
+                NameResolver.Args.newBuilder()
+                        .setDefaultPort(0)
+                        .setProxyDetector(GrpcUtil.DEFAULT_PROXY_DETECTOR)
+                        .setSynchronizationContext(new SynchronizationContext((t, ex) -> {}))
+                        .setServiceConfigParser(new NameResolver.ServiceConfigParser() {
+                            @Override
+                            public NameResolver.ConfigOrError parseServiceConfig(Map<String, ?> rawServiceConfig) {
+                                return null;
+                            }
+                        })
+                        .build());
         resolver.start(new Listener() {
             @Override
             public void onAddresses(List<EquivalentAddressGroup> servers, Attributes attributes) {

@@ -22,6 +22,7 @@ plugins {
 
 dependencies {
     implementation depLibs.grpc
+    implementation depLibs.guava
     testImplementation depLibs.googleHTTPClient
     compileOnly depLibs.lombok
     implementation depLibs.slf4j

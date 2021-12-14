@@ -27,6 +27,7 @@ dependencies {
     implementation project(":bookkeeper-stats")
     implementation depLibs.etcd
     implementation depLibs.commonsConfiguration
+    implementation depLibs.commonsLang3
     implementation depLibs.grpc
     implementation depLibs.zookeeper
 

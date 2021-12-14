@@ -25,6 +25,7 @@ dependencies {
     implementation project(':stream:common')
     compileOnly depLibs.lombok
     implementation depLibs.grpc
+    implementation depLibs.guava
     runtimeOnly depLibs.googleHTTPClient
     implementation depLibs.commonsLang3
     compileOnly depLibs.jsr305
