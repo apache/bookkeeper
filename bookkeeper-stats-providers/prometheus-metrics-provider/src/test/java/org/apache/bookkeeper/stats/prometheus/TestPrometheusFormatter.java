@@ -66,6 +66,8 @@ public class TestPrometheusFormatter {
 
         StringWriter writer = new StringWriter();
         provider.writeAllMetrics(writer);
+
+        writer.write("jvm_memory_direct_bytes_max{} 4.77626368E8\n");
         System.out.println(writer);
         Multimap<String, Metric> metrics = parseMetrics(writer.toString());
         System.out.println(metrics);
@@ -177,8 +179,8 @@ public class TestPrometheusFormatter {
         // or
         // pulsar_subscriptions_count{cluster="standalone", namespace="sample/standalone/ns1",
         // topic="persistent://sample/standalone/ns1/test-2"} 0.0 1517945780897
-        Pattern pattern = Pattern.compile("^(\\w+)(\\{([^\\}]+)\\})?\\s(-?[\\d\\w\\.]+)(\\s(\\d+))?$");
-        Pattern formatPattern = Pattern.compile("^(\\w+)(\\{(\\w+=[\\\"\\.\\w]+(,\\s?\\w+=[\\\"\\.\\w]+)*)\\})?"
+        Pattern pattern = Pattern.compile("^(\\w+)(\\{([^\\}]*)\\})?\\s(-?[\\d\\w\\.]+)(\\s(\\d+))?$");
+        Pattern formatPattern = Pattern.compile("^(\\w+)(\\{((\\w+=[\\\"\\.\\w]+(,\\s?\\w+=[\\\"\\.\\w]+)*))?\\})?"
                 + "\\s(-?[\\d\\w\\.]+)(\\s(\\d+))?$");
         Pattern tagsPattern = Pattern.compile("(\\w+)=\"([^\"]+)\"(,\\s?)?");
 
