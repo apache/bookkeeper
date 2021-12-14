@@ -39,11 +39,11 @@ depVersions = [
     dockerJava: "3.2.5",
     dropwizard: "3.2.5",
     errorprone: "2.4.0",
-    etcd: "0.5.4",
+    etcd: "0.5.11",
     freebuilder: "2.7.0",
     googleHTTPClient: "1.34.0",
     gradleTooling: "4.0.1",
-    grpc: "1.33.0",
+    grpc: "1.42.1",
     groovy: "2.5.8",
     guava: "30.0-jre",
     hamcrest: "1.3",
@@ -135,6 +135,7 @@ depLibs = [
         exclude group: 'junit', module: 'junit'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
         exclude group: 'org.codehaus.mojo', module: 'animal-sniffer-annotations'
+        exclude group: 'com.google.guava', module: 'guava'
     },
     groovy: "org.codehaus.groovy:groovy-all:${depVersions.groovy}",
     guava: dependencies.create("com.google.guava:guava:${depVersions.guava}"){

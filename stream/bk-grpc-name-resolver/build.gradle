@@ -28,6 +28,7 @@ dependencies {
     implementation project(':bookkeeper-stats')
     implementation project(':stream:common')
     implementation depLibs.grpc
+    implementation depLibs.guava
     implementation depLibs.slf4j
     implementation depLibs.commonsConfiguration
 
