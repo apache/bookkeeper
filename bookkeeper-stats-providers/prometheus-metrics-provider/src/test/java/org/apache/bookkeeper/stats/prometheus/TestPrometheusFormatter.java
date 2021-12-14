@@ -177,9 +177,9 @@ public class TestPrometheusFormatter {
         // or
         // pulsar_subscriptions_count{cluster="standalone", namespace="sample/standalone/ns1",
         // topic="persistent://sample/standalone/ns1/test-2"} 0.0 1517945780897
-        Pattern pattern = Pattern.compile("^(\\w+)(\\{([^\\}]+)\\})?\\s(-?[\\d\\w\\.]+)(\\s(\\d+))?$");
-        Pattern formatPattern = Pattern.compile("^(\\w+)(\\{(\\w+=[\\\"\\.\\w]+(,\\s?\\w+=[\\\"\\.\\w]+)*)\\})?"
-                + "\\s(-?[\\d\\w\\.]+)(\\s(\\d+))?$");
+        Pattern pattern = Pattern.compile("^(\\w+)(\\{([,-=\\'\\\"\\s\\.\\w]*)\\})?\\s(-?[\\d\\w\\.]+)$");
+        Pattern formatPattern = Pattern.compile("^(\\w+)(\\{(\\w+=[-\\'\\\"\\s\\.\\w]+"
+                + "(,\\s?\\w+=[-\\'\\\"\\s\\.\\w]+)*)?\\})?\\s(-?[\\d\\w\\.]+)?$");
         Pattern tagsPattern = Pattern.compile("(\\w+)=\"([^\"]+)\"(,\\s?)?");
 
         Splitter.on("\n").split(metrics).forEach(line -> {
