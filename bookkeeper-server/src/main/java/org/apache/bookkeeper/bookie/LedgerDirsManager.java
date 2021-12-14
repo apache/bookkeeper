@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_NUM_DIRS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_WRITABLE_DIRS;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -58,12 +59,16 @@ public class LedgerDirsManager {
 
     private final DiskChecker diskChecker;
 
-    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker) {
+    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker) throws IOException {
         this(conf, dirs, diskChecker, NullStatsLogger.INSTANCE);
     }
 
-    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger) {
+    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger)
+            throws IOException {
         this.ledgerDirectories = Arrays.asList(BookieImpl.getCurrentDirectories(dirs));
+        for (File f : this.ledgerDirectories) {
+            BookieImpl.checkDirectoryStructure(f);
+        }
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
         this.filledDirs = new ArrayList<File>();
         this.listeners = new ArrayList<LedgerDirsListener>();
@@ -98,6 +103,20 @@ public class LedgerDirsManager {
             @Override
             public Number getSample() {
                 return writableLedgerDirectories.size();
+            }
+        });
+
+        final int numDirs = dirs.length;
+        statsLogger.registerGauge(LD_NUM_DIRS, new Gauge<Number>() {
+
+            @Override
+            public Number getDefaultValue() {
+                return numDirs;
+            }
+
+            @Override
+            public Number getSample() {
+                return numDirs;
             }
         });
     }

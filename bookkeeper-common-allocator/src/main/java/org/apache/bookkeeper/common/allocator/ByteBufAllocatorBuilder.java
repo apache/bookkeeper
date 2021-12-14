@@ -39,7 +39,7 @@ public interface ByteBufAllocatorBuilder {
     /**
      * Finalize the configured {@link ByteBufAllocator}.
      */
-    ByteBufAllocator build();
+    ByteBufAllocatorWithOomHandler build();
 
     /**
      * Specify a custom allocator where the allocation requests should be

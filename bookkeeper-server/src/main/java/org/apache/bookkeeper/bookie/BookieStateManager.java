@@ -41,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -80,9 +79,9 @@ public class BookieStateManager implements StateManager {
     private final AtomicBoolean forceReadOnly = new AtomicBoolean(false);
     private volatile boolean availableForHighPriorityWrites = true;
 
-    private final BookieId bookieId;
+    private final Supplier<BookieId> bookieIdSupplier;
     private ShutdownHandler shutdownHandler;
-    private final Supplier<RegistrationManager> rm;
+    private final RegistrationManager rm;
     // Expose Stats
     @StatsDoc(
         name = SERVER_STATUS,
@@ -92,13 +91,13 @@ public class BookieStateManager implements StateManager {
 
     public BookieStateManager(ServerConfiguration conf,
                               StatsLogger statsLogger,
-                              MetadataBookieDriver metadataDriver,
+                              RegistrationManager rm,
                               LedgerDirsManager ledgerDirsManager,
                               Supplier<BookieServiceInfo> bookieServiceInfoProvider) throws IOException {
         this(
             conf,
             statsLogger,
-            () -> null == metadataDriver ? null : metadataDriver.getRegistrationManager(),
+            rm,
             ledgerDirsManager.getAllLedgerDirs(),
             () -> {
                 try {
@@ -111,15 +110,23 @@ public class BookieStateManager implements StateManager {
     }
     public BookieStateManager(ServerConfiguration conf,
                               StatsLogger statsLogger,
-                              Supplier<RegistrationManager> rm,
+                              RegistrationManager rm,
                               List<File> statusDirs,
                               Supplier<BookieId> bookieIdSupplier,
                               Supplier<BookieServiceInfo> bookieServiceInfoProvider) throws IOException {
         this.conf = conf;
         this.rm = rm;
+        if (this.rm != null) {
+            rm.addRegistrationListener(() -> {
+                    forceToUnregistered();
+                    // schedule a re-register operation
+                    registerBookie(false);
+                });
+        }
+
         this.statusDirs = statusDirs;
         // ZK ephemeral node for this Bookie.
-        this.bookieId = bookieIdSupplier.get();
+        this.bookieIdSupplier = bookieIdSupplier;
         this.bookieServiceInfoProvider = bookieServiceInfoProvider;
         // 1 : up, 0 : readonly, -1 : unregistered
         this.serverStatusGauge = new Gauge<Number>() {
@@ -143,12 +150,12 @@ public class BookieStateManager implements StateManager {
     }
 
     private boolean isRegistrationManagerDisabled() {
-        return null == rm || null == rm.get();
+        return null == rm;
     }
 
     @VisibleForTesting
-    BookieStateManager(ServerConfiguration conf, MetadataBookieDriver metadataDriver) throws IOException {
-        this(conf, NullStatsLogger.INSTANCE, metadataDriver, new LedgerDirsManager(conf, conf.getLedgerDirs(),
+    BookieStateManager(ServerConfiguration conf, RegistrationManager registrationManager) throws IOException {
+        this(conf, NullStatsLogger.INSTANCE, registrationManager, new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
                 NullStatsLogger.INSTANCE), BookieServiceInfo.NO_INFO);
     }
@@ -270,7 +277,7 @@ public class BookieStateManager implements StateManager {
 
         rmRegistered.set(false);
         try {
-            rm.get().registerBookie(bookieId, isReadOnly, bookieServiceInfoProvider.get());
+            rm.registerBookie(bookieIdSupplier.get(), isReadOnly, bookieServiceInfoProvider.get());
             rmRegistered.set(true);
         } catch (BookieException e) {
             throw new IOException(e);
@@ -304,7 +311,7 @@ public class BookieStateManager implements StateManager {
         }
         // clear the readonly state
         try {
-            rm.get().unregisterBookie(bookieId, true);
+            rm.unregisterBookie(bookieIdSupplier.get(), true);
         } catch (BookieException e) {
             // if we failed when deleting the readonly flag in zookeeper, it is OK since client would
             // already see the bookie in writable list. so just log the exception
@@ -340,7 +347,7 @@ public class BookieStateManager implements StateManager {
             return;
         }
         try {
-            rm.get().registerBookie(bookieId, true, bookieServiceInfoProvider.get());
+            rm.registerBookie(bookieIdSupplier.get(), true, bookieServiceInfoProvider.get());
         } catch (BookieException e) {
             LOG.error("Error in transition to ReadOnly Mode."
                     + " Shutting down", e);

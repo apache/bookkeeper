@@ -60,8 +60,10 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.lang3.StringUtils;
 
@@ -84,19 +86,37 @@ public class DbLedgerStorage implements LedgerStorage {
             / MB;
     private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory())
             / MB;
+    static final String READ_AHEAD_CACHE_BATCH_SIZE = "dbStorage_readAheadCacheBatchSize";
+    private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE = 100;
+
     private int numberOfDirs;
     private List<SingleDirectoryDbLedgerStorage> ledgerStorageList;
 
     // Keep 1 single Bookie GC thread so the the compactions from multiple individual directories are serialized
     private ScheduledExecutorService gcExecutor;
-    private DbLedgerStorageStats stats;
 
     protected ByteBufAllocator allocator;
 
+    // parent DbLedgerStorage stats (not per directory)
+    private static final String MAX_READAHEAD_BATCH_SIZE = "readahead-max-batch-size";
+    private static final String MAX_WRITE_CACHE_SIZE = "write-cache-max-size";
+
+    @StatsDoc(
+            name = MAX_READAHEAD_BATCH_SIZE,
+            help = "the configured readahead batch size"
+    )
+    private Gauge<Integer> readaheadBatchSizeGauge;
+
+    @StatsDoc(
+            name = MAX_WRITE_CACHE_SIZE,
+            help = "the configured write cache size"
+    )
+    private Gauge<Long> writeCacheSizeGauge;
+
     @Override
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
-            LedgerDirsManager indexDirsManager, StateManager stateManager, CheckpointSource checkpointSource,
-            Checkpointer checkpointer, StatsLogger statsLogger, ByteBufAllocator allocator) throws IOException {
+                           LedgerDirsManager indexDirsManager, StatsLogger statsLogger, ByteBufAllocator allocator)
+            throws IOException {
         long writeCacheMaxSize = getLongVariableOrDefault(conf, WRITE_CACHE_MAX_SIZE_MB,
                 DEFAULT_WRITE_CACHE_MAX_SIZE_MB) * MB;
         long readCacheMaxSize = getLongVariableOrDefault(conf, READ_AHEAD_CACHE_MAX_SIZE_MB,
@@ -116,6 +136,7 @@ public class DbLedgerStorage implements LedgerStorage {
 
         long perDirectoryWriteCacheSize = writeCacheMaxSize / numberOfDirs;
         long perDirectoryReadCacheSize = readCacheMaxSize / numberOfDirs;
+        int readAheadCacheBatchSize = conf.getInt(READ_AHEAD_CACHE_BATCH_SIZE, DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE);
 
         gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollector"));
 
@@ -127,29 +148,61 @@ public class DbLedgerStorage implements LedgerStorage {
             dirs[0] = ledgerDir.getParentFile();
             LedgerDirsManager ldm = new LedgerDirsManager(conf, dirs, ledgerDirsManager.getDiskChecker(), statsLogger);
             ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm, indexDirsManager,
-                    stateManager, checkpointSource, checkpointer, statsLogger, gcExecutor, perDirectoryWriteCacheSize,
-                    perDirectoryReadCacheSize));
+                    statsLogger, gcExecutor, perDirectoryWriteCacheSize,
+                    perDirectoryReadCacheSize, readAheadCacheBatchSize));
             ldm.getListeners().forEach(ledgerDirsManager::addLedgerDirsListener);
         }
 
-        this.stats = new DbLedgerStorageStats(
-            statsLogger,
-            () -> ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getWriteCacheSize).sum(),
-            () -> ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getWriteCacheCount).sum(),
-            () -> ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getReadCacheSize).sum(),
-            () -> ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getReadCacheCount).sum()
-        );
+        // parent DbLedgerStorage stats (not per directory)
+        readaheadBatchSizeGauge = new Gauge<Integer>() {
+            @Override
+            public Integer getDefaultValue() {
+                return readAheadCacheBatchSize;
+            }
+
+            @Override
+            public Integer getSample() {
+                return readAheadCacheBatchSize;
+            }
+        };
+        statsLogger.registerGauge(MAX_READAHEAD_BATCH_SIZE, readaheadBatchSizeGauge);
+
+        writeCacheSizeGauge = new Gauge<Long>() {
+            @Override
+            public Long getDefaultValue() {
+                return perDirectoryWriteCacheSize;
+            }
+
+            @Override
+            public Long getSample() {
+                return perDirectoryWriteCacheSize;
+            }
+        };
+        statsLogger.registerGauge(MAX_WRITE_CACHE_SIZE, writeCacheSizeGauge);
     }
 
     @VisibleForTesting
     protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-            StateManager stateManager, CheckpointSource checkpointSource, Checkpointer checkpointer,
-            StatsLogger statsLogger, ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize)
+            StatsLogger statsLogger, ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize,
+            int readAheadCacheBatchSize)
             throws IOException {
         return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
-                stateManager, checkpointSource, checkpointer, statsLogger, allocator, gcExecutor, writeCacheSize,
-                readCacheSize);
+                                                  statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize,
+                                                  readAheadCacheBatchSize);
+    }
+
+    @Override
+    public void setStateManager(StateManager stateManager) {
+        ledgerStorageList.forEach(s -> s.setStateManager(stateManager));
+    }
+    @Override
+    public void setCheckpointSource(CheckpointSource checkpointSource) {
+        ledgerStorageList.forEach(s -> s.setCheckpointSource(checkpointSource));
+    }
+    @Override
+    public void setCheckpointer(Checkpointer checkpointer) {
+        ledgerStorageList.forEach(s -> s.setCheckpointer(checkpointer));
     }
 
     @Override

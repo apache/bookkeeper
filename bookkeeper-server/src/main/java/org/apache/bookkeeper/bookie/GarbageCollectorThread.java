@@ -520,8 +520,10 @@ public class GarbageCollectorThread extends SafeRunnable {
      *
      * @throws InterruptedException if there is an exception stopping gc thread.
      */
-    public void shutdown() throws InterruptedException {
-        this.running = false;
+    public synchronized void shutdown() throws InterruptedException {
+        if (!this.running) {
+            return;
+        }
         LOG.info("Shutting down GarbageCollectorThread");
 
         while (!compacting.compareAndSet(false, true)) {
@@ -529,6 +531,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             Thread.sleep(100);
         }
 
+        this.running = false;
         // Interrupt GC executor thread
         gcExecutor.shutdownNow();
     }

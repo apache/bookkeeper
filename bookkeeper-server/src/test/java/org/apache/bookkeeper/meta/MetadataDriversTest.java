@@ -36,7 +36,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
 import org.apache.bookkeeper.meta.MetadataDrivers.MetadataBookieDriverInfo;
 import org.apache.bookkeeper.meta.MetadataDrivers.MetadataClientDriverInfo;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
@@ -107,13 +106,12 @@ public class MetadataDriversTest {
     abstract static class TestBookieDriver implements MetadataBookieDriver {
         @Override
         public MetadataBookieDriver initialize(ServerConfiguration conf,
-                                               RegistrationListener listener,
                                                StatsLogger statsLogger) throws MetadataException {
             return this;
         }
 
         @Override
-        public RegistrationManager getRegistrationManager() {
+        public RegistrationManager createRegistrationManager() {
             return mock(RegistrationManager.class);
         }
 

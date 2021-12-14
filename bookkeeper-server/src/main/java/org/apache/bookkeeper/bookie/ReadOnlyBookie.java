@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.util.function.Supplier;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +44,17 @@ public class ReadOnlyBookie extends BookieImpl {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyBookie.class);
 
-    public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger,
-            ByteBufAllocator allocator, Supplier<BookieServiceInfo> bookieServiceInfoProvider)
+    public ReadOnlyBookie(ServerConfiguration conf,
+                          RegistrationManager registrationManager,
+                          LedgerStorage storage,
+                          DiskChecker diskChecker,
+                          LedgerDirsManager ledgerDirsManager,
+                          LedgerDirsManager indexDirsManager,
+                          StatsLogger statsLogger,
+                          ByteBufAllocator allocator, Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws IOException, KeeperException, InterruptedException, BookieException {
-        super(conf, statsLogger, allocator, bookieServiceInfoProvider);
+        super(conf, registrationManager, storage, diskChecker,
+              ledgerDirsManager, indexDirsManager, statsLogger, allocator, bookieServiceInfoProvider);
         if (conf.isReadOnlyModeEnabled()) {
             stateManager.forceToReadOnly();
         } else {
@@ -54,24 +63,5 @@ public class ReadOnlyBookie extends BookieImpl {
             throw new IOException(err);
         }
         LOG.info("Running bookie in force readonly mode.");
-    }
-
-    @Override
-    StateManager initializeStateManager() throws IOException {
-        return new BookieStateManager(conf, statsLogger, metadataDriver, getLedgerDirsManager(),
-                                      bookieServiceInfoProvider) {
-
-            @Override
-            public void doTransitionToWritableMode() {
-                // no-op
-                LOG.info("Skip transition to writable mode for readonly bookie");
-            }
-
-            @Override
-            public void doTransitionToReadOnlyMode() {
-                // no-op
-                LOG.info("Skip transition to readonly mode for readonly bookie");
-            }
-        };
     }
 }

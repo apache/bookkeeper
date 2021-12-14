@@ -17,13 +17,6 @@
  */
 package org.apache.distributedlog;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.BookieServiceInfo;
-import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -46,75 +39,41 @@ public class TestTxnId extends TestDistributedLogBase {
             .setLogSegmentRollingConcurrency(-1)
             .setMaxLogSegmentBytes(400000);
 
-        long entryId = 0;
-        List<BookieServer> extraBookies = new ArrayList<>();
-        try {
-            extraBookies.add(startExtraBookie());
-            extraBookies.add(startExtraBookie());
+        bkutil.addBookie();
+        bkutil.addBookie();
 
-            try (BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
-                 BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned()) {
-                writer.write(DLMTestUtil.getLogRecordInstance(1, 100000)).join();
-                writer.write(DLMTestUtil.getLogRecordInstance(2, 100000)).join();
+        try (BKDistributedLogManager dlm = createNewDLM(conf, name);
+             BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned()) {
+            writer.write(DLMTestUtil.getLogRecordInstance(1, 100000)).join();
+            writer.write(DLMTestUtil.getLogRecordInstance(2, 100000)).join();
 
-                extraBookies.forEach(b -> b.shutdown());
+            bkutil.removeBookie();
+            bkutil.removeBookie();
 
-                try {
-                    writer.write(DLMTestUtil.getLogRecordInstance(3, 100000)).join();
-                    Assert.fail("Shouldn't have succeeded");
-                } catch (Exception e) {
-                    // expected
-                }
-
-                writer.write(DLMTestUtil.getLogRecordInstance(4, 100000)).join();
-                Assert.fail("Shouldn't be able to write");
+            try {
+                writer.write(DLMTestUtil.getLogRecordInstance(3, 100000)).join();
+                Assert.fail("Shouldn't have succeeded");
             } catch (Exception e) {
                 // expected
             }
 
-            extraBookies.add(startExtraBookie());
-            extraBookies.add(startExtraBookie());
+            writer.write(DLMTestUtil.getLogRecordInstance(4, 100000)).join();
+            Assert.fail("Shouldn't be able to write");
+        } catch (Exception e) {
+            // expected
+        }
 
-            try (BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
-                 BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned()) {
-                long firstTxid = dlm.getLastTxId() + 1;
-                for (int i = 0; i < 20; i++) {
-                    logger.info("Writing entry {}", i);
-                    writer.write(DLMTestUtil.getLogRecordInstance(firstTxid + i, 100000)).join();
-                    Thread.sleep(100);
-                }
+        bkutil.addBookie();
+        bkutil.addBookie();
+
+        try (BKDistributedLogManager dlm = createNewDLM(conf, name);
+             BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned()) {
+            long firstTxid = dlm.getLastTxId() + 1;
+            for (int i = 0; i < 20; i++) {
+                logger.info("Writing entry {}", i);
+                writer.write(DLMTestUtil.getLogRecordInstance(firstTxid + i, 100000)).join();
+                Thread.sleep(100);
             }
-        } finally {
-            extraBookies.forEach(b -> b.shutdown());
         }
-    }
-
-    private BookieServer startExtraBookie() throws Exception {
-        File journalDir = File.createTempFile("bookie", "journal");
-        journalDir.delete();
-        journalDir.mkdir();
-        TMP_DIRS.add(journalDir);
-
-        File ledgerDir =  File.createTempFile("bookie", "ledger");
-        ledgerDir.delete();
-        ledgerDir.mkdir();
-        TMP_DIRS.add(ledgerDir);
-
-        ServerConfiguration conf = new ServerConfiguration();
-        conf.setMetadataServiceUri("zk://" + zkServers + "/ledgers");
-        conf.setBookiePort(0);
-        conf.setDiskUsageThreshold(0.99f);
-        conf.setAllowLoopback(true);
-        conf.setJournalDirName(journalDir.getPath());
-        conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
-
-        BookieServer server = new BookieServer(conf, new NullStatsProvider().getStatsLogger(""),
-                                               BookieServiceInfo.NO_INFO);
-        server.start();
-
-        while (!server.isRunning()) {
-            Thread.sleep(10);
-        }
-        return server;
     }
 }

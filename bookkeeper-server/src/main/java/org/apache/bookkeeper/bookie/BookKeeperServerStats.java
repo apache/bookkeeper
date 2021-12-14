@@ -187,6 +187,7 @@ public interface BookKeeperServerStats {
     String LD_LEDGER_SCOPE = "ledger";
     String LD_INDEX_SCOPE = "index";
     String LD_WRITABLE_DIRS = "writable_dirs";
+    String LD_NUM_DIRS = "num_dirs";
 
     // EntryLogManagerForEntryLogPerLedger Stats
     String ENTRYLOGGER_SCOPE = "entrylogger";

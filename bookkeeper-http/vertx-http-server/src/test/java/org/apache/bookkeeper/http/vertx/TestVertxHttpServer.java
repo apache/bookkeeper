@@ -56,6 +56,19 @@ public class TestVertxHttpServer {
     }
 
     @Test
+    public void testStartBasicHttpServerConfigHost() throws Exception {
+        VertxHttpServer httpServer = new VertxHttpServer();
+        HttpServiceProvider httpServiceProvider = NullHttpServiceProvider.getInstance();
+        httpServer.initialize(httpServiceProvider);
+        assertTrue(httpServer.startServer(0, "localhost"));
+        int port = httpServer.getListeningPort();
+        HttpResponse httpResponse = send(getUrl(port, HttpRouter.HEARTBEAT), HttpServer.Method.GET);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), httpResponse.responseCode);
+        assertEquals(HeartbeatService.HEARTBEAT.trim(), httpResponse.responseBody.trim());
+        httpServer.stopServer();
+    }
+
+    @Test
     public void testStartMetricsServiceOnRouterPath() throws Exception {
         VertxHttpServer httpServer = new VertxHttpServer();
         HttpServiceProvider httpServiceProvider = NullHttpServiceProvider.getInstance();

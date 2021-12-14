@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
@@ -64,6 +65,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerAuditorManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
@@ -160,7 +162,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         // Create the BookKeeper client instance
         bkc = new BookKeeper(conf);
         ownsBK = true;
-        this.lfr = new LedgerFragmentReplicator(bkc, NullStatsLogger.INSTANCE);
+        this.lfr = new LedgerFragmentReplicator(bkc, NullStatsLogger.INSTANCE, conf);
         this.mFactory = bkc.ledgerManagerFactory;
     }
 
@@ -173,15 +175,22 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @param statsLogger
      *            - stats logger
      */
-    public BookKeeperAdmin(final BookKeeper bkc, StatsLogger statsLogger) {
+    public BookKeeperAdmin(final BookKeeper bkc, StatsLogger statsLogger, ClientConfiguration conf) {
+        Objects.requireNonNull(conf, "Client configuration cannot be null");
         this.bkc = bkc;
         ownsBK = false;
-        this.lfr = new LedgerFragmentReplicator(bkc, statsLogger);
+        this.lfr = new LedgerFragmentReplicator(bkc, statsLogger, conf);
         this.mFactory = bkc.ledgerManagerFactory;
     }
 
+    public BookKeeperAdmin(final BookKeeper bkc, ClientConfiguration conf) {
+        this(bkc, NullStatsLogger.INSTANCE, conf);
+    }
+
     public BookKeeperAdmin(final BookKeeper bkc) {
-        this(bkc, NullStatsLogger.INSTANCE);
+        this.bkc = bkc;
+        ownsBK = false;
+        this.mFactory = bkc.ledgerManagerFactory;
     }
 
     public ClientConfiguration getConf() {
@@ -1231,32 +1240,34 @@ public class BookKeeperAdmin implements AutoCloseable {
             boolean isInteractive, boolean force) throws Exception {
         return runFunctionWithMetadataBookieDriver(conf, driver -> {
             try {
-                boolean ledgerRootExists = driver.getRegistrationManager().prepareFormat();
+                try (RegistrationManager regManager = driver.createRegistrationManager()) {
+                    boolean ledgerRootExists = regManager.prepareFormat();
 
-                // If old data was there then confirm with admin.
-                boolean doFormat = true;
-                if (ledgerRootExists) {
-                    if (!isInteractive) {
-                        // If non interactive and force is set, then delete old data.
-                        doFormat = force;
-                    } else {
-                        // Confirm with the admin.
-                        doFormat = IOUtils
-                            .confirmPrompt("Ledger root already exists. "
-                                + "Are you sure to format bookkeeper metadata? "
-                                + "This may cause data loss.");
+                    // If old data was there then confirm with admin.
+                    boolean doFormat = true;
+                    if (ledgerRootExists) {
+                        if (!isInteractive) {
+                            // If non interactive and force is set, then delete old data.
+                            doFormat = force;
+                        } else {
+                            // Confirm with the admin.
+                            doFormat = IOUtils
+                                    .confirmPrompt("Ledger root already exists. "
+                                            + "Are you sure to format bookkeeper metadata? "
+                                            + "This may cause data loss.");
+                        }
                     }
+
+                    if (!doFormat) {
+                        return false;
+                    }
+
+                    driver.getLedgerManagerFactory().format(
+                            conf,
+                            driver.getLayoutManager());
+
+                    return regManager.format();
                 }
-
-                if (!doFormat) {
-                    return false;
-                }
-
-                driver.getLedgerManagerFactory().format(
-                    conf,
-                    driver.getLayoutManager());
-
-                return driver.getRegistrationManager().format();
             } catch (Exception e) {
                 throw new UncheckedExecutionException(e.getMessage(), e);
             }

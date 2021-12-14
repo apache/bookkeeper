@@ -33,6 +33,8 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -40,7 +42,9 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +64,10 @@ public class ListLedgerServiceTest extends BookKeeperClusterTestCase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        listLedgerService = new ListLedgerService(confByIndex(0), serverByIndex(0));
+        StatsProvider provider = new TestStatsProvider();
+        listLedgerService = new ListLedgerService(confByIndex(0),
+                BookieResources.createMetadataDriver(confByIndex(0),
+                        provider.getStatsLogger("")).getLedgerManagerFactory());
     }
 
     @Test

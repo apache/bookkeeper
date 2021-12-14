@@ -65,7 +65,6 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
-import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -518,7 +517,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                 new LinkedBlockingQueue<WriteCallbackEntry>();
 
         public DelayResponseBookie(ServerConfiguration conf)
-                throws IOException, KeeperException, InterruptedException, BookieException {
+                throws Exception {
             super(conf);
         }
 

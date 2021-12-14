@@ -54,12 +54,13 @@ public interface LedgerStorage {
                     LedgerManager ledgerManager,
                     LedgerDirsManager ledgerDirsManager,
                     LedgerDirsManager indexDirsManager,
-                    StateManager stateManager,
-                    CheckpointSource checkpointSource,
-                    Checkpointer checkpointer,
                     StatsLogger statsLogger,
                     ByteBufAllocator allocator)
             throws IOException;
+
+    void setStateManager(StateManager stateManager);
+    void setCheckpointSource(CheckpointSource checkpointSource);
+    void setCheckpointer(Checkpointer checkpointer);
 
     /**
      * Start any background threads belonging to the storage system. For example, garbage collection.

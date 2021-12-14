@@ -87,25 +87,29 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
                 requestProcessor.invalidateBlacklist(channel);
             }
         }
-
-        channel.writeAndFlush(response).addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                long writeElapsedNanos = MathUtils.elapsedNanos(writeNanos);
-                if (!future.isSuccess()) {
-                    requestProcessor.getRequestStats().getChannelWriteStats()
-                        .registerFailedEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
-                } else {
-                    requestProcessor.getRequestStats().getChannelWriteStats()
-                        .registerSuccessfulEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+        if (channel.isActive()) {
+            channel.writeAndFlush(response).addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    long writeElapsedNanos = MathUtils.elapsedNanos(writeNanos);
+                    if (!future.isSuccess()) {
+                        requestProcessor.getRequestStats().getChannelWriteStats()
+                                .registerFailedEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+                    } else {
+                        requestProcessor.getRequestStats().getChannelWriteStats()
+                                .registerSuccessfulEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+                    }
+                    if (StatusCode.EOK == code) {
+                        statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                    } else {
+                        statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                    }
                 }
-                if (StatusCode.EOK == code) {
-                    statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
-                } else {
-                    statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
-                }
-            }
-        });
+            });
+        } else {
+            LOGGER.debug("Netty channel {} is inactive, "
+                    + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
+        }
     }
 
     protected boolean isVersionCompatible() {
