@@ -24,6 +24,7 @@ dependencies {
     implementation project(':stream:common')
     implementation depLibs.lombok
     implementation depLibs.grpc
+    implementation depLibs.guava
     implementation depLibs.commonsLang3
 
     annotationProcessor depLibs.lombok

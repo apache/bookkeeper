@@ -26,6 +26,7 @@ dependencies {
 
     implementation depLibs.grpc
     implementation depLibs.lombok
+    implementation depLibs.guava
     implementation depLibs.slf4j
 
     testImplementation project(path: ':stream:clients:java:base', configuration: 'testArtifacts')

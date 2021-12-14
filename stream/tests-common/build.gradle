@@ -23,6 +23,7 @@ plugins {
 dependencies {
     implementation depLibs.grpc
     implementation depLibs.lombok
+    implementation depLibs.guava
     implementation depLibs.slf4j
 
     annotationProcessor depLibs.lombok

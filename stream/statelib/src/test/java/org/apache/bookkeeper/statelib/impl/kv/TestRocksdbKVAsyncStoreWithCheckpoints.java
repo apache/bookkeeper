@@ -26,8 +26,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
-import com.google.common.io.MoreFiles;
-import com.google.common.io.RecursiveDeleteOption;
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
@@ -47,6 +45,7 @@ import org.apache.bookkeeper.statelib.api.exceptions.InvalidStateStoreException;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.fs.FSCheckpointManager;
 import org.apache.bookkeeper.statelib.testing.executors.MockExecutorController;
+import org.apache.commons.io.FileUtils;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.TestDistributedLogBase;
@@ -235,9 +234,7 @@ public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBa
         assertTrue(files.isEmpty());
 
         // remove local dir
-        MoreFiles.deleteRecursively(
-            Paths.get(localDir.getAbsolutePath()),
-            RecursiveDeleteOption.ALLOW_INSECURE);
+        FileUtils.deleteDirectory(new File(localDir.getAbsolutePath()));
 
         // reload the store
         store = new RocksdbKVAsyncStore<>(
@@ -272,9 +269,7 @@ public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBa
         assertEquals(1, files.size());
 
         // remove local dir
-        MoreFiles.deleteRecursively(
-            Paths.get(localDir.getAbsolutePath()),
-            RecursiveDeleteOption.ALLOW_INSECURE);
+        FileUtils.deleteDirectory(new File(localDir.getAbsolutePath()));
 
         // reload the store
         store = new RocksdbKVAsyncStore<>(
@@ -293,9 +288,7 @@ public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBa
         store.close();
 
         // remove local dir
-        MoreFiles.deleteRecursively(
-            Paths.get(localDir.getAbsolutePath()),
-            RecursiveDeleteOption.ALLOW_INSECURE);
+        FileUtils.deleteDirectory(new File(localDir.getAbsolutePath()));
 
         store = new RocksdbKVAsyncStore<>(
             () -> new RocksdbKVStore<>(),
