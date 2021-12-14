@@ -193,7 +193,7 @@ public class TestPrometheusFormatter {
             System.err.println("Matches: " + matcher.matches());
             System.err.println(matcher);
             assertTrue(matcher.matches());
-            assertTrue(formatMatcher.matches());
+            assertTrue("failed to validate line: " + line, formatMatcher.matches());
 
             assertEquals(6, matcher.groupCount());
             System.err.println("groups: " + matcher.groupCount());
