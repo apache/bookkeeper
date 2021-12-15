@@ -128,6 +128,7 @@ The following TLS configs are needed on the bookie side:
 
 ```shell
 tlsProvider=OpenSSL
+tlsProviderFactoryClass=org.apache.bookkeeper.tls.TLSContextFactory
 # key store
 tlsKeyStoreType=JKS
 tlsKeyStore=/var/private/tls/bookie.keystore.jks
@@ -178,6 +179,7 @@ If client authentication is not required by the bookies, the following is a mini
 
 ```shell
 tlsProvider=OpenSSL
+tlsProviderFactoryClass=org.apache.bookkeeper.tls.TLSContextFactory
 clientTrustStore=/var/private/tls/client.truststore.jks
 clientTrustStorePasswordPath=/var/private/tls/client.truststore.passwd
 ```
