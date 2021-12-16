@@ -103,4 +103,25 @@ public interface MetadataClientDriver extends AutoCloseable {
      *            listener listening on metadata client session states.
      */
     void setSessionStateListener(SessionStateListener sessionStateListener);
+
+    /**
+     * Return health check is enable or disable.
+     *
+     * @return true if health check is enable, otherwise false.
+     */
+    default boolean isEnableHealthCheck() {
+        return true;
+    }
+
+    /**
+     * Disable health check.
+     */
+    default void disableHealthCheck(String enableHealthPath) {
+    }
+
+    /**
+     * Enable health check.
+     */
+    default void enableHealthCheck(String enableHealthPath) {
+    }
 }

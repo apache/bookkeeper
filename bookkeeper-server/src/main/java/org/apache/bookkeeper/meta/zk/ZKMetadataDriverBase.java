@@ -261,28 +261,19 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return lmFactory;
     }
 
-    public boolean isEnableHealthCheck() {
-        try {
-            return null == zk.exists(conf.getEnableHealthPath(), false);
-        } catch (Exception e) {
-            return true;
-        }
+    @SneakyThrows
+    public void disableHealthCheck(String enableHealthPath) {
+        zk.create(enableHealthPath, new byte[0], ZkUtils.getACLs(conf), CreateMode.PERSISTENT);
     }
 
-    public void disableHealthCheck(String enableHealthPath) throws Exception{
-        zk.create(enableHealthPath, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-    }
-
-    public void enableHealthCheck(String enableHealthPath) throws KeeperException, InterruptedException {
+    @SneakyThrows
+    public void enableHealthCheck(String enableHealthPath) {
         zk.delete(enableHealthPath, -1);
     }
 
-    public boolean enableHealthCheck() {
-        try {
-            return null == zk.exists(conf.getEnableHealthPath(), false);
-        } catch (Exception e) {
-            return true;
-        }
+    @SneakyThrows
+    public boolean isEnableHealthCheck() {
+        return null == zk.exists(conf.getEnableHealthPath(), false);
     }
 
     @Override

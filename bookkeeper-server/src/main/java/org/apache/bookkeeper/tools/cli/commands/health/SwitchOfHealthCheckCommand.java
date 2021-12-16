@@ -67,8 +67,8 @@ public class SwitchOfHealthCheckCommand extends BookieCommand<SwitchOfHealthChec
     @Setter
     public static class HealthCheckFlags extends CliFlags {
 
-        @Parameter(names = { "-d", "--disable" }, description = "Enable or disable health check.")
-        private boolean disable;
+        @Parameter(names = { "-e", "--enable" }, description = "Enable or disable health check.")
+        private boolean enable;
 
         @Parameter(names = {"-s", "--status"}, description = "Check the health check status.")
         private boolean status;
@@ -91,30 +91,25 @@ public class SwitchOfHealthCheckCommand extends BookieCommand<SwitchOfHealthChec
             try {
                 String enableHealthPath = conf.getEnableHealthPath();
 
-                if(!(driver instanceof ZKMetadataBookieDriver)){
-                    return null;
-                }
-
-                ZKMetadataBookieDriver zkDriver = (ZKMetadataBookieDriver) driver;
                 if (flags.status) {
-                    LOG.info("EnableHealthCheck is " + (zkDriver.isEnableHealthCheck()
+                    LOG.info("EnableHealthCheck is " + (driver.isEnableHealthCheck()
                             ? "enabled." : "disabled."));
                     return null;
                 }
 
-                if (flags.disable) {
-                    if (!zkDriver.isEnableHealthCheck()) {
-                        LOG.warn("HealthCheck already disable. Doing nothing");
-                    } else {
-                        LOG.info("Disable HealthCheck");
-                        zkDriver.disableHealthCheck(enableHealthPath);
-                    }
-                } else {
-                    if (zkDriver.isEnableHealthCheck()) {
+                if (flags.enable) {
+                    if (driver.isEnableHealthCheck()) {
                         LOG.warn("HealthCheck already enable. Doing nothing");
                     } else {
                         LOG.info("Enable HealthCheck");
-                        zkDriver.enableHealthCheck(enableHealthPath);
+                        driver.enableHealthCheck(enableHealthPath);
+                    }
+                } else {
+                    if (!driver.isEnableHealthCheck()) {
+                        LOG.warn("HealthCheck already disable. Doing nothing");
+                    } else {
+                        LOG.info("Disable HealthCheck");
+                        driver.disableHealthCheck(enableHealthPath);
                     }
                 }
             } catch (Exception e) {
