@@ -81,6 +81,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
@@ -614,7 +615,19 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
     }
 
+    boolean enableHealthCheck() {
+        if (metadataDriver instanceof ZKMetadataClientDriver) {
+            return ((ZKMetadataClientDriver) metadataDriver).enableHealthCheck();
+        }
+        return true;
+    }
+
     void checkForFaultyBookies() {
+        if (!enableHealthCheck()) {
+            LOG.info("enableHealthCheck is false!");
+            return;
+        }
+
         List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
         for (BookieId faultyBookie : faultyBookies) {
             if (Math.random() <= bookieQuarantineRatio) {

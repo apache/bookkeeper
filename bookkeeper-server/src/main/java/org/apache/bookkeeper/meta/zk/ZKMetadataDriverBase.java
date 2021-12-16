@@ -49,6 +49,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 
@@ -258,6 +259,30 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             }
         }
         return lmFactory;
+    }
+
+    public boolean isEnableHealthCheck() {
+        try {
+            return null == zk.exists(conf.getEnableHealthPath(), false);
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    public void disableHealthCheck(String enableHealthPath) throws Exception{
+        zk.create(enableHealthPath, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+    }
+
+    public void enableHealthCheck(String enableHealthPath) throws KeeperException, InterruptedException {
+        zk.delete(enableHealthPath, -1);
+    }
+
+    public boolean enableHealthCheck() {
+        try {
+            return null == zk.exists(conf.getEnableHealthPath(), false);
+        } catch (Exception e) {
+            return true;
+        }
     }
 
     @Override
