@@ -20,6 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands.health;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import java.util.concurrent.ExecutionException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -31,7 +32,6 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutionException;
 
 
 /**
