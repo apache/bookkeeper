@@ -42,6 +42,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.Rule;
 import org.junit.Test;
@@ -203,6 +204,33 @@ public class BookieWriteToJournalTest {
         result(latchForceLedger2);
 
         b.shutdown();
+    }
+
+    @Test
+    public void testSmallJournalQueueWithHighFlushFrequency() throws IOException, InterruptedException {
+        ServerConfiguration configuration = new ServerConfiguration();
+        configuration.setJournalQueueSize(1);
+        configuration.setJournalFlushWhenQueueEmpty(true);
+        configuration.setJournalBufferedWritesThreshold(1);
+
+        configuration.setJournalDirName(tempDir.newFolder().getPath());
+        configuration.setLedgerDirNames(new String[]{tempDir.newFolder().getPath()});
+        DiskChecker diskChecker = new DiskChecker(configuration.getDiskUsageThreshold(), configuration.getDiskUsageWarnThreshold());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(configuration, configuration.getLedgerDirs(), diskChecker);
+        Journal journal = new Journal(0, configuration.getJournalDirs()[0], configuration, ledgerDirsManager);
+        journal.start();
+
+        final int entries = 1000;
+        CountDownLatch entriesLatch = new CountDownLatch(entries);
+        for (int j = 1; j <= entries; j++) {
+            ByteBuf entry = buildEntry(1, j, -1);
+            journal.logAddEntry(entry, false, (int rc, long _ledgerId, long entryId, BookieId addr, Object ctx) -> {
+                entriesLatch.countDown();
+            }, null);
+        }
+        entriesLatch.await();
+
+        journal.shutdown();
     }
 
     private static ByteBuf buildEntry(long ledgerId, long entryId, long lastAddConfirmed) {
