@@ -531,9 +531,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return zk enable health path
      * */
     public String getEnableHealthPath() {
-        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(this);
-        String ledgerParentPath = zkLedgersRootPath.substring(0, zkLedgersRootPath.lastIndexOf("/ledgers"));
-        return String.format("%s/%s", ledgerParentPath, "enableHealthCheck");
+        String metadataServiceRootPath = ZKMetadataDriverBase.resolveMetadataServiceRootPath(this);
+        return String.format("%s/%s", metadataServiceRootPath, "enableHealthCheck");
     }
 
     /**
