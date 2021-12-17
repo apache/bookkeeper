@@ -96,9 +96,12 @@ public class EntryLocationIndex implements Closeable {
             if (log.isDebugEnabled()) {
                 log.debug("Ledger {} already deleted in db", ledgerId);
             }
+            /**
+             * when Ledger already deleted,
+             * throw Bookie.NoEntryException same like  the method {@link EntryLocationIndex.getLastEntryInLedgerInternal} solving ledgerId is not found
+             * */
             throw new Bookie.NoEntryException(ledgerId, -1);
         }
-
         return getLastEntryInLedgerInternal(ledgerId);
     }
 
