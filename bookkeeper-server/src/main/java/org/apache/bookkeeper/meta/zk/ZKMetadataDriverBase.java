@@ -88,12 +88,6 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return metadataServiceUri.getPath();
     }
 
-    public static String resolveMetadataServiceRootPath(AbstractConfiguration<?> conf) {
-        String metadataServiceUriStr = conf.getMetadataServiceUriUnchecked();
-        URI metadataServiceUri = URI.create(metadataServiceUriStr);
-        return metadataServiceUri.getPath();
-    }
-
     @SuppressWarnings("deprecation")
     public static Class<? extends LedgerManagerFactory> resolveLedgerManagerFactory(URI metadataServiceUri) {
         checkNotNull(metadataServiceUri, "Metadata service uri is null");
