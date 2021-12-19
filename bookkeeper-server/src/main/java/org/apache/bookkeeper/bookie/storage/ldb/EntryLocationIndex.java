@@ -99,7 +99,7 @@ public class EntryLocationIndex implements Closeable {
             /**
              * when Ledger already deleted,
              * throw Bookie.NoEntryException same like  the method
-             * {@link EntryLocationIndex.getLastEntryInLedgerInternal} solving ledgerId is not found
+             * {@link EntryLocationIndex.getLastEntryInLedgerInternal} solving ledgerId is not found.
              * */
             throw new Bookie.NoEntryException(ledgerId, -1);
         }
