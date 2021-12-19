@@ -46,6 +46,7 @@ dependencies {
 }
 
 task buildImage(type:Exec) {
+    dependsOn ':bookkeeper-dist-server:distTar'
     workingDir '../../..'
     commandLine './tests/docker-images/statestore-image/image_builder.sh'
 }
