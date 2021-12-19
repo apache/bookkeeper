@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -260,19 +262,45 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return lmFactory;
     }
 
-    @SneakyThrows
-    public void disableHealthCheck(String enableHealthPath) {
-        zk.create(enableHealthPath, new byte[0], ZkUtils.getACLs(conf), CreateMode.PERSISTENT);
+    public CompletableFuture<Void> disableHealthCheck() {
+        CompletableFuture<Void> createResult = new CompletableFuture<>();
+        try {
+            zk.create(getEnableHealthPath(), new byte[0], ZkUtils.getACLs(conf), CreateMode.PERSISTENT);
+            createResult.complete(null);
+        } catch (Exception e) {
+            createResult.completeExceptionally(e);
+        }
+        return createResult;
     }
 
-    @SneakyThrows
-    public void enableHealthCheck(String enableHealthPath) {
-        zk.delete(enableHealthPath, -1);
+    public CompletableFuture<Void>  enableHealthCheck() {
+        CompletableFuture<Void> deleteResult = new CompletableFuture<>();
+
+        try {
+            zk.delete(getEnableHealthPath(), -1);
+            deleteResult.complete(null);
+        } catch (Exception e) {
+            deleteResult.completeExceptionally(e);
+        }
+        return deleteResult;
     }
 
-    @SneakyThrows
-    public boolean isEnableHealthCheck() {
-        return null == zk.exists(conf.getEnableHealthPath(), false);
+    public CompletableFuture<Boolean> isEnableHealthCheck() {
+        CompletableFuture<Boolean> enableResult = new CompletableFuture<>();
+        try {
+            boolean isEnable = (null == zk.exists(getEnableHealthPath(), false));
+            enableResult.complete(isEnable);
+        } catch (Exception e) {
+            enableResult.completeExceptionally(e);
+        }
+        return enableResult;
+    }
+
+
+    public String getEnableHealthPath() {
+        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
+        String ledgerParentPath = zkLedgersRootPath.substring(0, zkLedgersRootPath.lastIndexOf("/ledgers"));
+        return String.format("%s/%s", ledgerParentPath, "enableHealthCheck");
     }
 
     @Override

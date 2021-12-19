@@ -46,7 +46,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import lombok.SneakyThrows;
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
@@ -615,10 +614,15 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
     }
 
+    void checkForFaultyBookies()  {
+        boolean isEnable = true;
+        try {
+            isEnable = metadataDriver.isEnableHealthCheck().get();
+        } catch (Exception e) {
+            LOG.error("call method isEnableHealthCheck failed!", e);
+        }
 
-    @SneakyThrows
-    void checkForFaultyBookies() {
-        if (!metadataDriver.isEnableHealthCheck()) {
+        if (!isEnable) {
             LOG.info("Health checks is currently disabled!");
             return;
         }

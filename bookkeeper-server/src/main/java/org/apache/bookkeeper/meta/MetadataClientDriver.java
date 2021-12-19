@@ -19,9 +19,11 @@
 package org.apache.bookkeeper.meta;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
@@ -109,19 +111,28 @@ public interface MetadataClientDriver extends AutoCloseable {
      *
      * @return true if health check is enable, otherwise false.
      */
-    default boolean isEnableHealthCheck() {
-        return true;
+    default CompletableFuture<Boolean> isEnableHealthCheck() {
+        return FutureUtils.value(true);
     }
 
     /**
      * Disable health check.
      */
-    default void disableHealthCheck(String enableHealthPath) {
+    default CompletableFuture<Void> disableHealthCheck() {
+        return FutureUtils.Void();
     }
 
     /**
      * Enable health check.
      */
-    default void enableHealthCheck(String enableHealthPath) {
+    default CompletableFuture<Void>  enableHealthCheck() {
+        return FutureUtils.Void();
+    }
+
+    /**
+     * @return disable health check path
+     */
+    default String getEnableHealthPath() {
+        return null;
     }
 }
