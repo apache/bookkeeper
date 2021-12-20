@@ -62,10 +62,22 @@ public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
         for (File ledgerDir : ledgerDirsManager.getAllLedgerDirs()) {
             try {
                 File dirtyFile = new File(ledgerDir, DIRTY_FILENAME);
-                dirtyFile.delete();
+                if (dirtyFile.exists()) {
+                    boolean deleted = dirtyFile.delete();
+
+                    if (!deleted) {
+                        LOG.error("Unable to register a clean shutdown. The dirty file of "
+                                        + " ledger dir {} could not be deleted.",
+                                ledgerDir.getAbsolutePath());
+                    }
+                } else {
+                    LOG.error("Unable to register a clean shutdown. The dirty file of "
+                                    + " ledger dir {} does not exist.",
+                            ledgerDir.getAbsolutePath());
+                }
             } catch (Throwable t) {
-                LOG.error("Unable to register a clean shutdown, dirty file of "
-                        + " ledger dir {} could not be deleted",
+                LOG.error("Unable to register a clean shutdown. An error occurred while deleting "
+                        + " the dirty file of ledger dir {}.",
                         ledgerDir.getAbsolutePath(), t);
             }
         }
