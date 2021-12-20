@@ -115,7 +115,13 @@ enum Events {
      * one ensemble but the process found one with none.
      */
     INVALID_METADATA,
-
+    /**
+     * Preboot must create a ledger that the bookie does not have but that metadata says
+     * the bookie should have. This can happen due to things like ensemble changes and
+     * when a ledger is closed. If the ledger cannot be created on the bookie then
+     * this error will cause preboot to fail.
+     */
+    ENSURE_LEDGER_ERROR,
     /**
      * Initialized the full check. If we have cached metadata from a previous run, or
      * the preboot check, then we use that. Otherwise we read the metadata from the

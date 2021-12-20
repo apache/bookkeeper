@@ -118,6 +118,8 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
                             ledgerStorage.setMasterKey(ledgerId, new byte[0]);
                         }
                     } catch (IOException ioe) {
+                        log.error("Event: {}, RunId: {}, LedgerId: {}",
+                                Events.ENSURE_LEDGER_ERROR, runId, ledgerId, ioe);
                         return FutureUtils.exception(ioe);
                     }
                 }
