@@ -36,7 +36,7 @@ public interface DataIntegrityCheck {
      * entries for that ledger and must prevent the bookie from taking part in
      * the discovery of the last entry of that ledger.
      */
-    CompletableFuture<Void> runPreBoot(String reason);
+    CompletableFuture<Void> runPreBootCheck(String reason);
 
     /**
      * Whether we need to run a full check.
@@ -46,7 +46,7 @@ public interface DataIntegrityCheck {
      * when some transient condition prevents a ledger being fixed during a
      * full check.
      */
-    boolean needsFull() throws IOException;
+    boolean needsFullCheck() throws IOException;
 
     /**
      * Run full check of bookies local data. This check should ensure that

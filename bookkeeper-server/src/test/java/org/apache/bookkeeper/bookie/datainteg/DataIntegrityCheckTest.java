@@ -156,7 +156,7 @@ public class DataIntegrityCheckTest {
                                                                  mock(EntryCopier.class),
                                                                  mock(BookKeeperAdmin.class),
                                                                  Schedulers.io());
-        impl.runPreBoot("test").get();
+        impl.runPreBootCheck("test").get();
 
         assertThat(storage.hasLimboState(0xbeefL), is(true));
         assertThat(storage.isFenced(0xbeefL), is(true));
@@ -179,7 +179,7 @@ public class DataIntegrityCheckTest {
                                                                  mock(EntryCopier.class),
                                                                  mock(BookKeeperAdmin.class),
                                                                  Schedulers.io());
-        impl.runPreBoot("test").get();
+        impl.runPreBootCheck("test").get();
 
         assertThat(storage.hasLimboState(0xbeefL), is(true));
         assertThat(storage.isFenced(0xbeefL), is(true));
@@ -202,7 +202,7 @@ public class DataIntegrityCheckTest {
                                                                  mock(EntryCopier.class),
                                                                  mock(BookKeeperAdmin.class),
                                                                  Schedulers.io());
-        impl.runPreBoot("test").get();
+        impl.runPreBootCheck("test").get();
 
         assertThat(storage.hasLimboState(0xbeefL), is(false));
         assertThat(storage.isFenced(0xbeefL), is(false));
@@ -225,7 +225,7 @@ public class DataIntegrityCheckTest {
                                                                  mock(BookKeeperAdmin.class),
                                                                  Schedulers.io());
         verify(storage, times(0)).flush();
-        impl.runPreBoot("test").get();
+        impl.runPreBootCheck("test").get();
         verify(storage, times(1)).flush();
 
         assertThat(storage.hasLimboState(0xbeefL), is(true));
@@ -257,7 +257,7 @@ public class DataIntegrityCheckTest {
                                                                  mock(EntryCopier.class),
                                                                  mock(BookKeeperAdmin.class),
                                                                  Schedulers.io());
-        impl.runPreBoot("test").get();
+        impl.runPreBootCheck("test").get();
     }
 
     @Test

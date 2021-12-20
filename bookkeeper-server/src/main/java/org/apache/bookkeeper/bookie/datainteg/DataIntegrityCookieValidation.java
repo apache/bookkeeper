@@ -141,7 +141,7 @@ public class DataIntegrityCookieValidation implements CookieValidation {
                 log.warn("ZK cookie({}) or directory cookies({}) do not match master cookie ({}), running check",
                         regManagerCookie, directoryCookies, masterCookie);
                 try {
-                    dataIntegCheck.runPreBoot("INVALID_COOKIE").get();
+                    dataIntegCheck.runPreBootCheck("INVALID_COOKIE").get();
                 } catch (ExecutionException ee) {
                     if (ee.getCause() instanceof BookieException) {
                         throw (BookieException) ee.getCause();

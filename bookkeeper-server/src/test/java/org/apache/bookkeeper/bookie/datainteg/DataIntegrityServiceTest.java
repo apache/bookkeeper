@@ -57,7 +57,7 @@ public class DataIntegrityServiceTest {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         MockDataIntegrityCheck check = new MockDataIntegrityCheck() {
                 @Override
-                public boolean needsFull() {
+                public boolean needsFullCheck() {
                     return true;
                 }
                 @Override
@@ -81,7 +81,7 @@ public class DataIntegrityServiceTest {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         MockDataIntegrityCheck check = new MockDataIntegrityCheck() {
                 @Override
-                public boolean needsFull() {
+                public boolean needsFullCheck() {
                     return false;
                 }
                 @Override
@@ -114,7 +114,7 @@ public class DataIntegrityServiceTest {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         MockDataIntegrityCheck check = new MockDataIntegrityCheck() {
                 @Override
-                public boolean needsFull() {
+                public boolean needsFullCheck() {
                     return true;
                 }
                 @Override
@@ -142,7 +142,7 @@ public class DataIntegrityServiceTest {
         semaphore.acquire(); // increment the count, can only be released by a check
         MockDataIntegrityCheck check = new MockDataIntegrityCheck() {
                 @Override
-                public boolean needsFull() {
+                public boolean needsFullCheck() {
                     return needsFullCheck.getAndSet(false);
                 }
                 @Override

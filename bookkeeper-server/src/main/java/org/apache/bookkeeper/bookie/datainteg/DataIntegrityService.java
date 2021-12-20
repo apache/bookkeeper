@@ -71,7 +71,7 @@ public class DataIntegrityService extends AbstractLifecycleComponent<BookieConfi
         synchronized (this) {
             scheduledFuture = scheduler.scheduleAtFixedRate(() -> {
                     try {
-                        if (check.needsFull()) {
+                        if (check.needsFullCheck()) {
                             check.runFullCheck().get();
                         }
                     } catch (InterruptedException ie) {

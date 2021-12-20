@@ -194,14 +194,14 @@ public class CookieValidationTest {
         DataIntegrityCookieValidation v1 = new DataIntegrityCookieValidation(
                 conf, regManager, dataIntegCheck);
         v1.checkCookies(dirs); // stamp original cookies
-        verify(dataIntegCheck, times(0)).runPreBoot("INVALID_COOKIE");
+        verify(dataIntegCheck, times(0)).runPreBootCheck("INVALID_COOKIE");
 
         dirs.add(initializedDir());
         v1.checkCookies(dirs); // stamp original cookies
-        verify(dataIntegCheck, times(1)).runPreBoot("INVALID_COOKIE");
+        verify(dataIntegCheck, times(1)).runPreBootCheck("INVALID_COOKIE");
 
         v1.checkCookies(dirs); // stamp original cookies
-        verify(dataIntegCheck, times(1)).runPreBoot("INVALID_COOKIE");
+        verify(dataIntegCheck, times(1)).runPreBootCheck("INVALID_COOKIE");
     }
 
     @Test
@@ -214,7 +214,7 @@ public class CookieValidationTest {
         MockRegistrationManager regManager = spy(new MockRegistrationManager());
         MockDataIntegrityCheck dataIntegCheck = spy(new MockDataIntegrityCheck() {
                 @Override
-                public CompletableFuture<Void> runPreBoot(String reason) {
+                public CompletableFuture<Void> runPreBootCheck(String reason) {
                     return FutureUtils.exception(new BookieException.InvalidCookieException("blah"));
                 }
             });
@@ -223,7 +223,7 @@ public class CookieValidationTest {
                 conf, regManager, dataIntegCheck);
 
         v1.checkCookies(dirs); // stamp original cookies
-        verify(dataIntegCheck, times(0)).runPreBoot("INVALID_COOKIE");
+        verify(dataIntegCheck, times(0)).runPreBootCheck("INVALID_COOKIE");
         verify(regManager, times(1)).writeCookie(anyObject(), anyObject());
 
         // add a directory to trigger data integrity check
@@ -234,7 +234,7 @@ public class CookieValidationTest {
         } catch (BookieException.InvalidCookieException e) {
             // expected
         }
-        verify(dataIntegCheck, times(1)).runPreBoot("INVALID_COOKIE");
+        verify(dataIntegCheck, times(1)).runPreBootCheck("INVALID_COOKIE");
         verify(regManager, times(1)).writeCookie(anyObject(), anyObject());
 
         // running the check again should run data integrity again, as stamping didn't happen
@@ -244,7 +244,7 @@ public class CookieValidationTest {
         } catch (BookieException.InvalidCookieException e) {
             // expected
         }
-        verify(dataIntegCheck, times(2)).runPreBoot("INVALID_COOKIE");
+        verify(dataIntegCheck, times(2)).runPreBootCheck("INVALID_COOKIE");
         verify(regManager, times(1)).writeCookie(anyObject(), anyObject());
     }
 
@@ -287,7 +287,7 @@ public class CookieValidationTest {
                 conf, regManager, dataIntegCheck);
         v1.checkCookies(dirs); // stamp original cookies
 
-        verify(dataIntegCheck, times(0)).runPreBoot("INVALID_COOKIE");
+        verify(dataIntegCheck, times(0)).runPreBootCheck("INVALID_COOKIE");
         verify(regManager, times(1)).writeCookie(anyObject(), anyObject());
 
         Cookie current = Cookie.readFromDirectory(dirs.get(0));
@@ -296,7 +296,7 @@ public class CookieValidationTest {
         assertThat(current, not(Cookie.readFromDirectory(dirs.get(0))));
 
         v1.checkCookies(dirs);
-        verify(dataIntegCheck, times(1)).runPreBoot("INVALID_COOKIE");
+        verify(dataIntegCheck, times(1)).runPreBootCheck("INVALID_COOKIE");
         verify(regManager, times(2)).writeCookie(anyObject(), anyObject());
 
         Cookie afterCheck = Cookie.readFromDirectory(dirs.get(0));
@@ -316,7 +316,7 @@ public class CookieValidationTest {
                 conf, regManager, dataIntegCheck);
         v1.checkCookies(dirs); // stamp original cookies
 
-        verify(dataIntegCheck, times(0)).runPreBoot("INVALID_COOKIE");
+        verify(dataIntegCheck, times(0)).runPreBootCheck("INVALID_COOKIE");
         verify(regManager, times(1)).writeCookie(anyObject(), anyObject());
 
         File cookieFile = new File(dirs.get(0), BookKeeperConstants.VERSION_FILENAME);

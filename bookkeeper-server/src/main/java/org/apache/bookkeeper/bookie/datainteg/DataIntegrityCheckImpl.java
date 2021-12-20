@@ -84,7 +84,7 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
     }
 
     @Override
-    public CompletableFuture<Void> runPreBoot(String reason) {
+    public CompletableFuture<Void> runPreBootCheck(String reason) {
         // we only run this once, it could be kicked off by different checks
         synchronized (this) {
             if (preBootFuture == null) {
@@ -146,7 +146,7 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
     }
 
     @Override
-    public boolean needsFull() throws IOException {
+    public boolean needsFullCheck() throws IOException {
         return this.ledgerStorage.getStorageStateFlags()
             .contains(StorageState.NEEDS_INTEGRITY_CHECK);
     }

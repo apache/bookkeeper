@@ -26,11 +26,11 @@ import java.util.concurrent.CompletableFuture;
  */
 public class MockDataIntegrityCheck implements DataIntegrityCheck {
     @Override
-    public CompletableFuture<Void> runPreBoot(String reason) {
+    public CompletableFuture<Void> runPreBootCheck(String reason) {
         return CompletableFuture.completedFuture(null);
     }
     @Override
-    public boolean needsFull() {
+    public boolean needsFullCheck() {
         return false;
     }
     @Override

@@ -403,7 +403,7 @@ public class Main {
             // run the preboot check to protect against data loss and to perform data repair
             if (!conf.getServerConf().getJournalWriteData()
                     && uncleanShutdownDetection.lastShutdownWasUnclean()) {
-                integCheck.runPreBoot("UNCLEAN_SHUTDOWN");
+                integCheck.runPreBootCheck("UNCLEAN_SHUTDOWN");
             }
             CookieValidation cookieValidation = new DataIntegrityCookieValidation(conf.getServerConf(),
                                                                  rm, integCheck);
