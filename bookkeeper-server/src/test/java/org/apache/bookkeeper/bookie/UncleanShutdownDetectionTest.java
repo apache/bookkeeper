@@ -122,7 +122,7 @@ public class UncleanShutdownDetectionTest {
         uncleanShutdownDetection.registerStartUp();
         uncleanShutdownDetection.registerCleanShutdown();
         File dirtyFile = new File(ledgerDirsManager.getAllLedgerDirs().get(0),
-                UncleanShutdownDetectionImpl.DirtyFileName);
+                UncleanShutdownDetectionImpl.DIRTY_FILENAME);
         dirtyFile.createNewFile();
 
         assertTrue(uncleanShutdownDetection.lastShutdownWasUnclean());

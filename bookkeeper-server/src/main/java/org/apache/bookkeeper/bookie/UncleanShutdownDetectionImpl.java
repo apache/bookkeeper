@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
     private static final Logger LOG = LoggerFactory.getLogger(UncleanShutdownDetectionImpl.class);
     private final LedgerDirsManager ledgerDirsManager;
-    static final String DirtyFileName = "DIRTY";
+    static final String DIRTY_FILENAME = "DIRTY";
 
     public UncleanShutdownDetectionImpl(LedgerDirsManager ledgerDirsManager) {
         this.ledgerDirsManager = ledgerDirsManager;
@@ -45,7 +45,7 @@ public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
     public void registerStartUp() throws IOException {
         for (File ledgerDir : ledgerDirsManager.getAllLedgerDirs()) {
             try {
-                File dirtyFile = new File(ledgerDir, DirtyFileName);
+                File dirtyFile = new File(ledgerDir, DIRTY_FILENAME);
                 dirtyFile.createNewFile();
                 LOG.info("Created dirty file in ledger dir: {}", ledgerDir.getAbsolutePath());
             } catch (IOException e) {
@@ -61,7 +61,7 @@ public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
     public void registerCleanShutdown() {
         for (File ledgerDir : ledgerDirsManager.getAllLedgerDirs()) {
             try {
-                File dirtyFile = new File(ledgerDir, DirtyFileName);
+                File dirtyFile = new File(ledgerDir, DIRTY_FILENAME);
                 dirtyFile.delete();
             } catch (Throwable t) {
                 LOG.error("Unable to register a clean shutdown, dirty file of "
@@ -75,7 +75,7 @@ public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
     public boolean lastShutdownWasUnclean() {
         try {
             for (File ledgerDir : ledgerDirsManager.getAllLedgerDirs()) {
-                File dirtyFile = new File(ledgerDir, DirtyFileName);
+                File dirtyFile = new File(ledgerDir, DIRTY_FILENAME);
                 if (dirtyFile.exists()) {
                     return true;
                 }
