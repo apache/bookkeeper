@@ -21,6 +21,8 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,18 +87,26 @@ public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
 
     @Override
     public boolean lastShutdownWasUnclean() {
+        boolean unclean = false;
+        List<String> dirtyFiles = new ArrayList<>();
         try {
             for (File ledgerDir : ledgerDirsManager.getAllLedgerDirs()) {
                 File dirtyFile = new File(ledgerDir, DIRTY_FILENAME);
                 if (dirtyFile.exists()) {
-                    return true;
+                    dirtyFiles.add(dirtyFile.getAbsolutePath());
+                    unclean = true;
                 }
             }
         } catch (Throwable t) {
             LOG.error("Unable to determine if last shutdown was unclean (defaults to unclean)", t);
-            return true;
+            unclean = true;
         }
 
-        return false;
+        if (!dirtyFiles.isEmpty()) {
+            LOG.info("Dirty files exist on boot-up indicating an unclean shutdown. Dirty files: {}",
+                    String.join(",", dirtyFiles));
+        }
+
+        return unclean;
     }
 }
