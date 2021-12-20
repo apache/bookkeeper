@@ -2288,7 +2288,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 return BKException.Code.WriteOnReadOnlyBookieException;
             case ETOOMANYREQUESTS:
                 return BKException.Code.TooManyRequestsException;
-            case EUNKNOWN:
+            case EUNKNOWNLEDGERSTATE:
                 return BKException.Code.DataUnknownException;
             default:
                 return BKException.Code.UNINITIALIZED;

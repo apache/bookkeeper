@@ -183,7 +183,7 @@ public interface BookieProtocol {
     /**
      * Ledger in unknown state.
      */
-    int EUNKNOWN = 107;
+    int EUNKNOWNLEDGERSTATE = 107;
 
     short FLAG_NONE = 0x0;
     short FLAG_DO_FENCING = 0x0001;

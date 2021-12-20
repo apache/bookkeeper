@@ -236,7 +236,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ledger has unknown state for entry: {} from ledger {}", entryId, ledgerId);
             }
-            return buildResponse(readResponse, StatusCode.EUNKNOWN, startTimeSw);
+            return buildResponse(readResponse, StatusCode.EUNKNOWNLEDGERSTATE, startTimeSw);
         } catch (BookieException e) {
             LOG.error(
                 "Unauthorized access to ledger:{} while reading entry:{} in request from address: {}",
