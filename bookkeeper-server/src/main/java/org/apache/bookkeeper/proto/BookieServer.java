@@ -119,7 +119,7 @@ public class BookieServer {
         this.uncaughtExceptionHandler = exceptionHandler;
     }
 
-    public void start() throws InterruptedException {
+    public void start() throws InterruptedException, IOException {
         this.bookie.start();
 
         // fail fast, when bookie startup is not successful

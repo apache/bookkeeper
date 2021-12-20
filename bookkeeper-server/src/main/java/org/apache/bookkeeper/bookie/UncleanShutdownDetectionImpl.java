@@ -20,6 +20,7 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.File;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,15 +42,17 @@ public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
     }
 
     @Override
-    public void registerStartUp() {
+    public void registerStartUp() throws IOException {
         for (File ledgerDir : ledgerDirsManager.getAllLedgerDirs()) {
             try {
                 File dirtyFile = new File(ledgerDir, DirtyFileName);
                 dirtyFile.createNewFile();
-            } catch (Throwable t) {
+                LOG.info("Created dirty file in ledger dir: {}", ledgerDir.getAbsolutePath());
+            } catch (IOException e) {
                 LOG.error("Unable to register start-up (so an unclean shutdown cannot"
-                        + " be detected). Dirty file of ledger dir {} could not be created",
-                        ledgerDir.getAbsolutePath(), t);
+                        + " be detected). Dirty file of ledger dir {} could not be created.",
+                        ledgerDir.getAbsolutePath(), e);
+                throw e;
             }
         }
     }

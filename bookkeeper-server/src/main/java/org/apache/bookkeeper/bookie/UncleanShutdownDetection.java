@@ -19,6 +19,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import java.io.IOException;
+
 /**
  * An interface for unclean shutdown detection. The bookie
  * must register its start-up and then register its graceful
@@ -26,7 +28,7 @@ package org.apache.bookkeeper.bookie;
  * shutdown.
  */
 public interface UncleanShutdownDetection {
-    void registerStartUp();
+    void registerStartUp() throws IOException;
     void registerCleanShutdown();
     boolean lastShutdownWasUnclean();
 }

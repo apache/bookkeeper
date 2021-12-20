@@ -25,6 +25,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -124,5 +126,29 @@ public class UncleanShutdownDetectionTest {
         dirtyFile.createNewFile();
 
         assertTrue(uncleanShutdownDetection.lastShutdownWasUnclean());
+    }
+
+    @Test(expected = IOException.class)
+    public void testRegisterStartFailsToCreateDirtyFilesAndThrowsIOException() throws IOException {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
+        LedgerDirsManager ledgerDirsManager = new MockLedgerDirsManager(conf, conf.getLedgerDirs(), diskChecker);
+
+        UncleanShutdownDetection uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
+        uncleanShutdownDetection.registerStartUp();
+    }
+
+    private class MockLedgerDirsManager extends LedgerDirsManager {
+        public MockLedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker)
+                throws IOException {
+            super(conf, dirs, diskChecker);
+        }
+
+        @Override
+        public List<File> getAllLedgerDirs() {
+            List<File> dirs = new ArrayList<>();
+            dirs.add(new File("does_not_exist"));
+            return dirs;
+        }
     }
 }
