@@ -51,7 +51,7 @@ jobs:
       - name: Build
         run: ./gradlew stream:server:build -x test
       - name: Test current server with old clients
-        run: ./gradlew :tests:backward-compat:current-server-old-clients:test || (tail -n +1 tests/backward-compat/upgrade/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/current-server-old-clients/build/container-logs/**/* && exit 1)
+        run: ./gradlew :tests:backward-compat:current-server-old-clients:test || (tail -n +1 tests/backward-compat/current-server-old-clients/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/current-server-old-clients/build/container-logs/**/* && exit 1)
       - name: Test progressive upgrade
         run: ./gradlew :tests:backward-compat:upgrade:test || (tail -n +1 tests/backward-compat/upgrade/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/upgrade/build/container-logs/**/* && exit 1)
       - name: Other tests
