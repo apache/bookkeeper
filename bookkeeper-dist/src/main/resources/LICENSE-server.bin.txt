@@ -241,10 +241,10 @@ Apache Software License, Version 2.
 - lib/io.vertx-vertx-core-3.9.8.jar [15]
 - lib/io.vertx-vertx-web-3.9.8.jar [16]
 - lib/io.vertx-vertx-web-common-3.9.8.jar [16]
-- lib/org.apache.logging.log4j-log4j-1.2-api-2.16.0.jar [17]
-- lib/org.apache.logging.log4j-log4j-api-2.16.0.jar [17]
-- lib/org.apache.logging.log4j-log4j-core-2.16.0.jar [17]
-- lib/org.apache.logging.log4j-log4j-slf4j-impl-2.16.0.jar [17]
+- lib/org.apache.logging.log4j-log4j-1.2-api-2.17.0.jar [17]
+- lib/org.apache.logging.log4j-log4j-api-2.17.0.jar [17]
+- lib/org.apache.logging.log4j-log4j-core-2.17.0.jar [17]
+- lib/org.apache.logging.log4j-log4j-slf4j-impl-2.17.0.jar [17]
 - lib/net.java.dev.jna-jna-3.2.7.jar [18]
 - lib/org.apache.commons-commons-collections4-4.1.jar [19]
 - lib/org.apache.commons-commons-lang3-3.6.jar [20]
@@ -320,7 +320,7 @@ Apache Software License, Version 2.
 [14] Source available at https://github.com/vert-x3/vertx-bridge-common/tree/3.9.8
 [15] Source available at https://github.com/eclipse/vert.x/tree/3.9.8
 [16] Source available at https://github.com/vert-x3/vertx-web/tree/3.9.8
-[17] Source available at https://github.com/apache/logging-log4j2/tree/rel/2.16.0
+[17] Source available at https://github.com/apache/logging-log4j2/tree/rel/2.17.0
 [18] Source available at https://github.com/java-native-access/jna/tree/3.2.7
 [19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
 [20] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
