@@ -20,6 +20,7 @@
 package org.apache.bookkeeper.common.component;
 
 import io.reactivex.rxjava3.core.Scheduler;
+import java.util.concurrent.ExecutorService;
 import org.apache.bookkeeper.common.conf.ComponentConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 
@@ -28,13 +29,16 @@ import org.apache.bookkeeper.stats.StatsLogger;
  */
 public class RxSchedulerLifecycleComponent extends AbstractLifecycleComponent<ComponentConfiguration> {
     private final Scheduler scheduler;
+    private final ExecutorService rxExecutor;
 
     public RxSchedulerLifecycleComponent(String componentName,
                                          ComponentConfiguration conf,
                                          StatsLogger stats,
-                                         Scheduler scheduler) {
+                                         Scheduler scheduler,
+                                         ExecutorService rxExecutor) {
         super(componentName, conf, stats);
         this.scheduler = scheduler;
+        this.rxExecutor = rxExecutor;
     }
 
     @Override
@@ -45,10 +49,12 @@ public class RxSchedulerLifecycleComponent extends AbstractLifecycleComponent<Co
     @Override
     protected void doStop() {
         scheduler.shutdown();
+        rxExecutor.shutdown();
     }
 
     @Override
     public void doClose() {
         scheduler.shutdown();
+        rxExecutor.shutdown();
     }
 }

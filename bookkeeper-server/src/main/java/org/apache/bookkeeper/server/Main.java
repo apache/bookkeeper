@@ -385,7 +385,8 @@ public class Main {
                     .build());
             Scheduler rxScheduler = Schedulers.from(rxExecutor);
             serverBuilder.addComponent(
-                    new RxSchedulerLifecycleComponent("rx-scheduler", conf, bookieStats, rxScheduler));
+                    new RxSchedulerLifecycleComponent("rx-scheduler", conf, bookieStats,
+                            rxScheduler, rxExecutor));
 
             storage = BookieResources.createLedgerStorage(
                     conf.getServerConf(), ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
