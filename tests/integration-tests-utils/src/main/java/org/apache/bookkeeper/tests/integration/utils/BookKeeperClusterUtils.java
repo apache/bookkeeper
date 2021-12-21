@@ -79,7 +79,8 @@ public class BookKeeperClusterUtils {
     public static boolean zookeeperRunning(DockerClient docker, String containerId) {
         String ip = DockerUtils.getContainerIP(docker, containerId);
         CompletableFuture<Void> future = new CompletableFuture<>();
-        new ZooKeeper(ip + ":2181", 10000,
+        @Cleanup
+        ZooKeeper zk = new ZooKeeper(ip + ":2181", 10000,
                 (e) -> {
                     if (e.getState().equals(KeeperState.SyncConnected)) {
                         future.complete(null);
