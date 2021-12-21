@@ -55,4 +55,4 @@ jobs:
       - name: Test progressive upgrade
         run: ./gradlew :tests:backward-compat:upgrade:test || (tail -n +1 tests/backward-compat/upgrade/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/upgrade/build/container-logs/**/* && exit 1)
       - name: Other tests
-        run: ./gradlew :tests:backward-compat:test -x tests:backward-compat:upgrade:test -x :tests:backward-compat:current-server-old-clients:test  || (tail -n +1 tests/backward-compact/upgrade/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compact/upgrade/build/container-logs/**/*)
+        run: ./gradlew :tests:backward-compat:test -x tests:backward-compat:upgrade:test -x :tests:backward-compat:current-server-old-clients:test
