@@ -231,7 +231,16 @@ public class MavenClassLoader implements AutoCloseable {
     }
 
     public Object newBookKeeper(String zookeeper) throws Exception {
-        return newInstance("org.apache.bookkeeper.client.BookKeeper", zookeeper);
+        Class<?> clientConfigurationClass = Class.forName("org.apache.bookkeeper.conf.ClientConfiguration", true, classloader);
+        Object clientConfiguration = newInstance("org.apache.bookkeeper.conf.ClientConfiguration");
+        clientConfigurationClass.getMethod("setReadTimeout", int.class).invoke(clientConfiguration, 15);
+        clientConfigurationClass.getMethod("setReadTimeout", int.class).invoke(clientConfiguration, 15);
+        clientConfigurationClass.getMethod("setZkTimeout", int.class).invoke(clientConfiguration, 30_000);
+        Class<?> klass = Class.forName("org.apache.bookkeeper.client.BookKeeper", true, classloader);
+        return klass
+                .getConstructor(clientConfigurationClass)
+                .newInstance(clientConfiguration);
+
     }
 
     public Object digestType(String type) throws Exception {
