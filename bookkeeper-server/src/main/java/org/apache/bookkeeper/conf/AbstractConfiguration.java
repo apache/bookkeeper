@@ -265,7 +265,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public String getMetadataServiceUri() throws ConfigurationException {
         String serviceUri = getString(METADATA_SERVICE_URI);
-        if (null == serviceUri) {
+        if (StringUtils.isBlank(serviceUri)) {
             // no service uri is defined, fallback to old settings
             String ledgerManagerType;
             ledgerManagerType = getLedgerManagerLayoutStringFromFactoryClass();
