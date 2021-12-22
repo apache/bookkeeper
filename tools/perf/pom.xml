@@ -17,7 +17,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper-tools-parent</artifactId>
-    <version>4.14.3-SNAPSHOT</version>
+    <version>4.14.4</version>
   </parent>
   <artifactId>bookkeeper-perf</artifactId>
   <name>Apache BookKeeper :: Tools :: Perf</name>
