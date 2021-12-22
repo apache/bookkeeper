@@ -60,7 +60,7 @@ def depLicences = [
         "javax.servlet-api-4.0.0/CDDL+GPL-1.1",
         "bouncycastle-1.0.2/LICENSE.html",
         "jsr-305/LICENSE",
-        "netty-4.1.68.Final/*",
+        "netty-4.1.72.Final/*",
         "paranamer-2.8/LICENSE.txt",
         "protobuf-3.14.0/LICENSE",
         "protobuf-3.12.0/LICENSE",
