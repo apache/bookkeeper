@@ -619,8 +619,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         try {
             isEnable = metadataDriver.isEnableHealthCheck().get();
         } catch (Exception e) {
-            LOG.error("metadataDriver.isEnableHealthCheck() failed," +
-                    "isEnable is treated as true !", e);
+            LOG.error("metadataDriver.isEnableHealthCheck() failed, isEnable is treated as true !", e);
         }
 
         if (!isEnable) {
