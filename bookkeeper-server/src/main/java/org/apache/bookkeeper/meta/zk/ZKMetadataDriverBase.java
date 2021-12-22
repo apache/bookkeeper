@@ -21,6 +21,7 @@ package org.apache.bookkeeper.meta.zk;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
+import static org.apache.bookkeeper.util.BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
 import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.ENABLE_HEALTH_CHECK;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
@@ -237,7 +238,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             this.ownZKHandle = true;
         }
 
-        int endIndex = ledgersRootPath.lastIndexOf("/ledgers");
+        int endIndex = ledgersRootPath.lastIndexOf(DEFAULT_ZK_LEDGERS_ROOT_PATH);
         String enableHealthCheckParentPath = ledgersRootPath.substring(0, endIndex == -1 ? 0 : endIndex);
         enableHealthCheckPath = String.format("%s/%s", enableHealthCheckParentPath, ENABLE_HEALTH_CHECK);
         // once created the zookeeper client, create the layout manager and registration client
