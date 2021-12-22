@@ -17,8 +17,10 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 # */
+set -e
 IMAGE_NAME=apachebookkeeper/bookkeeper-all-released-versions:latest
-if [[ "$(docker images -q $IMAGE_NAME 2> /dev/null)" != "" ]]; then
+FORCE_REBUILD="${BOOKKEEPER_DOCKER_IMAGES_FORCE_REBUILD:-false}"
+if [[ "$FORCE_REBUILD" != "true" && "$(docker images -q $IMAGE_NAME 2> /dev/null)" != "" ]]; then
   echo "reusing local image: $IMAGE_NAME"
   exit 0
 fi
