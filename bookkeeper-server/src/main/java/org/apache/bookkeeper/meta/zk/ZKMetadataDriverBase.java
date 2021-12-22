@@ -275,7 +275,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             zk.create(enableHealthCheckPath, BookKeeperConstants.EMPTY_BYTE_ARRAY, acls, CreateMode.PERSISTENT);
             createResult.complete(null);
         } catch (KeeperException.NodeExistsException nodeExistsException) {
-            log.debug("enableHealthCheckPath {} is existed!", enableHealthCheckPath);
+            log.debug("health check already disable!");
             createResult.complete(null);
         } catch (Exception e) {
             createResult.completeExceptionally(e);
@@ -290,7 +290,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             zk.delete(enableHealthCheckPath, -1);
             deleteResult.complete(null);
         } catch (KeeperException.NoNodeException noNodeException) {
-            log.debug("enableHealthCheckPath {} is not existed!", enableHealthCheckPath);
+            log.debug("health check already enabled!");
             deleteResult.complete(null);
         } catch (Exception e) {
             deleteResult.completeExceptionally(e);
@@ -298,7 +298,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return deleteResult;
     }
 
-    public CompletableFuture<Boolean> isEnableHealthCheck() {
+    public CompletableFuture<Boolean> isHealthCheckEnabled() {
         CompletableFuture<Boolean> enableResult = new CompletableFuture<>();
         try {
             boolean isEnable = (null == zk.exists(enableHealthCheckPath, false));

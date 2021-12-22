@@ -76,7 +76,7 @@ public interface MetadataBookieDriver extends AutoCloseable {
      *
      * @return true if health check is enable, otherwise false.
      */
-    default CompletableFuture<Boolean>  isEnableHealthCheck() {
+    default CompletableFuture<Boolean>  isHealthCheckEnabled() {
         return FutureUtils.value(true);
     }
 
