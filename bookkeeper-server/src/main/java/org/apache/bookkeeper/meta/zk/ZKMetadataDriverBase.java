@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
+import static org.apache.bookkeeper.util.BookKeeperConstants.ENABLE_HEALTH_CHECK;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import java.io.IOException;
@@ -44,6 +45,7 @@ import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -142,6 +144,9 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     // instantiated us
     protected boolean ownZKHandle = false;
 
+    // enable health check path
+    String enableHealthCheckPath;
+
     // ledgers root path
     protected String ledgersRootPath;
 
@@ -232,6 +237,8 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             this.ownZKHandle = true;
         }
 
+        String enableHealthCheckParentPath = ledgersRootPath.substring(0, ledgersRootPath.lastIndexOf("/ledgers"));
+        enableHealthCheckPath = String.format("%s/%s", enableHealthCheckParentPath, ENABLE_HEALTH_CHECK);
         // once created the zookeeper client, create the layout manager and registration client
         this.layoutManager = new ZkLayoutManager(
             zk,
@@ -265,7 +272,10 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     public CompletableFuture<Void> disableHealthCheck() {
         CompletableFuture<Void> createResult = new CompletableFuture<>();
         try {
-            zk.create(getEnableHealthPath(), new byte[0], ZkUtils.getACLs(conf), CreateMode.PERSISTENT);
+            zk.create(enableHealthCheckPath, BookKeeperConstants.EMPTY_BYTE_ARRAY, acls, CreateMode.PERSISTENT);
+            createResult.complete(null);
+        } catch (KeeperException.NodeExistsException nodeExistsException) {
+            log.debug("enableHealthCheckPath {} is existed!", enableHealthCheckPath);
             createResult.complete(null);
         } catch (Exception e) {
             createResult.completeExceptionally(e);
@@ -277,7 +287,10 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         CompletableFuture<Void> deleteResult = new CompletableFuture<>();
 
         try {
-            zk.delete(getEnableHealthPath(), -1);
+            zk.delete(enableHealthCheckPath, -1);
+            deleteResult.complete(null);
+        } catch (KeeperException.NoNodeException noNodeException) {
+            log.debug("enableHealthCheckPath {} is not existed!", enableHealthCheckPath);
             deleteResult.complete(null);
         } catch (Exception e) {
             deleteResult.completeExceptionally(e);
@@ -288,19 +301,12 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     public CompletableFuture<Boolean> isEnableHealthCheck() {
         CompletableFuture<Boolean> enableResult = new CompletableFuture<>();
         try {
-            boolean isEnable = (null == zk.exists(getEnableHealthPath(), false));
+            boolean isEnable = (null == zk.exists(enableHealthCheckPath, false));
             enableResult.complete(isEnable);
         } catch (Exception e) {
             enableResult.completeExceptionally(e);
         }
         return enableResult;
-    }
-
-
-    public String getEnableHealthPath() {
-        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
-        String ledgerParentPath = zkLedgersRootPath.substring(0, zkLedgersRootPath.lastIndexOf("/ledgers"));
-        return String.format("%s/%s", ledgerParentPath, "enableHealthCheck");
     }
 
     @Override

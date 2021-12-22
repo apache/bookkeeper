@@ -129,10 +129,4 @@ public interface MetadataClientDriver extends AutoCloseable {
         return FutureUtils.Void();
     }
 
-    /**
-     * @return disable health check path
-     */
-    default String getEnableHealthPath() {
-        return null;
-    }
 }

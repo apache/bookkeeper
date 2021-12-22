@@ -94,13 +94,6 @@ public interface MetadataBookieDriver extends AutoCloseable {
         return FutureUtils.Void();
     }
 
-    /**
-     * @return disable health check path
-     */
-    default String getEnableHealthPath() {
-        return null;
-    }
-
     @Override
     void close();
 
