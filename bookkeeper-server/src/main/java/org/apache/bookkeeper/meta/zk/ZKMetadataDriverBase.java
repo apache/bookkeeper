@@ -238,9 +238,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             this.ownZKHandle = true;
         }
 
-        int endIndex = ledgersRootPath.lastIndexOf(DEFAULT_ZK_LEDGERS_ROOT_PATH);
-        String enableHealthCheckParentPath = ledgersRootPath.substring(0, endIndex == -1 ? 0 : endIndex);
-        enableHealthCheckPath = String.format("%s/%s", enableHealthCheckParentPath, ENABLE_HEALTH_CHECK);
+        enableHealthCheckPath = ledgersRootPath + "/" + ENABLE_HEALTH_CHECK;
         // once created the zookeeper client, create the layout manager and registration client
         this.layoutManager = new ZkLayoutManager(
             zk,
