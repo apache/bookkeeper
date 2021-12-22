@@ -83,7 +83,7 @@ public class SwitchOfHealthCheckCommand extends BookieCommand<SwitchOfHealthChec
 
         MetadataDrivers.runFunctionWithMetadataBookieDriver(conf, driver -> {
             try {
-                boolean isEnable = driver.isEnableHealthCheck().get();
+                boolean isEnable = driver.isHealthCheckEnabled().get();
 
                 if (flags.status) {
                     LOG.info("EnableHealthCheck is " + (isEnable ? "enabled." : "disabled."));
