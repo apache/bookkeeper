@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 #/**
 # * Licensed to the Apache Software Foundation (ASF) under one
@@ -17,11 +17,16 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 # */
+set -e
+IMAGE_NAME=apachebookkeeper/bookkeeper-all-released-versions:latest
+FORCE_REBUILD="${BOOKKEEPER_DOCKER_IMAGES_FORCE_REBUILD:-false}"
+if [[ "$FORCE_REBUILD" != "true" && "$(docker images -q $IMAGE_NAME 2> /dev/null)" != "" ]]; then
+  echo "reusing local image: $IMAGE_NAME"
+  exit 0
+fi
 
-mkdir -p $BK_JOURNALDIR $BK_LEDGERDIR
+SCRIPT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
-sed -i "s|journalDirectory=.*|journalDirectory=$BK_JOURNALDIR|" /opt/bookkeeper/*/conf/bk_server.conf
-sed -i "s|ledgerDirectories=.*|ledgerDirectories=$BK_LEDGERDIR|" /opt/bookkeeper/*/conf/bk_server.conf
-sed -i "s|zkServers=.*|zkServers=$BK_ZKCONNECTSTRING|" /opt/bookkeeper/*/conf/bk_server.conf
-
-exec /usr/bin/supervisord -c /etc/supervisord.conf
+## BASE_DIR will be ./bookkeeper/
+BASE_DIR=${SCRIPT_DIR}/../../../
+docker build -t ${IMAGE_NAME} "${BASE_DIR}"/tests/docker-images/all-released-versions-image

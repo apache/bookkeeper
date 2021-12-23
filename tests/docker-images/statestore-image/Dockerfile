@@ -46,8 +46,8 @@ RUN mkdir /opt/bookkeeper/conf
 RUN mkdir /opt/bookkeeper/scripts
 
 ### -----Copy Jars------###
-ADD ./dist/server.tar.gz /opt/
-RUN mv /opt/server/lib/*.jar /opt/bookkeeper/lib/
+ADD ./dist/server-bin.tar.gz /opt/
+RUN mv /opt/server-bin/lib/*.jar /opt/bookkeeper/lib/
 ### --------------------###
 
 ### ----Copy scripts----------###

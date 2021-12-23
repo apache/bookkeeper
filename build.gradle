@@ -148,6 +148,7 @@ allprojects {
 
         plugins.withType(DistributionPlugin) {
             distTar {
+                archiveClassifier = "bin"
                 compression = Compression.GZIP
                 archiveExtension = 'tar.gz'
             }
@@ -184,7 +185,6 @@ allprojects {
         signing {
             def skipSigning = project.hasProperty('skipSigning') && skipSigning.toBoolean()
             def shouldSign = !skipSigning
-
             if (shouldSign) {
                 if (project.hasProperty("singingKey")) {
                     // The following allow the secretKey and password to be specified using env var
@@ -226,6 +226,12 @@ allprojects {
                         exclude excludeStr
                     });
                 }
+            }
+            systemProperty "gradle.buildDirectory", project.buildDir
+            systemProperty "currentVersion", project.rootProject.version
+            testLogging {
+                outputs.upToDateWhen {false}
+                showStandardStreams = true
             }
         }
     }

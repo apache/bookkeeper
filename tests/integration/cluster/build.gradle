@@ -45,13 +45,9 @@ dependencies {
     testAnnotationProcessor depLibs.lombok
 }
 
-task buildImage(type:Exec) {
-    workingDir '../../..'
-    commandLine './tests/docker-images/statestore-image/image_builder.sh'
-}
 
 test {
-    dependsOn buildImage
+    dependsOn(":tests:docker-images:buildImages")
     jvmArgs("-Djunit.timeout.test=600000",
             "-Djunit.max.retry=3",
             "-Djava.net.preferIPv4Stack=true",
