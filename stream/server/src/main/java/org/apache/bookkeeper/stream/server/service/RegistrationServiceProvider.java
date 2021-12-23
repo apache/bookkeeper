@@ -64,11 +64,11 @@ public class RegistrationServiceProvider
         this.zkServers = ZKMetadataDriverBase.resolveZkServers(bkServerConf);
         this.regPath = ZK_METADATA_ROOT_PATH + "/" + SERVERS_PATH;
         this.bkZkRetryPolicy = new BoundExponentialBackoffRetryPolicy(
-            bkServerConf.getZkRetryBackoffStartMs(),
-            bkServerConf.getZkRetryBackoffMaxMs(),
-            Integer.MAX_VALUE);
+                bkServerConf.getZkRetryBackoffStartMs(),
+                bkServerConf.getZkRetryBackoffMaxMs(),
+                bkServerConf.getZkRetryBackoffMaxRetries());
         this.regExecutor = Executors.newSingleThreadScheduledExecutor(
-            new ThreadFactoryBuilder().setNameFormat("registration-service-provider-scheduler").build());
+                new ThreadFactoryBuilder().setNameFormat("registration-service-provider-scheduler").build());
         ClientConfiguration clientConfiguration = new ClientConfiguration(bkServerConf);
         this.bookieAddresschangeTracking = clientConfiguration.getEnableBookieAddressTracking();
     }
