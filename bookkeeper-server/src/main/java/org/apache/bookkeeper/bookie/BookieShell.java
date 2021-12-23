@@ -1052,10 +1052,11 @@ public class BookieShell implements Tool {
 
             long logId;
             try {
-                logId = Long.parseLong(leftArgs[0]);
+                logId = Long.parseLong(leftArgs[0], 16);
                 flags.logId(logId);
             } catch (NumberFormatException nfe) {
                 flags.logFilename(leftArgs[0]);
+                flags.logId(-1);
             }
             cmd.apply(bkConf, flags);
             return 0;

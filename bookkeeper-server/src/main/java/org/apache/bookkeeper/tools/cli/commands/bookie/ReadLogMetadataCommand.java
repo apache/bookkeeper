@@ -130,6 +130,9 @@ public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> 
         LOG.info("Print entryLogMetadata of entrylog {} ({}.log)", logId, Long.toHexString(logId));
         initEntryLogger(conf);
         EntryLogMetadata entryLogMetadata = entryLogger.getEntryLogMetadata(logId);
+        LOG.info("entryLogId: {}, remaining size: {}, total size: {}, usage: {}", entryLogMetadata.getEntryLogId(),
+                entryLogMetadata.getRemainingSize(), entryLogMetadata.getTotalSize(), entryLogMetadata.getUsage());
+
         entryLogMetadata.getLedgersMap().forEach((ledgerId, size) -> {
             LOG.info("--------- Lid={}, TotalSizeOfEntriesOfLedger={}  ---------",
                      ledgerIdFormatter.formatLedgerId(ledgerId), size);
