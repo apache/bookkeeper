@@ -1035,8 +1035,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     LOG.warn("Received exception while trying to get network location of bookie: {}", bookie, e);
                 }
             }
-            if ((racksInQuorum.size() < minNumRacksPerWriteQuorumForThisEnsemble)
-                    || (enforceMinNumRacksPerWriteQuorum && racksInQuorum.contains(getDefaultRack()))) {
+            if (enforceMinNumRacksPerWriteQuorum && (racksInQuorum.size() < minNumRacksPerWriteQuorumForThisEnsemble
+                    || racksInQuorum.contains(getDefaultRack()))) {
                 return PlacementPolicyAdherence.FAIL;
             }
         }
