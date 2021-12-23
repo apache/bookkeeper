@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 #/**
 # * Licensed to the Apache Software Foundation (ASF) under one
@@ -17,11 +17,16 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 # */
+set -e
+BK_VERSION=$1
+SCRIPT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+echo "BK_VERSION=${BK_VERSION}"
 
-mkdir -p $BK_JOURNALDIR $BK_LEDGERDIR
+## BASE_DIR will be ./bookkeeper/
+BASE_DIR=${SCRIPT_DIR}/../../
+cd ${BASE_DIR}
+time /bin/bash -e tests/docker-images/statestore-image/image_builder.sh
+time /bin/bash -e tests/docker-images/all-released-versions-image/image_builder.sh
+time /bin/bash -e tests/docker-images/all-versions-image/image_builder.sh ${BK_VERSION}
+time /bin/bash -e tests/docker-images/current-version-image/image_builder.sh ${BK_VERSION}
 
-sed -i "s|journalDirectory=.*|journalDirectory=$BK_JOURNALDIR|" /opt/bookkeeper/*/conf/bk_server.conf
-sed -i "s|ledgerDirectories=.*|ledgerDirectories=$BK_LEDGERDIR|" /opt/bookkeeper/*/conf/bk_server.conf
-sed -i "s|zkServers=.*|zkServers=$BK_ZKCONNECTSTRING|" /opt/bookkeeper/*/conf/bk_server.conf
-
-exec /usr/bin/supervisord -c /etc/supervisord.conf

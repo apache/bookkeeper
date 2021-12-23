@@ -18,22 +18,35 @@
 # * limitations under the License.
 # */
 
+IMAGE_NAME=apachebookkeeper/bookkeeper-current:latest
+FORCE_REBUILD="${BOOKKEEPER_DOCKER_IMAGES_FORCE_REBUILD:-false}"
+if [[ "$FORCE_REBUILD" != "true" && "$(docker images -q $IMAGE_NAME 2> /dev/null)" != "" ]]; then
+  echo "reusing local image: $IMAGE_NAME"
+  exit 0
+fi
 SCRIPT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
 ## BASE_DIR will be ./bookkeeper/
 BASE_DIR=${SCRIPT_DIR}/../../../
+rm -rf "${BASE_DIR}"/tests/docker-images/statestore-image/dist
+rm -rf "${BASE_DIR}"/tests/docker-images/statestore-image/scripts
+rm -rf "${BASE_DIR}"/tests/docker-images/statestore-image/temp_conf
+rm -rf "${BASE_DIR}"/tests/docker-images/statestore-image/temp_bin
+
 mkdir "${BASE_DIR}"/tests/docker-images/statestore-image/dist
 mkdir "${BASE_DIR}"/tests/docker-images/statestore-image/scripts
 mkdir "${BASE_DIR}"/tests/docker-images/statestore-image/temp_conf
 mkdir "${BASE_DIR}"/tests/docker-images/statestore-image/temp_bin
 
-cp "${BASE_DIR}"/stream/server/build/distributions/server.tar.gz "${BASE_DIR}"/tests/docker-images/statestore-image/dist
+cp "${BASE_DIR}"/stream/server/build/distributions/server-bin.tar.gz "${BASE_DIR}"/tests/docker-images/statestore-image/dist
 cp "${BASE_DIR}"/docker/scripts/* "${BASE_DIR}"/tests/docker-images/statestore-image/scripts
 cp "${BASE_DIR}"/conf/* "${BASE_DIR}"/tests/docker-images/statestore-image/temp_conf
 cp "${BASE_DIR}"/bin/* "${BASE_DIR}"/tests/docker-images/statestore-image/temp_bin
-docker build -t apachebookkeeper/bookkeeper-current:latest "${BASE_DIR}"/tests/docker-images/statestore-image
+docker build -t ${IMAGE_NAME} "${BASE_DIR}"/tests/docker-images/statestore-image
 
 rm -rf "${BASE_DIR}"/tests/docker-images/statestore-image/dist
 rm -rf "${BASE_DIR}"/tests/docker-images/statestore-image/scripts
 rm -rf "${BASE_DIR}"/tests/docker-images/statestore-image/temp_conf
 rm -rf "${BASE_DIR}"/tests/docker-images/statestore-image/temp_bin
+
+

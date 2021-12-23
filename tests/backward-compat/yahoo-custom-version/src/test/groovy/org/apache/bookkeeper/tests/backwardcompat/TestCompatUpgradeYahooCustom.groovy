@@ -125,7 +125,7 @@ class TestCompatUpgradeYahooCustom {
 
     def List<Long> exerciseClients(List<Long> toVerify) {
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
-        String currentVersion = System.getProperty("currentVersion")
+        String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
 
         def ledgers = []
         def yahooCL = MavenClassLoader.forArtifact(yahooRepo, yahooArtifact)
@@ -191,7 +191,7 @@ class TestCompatUpgradeYahooCustom {
 
     @Test
     public void testUpgradeYahooCustom() throws Exception {
-        String currentVersion = System.getProperty("currentVersion")
+        String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
         String yahooVersion = "4.3-yahoo"
         BookKeeperClusterUtils.metadataFormatIfNeeded(docker, yahooVersion)
 

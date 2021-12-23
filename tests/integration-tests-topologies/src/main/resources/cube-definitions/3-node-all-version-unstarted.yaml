@@ -22,7 +22,7 @@ networks:
     driver: bridge
 
 zookeeper*:
-  image: zookeeper:3.4.11
+  image: zookeeper:3.6.2
   await:
     strategy: org.apache.bookkeeper.tests.integration.utils.ZooKeeperAwaitStrategy
   aliases:
@@ -41,6 +41,7 @@ bookkeeper1*:
     - customBeforeStopAction:
         strategy: org.apache.bookkeeper.tests.integration.utils.BookKeeperLogsToTargetDirStopAction
   networkMode: testnetwork*
+  exposedPorts: [3181/tcp, 8080/tcp]
 
 bookkeeper2*:
   image: apachebookkeeper/bookkeeper-all-versions
@@ -51,6 +52,7 @@ bookkeeper2*:
     - customBeforeStopAction:
         strategy: org.apache.bookkeeper.tests.integration.utils.BookKeeperLogsToTargetDirStopAction
   networkMode: testnetwork*
+  exposedPorts: [ 3181/tcp, 8080/tcp ]
 
 bookkeeper3*:
   image: apachebookkeeper/bookkeeper-all-versions
@@ -61,4 +63,5 @@ bookkeeper3*:
     - customBeforeStopAction:
         strategy: org.apache.bookkeeper.tests.integration.utils.BookKeeperLogsToTargetDirStopAction
   networkMode: testnetwork*
+  exposedPorts: [ 3181/tcp, 8080/tcp ]
 

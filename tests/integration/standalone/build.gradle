@@ -34,13 +34,8 @@ dependencies {
     testAnnotationProcessor depLibs.lombok
 }
 
-task buildImage(type:Exec) {
-    workingDir '../../..'
-    commandLine './tests/docker-images/statestore-image/image_builder.sh'
-}
-
 test {
-    dependsOn buildImage
+    dependsOn(":tests:docker-images:buildImages")
 }
 
 publishing {

@@ -37,9 +37,6 @@ class TestCompatUpgradeWithHostnameBookieId {
     private static final Logger LOG = LoggerFactory.getLogger(TestCompatUpgradeWithHostnameBookieId.class)
     private static byte[] PASSWD = "foobar".getBytes()
 
-    private def oldClientVersions = ["4.4.0", "4.5.1", "4.6.2", "4.7.2", "4.8.2", "4.9.2",
-                                     "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.0" ]
-
     @ArquillianResource
     DockerClient docker
 
@@ -73,7 +70,7 @@ class TestCompatUpgradeWithHostnameBookieId {
         BookKeeperClusterUtils.legacyMetadataFormat(docker)
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
 
-        String currentVersion = System.getProperty("currentVersion")
+        String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
 
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.1.0"))
 
@@ -111,7 +108,7 @@ class TestCompatUpgradeWithHostnameBookieId {
             ledger420r.close()
 
             // Ensure we can write and read new ledgers with all client versions
-            oldClientVersions.each{
+            BookKeeperClusterUtils.OLD_CLIENT_VERSIONS.each{
                 LOG.info("Testing ledger creation for version {}", it)
                 def oldCL = MavenClassLoader.forBookKeeperVersion(it)
                 def oldBK = oldCL.newBookKeeper(zookeeper)

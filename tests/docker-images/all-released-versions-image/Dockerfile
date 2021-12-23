@@ -30,35 +30,15 @@ RUN apt-get update && apt-get install -qy wget supervisor bash \
 
 RUN mkdir /tarballs
 WORKDIR /tarballs
-RUN wget -nv https://archive.apache.org/dist/zookeeper/bookkeeper/bookkeeper-4.0.0/binaries/bookkeeper-server-4.0.0-bin.tar.gz{,.sha1,.md5,.asc}
 RUN wget -nv https://archive.apache.org/dist/zookeeper/bookkeeper/bookkeeper-4.1.0/bookkeeper-server-4.1.0-bin.tar.gz{,.sha1,.md5,.asc}
 RUN wget -nv https://archive.apache.org/dist/zookeeper/bookkeeper/bookkeeper-4.2.0/bookkeeper-server-4.2.0-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/zookeeper/bookkeeper/bookkeeper-4.2.1/bookkeeper-server-4.2.1-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/zookeeper/bookkeeper/bookkeeper-4.2.2/bookkeeper-server-4.2.2-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/zookeeper/bookkeeper/bookkeeper-4.2.3/bookkeeper-server-4.2.3-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/zookeeper/bookkeeper/bookkeeper-4.3.0/bookkeeper-server-4.3.0-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.2.4/bookkeeper-server-4.2.4-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.3.0/bookkeeper-server-4.3.0-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.3.1/bookkeeper-server-4.3.1-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.3.2/bookkeeper-server-4.3.2-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.4.0/bookkeeper-server-4.4.0-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.5.0/bookkeeper-server-4.5.0-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.5.1/bookkeeper-server-4.5.1-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.6.0/bookkeeper-server-4.6.0-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.6.1/bookkeeper-server-4.6.1-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.6.2/bookkeeper-server-4.6.2-bin.tar.gz{,.sha1,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.7.0/bookkeeper-server-4.7.0-bin.tar.gz{,.sha1,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.7.1/bookkeeper-server-4.7.1-bin.tar.gz{,.sha1,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.7.2/bookkeeper-server-4.7.2-bin.tar.gz{,.sha512,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.8.2/bookkeeper-server-4.8.2-bin.tar.gz{,.sha512,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.9.2/bookkeeper-server-4.9.2-bin.tar.gz{,.sha512,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.10.0/bookkeeper-server-4.10.0-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.11.0/bookkeeper-server-4.11.0-bin.tar.gz{,.sha512,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.11.1/bookkeeper-server-4.11.1-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.12.0/bookkeeper-server-4.12.0-bin.tar.gz{,.sha512,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.12.1/bookkeeper-server-4.12.1-bin.tar.gz{,.sha512,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.13.0/bookkeeper-server-4.13.0-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.14.0/bookkeeper-server-4.14.0-bin.tar.gz{,.sha512,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.14.3/bookkeeper-server-4.14.3-bin.tar.gz{,.sha512,.asc}
 
 RUN wget -nv https://archive.apache.org/dist/incubator/pulsar/pulsar-1.21.0-incubating/apache-pulsar-1.21.0-incubating-bin.tar.gz{,.asc}
 RUN wget -nv https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
