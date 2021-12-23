@@ -43,7 +43,7 @@ class TestCompatUpgradeDirect {
     public void test0_upgradeDirect410toCurrent() throws Exception {
         BookKeeperClusterUtils.legacyMetadataFormat(docker)
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
-        String currentVersion = System.getProperty("currentVersion")
+        String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
         int numEntries = 10
 
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.1.0"))
@@ -94,7 +94,7 @@ class TestCompatUpgradeDirect {
 
     @Test
     public void test9_v410ClientCantFenceLedgerFromCurrent() throws Exception {
-        String currentVersion = System.getProperty("currentVersion")
+        String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
 
         def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)

@@ -54,9 +54,9 @@ public class DockerUtils {
     private static final Logger LOG = LoggerFactory.getLogger(DockerUtils.class);
 
     private static File getTargetDirectory(String containerId) {
-        String base = System.getProperty("maven.buildDirectory");
+        String base = System.getProperty("gradle.buildDirectory");
         if (base == null) {
-            base = "target";
+            base = "build";
         }
         File directory = new File(base + "/container-logs/" + containerId);
         if (!directory.exists() && !directory.mkdirs()) {

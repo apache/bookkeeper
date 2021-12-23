@@ -45,7 +45,7 @@ class TestCompatUpgradeOldServerInClusterWithCookies {
         BookKeeperClusterUtils.legacyMetadataFormat(docker)
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
 
-        String currentVersion = System.getProperty("currentVersion")
+        String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
         int numEntries = 10
 
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.1.0"))

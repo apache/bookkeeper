@@ -38,6 +38,15 @@ subprojects {
         testImplementation depLibs.junit
         testImplementation depLibs.slf4j
         testImplementation depLibs.arquillianCubeDocker
+        testImplementation depLibs.zookeeper
     }
 
+    test {
+        dependsOn(":tests:docker-images:buildImages")
+    }
+
+}
+
+test {
+    subprojects.each { dependsOn("${it.name}:test") }
 }

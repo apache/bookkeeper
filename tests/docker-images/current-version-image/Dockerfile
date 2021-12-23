@@ -47,17 +47,17 @@ RUN set -x \
     && yum clean all
 
 # untar tarballs
-ADD target/${DISTRO_NAME}.tar.gz /opt
+ADD build/package/${DISTRO_NAME}.tar.gz /opt
 RUN mv /opt/${PKG_NAME} /opt/bookkeeper
 
 WORKDIR /opt/bookkeeper
 
-COPY target/scripts /opt/bookkeeper/scripts
+COPY build/package/scripts /opt/bookkeeper/scripts
 COPY scripts/install-python-client.sh /opt/bookkeeper/scripts
 RUN chmod +x -R /opt/bookkeeper/scripts/
 
 # copy the python client
-ADD target/bookkeeper-client/ /opt/bookkeeper/bookkeeper-client
+ADD build/package/bookkeeper-client/ /opt/bookkeeper/bookkeeper-client
 RUN /opt/bookkeeper/scripts/install-python-client.sh
 
 ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/scripts/entrypoint.sh" ]

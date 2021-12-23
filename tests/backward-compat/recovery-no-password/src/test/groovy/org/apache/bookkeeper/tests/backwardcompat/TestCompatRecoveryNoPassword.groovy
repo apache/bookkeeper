@@ -20,6 +20,7 @@ package org.apache.bookkeeper.tests.backwardcompat
 import com.github.dockerjava.api.DockerClient
 
 import io.netty.buffer.ByteBuf
+import org.apache.bookkeeper.net.BookieId
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
@@ -115,7 +116,7 @@ class TestCompatRecoveryNoPassword {
 
             def cb = new ReplicationVerificationCallback(numRequests)
             for (long i = startEntryId; i < endEntryId; i++) {
-                for (BookieSocketAddress addr : e.getValue()) {
+                for (BookieId addr : e.getValue()) {
                     bookkeeper.getBookieClient()
                         .readEntry(addr, lh.getId(), i, cb, addr, BookieProtocol.FLAG_NONE)
                 }
@@ -143,7 +144,7 @@ class TestCompatRecoveryNoPassword {
         byte[] passwdCorrect = "AAAAAA".getBytes()
         byte[] passwdBad = "BBBBBB".getBytes()
 
-        String currentVersion = System.getProperty("currentVersion")
+        String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
 
         BookKeeperClusterUtils.legacyMetadataFormat(docker)
@@ -178,7 +179,7 @@ class TestCompatRecoveryNoPassword {
 
             // start a new bookie, and kill one of the initial 2
             def failedBookieId = new BookieSocketAddress(
-                DockerUtils.getContainerIP(docker, bookieContainers.get(0)), 3181)
+                DockerUtils.getContainerIP(docker, bookieContainers.get(0)), 3181).toBookieId()
             Assert.assertTrue(BookKeeperClusterUtils.stopBookie(
                     docker, bookieContainers.get(0)))
             Assert.assertTrue(BookKeeperClusterUtils.startBookieWithVersion(
