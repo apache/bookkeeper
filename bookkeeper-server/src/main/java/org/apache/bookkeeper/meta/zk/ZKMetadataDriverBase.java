@@ -22,7 +22,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
-import static org.apache.bookkeeper.util.BookKeeperConstants.ENABLE_HEALTH_CHECK;
+import static org.apache.bookkeeper.util.BookKeeperConstants.DISABLE_HEALTH_CHECK;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import java.io.IOException;
@@ -144,8 +144,8 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     // instantiated us
     protected boolean ownZKHandle = false;
 
-    // enable health check path
-    String enableHealthCheckPath;
+    // disable health check path
+    String disableHealthCheckPath;
 
     // ledgers root path
     protected String ledgersRootPath;
@@ -237,7 +237,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             this.ownZKHandle = true;
         }
 
-        enableHealthCheckPath = ledgersRootPath + "/" + ENABLE_HEALTH_CHECK;
+        disableHealthCheckPath = ledgersRootPath + "/" + DISABLE_HEALTH_CHECK;
         // once created the zookeeper client, create the layout manager and registration client
         this.layoutManager = new ZkLayoutManager(
             zk,
@@ -271,7 +271,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     public CompletableFuture<Void> disableHealthCheck() {
         CompletableFuture<Void> createResult = new CompletableFuture<>();
         try {
-            zk.create(enableHealthCheckPath, BookKeeperConstants.EMPTY_BYTE_ARRAY, acls, CreateMode.PERSISTENT);
+            zk.create(disableHealthCheckPath, BookKeeperConstants.EMPTY_BYTE_ARRAY, acls, CreateMode.PERSISTENT);
             createResult.complete(null);
         } catch (KeeperException.NodeExistsException nodeExistsException) {
             log.debug("health check already disable!");
@@ -286,7 +286,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         CompletableFuture<Void> deleteResult = new CompletableFuture<>();
 
         try {
-            zk.delete(enableHealthCheckPath, -1);
+            zk.delete(disableHealthCheckPath, -1);
             deleteResult.complete(null);
         } catch (KeeperException.NoNodeException noNodeException) {
             log.debug("health check already enabled!");
@@ -300,7 +300,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     public CompletableFuture<Boolean> isHealthCheckEnabled() {
         CompletableFuture<Boolean> enableResult = new CompletableFuture<>();
         try {
-            boolean isEnable = (null == zk.exists(enableHealthCheckPath, false));
+            boolean isEnable = (null == zk.exists(disableHealthCheckPath, false));
             enableResult.complete(isEnable);
         } catch (Exception e) {
             enableResult.completeExceptionally(e);
