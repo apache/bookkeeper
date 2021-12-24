@@ -51,10 +51,12 @@ import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Stat;
 
 /**
  * This is a mixin class for supporting zookeeper based metadata driver.
@@ -270,41 +272,56 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
     public CompletableFuture<Void> disableHealthCheck() {
         CompletableFuture<Void> createResult = new CompletableFuture<>();
-        try {
-            zk.create(disableHealthCheckPath, BookKeeperConstants.EMPTY_BYTE_ARRAY, acls, CreateMode.PERSISTENT);
-            createResult.complete(null);
-        } catch (KeeperException.NodeExistsException nodeExistsException) {
-            log.debug("health check already disable!");
-            createResult.complete(null);
-        } catch (Exception e) {
-            createResult.completeExceptionally(e);
-        }
+        zk.create(disableHealthCheckPath, BookKeeperConstants.EMPTY_BYTE_ARRAY, acls, CreateMode.PERSISTENT, new AsyncCallback.StringCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx, String name) {
+                if (KeeperException.Code.OK.intValue() == rc) {
+                    createResult.complete(null);
+                } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
+                    log.debug("health check already disable!");
+                    createResult.complete(null);
+                } else {
+                    createResult.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
+                }
+            }
+        }, null);
+
         return createResult;
     }
 
-    public CompletableFuture<Void>  enableHealthCheck() {
+    public CompletableFuture<Void> enableHealthCheck() {
         CompletableFuture<Void> deleteResult = new CompletableFuture<>();
 
-        try {
-            zk.delete(disableHealthCheckPath, -1);
-            deleteResult.complete(null);
-        } catch (KeeperException.NoNodeException noNodeException) {
-            log.debug("health check already enabled!");
-            deleteResult.complete(null);
-        } catch (Exception e) {
-            deleteResult.completeExceptionally(e);
-        }
+        zk.delete(disableHealthCheckPath, -1, new AsyncCallback.VoidCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx) {
+                if (KeeperException.Code.OK.intValue() == rc) {
+                    deleteResult.complete(null);
+                } else if (KeeperException.Code.NONODE.intValue() == rc) {
+                    log.debug("health check already enabled!");
+                    deleteResult.complete(null);
+                } else {
+                    deleteResult.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
+                }
+            }
+        }, null);
+
         return deleteResult;
     }
 
     public CompletableFuture<Boolean> isHealthCheckEnabled() {
         CompletableFuture<Boolean> enableResult = new CompletableFuture<>();
-        try {
-            boolean isEnable = (null == zk.exists(disableHealthCheckPath, false));
-            enableResult.complete(isEnable);
-        } catch (Exception e) {
-            enableResult.completeExceptionally(e);
-        }
+        zk.exists(disableHealthCheckPath, false, new AsyncCallback.StatCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx, Stat stat) {
+                if (KeeperException.Code.OK.intValue() == rc) {
+                    enableResult.complete(false);
+                } else {
+                    enableResult.complete(true);
+                }
+            }
+        }, null);
+
         return enableResult;
     }
 
