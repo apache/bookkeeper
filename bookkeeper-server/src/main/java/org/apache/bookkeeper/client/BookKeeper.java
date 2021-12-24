@@ -615,6 +615,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     void checkForFaultyBookies()  {
+        List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
+        if (faultyBookies.isEmpty()) {
+            return;
+        }
+
         boolean isEnable = true;
         try {
             isEnable = metadataDriver.isHealthCheckEnabled().get();
@@ -627,7 +632,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             return;
         }
 
-        List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
         for (BookieId faultyBookie : faultyBookies) {
             if (Math.random() <= bookieQuarantineRatio) {
                 bookieWatcher.quarantineBookie(faultyBookie);
