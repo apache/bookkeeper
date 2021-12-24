@@ -497,6 +497,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             long busyStartTime = System.nanoTime();
             while (running) {
                 ForceWriteRequest req = null;
+                boolean forceWriteMarkerSent = false;
                 try {
                     forceWriteThreadTime.add(MathUtils.elapsedNanos(busyStartTime));
                     req = forceWriteRequests.take();
@@ -509,7 +510,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             // queue will benefit from this force write - post a marker prior to issuing
                             // the flush so until this marker is encountered we can skip the force write
                             if (enableGroupForceWrites) {
-                                forceWriteRequests.put(createForceWriteRequest(req.logFile, 0, 0, null, false, true));
+                                forceWriteMarkerSent = forceWriteRequests.offer(createForceWriteRequest(req.logFile, 0, 0, null, false, true));
                             }
 
                             // If we are about to issue a write, record the number of requests in
@@ -527,6 +528,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     if (enableGroupForceWrites
                             // if its a marker we should switch back to flushing
                             && !req.isMarker
+                            // If group marker sending failed, we can't figure out which writes are
+                            // grouped in this force write. So, abandon it even if other writes could
+                            // be grouped. This should be extremely rare as, usually, queue size is
+                            // large enough to accommodate high flush frequencies.
+                            && forceWriteMarkerSent
                             // This indicates that this is the last request in a given file
                             // so subsequent requests will go to a different file so we should
                             // flush on the next request
