@@ -272,7 +272,8 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
     public CompletableFuture<Void> disableHealthCheck() {
         CompletableFuture<Void> createResult = new CompletableFuture<>();
-        zk.create(disableHealthCheckPath, BookKeeperConstants.EMPTY_BYTE_ARRAY, acls, CreateMode.PERSISTENT, new AsyncCallback.StringCallback() {
+        zk.create(disableHealthCheckPath, BookKeeperConstants.EMPTY_BYTE_ARRAY, acls,
+                CreateMode.PERSISTENT, new AsyncCallback.StringCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, String name) {
                 if (KeeperException.Code.OK.intValue() == rc) {
