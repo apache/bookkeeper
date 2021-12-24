@@ -21,8 +21,8 @@ package org.apache.bookkeeper.meta.zk;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
-import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.DISABLE_HEALTH_CHECK;
+import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import java.io.IOException;
