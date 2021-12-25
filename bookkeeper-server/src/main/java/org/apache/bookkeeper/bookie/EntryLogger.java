@@ -1067,7 +1067,8 @@ public class EntryLogger {
         }
     }
 
-    public EntryLogMetadata getEntryLogMetadata(long entryLogId, AbstractLogCompactor.Throttler throttler) throws IOException {
+    public EntryLogMetadata getEntryLogMetadata(long entryLogId, AbstractLogCompactor.Throttler throttler)
+        throws IOException {
         // First try to extract the EntryLogMetadata from the index, if there's no index then fallback to scanning the
         // entry log
         try {
@@ -1167,7 +1168,9 @@ public class EntryLogger {
         return extractEntryLogMetadataByScanning(entryLogId, null);
     }
 
-    private EntryLogMetadata extractEntryLogMetadataByScanning(long entryLogId, AbstractLogCompactor.Throttler throttler) throws IOException {
+    private EntryLogMetadata extractEntryLogMetadataByScanning(long entryLogId,
+                                                               AbstractLogCompactor.Throttler throttler)
+        throws IOException {
         final EntryLogMetadata meta = new EntryLogMetadata(entryLogId);
 
         // Read through the entry log file and extract the entry log meta
