@@ -438,9 +438,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         // Loop through all of the entry logs and remove the non-active ledgers.
         entryLogMetaMap.forEach((entryLogId, meta) -> {
             try {
-                removeIfLedgerNotExists(meta);
-                // update entryMetadta to persistent-map
-                entryLogMetaMap.put(meta.getEntryLogId(), meta);
+                boolean modified = removeIfLedgerNotExists(meta);
                 if (meta.isEmpty()) {
                     // This means the entry log is not associated with any active
                     // ledgers anymore.
@@ -448,6 +446,9 @@ public class GarbageCollectorThread extends SafeRunnable {
                     LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
                     removeEntryLog(entryLogId);
                     gcStats.getReclaimedSpaceViaDeletes().add(meta.getTotalSize());
+                } else if (modified) {
+                    // update entryLogMetaMap only when the meta modified.
+                    entryLogMetaMap.put(meta.getEntryLogId(), meta);
                 }
             } catch (EntryLogMetadataMapException e) {
                 // Ignore and continue because ledger will not be cleaned up
@@ -462,16 +463,23 @@ public class GarbageCollectorThread extends SafeRunnable {
         this.numActiveEntryLogs = entryLogMetaMap.size();
     }
 
-    private void removeIfLedgerNotExists(EntryLogMetadata meta) throws EntryLogMetadataMapException {
+    private boolean removeIfLedgerNotExists(EntryLogMetadata meta) throws EntryLogMetadataMapException {
+        AtomicBoolean modified = new AtomicBoolean(false);
         meta.removeLedgerIf((entryLogLedger) -> {
             // Remove the entry log ledger from the set if it isn't active.
             try {
-                return !ledgerStorage.ledgerExists(entryLogLedger);
+                boolean exist = ledgerStorage.ledgerExists(entryLogLedger);
+                if (!exist) {
+                    modified.set(true);
+                }
+                return !exist;
             } catch (IOException e) {
                 LOG.error("Error reading from ledger storage", e);
                 return false;
             }
         });
+
+        return modified.get();
     }
 
     /**
