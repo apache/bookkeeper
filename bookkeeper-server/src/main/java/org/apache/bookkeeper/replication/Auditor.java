@@ -1245,6 +1245,12 @@ public class Auditor implements AutoCloseable {
      * be run very often.
      */
     void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
+        try {
+            waitIfLedgerReplicationDisabled();
+        } catch (UnavailableException e) {
+            LOG.error("Exception while reading from ZK", e);
+        }
+
         final BookKeeper localClient = getBookKeeper(conf);
         final BookKeeperAdmin localAdmin = getBookKeeperAdmin(localClient);
         try {
