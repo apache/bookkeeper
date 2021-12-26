@@ -523,7 +523,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * If it set, it only works for one ledger directory configured for ledgerDirectories. For multi ledgerDirectory
      * configured, keep the default value is the best practice.
      *
-     * @param gcEntrylogMetadataCachePath.
+     * @param gcEntrylogMetadataCachePath
      * @return server configuration.
      */
     public ServerConfiguration setGcEntryLogMetadataCachePath(String gcEntrylogMetadataCachePath) {
