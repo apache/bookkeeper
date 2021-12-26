@@ -49,7 +49,7 @@ class TestCompatHierarchicalLedgerManager {
      */
     @Test
     public void testCompatHierarchicalLedgerManagerV420toCurrent() throws Exception {
-        String currentVersion = System.getProperty("currentVersion")
+        String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
         BookKeeperClusterUtils.legacyMetadataFormat(docker)
 
         BookKeeperClusterUtils.updateAllBookieConf(docker, "4.2.0",

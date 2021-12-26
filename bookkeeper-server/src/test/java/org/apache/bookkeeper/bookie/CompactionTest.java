@@ -54,8 +54,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
+
+import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.bookie.storage.ldb.PersistentEntryLogMetadataMap;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -140,7 +142,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         baseConf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         baseConf.setIsThrottleByBytes(this.isThrottleByBytes);
         baseConf.setIsForceGCAllowWhenNoSpace(false);
-
+        baseConf.setGcEntryLogMetadataCacheEnabled(true);
         super.setUp();
     }
 
@@ -219,6 +221,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         assertFalse(getGCThread().enableMajorCompaction);
         assertFalse(getGCThread().enableMinorCompaction);
         getGCThread().triggerGC().get();
+        assertTrue(getGCThread().getEntryLogMetaMap() instanceof PersistentEntryLogMetadataMap);
 
         // after garbage collection, compaction should not be executed
         assertEquals(lastMinorCompactionTime, getGCThread().lastMinorCompactionTime);
@@ -347,6 +350,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         getGCThread().enableForceGC();
         getGCThread().triggerGC().get();
+        assertTrue(getGCThread().getEntryLogMetaMap() instanceof PersistentEntryLogMetadataMap);
         assertTrue(
                 "ACTIVE_ENTRY_LOG_COUNT should have been updated",
                 getStatsProvider(0)
@@ -656,6 +660,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         LOG.info("Finished deleting the ledgers contains most entries.");
         getGCThread().triggerGC().get();
+        assertTrue(getGCThread().getEntryLogMetaMap() instanceof PersistentEntryLogMetadataMap);
 
         // after garbage collection, major compaction should not be executed
         assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
@@ -705,6 +710,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
         assertFalse(getGCThread().enableMajorCompaction);
         assertTrue(getGCThread().enableMinorCompaction);
+        assertTrue(getGCThread().getEntryLogMetaMap() instanceof PersistentEntryLogMetadataMap);
 
         for (int i = 0; i < bookieCount(); i++) {
             BookieImpl bookie = ((BookieImpl) serverByIndex(i).getBookie());
@@ -788,6 +794,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         LOG.info("Finished deleting the ledgers contains most entries.");
         getGCThread().enableForceGC();
         getGCThread().triggerGC().get();
+        assertTrue(getGCThread().getEntryLogMetaMap() instanceof PersistentEntryLogMetadataMap);
 
         // after garbage collection, minor compaction should not be executed
         assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
@@ -838,6 +845,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         LOG.info("Finished deleting the ledgers contains most entries.");
         getGCThread().enableForceGC();
         getGCThread().triggerGC().get();
+        assertTrue(getGCThread().getEntryLogMetaMap() instanceof PersistentEntryLogMetadataMap);
 
         // after garbage collection, minor compaction should not be executed
         assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
@@ -925,6 +933,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
          * purpose.
          */
         newBookieConf.setMetadataServiceUri(null);
+        String entryLogCachePath = newBookieConf.getGcEntryLogMetadataCachePath();
+        newBookieConf.setGcEntryLogMetadataCachePath(entryLogCachePath + "-bk2");
         Bookie newbookie = new TestBookieImpl(newBookieConf);
 
         DigestManager digestManager = DigestManager.instantiate(ledgerId, passwdBytes,
@@ -1010,6 +1020,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         LOG.info("Finished deleting the ledgers contains most entries.");
         getGCThread().enableForceGC();
         getGCThread().triggerGC().get();
+        assertTrue(getGCThread().getEntryLogMetaMap() instanceof PersistentEntryLogMetadataMap);
 
         // after garbage collection, minor compaction should not be executed
         assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
@@ -1067,59 +1078,6 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testCancelledCompactionWhenShuttingDown() throws Exception {
-        // prepare data
-        LedgerHandle[] lhs = prepareData(3, false);
-
-        // change compaction in low throughput
-        // restart bookies
-        restartBookies(c -> {
-            c.setIsThrottleByBytes(true);
-            c.setCompactionRateByBytes(ENTRY_SIZE / 1000);
-            c.setMinorCompactionThreshold(0.2f);
-            c.setMajorCompactionThreshold(0.5f);
-            return c;
-        });
-
-        // remove ledger2 and ledger3
-        // so entry log 1 and 2 would have ledger1 entries left
-        bkc.deleteLedger(lhs[1].getId());
-        bkc.deleteLedger(lhs[2].getId());
-        LOG.info("Finished deleting the ledgers contains most entries.");
-
-        getGCThread().triggerGC(true, false, false);
-        waitUntilTrue(() -> {
-            try {
-                return getGCThread().compacting.get();
-            } catch (Exception e) {
-                fail("Get GC thread failed");
-            }
-            return null;
-        }, () -> "Not attempting to complete", 10000, 200);
-
-        getGCThread().shutdown();
-        // after garbage collection, compaction should be cancelled when acquire permits
-        assertTrue(getGCThread().compactor.isCancelled());
-
-    }
-
-    private void waitUntilTrue(Supplier<Boolean> condition,
-                               Supplier<String> msg,
-                               long waitTime,
-                               long pause) throws InterruptedException {
-        long startTime = System.currentTimeMillis();
-        while (true) {
-            if (condition.get()) {
-                return;
-            }
-            if (System.currentTimeMillis() > startTime + waitTime) {
-                fail(msg.get());
-            }
-            Thread.sleep(Math.min(waitTime, pause));
-        }
-    }
-
-    @Test
     public void testCompactionSmallEntryLogs() throws Exception {
 
         // create a ledger to write a few entries
@@ -1148,6 +1106,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         getGCThread().enableForceGC();
         getGCThread().triggerGC().get();
+        assertTrue(getGCThread().getEntryLogMetaMap() instanceof PersistentEntryLogMetadataMap);
 
         // entry logs (0.log) should not be compacted
         // entry logs ([1,2,3].log) should be compacted.
@@ -1770,9 +1729,13 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             super(gcThread.conf,
                   gcThread.entryLogger,
                   gcThread.ledgerStorage,
-                  (long entry) -> {
-                gcThread.removeEntryLog(entry);
-            });
+                    (long entry) -> {
+                        try {
+                            gcThread.removeEntryLog(entry);
+                        } catch (EntryLogMetadataMapException e) {
+                            LOG.warn("Failed to remove entry-log metadata {}", entry, e);
+                        }
+                    });
         }
 
         synchronized void compactWithIndexFlushFailure(EntryLogMetadata metadata) {
