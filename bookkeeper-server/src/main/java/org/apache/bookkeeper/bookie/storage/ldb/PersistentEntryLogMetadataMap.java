@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.METADATA_CACHE;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,7 +41,6 @@ import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigT
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.apache.bookkeeper.util.BookKeeperConstants.METADATA_CACHE;
 
 /**
  * Persistent entryLogMetadata-map that stores entry-loggers metadata into
