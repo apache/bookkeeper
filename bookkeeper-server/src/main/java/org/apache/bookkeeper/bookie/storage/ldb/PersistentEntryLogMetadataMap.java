@@ -40,6 +40,7 @@ import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigT
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static org.apache.bookkeeper.util.BookKeeperConstants.METADATA_CACHE;
 
 /**
  * Persistent entryLogMetadata-map that stores entry-loggers metadata into
@@ -77,14 +78,14 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
     };
 
     public PersistentEntryLogMetadataMap(String metadataPath, ServerConfiguration conf) throws IOException {
-        LOG.info("Loading persistent entrylog metadata-map from {}", metadataPath);
+        LOG.info("Loading persistent entrylog metadata-map from {}", metadataPath + "/" + METADATA_CACHE);
         File dir = new File(metadataPath);
         if (!dir.mkdirs() && !dir.exists()) {
             String err = "Unable to create directory " + dir;
             LOG.error(err);
             throw new IOException(err);
         }
-        metadataMapDB = KeyValueStorageRocksDB.factory.newKeyValueStorage(metadataPath, "metadata-cache",
+        metadataMapDB = KeyValueStorageRocksDB.factory.newKeyValueStorage(metadataPath, METADATA_CACHE,
                 DbConfigType.Small, conf);
     }
 

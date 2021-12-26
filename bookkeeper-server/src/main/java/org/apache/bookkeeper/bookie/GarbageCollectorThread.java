@@ -22,9 +22,11 @@
 package org.apache.bookkeeper.bookie;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -48,6 +50,7 @@ import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static org.apache.bookkeeper.util.BookKeeperConstants.METADATA_CACHE;
 
 /**
  * This is the garbage collector thread that runs in the background to
@@ -120,6 +123,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     final GarbageCleaner garbageCleaner;
 
     final ServerConfiguration conf;
+    final LedgerDirsManager ledgerDirsManager;
 
     /**
      * Create a garbage collector thread.
@@ -129,8 +133,10 @@ public class GarbageCollectorThread extends SafeRunnable {
      * @throws IOException
      */
     public GarbageCollectorThread(ServerConfiguration conf, LedgerManager ledgerManager,
-            final CompactableLedgerStorage ledgerStorage, StatsLogger statsLogger) throws IOException {
-        this(conf, ledgerManager, ledgerStorage, statsLogger,
+                                  final LedgerDirsManager ledgerDirsManager,
+                                  final CompactableLedgerStorage ledgerStorage,
+                                  StatsLogger statsLogger) throws IOException {
+        this(conf, ledgerManager, ledgerDirsManager, ledgerStorage, statsLogger,
                 Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread")));
     }
 
@@ -143,6 +149,7 @@ public class GarbageCollectorThread extends SafeRunnable {
      */
     public GarbageCollectorThread(ServerConfiguration conf,
                                   LedgerManager ledgerManager,
+                                  final LedgerDirsManager ledgerDirsManager,
                                   final CompactableLedgerStorage ledgerStorage,
                                   StatsLogger statsLogger,
                                   ScheduledExecutorService gcExecutor)
@@ -150,6 +157,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         this.gcExecutor = gcExecutor;
         this.conf = conf;
 
+        this.ledgerDirsManager = ledgerDirsManager;
         this.entryLogger = ledgerStorage.getEntryLogger();
         this.entryLogMetaMap = createEntryLogMetadataMap();
         this.ledgerStorage = ledgerStorage;
@@ -260,11 +268,13 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     private EntryLogMetadataMap createEntryLogMetadataMap() throws IOException {
         if (conf.isGcEntryLogMetadataCacheEnabled()) {
-            String baseDir = this.conf.getGcEntryLogMetadataCachePath();
+            String baseDir = Strings.isNullOrEmpty(conf.getGcEntryLogMetadataCachePath()) ?
+                this.ledgerDirsManager.getAllLedgerDirs().get(0).getPath() : conf.getGcEntryLogMetadataCachePath();
             try {
                 return new PersistentEntryLogMetadataMap(baseDir, conf);
             } catch (IOException e) {
-                LOG.error("Failed to initialize persistent-metadata-map , clean up {}", baseDir, e);
+                LOG.error("Failed to initialize persistent-metadata-map , clean up {}",
+                    baseDir + "/" + METADATA_CACHE, e);
                 throw e;
             }
         } else {
