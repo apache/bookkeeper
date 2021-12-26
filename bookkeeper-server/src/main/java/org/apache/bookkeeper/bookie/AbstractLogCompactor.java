@@ -21,9 +21,17 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 
+import io.netty.util.concurrent.DefaultThreadFactory;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+
+import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Abstract entry log compactor used for compaction.
@@ -31,7 +39,10 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 public abstract class AbstractLogCompactor {
 
     protected final ServerConfiguration conf;
-    protected final Throttler throttler;
+    private final Throttler throttler;
+    private final AtomicBoolean shutting = new AtomicBoolean(false);
+    private final ScheduledExecutorService rateAcquireExecutor;
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     interface LogRemovalListener {
         void removeEntryLog(long logToRemove);
@@ -43,6 +54,7 @@ public abstract class AbstractLogCompactor {
         this.conf = conf;
         this.throttler = new Throttler(conf);
         this.logRemovalListener = logRemovalListener;
+        this.rateAcquireExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("RateLimiterAcquireThread"));
     }
 
     /**
@@ -56,6 +68,41 @@ public abstract class AbstractLogCompactor {
      * Do nothing by default. Intended for subclass to override this method.
      */
     public void cleanUpAndRecover() {}
+
+    // GC thread will check the status for the rate limiter
+    // If the compactor is being stopped by other threads,
+    // and the GC thread is still limited, the compact task will be stopped.
+    public void acquire(int permits) throws IOException {
+        Future<?> acquire = rateAcquireExecutor.submit(() -> {
+            throttler.acquire(permits);
+        });
+
+        while (!acquire.isDone()) {
+            if (acquire.isCancelled() || shutting.get()) {
+                acquire.cancel(true);
+                cancelled.set(true);
+                throw new IOException("Failed to get permits may be compactor has been shutting down");
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+    }
+
+    public void initiateShutdown() {
+        shutting.compareAndSet(false, true);
+    }
+
+    public void awaitShutdown() {
+        rateAcquireExecutor.shutdownNow();
+    }
+
+    public boolean isCancelled() {
+        return cancelled.get();
+    }
 
     static class Throttler {
         private final RateLimiter rateLimiter;

@@ -526,12 +526,15 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
         LOG.info("Shutting down GarbageCollectorThread");
 
+        compactor.initiateShutdown();
         while (!compacting.compareAndSet(false, true)) {
             // Wait till the thread stops compacting
             Thread.sleep(100);
         }
 
         this.running = false;
+        // Interrupt rate acquire executor thread
+        compactor.awaitShutdown();
         // Interrupt GC executor thread
         gcExecutor.shutdownNow();
     }

@@ -92,7 +92,7 @@ public class EntryLogCompactor extends AbstractLogCompactor {
 
                 @Override
                 public void process(final long ledgerId, long offset, ByteBuf entry) throws IOException {
-                    throttler.acquire(entry.readableBytes());
+                    acquire(entry.readableBytes());
 
                     if (offsets.size() > maxOutstandingRequests) {
                         flush();
