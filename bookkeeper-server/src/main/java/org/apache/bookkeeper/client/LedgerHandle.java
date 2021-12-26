@@ -1383,11 +1383,16 @@ public class LedgerHandle implements WriteHandle {
      */
 
     public void asyncReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        asyncReadLastConfirmed(cb, ctx, null);
+    }
+
+    public void asyncReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx,
+                                       Set<BookieId> skipStatusRemoveBookies) {
         if (clientCtx.getConf().useV2WireProtocol) {
             // in v2 protocol we don't support readLAC RPC
             asyncReadPiggybackLastConfirmed(cb, ctx);
         } else {
-            asyncReadExplicitLastConfirmed(cb, ctx);
+            asyncReadExplicitLastConfirmed(cb, ctx, skipStatusRemoveBookies);
         }
     }
 
@@ -1694,6 +1699,11 @@ public class LedgerHandle implements WriteHandle {
      *          callback context
      */
     public void asyncReadExplicitLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        asyncReadExplicitLastConfirmed(cb, ctx, null);
+    }
+
+    public void asyncReadExplicitLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx,
+                                               Set<BookieId> skipStatusRemoveBookies) {
         boolean isClosed;
         synchronized (this) {
             LedgerMetadata metadata = getLedgerMetadata();
@@ -1721,7 +1731,8 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
         };
-        new PendingReadLacOp(this, clientCtx.getBookieClient(), getCurrentEnsemble(), innercb).initiate();
+        new PendingReadLacOp(this, clientCtx.getBookieClient(), getCurrentEnsemble(), innercb)
+                .initiate(skipStatusRemoveBookies);
     }
 
     /*

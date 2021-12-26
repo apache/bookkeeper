@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import io.netty.buffer.ByteBuf;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.net.BookieId;
@@ -92,6 +93,25 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
                                    BookieProtocol.LAST_ADD_CONFIRMED,
                                    this, i, BookieProtocol.FLAG_DO_FENCING,
                                    ledgerKey);
+        }
+    }
+
+    public void initiateWithFencing(Set<BookieId> skipStatusRemoveBookies) {
+        for (int i = 0; i < currentEnsemble.size(); i++) {
+            if (skipStatusRemoveBookies != null && skipStatusRemoveBookies.size() != 0
+                    && skipStatusRemoveBookies.contains(currentEnsemble.get(i))) {
+                this.readEntryComplete(BKException.Code.NoSuchLedgerExistsException,
+                        ledgerId,
+                        BookieProtocol.LAST_ADD_CONFIRMED,
+                        null,
+                        i);
+                continue;
+            }
+            bookieClient.readEntry(currentEnsemble.get(i),
+                    ledgerId,
+                    BookieProtocol.LAST_ADD_CONFIRMED,
+                    this, i, BookieProtocol.FLAG_DO_FENCING,
+                    ledgerKey);
         }
     }
 

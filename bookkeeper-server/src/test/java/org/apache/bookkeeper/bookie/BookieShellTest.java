@@ -337,7 +337,8 @@ public class BookieShellTest {
             .verifyNew(BookKeeperAdmin.class, times(1))
             .withArguments(any(ClientConfiguration.class));
         verify(admin, times(1))
-            .recoverBookieData(any(Set.class), eq(dryrun), eq(skipOpenLedgers), eq(skipUnrecoverableLedgers));
+            .recoverBookieData(any(Set.class), eq(dryrun), eq(skipOpenLedgers), eq(skipUnrecoverableLedgers),
+                    null);
         verify(admin, times(1)).close();
         if (removeCookies) {
             PowerMockito.verifyStatic(MetadataDrivers.class);

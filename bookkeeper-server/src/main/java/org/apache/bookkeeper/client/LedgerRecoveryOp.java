@@ -19,10 +19,12 @@ package org.apache.bookkeeper.client;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
 import org.slf4j.Logger;
@@ -53,6 +55,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     // EntryListener Hook
     @VisibleForTesting
     ReadEntryListener entryListener = null;
+    private Set<BookieId> skipStatusRemoveBookies;
 
     class RecoveryReadOp extends ListenerBasedPendingReadOp {
 
@@ -93,12 +96,17 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     }
 
     public CompletableFuture<LedgerHandle> initiate() {
+        return initiate(null);
+    }
+
+    public CompletableFuture<LedgerHandle> initiate(Set<BookieId> skipStatusRemoveBookies) {
+        this.skipStatusRemoveBookies = skipStatusRemoveBookies;
         ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(clientCtx.getBookieClient(),
-                                                            lh.distributionSchedule,
-                                                            lh.macManager,
-                                                            lh.ledgerId,
-                                                            lh.getCurrentEnsemble(),
-                                                            lh.ledgerKey,
+                lh.distributionSchedule,
+                lh.macManager,
+                lh.ledgerId,
+                lh.getCurrentEnsemble(),
+                lh.ledgerKey,
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     @Override
                     public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
@@ -129,7 +137,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                             // keep a copy of ledger metadata before proceeding
                             // ledger recovery
                             metadataForRecovery = lh.getLedgerMetadata();
-                            doRecoveryRead();
+                            doRecoveryRead(skipStatusRemoveBookies);
                         } else if (rc == BKException.Code.UnauthorizedAccessException) {
                             submitCallback(rc);
                         } else {
@@ -143,7 +151,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
          * server it will fence off the ledger, stopping any subsequent operation
          * from writing to it.
          */
-        rlcop.initiateWithFencing();
+        rlcop.initiateWithFencing(skipStatusRemoveBookies);
 
         return promise;
     }
@@ -164,11 +172,15 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
      * Try to read past the last confirmed.
      */
     private void doRecoveryRead() {
+        doRecoveryRead(null);
+    }
+
+    private void doRecoveryRead(Set<BookieId> skipStatusRemoveBookies) {
         if (!promise.isDone()) {
             startEntryToRead = endEntryToRead + 1;
             endEntryToRead = endEntryToRead + clientCtx.getConf().recoveryReadBatchSize;
             new RecoveryReadOp(lh, clientCtx, startEntryToRead, endEntryToRead, this, null)
-                .initiate();
+                    .initiate(skipStatusRemoveBookies);
         }
     }
 
@@ -203,7 +215,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                 lh.asyncRecoveryAddEntry(data, 0, data.length, this, null);
                 if (entry.getEntryId() == endEntryToRead) {
                     // trigger next batch read
-                    doRecoveryRead();
+                    doRecoveryRead(this.skipStatusRemoveBookies);
                 }
                 return;
             }

@@ -20,6 +20,7 @@ package org.apache.bookkeeper.client;
 import io.netty.buffer.ByteBuf;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.net.BookieId;
@@ -74,6 +75,21 @@ class PendingReadLacOp implements ReadLacCallback {
 
     public void initiate() {
         for (int i = 0; i < currentEnsemble.size(); i++) {
+            bookieClient.readLac(currentEnsemble.get(i), lh.ledgerId, this, i);
+        }
+    }
+
+    public void initiate(Set<BookieId> skipStatusRemoveBookies) {
+        for (int i = 0; i < currentEnsemble.size(); i++) {
+            if (skipStatusRemoveBookies != null && skipStatusRemoveBookies.size() != 0
+                    && skipStatusRemoveBookies.contains(currentEnsemble.get(i))) {
+                this.readLacComplete(BKException.Code.NoSuchLedgerExistsException,
+                        lh.ledgerId,
+                        null,
+                        null,
+                        i);
+                continue;
+            }
             bookieClient.readLac(currentEnsemble.get(i), lh.ledgerId, this, i);
         }
     }

@@ -248,6 +248,10 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         recover(finalCb, null, false);
     }
 
+    void recover(GenericCallback<Void> finalCb, Set<BookieId> skipStatusRemoveBookies) {
+        recover(finalCb, null, false, skipStatusRemoveBookies);
+    }
+
     /**
      * Recover the ledger.
      *
@@ -261,13 +265,23 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     void recover(GenericCallback<Void> finalCb,
                  final @VisibleForTesting ReadEntryListener listener,
                  final boolean forceRecovery) {
+        recover(finalCb,
+                listener,
+                forceRecovery,
+                null);
+    }
+
+    void recover(GenericCallback<Void> finalCb,
+                 final @VisibleForTesting ReadEntryListener listener,
+                 final boolean forceRecovery,
+                 final Set<BookieId> skipStatusRemoveBookies) {
         final GenericCallback<Void> cb = new TimedGenericCallback<Void>(
-            finalCb,
-            BKException.Code.OK,
-            clientCtx.getClientStats().getRecoverOpLogger());
+                finalCb,
+                BKException.Code.OK,
+                clientCtx.getClientStats().getRecoverOpLogger());
 
         MetadataUpdateLoop.NeedsUpdatePredicate needsUpdate =
-            (metadata) -> metadata.getState() == LedgerMetadata.State.OPEN;
+                (metadata) -> metadata.getState() == LedgerMetadata.State.OPEN;
         if (forceRecovery) {
             // in the force recovery case, we want to update the metadata
             // to IN_RECOVERY, even if the ledger is already closed
@@ -279,25 +293,25 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 needsUpdate,
                 (metadata) -> LedgerMetadataBuilder.from(metadata).withInRecoveryState().build(),
                 this::setLedgerMetadata)
-            .run()
-            .thenCompose((metadata) -> {
+                .run()
+                .thenCompose((metadata) -> {
                     if (metadata.getValue().isClosed()) {
                         return CompletableFuture.completedFuture(ReadOnlyLedgerHandle.this);
                     } else {
                         return new LedgerRecoveryOp(ReadOnlyLedgerHandle.this, clientCtx)
-                            .setEntryListener(listener)
-                            .initiate();
+                                .setEntryListener(listener)
+                                .initiate(skipStatusRemoveBookies);
                     }
-            })
-            .thenCompose((ignore) -> closeRecovered())
-            .whenComplete((ignore, ex) -> {
+                })
+                .thenCompose((ignore) -> closeRecovered())
+                .whenComplete((ignore, ex) -> {
                     if (ex != null) {
                         cb.operationComplete(
                                 BKException.getExceptionCode(ex, BKException.Code.UnexpectedConditionException), null);
                     } else {
                         cb.operationComplete(BKException.Code.OK, null);
                     }
-            });
+                });
     }
 
     CompletableFuture<Versioned<LedgerMetadata>> closeRecovered() {
