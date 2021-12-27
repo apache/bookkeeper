@@ -21,17 +21,15 @@
 
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 
 import io.netty.util.concurrent.DefaultThreadFactory;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
  * Abstract entry log compactor used for compaction.
@@ -54,7 +52,8 @@ public abstract class AbstractLogCompactor {
         this.conf = conf;
         this.throttler = new Throttler(conf);
         this.logRemovalListener = logRemovalListener;
-        this.rateAcquireExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("RateLimiterAcquireThread"));
+        this.rateAcquireExecutor = Executors.newSingleThreadScheduledExecutor(
+                new DefaultThreadFactory("RateLimiterAcquireThread"));
     }
 
     /**
