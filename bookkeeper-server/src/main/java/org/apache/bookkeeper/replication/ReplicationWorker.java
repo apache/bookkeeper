@@ -227,7 +227,6 @@ public class ReplicationWorker implements Runnable {
         workerRunning = true;
         while (workerRunning) {
             try {
-                rereplicate();
                 if (!rereplicate()) {
                     LOG.warn("failed while replicating fragments");
                     waitBackOffTime(rwRereplicateBackoffMs);
