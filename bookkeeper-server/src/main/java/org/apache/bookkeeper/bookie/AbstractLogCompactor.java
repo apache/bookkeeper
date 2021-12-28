@@ -26,7 +26,6 @@ import com.google.common.util.concurrent.RateLimiter;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,23 +73,13 @@ public abstract class AbstractLogCompactor {
     // and the GC thread is still limited, the compact task will be stopped.
     public void acquire(int permits) throws IOException {
         long timeout = 100;
-        if (!throttler.tryAcquire(permits, timeout, TimeUnit.MILLISECONDS)) {
-            long start = System.currentTimeMillis();
-            Future<?> acquire = rateAcquireExecutor.submit(() -> {
-                throttler.acquire(permits);
-            });
-
-            while (!acquire.isDone()) {
-                if (acquire.isCancelled() || shutting.get()) {
-                    acquire.cancel(true);
-                    cancelled.set(true);
-                    throw new IOException("Failed to get permits takes " + (System.currentTimeMillis() - start) + " ms may be compactor has been shutting down");
-                }
-                try {
-                    TimeUnit.MILLISECONDS.sleep(timeout);
-                } catch (InterruptedException ex) {
-                    // ignore
-                }
+        long start = System.currentTimeMillis();
+        while (!throttler.tryAcquire(permits, timeout, TimeUnit.MILLISECONDS)) {
+            if (shutting.get()) {
+                cancelled.set(true);
+                throw new IOException("Failed to get permits takes "
+                        + (System.currentTimeMillis() - start)
+                        + " ms may be compactor has been shutting down");
             }
         }
     }
