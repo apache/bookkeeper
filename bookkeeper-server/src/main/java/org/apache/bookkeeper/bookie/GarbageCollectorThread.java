@@ -563,8 +563,6 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
 
         this.running = false;
-        // Interrupt rate acquire executor thread
-        compactor.awaitShutdown();
         // Interrupt GC executor thread
         gcExecutor.shutdownNow();
         try {

@@ -21,12 +21,10 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 
-import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -39,7 +37,6 @@ public abstract class AbstractLogCompactor {
     protected final ServerConfiguration conf;
     private final Throttler throttler;
     private final AtomicBoolean shutting = new AtomicBoolean(false);
-    private final ScheduledExecutorService rateAcquireExecutor;
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     interface LogRemovalListener {
@@ -52,8 +49,6 @@ public abstract class AbstractLogCompactor {
         this.conf = conf;
         this.throttler = new Throttler(conf);
         this.logRemovalListener = logRemovalListener;
-        this.rateAcquireExecutor = Executors.newSingleThreadScheduledExecutor(
-                new DefaultThreadFactory("RateLimiterAcquireThread"));
     }
 
     /**
@@ -93,10 +88,7 @@ public abstract class AbstractLogCompactor {
         shutting.compareAndSet(false, true);
     }
 
-    public void awaitShutdown() {
-        rateAcquireExecutor.shutdownNow();
-    }
-
+    @VisibleForTesting
     public boolean isCancelled() {
         return cancelled.get();
     }
