@@ -81,6 +81,11 @@ public abstract class AbstractLogCompactor {
                         + (System.currentTimeMillis() - start)
                         + " ms may be compactor has been shutting down");
             }
+            try {
+                TimeUnit.NANOSECONDS.sleep(timeout);
+            } catch (InterruptedException e) {
+                // ignore
+            }
         }
     }
 
