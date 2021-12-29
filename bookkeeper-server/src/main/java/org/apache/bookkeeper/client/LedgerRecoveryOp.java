@@ -102,11 +102,11 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     public CompletableFuture<LedgerHandle> initiate(Set<BookieId> skipStatusRemoveBookies) {
         this.skipStatusRemoveBookies = skipStatusRemoveBookies;
         ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(clientCtx.getBookieClient(),
-                lh.distributionSchedule,
-                lh.macManager,
-                lh.ledgerId,
-                lh.getCurrentEnsemble(),
-                lh.ledgerKey,
+                                                            lh.distributionSchedule,
+                                                            lh.macManager,
+                                                            lh.ledgerId,
+                                                            lh.getCurrentEnsemble(),
+                                                            lh.ledgerKey,
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     @Override
                     public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
@@ -180,7 +180,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
             startEntryToRead = endEntryToRead + 1;
             endEntryToRead = endEntryToRead + clientCtx.getConf().recoveryReadBatchSize;
             new RecoveryReadOp(lh, clientCtx, startEntryToRead, endEntryToRead, this, null)
-                    .initiate(skipStatusRemoveBookies);
+                .initiate(skipStatusRemoveBookies);
         }
     }
 

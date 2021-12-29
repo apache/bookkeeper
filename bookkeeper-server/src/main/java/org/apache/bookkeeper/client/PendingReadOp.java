@@ -549,7 +549,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             entry.read();
             if (!parallelRead && clientCtx.getConf().readSpeculativeRequestPolicy.isPresent()) {
                 speculativeTask = clientCtx.getConf().readSpeculativeRequestPolicy.get()
-                        .initiateSpeculativeRequest(clientCtx.getScheduler(), entry);
+                    .initiateSpeculativeRequest(clientCtx.getScheduler(), entry);
             }
         }
     }

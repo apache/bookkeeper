@@ -279,7 +279,7 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
                            boolean skipOpenLedgers,
                            boolean removeCookies,
                            boolean skipUnrecoverableLedgers,
-                               Set<BookieId> skipStatusRemoveBookies)
+                           Set<BookieId> skipStatusRemoveBookies)
         throws InterruptedException, BKException {
         bkAdmin.recoverBookieData(bookieAddrs, dryrun, skipOpenLedgers, skipUnrecoverableLedgers,
                 skipStatusRemoveBookies);
