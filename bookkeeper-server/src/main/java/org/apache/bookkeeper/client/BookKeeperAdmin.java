@@ -351,7 +351,8 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     public void asyncOpenLedgerNoRecovery(final long lId, final OpenCallback cb, final Object ctx,
                                           Set<BookieId> skipStatusRemoveBookies) {
-        new LedgerOpenOp(bkc, bkc.getClientCtx().getClientStats(), lId, cb, ctx).initiateWithoutRecovery(skipStatusRemoveBookies);
+        new LedgerOpenOp(bkc, bkc.getClientCtx().getClientStats(), lId, cb, ctx)
+                .initiateWithoutRecovery(skipStatusRemoveBookies);
     }
 
     /**
