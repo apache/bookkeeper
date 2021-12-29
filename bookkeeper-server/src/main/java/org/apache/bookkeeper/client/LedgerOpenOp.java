@@ -118,7 +118,7 @@ class LedgerOpenOp {
          * Asynchronously read the ledger metadata node.
          */
         bk.getLedgerManager().readLedgerMetadata(ledgerId)
-                .whenComplete((metadata, exception) -> {
+            .whenComplete((metadata, exception) -> {
                     if (exception != null) {
                         openComplete(BKException.getExceptionCode(exception), null);
                     } else {
