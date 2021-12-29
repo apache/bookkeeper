@@ -155,7 +155,7 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
             }
         }
 
-        if(skipRemoveBookieStatus){
+        if(skipRemoveBookieStatus) {
             skipStatusRemoveBookies = bookieAddrs;
         }
         LOG.info("Constructing admin");
