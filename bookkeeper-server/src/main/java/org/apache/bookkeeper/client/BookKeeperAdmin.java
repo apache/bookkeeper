@@ -595,7 +595,13 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     public void recoverBookieData(final Set<BookieId> bookiesSrc, boolean dryrun, boolean skipOpenLedgers)
         throws InterruptedException, BKException {
-        recoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, false, null);
+        recoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, false);
+    }
+
+    public void recoverBookieData(final Set<BookieId> bookiesSrc, boolean dryrun, boolean skipOpenLedgers,
+                                  boolean skipUnrecoverableLedgers)
+            throws InterruptedException, BKException {
+        recoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, null);
     }
 
     public void recoverBookieData(final Set<BookieId> bookiesSrc, boolean dryrun, boolean skipOpenLedgers,
@@ -603,7 +609,8 @@ public class BookKeeperAdmin implements AutoCloseable {
             throws InterruptedException, BKException {
         SyncObject sync = new SyncObject();
         // Call the async method to recover bookie data.
-        asyncRecoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, new RecoverCallback() {
+        asyncRecoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, skipStatusRemoveBookies,
+                new RecoverCallback() {
             @Override
             public void recoverComplete(int rc, Object ctx) {
                 LOG.info("Recover bookie operation completed with rc: {}", BKException.codeLogger(rc));
@@ -614,7 +621,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                     syncObj.notify();
                 }
             }
-        }, sync, skipStatusRemoveBookies);
+        }, sync);
 
         // Wait for the async method to complete.
         synchronized (sync) {
@@ -689,15 +696,15 @@ public class BookKeeperAdmin implements AutoCloseable {
     public void asyncRecoverBookieData(final Set<BookieId> bookieSrc, boolean dryrun,
                                        final boolean skipOpenLedgers, final boolean skipUnrecoverableLedgers,
                                        final RecoverCallback cb, final Object context) {
-        getActiveLedgers(bookieSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, cb, context, null);
+        getActiveLedgers(bookieSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, null, cb, context);
     }
 
     public void asyncRecoverBookieData(final Set<BookieId> bookieSrc, boolean dryrun,
                                        final boolean skipOpenLedgers, final boolean skipUnrecoverableLedgers,
-                                       final RecoverCallback cb, final Object context,
-                                       Set<BookieId> skipStatusRemoveBookies) {
-        getActiveLedgers(bookieSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, cb, context,
-                skipStatusRemoveBookies);
+                                       final Set<BookieId> skipStatusRemoveBookies,
+                                       final RecoverCallback cb, final Object context) {
+        getActiveLedgers(bookieSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, skipStatusRemoveBookies,
+                cb, context);
     }
 
     /**
@@ -737,6 +744,10 @@ public class BookKeeperAdmin implements AutoCloseable {
      *            dryrun the recover procedure.
      * @param skipOpenLedgers
      *            Skip recovering open ledgers.
+     * @param skipUnrecoverableLedgers
+     *            Skip unrecoverable ledgers.
+     * @param skipStatusRemoveBookies
+     *            Skip status for these remove bookies.
      * @param cb
      *            RecoverCallback to invoke once all of the data on the dead
      *            bookie has been recovered and replicated.
@@ -745,8 +756,8 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     private void getActiveLedgers(final Set<BookieId> bookiesSrc, final boolean dryrun,
                                   final boolean skipOpenLedgers, final boolean skipUnrecoverableLedgers,
-                                  final RecoverCallback cb, final Object context,
-                                  Set<BookieId> skipStatusRemoveBookies) {
+                                  final Set<BookieId> skipStatusRemoveBookies,
+                                  final RecoverCallback cb, final Object context) {
         // Wrapper class around the RecoverCallback so it can be used
         // as the final VoidCallback to process ledgers
         class RecoverCallbackWrapper implements AsyncCallback.VoidCallback {
@@ -765,8 +776,8 @@ public class BookKeeperAdmin implements AutoCloseable {
         Processor<Long> ledgerProcessor = new Processor<Long>() {
             @Override
             public void process(Long ledgerId, AsyncCallback.VoidCallback iterCallback) {
-                recoverLedger(bookiesSrc, ledgerId, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, iterCallback,
-                        skipStatusRemoveBookies);
+                recoverLedger(bookiesSrc, ledgerId, dryrun, skipOpenLedgers, skipUnrecoverableLedgers,
+                        skipStatusRemoveBookies, iterCallback);
             }
         };
         bkc.getLedgerManager().asyncProcessLedgers(
@@ -793,7 +804,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     private void recoverLedger(final Set<BookieId> bookiesSrc, final long lId, final boolean dryrun,
                                final boolean skipOpenLedgers, final AsyncCallback.VoidCallback finalLedgerIterCb) {
-        recoverLedger(bookiesSrc, lId, dryrun, skipOpenLedgers, false, finalLedgerIterCb, null);
+        recoverLedger(bookiesSrc, lId, dryrun, skipOpenLedgers, false, null, finalLedgerIterCb);
     }
 
     /**
@@ -811,16 +822,16 @@ public class BookKeeperAdmin implements AutoCloseable {
      *            Skip recovering open ledgers.
      * @param skipUnrecoverableLedgers
      *            Skip unrecoverable ledgers.
+     * @param skipStatusRemoveBookies
+     *            Skip status for these remove bookies.
      * @param finalLedgerIterCb
      *            IterationCallback to invoke once we've recovered the current
      *            ledger.
-     * @param skipStatusRemoveBookies
-     *            IterationCallback to skip status for these remove bookies.
      */
     private void recoverLedger(final Set<BookieId> bookiesSrc, final long lId, final boolean dryrun,
                                final boolean skipOpenLedgers, final boolean skipUnrecoverableLedgers,
-                               final AsyncCallback.VoidCallback finalLedgerIterCb,
-                               Set<BookieId> skipStatusRemoveBookies) {
+                               final Set<BookieId> skipStatusRemoveBookies,
+                               final AsyncCallback.VoidCallback finalLedgerIterCb) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Recovering ledger : {}", lId);
         }
@@ -882,7 +893,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                             bkc.mainWorkerPool.submit(() -> {
                                 // do recovery
                                 recoverLedger(bookiesSrc, lId, dryrun, skipOpenLedgers,
-                                    skipUnrecoverableLedgers, finalLedgerIterCb, skipStatusRemoveBookies);
+                                    skipUnrecoverableLedgers, skipStatusRemoveBookies, finalLedgerIterCb);
                             });
                         }
                     }, null, skipStatusRemoveBookies);
