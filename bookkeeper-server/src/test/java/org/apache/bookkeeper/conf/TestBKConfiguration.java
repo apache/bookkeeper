@@ -93,6 +93,10 @@ public class TestBKConfiguration {
     public static ClientConfiguration newClientConfiguration() {
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         clientConfiguration.setTLSEnabledProtocols("TLSv1.2,TLSv1.1");
+        /**
+         * if testcase has zk error,just try 1 time for fast running
+         */
+        clientConfiguration.setZkRetryBackoffMaxRetries(1);
         return clientConfiguration;
     }
 }
