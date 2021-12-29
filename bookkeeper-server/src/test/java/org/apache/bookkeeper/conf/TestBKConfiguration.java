@@ -60,6 +60,10 @@ public class TestBKConfiguration {
         confReturn.setAllocatorPoolingPolicy(PoolingPolicy.UnpooledHeap);
         confReturn.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 4);
         confReturn.setProperty(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB, 4);
+        /**
+         * if testcase has zk error,just try 1 time for fast running
+         */
+        confReturn.setZkRetryBackoffMaxRetries(1);
         setLoopbackInterfaceAndAllowLoopback(confReturn);
         return confReturn;
     }
