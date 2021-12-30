@@ -599,8 +599,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     public void recoverBookieData(final Set<BookieId> bookiesSrc, boolean dryrun, boolean skipOpenLedgers,
-                                  boolean skipUnrecoverableLedgers)
-            throws InterruptedException, BKException {
+                                  boolean skipUnrecoverableLedgers) throws InterruptedException, BKException {
         recoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, null);
     }
 
