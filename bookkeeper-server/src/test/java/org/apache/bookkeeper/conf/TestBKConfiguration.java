@@ -61,9 +61,9 @@ public class TestBKConfiguration {
         confReturn.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 4);
         confReturn.setProperty(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB, 4);
         /**
-         * if testcase has zk error,just try 1 time for fast running
+         * if testcase has zk error,just try 0 time for fast running
          */
-        confReturn.setZkRetryBackoffMaxRetries(1);
+        confReturn.setZkRetryBackoffMaxRetries(0);
         setLoopbackInterfaceAndAllowLoopback(confReturn);
         return confReturn;
     }
@@ -94,9 +94,9 @@ public class TestBKConfiguration {
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         clientConfiguration.setTLSEnabledProtocols("TLSv1.2,TLSv1.1");
         /**
-         * if testcase has zk error,just try 1 time for fast running
+         * if testcase has zk error,just try 0 time for fast running
          */
-        clientConfiguration.setZkRetryBackoffMaxRetries(1);
+        clientConfiguration.setZkRetryBackoffMaxRetries(0);
         return clientConfiguration;
     }
 }
