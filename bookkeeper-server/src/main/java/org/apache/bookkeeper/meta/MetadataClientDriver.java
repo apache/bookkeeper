@@ -114,19 +114,4 @@ public interface MetadataClientDriver extends AutoCloseable {
     default CompletableFuture<Boolean> isHealthCheckEnabled() {
         return FutureUtils.value(true);
     }
-
-    /**
-     * Disable health check.
-     */
-    default CompletableFuture<Void> disableHealthCheck() {
-        return FutureUtils.Void();
-    }
-
-    /**
-     * Enable health check.
-     */
-    default CompletableFuture<Void>  enableHealthCheck() {
-        return FutureUtils.Void();
-    }
-
 }

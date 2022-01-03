@@ -83,8 +83,8 @@ public interface MetadataBookieDriver extends AutoCloseable {
     /**
      * Disable health check.
      */
-    default CompletableFuture<Void> disableHealthCheck() {
-        return FutureUtils.Void();
+    default CompletableFuture<Void> disableHealthCheck() throws Exception {
+        throw new Exception("Not support disableHealthCheck");
     }
 
     /**

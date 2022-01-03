@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -606,7 +607,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             scheduler.scheduleAtFixedRate(new SafeRunnable() {
 
                 @Override
-                public void safeRun() {
+                public void safeRun() throws ExecutionException, InterruptedException {
                     checkForFaultyBookies();
                 }
                     }, conf.getBookieHealthCheckIntervalSeconds(), conf.getBookieHealthCheckIntervalSeconds(),
@@ -614,19 +615,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
     }
 
-    void checkForFaultyBookies()  {
+    void checkForFaultyBookies() throws ExecutionException, InterruptedException {
         List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
         if (faultyBookies.isEmpty()) {
             return;
         }
 
-        boolean isEnable = true;
-        try {
-            isEnable = metadataDriver.isHealthCheckEnabled().get();
-        } catch (Exception e) {
-            LOG.error("metadataDriver.isEnableHealthCheck() failed, isEnable is treated as true !", e);
-        }
-
+        boolean isEnable = metadataDriver.isHealthCheckEnabled().get();
         if (!isEnable) {
             LOG.info("Health checks is currently disabled!");
             return;

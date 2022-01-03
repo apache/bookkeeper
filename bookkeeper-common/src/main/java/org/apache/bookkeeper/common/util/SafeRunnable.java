@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.common.util;
 
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ public interface SafeRunnable extends Runnable {
         }
     }
 
-    void safeRun();
+    void safeRun() throws ExecutionException, InterruptedException;
 
     /**
      * Utility method to use SafeRunnable from lambdas.
