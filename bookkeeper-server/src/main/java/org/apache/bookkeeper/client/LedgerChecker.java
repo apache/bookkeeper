@@ -51,6 +51,14 @@ public class LedgerChecker {
     public final BookieClient bookieClient;
     public final BookieWatcher bookieWatcher;
 
+    private static int averageEntrySize;
+
+    private static final int INITIAL_AVERAGE_ENTRY_SIZE = 1024;
+    private static final double AVERAGE_ENTRY_SIZE_RATIO = 0.8;
+
+    protected static LedgerFragmentReplicator.Throttler readThrottle = null;
+
+
     static class InvalidFragmentException extends Exception {
         private static final long serialVersionUID = 1467201276417062353L;
     }
@@ -76,6 +84,11 @@ public class LedgerChecker {
         @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                 ByteBuf buffer, Object ctx) {
+            if (readThrottle != null && buffer != null) {
+                int readSize = buffer.readableBytes();
+                averageEntrySize = (int) (averageEntrySize * AVERAGE_ENTRY_SIZE_RATIO
+                        + (1 - AVERAGE_ENTRY_SIZE_RATIO) * readSize);
+            }
             if (rc == BKException.Code.OK) {
                 if (numEntries.decrementAndGet() == 0
                         && !completed.getAndSet(true)) {
@@ -145,6 +158,19 @@ public class LedgerChecker {
         bookieWatcher = watcher;
     }
 
+    public LedgerChecker(BookKeeper bkc, int ledgerCheckerReadRateByBytes) {
+        this(bkc.getBookieClient(), bkc.getBookieWatcher(), ledgerCheckerReadRateByBytes);
+    }
+
+    public LedgerChecker(BookieClient client, BookieWatcher watcher, int ledgerCheckerReadRateByBytes) {
+        bookieClient = client;
+        bookieWatcher = watcher;
+        if (ledgerCheckerReadRateByBytes > 0) {
+            readThrottle = new LedgerFragmentReplicator.Throttler(ledgerCheckerReadRateByBytes);
+        }
+        averageEntrySize = INITIAL_AVERAGE_ENTRY_SIZE;
+    }
+
     /**
      * Verify a ledger fragment to collect bad bookies.
      *
@@ -207,6 +233,9 @@ public class LedgerChecker {
             // fragment is on this bookie, but already know it's unavailable, so skip the call
             cb.operationComplete(BKException.Code.BookieHandleNotAvailableException, fragment);
         } else if (firstStored == lastStored) {
+            if (readThrottle != null) {
+                readThrottle.acquire(averageEntrySize);
+            }
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(1,
                     fragment, cb);
             bookieClient.readEntry(bookie, fragment.getLedgerId(), firstStored,
@@ -251,6 +280,9 @@ public class LedgerChecker {
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(entriesToBeVerified.size(),
                     fragment, cb);
             for (Long entryID: entriesToBeVerified) {
+                if (readThrottle != null) {
+                    readThrottle.acquire(averageEntrySize);
+                }
                 bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, null, BookieProtocol.FLAG_NONE);
             }
         }
@@ -275,6 +307,11 @@ public class LedgerChecker {
         @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                                       ByteBuf buffer, Object ctx) {
+            if (readThrottle != null && buffer != null) {
+                int readSize = buffer.readableBytes();
+                averageEntrySize = (int) (averageEntrySize * AVERAGE_ENTRY_SIZE_RATIO
+                        + (1 - AVERAGE_ENTRY_SIZE_RATIO) * readSize);
+            }
             if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc
                     && BKException.Code.NoSuchLedgerExistsOnMetadataServerException != rc) {
                 entryMayExist.set(true);
@@ -395,6 +432,9 @@ public class LedgerChecker {
 
                 DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(entryToRead);
                 for (int i = 0; i < writeSet.size(); i++) {
+                    if (readThrottle != null) {
+                        readThrottle.acquire(averageEntrySize);
+                    }
                     BookieId addr = curEnsemble.get(writeSet.get(i));
                     bookieClient.readEntry(addr, lh.getId(), entryToRead,
                                            eecb, null, BookieProtocol.FLAG_NONE);

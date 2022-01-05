@@ -214,6 +214,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC =
         "auditorAcquireConcurrentOpenLedgerOperationsTimeOutMSec";
     protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
+    protected static final String LEDGER_CHECKER_READ_RATE_BY_BYTES = "ledgerCheckerReadRateByBytes";
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -331,6 +332,16 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration(AbstractConfiguration conf) {
         super();
         loadConf(conf);
+    }
+
+    /**
+     * Get the bytes rate of ledgerChecker.
+     * Default value is -1 which it means entries will ledgerChecker without any throttling activity.
+     *
+     * @return bytes rate of ledgerChecker
+     */
+    public int getLedgerCheckerReadRateByBytes(){
+        return getInt(LEDGER_CHECKER_READ_RATE_BY_BYTES, -1);
     }
 
     /**

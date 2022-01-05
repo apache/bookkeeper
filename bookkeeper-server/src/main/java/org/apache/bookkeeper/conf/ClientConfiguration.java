@@ -202,6 +202,18 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
 
+    protected static final String LEDGER_CHECKER_READ_RATE_BY_BYTES = "ledgerCheckerReadRateByBytes";
+
+    /**
+     * Get the bytes rate of ledgerChecker.
+     * Default value is -1 which it means entries will ledgerChecker without any throttling activity.
+     *
+     * @return bytes rate of ledgerChecker
+     */
+    public int getLedgerCheckerReadRateByBytes(){
+        return getInt(LEDGER_CHECKER_READ_RATE_BY_BYTES, -1);
+    }
+
     /**
      * Get the bytes rate of re-replication.
      * Default value is -1 which it means entries will replicated without any throttling activity.
