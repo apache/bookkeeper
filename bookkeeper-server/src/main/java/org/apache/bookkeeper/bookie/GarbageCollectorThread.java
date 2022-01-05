@@ -45,6 +45,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -464,13 +465,13 @@ public class GarbageCollectorThread extends SafeRunnable {
     }
 
     private boolean removeIfLedgerNotExists(EntryLogMetadata meta) throws EntryLogMetadataMapException {
-        AtomicBoolean modified = new AtomicBoolean(false);
+        MutableBoolean modified = new MutableBoolean(false);
         meta.removeLedgerIf((entryLogLedger) -> {
             // Remove the entry log ledger from the set if it isn't active.
             try {
                 boolean exist = ledgerStorage.ledgerExists(entryLogLedger);
                 if (!exist) {
-                    modified.set(true);
+                    modified.setTrue();
                 }
                 return !exist;
             } catch (IOException e) {
@@ -479,7 +480,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             }
         });
 
-        return modified.get();
+        return modified.getValue();
     }
 
     /**
