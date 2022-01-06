@@ -20,6 +20,7 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
+import java.util.concurrent.Semaphore;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,13 +52,7 @@ public class LedgerChecker {
     public final BookieClient bookieClient;
     public final BookieWatcher bookieWatcher;
 
-    private static int averageEntrySize;
-
-    private static final int INITIAL_AVERAGE_ENTRY_SIZE = 1024;
-    private static final double AVERAGE_ENTRY_SIZE_RATIO = 0.8;
-
-    protected static LedgerFragmentReplicator.Throttler readThrottle = null;
-
+    final Semaphore semaphore;
 
     static class InvalidFragmentException extends Exception {
         private static final long serialVersionUID = 1467201276417062353L;
@@ -68,7 +63,7 @@ public class LedgerChecker {
      * call back to previous call back API which is waiting for it once it meets
      * the expected call backs from down.
      */
-    private static class ReadManyEntriesCallback implements ReadEntryCallback {
+    private class ReadManyEntriesCallback implements ReadEntryCallback {
         AtomicBoolean completed = new AtomicBoolean(false);
         final AtomicLong numEntries;
         final LedgerFragment fragment;
@@ -84,11 +79,7 @@ public class LedgerChecker {
         @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                 ByteBuf buffer, Object ctx) {
-            if (readThrottle != null && buffer != null) {
-                int readSize = buffer.readableBytes();
-                averageEntrySize = (int) (averageEntrySize * AVERAGE_ENTRY_SIZE_RATIO
-                        + (1 - AVERAGE_ENTRY_SIZE_RATIO) * readSize);
-            }
+            releasePermit();
             if (rc == BKException.Code.OK) {
                 if (numEntries.decrementAndGet() == 0
                         && !completed.getAndSet(true)) {
@@ -154,21 +145,40 @@ public class LedgerChecker {
     }
 
     public LedgerChecker(BookieClient client, BookieWatcher watcher) {
-        bookieClient = client;
-        bookieWatcher = watcher;
+        this(client, watcher, -1);
     }
 
-    public LedgerChecker(BookKeeper bkc, int ledgerCheckerReadRateByBytes) {
-        this(bkc.getBookieClient(), bkc.getBookieWatcher(), ledgerCheckerReadRateByBytes);
+    public LedgerChecker(BookKeeper bkc, int inFlightReadEntryNum) {
+        this(bkc.getBookieClient(), bkc.getBookieWatcher(), inFlightReadEntryNum);
     }
 
-    public LedgerChecker(BookieClient client, BookieWatcher watcher, int ledgerCheckerReadRateByBytes) {
+    public LedgerChecker(BookieClient client, BookieWatcher watcher, int inFlightReadEntryNum) {
         bookieClient = client;
         bookieWatcher = watcher;
-        if (ledgerCheckerReadRateByBytes > 0) {
-            readThrottle = new LedgerFragmentReplicator.Throttler(ledgerCheckerReadRateByBytes);
+        if (inFlightReadEntryNum > 0) {
+            semaphore = new Semaphore(inFlightReadEntryNum);
+        } else {
+            semaphore = null;
         }
-        averageEntrySize = INITIAL_AVERAGE_ENTRY_SIZE;
+    }
+
+    /**
+     * Acquires a permit from permit manager,
+     * blocking until all are available.
+     */
+    public void acquirePermit() throws InterruptedException {
+        if (null != semaphore) {
+            semaphore.acquire(1);
+        }
+    }
+
+    /**
+     * Release a given permit.
+     */
+    public void releasePermit() {
+        if (null != semaphore) {
+            semaphore.release();
+        }
     }
 
     /**
@@ -183,7 +193,7 @@ public class LedgerChecker {
     private void verifyLedgerFragment(LedgerFragment fragment,
                                       GenericCallback<LedgerFragment> cb,
                                       Long percentageOfLedgerFragmentToBeVerified)
-            throws InvalidFragmentException, BKException {
+            throws InvalidFragmentException, BKException, InterruptedException {
         Set<Integer> bookiesToCheck = fragment.getBookiesIndexes();
         if (bookiesToCheck.isEmpty()) {
             cb.operationComplete(BKException.Code.OK, fragment);
@@ -214,7 +224,7 @@ public class LedgerChecker {
                                       int bookieIndex,
                                       GenericCallback<LedgerFragment> cb,
                                       long percentageOfLedgerFragmentToBeVerified)
-            throws InvalidFragmentException {
+            throws InvalidFragmentException, InterruptedException {
         long firstStored = fragment.getFirstStoredEntryId(bookieIndex);
         long lastStored = fragment.getLastStoredEntryId(bookieIndex);
 
@@ -233,9 +243,7 @@ public class LedgerChecker {
             // fragment is on this bookie, but already know it's unavailable, so skip the call
             cb.operationComplete(BKException.Code.BookieHandleNotAvailableException, fragment);
         } else if (firstStored == lastStored) {
-            if (readThrottle != null) {
-                readThrottle.acquire(averageEntrySize);
-            }
+            acquirePermit();
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(1,
                     fragment, cb);
             bookieClient.readEntry(bookie, fragment.getLedgerId(), firstStored,
@@ -280,9 +288,7 @@ public class LedgerChecker {
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(entriesToBeVerified.size(),
                     fragment, cb);
             for (Long entryID: entriesToBeVerified) {
-                if (readThrottle != null) {
-                    readThrottle.acquire(averageEntrySize);
-                }
+                acquirePermit();
                 bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, null, BookieProtocol.FLAG_NONE);
             }
         }
@@ -293,7 +299,7 @@ public class LedgerChecker {
      * It is used to differentiate the cases where it has been written
      * but now cannot be read, and where it never has been written.
      */
-    private static class EntryExistsCallback implements ReadEntryCallback {
+    private class EntryExistsCallback implements ReadEntryCallback {
         AtomicBoolean entryMayExist = new AtomicBoolean(false);
         final AtomicInteger numReads;
         final GenericCallback<Boolean> cb;
@@ -307,11 +313,7 @@ public class LedgerChecker {
         @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                                       ByteBuf buffer, Object ctx) {
-            if (readThrottle != null && buffer != null) {
-                int readSize = buffer.readableBytes();
-                averageEntrySize = (int) (averageEntrySize * AVERAGE_ENTRY_SIZE_RATIO
-                        + (1 - AVERAGE_ENTRY_SIZE_RATIO) * readSize);
-            }
+            releasePermit();
             if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc
                     && BKException.Code.NoSuchLedgerExistsOnMetadataServerException != rc) {
                 entryMayExist.set(true);
@@ -360,13 +362,13 @@ public class LedgerChecker {
      * which are missing.
      */
     public void checkLedger(final LedgerHandle lh,
-                            final GenericCallback<Set<LedgerFragment>> cb) {
+                            final GenericCallback<Set<LedgerFragment>> cb) throws InterruptedException {
         checkLedger(lh, cb, 0L);
     }
 
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb,
-                            long percentageOfLedgerFragmentToBeVerified) {
+                            long percentageOfLedgerFragmentToBeVerified) throws InterruptedException {
         // build a set of all fragment replicas
         final Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
 
@@ -421,7 +423,7 @@ public class LedgerChecker {
                 final EntryExistsCallback eecb = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
                                               new GenericCallback<Boolean>() {
                                                   @Override
-                                                  public void operationComplete(int rc, Boolean result) {
+                                                  public void operationComplete(int rc, Boolean result) throws InterruptedException {
                                                       if (result) {
                                                           fragments.add(lastLedgerFragment);
                                                       }
@@ -432,9 +434,7 @@ public class LedgerChecker {
 
                 DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(entryToRead);
                 for (int i = 0; i < writeSet.size(); i++) {
-                    if (readThrottle != null) {
-                        readThrottle.acquire(averageEntrySize);
-                    }
+                    acquirePermit();
                     BookieId addr = curEnsemble.get(writeSet.get(i));
                     bookieClient.readEntry(addr, lh.getId(), entryToRead,
                                            eecb, null, BookieProtocol.FLAG_NONE);
@@ -450,7 +450,7 @@ public class LedgerChecker {
 
     private void checkFragments(Set<LedgerFragment> fragments,
                                 GenericCallback<Set<LedgerFragment>> cb,
-                                long percentageOfLedgerFragmentToBeVerified) {
+                                long percentageOfLedgerFragmentToBeVerified) throws InterruptedException {
         if (fragments.size() == 0) { // no fragments to verify
             cb.operationComplete(BKException.Code.OK, fragments);
             return;
