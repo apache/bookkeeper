@@ -58,7 +58,7 @@ def depLicences = [
         "checker-qual-3.5.0/LICENSE",
         "google-auth-library-credentials-0.20.0/LICENSE",
         "javax.servlet-api-4.0.0/CDDL+GPL-1.1",
-        "bouncycastle-1.0.2/LICENSE.html",
+        "bouncycastle-1.0.2.1/LICENSE.html",
         "jsr-305/LICENSE",
         "netty-4.1.72.Final/*",
         "paranamer-2.8/LICENSE.txt",
