@@ -159,7 +159,7 @@ public class BookkeeperInternalCallbacks {
      * A generic callback interface.
      */
     public interface GenericCallback<T> {
-        void operationComplete(int rc, T result) throws InterruptedException;
+        void operationComplete(int rc, T result);
     }
 
     /**

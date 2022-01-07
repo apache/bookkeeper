@@ -174,7 +174,7 @@ public interface AsyncCallback {
          * @param ctx
          *          context object
          */
-        void openComplete(int rc, LedgerHandle lh, Object ctx) throws InterruptedException;
+        void openComplete(int rc, LedgerHandle lh, Object ctx);
 
     }
 

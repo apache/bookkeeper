@@ -362,13 +362,13 @@ public class LedgerChecker {
      * which are missing.
      */
     public void checkLedger(final LedgerHandle lh,
-                            final GenericCallback<Set<LedgerFragment>> cb) throws InterruptedException {
+                            final GenericCallback<Set<LedgerFragment>> cb) {
         checkLedger(lh, cb, 0L);
     }
 
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb,
-                            long percentageOfLedgerFragmentToBeVerified) throws InterruptedException {
+                            long percentageOfLedgerFragmentToBeVerified) {
         // build a set of all fragment replicas
         final Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
 
@@ -423,7 +423,7 @@ public class LedgerChecker {
                 final EntryExistsCallback eecb = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
                                               new GenericCallback<Boolean>() {
                                                   @Override
-                                                  public void operationComplete(int rc, Boolean result) throws InterruptedException {
+                                                  public void operationComplete(int rc, Boolean result) {
                                                       if (result) {
                                                           fragments.add(lastLedgerFragment);
                                                       }
@@ -434,10 +434,14 @@ public class LedgerChecker {
 
                 DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(entryToRead);
                 for (int i = 0; i < writeSet.size(); i++) {
-                    acquirePermit();
-                    BookieId addr = curEnsemble.get(writeSet.get(i));
-                    bookieClient.readEntry(addr, lh.getId(), entryToRead,
-                                           eecb, null, BookieProtocol.FLAG_NONE);
+                    try {
+                        acquirePermit();
+                        BookieId addr = curEnsemble.get(writeSet.get(i));
+                        bookieClient.readEntry(addr, lh.getId(), entryToRead,
+                                eecb, null, BookieProtocol.FLAG_NONE);
+                    } catch (InterruptedException e) {
+                        LOG.error("InterruptedException when checking entry : {}", entryToRead, e);
+                    }
                 }
                 writeSet.recycle();
                 return;
@@ -450,7 +454,7 @@ public class LedgerChecker {
 
     private void checkFragments(Set<LedgerFragment> fragments,
                                 GenericCallback<Set<LedgerFragment>> cb,
-                                long percentageOfLedgerFragmentToBeVerified) throws InterruptedException {
+                                long percentageOfLedgerFragmentToBeVerified) {
         if (fragments.size() == 0) { // no fragments to verify
             cb.operationComplete(BKException.Code.OK, fragments);
             return;
@@ -469,6 +473,8 @@ public class LedgerChecker {
                         BKException.Code.IncorrectParameterException, r);
             } catch (BKException e) {
                 LOG.error("BKException when checking fragment : {}", r, e);
+            } catch (InterruptedException e) {
+                LOG.error("InterruptedException when checking fragment : {}", r, e);
             }
         }
     }
