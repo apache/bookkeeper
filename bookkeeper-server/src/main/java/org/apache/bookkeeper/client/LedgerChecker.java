@@ -20,13 +20,13 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
-import java.util.concurrent.Semaphore;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;

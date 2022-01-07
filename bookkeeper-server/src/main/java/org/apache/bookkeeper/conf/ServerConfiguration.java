@@ -3726,8 +3726,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get in flight read entry number when ledger checker
-     * Default value is -1 which it is unlimited  when ledger checker
+     * Get in flight read entry number when ledger checker.
+     * Default value is -1 which it is unlimited  when ledger checker.
      *
      * @return read entry number of in flight.
      */
