@@ -20,6 +20,7 @@
 plugins {
     id 'groovy'
     id 'com.adarshr.test-logger'
+    id 'org.gradle.test-retry'
 }
 
 subprojects {
@@ -29,6 +30,8 @@ subprojects {
 
     apply plugin: 'groovy'
     apply plugin: 'com.adarshr.test-logger'
+    apply plugin: 'org.gradle.test-retry'
+
 
     dependencies {
         testImplementation 'org.codehaus.groovy:groovy-all:2.4.15'
@@ -43,6 +46,10 @@ subprojects {
 
     test {
         dependsOn(":tests:docker-images:buildImages")
+        retry {
+            maxFailures = 10
+            maxRetries = 5
+        }
     }
 
 }
