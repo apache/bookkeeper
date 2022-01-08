@@ -53,7 +53,7 @@
         <include>google-auth-library-credentials-0.20.0/LICENSE</include>
         <include>javax.servlet-api-4.0.0/CDDL+GPL-1.1</include>
         <include>netty-4.1.72.Final/*</include>
-        <include>bouncycastle-1.0.2/LICENSE.html</include>
+        <include>bouncycastle-1.0.2.1/LICENSE.html</include>
         <include>protobuf-3.14.0/LICENSE</include>
         <include>protobuf-3.12.0/LICENSE</include>
         <include>slf4j-1.7.32/LICENSE.txt</include>
