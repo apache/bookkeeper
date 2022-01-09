@@ -510,7 +510,19 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             // queue will benefit from this force write - post a marker prior to issuing
                             // the flush so until this marker is encountered we can skip the force write
                             if (enableGroupForceWrites) {
-                                forceWriteMarkerSent = forceWriteRequests.offer(createForceWriteRequest(req.logFile, 0, 0, null, false, true));
+                                ForceWriteRequest marker =
+                                    createForceWriteRequest(req.logFile, 0, 0, null, false, true);
+                                forceWriteMarkerSent = forceWriteRequests.offer(marker);
+                                if (!forceWriteMarkerSent) {
+                                    marker.recycle();
+                                    Counter failures = journalStats.getForceWriteGroupingFailures();
+                                    failures.inc();
+                                    LOG.error(
+                                        "Fail to send force write grouping marker,"
+                                        + " Journal.forceWriteRequests queue(capacity {}) is full,"
+                                        + " current failure counter is {}.",
+                                        conf.getJournalQueueSize(), failures.get());
+                                }
                             }
 
                             // If we are about to issue a write, record the number of requests in
