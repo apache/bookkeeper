@@ -208,23 +208,23 @@ public class BookieWriteToJournalTest {
 
     @Test
     public void testSmallJournalQueueWithHighFlushFrequency() throws IOException, InterruptedException {
-        ServerConfiguration configuration = new ServerConfiguration();
-        configuration.setJournalQueueSize(1);
-        configuration.setJournalFlushWhenQueueEmpty(true);
-        configuration.setJournalBufferedWritesThreshold(1);
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setJournalQueueSize(1);
+        conf.setJournalFlushWhenQueueEmpty(true);
+        conf.setJournalBufferedWritesThreshold(1);
 
-        configuration.setJournalDirName(tempDir.newFolder().getPath());
-        configuration.setLedgerDirNames(new String[]{tempDir.newFolder().getPath()});
-        DiskChecker diskChecker = new DiskChecker(configuration.getDiskUsageThreshold(), configuration.getDiskUsageWarnThreshold());
-        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(configuration, configuration.getLedgerDirs(), diskChecker);
-        Journal journal = new Journal(0, configuration.getJournalDirs()[0], configuration, ledgerDirsManager);
+        conf.setJournalDirName(tempDir.newFolder().getPath());
+        conf.setLedgerDirNames(new String[]{tempDir.newFolder().getPath()});
+        DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), diskChecker);
+        Journal journal = new Journal(0, conf.getJournalDirs()[0], conf, ledgerDirsManager);
         journal.start();
 
         final int entries = 1000;
         CountDownLatch entriesLatch = new CountDownLatch(entries);
         for (int j = 1; j <= entries; j++) {
             ByteBuf entry = buildEntry(1, j, -1);
-            journal.logAddEntry(entry, false, (int rc, long _ledgerId, long entryId, BookieId addr, Object ctx) -> {
+            journal.logAddEntry(entry, false, (int rc, long ledgerId, long entryId, BookieId addr, Object ctx) -> {
                 entriesLatch.countDown();
             }, null);
         }
