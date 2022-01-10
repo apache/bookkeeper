@@ -41,9 +41,9 @@ jar {
     manifest {
         attributes 'Main-Class': 'org.openjdk.jmh.Main'
     }
-    println configurations.runtime.collect().size()
+    println configurations.runtimeClasspath.collect().size()
     from {
-        configurations.compileOnly.collect {it.isDirectory() ? it : zipTree(it) }
+        configurations.compileClasspath.collect {it.isDirectory() ? it : zipTree(it) }
     }
     exclude 'META-INF/*.RSA'
     exclude 'META-INF/*.SF'
