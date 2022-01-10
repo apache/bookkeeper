@@ -66,7 +66,7 @@ public class RegistrationServiceProvider
         this.bkZkRetryPolicy = new BoundExponentialBackoffRetryPolicy(
             bkServerConf.getZkRetryBackoffStartMs(),
             bkServerConf.getZkRetryBackoffMaxMs(),
-            Integer.MAX_VALUE);
+            bkServerConf.getZkRetryBackoffMaxRetries());
         this.regExecutor = Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder().setNameFormat("registration-service-provider-scheduler").build());
         ClientConfiguration clientConfiguration = new ClientConfiguration(bkServerConf);
