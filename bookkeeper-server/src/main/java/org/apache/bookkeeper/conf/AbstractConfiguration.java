@@ -75,6 +75,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Zookeeper Parameters
     protected static final String ZK_TIMEOUT = "zkTimeout";
     protected static final String ZK_SERVERS = "zkServers";
+    protected static final String ZK_RETRY_BACKOFF_MAX_RETRIES = "zkRetryBackoffMaxRetries";
 
     // Ledger Manager
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
@@ -342,6 +343,27 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setZkTimeout(int zkTimeout) {
         setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
+        return getThis();
+    }
+
+    /**
+     * Get zookeeper client backoff max retry times.
+     *
+     * @return zk backoff max retry times.
+     */
+    public int getZkRetryBackoffMaxRetries() {
+        return getInt(ZK_RETRY_BACKOFF_MAX_RETRIES, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Set zookeeper client backoff max retry times.
+     *
+     * @param maxRetries
+     *          backoff max retry times
+     * @return server configuration.
+     */
+    public T setZkRetryBackoffMaxRetries(int maxRetries) {
+        setProperty(ZK_RETRY_BACKOFF_MAX_RETRIES, Integer.toString(maxRetries));
         return getThis();
     }
 
