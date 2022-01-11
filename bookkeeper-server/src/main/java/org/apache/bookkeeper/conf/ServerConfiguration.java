@@ -214,6 +214,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC =
         "auditorAcquireConcurrentOpenLedgerOperationsTimeOutMSec";
     protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
+    protected static final String IN_FLIGHT_READ_ENTRY_NUM_IN_LEDGER_CHECKER = "inFlightReadEntryNumInLedgerChecker";
+
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -3721,6 +3723,16 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public int getReplicationRateByBytes() {
         return getInt(REPLICATION_RATE_BY_BYTES, -1);
+    }
+
+    /**
+     * Get in flight read entry number when ledger checker.
+     * Default value is -1 which it is unlimited  when ledger checker.
+     *
+     * @return read entry number of in flight.
+     */
+    public int getInFlightReadEntryNumInLedgerChecker(){
+        return getInt(IN_FLIGHT_READ_ENTRY_NUM_IN_LEDGER_CHECKER, -1);
     }
 
     /**
