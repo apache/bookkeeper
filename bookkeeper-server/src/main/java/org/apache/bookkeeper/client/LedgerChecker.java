@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,6 +51,8 @@ public class LedgerChecker {
     public final BookieClient bookieClient;
     public final BookieWatcher bookieWatcher;
 
+    final Semaphore semaphore;
+
     static class InvalidFragmentException extends Exception {
         private static final long serialVersionUID = 1467201276417062353L;
     }
@@ -59,7 +62,7 @@ public class LedgerChecker {
      * call back to previous call back API which is waiting for it once it meets
      * the expected call backs from down.
      */
-    private static class ReadManyEntriesCallback implements ReadEntryCallback {
+    private class ReadManyEntriesCallback implements ReadEntryCallback {
         AtomicBoolean completed = new AtomicBoolean(false);
         final AtomicLong numEntries;
         final LedgerFragment fragment;
@@ -75,6 +78,7 @@ public class LedgerChecker {
         @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                 ByteBuf buffer, Object ctx) {
+            releasePermit();
             if (rc == BKException.Code.OK) {
                 if (numEntries.decrementAndGet() == 0
                         && !completed.getAndSet(true)) {
@@ -140,8 +144,40 @@ public class LedgerChecker {
     }
 
     public LedgerChecker(BookieClient client, BookieWatcher watcher) {
+        this(client, watcher, -1);
+    }
+
+    public LedgerChecker(BookKeeper bkc, int inFlightReadEntryNum) {
+        this(bkc.getBookieClient(), bkc.getBookieWatcher(), inFlightReadEntryNum);
+    }
+
+    public LedgerChecker(BookieClient client, BookieWatcher watcher, int inFlightReadEntryNum) {
         bookieClient = client;
         bookieWatcher = watcher;
+        if (inFlightReadEntryNum > 0) {
+            semaphore = new Semaphore(inFlightReadEntryNum);
+        } else {
+            semaphore = null;
+        }
+    }
+
+    /**
+     * Acquires a permit from permit manager,
+     * blocking until all are available.
+     */
+    public void acquirePermit() throws InterruptedException {
+        if (null != semaphore) {
+            semaphore.acquire(1);
+        }
+    }
+
+    /**
+     * Release a given permit.
+     */
+    public void releasePermit() {
+        if (null != semaphore) {
+            semaphore.release();
+        }
     }
 
     /**
@@ -156,7 +192,7 @@ public class LedgerChecker {
     private void verifyLedgerFragment(LedgerFragment fragment,
                                       GenericCallback<LedgerFragment> cb,
                                       Long percentageOfLedgerFragmentToBeVerified)
-            throws InvalidFragmentException, BKException {
+            throws InvalidFragmentException, BKException, InterruptedException {
         Set<Integer> bookiesToCheck = fragment.getBookiesIndexes();
         if (bookiesToCheck.isEmpty()) {
             cb.operationComplete(BKException.Code.OK, fragment);
@@ -187,7 +223,7 @@ public class LedgerChecker {
                                       int bookieIndex,
                                       GenericCallback<LedgerFragment> cb,
                                       long percentageOfLedgerFragmentToBeVerified)
-            throws InvalidFragmentException {
+            throws InvalidFragmentException, InterruptedException {
         long firstStored = fragment.getFirstStoredEntryId(bookieIndex);
         long lastStored = fragment.getLastStoredEntryId(bookieIndex);
 
@@ -212,6 +248,7 @@ public class LedgerChecker {
             // fragment is on this bookie, but already know it's unavailable, so skip the call
             cb.operationComplete(BKException.Code.BookieHandleNotAvailableException, fragment);
         } else if (firstStored == lastStored) {
+            acquirePermit();
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(1,
                     fragment, cb);
             bookieClient.readEntry(bookie, fragment.getLedgerId(), firstStored,
@@ -256,6 +293,7 @@ public class LedgerChecker {
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(entriesToBeVerified.size(),
                     fragment, cb);
             for (Long entryID: entriesToBeVerified) {
+                acquirePermit();
                 bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, null, BookieProtocol.FLAG_NONE);
             }
         }
@@ -266,7 +304,7 @@ public class LedgerChecker {
      * It is used to differentiate the cases where it has been written
      * but now cannot be read, and where it never has been written.
      */
-    private static class EntryExistsCallback implements ReadEntryCallback {
+    private class EntryExistsCallback implements ReadEntryCallback {
         AtomicBoolean entryMayExist = new AtomicBoolean(false);
         final AtomicInteger numReads;
         final GenericCallback<Boolean> cb;
@@ -280,6 +318,7 @@ public class LedgerChecker {
         @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                                       ByteBuf buffer, Object ctx) {
+            releasePermit();
             if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc
                     && BKException.Code.NoSuchLedgerExistsOnMetadataServerException != rc) {
                 entryMayExist.set(true);
@@ -400,9 +439,14 @@ public class LedgerChecker {
 
                 DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(entryToRead);
                 for (int i = 0; i < writeSet.size(); i++) {
-                    BookieId addr = curEnsemble.get(writeSet.get(i));
-                    bookieClient.readEntry(addr, lh.getId(), entryToRead,
-                                           eecb, null, BookieProtocol.FLAG_NONE);
+                    try {
+                        acquirePermit();
+                        BookieId addr = curEnsemble.get(writeSet.get(i));
+                        bookieClient.readEntry(addr, lh.getId(), entryToRead,
+                                eecb, null, BookieProtocol.FLAG_NONE);
+                    } catch (InterruptedException e) {
+                        LOG.error("InterruptedException when checking entry : {}", entryToRead, e);
+                    }
                 }
                 writeSet.recycle();
                 return;
@@ -434,6 +478,8 @@ public class LedgerChecker {
                         BKException.Code.IncorrectParameterException, r);
             } catch (BKException e) {
                 LOG.error("BKException when checking fragment : {}", r, e);
+            } catch (InterruptedException e) {
+                LOG.error("InterruptedException when checking fragment : {}", r, e);
             }
         }
     }
