@@ -385,8 +385,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     this.logFile.forceWrite(false);
                     journalStats.getJournalSyncStats()
                         .registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                    lastLogMark.setCurLogMark(this.logId, this.lastFlushedPosition);
                 }
-                lastLogMark.setCurLogMark(this.logId, this.lastFlushedPosition);
 
                 // Notify the waiters that the force write succeeded
                 for (int i = 0; i < forceWriteWaiters.size(); i++) {
