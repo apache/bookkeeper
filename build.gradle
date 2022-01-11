@@ -25,7 +25,7 @@ buildscript {
 plugins {
     id 'com.google.protobuf'
     id 'java'
-    id "com.github.vlsi.stage-vote-release" version "1.73"
+    id "com.github.vlsi.stage-vote-release" version "1.77"
     id 'checkstyle'
     id 'org.nosphere.apache.rat'
     id 'com.github.spotbugs'
