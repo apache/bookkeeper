@@ -36,6 +36,7 @@ import io.netty.util.internal.PlatformDependent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.Executors;
@@ -86,9 +87,14 @@ public class DbLedgerStorage implements LedgerStorage {
             / MB;
     private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory())
             / MB;
+
     static final String READ_AHEAD_CACHE_BATCH_SIZE = "dbStorage_readAheadCacheBatchSize";
     private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE = 100;
 
+    // use the storage assigned to ledger 0 for flags.
+    // if the storage configuration changes, the flags may be lost
+    // but in that case data integrity should kick off anyhow.
+    private static final long STORAGE_FLAGS_KEY = 0L;
     private int numberOfDirs;
     private List<SingleDirectoryDbLedgerStorage> ledgerStorageList;
 
@@ -223,12 +229,17 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
+    public boolean entryExists(long ledgerId, long entryId) throws IOException, BookieException {
+        return getLedgerStorage(ledgerId).entryExists(ledgerId, entryId);
+    }
+
+    @Override
     public boolean setFenced(long ledgerId) throws IOException {
         return getLedgerStorage(ledgerId).setFenced(ledgerId);
     }
 
     @Override
-    public boolean isFenced(long ledgerId) throws IOException {
+    public boolean isFenced(long ledgerId) throws IOException, BookieException {
         return getLedgerStorage(ledgerId).isFenced(ledgerId);
     }
 
@@ -249,12 +260,12 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
-    public ByteBuf getEntry(long ledgerId, long entryId) throws IOException {
+    public ByteBuf getEntry(long ledgerId, long entryId) throws IOException, BookieException {
         return getLedgerStorage(ledgerId).getEntry(ledgerId, entryId);
     }
 
     @Override
-    public long getLastAddConfirmed(long ledgerId) throws IOException {
+    public long getLastAddConfirmed(long ledgerId) throws IOException, BookieException {
         return getLedgerStorage(ledgerId).getLastAddConfirmed(ledgerId);
     }
 
@@ -301,7 +312,7 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
-    public ByteBuf getExplicitLac(long ledgerId) throws IOException {
+    public ByteBuf getExplicitLac(long ledgerId) throws IOException, BookieException {
         return getLedgerStorage(ledgerId).getExplicitLac(ledgerId);
     }
 
@@ -331,7 +342,7 @@ public class DbLedgerStorage implements LedgerStorage {
         return Iterables.concat(listIt);
     }
 
-    public ByteBuf getLastEntry(long ledgerId) throws IOException {
+    public ByteBuf getLastEntry(long ledgerId) throws IOException, BookieException {
         return getLedgerStorage(ledgerId).getLastEntry(ledgerId);
     }
 
@@ -421,5 +432,35 @@ public class DbLedgerStorage implements LedgerStorage {
         // check Issue #2078
         throw new UnsupportedOperationException(
                 "getListOfEntriesOfLedger method is currently unsupported for DbLedgerStorage");
+    }
+
+    @Override
+    public void setLimboState(long ledgerId) throws IOException {
+        getLedgerStorage(ledgerId).setLimboState(ledgerId);
+    }
+
+    @Override
+    public boolean hasLimboState(long ledgerId) throws IOException {
+        return getLedgerStorage(ledgerId).hasLimboState(ledgerId);
+    }
+
+    @Override
+    public void clearLimboState(long ledgerId) throws IOException {
+        getLedgerStorage(ledgerId).clearLimboState(ledgerId);
+    }
+
+    @Override
+    public EnumSet<StorageState> getStorageStateFlags() throws IOException {
+        return getLedgerStorage(STORAGE_FLAGS_KEY).getStorageStateFlags();
+    }
+
+    @Override
+    public void setStorageStateFlag(StorageState flag) throws IOException {
+        getLedgerStorage(STORAGE_FLAGS_KEY).setStorageStateFlag(flag);
+    }
+
+    @Override
+    public void clearStorageStateFlag(StorageState flag) throws IOException {
+        getLedgerStorage(STORAGE_FLAGS_KEY).clearStorageStateFlag(flag);
     }
 }

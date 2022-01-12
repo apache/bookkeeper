@@ -149,7 +149,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     protected ReadResponse readEntry(ReadResponse.Builder readResponseBuilder,
                                      long entryId,
                                      Stopwatch startTimeSw)
-        throws IOException {
+        throws IOException, BookieException {
         return readEntry(readResponseBuilder, entryId, false, startTimeSw);
     }
 
@@ -169,7 +169,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                                      long entryId,
                                      boolean readLACPiggyBack,
                                      Stopwatch startTimeSw)
-        throws IOException {
+        throws IOException, BookieException {
         ByteBuf entryBody = requestProcessor.getBookie().readEntry(ledgerId, entryId);
         if (null != fenceResult) {
             handleReadResultForFenceRead(entryBody, readResponseBuilder, entryId, startTimeSw);
@@ -232,6 +232,11 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         } catch (IOException e) {
             LOG.error("IOException while reading entry: {} from ledger {} ", entryId, ledgerId, e);
             return buildResponse(readResponse, StatusCode.EIO, startTimeSw);
+        } catch (BookieException.DataUnknownException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Ledger has unknown state for entry: {} from ledger {}", entryId, ledgerId);
+            }
+            return buildResponse(readResponse, StatusCode.EUNKNOWNLEDGERSTATE, startTimeSw);
         } catch (BookieException e) {
             LOG.error(
                 "Unauthorized access to ledger:{} while reading entry:{} in request from address: {}",

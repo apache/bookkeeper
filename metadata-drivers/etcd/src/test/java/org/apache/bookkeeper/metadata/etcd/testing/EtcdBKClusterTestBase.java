@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.api.BookKeeper;
@@ -125,7 +126,8 @@ public abstract class EtcdBKClusterTestBase extends EtcdTestBase {
         TestStatsProvider provider = new TestStatsProvider();
         Bookie bookie = new TestBookieImpl(conf);
         BookieServer server = new BookieServer(conf, bookie, provider.getStatsLogger(""),
-                                               ByteBufAllocator.DEFAULT);
+                                               ByteBufAllocator.DEFAULT,
+                                               new MockUncleanShutdownDetection());
         server.start();
         return server;
     }

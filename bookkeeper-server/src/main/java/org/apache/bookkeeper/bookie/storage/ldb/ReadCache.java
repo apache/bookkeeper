@@ -155,6 +155,27 @@ public class ReadCache implements Closeable {
         return null;
     }
 
+    public boolean hasEntry(long ledgerId, long entryId) {
+        lock.readLock().lock();
+
+        try {
+            int size = cacheSegments.size();
+            for (int i = 0; i < size; i++) {
+                int segmentIdx = (currentSegmentIdx + (size - i)) % size;
+
+                LongPair res = cacheIndexes.get(segmentIdx).get(ledgerId, entryId);
+                if (res != null) {
+                    return true;
+                }
+            }
+        } finally {
+            lock.readLock().unlock();
+        }
+
+        // Entry not found in any segment
+        return false;
+    }
+
     /**
      * @return the total size of cached entries
      */

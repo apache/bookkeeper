@@ -52,6 +52,7 @@ dependencies {
     implementation depLibs.nettyTransportNativeEpoll
     implementation depLibs.protobuf
     implementation depLibs.rocksDb
+    implementation depLibs.rxjava
     implementation depLibs.zookeeper
     runtimeOnly depLibs.metricsCore
     runtimeOnly depLibs.snappy

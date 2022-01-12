@@ -94,7 +94,7 @@ public interface CheckpointSource {
     CheckpointSource DEFAULT = new CheckpointSource() {
             @Override
             public Checkpoint newCheckpoint() {
-                return Checkpoint.MAX;
+                return Checkpoint.MIN;
             }
 
             @Override

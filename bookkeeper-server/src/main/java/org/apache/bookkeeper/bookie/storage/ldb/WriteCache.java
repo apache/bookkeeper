@@ -196,6 +196,10 @@ public class WriteCache implements Closeable {
         return entry;
     }
 
+    public boolean hasEntry(long ledgerId, long entryId) {
+        return index.get(ledgerId, entryId) != null;
+    }
+
     public ByteBuf getLastEntry(long ledgerId) {
         long lastEntryId = lastEntryMap.get(ledgerId);
         if (lastEntryId == -1) {

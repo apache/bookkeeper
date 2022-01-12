@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -107,7 +108,7 @@ public class BookKeeperClientTestsWithBookieErrors extends BookKeeperClusterTest
         }
 
         @Override
-        public ByteBuf getEntry(long ledgerId, long entryId) throws IOException {
+        public ByteBuf getEntry(long ledgerId, long entryId) throws IOException, BookieException {
             Consumer<ByteBuf> faultInjection;
             synchronized (lock) {
                 faultInjection = storageFaultInjectionsMap.get(this);

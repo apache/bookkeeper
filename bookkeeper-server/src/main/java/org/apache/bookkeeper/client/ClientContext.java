@@ -33,7 +33,7 @@ import org.apache.bookkeeper.proto.BookieClient;
  * but they are present to the LedgerHandle through this interface to allow
  * tests to easily inject mocked versions.
  */
-interface ClientContext {
+public interface ClientContext {
     ClientInternalConf getConf();
     LedgerManager getLedgerManager();
     BookieWatcher getBookieWatcher();

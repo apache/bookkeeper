@@ -63,6 +63,7 @@
         <include>paranamer-2.8/LICENSE.txt</include>
         <include>protobuf-3.14.0/LICENSE</include>
         <include>protobuf-3.12.0/LICENSE</include>
+        <include>reactivestreams-1.0.3/LICENSE</include>
         <include>scala-library-2.11.7/LICENSE.md</include>
         <include>scala-parser-combinators_2.11-1.0.4/LICENSE.md</include>
         <include>scala-reflect-2.11.8/LICENSE.md</include>

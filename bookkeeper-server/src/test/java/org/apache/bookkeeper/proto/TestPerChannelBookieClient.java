@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
@@ -247,7 +248,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         Bookie delayBookie = new TestBookieImpl(conf) {
             @Override
             public ByteBuf readEntry(long ledgerId, long entryId)
-                    throws IOException, NoLedgerException {
+                    throws IOException, NoLedgerException, BookieException {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException ie) {

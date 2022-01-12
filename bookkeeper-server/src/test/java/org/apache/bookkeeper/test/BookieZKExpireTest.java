@@ -30,6 +30,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.util.HashSet;
 
+import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -69,7 +70,8 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             ServerConfiguration conf = newServerConfiguration(PortManager.nextFreePort(), f, new File[] { f });
             server = new BookieServer(
                     conf, new TestBookieImpl(conf),
-                    NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+                    NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
+                    new MockUncleanShutdownDetection());
             server.start();
 
             int secondsToWait = 5;

@@ -30,6 +30,7 @@ import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,6 +38,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Objects;
 import java.util.Set;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.BookieException.UnknownBookieIdException;
@@ -211,6 +213,12 @@ public class Cookie {
         return cBuilder;
     }
 
+    public static Cookie parseFromBytes(byte[] bytes) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new StringReader(new String(bytes, UTF_8)))) {
+            return parse(reader).build();
+        }
+    }
+
     public void writeToDirectory(File directory) throws IOException {
         File versionFile = new File(directory,
             BookKeeperConstants.VERSION_FILENAME);
@@ -289,7 +297,7 @@ public class Cookie {
      * @return cookie builder object
      * @throws UnknownHostException
      */
-    static Builder generateCookie(ServerConfiguration conf)
+    public static Builder generateCookie(ServerConfiguration conf)
             throws UnknownHostException {
         Builder builder = Cookie.newBuilder();
         builder.setLayoutVersion(CURRENT_COOKIE_LAYOUT_VERSION);
@@ -346,7 +354,7 @@ public class Cookie {
      * @return cookie object
      * @throws IOException
      */
-    public static Cookie readFromDirectory(File directory) throws IOException {
+    public static Cookie readFromDirectory(File directory) throws IOException, FileNotFoundException {
         File versionFile = new File(directory, BookKeeperConstants.VERSION_FILENAME);
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(versionFile), UTF_8))) {
@@ -451,5 +459,24 @@ public class Cookie {
     public static Builder newBuilder(Cookie oldCookie) {
         return new Builder(oldCookie.layoutVersion, oldCookie.bookieId, oldCookie.journalDirs, oldCookie.ledgerDirs,
                 oldCookie.instanceId);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof Cookie) {
+            Cookie otherCookie = (Cookie) other;
+            return layoutVersion == otherCookie.layoutVersion
+                && Objects.equals(bookieId, otherCookie.bookieId)
+                && Objects.equals(journalDirs, otherCookie.journalDirs)
+                && Objects.equals(ledgerDirs, otherCookie.ledgerDirs)
+                && Objects.equals(instanceId, otherCookie.instanceId);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(bookieId, journalDirs, ledgerDirs, instanceId);
     }
 }

@@ -50,7 +50,10 @@ import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.LegacyCookieValidation;
+import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetectionImpl;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
@@ -834,6 +837,9 @@ public abstract class BookKeeperClusterTestCase {
                     conf, diskChecker, bookieStats.scope(LD_LEDGER_SCOPE));
             LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
                     conf, diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
+
+            UncleanShutdownDetection uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
+
             storage = BookieResources.createLedgerStorage(
                     conf, ledgerManager, ledgerDirsManager, indexDirsManager,
                     bookieStats, allocator);
@@ -847,7 +853,8 @@ public abstract class BookKeeperClusterTestCase {
                                         diskChecker, ledgerDirsManager, indexDirsManager,
                                         bookieStats, allocator, BookieServiceInfo.NO_INFO);
             }
-            server = new BookieServer(conf, bookie, rootStatsLogger, allocator);
+            server = new BookieServer(conf, bookie, rootStatsLogger, allocator,
+                    uncleanShutdownDetection);
             address = BookieImpl.getBookieAddress(conf);
 
             autoRecovery = null;
@@ -864,7 +871,8 @@ public abstract class BookKeeperClusterTestCase {
             storage = null;
 
             bookie = b;
-            server = new BookieServer(conf, b, provider.getStatsLogger(""), allocator);
+            server = new BookieServer(conf, b, provider.getStatsLogger(""),
+                    allocator, new MockUncleanShutdownDetection());
             address = BookieImpl.getBookieAddress(conf);
 
             autoRecovery = null;

@@ -48,7 +48,7 @@ public interface Bookie {
     void forceLedger(long ledgerId, WriteCallback cb, Object ctx);
     void setExplicitLac(ByteBuf entry, WriteCallback writeCallback, Object ctx, byte[] masterKey)
             throws IOException, InterruptedException, BookieException;
-    ByteBuf getExplicitLac(long ledgerId) throws IOException, NoLedgerException;
+    ByteBuf getExplicitLac(long ledgerId) throws IOException, NoLedgerException, BookieException;
 
     // these can probably be moved out and called directly on ledgerdirmanager
     long getTotalDiskSpace() throws IOException;
@@ -56,8 +56,8 @@ public interface Bookie {
 
     // TODO: Shouldn't this be async?
     ByteBuf readEntry(long ledgerId, long entryId)
-            throws IOException, NoLedgerException;
-    long readLastAddConfirmed(long ledgerId) throws IOException;
+            throws IOException, NoLedgerException, BookieException;
+    long readLastAddConfirmed(long ledgerId) throws IOException, BookieException;
     PrimitiveIterator.OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException, NoLedgerException;
 
     /**

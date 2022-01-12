@@ -169,7 +169,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
      * first run and the filesystem structure is up to date.
      */
     private void checkEnvironment(RegistrationManager registrationManager)
-            throws BookieException, IOException {
+            throws BookieException, IOException, InterruptedException {
         List<File> allLedgerDirs = new ArrayList<File>(ledgerDirsManager.getAllLedgerDirs().size()
                 + indexDirsManager.getAllLedgerDirs().size());
         allLedgerDirs.addAll(ledgerDirsManager.getAllLedgerDirs());
@@ -363,7 +363,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         ledgerStorage.setCheckpointSource(new CheckpointSource() {
                 @Override
                 public Checkpoint newCheckpoint() {
-                    return Checkpoint.MAX;
+                    return Checkpoint.MIN;
                 }
 
                 @Override
@@ -488,6 +488,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     }
 
     void readJournal() throws IOException, BookieException {
+        if (!conf.getJournalWriteData()) {
+            LOG.warn("Journal disabled for add entry requests. Running BookKeeper this way can "
+                    + "lead to data loss. It is recommended to use data integrity checking when "
+                    + "running without the journal to minimize data loss risk");
+        }
+
         long startTs = System.currentTimeMillis();
         JournalScanner scanner = new JournalScanner() {
             @Override
@@ -991,7 +997,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         }
     }
 
-    public ByteBuf getExplicitLac(long ledgerId) throws IOException, Bookie.NoLedgerException {
+    public ByteBuf getExplicitLac(long ledgerId) throws IOException, Bookie.NoLedgerException, BookieException {
         ByteBuf lac;
         LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
         synchronized (handle) {
@@ -1066,7 +1072,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     }
 
     public ByteBuf readEntry(long ledgerId, long entryId)
-            throws IOException, NoLedgerException {
+            throws IOException, NoLedgerException, BookieException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
         int entrySize = 0;
@@ -1091,7 +1097,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         }
     }
 
-    public long readLastAddConfirmed(long ledgerId) throws IOException {
+    public long readLastAddConfirmed(long ledgerId) throws IOException, BookieException {
         LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
         return handle.getLastAddConfirmed();
     }

@@ -222,7 +222,8 @@ public class LedgerStorageCheckpointTest {
         File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
         BookieServer server = new BookieServer(
                 conf, new TestBookieImpl(conf),
-                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -353,7 +354,8 @@ public class LedgerStorageCheckpointTest {
         File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
         BookieServer server = new BookieServer(
                 conf, new TestBookieImpl(conf),
-                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -433,7 +435,8 @@ public class LedgerStorageCheckpointTest {
         File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
         BookieServer server = new BookieServer(
                 conf, new TestBookieImpl(conf),
-                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -498,7 +501,8 @@ public class LedgerStorageCheckpointTest {
         File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
         BookieServer server = new BookieServer(
                 conf, new TestBookieImpl(conf),
-                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -604,7 +608,8 @@ public class LedgerStorageCheckpointTest {
         File ledgerDir = BookieImpl.getCurrentDirectories(conf.getLedgerDirs())[0];
         BookieServer server = new BookieServer(
                 conf, new TestBookieImpl(conf),
-                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
         server.start();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -683,7 +688,8 @@ public class LedgerStorageCheckpointTest {
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         server = new BookieServer(
                 conf, new TestBookieImpl(conf),
-                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
         server.start();
         BookKeeper newBKClient = new BookKeeper(clientConf);
         // since Bookie checkpointed successfully before shutdown/crash,

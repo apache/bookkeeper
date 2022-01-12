@@ -18,12 +18,18 @@
 
 package org.apache.bookkeeper.server;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_SCOPE;
 import static org.apache.bookkeeper.server.component.ServerLifecycleComponent.loadServerComponents;
 
+import com.google.common.base.Ticker;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.reactivex.rxjava3.core.Scheduler;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -31,6 +37,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -44,12 +52,24 @@ import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.LegacyCookieValidation;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.bookie.ScrubberStats;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetectionImpl;
+import org.apache.bookkeeper.bookie.datainteg.DataIntegrityCheck;
+import org.apache.bookkeeper.bookie.datainteg.DataIntegrityCheckImpl;
+import org.apache.bookkeeper.bookie.datainteg.DataIntegrityCookieValidation;
+import org.apache.bookkeeper.bookie.datainteg.DataIntegrityService;
+import org.apache.bookkeeper.bookie.datainteg.EntryCopier;
+import org.apache.bookkeeper.bookie.datainteg.EntryCopierImpl;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.common.component.AutoCloseableLifecycleComponent;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
+import org.apache.bookkeeper.common.component.RxSchedulerLifecycleComponent;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.UncheckedConfigurationException;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
@@ -58,6 +78,7 @@ import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
@@ -85,7 +106,6 @@ import org.apache.commons.lang3.StringUtils;
  */
 @Slf4j
 public class Main {
-
     static final Options BK_OPTS = new Options();
     static {
         BK_OPTS.addOption("c", "conf", true, "Configuration for Bookie Server");
@@ -229,7 +249,6 @@ public class Main {
     }
 
     static int doMain(String[] args) {
-
         ServerConfiguration conf;
 
         // 0. parse command line
@@ -340,14 +359,62 @@ public class Main {
         LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
                 conf.getServerConf(), diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
 
-        CookieValidation cookieValidation = new LegacyCookieValidation(conf.getServerConf(), rm);
-        cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
-
         ByteBufAllocatorWithOomHandler allocator = BookieResources.createAllocator(conf.getServerConf());
 
+        UncleanShutdownDetection uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
+        if (uncleanShutdownDetection.lastShutdownWasUnclean()) {
+            log.info("Unclean shutdown detected. The bookie did not register a graceful shutdown prior to this boot.");
+        }
+
         // bookie takes ownership of storage, so shuts it down
-        LedgerStorage storage = BookieResources.createLedgerStorage(
-                conf.getServerConf(), ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
+        LedgerStorage storage = null;
+        DataIntegrityCheck integCheck = null;
+
+        if (conf.getServerConf().isDataIntegrityCheckingEnabled()) {
+            StatsLogger clientStats = bookieStats.scope(CLIENT_SCOPE);
+            ClientConfiguration clientConfiguration = new ClientConfiguration(conf.getServerConf());
+            clientConfiguration.setClientRole(ClientConfiguration.CLIENT_ROLE_SYSTEM);
+            BookKeeper bkc = BookKeeper.forConfig(clientConfiguration).statsLogger(clientStats).build();
+            serverBuilder.addComponent(new AutoCloseableLifecycleComponent("bkc", bkc));
+
+            BookieId bookieId = BookieImpl.getBookieId(conf.getServerConf());
+            ExecutorService rxExecutor = Executors.newFixedThreadPool(
+                    2, new ThreadFactoryBuilder().setNameFormat("rx-schedule-%d")
+                    .setUncaughtExceptionHandler(
+                            (t, ex) -> log.error("Uncaught exception on thread {}", t.getName(), ex))
+                    .build());
+            Scheduler rxScheduler = Schedulers.from(rxExecutor);
+            serverBuilder.addComponent(
+                    new RxSchedulerLifecycleComponent("rx-scheduler", conf, bookieStats,
+                            rxScheduler, rxExecutor));
+
+            storage = BookieResources.createLedgerStorage(
+                    conf.getServerConf(), ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
+
+            EntryCopier copier = new EntryCopierImpl(bookieId,
+                    ((org.apache.bookkeeper.client.BookKeeper) bkc).getClientCtx().getBookieClient(),
+                    storage, Ticker.systemTicker());
+
+            integCheck = new DataIntegrityCheckImpl(bookieId,
+                                                    ledgerManager, storage, copier,
+                                                    new BookKeeperAdmin(bkc, clientStats, clientConfiguration),
+                                                    rxScheduler);
+
+            // if we're running with journal writes disabled and an unclean shutdown occurred then
+            // run the preboot check to protect against data loss and to perform data repair
+            if (!conf.getServerConf().getJournalWriteData()
+                    && uncleanShutdownDetection.lastShutdownWasUnclean()) {
+                integCheck.runPreBootCheck("UNCLEAN_SHUTDOWN");
+            }
+            CookieValidation cookieValidation = new DataIntegrityCookieValidation(conf.getServerConf(),
+                                                                 rm, integCheck);
+            cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
+        } else {
+            CookieValidation cookieValidation = new LegacyCookieValidation(conf.getServerConf(), rm);
+            cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
+            storage = BookieResources.createLedgerStorage(
+                    conf.getServerConf(), ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
+        }
 
         Bookie bookie;
         if (conf.getServerConf().isForceReadOnlyBookie()) {
@@ -366,7 +433,7 @@ public class Main {
 
         // 5. build bookie server
         BookieService bookieService =
-            new BookieService(conf, bookie, rootStatsLogger, allocator);
+            new BookieService(conf, bookie, rootStatsLogger, allocator, uncleanShutdownDetection);
 
         serverBuilder.addComponent(bookieService);
         log.info("Load lifecycle component : {}", BookieService.class.getName());
@@ -387,7 +454,18 @@ public class Main {
             log.info("Load lifecycle component : {}", AutoRecoveryService.class.getName());
         }
 
-        // 7. build http service
+        // 7. build data integrity check service
+        if (conf.getServerConf().isDataIntegrityCheckingEnabled()) {
+            checkNotNull(integCheck,
+                    "integCheck should have been initialized with the cookie validation");
+            DataIntegrityService dataIntegrityService =
+                    new DataIntegrityService(conf, rootStatsLogger.scope(REPLICATION_SCOPE),
+                    integCheck);
+            serverBuilder.addComponent(dataIntegrityService);
+            log.info("Load lifecycle component : {}", DataIntegrityService.class.getName());
+        }
+
+        // 8. build http service
         if (conf.getServerConf().isHttpServerEnabled()) {
             BKHttpServiceProvider provider = new BKHttpServiceProvider.Builder()
                 .setBookieServer(bookieService.getServer())
@@ -401,7 +479,7 @@ public class Main {
             log.info("Load lifecycle component : {}", HttpService.class.getName());
         }
 
-        // 8. build extra services
+        // 9. build extra services
         String[] extraComponents = conf.getServerConf().getExtraServerComponents();
         if (null != extraComponents) {
             try {
@@ -455,8 +533,10 @@ public class Main {
         if (journalDirs != null) {
             for (File j : journalDirs) {
                 File cur = BookieImpl.getCurrentDirectory(j);
-                BookieImpl.checkDirectoryStructure(cur);
-                dirs.add(cur);
+                if (!dirs.stream().anyMatch(f -> f.equals(cur))) {
+                    BookieImpl.checkDirectoryStructure(cur);
+                    dirs.add(cur);
+                }
             }
         }
 
@@ -464,16 +544,20 @@ public class Main {
         if (ledgerDirs != null) {
             for (File l : ledgerDirs) {
                 File cur = BookieImpl.getCurrentDirectory(l);
-                BookieImpl.checkDirectoryStructure(cur);
-                dirs.add(cur);
+                if (!dirs.stream().anyMatch(f -> f.equals(cur))) {
+                    BookieImpl.checkDirectoryStructure(cur);
+                    dirs.add(cur);
+                }
             }
         }
         File[] indexDirs = conf.getIndexDirs();
         if (indexDirs != null) {
             for (File i : indexDirs) {
                 File cur = BookieImpl.getCurrentDirectory(i);
-                BookieImpl.checkDirectoryStructure(cur);
-                dirs.add(cur);
+                if (!dirs.stream().anyMatch(f -> f.equals(cur))) {
+                    BookieImpl.checkDirectoryStructure(cur);
+                    dirs.add(cur);
+                }
             }
         }
         return dirs;

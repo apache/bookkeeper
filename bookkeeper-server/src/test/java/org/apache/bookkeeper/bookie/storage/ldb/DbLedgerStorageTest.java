@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import com.google.common.collect.Lists;
@@ -37,6 +38,7 @@ import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -45,14 +47,18 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Unit test for {@link DbLedgerStorage}.
  */
 public class DbLedgerStorageTest {
-
+    private static final Logger log = LoggerFactory.getLogger(DbLedgerStorageTest.class);
     private DbLedgerStorage storage;
     private File tmpDir;
     private LedgerDirsManager ledgerDirsManager;
+    private ServerConfiguration conf;
 
     @Before
     public void setup() throws Exception {
@@ -63,7 +69,7 @@ public class DbLedgerStorageTest {
         BookieImpl.checkDirectoryStructure(curDir);
 
         int gcWaitTime = 1000;
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
@@ -133,6 +139,7 @@ public class DbLedgerStorageTest {
         assertEquals(true, ((DbLedgerStorage) storage).isFlushRequired());
 
         // Read from write cache
+        assertTrue(storage.entryExists(4, 1));
         ByteBuf res = storage.getEntry(4, 1);
         assertEquals(entry, res);
 
@@ -141,6 +148,7 @@ public class DbLedgerStorageTest {
         assertEquals(false, ((DbLedgerStorage) storage).isFlushRequired());
 
         // Read from db
+        assertTrue(storage.entryExists(4, 1));
         res = storage.getEntry(4, 1);
         assertEquals(entry, res);
 
@@ -190,22 +198,13 @@ public class DbLedgerStorageTest {
         storage.deleteLedger(4);
         assertEquals(false, storage.ledgerExists(4));
 
-        // Should not throw exception event if the ledger was deleted
-        storage.getEntry(4, 4);
-        assertEquals(3, storage.getLastAddConfirmed(4));
-
-        storage.addEntry(Unpooled.wrappedBuffer(entry2));
-        res = storage.getEntry(4, BookieProtocol.LAST_ADD_CONFIRMED);
-        assertEquals(entry4, res);
-        assertEquals(3, storage.getLastAddConfirmed(4));
-
-        // Get last entry from storage
+        // remove entries for ledger 4 from cache
         storage.flush();
 
         try {
             storage.getEntry(4, 4);
             fail("Should have thrown exception since the ledger was deleted");
-        } catch (NoEntryException e) {
+        } catch (Bookie.NoLedgerException e) {
             // ok
         }
     }
@@ -436,9 +435,201 @@ public class DbLedgerStorageTest {
     }
 
     @Test
-    public void testGetLedgerDirsListeners() throws IOException {
-        // we should have two listeners, one is the SingleLedgerDirectories listener,
-        // and another is EntryLogManagerForEntryLogPerLedger
-        assertEquals(2, ledgerDirsManager.getListeners().size());
+    public void testLimboStateSucceedsWhenInLimboButHasEntry() throws Exception {
+        storage.setMasterKey(1, "foobar".getBytes());
+
+        ByteBuf entry0 = Unpooled.buffer(1024);
+        entry0.writeLong(1); // ledger id
+        entry0.writeLong(0); // entry id
+        entry0.writeBytes("entry-0".getBytes());
+
+        storage.addEntry(entry0);
+        storage.flush();
+        storage.setLimboState(1);
+
+        try {
+            storage.getEntry(1, 0);
+        } catch (BookieException.DataUnknownException e) {
+            fail("Should have been able to read entry");
+        }
+
+        storage.shutdown();
+    }
+
+    @Test
+    public void testLimboStateThrowsInLimboWhenNoEntry() throws Exception {
+        storage.setMasterKey(1, "foobar".getBytes());
+
+        ByteBuf entry0 = Unpooled.buffer(1024);
+        entry0.writeLong(1); // ledger id
+        entry0.writeLong(0); // entry id
+        entry0.writeBytes("entry-0".getBytes());
+
+        storage.addEntry(entry0);
+        storage.flush();
+        storage.setLimboState(1);
+
+        try {
+            storage.getEntry(1, 1);
+        } catch (NoEntryException nee) {
+            fail("Shouldn't have seen NoEntryException");
+        } catch (BookieException.DataUnknownException e) {
+            // expected
+        }
+
+        storage.shutdown();
+        Bookie restartedBookie = new TestBookieImpl(conf);
+        DbLedgerStorage restartedStorage = (DbLedgerStorage) restartedBookie.getLedgerStorage();
+        try {
+            try {
+                restartedStorage.getEntry(1, 1);
+            } catch (NoEntryException nee) {
+                fail("Shouldn't have seen NoEntryException");
+            } catch (BookieException.DataUnknownException e) {
+                // expected
+            }
+        } finally {
+            restartedStorage.shutdown();
+        }
+    }
+
+    @Test
+    public void testLimboStateThrowsNoEntryExceptionWhenLimboCleared() throws Exception {
+        storage.setMasterKey(1, "foobar".getBytes());
+
+        ByteBuf entry0 = Unpooled.buffer(1024);
+        entry0.writeLong(1); // ledger id
+        entry0.writeLong(0); // entry id
+        entry0.writeBytes("entry-0".getBytes());
+
+        storage.addEntry(entry0);
+        storage.flush();
+        storage.setLimboState(1);
+
+        try {
+            storage.getEntry(1, 1);
+        } catch (NoEntryException nee) {
+            fail("Shouldn't have seen NoEntryException");
+        } catch (BookieException.DataUnknownException e) {
+            // expected
+        }
+
+        storage.clearLimboState(1);
+        try {
+            storage.getEntry(1, 1);
+        } catch (NoEntryException nee) {
+            // expected
+        } catch (BookieException.DataUnknownException e) {
+            fail("Should have seen NoEntryException");
+        }
+    }
+
+    @Test
+    public void testLimboStateSucceedsWhenFenced() throws Exception {
+        storage.setMasterKey(1, "foobar".getBytes());
+
+        ByteBuf entry0 = Unpooled.buffer(1024);
+        entry0.writeLong(1); // ledger id
+        entry0.writeLong(0); // entry id
+        entry0.writeBytes("entry-0".getBytes());
+
+        storage.addEntry(entry0);
+        storage.flush();
+        storage.setFenced(1);
+        storage.setLimboState(1);
+
+        try {
+            storage.isFenced(1);
+        } catch (IOException ioe) {
+            fail("Should have been able to get isFenced response");
+        }
+
+        storage.shutdown();
+    }
+
+    @Test
+    public void testLimboStateThrowsInLimboWhenNotFenced() throws Exception {
+        storage.setMasterKey(1, "foobar".getBytes());
+
+        ByteBuf entry0 = Unpooled.buffer(1024);
+        entry0.writeLong(1); // ledger id
+        entry0.writeLong(0); // entry id
+        entry0.writeBytes("entry-0".getBytes());
+
+        storage.addEntry(entry0);
+        storage.flush();
+        storage.setLimboState(1);
+
+        try {
+            storage.isFenced(1);
+            fail("Shouldn't have been able to get isFenced response");
+        } catch (BookieException.DataUnknownException e) {
+            // expected
+        }
+
+        storage.shutdown();
+    }
+
+    @Test
+    public void testHasEntry() throws Exception {
+        long ledgerId = 0xbeefee;
+        storage.setMasterKey(ledgerId, "foobar".getBytes());
+
+        ByteBuf entry0 = Unpooled.buffer(1024);
+        entry0.writeLong(ledgerId); // ledger id
+        entry0.writeLong(0); // entry id
+        entry0.writeBytes("entry-0".getBytes());
+
+        storage.addEntry(entry0);
+
+        // should come from write cache
+        assertTrue(storage.entryExists(ledgerId, 0));
+        assertFalse(storage.entryExists(ledgerId, 1));
+
+        storage.flush();
+
+        // should come from storage
+        assertTrue(storage.entryExists(ledgerId, 0));
+        assertFalse(storage.entryExists(ledgerId, 1));
+
+        // pull entry into readcache
+        storage.getEntry(ledgerId, 0);
+
+        // should come from read cache
+        assertTrue(storage.entryExists(ledgerId, 0));
+        assertFalse(storage.entryExists(ledgerId, 1));
+    }
+
+    @Test
+    public void testStorageStateFlags() throws Exception {
+        assertTrue(storage.getStorageStateFlags().isEmpty());
+
+        storage.setStorageStateFlag(LedgerStorage.StorageState.NEEDS_INTEGRITY_CHECK);
+        assertTrue(storage.getStorageStateFlags()
+                   .contains(LedgerStorage.StorageState.NEEDS_INTEGRITY_CHECK));
+
+        storage.shutdown();
+        Bookie restartedBookie1 = new TestBookieImpl(conf);
+        DbLedgerStorage restartedStorage1 = (DbLedgerStorage) restartedBookie1.getLedgerStorage();
+        try {
+            assertTrue(restartedStorage1.getStorageStateFlags()
+                   .contains(LedgerStorage.StorageState.NEEDS_INTEGRITY_CHECK));
+            restartedStorage1.clearStorageStateFlag(LedgerStorage.StorageState.NEEDS_INTEGRITY_CHECK);
+
+            assertFalse(restartedStorage1.getStorageStateFlags()
+                   .contains(LedgerStorage.StorageState.NEEDS_INTEGRITY_CHECK));
+
+        } finally {
+            restartedStorage1.shutdown();
+        }
+
+        Bookie restartedBookie2 = new TestBookieImpl(conf);
+        DbLedgerStorage restartedStorage2 = (DbLedgerStorage) restartedBookie2.getLedgerStorage();
+        try {
+            assertFalse(restartedStorage2.getStorageStateFlags()
+                   .contains(LedgerStorage.StorageState.NEEDS_INTEGRITY_CHECK));
+        } finally {
+            restartedStorage2.shutdown();
+        }
     }
 }

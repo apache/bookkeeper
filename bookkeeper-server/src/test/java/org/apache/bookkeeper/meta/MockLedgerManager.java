@@ -19,12 +19,18 @@
  */
 package org.apache.bookkeeper.meta;
 
-import java.util.HashMap;
+import com.google.common.collect.Lists;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -63,7 +69,7 @@ public class MockLedgerManager implements LedgerManager {
     private Hook preWriteHook = (ledgerId, metadata) -> FutureUtils.value(null);
 
     public MockLedgerManager() {
-        this(new HashMap<>(),
+        this(new ConcurrentHashMap<>(),
              Executors.newSingleThreadExecutor((r) -> new Thread(r, "MockLedgerManager")), true);
     }
 
@@ -129,7 +135,7 @@ public class MockLedgerManager implements LedgerManager {
                     Versioned<LedgerMetadata> metadata = readMetadata(ledgerId);
                     if (metadata == null) {
                         executeCallback(() -> promise.completeExceptionally(
-                                                new BKException.BKNoSuchLedgerExistsException()));
+                                                new BKException.BKNoSuchLedgerExistsOnMetadataServerException()));
                     } else {
                         executeCallback(() -> promise.complete(metadata));
                     }
@@ -150,7 +156,8 @@ public class MockLedgerManager implements LedgerManager {
                     try {
                         Versioned<LedgerMetadata> oldMetadata = readMetadata(ledgerId);
                         if (oldMetadata == null) {
-                            return FutureUtils.exception(new BKException.BKNoSuchLedgerExistsException());
+                            return FutureUtils.exception(
+                                    new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                         } else if (!oldMetadata.getVersion().equals(currentVersion)) {
                             return FutureUtils.exception(new BKException.BKMetadataVersionException());
                         } else {
@@ -189,7 +196,25 @@ public class MockLedgerManager implements LedgerManager {
 
     @Override
     public LedgerRangeIterator getLedgerRanges(long zkOpTimeoutMs) {
-        return null;
+        List<Long> ledgerIds = new ArrayList<>(metadataMap.keySet());
+        ledgerIds.sort(Comparator.naturalOrder());
+        List<List<Long>> partitions = Lists.partition(ledgerIds, 100);
+        return new LedgerRangeIterator() {
+            int i = 0;
+            @Override
+            public boolean hasNext() {
+                if (i >= partitions.size()) {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+
+            @Override
+            public LedgerRange next() {
+                return new LedgerRange(new HashSet<>(partitions.get(i++)));
+            }
+        };
     }
 
     @Override

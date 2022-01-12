@@ -35,6 +35,8 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.LegacyCookieValidation;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetectionImpl;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -98,6 +100,7 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
                 serverConf, diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
         LedgerStorage storage = BookieResources.createLedgerStorage(
                 serverConf, ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
+        UncleanShutdownDetection uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
 
         LegacyCookieValidation cookieValidation = new LegacyCookieValidation(serverConf, rm);
         cookieValidation.checkCookies(Main.storageDirectoriesFromConf(serverConf));
@@ -116,8 +119,7 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
         }
 
         this.bs = new BookieServer(serverConf, bookie,
-                statsLogger, allocator);
-
+                statsLogger, allocator, uncleanShutdownDetection);
         log.info(hello);
     }
 

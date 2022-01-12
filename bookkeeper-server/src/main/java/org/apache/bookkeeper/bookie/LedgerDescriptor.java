@@ -64,7 +64,7 @@ public abstract class LedgerDescriptor {
     abstract long getLedgerId();
 
     abstract boolean setFenced() throws IOException;
-    abstract boolean isFenced() throws IOException;
+    abstract boolean isFenced() throws IOException, BookieException;
     /**
      * When we fence a ledger, we need to first set ledger to fenced state in memory and
      * then log the fence entry in Journal so that we can rebuild the state.
@@ -75,9 +75,9 @@ public abstract class LedgerDescriptor {
     abstract CompletableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException;
 
     abstract long addEntry(ByteBuf entry) throws IOException, BookieException;
-    abstract ByteBuf readEntry(long entryId) throws IOException;
+    abstract ByteBuf readEntry(long entryId) throws IOException, BookieException;
 
-    abstract long getLastAddConfirmed() throws IOException;
+    abstract long getLastAddConfirmed() throws IOException, BookieException;
     abstract boolean waitForLastAddConfirmedUpdate(long previousLAC,
                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
         throws IOException;
@@ -86,7 +86,7 @@ public abstract class LedgerDescriptor {
 
     abstract void setExplicitLac(ByteBuf entry) throws IOException;
 
-    abstract  ByteBuf getExplicitLac() throws IOException;
+    abstract  ByteBuf getExplicitLac() throws IOException, BookieException;
 
     abstract OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException;
 }

@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
@@ -79,7 +80,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
     protected ReadResponse readEntry(ReadResponse.Builder readResponseBuilder,
                                      long entryId,
                                      Stopwatch startTimeSw)
-            throws IOException {
+            throws IOException, BookieException {
         if (RequestUtils.shouldPiggybackEntry(readRequest)) {
             if (!readRequest.hasPreviousLAC() || (BookieProtocol.LAST_ADD_CONFIRMED != entryId)) {
                 // This is not a valid request - client bug?

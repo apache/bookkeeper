@@ -538,7 +538,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public ByteBuf readEntry(long ledgerId, long entryId) throws IOException, NoLedgerException {
+        public ByteBuf readEntry(long ledgerId, long entryId) throws IOException, NoLedgerException, BookieException {
             LOG.info("ReadEntry {} - {}", ledgerId, entryId);
             if (delayReadResponse.get() && delayReadOnEntry.get() == entryId) {
                 CountDownLatch latch = delayReadLatch;

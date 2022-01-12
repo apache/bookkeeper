@@ -180,6 +180,11 @@ public interface BookieProtocol {
      */
     int ETOOMANYREQUESTS = 106;
 
+    /**
+     * Ledger in unknown state.
+     */
+    int EUNKNOWNLEDGERSTATE = 107;
+
     short FLAG_NONE = 0x0;
     short FLAG_DO_FENCING = 0x0001;
     short FLAG_RECOVERY_ADD = 0x0002;

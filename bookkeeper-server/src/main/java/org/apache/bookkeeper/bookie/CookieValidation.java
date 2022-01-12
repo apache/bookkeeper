@@ -25,5 +25,5 @@ import java.util.List;
  * Interface for cookie validation.
  */
 public interface CookieValidation {
-    void checkCookies(List<File> directories) throws BookieException, UnknownHostException;
+    void checkCookies(List<File> directories) throws BookieException, UnknownHostException, InterruptedException;
 }

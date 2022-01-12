@@ -625,7 +625,7 @@ public class EntryLogTest {
         }
 
         @Override
-        public Boolean call() throws IOException {
+        public Boolean call() throws IOException, BookieException {
             try {
                 ByteBuf expectedByteBuf = generateEntry(ledgerId, entryId);
                 ByteBuf actualByteBuf = ledgerStorage.getEntry(ledgerId, entryId);
