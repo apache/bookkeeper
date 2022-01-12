@@ -34,6 +34,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap.LongPair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Read cache implementation.
@@ -46,6 +48,7 @@ import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap.Long
  * the read cache.
  */
 public class ReadCache implements Closeable {
+    private static final Logger log = LoggerFactory.getLogger(ReadCache.class);
 
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1 * 1024 * 1024 * 1024;
 
@@ -90,6 +93,10 @@ public class ReadCache implements Closeable {
         lock.readLock().lock();
 
         try {
+            if (entrySize > segmentSize) {
+                log.warn("entrySize {} > segmentSize {}, skip update read cache!", entrySize, segmentSize);
+                return;
+            }
             int offset = currentSegmentOffset.getAndAdd(alignedSize);
             if (offset + entrySize > segmentSize) {
                 // Roll-over the segment (outside the read-lock)
