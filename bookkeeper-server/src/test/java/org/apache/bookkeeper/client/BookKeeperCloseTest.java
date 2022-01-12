@@ -107,7 +107,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
                 @Override
                 public ByteBuf readEntry(long ledgerId, long entryId)
-                        throws IOException, NoLedgerException {
+                        throws IOException, NoLedgerException, BookieException {
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException ie) {

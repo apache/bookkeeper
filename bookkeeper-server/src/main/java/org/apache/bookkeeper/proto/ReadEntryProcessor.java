@@ -99,6 +99,9 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
                 LOG.debug("Error reading {}", request, e);
             }
             errorCode = BookieProtocol.EIO;
+        } catch (BookieException.DataUnknownException e) {
+            LOG.error("Ledger {} is in an unknown state", request.getLedgerId(), e);
+            errorCode = BookieProtocol.EUNKNOWNLEDGERSTATE;
         } catch (BookieException e) {
             LOG.error("Unauthorized access to ledger {}", request.getLedgerId(), e);
             errorCode = BookieProtocol.EUA;

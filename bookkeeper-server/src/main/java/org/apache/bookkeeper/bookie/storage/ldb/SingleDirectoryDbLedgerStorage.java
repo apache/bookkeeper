@@ -21,8 +21,10 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 
@@ -34,7 +36,9 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -286,11 +290,62 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
-    public boolean isFenced(long ledgerId) throws IOException {
+    public boolean entryExists(long ledgerId, long entryId) throws IOException, BookieException {
+        if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
+            return false;
+        }
+
+        // We need to try to read from both write caches, since recent entries could be found in either of the two. The
+        // write caches are already thread safe on their own, here we just need to make sure we get references to both
+        // of them. Using an optimistic lock since the read lock is always free, unless we're swapping the caches.
+        long stamp = writeCacheRotationLock.tryOptimisticRead();
+        WriteCache localWriteCache = writeCache;
+        WriteCache localWriteCacheBeingFlushed = writeCacheBeingFlushed;
+        if (!writeCacheRotationLock.validate(stamp)) {
+            // Fallback to regular read lock approach
+            stamp = writeCacheRotationLock.readLock();
+            try {
+                localWriteCache = writeCache;
+                localWriteCacheBeingFlushed = writeCacheBeingFlushed;
+            } finally {
+                writeCacheRotationLock.unlockRead(stamp);
+            }
+        }
+
+        boolean inCache = localWriteCache.hasEntry(ledgerId, entryId)
+             || localWriteCacheBeingFlushed.hasEntry(ledgerId, entryId)
+             || readCache.hasEntry(ledgerId, entryId);
+
+        if (inCache) {
+            return true;
+        }
+
+        // Read from main storage
+        long entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
+        if (entryLocation != 0) {
+            return true;
+        }
+
+        // Only a negative result while in limbo equates to unknown
+        throwIfLimbo(ledgerId);
+
+        return false;
+    }
+
+    @Override
+    public boolean isFenced(long ledgerId) throws IOException, BookieException {
         if (log.isDebugEnabled()) {
             log.debug("isFenced. ledger: {}", ledgerId);
         }
-        return ledgerIndex.get(ledgerId).getFenced();
+
+        boolean isFenced = ledgerIndex.get(ledgerId).getFenced();
+
+        // Only a negative result while in limbo equates to unknown
+        if (!isFenced) {
+            throwIfLimbo(ledgerId);
+        }
+
+        return isFenced;
     }
 
     @Override
@@ -416,7 +471,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
-    public ByteBuf getEntry(long ledgerId, long entryId) throws IOException {
+    public ByteBuf getEntry(long ledgerId, long entryId) throws IOException, BookieException {
         long startTime = MathUtils.nowInNano();
         try {
             ByteBuf entry = doGetEntry(ledgerId, entryId);
@@ -428,7 +483,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         }
     }
 
-    private ByteBuf doGetEntry(long ledgerId, long entryId) throws IOException {
+    private ByteBuf doGetEntry(long ledgerId, long entryId) throws IOException, BookieException {
         if (log.isDebugEnabled()) {
             log.debug("Get Entry: {}@{}", ledgerId, entryId);
         }
@@ -485,6 +540,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         try {
             entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
             if (entryLocation == 0) {
+                // Only a negative result while in limbo equates to unknown
+                throwIfLimbo(ledgerId);
+
                 throw new NoEntryException(ledgerId, entryId);
             }
         } finally {
@@ -556,7 +614,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         }
     }
 
-    public ByteBuf getLastEntry(long ledgerId) throws IOException {
+    public ByteBuf getLastEntry(long ledgerId) throws IOException, BookieException {
+        throwIfLimbo(ledgerId);
+
+        long startTime = MathUtils.nowInNano();
         long stamp = writeCacheRotationLock.readLock();
         try {
             // First try to read from the write cache of recent entries
@@ -799,7 +860,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
-    public long getLastAddConfirmed(long ledgerId) throws IOException {
+    public long getLastAddConfirmed(long ledgerId) throws IOException, BookieException {
+        throwIfLimbo(ledgerId);
+
         TransientLedgerInfo ledgerInfo = transientLedgerInfoCache.get(ledgerId);
         long lac = null != ledgerInfo ? ledgerInfo.getLastAddConfirmed() : TransientLedgerInfo.NOT_ASSIGNED_LAC;
         if (lac == TransientLedgerInfo.NOT_ASSIGNED_LAC) {
@@ -837,7 +900,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
-    public ByteBuf getExplicitLac(long ledgerId) throws IOException {
+    public ByteBuf getExplicitLac(long ledgerId) throws IOException, BookieException {
+        throwIfLimbo(ledgerId);
         if (log.isDebugEnabled()) {
             log.debug("getExplicitLac ledger {}", ledgerId);
         }
@@ -1012,5 +1076,92 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 }
             }
         };
+    }
+
+    @Override
+    public void setLimboState(long ledgerId) throws IOException {
+        if (log.isDebugEnabled()) {
+            log.debug("setLimboState. ledger: {}", ledgerId);
+        }
+        ledgerIndex.setLimbo(ledgerId);
+    }
+
+    @Override
+    public boolean hasLimboState(long ledgerId) throws IOException {
+        if (log.isDebugEnabled()) {
+            log.debug("hasLimboState. ledger: {}", ledgerId);
+        }
+        return ledgerIndex.get(ledgerId).getLimbo();
+    }
+
+    @Override
+    public void clearLimboState(long ledgerId) throws IOException {
+        if (log.isDebugEnabled()) {
+            log.debug("clearLimboState. ledger: {}", ledgerId);
+        }
+        ledgerIndex.clearLimbo(ledgerId);
+    }
+
+    private void throwIfLimbo(long ledgerId) throws IOException, BookieException {
+        if (hasLimboState(ledgerId)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Accessing ledger({}) in limbo state, throwing exception", ledgerId);
+            }
+            throw BookieException.create(BookieException.Code.DataUnknownException);
+        }
+    }
+
+    /**
+     * Mapping of enums to bitmaps. The bitmaps must not overlap so that we can
+     * do bitwise operations on them.
+     */
+    private static final Map<StorageState, Integer> stateBitmaps = ImmutableMap.of(
+            StorageState.NEEDS_INTEGRITY_CHECK, 0x00000001);
+
+    @Override
+    public EnumSet<StorageState> getStorageStateFlags() throws IOException {
+        int flags = ledgerIndex.getStorageStateFlags();
+        EnumSet<StorageState> flagsEnum = EnumSet.noneOf(StorageState.class);
+        for (Map.Entry<StorageState, Integer> e : stateBitmaps.entrySet()) {
+            int value = e.getValue();
+            if ((flags & value) == value) {
+                flagsEnum.add(e.getKey());
+            }
+            flags = flags & ~value;
+        }
+        checkState(flags == 0, "Unknown storage state flag found " + flags);
+        return flagsEnum;
+    }
+
+    @Override
+    public void setStorageStateFlag(StorageState flag) throws IOException {
+        checkArgument(stateBitmaps.containsKey(flag), "Unsupported flag " + flag);
+        int flagInt = stateBitmaps.get(flag);
+        while (true) {
+            int curFlags = ledgerIndex.getStorageStateFlags();
+            int newFlags = curFlags | flagInt;
+            if (ledgerIndex.setStorageStateFlags(curFlags, newFlags)) {
+                return;
+            } else {
+                log.info("Conflict updating storage state flags {} -> {}, retrying",
+                        curFlags, newFlags);
+            }
+        }
+    }
+
+    @Override
+    public void clearStorageStateFlag(StorageState flag) throws IOException {
+        checkArgument(stateBitmaps.containsKey(flag), "Unsupported flag " + flag);
+        int flagInt = stateBitmaps.get(flag);
+        while (true) {
+            int curFlags = ledgerIndex.getStorageStateFlags();
+            int newFlags = curFlags & ~flagInt;
+            if (ledgerIndex.setStorageStateFlags(curFlags, newFlags)) {
+                return;
+            } else {
+                log.info("Conflict updating storage state flags {} -> {}, retrying",
+                        curFlags, newFlags);
+            }
+        }
     }
 }

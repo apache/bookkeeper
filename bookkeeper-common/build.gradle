@@ -38,6 +38,7 @@ dependencies {
     implementation depLibs.jacksonDatabind
     implementation depLibs.jctools
     implementation depLibs.nettyCommon
+    implementation depLibs.rxjava
     implementation depLibs.slf4j
     testCompileOnly depLibs.lombok
     testImplementation depLibs.commonsLang3

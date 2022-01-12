@@ -317,6 +317,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Certificate role based authorization
     protected static final String AUTHORIZED_ROLES = "authorizedRoles";
 
+    protected static final String DATA_INTEGRITY_CHECKING_ENABLED = "dataIntegrityChecking";
+    protected static final String DATA_INTEGRITY_COOKIE_STAMPING_ENABLED = "dataIntegrityStampMissingCookies";
+
     /**
      * Construct a default configuration object.
      */
@@ -3745,5 +3748,54 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setReplicationRateByBytes(int rate) {
         setProperty(REPLICATION_RATE_BY_BYTES, rate);
         return this;
+    }
+
+    /**
+     * Enabled data integrity checker.
+     * The data integrity checker checks that the bookie has all the entries which
+     * ledger metadata asserts it has.
+     * The checker runs on startup (periodic will be added later).
+     * The changes how cookies are handled. If a directory is found to be missing a cookie,
+     * the check runs. The check is divided into two parts, preboot and full.
+     * The preboot check ensures that it is safe to boot the bookie; the bookie will not
+     * vote in any operation that contradicts a previous vote.
+     * The full check ensures that any ledger that claims to have entries on the bookie,
+     * truly does have data on the bookie. Any missing entries are copies from available
+     * replicas.
+     */
+    public ServerConfiguration setDataIntegrityCheckingEnabled(boolean enabled) {
+        this.setProperty(DATA_INTEGRITY_CHECKING_ENABLED,
+                         Boolean.toString(enabled));
+        return this;
+    }
+
+    /**
+     * @see #setDataIntegrityCheckingEnabled
+     */
+    public boolean isDataIntegrityCheckingEnabled() {
+        return this.getBoolean(DATA_INTEGRITY_CHECKING_ENABLED, false);
+    }
+
+    /**
+     * When this config is set to true and the data integrity checker is also enabled then
+     * any missing cookie files in the ledger directories do not prevent the bookie from
+     * booting. Missing cookie files usually indicate an empty disk has been mounted, which
+     * might be after a disk failure (all data lost) or a provisioning error (wrong disk mounted).
+     * If there are missing cookie files then:
+     * - a new cookie is stamped (written to each ledger directory and to the co-ordination service, eg: zookeeper).
+     * - the data integrity checker will attempt to repair any lost data by sourcing the lost entries from other bookies
+     * If any cookies do not match the master cookie, then cookie validation still fails as normal.
+     */
+    public ServerConfiguration setDataIntegrityStampMissingCookiesEnabled(boolean enabled) {
+        this.setProperty(DATA_INTEGRITY_COOKIE_STAMPING_ENABLED,
+                Boolean.toString(enabled));
+        return this;
+    }
+
+    /**
+     * @see #setDataIntegrityStampMissingCookiesEnabled
+     */
+    public boolean isDataIntegrityStampMissingCookiesEnabled() {
+        return this.getBoolean(DATA_INTEGRITY_COOKIE_STAMPING_ENABLED, false);
     }
 }

@@ -1646,7 +1646,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
         };
 
-    ClientContext getClientCtx() {
+    public ClientContext getClientCtx() {
         return clientCtx;
     }
 }

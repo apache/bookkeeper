@@ -35,6 +35,7 @@ import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.ExitCode;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
@@ -61,6 +62,7 @@ public class BookieServer {
     private volatile boolean running = false;
     private final Bookie bookie;
     DeathWatcher deathWatcher;
+    UncleanShutdownDetection uncleanShutdownDetection;
     private static final Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
     int exitCode = ExitCode.OK;
@@ -77,7 +79,8 @@ public class BookieServer {
     public BookieServer(ServerConfiguration conf,
                         Bookie bookie,
                         StatsLogger statsLogger,
-                        ByteBufAllocator allocator)
+                        ByteBufAllocator allocator,
+                        UncleanShutdownDetection uncleanShutdownDetection)
             throws IOException, KeeperException, InterruptedException,
             BookieException, UnavailableException, CompatibilityException, SecurityException {
         this.conf = conf;
@@ -93,6 +96,7 @@ public class BookieServer {
         this.statsLogger = statsLogger;
         this.bookie = bookie;
         this.nettyServer = new BookieNettyServer(this.conf, null, allocator);
+        this.uncleanShutdownDetection = uncleanShutdownDetection;
 
         final SecurityHandlerFactory shFactory;
 
@@ -115,14 +119,17 @@ public class BookieServer {
         this.uncaughtExceptionHandler = exceptionHandler;
     }
 
-    public void start() throws InterruptedException {
+    public void start() throws InterruptedException, IOException {
         this.bookie.start();
+
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {
             exitCode = bookie.getExitCode();
             this.requestProcessor.close();
             return;
         }
+
+        this.uncleanShutdownDetection.registerStartUp();
         this.nettyServer.start();
 
         running = true;
@@ -187,6 +194,7 @@ public class BookieServer {
         }
         this.requestProcessor.close();
         exitCode = bookie.shutdown();
+        uncleanShutdownDetection.registerCleanShutdown();
         running = false;
     }
 
