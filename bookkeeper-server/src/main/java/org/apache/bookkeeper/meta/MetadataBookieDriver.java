@@ -85,7 +85,7 @@ public interface MetadataBookieDriver extends AutoCloseable {
      */
     default CompletableFuture<Void> disableHealthCheck() {
         CompletableFuture<Void> result = new CompletableFuture<>();
-        result.completeExceptionally(new Exception("Not support disableHealthCheck"));
+        result.completeExceptionally(new Exception("disableHealthCheck is not supported by this metadata driver"));
         return result;
     }
 
