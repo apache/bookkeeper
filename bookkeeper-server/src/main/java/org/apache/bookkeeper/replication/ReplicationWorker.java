@@ -227,9 +227,12 @@ public class ReplicationWorker implements Runnable {
         workerRunning = true;
         while (workerRunning) {
             try {
-                rereplicate();
+                if (!rereplicate()) {
+                    LOG.warn("failed while replicating fragments");
+                    waitBackOffTime(rwRereplicateBackoffMs);
+                }
             } catch (InterruptedException e) {
-                LOG.info("InterruptedException "
+                LOG.error("InterruptedException "
                         + "while replicating fragments", e);
                 shutdown();
                 Thread.currentThread().interrupt();
@@ -258,7 +261,7 @@ public class ReplicationWorker implements Runnable {
      * Replicates the under replicated fragments from failed bookie ledger to
      * targetBookie.
      */
-    private void rereplicate() throws InterruptedException, BKException,
+    private boolean rereplicate() throws InterruptedException, BKException,
             UnavailableException {
         long ledgerIdToReplicate = underreplicationManager
                 .getLedgerToRereplicate();
@@ -275,6 +278,7 @@ public class ReplicationWorker implements Runnable {
                 rereplicateOpStats.registerFailedEvent(latencyMillis, TimeUnit.MILLISECONDS);
             }
         }
+        return success;
     }
 
     private void logBKExceptionAndReleaseLedger(BKException e, long ledgerIdToReplicate)
