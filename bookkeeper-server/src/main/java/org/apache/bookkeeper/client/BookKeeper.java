@@ -607,7 +607,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             scheduler.scheduleAtFixedRate(new SafeRunnable() {
 
                 @Override
-                public void safeRun() throws ExecutionException, InterruptedException {
+                public void safeRun() {
                     checkForFaultyBookies();
                 }
                     }, conf.getBookieHealthCheckIntervalSeconds(), conf.getBookieHealthCheckIntervalSeconds(),
@@ -615,13 +615,20 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
     }
 
-    void checkForFaultyBookies() throws ExecutionException, InterruptedException {
+    void checkForFaultyBookies() {
         List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
         if (faultyBookies.isEmpty()) {
             return;
         }
 
-        boolean isEnable = metadataDriver.isHealthCheckEnabled().get();
+        boolean isEnable = false;
+        try {
+            isEnable = metadataDriver.isHealthCheckEnabled().get();
+        } catch (InterruptedException e) {
+            LOG.error("isHealthCheckEnabled throw InterruptedException", e);
+        } catch (ExecutionException e) {
+            LOG.error("isHealthCheckEnabled throw ExecutionException", e);
+        }
         if (!isEnable) {
             LOG.info("Health checks is currently disabled!");
             return;
