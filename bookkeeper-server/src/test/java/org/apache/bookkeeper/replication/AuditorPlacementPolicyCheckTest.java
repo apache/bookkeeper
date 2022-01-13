@@ -236,6 +236,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         int writeQuorumSize = 3;
         int ackQuorumSize = 2;
         int minNumRacksPerWriteQuorumConfValue = 3;
+        boolean enforceMinNumRacksPerWriteQuorum = true;
 
         /*
          * this closed ledger doesn't adhere to placement policy because there are only
@@ -273,6 +274,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
 
         ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
         servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
+        servConf.setEnforceMinNumRacksPerWriteQuorum(enforceMinNumRacksPerWriteQuorum);
         setServerConfigPropertiesForRackPlacement(servConf);
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
@@ -454,6 +456,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         int writeQuorumSize = 5;
         int ackQuorumSize = 2;
         int minNumRacksPerWriteQuorumConfValue = 4;
+        boolean enforceMinNumRacksPerWriteQuorum = true;
 
         /*
          * this closed ledger in each writeQuorumSize (5), there would be
@@ -510,6 +513,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
 
         ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
         servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
+        servConf.setEnforceMinNumRacksPerWriteQuorum(enforceMinNumRacksPerWriteQuorum);
         setServerConfigPropertiesForRackPlacement(servConf);
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
