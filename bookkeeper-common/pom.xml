@@ -69,6 +69,11 @@
       <artifactId>error_prone_annotations</artifactId>
       <scope>provided</scope>
     </dependency>
+    <!-- import for rxjava3 in maven -->
+    <dependency>
+      <groupId>io.reactivex.rxjava3</groupId>
+      <artifactId>rxjava</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>

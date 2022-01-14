@@ -198,6 +198,7 @@
     <spotbugs-maven-plugin.version>3.1.8</spotbugs-maven-plugin.version>
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
+    <rxjava.version>3.0.1</rxjava.version>
   </properties>
 
   <!-- dependency definitions -->
@@ -757,6 +758,13 @@
         <artifactId>jmh-generator-annprocess</artifactId>
         <version>${jmh.version}</version>
       </dependency>
+
+      <!-- import for rxjava3 in maven -->
+      <dependency>
+        <groupId>io.reactivex.rxjava3</groupId>
+        <artifactId>rxjava</artifactId>
+        <version>${rxjava.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -783,7 +791,6 @@
       <groupId>commons-configuration</groupId>
       <artifactId>commons-configuration</artifactId>
     </dependency>
-
     <!-- test dependencies -->
     <dependency>
       <groupId>junit</groupId>
