@@ -213,7 +213,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         "auditorMaxNumberOfConcurrentOpenLedgerOperations";
     protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC =
         "auditorAcquireConcurrentOpenLedgerOperationsTimeOutMSec";
-    protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
     protected static final String IN_FLIGHT_READ_ENTRY_NUM_IN_LEDGER_CHECKER = "inFlightReadEntryNumInLedgerChecker";
 
 
@@ -3719,16 +3718,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the bytes rate of re-replication.
-     * Default value is -1 which it means entries will replicated without any throttling activity.
-     *
-     * @return bytes rate of re-replication.
-     */
-    public int getReplicationRateByBytes() {
-        return getInt(REPLICATION_RATE_BY_BYTES, -1);
-    }
-
-    /**
      * Get in flight read entry number when ledger checker.
      * Default value is -1 which it is unlimited  when ledger checker.
      *
@@ -3736,18 +3725,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public int getInFlightReadEntryNumInLedgerChecker(){
         return getInt(IN_FLIGHT_READ_ENTRY_NUM_IN_LEDGER_CHECKER, -1);
-    }
-
-    /**
-     * Set the rate of re-replication.
-     *
-     * @param rate bytes rate of re-replication.
-     *
-     * @return ServerConfiguration
-     */
-    public ServerConfiguration setReplicationRateByBytes(int rate) {
-        setProperty(REPLICATION_RATE_BY_BYTES, rate);
-        return this;
     }
 
     /**
