@@ -279,7 +279,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 if (KeeperException.Code.OK.intValue() == rc) {
                     createResult.complete(null);
                 } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
-                    log.debug("health check already disable!");
+                    log.debug("health check already disabled!");
                     createResult.complete(null);
                 } else {
                     createResult.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));

@@ -621,16 +621,16 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             return;
         }
 
-        boolean isEnable = false;
+        boolean isEnabled = false;
         try {
-            isEnable = metadataDriver.isHealthCheckEnabled().get();
+            isEnabled = metadataDriver.isHealthCheckEnabled().get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOG.error("Cannot verify if healthcheck is enabled", e);
         } catch (ExecutionException e) {
             LOG.error("Cannot verify if healthcheck is enabled", e.getCause());
         }
-        if (!isEnable) {
+        if (!isEnabled) {
             LOG.info("Health checks is currently disabled!");
             return;
         }

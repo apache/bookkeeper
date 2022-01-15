@@ -42,7 +42,7 @@ public class SwitchOfHealthCheckCommand extends BookieCommand<SwitchOfHealthChec
     static final Logger LOG = LoggerFactory.getLogger(SwitchOfHealthCheckCommand.class);
 
     private static final String NAME = "switch";
-    private static final String DESC = "Enable or disable health check in the cluster. Default is enable.";
+    private static final String DESC = "Enables or disables health check in the cluster. Default is enabled.";
 
     public SwitchOfHealthCheckCommand() {
         this(new HealthCheckFlags());
@@ -92,14 +92,14 @@ public class SwitchOfHealthCheckCommand extends BookieCommand<SwitchOfHealthChec
 
                 if (flags.enable) {
                     if (isEnable) {
-                        LOG.warn("HealthCheck already enable. Doing nothing");
+                        LOG.warn("HealthCheck already enabled. Doing nothing");
                     } else {
                         LOG.info("Enable HealthCheck");
                         driver.enableHealthCheck().get();
                     }
                 } else {
                     if (!isEnable) {
-                        LOG.warn("HealthCheck already disable. Doing nothing");
+                        LOG.warn("HealthCheck already disabled. Doing nothing");
                     } else {
                         LOG.info("Disable HealthCheck");
                         driver.disableHealthCheck().get();
