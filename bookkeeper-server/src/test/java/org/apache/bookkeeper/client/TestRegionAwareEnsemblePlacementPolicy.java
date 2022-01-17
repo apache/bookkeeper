@@ -1524,4 +1524,39 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
     }
+
+    public void testRegionsWithDiskWeight() throws Exception {
+        repp.uninitalize();
+        repp = new RegionAwareEnsemblePlacementPolicy();
+        conf.setProperty(REPP_ENABLE_VALIDATION, false);
+        conf.setDiskWeightBasedPlacementEnabled(true);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL,
+            NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region2/r3");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region3/r11");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region4/r13");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region5/r23");
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        List<BookieId> ensemble = repp.newEnsemble(3, 3, 2, null,
+            new HashSet<>()).getResult();
+
+        assertEquals(3, ensemble.size());
+    }
 }

@@ -150,8 +150,6 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
             Double randomNum = randomMax * Math.random();
             // find the nearest key in the map corresponding to the randomNum
             Double key = cummulativeMap.floorKey(randomNum);
-            //LOG.info("Random max: {} CummulativeMap size: {} selected key: {}", randomMax, cummulativeMap.size(),
-            //    key);
             return cummulativeMap.get(key);
         } finally {
             rwLock.readLock().unlock();

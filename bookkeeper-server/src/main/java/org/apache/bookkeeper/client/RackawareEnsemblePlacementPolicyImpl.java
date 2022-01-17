@@ -714,20 +714,21 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 throw new BKNotEnoughBookiesException();
             }
             if (wRSelection == null) {
-                Map<BookieNode, WeightedObject> rackMap = new HashMap<BookieNode, WeightedObject>();
-                for (BookieNode n : bookiesToSelectFrom) {
-                    if (excludeBookies.contains(n)) {
-                        continue;
-                    }
-                    if (this.bookieInfoMap.containsKey(n)) {
-                        rackMap.put(n, this.bookieInfoMap.get(n));
-                    } else {
-                        rackMap.put(n, new BookieInfo());
-                    }
-                }
                 wRSelection = new WeightedRandomSelectionImpl<BookieNode>(this.maxWeightMultiple);
-                wRSelection.updateMap(rackMap);
             }
+
+            Map<BookieNode, WeightedObject> rackMap = new HashMap<BookieNode, WeightedObject>();
+            for (BookieNode n : bookiesToSelectFrom) {
+                if (excludeBookies.contains(n)) {
+                    continue;
+                }
+                if (this.bookieInfoMap.containsKey(n)) {
+                    rackMap.put(n, this.bookieInfoMap.get(n));
+                } else {
+                    rackMap.put(n, new BookieInfo());
+                }
+            }
+            wRSelection.updateMap(rackMap);
         } else {
             Collections.shuffle(bookiesToSelectFrom);
         }
