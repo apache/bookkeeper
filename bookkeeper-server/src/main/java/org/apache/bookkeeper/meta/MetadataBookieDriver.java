@@ -18,6 +18,9 @@
  */
 package org.apache.bookkeeper.meta;
 
+import java.util.concurrent.CompletableFuture;
+
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
@@ -67,6 +70,31 @@ public interface MetadataBookieDriver extends AutoCloseable {
      * @return the layout manager.
      */
     LayoutManager getLayoutManager();
+
+    /**
+     * Return health check is enable or disable.
+     *
+     * @return true if health check is enable, otherwise false.
+     */
+    default CompletableFuture<Boolean>  isHealthCheckEnabled() {
+        return FutureUtils.value(true);
+    }
+
+    /**
+     * Disable health check.
+     */
+    default CompletableFuture<Void> disableHealthCheck() {
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        result.completeExceptionally(new Exception("disableHealthCheck is not supported by this metadata driver"));
+        return result;
+    }
+
+    /**
+     * Enable health check.
+     */
+    default CompletableFuture<Void>  enableHealthCheck() {
+        return FutureUtils.Void();
+    }
 
     @Override
     void close();
