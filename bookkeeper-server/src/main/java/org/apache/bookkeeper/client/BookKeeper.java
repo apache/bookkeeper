@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -616,6 +617,24 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     void checkForFaultyBookies() {
         List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
+        if (faultyBookies.isEmpty()) {
+            return;
+        }
+
+        boolean isEnabled = false;
+        try {
+            isEnabled = metadataDriver.isHealthCheckEnabled().get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.error("Cannot verify if healthcheck is enabled", e);
+        } catch (ExecutionException e) {
+            LOG.error("Cannot verify if healthcheck is enabled", e.getCause());
+        }
+        if (!isEnabled) {
+            LOG.info("Health checks is currently disabled!");
+            return;
+        }
+
         for (BookieId faultyBookie : faultyBookies) {
             if (Math.random() <= bookieQuarantineRatio) {
                 bookieWatcher.quarantineBookie(faultyBookie);

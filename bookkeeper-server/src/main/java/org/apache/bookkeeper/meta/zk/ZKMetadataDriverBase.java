@@ -21,6 +21,7 @@ package org.apache.bookkeeper.meta.zk;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
+import static org.apache.bookkeeper.util.BookKeeperConstants.DISABLE_HEALTH_CHECK;
 import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
@@ -28,6 +29,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -42,15 +45,18 @@ import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Stat;
 
 /**
  * This is a mixin class for supporting zookeeper based metadata driver.
@@ -139,6 +145,9 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     // whether the zk handle is one we created, or is owned by whoever
     // instantiated us
     protected boolean ownZKHandle = false;
+
+    // disable health check path
+    String disableHealthCheckPath;
 
     // ledgers root path
     protected String ledgersRootPath;
@@ -230,6 +239,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             this.ownZKHandle = true;
         }
 
+        disableHealthCheckPath = ledgersRootPath + "/" + DISABLE_HEALTH_CHECK;
         // once created the zookeeper client, create the layout manager and registration client
         this.layoutManager = new ZkLayoutManager(
             zk,
@@ -258,6 +268,62 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             }
         }
         return lmFactory;
+    }
+
+    public CompletableFuture<Void> disableHealthCheck() {
+        CompletableFuture<Void> createResult = new CompletableFuture<>();
+        zk.create(disableHealthCheckPath, BookKeeperConstants.EMPTY_BYTE_ARRAY, acls,
+                CreateMode.PERSISTENT, new AsyncCallback.StringCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx, String name) {
+                if (KeeperException.Code.OK.intValue() == rc) {
+                    createResult.complete(null);
+                } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
+                    log.debug("health check already disabled!");
+                    createResult.complete(null);
+                } else {
+                    createResult.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
+                }
+            }
+        }, null);
+
+        return createResult;
+    }
+
+    public CompletableFuture<Void> enableHealthCheck() {
+        CompletableFuture<Void> deleteResult = new CompletableFuture<>();
+
+        zk.delete(disableHealthCheckPath, -1, new AsyncCallback.VoidCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx) {
+                if (KeeperException.Code.OK.intValue() == rc) {
+                    deleteResult.complete(null);
+                } else if (KeeperException.Code.NONODE.intValue() == rc) {
+                    log.debug("health check already enabled!");
+                    deleteResult.complete(null);
+                } else {
+                    deleteResult.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
+                }
+            }
+        }, null);
+
+        return deleteResult;
+    }
+
+    public CompletableFuture<Boolean> isHealthCheckEnabled() {
+        CompletableFuture<Boolean> enableResult = new CompletableFuture<>();
+        zk.exists(disableHealthCheckPath, false, new AsyncCallback.StatCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx, Stat stat) {
+                if (KeeperException.Code.OK.intValue() == rc) {
+                    enableResult.complete(false);
+                } else {
+                    enableResult.complete(true);
+                }
+            }
+        }, null);
+
+        return enableResult;
     }
 
     @Override
