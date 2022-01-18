@@ -38,6 +38,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.MemoryLimitController;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.ByteBufList;
@@ -83,6 +84,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     EnumSet<WriteFlag> writeFlags;
     boolean allowFailFast = false;
     List<BookieId> ensemble;
+    MemoryLimitController memoryLimitController;
 
     static PendingAddOp create(LedgerHandle lh, ClientContext clientCtx,
                                List<BookieId> ensemble,
@@ -116,7 +118,6 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             op.addEntrySuccessBookies.clear();
         }
         op.writeDelayedStartTime = -1;
-
         return op;
     }
 

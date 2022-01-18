@@ -52,6 +52,7 @@ import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.MemoryLimitController;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -104,6 +105,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
     private final long bookieErrorThresholdPerInterval;
 
+    private final MemoryLimitController memoryLimitController;
+
     public BookieClientImpl(ClientConfiguration conf, EventLoopGroup eventLoopGroup,
                             ByteBufAllocator allocator,
                             OrderedExecutor executor, ScheduledExecutorService scheduler,
@@ -137,6 +140,11 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         } else {
             this.timeoutFuture = null;
         }
+        this.memoryLimitController = new MemoryLimitController(128 * 1024 * 1024);
+    }
+
+    public MemoryLimitController getMemoryLimitController() {
+        return memoryLimitController;
     }
 
     private int getRc(int rc) {
@@ -326,10 +334,23 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         // the PendingApp might have already failed
         toSend.retain();
 
+        final long size = toSend.readableBytes();
+        try {
+            this.getMemoryLimitController().reserveMemory(size);
+            LOG.info("Acquire memory size {} for entry {}, current usage {} ", size, entryId,
+                this.getMemoryLimitController().currentUsage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        WriteAndFlushCallback callback = new WriteAndFlushCallback();
+        callback.setBookieClient(this);
+        callback.setSize(size);
+        callback.setEntryId(entryId);
+
         client.obtain(ChannelReadyForAddEntryCallback.create(
-                              this, toSend, ledgerId, entryId, addr,
-                                  ctx, cb, options, masterKey, allowFastFail, writeFlags),
-                      ledgerId);
+                this, toSend, ledgerId, entryId, addr,
+                ctx, cb, options, masterKey, allowFastFail, writeFlags, callback),
+            ledgerId);
     }
 
     @Override
@@ -378,6 +399,31 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }
     }
 
+    private static class WriteAndFlushCallback implements BookkeeperInternalCallbacks.WriteAndFlushCallback {
+
+        private BookieClientImpl bookieClient;
+        private long size;
+        private long entryId;
+
+        public void setBookieClient(BookieClientImpl bookieClient) {
+            this.bookieClient = bookieClient;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public void setEntryId(long entryId) {
+            this.entryId = entryId;
+        }
+
+        @Override
+        public void complete() {
+            LOG.info("Release memory size {} for entry {}", size, entryId);
+            bookieClient.getMemoryLimitController().releaseMemory(size);
+        }
+    }
+
     private static class ChannelReadyForAddEntryCallback
         implements GenericCallback<PerChannelBookieClient> {
         private final Handle<ChannelReadyForAddEntryCallback> recyclerHandle;
@@ -393,12 +439,13 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         private byte[] masterKey;
         private boolean allowFastFail;
         private EnumSet<WriteFlag> writeFlags;
+        private WriteAndFlushCallback writeAndFlushCallback;
 
         static ChannelReadyForAddEntryCallback create(
                 BookieClientImpl bookieClient, ByteBufList toSend, long ledgerId,
                 long entryId, BookieId addr, Object ctx,
                 WriteCallback cb, int options, byte[] masterKey, boolean allowFastFail,
-                EnumSet<WriteFlag> writeFlags) {
+                EnumSet<WriteFlag> writeFlags, WriteAndFlushCallback writeAndFlushCallback) {
             ChannelReadyForAddEntryCallback callback = RECYCLER.get();
             callback.bookieClient = bookieClient;
             callback.toSend = toSend;
@@ -411,6 +458,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             callback.masterKey = masterKey;
             callback.allowFastFail = allowFastFail;
             callback.writeFlags = writeFlags;
+            callback.writeAndFlushCallback = writeAndFlushCallback;
             return callback;
         }
 
@@ -420,8 +468,20 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             if (rc != BKException.Code.OK) {
                 bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
             } else {
-                pcbc.addEntry(ledgerId, masterKey, entryId,
-                              toSend, cb, ctx, options, allowFastFail, writeFlags);
+//                try {
+                    final long size = toSend.readableBytes();
+//                    bookieClient.memoryLimitController.reserveMemory(size);
+//                    LOG.info("Acquire memory size {} for entry {} ", size, entryId);
+//                    WriteAndFlushCallback callback = new WriteAndFlushCallback();
+//                    callback.setBookieClient(bookieClient);
+//                    callback.setSize(size);
+//                    callback.setEntryId(entryId);
+                    pcbc.addEntry(ledgerId, masterKey, entryId,
+                        toSend, cb, ctx, options, allowFastFail, writeFlags, writeAndFlushCallback);
+//                } catch (InterruptedException e) {
+//                    LOG.error("Failed to allocate memory from controller {} {}", entryId, toSend.size());
+//                    bookieClient.completeAdd(BKException.Code.IllegalOpException, ledgerId, entryId, addr, cb, ctx);
+//                }
             }
 
             toSend.release();

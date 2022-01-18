@@ -76,6 +76,7 @@ import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
+import org.apache.bookkeeper.common.util.MemoryLimitController;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -179,7 +180,6 @@ public class LedgerHandle implements WriteHandle {
                  EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
         this.clientCtx = clientCtx;
-
         this.versionedMetadata = versionedMetadata;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.writeFlags = writeFlags;
