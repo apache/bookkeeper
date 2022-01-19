@@ -29,6 +29,7 @@ plugins {
     id 'checkstyle'
     id 'org.nosphere.apache.rat'
     id 'com.github.spotbugs'
+    id 'org.owasp.dependencycheck'
 }
 
 subprojects {
@@ -70,6 +71,36 @@ allprojects {
         apply plugin: 'org.nosphere.apache.rat'
         apply plugin: "checkstyle"
         apply plugin: 'com.github.spotbugs'
+        apply plugin: 'org.owasp.dependencycheck'
+
+        dependencyCheck {
+            // see https://jeremylong.github.io/DependencyCheck/dependency-check-gradle/configuration.html
+            // for configuration properties
+            suppressionFile = "src/owasp-dependency-check-suppressions.xml"
+            analyzers {
+                msbuildEnabled = false
+                rubygemsEnabled = false
+                pyDistributionEnabled = false
+                pyPackageEnabled = false
+                nuspecEnabled = false
+                nugetconfEnabled = false
+                assemblyEnabled = false
+                cmakeEnabled = false
+                composerEnabled = false
+                cpanEnabled  =false
+                nodeEnabled = false
+                cocoapodsEnabled = false
+                swiftEnabled = false
+                swiftPackageResolvedEnabled = false
+                bundleAuditEnabled = false
+                golangDepEnabled = false
+                golangModEnabled = false
+
+                nodeAudit.enabled = false
+                retirejs.enabled = false
+            }
+        }
+
         checkstyle {
             toolVersion "${checkStyleVersion}"
             configFile file("$rootDir/buildtools/src/main/resources/bookkeeper/checkstyle.xml")
