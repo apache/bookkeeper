@@ -395,14 +395,15 @@ public class LedgerFragmentReplicator {
                 byte[] data = entry.getEntry();
                 final long dataLength = data.length;
                 numEntriesRead.inc();
-                numBytesRead.registerSuccessfulValue(dataLength);
 
                 ByteBufList toSend = lh.getDigestManager()
                         .computeDigestAndPackageForSending(entryId,
                                 lh.getLastAddConfirmed(), entry.getLength(),
                                 Unpooled.wrappedBuffer(data, 0, data.length));
+                int readBytes = toSend.readableBytes();
+                numBytesRead.registerSuccessfulValue(readBytes);
                 if (replicationThrottle != null) {
-                    updateAverageEntrySize(toSend.readableBytes());
+                    updateAverageEntrySize(readBytes);
                 }
                 for (BookieId newBookie : newBookies) {
                     long startWriteEntryTime = MathUtils.nowInNano();
