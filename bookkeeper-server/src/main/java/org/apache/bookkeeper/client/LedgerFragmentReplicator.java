@@ -402,9 +402,7 @@ public class LedgerFragmentReplicator {
                                 lh.getLastAddConfirmed(), entry.getLength(),
                                 Unpooled.wrappedBuffer(data, 0, data.length));
                 if (replicationThrottle != null) {
-                    int toSendSize = toSend.readableBytes();
-                    averageEntrySize = (int) (averageEntrySize * AVERAGE_ENTRY_SIZE_RATIO
-                            + (1 - AVERAGE_ENTRY_SIZE_RATIO) * toSendSize);
+                    updateAverageEntrySize(toSend.readableBytes());
                 }
                 for (BookieId newBookie : newBookies) {
                     long startWriteEntryTime = MathUtils.nowInNano();
@@ -418,6 +416,12 @@ public class LedgerFragmentReplicator {
                 toSend.release();
             }
         }, null);
+    }
+
+    /* make sure this update safety when different callback run this updating */
+    private synchronized void updateAverageEntrySize(int toSendSize) {
+        averageEntrySize = (int) (averageEntrySize * AVERAGE_ENTRY_SIZE_RATIO
+                + (1 - AVERAGE_ENTRY_SIZE_RATIO) * toSendSize);
     }
 
     /**
