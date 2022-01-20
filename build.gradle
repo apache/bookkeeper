@@ -59,6 +59,13 @@ releaseParams { // ReleaseExtension
     }
 }
 
+def skipDepCheck = []
+allprojects {
+    if (it.path.startsWith(':tests')) {
+        skipDepCheck << it.path
+    }
+}
+
 allprojects {
     apply from: "$rootDir/dependencies.gradle"
     if (it.path != ':circe-checksum:src:main:circe'
@@ -71,33 +78,37 @@ allprojects {
         apply plugin: 'org.nosphere.apache.rat'
         apply plugin: "checkstyle"
         apply plugin: 'com.github.spotbugs'
-        apply plugin: 'org.owasp.dependencycheck'
+        
+        if (!it.path.startsWith(':tests')) {
+            apply plugin: 'org.owasp.dependencycheck'
 
-        dependencyCheck {
-            // see https://jeremylong.github.io/DependencyCheck/dependency-check-gradle/configuration.html
-            // for configuration properties
-            suppressionFile = "src/owasp-dependency-check-suppressions.xml"
-            analyzers {
-                msbuildEnabled = false
-                rubygemsEnabled = false
-                pyDistributionEnabled = false
-                pyPackageEnabled = false
-                nuspecEnabled = false
-                nugetconfEnabled = false
-                assemblyEnabled = false
-                cmakeEnabled = false
-                composerEnabled = false
-                cpanEnabled  =false
-                nodeEnabled = false
-                cocoapodsEnabled = false
-                swiftEnabled = false
-                swiftPackageResolvedEnabled = false
-                bundleAuditEnabled = false
-                golangDepEnabled = false
-                golangModEnabled = false
+            dependencyCheck {
+                // see https://jeremylong.github.io/DependencyCheck/dependency-check-gradle/configuration.html
+                // for configuration properties
+                suppressionFile = "$rootDir/src/owasp-dependency-check-suppressions.xml"
+                skipProjects = skipDepCheck
+                analyzers {
+                    msbuildEnabled = false
+                    rubygemsEnabled = false
+                    pyDistributionEnabled = false
+                    pyPackageEnabled = false
+                    nuspecEnabled = false
+                    nugetconfEnabled = false
+                    assemblyEnabled = false
+                    cmakeEnabled = false
+                    composerEnabled = false
+                    cpanEnabled = false
+                    nodeEnabled = false
+                    cocoapodsEnabled = false
+                    swiftEnabled = false
+                    swiftPackageResolvedEnabled = false
+                    bundleAuditEnabled = false
+                    golangDepEnabled = false
+                    golangModEnabled = false
 
-                nodeAudit.enabled = false
-                retirejs.enabled = false
+                    nodeAudit.enabled = false
+                    retirejs.enabled = false
+                }
             }
         }
 
