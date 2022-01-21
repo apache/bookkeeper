@@ -2015,6 +2015,20 @@ public class LedgerHandle implements WriteHandle {
                 pendingAddOp.unsetSuccessAndSendWriteRequest(ensemble, bookieIndex);
             }
         }
+        // Some entries could fulfill ack requirement before and after ensemble changed.
+        // We need to invoke #sendAddSuccessCallbacks() for such entries because
+        // they may have already completed, but they are just waiting for the ensemble
+        // change to complete.
+        // E.g.
+        // ensemble (A, B, C, D), entry k is written to (A, B, D). An ensemble change
+        // happens to replace C with E. Entry k does not complete until C is
+        // replaced with E successfully. When the ensemble change completes, it tries
+        // to unset entry k. C however is not in k's write set, so no entry is written
+        // again, and no one triggers #sendAddSuccessCallbacks. Consequently, k never
+        // completes.
+        //
+        // We call sendAddSuccessCallback after unsetting all pending adds to cover this case.
+        sendAddSuccessCallbacks();
     }
 
     void registerOperationFailureOnBookie(BookieId bookie, long entryId) {
