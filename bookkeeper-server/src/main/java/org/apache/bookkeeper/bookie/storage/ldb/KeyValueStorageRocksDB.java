@@ -21,6 +21,9 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static com.google.common.base.Preconditions.checkState;
+import static org.rocksdb.RateLimiter.DEFAULT_FAIRNESS;
+import static org.rocksdb.RateLimiter.DEFAULT_MODE;
+import static org.rocksdb.RateLimiter.DEFAULT_REFILL_PERIOD_MICROS;
 
 //CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
@@ -43,6 +46,8 @@ import org.rocksdb.CompressionType;
 import org.rocksdb.InfoLogLevel;
 import org.rocksdb.LRUCache;
 import org.rocksdb.Options;
+import org.rocksdb.RateLimiter;
+import org.rocksdb.RateLimiterMode;
 import org.rocksdb.ReadOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
@@ -83,6 +88,25 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private static final String ROCKSDB_NUM_LEVELS = "dbStorage_rocksDB_numLevels";
     private static final String ROCKSDB_NUM_FILES_IN_LEVEL0 = "dbStorage_rocksDB_numFilesInLevel0";
     private static final String ROCKSDB_MAX_SIZE_IN_LEVEL1_MB = "dbStorage_rocksDB_maxSizeInLevel1MB";
+    // add new params for rocksDB
+    private static final String ROCKSDB_MAX_WRITE_BUFFER_NUMBER = "dbStorage_rocksDB_maxWriteBufferNumber";
+    private static final String ROCKSDB_MAX_BACK_GROUND_JOBS = "dbStorage_rocksDB_maxBackgroundJobs";
+    private static final String ROCKSDB_RATE_BYTES_PER_SECOND = "dbStorage_rocksDB_rateBytesPerSecond";
+    private static final String ROCKSDB_RATE_REFILL_PERIOD_MICROS = "dbStorage_rocksDB_rateRefillPeriodMicros";
+    private static final String ROCKSDB_RATE_FAIRNESS = "dbStorage_rocksDB_rateFairness";
+    private static final String ROCKSDB_RATELIMITERMODE = "dbStorage_rocksDB_rateLimiterMode";
+    private static final String ROCKSDB_INCREASE_PARALLELISM = "dbStorage_rocksDB_increaseParallelism";
+    private static final String ROCKSDB_MAX_TOTAL_WAL_SIZE = "dbStorage_rocksDB_maxTotalWalSize";
+    private static final String ROCKSDB_MAX_OPEN_FILES = "dbStorage_rocksDB_maxOpenFiles";
+    private static final String ROCKSDB_DELETE_OBSOLETE_FILES_PERIOD_MICROS =
+            "dbStorage_rocksDB_deleteObsoleteFilesPeriodMicros";
+    private static final String ROCKSDB_FORMAT_VERSION = "dbStorage_rocksDB_formatVersion";
+    private static final String ROCKSDB_CHECKSUM_TYPE = "dbStorage_rocksDB_checksumType";
+    private static final String ROCKSDB_CACHE_INDEX_AND_FILTER_BLOCKS = "dbStorage_rocksDB_cacheIndexAndFilterBlocks";
+    private static final String ROCKSDB_LEVEL_COMPACTION_DYNAMIC_LEVEL_BYTES =
+            "dbStorage_rocksDB_levelCompactionDynamicLevelBytes";
+    private static final String ROCKSDB_KEEP_LOG_FILE_NUM = "dbStorage_rocksDB_keepLogFileNum";
+    private static final String ROCKSDB_LOG_FILE_TIME_TO_ROLL = "dbStorage_rocksDB_logFileTimeToRoll";
 
     public KeyValueStorageRocksDB(String basePath, String subPath, DbConfigType dbConfigType, ServerConfiguration conf)
             throws IOException {
@@ -123,36 +147,65 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 int bloomFilterBitsPerKey = conf.getInt(ROCKSDB_BLOOM_FILTERS_BITS_PER_KEY, 10);
                 boolean lz4CompressionEnabled = conf.getBoolean(ROCKSDB_LZ4_COMPRESSION_ENABLED, true);
 
+                // add new params for rocksDB
+                int maxWriteBufferNumber = conf.getInt(ROCKSDB_MAX_WRITE_BUFFER_NUMBER, 4);
+                int maxBackgroundJobs = conf.getInt(ROCKSDB_MAX_BACK_GROUND_JOBS, 32);
+                int rateBytesPerSecond = conf.getInt(ROCKSDB_RATE_BYTES_PER_SECOND, -1);
+                int increaseParallelism = conf.getInt(ROCKSDB_INCREASE_PARALLELISM, 32);
+                int maxTotalWalSize = conf.getInt(ROCKSDB_MAX_TOTAL_WAL_SIZE, 512 * 1024 * 1024);
+                int maxOpenFiles = conf.getInt(ROCKSDB_MAX_OPEN_FILES, -1);
+                long deleteObsoleteFilesPeriodMicros = conf.getLong(ROCKSDB_DELETE_OBSOLETE_FILES_PERIOD_MICROS,
+                        TimeUnit.HOURS.toMicros(1));
+                int formatVersion = conf.getInt(ROCKSDB_FORMAT_VERSION, 2);
+                ChecksumType checksumType = ChecksumType.valueOf(conf.getString(ROCKSDB_CHECKSUM_TYPE,
+                        ChecksumType.kxxHash.name()));
+                boolean cacheIndexAndFilterBlocks = conf.getBoolean(ROCKSDB_CACHE_INDEX_AND_FILTER_BLOCKS, true);
+                boolean levelCompactionDynamicLevelBytes = conf.getBoolean(ROCKSDB_LEVEL_COMPACTION_DYNAMIC_LEVEL_BYTES,
+                        true);
+
                 if (lz4CompressionEnabled) {
                     options.setCompressionType(CompressionType.LZ4_COMPRESSION);
                 }
                 options.setWriteBufferSize(writeBufferSizeMB * 1024 * 1024);
-                options.setMaxWriteBufferNumber(4);
+                options.setMaxWriteBufferNumber(maxWriteBufferNumber);
                 if (numLevels > 0) {
                     options.setNumLevels(numLevels);
                 }
                 options.setLevelZeroFileNumCompactionTrigger(numFilesInLevel0);
                 options.setMaxBytesForLevelBase(maxSizeInLevel1MB * 1024 * 1024);
-                options.setMaxBackgroundJobs(32);
-                options.setIncreaseParallelism(32);
-                options.setMaxTotalWalSize(512 * 1024 * 1024);
-                options.setMaxOpenFiles(-1);
+                options.setMaxBackgroundJobs(maxBackgroundJobs);
+                if (rateBytesPerSecond > 0) {
+                    long refillPeriodMicros = conf.getLong(ROCKSDB_RATE_REFILL_PERIOD_MICROS,
+                            DEFAULT_REFILL_PERIOD_MICROS);
+                    int fairness = conf.getInt(ROCKSDB_RATE_FAIRNESS,
+                            DEFAULT_FAIRNESS);
+                    RateLimiterMode rateLimiterMode = RateLimiterMode.getRateLimiterMode(
+                            conf.getByte(ROCKSDB_RATELIMITERMODE, DEFAULT_MODE.getValue()));
+                    final boolean autoTune = true;
+                    RateLimiter rateLimiter = new RateLimiter(rateBytesPerSecond, refillPeriodMicros, fairness,
+                            rateLimiterMode, autoTune);
+                    options.setRateLimiter(rateLimiter);
+                }
+
+                options.setIncreaseParallelism(increaseParallelism);
+                options.setMaxTotalWalSize(maxTotalWalSize);
+                options.setMaxOpenFiles(maxOpenFiles);
                 options.setTargetFileSizeBase(sstSizeMB * 1024 * 1024);
-                options.setDeleteObsoleteFilesPeriodMicros(TimeUnit.HOURS.toMicros(1));
+                options.setDeleteObsoleteFilesPeriodMicros(deleteObsoleteFilesPeriodMicros);
 
                 this.cache = new LRUCache(blockCacheSize);
                 BlockBasedTableConfig tableOptions = new BlockBasedTableConfig();
                 tableOptions.setBlockSize(blockSize);
                 tableOptions.setBlockCache(cache);
-                tableOptions.setFormatVersion(2);
-                tableOptions.setChecksumType(ChecksumType.kxxHash);
+                tableOptions.setFormatVersion(formatVersion);
+                tableOptions.setChecksumType(checksumType);
                 if (bloomFilterBitsPerKey > 0) {
                     tableOptions.setFilterPolicy(new BloomFilter(bloomFilterBitsPerKey, false));
                 }
 
                 // Options best suited for HDDs
-                tableOptions.setCacheIndexAndFilterBlocks(true);
-                options.setLevelCompactionDynamicLevelBytes(true);
+                tableOptions.setCacheIndexAndFilterBlocks(cacheIndexAndFilterBlocks);
+                options.setLevelCompactionDynamicLevelBytes(levelCompactionDynamicLevelBytes);
 
                 options.setTableFormatConfig(tableOptions);
             } else {
@@ -188,9 +241,11 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 log.warn("Unrecognized RockDB log level: {}", logLevel);
             }
 
+            int keepLogFileNum = conf.getInt(ROCKSDB_KEEP_LOG_FILE_NUM, 30);
+            long logFileTimeToRoll = conf.getLong(ROCKSDB_LOG_FILE_TIME_TO_ROLL, TimeUnit.DAYS.toSeconds(1));
             // Keep log files for 1month
-            options.setKeepLogFileNum(30);
-            options.setLogFileTimeToRoll(TimeUnit.DAYS.toSeconds(1));
+            options.setKeepLogFileNum(keepLogFileNum);
+            options.setLogFileTimeToRoll(logFileTimeToRoll);
 
             try {
                 if (readOnly) {
