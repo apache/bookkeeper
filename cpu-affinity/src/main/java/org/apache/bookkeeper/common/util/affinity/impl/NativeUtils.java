@@ -20,8 +20,6 @@
  */
 package org.apache.bookkeeper.common.util.affinity.impl;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.File;
@@ -50,7 +48,7 @@ public class NativeUtils {
             value = "OBL_UNSATISFIED_OBLIGATION",
             justification = "work around for java 9: https://github.com/spotbugs/spotbugs/issues/493")
     public static void loadLibraryFromJar(String path) throws Exception {
-        checkArgument(path.startsWith("/"), "absolute path must start with /");
+        com.google.common.base.Preconditions.checkArgument(path.startsWith("/"), "absolute path must start with /");
 
         String[] parts = path.split("/");
         String filename = (parts.length > 0) ? parts[parts.length - 1] : null;
