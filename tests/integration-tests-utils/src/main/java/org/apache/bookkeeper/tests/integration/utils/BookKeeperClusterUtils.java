@@ -127,7 +127,7 @@ public class BookKeeperClusterUtils {
     }
 
     public static void formatAllBookies(DockerClient docker, String version) throws Exception {
-        String bookkeeper = "/opt/bookkeeper/" + version + "/bin/bookkkeeper";
+        String bookkeeper = "/opt/bookkeeper/" + version + "/bin/bookkeeper";
         BookKeeperClusterUtils.runOnAllBookies(docker, bookkeeper, "shell", "bookieformat", "-nonInteractive");
     }
 
