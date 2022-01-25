@@ -234,6 +234,10 @@ allprojects {
                 showStandardStreams = true
             }
         }
+
+        dependencies {
+            implementation(enforcedPlatform(depLibs.nettyBom))
+        }
     }
 
     repositories {
