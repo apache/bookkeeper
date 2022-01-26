@@ -121,6 +121,7 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     final ServerConfiguration conf;
 
+    final static AtomicLong threadNum = new AtomicLong(0);
     /**
      * Create a garbage collector thread.
      *
@@ -339,7 +340,22 @@ public class GarbageCollectorThread extends SafeRunnable {
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
         }
-        scheduledFuture = gcExecutor.scheduleAtFixedRate(this, gcWaitTime, gcWaitTime, TimeUnit.MILLISECONDS);
+        long initialDelay = getModInitialDelay();
+        scheduledFuture = gcExecutor.scheduleAtFixedRate(this, initialDelay, gcWaitTime, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * when number of ledger's Dir are more than 1,the same of GarbageCollectorThread will do the same thing,
+     * Especially
+     * 1) deleting ledger, then SyncThread will be timed to do rocksDB compact
+     * 2) compact: entry, cost cpu.
+     * then get Mod initial Delay time to simply avoid GarbageCollectorThread working at the same time
+     */
+    public long getModInitialDelay() {
+        int ledgerDirsNum = conf.getLedgerDirs().length;
+        long splitTime = gcWaitTime / ledgerDirsNum;
+        long currentThreadNum = threadNum.incrementAndGet();
+        return gcWaitTime + currentThreadNum * splitTime;
     }
 
     @Override
