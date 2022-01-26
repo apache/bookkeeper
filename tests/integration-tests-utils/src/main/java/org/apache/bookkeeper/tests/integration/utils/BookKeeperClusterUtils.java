@@ -47,10 +47,6 @@ public class BookKeeperClusterUtils {
     private static final List<String> OLD_CLIENT_VERSIONS_WITH_CURRENT_LEDGER_METADATA_FORMAT =
             Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.3");
 
-    private static final List<String> OLD_CLIENT_VERSIONS_WITH_OLD_BK_BIN_NAME =
-            Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.3", "4.3-yahoo");
-
-
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterUtils.class);
 
     public static boolean hasVersionLatestMetadataFormat(String version) {
@@ -101,7 +97,7 @@ public class BookKeeperClusterUtils {
         @Cleanup
         ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker);
         if (zk.exists("/ledgers", false) == null) {
-            String bookkeeper = "/opt/bookkeeper/" + version + "/bin/" + computeBinFilenameByVersion(version);
+            String bookkeeper = "/opt/bookkeeper/" + version + "/bin/bookkeeper";
             runOnAnyBookie(docker, bookkeeper, "shell", "metaformat", "-nonInteractive");
             return true;
         } else {
@@ -131,7 +127,7 @@ public class BookKeeperClusterUtils {
     }
 
     public static void formatAllBookies(DockerClient docker, String version) throws Exception {
-        String bookkeeper = "/opt/bookkeeper/" + version + "/bin/" + computeBinFilenameByVersion(version);
+        String bookkeeper = "/opt/bookkeeper/" + version + "/bin/bookkeeper";
         BookKeeperClusterUtils.runOnAllBookies(docker, bookkeeper, "shell", "bookieformat", "-nonInteractive");
     }
 
@@ -258,12 +254,5 @@ public class BookKeeperClusterUtils {
         return allBookies().stream()
             .map((b) -> waitBookieUp(docker, b, 10, TimeUnit.SECONDS))
             .reduce(true, BookKeeperClusterUtils::allTrue);
-    }
-
-    private static String computeBinFilenameByVersion(String version) {
-        if (OLD_CLIENT_VERSIONS_WITH_OLD_BK_BIN_NAME.contains(version)) {
-            return "bookkeeper";
-        }
-        return "bookkeeper_gradle";
     }
 }
