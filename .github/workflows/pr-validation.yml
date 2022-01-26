@@ -49,4 +49,4 @@ jobs:
       - name: Validate pull request
         run: ./gradlew build -x spotbugsTest -x signDistTar -x test
       - name: Check license files
-        run: dev/check-all-licenses-gradle
+        run: dev/check-all-licenses

@@ -31,6 +31,7 @@ fi
 
 BINDIR=`dirname "$0"`
 BENCH_HOME=`cd $BINDIR/..;pwd`
+BK_HOME=${BK_HOME:-"`cd ${BINDIR}/../..;pwd`"}
 
 RELEASE_JAR=`ls $BENCH_HOME/bookkeeper-benchmark-*.jar 2> /dev/null | tail -1` 
 if [ $? == 0 ]; then
@@ -69,18 +70,11 @@ EOF
 }
 
 add_maven_deps_to_classpath() {
-    MVN="mvn"
-    if [ "$MAVEN_HOME" != "" ]; then
-	MVN=${MAVEN_HOME}/bin/mvn
-    fi
-    
-    # Need to generate classpath from maven pom. This is costly so generate it
-    # and cache it. Save the file into our target dir so a mvn clean will get
-    # clean it up and force us create a new one.
-    f="${BENCH_HOME}/target/cached_classpath.txt"
+    f="${BENCH_HOME}/build/classpath.txt"
     if [ ! -f "${f}" ]
     then
-	${MVN} -f "${BENCH_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
+      echo "no classpath.txt found at ${BENCH_HOME}/build"
+      exit 1
     fi
     BENCHMARK_CLASSPATH=${CLASSPATH}:`cat "${f}"`
 }
