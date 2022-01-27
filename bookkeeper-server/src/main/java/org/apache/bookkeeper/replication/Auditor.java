@@ -89,7 +89,6 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
@@ -480,10 +479,7 @@ public class Auditor implements AutoCloseable {
     private void initialize(ServerConfiguration conf, BookKeeper bkc)
             throws UnavailableException {
         try {
-            LedgerManagerFactory ledgerManagerFactory = AbstractZkLedgerManagerFactory
-                    .newLedgerManagerFactory(
-                        conf,
-                        bkc.getMetadataClientDriver().getLayoutManager());
+            LedgerManagerFactory ledgerManagerFactory = bkc.getLedgerManagerFactory();
             ledgerManager = ledgerManagerFactory.newLedgerManager();
             this.bookieLedgerIndexer = new BookieLedgerIndexer(ledgerManager);
 
@@ -503,7 +499,7 @@ public class Auditor implements AutoCloseable {
         } catch (CompatibilityException ce) {
             throw new UnavailableException(
                     "CompatibilityException while initializing Auditor", ce);
-        } catch (IOException | KeeperException ioe) {
+        } catch (KeeperException ioe) {
             throw new UnavailableException(
                     "Exception while initializing Auditor", ioe);
         } catch (InterruptedException ie) {

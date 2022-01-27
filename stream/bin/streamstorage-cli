@@ -57,18 +57,14 @@ elif [ -e "$BUILT_JAR" ]; then
 fi
 
 add_maven_deps_to_classpath() {
-    MVN="mvn"
-    if [ "$MAVEN_HOME" != "" ]; then
-	MVN=${MAVEN_HOME}/bin/mvn
-    fi
-    
     # Need to generate classpath from maven pom. This is costly so generate it
     # and cache it. Save the file into our target dir so a mvn clean will get
     # clean it up and force us create a new one.
-    f="${SS_HOME}/cli/target/classpath.txt"
+    f="${SS_HOME}/cli/build/classpath.txt"
     if [ ! -f "${f}" ]
     then
-	${MVN} -f "${SS_HOME}/cli/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
+      echo "no classpath.txt found at ${SS_HOME}/cli/build"
+      exit 1
     fi
     SS_CLASSPATH=${CLASSPATH}:`cat "${f}"`
 }

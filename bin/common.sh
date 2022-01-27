@@ -155,7 +155,7 @@ is_released_binary() {
 find_module_jar_at() {
   DIR=$1
   MODULE=$2
-  REGEX="^${MODULE}-[0-9\\.]*((-[a-zA-Z]*(-[0-9]*)?)|(-SNAPSHOT))?.jar$"
+  REGEX="^${MODULE}[-0-9\\.]*((-[a-zA-Z]*(-[0-9]*)?)|(-SNAPSHOT))?.jar$"
   if [ -d ${DIR} ]; then
     cd ${DIR}
     for f in *.jar; do
@@ -196,23 +196,13 @@ find_module_jar() {
   fi
 
   if [ -z "${MODULE_JAR}" ]; then
-    BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
+    BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/build/libs ${MODULE_NAME})
     if [ -z "${BUILT_JAR}" ]; then
+      echo "${BK_HOME}/${MODULE_PATH}/build/libs" >&2;
       echo "Couldn't find module '${MODULE_NAME}' jar." >&2
-      read -p "Do you want me to run \`mvn package -DskipTests\` for you ? (y|n) " answer
-      case "${answer:0:1}" in
-        y|Y )
-          mkdir -p ${BK_HOME}/logs
-          output="${BK_HOME}/logs/build.out"
-          echo "see output at ${output} for the progress ..." >&2
-          mvn package -DskipTests &> ${output}
-          ;;
-        * )
-          exit 1
-          ;;
-      esac
+     ## read -p "Do you want me to run \`mvn package -DskipTests\` for you ? (y|n) " answer
 
-      BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
+      BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/build/libs ${MODULE_NAME})
     fi
     if [ -n "${BUILT_JAR}" ]; then
       MODULE_JAR=${BUILT_JAR}
@@ -223,28 +213,19 @@ find_module_jar() {
     echo "Could not find module '${MODULE_JAR}' jar." >&2
     exit 1
   fi
-  echo ${MODULE_JAR}
+  echo "${MODULE_JAR}"
   return
 }
 
 add_maven_deps_to_classpath() {
   MODULE_PATH=$1
-  MVN="mvn"
-  if [ "$MAVEN_HOME" != "" ]; then
-    MVN=${MAVEN_HOME}/bin/mvn
-  fi
-
   # Need to generate classpath from maven pom. This is costly so generate it
   # and cache it. Save the file into our target dir so a mvn clean will get
   # clean it up and force us create a new one.
-  f="${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt"
-  output="${BK_HOME}/${MODULE_PATH}/target/build_classpath.out"
-
+  f="${BK_HOME}/${MODULE_PATH}/build/classpath.txt"
   if [ ! -f ${f} ]; then
-    echo "the classpath of module '${MODULE_PATH}' is not found, generating it ..." >&2
-    echo "see output at ${output} for the progress ..." >&2
-    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> ${output}
-    echo "the classpath of module '${MODULE_PATH}' is generated at '${f}'." >&2
+      echo "no classpath.txt found at ${BK_HOME}/${MODULE_PATH}/build"
+      exit 1
   fi
 }
 
@@ -258,7 +239,7 @@ set_module_classpath() {
     echo ${BK_CLASSPATH}
   else
     add_maven_deps_to_classpath ${MODULE_PATH} >&2
-    cat ${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt
+    cat ${BK_HOME}/${MODULE_PATH}/build/classpath.txt
   fi
   return
 }

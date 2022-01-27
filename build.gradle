@@ -89,6 +89,8 @@ allprojects {
             reportLevel = 'high'
         }
 
+
+
         task testJar(type: Jar, dependsOn: testClasses) {
             classifier = 'tests'
             from sourceSets.test.output
@@ -234,9 +236,14 @@ allprojects {
                 showStandardStreams = true
             }
         }
-
         dependencies {
             implementation(enforcedPlatform(depLibs.nettyBom))
+        }
+        tasks.register('writeClasspath') {
+            doLast {
+                buildDir.mkdirs()
+                new File(buildDir, "classpath.txt").text = sourceSets.main.runtimeClasspath.collect { it.absolutePath }.join(':') + "\n"
+            }
         }
     }
 
