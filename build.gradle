@@ -28,7 +28,7 @@ plugins {
     id "com.github.vlsi.stage-vote-release" version "1.77"
     id 'checkstyle'
     id 'org.nosphere.apache.rat'
-    id 'com.github.spotbugs'
+    id 'com.github.spotbugs' apply false
 }
 
 subprojects {
@@ -87,6 +87,7 @@ allprojects {
             toolVersion = '3.1.8'
             excludeFilter = file("$rootDir/buildtools/src/main/resources/bookkeeper/findbugsExclude.xml")
             reportLevel = 'high'
+            spotbugsTest.enabled = false
         }
 
 
