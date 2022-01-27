@@ -130,6 +130,7 @@ allprojects {
             toolVersion = '3.1.8'
             excludeFilter = file("$rootDir/buildtools/src/main/resources/bookkeeper/findbugsExclude.xml")
             reportLevel = 'high'
+            spotbugsTest.enabled = false
         }
 
 
