@@ -176,6 +176,7 @@ depLibs = [
     metricsJvm: "io.dropwizard.metrics:metrics-jvm:${depVersions.dropwizard}",
     metricsGraphite: "io.dropwizard.metrics:metrics-graphite:${depVersions.dropwizard}",
     mockito: "org.mockito:mockito-core:${depVersions.mockito}",
+    nettyBom: "io.netty:netty-bom:${depVersions.netty}",
     nettyBuffer: "io.netty:netty-buffer:${depVersions.netty}",
     nettyCommon: "io.netty:netty-common:${depVersions.netty}",
     nettyHandler: "io.netty:netty-handler:${depVersions.netty}",
