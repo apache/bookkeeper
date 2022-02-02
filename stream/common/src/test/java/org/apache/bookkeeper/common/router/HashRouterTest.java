@@ -40,7 +40,7 @@ public class HashRouterTest {
         int hash32 = Murmur3.hash32(
             key, key.readerIndex(), key.readableBytes(), (int) AbstractHashRouter.HASH_SEED);
         int bytesHash32 = Murmur3.hash32(keyBytes, 0, keyBytes.length, (int) AbstractHashRouter.HASH_SEED);
-        int guavaHash32 = Hashing.murmur3_32((int) AbstractHashRouter.HASH_SEED)
+        int guavaHash32 = Hashing.murmur3_32_fixed((int) AbstractHashRouter.HASH_SEED)
             .newHasher()
             .putString("foo", UTF_8)
             .hash()
