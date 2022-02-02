@@ -22,23 +22,23 @@ LongAdder), which was released with the following comments:
     http://creativecommons.org/publicdomain/zero/1.0/
 
 ------------------------------------------------------------------------------------
-- lib/io.netty-netty-buffer-4.1.72.Final.jar
-- lib/io.netty-netty-codec-4.1.72.Final.jar
-- lib/io.netty-netty-codec-dns-4.1.72.Final.jar
-- lib/io.netty-netty-codec-http-4.1.72.Final.jar
-- lib/io.netty-netty-codec-http2-4.1.72.Final.jar
-- lib/io.netty-netty-codec-socks-4.1.72.Final.jar
-- lib/io.netty-netty-common-4.1.72.Final.jar
-- lib/io.netty-netty-handler-4.1.72.Final.jar
-- lib/io.netty-netty-handler-proxy-4.1.72.Final.jar
-- lib/io.netty-netty-resolver-4.1.72.Final.jar
-- lib/io.netty-netty-resolver-dns-4.1.72.Final.jar
+- lib/io.netty-netty-buffer-4.1.73.Final.jar
+- lib/io.netty-netty-codec-4.1.73.Final.jar
+- lib/io.netty-netty-codec-dns-4.1.73.Final.jar
+- lib/io.netty-netty-codec-http-4.1.73.Final.jar
+- lib/io.netty-netty-codec-http2-4.1.73.Final.jar
+- lib/io.netty-netty-codec-socks-4.1.73.Final.jar
+- lib/io.netty-netty-common-4.1.73.Final.jar
+- lib/io.netty-netty-handler-4.1.73.Final.jar
+- lib/io.netty-netty-handler-proxy-4.1.73.Final.jar
+- lib/io.netty-netty-resolver-4.1.73.Final.jar
+- lib/io.netty-netty-resolver-dns-4.1.73.Final.jar
 - lib/io.netty-netty-tcnative-boringssl-static-2.0.46.Final.jar
 - lib/io.netty-netty-tcnative-classes-2.0.46.Final.jar
-- lib/io.netty-netty-transport-4.1.72.Final.jar
-- lib/io.netty-netty-transport-classes-epoll-4.1.72.Final.jar
-- lib/io.netty-netty-transport-native-epoll-4.1.72.Final-linux-x86_64.jar
-- lib/io.netty-netty-transport-native-unix-common-4.1.72.Final.jar
+- lib/io.netty-netty-transport-4.1.73.Final.jar
+- lib/io.netty-netty-transport-classes-epoll-4.1.73.Final.jar
+- lib/io.netty-netty-transport-native-epoll-4.1.73.Final-linux-x86_64.jar
+- lib/io.netty-netty-transport-native-unix-common-4.1.73.Final.jar
 
 
                             The Netty Project

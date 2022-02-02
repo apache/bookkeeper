@@ -66,7 +66,7 @@ depVersions = [
     lombok: "1.18.20",
     lz4: "1.3.0",
     mockito: "3.0.0",
-    netty: "4.1.72.Final",
+    netty: "4.1.73.Final",
     nettyTcnativeBoringSsl: "2.0.46.Final",
     powermock: "2.0.2",
     prometheus: "0.8.1",
