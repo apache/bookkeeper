@@ -280,6 +280,9 @@ allprojects {
                 showStandardStreams = true
             }
         }
+        dependencies {
+            implementation(enforcedPlatform(depLibs.nettyBom))
+        }
         tasks.register('writeClasspath') {
             doLast {
                 buildDir.mkdirs()
