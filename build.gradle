@@ -88,6 +88,7 @@ allprojects {
                 suppressionFile = "$rootDir/src/owasp-dependency-check-suppressions.xml"
                 skipProjects = skipDepCheck
                 skipConfigurations = ["checkstyle", "spotbugs"]
+                failBuildOnCVSS = 7
                 analyzers {
                     msbuildEnabled = false
                     rubygemsEnabled = false
