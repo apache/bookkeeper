@@ -102,20 +102,6 @@ Depending on your preferred development environment, you may need to prepare it 
 
 ##### IntelliJ
 
-###### Enable Annotation Processing
-
-To configure annotation processing in IntelliJ:
-
-1. Open Annotation Processors Settings dialog box by going to Settings -> Build, Execution, Deployment -> Compiler -> Annotation Processors.
-1. Select the following buttons:
-    1. "Enable annotation processing"
-    1. "Obtain processors from project classpath"
-    1. "Store generated sources relative to: Module content root"
-1. Set the generated source directories to be equal to the Maven directories:
-    1. Set "Production sources directory:" to "target/generated-sources/annotations".
-    1. Set "Test sources directory:" to "target/generated-test-sources/test-annotations".
-1. Click "OK".
-
 ###### Checkstyle
 IntelliJ supports checkstyle within the IDE using the Checkstyle-IDEA plugin.
 
@@ -153,7 +139,6 @@ Start Eclipse with a fresh workspace in a separate directory from your checkout.
 
 	File
 	-> Import...
-	-> Existing Maven Projects
 	-> Browse to the directory you cloned into and select "bookkeeper"
 	-> make sure all bookkeeper projects are selected
 	-> Finalize

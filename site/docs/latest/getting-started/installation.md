@@ -12,63 +12,32 @@ You can install BookKeeper either by [downloading](#download) a [GZipped](http:/
 
 * [Unix environment](http://www.opengroup.org/unix)
 * [Java Development Kit 1.8](http://www.oracle.com/technetwork/java/javase/downloads/index.html) or later
-* [Maven 3.0](https://maven.apache.org/install.html) or later
 
 ## Download
 
-You can download Apache BookKeeper releases from one of many [Apache mirrors](http://www.apache.org/dyn/closer.cgi/bookkeeper). Here's an example for the [apache.claz.org](http://apache.claz.org/bookkeeper) mirror:
-
-```shell
-$ curl -O {{ download_url }}
-$ tar xvf bookkeeper-{{ site.latest_release }}-src.tar.gz
-$ cd bookkeeper-{{ site.latest_release }}
-```
+You can download Apache BookKeeper releases from one of many [Apache mirrors](https://dlcdn.apache.org/bookkeeper/).
 
 ## Clone
 
-To build BookKeeper from source, clone the repository, either from the [GitHub mirror]({{ site.github_repo }}) or from the [Apache repository](http://git.apache.org/bookkeeper.git/):
+To build BookKeeper from source, clone the repository, either from the [GitHub mirror]({{ site.github_repo }}):
 
 ```shell
-# From the GitHub mirror
 $ git clone {{ site.github_repo}}
-
-# From Apache directly
-$ git clone git://git.apache.org/bookkeeper.git/
 ```
 
-## Build using Maven
+## Build using Gradle
 
-Once you have the BookKeeper on your local machine, either by [downloading](#download) or [cloning](#clone) it, you can then build BookKeeper from source using Maven:
+Once you have the BookKeeper on your local machine, either by [downloading](#download) or [cloning](#clone) it, you can then build BookKeeper from source using Gradle:
 
 ```shell
-$ mvn package
+$ ./gradlew build -x signDistTar -x test
 ```
 
-Since 4.8.0, bookkeeper introduces `table service`. If you would like to build and tryout table service, you can build it with `stream` profile.
+To run all the tests:
 
 ```shell
-$ mvn package -Dstream
+$ ./gradlew test -x signDistTar
 ```
-
-> You can skip tests by adding the `-DskipTests` flag when running `mvn package`.
-
-### Useful Maven commands
-
-Some other useful Maven commands beyond `mvn package`:
-
-Command | Action
-:-------|:------
-`mvn clean` | Removes build artifacts
-`mvn compile` | Compiles JAR files from Java sources
-`mvn compile spotbugs:spotbugs` | Compile using the Maven [SpotBugs](https://github.com/spotbugs/spotbugs-maven-plugin) plugin
-`mvn install` | Install the BookKeeper JAR locally in your local Maven cache (usually in the `~/.m2` directory)
-`mvn deploy` | Deploy the BookKeeper JAR to the Maven repo (if you have the proper credentials)
-`mvn verify` | Performs a wide variety of verification and validation tasks
-`mvn apache-rat:check` | Run Maven using the [Apache Rat](http://creadur.apache.org/rat/apache-rat-plugin/) plugin
-`mvn compile javadoc:aggregate` | Build Javadocs locally
-`mvn -am -pl bookkeeper-dist/server package` | Build a server distribution using the Maven [Assembly](http://maven.apache.org/plugins/maven-assembly-plugin/) plugin
-
-> You can enable `table service` by adding the `-Dstream` flag when running above commands.
 
 ## Package directory
 

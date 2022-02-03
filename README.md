@@ -1,6 +1,5 @@
 <img src="https://pbs.twimg.com/profile_images/545716709311520769/piLLa1iC_400x400.png" alt="logo" style="width: 32px;"/>
 
-[![Coverage Status](https://coveralls.io/repos/github/apache/bookkeeper/badge.svg?branch=master)](https://coveralls.io/github/apache/bookkeeper?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.apache.bookkeeper/bookkeeper/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.apache.bookkeeper/bookkeeper)
 
 # Apache BookKeeper
@@ -29,7 +28,7 @@ Please visit the [Documentation](https://bookkeeper.apache.org/docs/latest/overv
 
 ### Report a Bug
 
-For filing bugs, suggesting improvements, or requesting new features, help us out by [opening a Github issue](https://github.com/apache/bookkeeper/issues) or [opening an Apache jira](https://issues.apache.org/jira/browse/BOOKKEEPER).
+For filing bugs, suggesting improvements, or requesting new features, help us out by [opening a Github issue](https://github.com/apache/bookkeeper/issues).
 
 ### Need Help?
 
@@ -45,15 +44,10 @@ We feel that a welcoming open community is important and welcome contributions.
 
 ### Contributing Code
 
-1. See [Developer Setup](https://cwiki.apache.org/confluence/display/BOOKKEEPER/Developer+Setup) to get your local environment setup.
+1. See our [installation guide](https://bookkeeper.apache.org/docs/latest/getting-started/installation/) to get your local environment setup.
 
-2. Take a look at our open issues: [JIRA Issues](https://issues.apache.org/jira/browse/BOOKKEEPER) [Github Issues](https://github.com/apache/bookkeeper/issues).
+2. Take a look at our open issues: [Github Issues](https://github.com/apache/bookkeeper/issues).
 
-3. Review our [coding style](https://cwiki.apache.org/confluence/display/BOOKKEEPER/Coding+Guide) and follow our [pull requests](https://github.com/apache/bookkeeper/pulls) to learn about our conventions.
+3. Review our [coding style](https://bookkeeper.apache.org/community/coding_guide/) and follow our [pull requests](https://github.com/apache/bookkeeper/pulls) to learn more about our conventions.
 
-4. Make your changes according to our [contribution guide](https://cwiki.apache.org/confluence/display/BOOKKEEPER/Contributing+to+BookKeeper).
-
-### Improving Website and Documentation
-
-1. See [Building the website and documentation](https://cwiki.apache.org/confluence/display/BOOKKEEPER/Building+the+website+and+documentation) on how to build the website and documentation.
-
+4. Make your changes according to our [contributing guide](https://bookkeeper.apache.org/community/contributing/)
