@@ -17,7 +17,7 @@
 # under the License.
 #
 
-name: Backward compatibility tests
+name: OWASP Dependency Check
 
 on:
   push:
@@ -29,14 +29,12 @@ on:
       - 'site/**'
     workflow_dispatch:
 
-env:
-  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
 
 jobs:
-  test:
+  check:
 
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -48,11 +46,14 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Build
-        run: ./gradlew stream:server:build -x test
-      - name: Test current server with old clients
-        run: ./gradlew :tests:backward-compat:current-server-old-clients:test || (tail -n +1 tests/backward-compat/current-server-old-clients/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/current-server-old-clients/build/container-logs/**/* && exit 1)
-      - name: Test progressive upgrade
-        run: ./gradlew :tests:backward-compat:upgrade:test || (tail -n +1 tests/backward-compat/upgrade/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/upgrade/build/container-logs/**/* && exit 1)
-      - name: Other tests
-        run: ./gradlew :tests:backward-compat:test -x tests:backward-compat:upgrade:test -x :tests:backward-compat:current-server-old-clients:test
+
+      - name: run "clean build dependencyCheckAggregate" to trigger dependency check
+        run: ./gradlew clean build -x signDistTar -x test dependencyCheckAggregate
+
+      - name: Upload report
+        uses: actions/upload-artifact@v2
+        if: ${{ cancelled() || failure() }}
+        continue-on-error: true
+        with:
+          name: dependency report
+          path: build/reports/dependency-check-report.html

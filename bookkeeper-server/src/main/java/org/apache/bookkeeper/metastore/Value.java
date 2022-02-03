@@ -92,7 +92,7 @@ public class Value {
 
     @Override
     public int hashCode() {
-        HashFunction hf = Hashing.murmur3_32();
+        HashFunction hf = Hashing.murmur3_32_fixed();
         Hasher hc = hf.newHasher();
         for (String key : fields.keySet()) {
             hc.putString(key, Charset.defaultCharset());

@@ -21,11 +21,7 @@
 #
 
 function get_bk_version() {
-    bk_version=$(mvn -q \
-    -Dexec.executable="echo" \
-    -Dexec.args='${project.version}' \
-    --non-recursive \
-    org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
+    bk_version=$(${BK_HOME}/gradlew --no-daemon properties -q | grep "version:" | awk '{print $2}')
     echo ${bk_version}
 }
 

@@ -34,7 +34,7 @@ jobs:
   check:
 
     runs-on: ubuntu-latest
-
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -47,6 +47,6 @@ jobs:
         with:
           java-version: 1.8
       - name: Validate pull request
-        run: ./gradlew build -x spotbugsTest -x signDistTar -x test
+        run: ./gradlew build -x signDistTar -x test
       - name: Check license files
-        run: dev/check-all-licenses-gradle
+        run: dev/check-all-licenses

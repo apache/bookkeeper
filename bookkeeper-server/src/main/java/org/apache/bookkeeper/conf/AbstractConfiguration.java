@@ -189,6 +189,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // option to limit stats logging
     public static final String LIMIT_STATS_LOGGING = "limitStatsLogging";
 
+    protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
+
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {
@@ -1202,6 +1204,28 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setLimitStatsLogging(boolean limitStatsLogging) {
         setProperty(LIMIT_STATS_LOGGING, limitStatsLogging);
+        return getThis();
+    }
+
+    /**
+     * Get the bytes rate of re-replication.
+     * Default value is -1 which it means entries will replicated without any throttling activity.
+     *
+     * @return bytes rate of re-replication.
+     */
+    public int getReplicationRateByBytes() {
+        return getInt(REPLICATION_RATE_BY_BYTES, -1);
+    }
+
+    /**
+     * Set the bytes rate of re-replication.
+     *
+     * @param rate bytes rate of re-replication.
+     *
+     * @return ClientConfiguration
+     */
+    public T setReplicationRateByBytes(int rate) {
+        this.setProperty(REPLICATION_RATE_BY_BYTES, rate);
         return getThis();
     }
 
