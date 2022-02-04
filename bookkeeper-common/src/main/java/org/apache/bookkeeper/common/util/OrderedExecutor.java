@@ -19,8 +19,6 @@ package org.apache.bookkeeper.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.ForwardingExecutorService;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
@@ -76,7 +74,6 @@ public class OrderedExecutor implements ExecutorService {
     public static final int NO_TASK_LIMIT = -1;
     private static final int DEFAULT_MAX_ARRAY_QUEUE_SIZE = 10_000;
     protected static final long WARN_TIME_MICRO_SEC_DEFAULT = TimeUnit.SECONDS.toMicros(1);
-    private static final HashFunction hf = Hashing.murmur3_32_fixed();
 
     final String name;
     final ExecutorService[] threads;
@@ -613,7 +610,7 @@ public class OrderedExecutor implements ExecutorService {
     }
 
     protected static int chooseThreadIdx(long orderingKey, int numThreads) {
-        return MathUtils.signSafeMod(hf.hashLong(orderingKey).asInt(), numThreads);
+        return MathUtils.signSafeMod(orderingKey >>> 1, numThreads);
     }
 
     protected Runnable timedRunnable(Runnable r) {
