@@ -121,7 +121,6 @@ public class TestThreadSelection {
         log.info("got min={}, max={} (disparity: {}) for {} threads with {} ids", min, max, numThreads, MAX_KEY);
         Assert.assertTrue("all threads were used [numThreads: " + numThreads + "]",
                 min > 0);
-        System.out.println(String.format("%,.2f", (double) max / min));
         log.info("disparity = {}", String.format("%,.2f", (double) max / min));
         Assert.assertTrue("no large disparity found [numThreads: " + numThreads + "]",
                 (double) max / min <= MAX_DISPARITY);

@@ -26,6 +26,16 @@ public class MathUtils {
 
     private static final long NANOSECONDS_PER_MILLISECOND = 1000000;
 
+    public static int signSafeMod(int dividend, int divisor) {
+        int mod = dividend % divisor;
+
+        if (mod < 0) {
+            mod += divisor;
+        }
+
+        return mod;
+    }
+
     public static int signSafeMod(long dividend, int divisor) {
         int mod = (int) (dividend % divisor);
 
