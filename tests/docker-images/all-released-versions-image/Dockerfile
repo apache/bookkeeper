@@ -17,14 +17,14 @@
 # under the License.
 #
 
-FROM openjdk:8-jdk
+FROM eclipse-temurin:11.0.14_9-jdk
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
 ENV BK_JOURNALDIR=/opt/bookkeeper/data/journal
 ENV BK_LEDGERDIR=/opt/bookkeeper/data/ledgers
 ENV BK_ZKCONNECTSTRING=zookeeper1,zookeeper2,zookeeper3
 
-RUN apt-get update && apt-get install -qy wget supervisor bash \
+RUN apt-get update && apt-get install -qy wget supervisor bash gpg \
     && echo "dash dash/sh boolean false" | debconf-set-selections \
     && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
 
