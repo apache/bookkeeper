@@ -19,6 +19,7 @@ package org.apache.bookkeeper.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.ForwardingExecutorService;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
@@ -570,7 +571,7 @@ public class OrderedExecutor implements ExecutorService {
             return threadIds[0];
         }
 
-        return threadIds[MathUtils.signSafeMod(orderingKey, threadIds.length)];
+        return threadIds[chooseThreadIdx(orderingKey, threads.length)];
     }
 
     public ExecutorService chooseThread() {
@@ -591,7 +592,7 @@ public class OrderedExecutor implements ExecutorService {
         if (null == orderingKey) {
             return threads[rand.nextInt(threads.length)];
         } else {
-            return threads[MathUtils.signSafeMod(orderingKey.hashCode(), threads.length)];
+            return threads[chooseThreadIdx(orderingKey.hashCode(), threads.length)];
         }
     }
 
@@ -606,7 +607,11 @@ public class OrderedExecutor implements ExecutorService {
             return threads[0];
         }
 
-        return threads[MathUtils.signSafeMod(orderingKey, threads.length)];
+        return threads[chooseThreadIdx(orderingKey, threads.length)];
+    }
+
+    protected static int chooseThreadIdx(long orderingKey, int numThreads) {
+        return Hashing.consistentHash(orderingKey, numThreads);
     }
 
     protected Runnable timedRunnable(Runnable r) {
