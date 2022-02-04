@@ -143,11 +143,11 @@ class TestCompatUpgrade {
 
     @Test
     public void test_006_4130to4143() throws Exception {
-        testUpgrade("4.13.0", "4.14.3")
+        testUpgrade("4.13.0", "4.14.4")
     }
 
     @Test
     public void test_007_4143toCurrentMaster() throws Exception {
-        testUpgrade("4.14.3", BookKeeperClusterUtils.CURRENT_VERSION)
+        testUpgrade("4.14.4", BookKeeperClusterUtils.CURRENT_VERSION)
     }
 }

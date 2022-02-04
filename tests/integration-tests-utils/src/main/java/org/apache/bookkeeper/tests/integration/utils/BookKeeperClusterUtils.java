@@ -43,9 +43,10 @@ import org.slf4j.LoggerFactory;
 public class BookKeeperClusterUtils {
     public static final String CURRENT_VERSION = System.getProperty("currentVersion");
     public static final List<String> OLD_CLIENT_VERSIONS =
-            Arrays.asList("4.8.2", "4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.3");
+            Arrays.asList("4.8.2", "4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.4");
     private static final List<String> OLD_CLIENT_VERSIONS_WITH_CURRENT_LEDGER_METADATA_FORMAT =
-            Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.3");
+            Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.4");
+
 
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterUtils.class);
 
