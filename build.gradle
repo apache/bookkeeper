@@ -44,6 +44,18 @@ releaseArtifacts {
     fromProject("bookkeeper-dist-all")
     fromProject("bookkeeper-dist-bkctl")
     fromProject("bookkeeper-dist-server")
+
+    tasks.withType(Jar) {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+
+    tasks.withType(Tar) {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+
+    tasks.withType(Zip) {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
 }
 
 releaseParams { // ReleaseExtension
@@ -78,7 +90,7 @@ allprojects {
         apply plugin: 'org.nosphere.apache.rat'
         apply plugin: "checkstyle"
         apply plugin: 'com.github.spotbugs'
-        
+
         if (!it.path.startsWith(':tests')) {
             apply plugin: 'org.owasp.dependencycheck'
 
@@ -136,12 +148,24 @@ allprojects {
 
 
 
+        tasks.withType(Jar) {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+
+        tasks.withType(Tar) {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+
+        tasks.withType(Zip) {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+
         task testJar(type: Jar, dependsOn: testClasses) {
-            classifier = 'tests'
+            archiveClassifier = 'tests'
             from sourceSets.test.output
         }
 
-        // TODO- Seperate rat plugins and other plugins configuration in seperate files
+        // TODO- Separate rat plugins and other plugins configuration in separate files
         rat {
             excludes = [
                     '**/.*/**',
@@ -186,7 +210,9 @@ allprojects {
         }
 
         configurations {
-            testArtifacts.extendsFrom testRuntime
+            testArtifacts {
+                extendsFrom testRuntimeOnly
+            }
         }
 
         artifacts {
@@ -195,6 +221,12 @@ allprojects {
 
         plugins.withType(DistributionPlugin) {
             distTar {
+                dependsOn(jar)
+                if (it.path.contains('bookkeeper-dist-all')) {
+                    dependsOn(':bookkeeper-benchmark:jar')
+                    dependsOn(':bookkeeper-common:jar')
+                    dependsOn(':bookkeeper-common-allocator:jar')
+                }
                 archiveClassifier = "bin"
                 compression = Compression.GZIP
                 archiveExtension = 'tar.gz'

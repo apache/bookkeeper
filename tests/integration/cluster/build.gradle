@@ -23,6 +23,7 @@ plugins {
 
 dependencies {
     implementation depLibs.grpc
+    testImplementation project(':bookkeeper-common')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
     testImplementation project(':stream:api')
     testImplementation project(':stream:storage:api')
