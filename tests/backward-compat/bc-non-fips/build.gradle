@@ -23,9 +23,14 @@ plugins {
 }
 
 dependencies {
-
+    testImplementation project(':bookkeeper-common')
+    testImplementation(project(':bookkeeper-server')) {
+        exclude group: "org.bouncycastle", module: "bc-fips"
+    }
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
-    testImplementation project(path: ':bookkeeper-server', configuration: 'testArtifacts')
+    testImplementation(project(path: ':bookkeeper-server', configuration: 'testArtifacts')) {
+        exclude group: "org.bouncycastle", module: "bc-fips"
+    }
     testImplementation depLibs.junit
     testImplementation depLibs.slf4j
     testImplementation depLibs.bcpkixJdk15on
