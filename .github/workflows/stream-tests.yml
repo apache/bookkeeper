@@ -55,7 +55,7 @@ jobs:
       - name: Run stream:serve tests
         run: ./gradlew stream:server:test -Dtestlogger.theme=plain
       - name: Run stream:statelib tests
-        run: ./gradlew stream:statelib:test -Dtestlogger.theme=plain
+        run: ./gradlew stream:statelib:test -Dtestlogger.theme=plain -DtestHideStandardOut=true
       - name: Run stream:storage:api:test tests
         run: ./gradlew stream:storage:api:test -Dtestlogger.theme=plain
       - name: Run stream:storage:impl tests
