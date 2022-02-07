@@ -22,6 +22,7 @@ plugins {
 }
 
 dependencies {
+    testImplementation project(':bookkeeper-common')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
     testImplementation project(':bookkeeper-server')
     testImplementation project(':tests:integration-tests-utils')

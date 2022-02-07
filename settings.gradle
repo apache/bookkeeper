@@ -25,6 +25,7 @@ pluginManagement {
         id "com.github.spotbugs" version "${spotbugsPlugin}"
         id "com.adarshr.test-logger" version  "${testLogger}"
         id "org.gradle.test-retry" version "${testRetry}"
+        id "org.owasp.dependencycheck" version "${owaspPlugin}"
     }
 }
 

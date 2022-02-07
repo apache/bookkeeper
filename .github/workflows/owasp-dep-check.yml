@@ -17,7 +17,7 @@
 # under the License.
 #
 
-name: PR Validation
+name: OWASP Dependency Check
 
 on:
   push:
@@ -28,9 +28,6 @@ on:
     paths-ignore:
       - 'site/**'
     workflow_dispatch:
-
-env:
-  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
 
 
 jobs:
@@ -49,8 +46,14 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Validate pull request
-        run: ./gradlew build -x signDistTar -x test ${GRADLE_ARGS}
-        
-      - name: Check license files
-        run: dev/check-all-licenses
+
+      - name: run "clean build dependencyCheckAggregate" to trigger dependency check
+        run: ./gradlew clean build -x signDistTar -x test dependencyCheckAggregate
+
+      - name: Upload report
+        uses: actions/upload-artifact@v2
+        if: ${{ cancelled() || failure() }}
+        continue-on-error: true
+        with:
+          name: dependency report
+          path: build/reports/dependency-check-report.html

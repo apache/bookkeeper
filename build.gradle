@@ -29,6 +29,7 @@ plugins {
     id 'checkstyle'
     id 'org.nosphere.apache.rat'
     id 'com.github.spotbugs'
+    id 'org.owasp.dependencycheck'
 }
 
 subprojects {
@@ -43,6 +44,18 @@ releaseArtifacts {
     fromProject("bookkeeper-dist-all")
     fromProject("bookkeeper-dist-bkctl")
     fromProject("bookkeeper-dist-server")
+
+    tasks.withType(Jar) {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+
+    tasks.withType(Tar) {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+
+    tasks.withType(Zip) {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
 }
 
 releaseParams { // ReleaseExtension
@@ -58,6 +71,13 @@ releaseParams { // ReleaseExtension
     }
 }
 
+def skipDepCheck = []
+allprojects {
+    if (it.path.startsWith(':tests')) {
+        skipDepCheck << it.path
+    }
+}
+
 allprojects {
     apply from: "$rootDir/dependencies.gradle"
     if (it.path != ':circe-checksum:src:main:circe'
@@ -70,6 +90,42 @@ allprojects {
         apply plugin: 'org.nosphere.apache.rat'
         apply plugin: "checkstyle"
         apply plugin: 'com.github.spotbugs'
+
+        if (!it.path.startsWith(':tests')) {
+            apply plugin: 'org.owasp.dependencycheck'
+
+            dependencyCheck {
+                // see https://jeremylong.github.io/DependencyCheck/dependency-check-gradle/configuration.html
+                // for configuration properties
+                suppressionFile = "$rootDir/src/owasp-dependency-check-suppressions.xml"
+                skipProjects = skipDepCheck
+                skipConfigurations = ["checkstyle", "spotbugs"]
+                failBuildOnCVSS = 7
+                analyzers {
+                    msbuildEnabled = false
+                    rubygemsEnabled = false
+                    pyDistributionEnabled = false
+                    pyPackageEnabled = false
+                    nuspecEnabled = false
+                    nugetconfEnabled = false
+                    assemblyEnabled = false
+                    cmakeEnabled = false
+                    composerEnabled = false
+                    cpanEnabled = false
+                    nodeEnabled = false
+                    cocoapodsEnabled = false
+                    swiftEnabled = false
+                    swiftPackageResolvedEnabled = false
+                    bundleAuditEnabled = false
+                    golangDepEnabled = false
+                    golangModEnabled = false
+
+                    nodeAudit.enabled = false
+                    retirejs.enabled = false
+                }
+            }
+        }
+
         checkstyle {
             toolVersion "${checkStyleVersion}"
             configFile file("$rootDir/buildtools/src/main/resources/bookkeeper/checkstyle.xml")
@@ -87,16 +143,29 @@ allprojects {
             toolVersion = '3.1.8'
             excludeFilter = file("$rootDir/buildtools/src/main/resources/bookkeeper/findbugsExclude.xml")
             reportLevel = 'high'
+            spotbugsTest.enabled = false
         }
 
 
 
+        tasks.withType(Jar) {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+
+        tasks.withType(Tar) {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+
+        tasks.withType(Zip) {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+
         task testJar(type: Jar, dependsOn: testClasses) {
-            classifier = 'tests'
+            archiveClassifier = 'tests'
             from sourceSets.test.output
         }
 
-        // TODO- Seperate rat plugins and other plugins configuration in seperate files
+        // TODO- Separate rat plugins and other plugins configuration in separate files
         rat {
             excludes = [
                     '**/.*/**',
@@ -141,7 +210,9 @@ allprojects {
         }
 
         configurations {
-            testArtifacts.extendsFrom testRuntime
+            testArtifacts {
+                extendsFrom testRuntimeOnly
+            }
         }
 
         artifacts {
@@ -150,6 +221,12 @@ allprojects {
 
         plugins.withType(DistributionPlugin) {
             distTar {
+                dependsOn(jar)
+                if (it.path.contains('bookkeeper-dist-all')) {
+                    dependsOn(':bookkeeper-benchmark:jar')
+                    dependsOn(':bookkeeper-common:jar')
+                    dependsOn(':bookkeeper-common-allocator:jar')
+                }
                 archiveClassifier = "bin"
                 compression = Compression.GZIP
                 archiveExtension = 'tar.gz'
@@ -236,12 +313,20 @@ allprojects {
                 showStandardStreams = !Boolean.getBoolean("testHideStandardOut")
             }
         }
+        dependencies {
+            implementation(enforcedPlatform(depLibs.nettyBom))
+        }
         tasks.register('writeClasspath') {
             doLast {
                 buildDir.mkdirs()
                 new File(buildDir, "classpath.txt").text = sourceSets.main.runtimeClasspath.collect { it.absolutePath }.join(':') + "\n"
             }
         }
+
+        dependencies {
+            implementation(enforcedPlatform(depLibs.guavaBom))
+        }
+
     }
 
     repositories {
