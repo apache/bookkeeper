@@ -29,6 +29,9 @@ on:
       - 'site/**'
     workflow_dispatch:
 
+env:
+  GRADLE_OPTS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
+
 
 jobs:
   check:

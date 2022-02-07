@@ -30,7 +30,7 @@ on:
     workflow_dispatch:
 
 env:
-  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
+  GRADLE_OPTS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
 
 jobs:
   test:
