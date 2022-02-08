@@ -310,7 +310,7 @@ allprojects {
             systemProperty "currentVersion", project.rootProject.version
             testLogging {
                 outputs.upToDateWhen {false}
-                showStandardStreams = true
+                showStandardStreams = !Boolean.getBoolean("testHideStandardOut")
             }
         }
         dependencies {
