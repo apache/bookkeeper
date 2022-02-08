@@ -30,7 +30,7 @@ on:
     workflow_dispatch:
 
 env:
-  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
+  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
 
 jobs:
   test:
@@ -49,10 +49,10 @@ jobs:
         with:
           java-version: 1.8
       - name: Build
-        run: ./gradlew stream:server:build -x test
+        run: ./gradlew stream:server:build -x test ${GRADLE_ARGS}
       - name: Test current server with old clients
-        run: ./gradlew :tests:backward-compat:current-server-old-clients:test || (tail -n +1 tests/backward-compat/current-server-old-clients/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/current-server-old-clients/build/container-logs/**/* && exit 1)
+        run: ./gradlew :tests:backward-compat:current-server-old-clients:test ${GRADLE_ARGS} || (tail -n +1 tests/backward-compat/current-server-old-clients/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/current-server-old-clients/build/container-logs/**/* && exit 1)
       - name: Test progressive upgrade
-        run: ./gradlew :tests:backward-compat:upgrade:test || (tail -n +1 tests/backward-compat/upgrade/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/upgrade/build/container-logs/**/* && exit 1)
+        run: ./gradlew :tests:backward-compat:upgrade:test ${GRADLE_ARGS} || (tail -n +1 tests/backward-compat/upgrade/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/upgrade/build/container-logs/**/* && exit 1)
       - name: Other tests
-        run: ./gradlew :tests:backward-compat:test -x tests:backward-compat:upgrade:test -x :tests:backward-compat:current-server-old-clients:test
+        run: ./gradlew :tests:backward-compat:test -x tests:backward-compat:upgrade:test -x :tests:backward-compat:current-server-old-clients:test ${GRADLE_ARGS}

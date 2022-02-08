@@ -29,6 +29,9 @@ on:
       - 'site/**'
     workflow_dispatch:
 
+env:
+  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
+
 jobs:
   check:
 
@@ -47,4 +50,4 @@ jobs:
           java-version: 1.11
       - name: Build with gradle
         run: |
-          ./gradlew test -x bookkeeper-server:test -x tests:integration:cluster:test -x tests:integration:smoke:test -x tests:integration:standalone:test -Dtestlogger.theme=plain -PexcludeTests="**/distributedlog/**, **/statelib/**, **/clients/**, **/*common/**, **/stream/**, **/stream/*bk*/**, **/*backward*/**"
+          ./gradlew test -x bookkeeper-server:test -x tests:integration:cluster:test -x tests:integration:smoke:test -x tests:integration:standalone:test -PexcludeTests="**/distributedlog/**, **/statelib/**, **/clients/**, **/*common/**, **/stream/**, **/stream/*bk*/**, **/*backward*/**" ${GRADLE_ARGS}

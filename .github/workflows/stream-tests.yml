@@ -28,6 +28,9 @@ on:
       - 'site/**'
     workflow_dispatch:
 
+env:
+  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
+
 jobs:
   test:
 
@@ -45,19 +48,19 @@ jobs:
         with:
           java-version: 1.8
       - name: Run stream:distributedlog:core tests
-        run: ./gradlew stream:distributedlog:core:test -Dtestlogger.theme=plain
+        run: ./gradlew stream:distributedlog:core:test ${GRADLE_ARGS}
       - name: Run stream:distributedlog:common tests
-        run: ./gradlew stream:distributedlog:common:test -Dtestlogger.theme=plain
+        run: ./gradlew stream:distributedlog:common:test ${GRADLE_ARGS}
       - name: Run stream:distributedlog:protocol tests
-        run: ./gradlew stream:distributedlog:protocol:test -Dtestlogger.theme=plain
+        run: ./gradlew stream:distributedlog:protocol:test ${GRADLE_ARGS}
       - name: Run stream:proto tests
-        run: ./gradlew stream:proto:test -Dtestlogger.theme=plain
+        run: ./gradlew stream:proto:test ${GRADLE_ARGS}
       - name: Run stream:serve tests
-        run: ./gradlew stream:server:test -Dtestlogger.theme=plain
+        run: ./gradlew stream:server:test ${GRADLE_ARGS}
       - name: Run stream:statelib tests
-        run: ./gradlew stream:statelib:test -Dtestlogger.theme=plain
+        run: ./gradlew stream:statelib:test ${GRADLE_ARGS}
       - name: Run stream:storage:api:test tests
-        run: ./gradlew stream:storage:api:test -Dtestlogger.theme=plain
+        run: ./gradlew stream:storage:api:test ${GRADLE_ARGS}
       - name: Run stream:storage:impl tests
-        run: ./gradlew stream:storage:impl:test -Dtestlogger.theme=plain
+        run: ./gradlew stream:storage:impl:test ${GRADLE_ARGS}
 
