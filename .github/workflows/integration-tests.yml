@@ -30,7 +30,7 @@ on:
     workflow_dispatch:
 
 env:
-  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
+  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
 
 jobs:
   test:
@@ -50,10 +50,10 @@ jobs:
           java-version: 1.8
 
       - name: Build tar
-        run: ./gradlew stream:server:build -x test
+        run: ./gradlew stream:server:build -x test ${GRADLE_ARGS}
       - name: run cluster integration test
-        run: ./gradlew :tests:integration:cluster:test -Dtestlogger.theme=plain
+        run: ./gradlew :tests:integration:cluster:test ${GRADLE_ARGS}
       - name: run smoke test
-        run: ./gradlew tests:integration:smoke:test -Dtestlogger.theme=plain
+        run: ./gradlew tests:integration:smoke:test ${GRADLE_ARGS}
       - name: run standalone test
-        run: ./gradlew tests:integration:standalone:test -Dtestlogger.theme=plain
+        run: ./gradlew tests:integration:standalone:test ${GRADLE_ARGS}
