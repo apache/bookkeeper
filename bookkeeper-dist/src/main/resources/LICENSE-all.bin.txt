@@ -260,7 +260,7 @@ Apache Software License, Version 2.
 - lib/org.eclipse.jetty-jetty-servlet-9.4.43.v20210629.jar [22]
 - lib/org.eclipse.jetty-jetty-util-9.4.43.v20210629.jar [22]
 - lib/org.eclipse.jetty-jetty-util-ajax-9.4.43.v20210629.jar [22]
-- lib/org.rocksdb-rocksdbjni-6.22.1.1.jar [23]
+- lib/org.rocksdb-rocksdbjni-6.27.3.jar [23]
 - lib/com.beust-jcommander-1.78.jar [24]
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
 - lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [25]
@@ -586,7 +586,7 @@ This private header is also used by Apple's open source
     * http://www.opensource.apple.com/source/configd/configd-453.19/dnsinfo/dnsinfo.h
 
 ------------------------------------------------------------------------------------
-lib/org.rocksdb-rocksdbjni-6.22.1.1.jar is derived from leveldb, which is under the following license.
+lib/org.rocksdb-rocksdbjni-6.27.3.jar is derived from leveldb, which is under the following license.
 
 Copyright (c) 2011 The LevelDB Authors. All rights reserved.
 
