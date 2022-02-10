@@ -53,7 +53,7 @@ jobs:
       - name: Build tar
         run: ./gradlew stream:server:build -x test ${GRADLE_ARGS}
       - name: run cluster integration test
-        run: ./gradlew :tests:integration:cluster:test ${GRADLE_ARGS}
+        run: ./gradlew :tests:integration:cluster:test ${GRADLE_ARGS} || (tail -n +1 tests/integration/cluster/build/reports/tests/test/classes/* && tail -n +1 tests/integration/cluster/build/container-logs/**/* && exit 1)
       - name: run smoke test
         run: ./gradlew tests:integration:smoke:test ${GRADLE_ARGS}
       - name: run standalone test
