@@ -95,7 +95,6 @@ public class BookieAuthZFactory implements BookieAuthProvider.Factory {
                         for (String allowedRole : allowedRoles) {
                             if (certRole[0].equals(allowedRole)) {
                                 authorized = true;
-                                break;
                             }
                         }
                         if (authorized) {
