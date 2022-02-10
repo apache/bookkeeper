@@ -21,19 +21,24 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.collect.Iterables;
+
+import java.io.IOException;
+
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Maintains an index of the entry locations in the EntryLogger.
  *
- * <p>For each ledger multiple entries are stored in the same "record", represented
- * by the {@link LedgerIndexPage} class.
+ * <p>Asynchronous write mode class.
  */
 public class EntryLocationIndexAsync extends EntryLocationIndex {
+
+    private static final Logger log = LoggerFactory.getLogger(EntryLocationIndexAsync.class);
 
     public EntryLocationIndexAsync(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
                                    StatsLogger stats) throws IOException {
