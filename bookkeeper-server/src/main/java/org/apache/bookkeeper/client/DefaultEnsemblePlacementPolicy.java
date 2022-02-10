@@ -206,7 +206,9 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     public void updateBookieInfo(Map<BookieId, BookieInfo> bookieInfoMap) {
         rwLock.writeLock().lock();
         try {
-            this.bookieInfoMap.putAll(bookieInfoMap);
+            for (Map.Entry<BookieId, BookieInfo> e : bookieInfoMap.entrySet()) {
+                this.bookieInfoMap.put(e.getKey(), e.getValue());
+            }
             this.weightedSelection.updateMap(this.bookieInfoMap);
         } finally {
             rwLock.writeLock().unlock();
