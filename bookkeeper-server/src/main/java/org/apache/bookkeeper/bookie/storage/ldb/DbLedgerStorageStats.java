@@ -59,7 +59,10 @@ class DbLedgerStorageStats {
     private static final String FLUSH_LOCATIONS_INDEX = "flush-locations-index";
     private static final String FLUSH_LEDGER_INDEX = "flush-ledger-index";
     private static final String FLUSH_SIZE = "flush-size";
+
+    @Deprecated
     private static final String THROTTLED_WRITE_REQUESTS = "throttled-write-requests";
+    // throttled-write-requests is deprecated, use new metric: throttled-write
     private static final String THROTTLED_WRITE = "throttled-write";
     private static final String REJECTED_WRITE_REQUESTS = "rejected-write-requests";
     private static final String WRITE_CACHE_SIZE = "write-cache-size";
