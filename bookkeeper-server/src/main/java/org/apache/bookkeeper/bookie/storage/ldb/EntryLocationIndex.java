@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
-import com.google.common.collect.Iterables;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -269,5 +268,5 @@ public abstract class EntryLocationIndex implements Closeable {
         return new EntryLocationIndexSync(conf, storageFactory, basePath, stats);
     }
 
-    protected static final Logger log = LoggerFactory.getLogger(EntryLocationIndex.class);
+    private static final Logger log = LoggerFactory.getLogger(EntryLocationIndex.class);
 }

@@ -1794,7 +1794,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get location index sync data
+     * Get location index sync data.
      *
      * @return true  - sync operate location index,
      *         false - async operate location index.
@@ -1804,7 +1804,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set location index sync data
+     * Set location index sync data.
      *
      * @param syncSwitch true to sync operate location index
      *
