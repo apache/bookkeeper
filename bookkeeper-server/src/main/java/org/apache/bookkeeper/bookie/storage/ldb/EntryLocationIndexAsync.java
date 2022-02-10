@@ -20,9 +20,10 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+import com.google.common.collect.Iterables;
+
 import java.io.IOException;
 
-import com.google.common.collect.Iterables;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -33,7 +34,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Maintains an index of the entry locations in the EntryLogger.
  *
- * Asynchronous write mode class.
+ * <p>Asynchronous write mode class.
  */
 public class EntryLocationIndexAsync extends EntryLocationIndex {
 
