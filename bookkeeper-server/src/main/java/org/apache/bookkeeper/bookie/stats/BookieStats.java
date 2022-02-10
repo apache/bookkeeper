@@ -56,11 +56,20 @@ public class BookieStats {
 
     // Expose Stats
     final StatsLogger statsLogger;
-    @StatsDoc(name = WRITE_BYTES, help = "total bytes written to a bookie")
+    @StatsDoc(
+        name = WRITE_BYTES,
+        help = "total bytes written to a bookie"
+    )
     private final Counter writeBytes;
-    @StatsDoc(name = READ_BYTES, help = "total bytes read from a bookie")
+    @StatsDoc(
+        name = READ_BYTES,
+        help = "total bytes read from a bookie"
+    )
     private final Counter readBytes;
-    @StatsDoc(name = BOOKIE_FORCE_LEDGER, help = "total force operations occurred on a bookie")
+    @StatsDoc(
+        name = BOOKIE_FORCE_LEDGER,
+        help = "total force operations occurred on a bookie"
+    )
     private final Counter forceLedgerOps;
     // Bookie Operation Latency Stats
     @StatsDoc(
@@ -69,7 +78,10 @@ public class BookieStats {
         parent = ADD_ENTRY
     )
     private final OpStatsLogger addEntryStats;
-    @StatsDoc(name = BOOKIE_RECOVERY_ADD_ENTRY, help = "operation stats of RecoveryAddEntry on a bookie")
+    @StatsDoc(
+        name = BOOKIE_RECOVERY_ADD_ENTRY,
+        help = "operation stats of RecoveryAddEntry on a bookie"
+    )
     private final OpStatsLogger recoveryAddEntryStats;
     @StatsDoc(
         name = BOOKIE_READ_ENTRY,
@@ -78,19 +90,31 @@ public class BookieStats {
     )
     private final OpStatsLogger readEntryStats;
     @StatsDoc(
-            name = BOOKIE_GET_LIST_OF_ENTRIES_OF_LEDGER,
-            help = "operation stats of GetListOfEntriesOfLedger on a bookie",
-            parent = GET_LIST_OF_ENTRIES_OF_LEDGER
+        name = BOOKIE_GET_LIST_OF_ENTRIES_OF_LEDGER,
+        help = "operation stats of GetListOfEntriesOfLedger on a bookie",
+        parent = GET_LIST_OF_ENTRIES_OF_LEDGER
     )
     private final OpStatsLogger getListOfEntriesOfLedgerStats;
     // Bookie Operation Bytes Stats
-    @StatsDoc(name = BOOKIE_ADD_ENTRY_BYTES, help = "bytes stats of AddEntry on a bookie")
+    @StatsDoc(
+        name = BOOKIE_ADD_ENTRY_BYTES,
+        help = "bytes stats of AddEntry on a bookie"
+    )
     private final OpStatsLogger addBytesStats;
-    @StatsDoc(name = BOOKIE_READ_ENTRY_BYTES, help = "bytes stats of ReadEntry on a bookie")
+    @StatsDoc(
+        name = BOOKIE_READ_ENTRY_BYTES,
+        help = "bytes stats of ReadEntry on a bookie"
+    )
     private final OpStatsLogger readBytesStats;
-    @StatsDoc(name = JOURNAL_DIRS, help = "number of configured journal directories")
+    @StatsDoc(
+        name = JOURNAL_DIRS,
+        help = "number of configured journal directories"
+    )
     private final Gauge<Integer> journalDirsGauge;
-    @StatsDoc(name = JOURNAL_QUEUE_MAX_SIZE, help = "maximum length of a journal queue")
+    @StatsDoc(
+        name = JOURNAL_QUEUE_MAX_SIZE,
+        help = "maximum length of a journal queue"
+    )
     private final Gauge<Integer> journalQueueMaxQueueSizeGauge;
 
     public BookieStats(StatsLogger statsLogger, int numJournalDirs, int maxJournalQueueSize) {
