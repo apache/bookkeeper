@@ -2,7 +2,7 @@
 name: Flaky test
 about: Report a flaky test failure
 title: 'Flaky-test: test_class.test_method'
-labels: ["component/test", "flaky-tests"]
+labels: ["area/tests", "flaky-tests"]
 assignees: ''
 ---
 <!--- 
