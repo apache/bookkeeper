@@ -43,7 +43,7 @@ public class EntryLocationIndexTest {
         tmpDir.mkdir();
         tmpDir.deleteOnExit();
 
-        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+        EntryLocationIndex idx = EntryLocationIndex.newInstance(serverConfiguration, KeyValueStorageRocksDB.factory,
                 tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
 
         // Add some dummy indexes
@@ -86,7 +86,7 @@ public class EntryLocationIndexTest {
         tmpDir.mkdir();
         tmpDir.deleteOnExit();
 
-        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+        EntryLocationIndex idx = EntryLocationIndex.newInstance(serverConfiguration, KeyValueStorageRocksDB.factory,
                 tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
 
         // Add some dummy indexes
@@ -118,7 +118,7 @@ public class EntryLocationIndexTest {
         tmpDir.mkdir();
         tmpDir.deleteOnExit();
 
-        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+        EntryLocationIndex idx = EntryLocationIndex.newInstance(serverConfiguration, KeyValueStorageRocksDB.factory,
                                                         tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
 
         // Add some dummy indexes

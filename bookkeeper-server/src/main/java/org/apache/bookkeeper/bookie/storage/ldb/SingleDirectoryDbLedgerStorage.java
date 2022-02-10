@@ -173,7 +173,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         readCache = new ReadCache(allocator, readCacheMaxSize);
 
         ledgerIndex = new LedgerMetadataIndex(conf, KeyValueStorageRocksDB.factory, baseDir, ledgerDirStatsLogger);
-        entryLocationIndex = new EntryLocationIndex(conf,
+        entryLocationIndex = EntryLocationIndex.newInstance(conf,
                 KeyValueStorageRocksDB.factory, baseDir, ledgerDirStatsLogger);
 
         transientLedgerInfoCache = new ConcurrentLongHashMap<>(16 * 1024,
@@ -725,8 +725,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             recordSuccessfulEvent(dbLedgerStorageStats.getFlushEntryLogStats(), entryLoggerStart);
 
             long batchFlushStartTime = MathUtils.nowInNano();
-            batch.flush();
-            batch.close();
+            entryLocationIndex.flush(batch);
             recordSuccessfulEvent(dbLedgerStorageStats.getFlushLocationIndexStats(), batchFlushStartTime);
             if (log.isDebugEnabled()) {
                 log.debug("DB batch flushed time : {} s",
@@ -977,8 +976,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             }
         }
 
-        batch.flush();
-        batch.close();
+        entryLocationIndex.flush(batch);
 
         return numberOfEntries.longValue();
     }

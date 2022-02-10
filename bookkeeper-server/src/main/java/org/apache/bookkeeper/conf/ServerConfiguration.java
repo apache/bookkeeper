@@ -171,6 +171,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_DIRS = "journalDirectories";
     protected static final String LEDGER_DIRS = "ledgerDirectories";
     protected static final String INDEX_DIRS = "indexDirectories";
+    protected static final String LOCATION_INDEX_SYNC_DATA = "locationIndexSyncData";
     protected static final String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
     // NIO and Netty Parameters
     protected static final String SERVER_TCP_NODELAY = "serverTcpNoDelay";
@@ -1789,6 +1790,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setIsForceGCAllowWhenNoSpace(boolean force) {
         setProperty(IS_FORCE_GC_ALLOW_WHEN_NO_SPACE, force);
+        return this;
+    }
+
+    /**
+     * Get location index sync data
+     *
+     * @return true  - sync operate location index,
+     *         false - async operate location index.
+     */
+    public boolean getLocationIndexSyncData() {
+        return getBoolean(LOCATION_INDEX_SYNC_DATA, true);
+    }
+
+    /**
+     * Set location index sync data
+     *
+     * @param syncSwitch true to sync operate location index
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setLocationIndexSyncData(boolean syncSwitch) {
+        setProperty(LOCATION_INDEX_SYNC_DATA, syncSwitch);
         return this;
     }
 
