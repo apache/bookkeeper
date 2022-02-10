@@ -1075,7 +1075,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             throws IOException, NoLedgerException, BookieException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
-        int entrySize = 0;
         try {
             LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
             if (LOG.isTraceEnabled()) {
@@ -1089,10 +1088,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
             if (success) {
                 bookieStats.getReadEntryStats().registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                bookieStats.getReadBytesStats().registerSuccessfulValue(entrySize);
             } else {
                 bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                bookieStats.getReadEntryStats().registerFailedValue(entrySize);
             }
         }
     }

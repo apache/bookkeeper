@@ -25,7 +25,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTR
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_FORCE_LEDGER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_GET_LIST_OF_ENTRIES_OF_LEDGER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_RECOVERY_ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
@@ -102,11 +101,6 @@ public class BookieStats {
     )
     private final OpStatsLogger addBytesStats;
     @StatsDoc(
-        name = BOOKIE_READ_ENTRY_BYTES,
-        help = "bytes stats of ReadEntry on a bookie"
-    )
-    private final OpStatsLogger readBytesStats;
-    @StatsDoc(
         name = JOURNAL_DIRS,
         help = "number of configured journal directories"
     )
@@ -127,7 +121,6 @@ public class BookieStats {
         readEntryStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY);
         getListOfEntriesOfLedgerStats = statsLogger.getOpStatsLogger(BOOKIE_GET_LIST_OF_ENTRIES_OF_LEDGER);
         addBytesStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY_BYTES);
-        readBytesStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY_BYTES);
         journalDirsGauge = new Gauge<Integer>() {
             @Override
             public Integer getDefaultValue() {
