@@ -54,4 +54,4 @@ jobs:
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()
-        run: ./dev/ci_tool print_thread_dumps
+        run: ./dev/ci-tool print_thread_dumps
