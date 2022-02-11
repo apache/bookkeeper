@@ -402,7 +402,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testMinorCompactionWithMaxTimeMillis() throws Exception {
+    public void testMinorCompactionWithMaxTimeMillisOk() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(6, false);
 
@@ -419,8 +419,10 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             c.setMajorCompactionInterval(240000);
 
             // Setup limit on compaction duration.
-            c.setMinorCompactionMaxTimeMillis(15);
-            c.setMajorCompactionMaxTimeMillis(15);
+            // The limit is enough to compact.
+            c.setMinorCompactionMaxTimeMillis(5000);
+            c.setMajorCompactionMaxTimeMillis(5000);
+
             return c;
         });
 
@@ -477,7 +479,70 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     }
 
 
+    @Test
+    public void testMinorCompactionWithMaxTimeMillisTooShort() throws Exception {
+        // prepare data
+        LedgerHandle[] lhs = prepareData(6, false);
 
+        for (LedgerHandle lh : lhs) {
+            lh.close();
+        }
+
+        // disable major compaction
+        // restart bookies
+        restartBookies(c-> {
+            c.setMajorCompactionThreshold(0.0f);
+            c.setGcWaitTime(60000);
+            c.setMinorCompactionInterval(120000);
+            c.setMajorCompactionInterval(240000);
+
+            // Setup limit on compaction duration.
+            // The limit is not enough to finish the compaction
+            c.setMinorCompactionMaxTimeMillis(1);
+            c.setMajorCompactionMaxTimeMillis(1);
+
+            return c;
+        });
+
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+        assertTrue(
+                "ACTIVE_ENTRY_LOG_COUNT should have been updated",
+                getStatsProvider(0)
+                        .getGauge("bookie.gc." + ACTIVE_ENTRY_LOG_COUNT)
+                        .getSample().intValue() > 0);
+        assertTrue(
+                "ACTIVE_ENTRY_LOG_SPACE_BYTES should have been updated",
+                getStatsProvider(0)
+                        .getGauge("bookie.gc." + ACTIVE_ENTRY_LOG_SPACE_BYTES)
+                        .getSample().intValue() > 0);
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertTrue(getGCThread().enableMinorCompaction);
+
+        // remove ledger2 and ledger3
+        bkc.deleteLedger(lhs[1].getId());
+        bkc.deleteLedger(lhs[2].getId());
+
+        LOG.info("Finished deleting the ledgers contains most entries.");
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+
+        // after garbage collection, major compaction should not be executed
+        assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
+
+        // entry logs ([0,1,2].log) should be compacted.
+        for (File ledgerDirectory : tmpDirs.getDirs()) {
+            // Compaction of at least one of the files should not finish up
+            assertTrue("Not found entry log file ([0,1,2].log that should not have been compacted in ledgerDirectory: "
+                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
+        }
+
+        verifyLedger(lhs[0].getId(), 0, lhs[0].getLastAddConfirmed());
+    }
 
     @Test
     public void testForceMinorCompaction() throws Exception {
