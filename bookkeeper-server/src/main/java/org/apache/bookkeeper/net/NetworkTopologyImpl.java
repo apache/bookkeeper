@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.net;
 
+import com.google.common.base.Strings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -119,9 +120,10 @@ public class NetworkTopologyImpl implements NetworkTopology {
          * @return true if this node is an ancestor of <i>n</i>
          */
         boolean isAncestor(Node n) {
-            return getPath(this).equals(NodeBase.PATH_SEPARATOR_STR)
+            return !Strings.isNullOrEmpty(n.getNetworkLocation())
+                && (getPath(this).equals(NodeBase.PATH_SEPARATOR_STR)
                     || (n.getNetworkLocation() + NodeBase.PATH_SEPARATOR_STR).startsWith(getPath(this)
-                            + NodeBase.PATH_SEPARATOR_STR);
+                            + NodeBase.PATH_SEPARATOR_STR));
         }
 
         /**
