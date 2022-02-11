@@ -193,7 +193,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         this.entryLogger.addListener(this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
-        gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger.scope("gc"));
+        gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager,
+            this, statsLogger.scope("gc"));
         pageSize = conf.getPageSize();
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         // Expose Stats

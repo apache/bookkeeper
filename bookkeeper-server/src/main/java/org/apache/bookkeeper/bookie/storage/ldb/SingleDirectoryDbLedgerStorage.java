@@ -183,7 +183,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES, TimeUnit.MINUTES);
 
         entryLogger = new EntryLogger(conf, ledgerDirsManager, null, statsLogger, allocator);
-        gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger);
+        gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager, this, statsLogger);
 
         dbLedgerStorageStats = new DbLedgerStorageStats(
                 ledgerDirStatsLogger,
