@@ -17,7 +17,6 @@
  */
 package org.apache.bookkeeper.conf;
 
-import static org.apache.bookkeeper.util.BookKeeperConstants.ENTRYLOG_INDEX_CACHE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
 import com.google.common.annotations.Beta;
@@ -515,17 +514,20 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * gcPersistentEntrylogMetadataMapEnabled is true.
      *
      * @return entrylog metadata-map persistent store dir path.(default: it
-     *         creates a sub-directory under a first available base ledger
-     *         directory with name "entrylogIndexCache").
+     *         creates a sub-directory under each ledger
+     *         directory with name "metadata-cache". If it set, it only works for one ledger directory
+     *         configured for ledgerDirectories).
      */
     public String getGcEntryLogMetadataCachePath() {
-        return getString(GC_ENTRYLOG_METADATA_CACHE_PATH, getLedgerDirNames()[0] + "/" + ENTRYLOG_INDEX_CACHE);
+        return getString(GC_ENTRYLOG_METADATA_CACHE_PATH, null);
     }
 
     /**
      * Set directory to persist Entrylog metadata if gcPersistentEntrylogMetadataMapEnabled is true.
+     * If it set, it only works for one ledger directory configured for ledgerDirectories. For multi ledgerDirectory
+     * configured, keep the default value is the best practice.
      *
-     * @param gcPersistentEntrylogMetadataMapPath.
+     * @param gcEntrylogMetadataCachePath
      * @return server configuration.
      */
     public ServerConfiguration setGcEntryLogMetadataCachePath(String gcEntrylogMetadataCachePath) {

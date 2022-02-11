@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -1192,10 +1193,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
         // Clean up metadata directories if they are separate from the
         // ledger dirs
-        File metadataDir = new File(conf.getGcEntryLogMetadataCachePath());
-        if (!cleanDir(metadataDir)) {
-            LOG.error("Formatting ledger metadata directory {} failed", metadataDir);
-            return false;
+        if (!Strings.isNullOrEmpty(conf.getGcEntryLogMetadataCachePath())) {
+            File metadataDir = new File(conf.getGcEntryLogMetadataCachePath());
+            if (!cleanDir(metadataDir)) {
+                LOG.error("Formatting ledger metadata directory {} failed", metadataDir);
+                return false;
+            }
         }
         LOG.info("Bookie format completed successfully");
         return true;
