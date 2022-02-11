@@ -31,7 +31,7 @@ public class BookKeeperConstants {
     public static final String BOOKIE_STATUS_FILENAME = "BOOKIE_STATUS";
     public static final String PASSWD = "passwd";
     public static final String CURRENT_DIR = "current";
-    public static final String ENTRYLOG_INDEX_CACHE = "entrylogIndexCache";
+    public static final String METADATA_CACHE = "metadata-cache";
     public static final String READONLY = "readonly";
 
     // //////////////////////////

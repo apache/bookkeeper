@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.METADATA_CACHE;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -77,14 +78,14 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
     };
 
     public PersistentEntryLogMetadataMap(String metadataPath, ServerConfiguration conf) throws IOException {
-        LOG.info("Loading persistent entrylog metadata-map from {}", metadataPath);
+        LOG.info("Loading persistent entrylog metadata-map from {}", metadataPath + "/" + METADATA_CACHE);
         File dir = new File(metadataPath);
         if (!dir.mkdirs() && !dir.exists()) {
             String err = "Unable to create directory " + dir;
             LOG.error(err);
             throw new IOException(err);
         }
-        metadataMapDB = KeyValueStorageRocksDB.factory.newKeyValueStorage(metadataPath, "metadata-cache",
+        metadataMapDB = KeyValueStorageRocksDB.factory.newKeyValueStorage(metadataPath, METADATA_CACHE,
                 DbConfigType.Small, conf);
     }
 
