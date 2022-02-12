@@ -423,9 +423,13 @@ public class GarbageCollectorThread extends SafeRunnable {
                     minorCompacting.set(false);
                 }
             }
+            gcStats.getGcThreadRuntime().registerSuccessfulEvent(
+                    MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
         } catch (EntryLogMetadataMapException e) {
             LOG.error("Error in entryLog-metadatamap, Failed to complete GC/Compaction due to entry-log {}",
                     e.getMessage(), e);
+            gcStats.getGcThreadRuntime().registerFailedEvent(
+                    MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
         } finally {
             if (force && forceGarbageCollection.compareAndSet(true, false)) {
                 LOG.info("{} Set forceGarbageCollection to false after force GC to make it forceGC-able again.",
@@ -433,8 +437,6 @@ public class GarbageCollectorThread extends SafeRunnable {
             }
         }
 
-        gcStats.getGcThreadRuntime().registerSuccessfulEvent(
-                MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
     }
 
     /**
@@ -586,7 +588,6 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
 
         this.running = false;
-
         // Interrupt GC executor thread
         gcExecutor.shutdownNow();
         try {
