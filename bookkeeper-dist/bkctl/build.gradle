@@ -49,7 +49,7 @@ releaseArtifacts {
 def depLicences = [
         "checker-qual-3.5.0/LICENSE",
         "google-auth-library-credentials-0.20.0/LICENSE",
-        "netty-4.1.73.Final/*",
+        "netty-4.1.74.Final/*",
         "bouncycastle-1.0.2.1/LICENSE.html",
         "protobuf-3.14.0/LICENSE",
         "protobuf-3.12.0/LICENSE",
