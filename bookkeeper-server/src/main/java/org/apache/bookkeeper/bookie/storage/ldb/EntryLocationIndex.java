@@ -262,7 +262,7 @@ public abstract class EntryLocationIndex implements Closeable {
 
     public static EntryLocationIndex newInstance(ServerConfiguration conf, KeyValueStorageFactory storageFactory,
                                                  String basePath, StatsLogger stats) throws IOException {
-        if (conf.getLocationIndexSyncData()) {
+        if (!conf.getLocationIndexSyncData()) {
             return new EntryLocationIndexAsync(conf, storageFactory, basePath, stats);
         }
         return new EntryLocationIndexSync(conf, storageFactory, basePath, stats);
