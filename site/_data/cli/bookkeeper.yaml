@@ -7,7 +7,7 @@ commands:
   description: Starts up an ensemble of N bookies in a single JVM process. Typically used for local experimentation and development.
   argument: N
 - name: autorecovery
-  description: Runs the autorecovery service daemon.
+  description: Runs the autorecovery service.
 - name: upgrade
   description: Upgrades the bookie's filesystem.
   options:
