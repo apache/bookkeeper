@@ -394,5 +394,7 @@ public class NullMetadataBookieDriver implements MetadataBookieDriver {
                 throws ReplicationException.UnavailableException {
             throw new ReplicationException.UnavailableException("null");
         }
+        @Override
+        public void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb) {}
     }
 }
