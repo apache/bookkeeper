@@ -83,6 +83,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private static final String ROCKSDB_NUM_LEVELS = "dbStorage_rocksDB_numLevels";
     private static final String ROCKSDB_NUM_FILES_IN_LEVEL0 = "dbStorage_rocksDB_numFilesInLevel0";
     private static final String ROCKSDB_MAX_SIZE_IN_LEVEL1_MB = "dbStorage_rocksDB_maxSizeInLevel1MB";
+    private static final String ROCKSDB_FORMAT_VERSION = "dbStorage_rocksDB_format_version";
 
     public KeyValueStorageRocksDB(String basePath, String subPath, DbConfigType dbConfigType, ServerConfiguration conf)
             throws IOException {
@@ -122,6 +123,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 int blockSize = conf.getInt(ROCKSDB_BLOCK_SIZE, 64 * 1024);
                 int bloomFilterBitsPerKey = conf.getInt(ROCKSDB_BLOOM_FILTERS_BITS_PER_KEY, 10);
                 boolean lz4CompressionEnabled = conf.getBoolean(ROCKSDB_LZ4_COMPRESSION_ENABLED, true);
+                int formatVersion = conf.getInt(ROCKSDB_FORMAT_VERSION, 2);
 
                 if (lz4CompressionEnabled) {
                     options.setCompressionType(CompressionType.LZ4_COMPRESSION);
@@ -144,7 +146,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 BlockBasedTableConfig tableOptions = new BlockBasedTableConfig();
                 tableOptions.setBlockSize(blockSize);
                 tableOptions.setBlockCache(cache);
-                tableOptions.setFormatVersion(2);
+                tableOptions.setFormatVersion(formatVersion);
                 tableOptions.setChecksumType(ChecksumType.kxxHash);
                 if (bloomFilterBitsPerKey > 0) {
                     tableOptions.setFilterPolicy(new BloomFilter(bloomFilterBitsPerKey, false));
