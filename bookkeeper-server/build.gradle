@@ -28,9 +28,9 @@ dependencies {
     implementation project(':bookkeeper-http:http-server')
     implementation project(':bookkeeper-proto')
     implementation project(':bookkeeper-stats')
+    implementation project(':bookkeeper-tools-framework')
     implementation project(':circe-checksum')
     implementation project(':cpu-affinity')
-    implementation project(':tools:framework')
 
     compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations
