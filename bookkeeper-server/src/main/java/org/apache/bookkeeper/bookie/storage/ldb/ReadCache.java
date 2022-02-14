@@ -149,7 +149,7 @@ public class ReadCache implements Closeable {
                     int entryOffset = (int) res.first;
                     int entryLen = (int) res.second;
 
-                    ByteBuf entry = allocator.directBuffer(entryLen, entryLen);
+                    ByteBuf entry = allocator.buffer(entryLen, entryLen);
                     entry.writeBytes(cacheSegments.get(segmentIdx), entryOffset, entryLen);
                     return entry;
                 }
