@@ -243,6 +243,10 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                     continue;
                 }
             } catch (Throwable t) {
+                if (!(t.getCause() instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
+                    LOG.warn("Failed to get metadata for ledger {}. {}: {}",
+                            ledgerId, t.getClass().getName(), t.getMessage());
+                }
                 latch.countDown();
                 continue;
             }
@@ -268,6 +272,10 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                                         overReplicatedLedgers.add(ledgerId);
                                         garbageCleaner.clean(ledgerId);
                                     }
+                                } else if (!(exception
+                                        instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
+                                    LOG.warn("Failed to get metadata for ledger {}. {}: {}",
+                                            ledgerId, exception.getClass().getName(), exception.getMessage());
                                 }
                             } finally {
                                 semaphore.release();
