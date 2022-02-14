@@ -58,7 +58,7 @@ jobs:
       - name: Run stream:serve tests
         run: ./gradlew stream:server:test ${GRADLE_ARGS}
       - name: Run stream:statelib tests
-        run: ./gradlew stream:statelib:test ${GRADLE_ARGS} -i
+        run: ./gradlew stream:statelib:test ${GRADLE_ARGS}
       - name: Run stream:storage:api:test tests
         run: ./gradlew stream:storage:api:test ${GRADLE_ARGS}
       - name: Run stream:storage:impl tests
