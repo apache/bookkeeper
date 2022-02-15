@@ -51,3 +51,7 @@ jobs:
 
       - name: Run bookie test
         run: ./gradlew bookkeeper-server:test --tests="org.apache.bookkeeper.bookie.*" ${GRADLE_ARGS}
+
+      - name: print JVM thread dumps when cancelled
+        if: cancelled()
+        run: ./dev/ci-tool print_thread_dumps

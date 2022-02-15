@@ -57,3 +57,7 @@ jobs:
         run: ./gradlew tests:integration:smoke:test ${GRADLE_ARGS}
       - name: run standalone test
         run: ./gradlew tests:integration:standalone:test ${GRADLE_ARGS}
+
+      - name: print JVM thread dumps when cancelled
+        if: cancelled()
+        run: ./dev/ci-tool print_thread_dumps
