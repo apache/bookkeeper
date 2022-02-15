@@ -21,10 +21,10 @@
 package org.apache.bookkeeper.bookie;
 
 /**
- * Test compactions by entries.
+ * Test compaction by bytes.
  */
-public class CompactionByEntriesTest extends CompactionTest {
-    public CompactionByEntriesTest() {
-        super(false);
+public class CompactionByBytesWithoutMetadataCacheTest extends CompactionTest {
+    public CompactionByBytesWithoutMetadataCacheTest() {
+        super(true, false);
     }
 }
