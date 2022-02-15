@@ -315,6 +315,7 @@ allprojects {
         }
         dependencies {
             implementation(enforcedPlatform(depLibs.nettyBom))
+            testImplementation depLibs.log4jSlf4jImpl
         }
         tasks.register('writeClasspath') {
             doLast {
