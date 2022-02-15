@@ -400,35 +400,43 @@ public class GarbageCollectorThread extends SafeRunnable {
                 // enter major compaction
                 LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
                 majorCompacting.set(true);
-                doCompactEntryLogs(majorCompactionThreshold, majorCompactionMaxTimeMillis);
-                lastMajorCompactionTime = System.currentTimeMillis();
-                // and also move minor compaction time
-                lastMinorCompactionTime = lastMajorCompactionTime;
-                gcStats.getMajorCompactionCounter().inc();
-                majorCompacting.set(false);
+                try {
+                    doCompactEntryLogs(majorCompactionThreshold, majorCompactionMaxTimeMillis);
+                } finally {
+                    lastMajorCompactionTime = System.currentTimeMillis();
+                    // and also move minor compaction time
+                    lastMinorCompactionTime = lastMajorCompactionTime;
+                    gcStats.getMajorCompactionCounter().inc();
+                    majorCompacting.set(false);
+                }
             } else if (((isForceMinorCompactionAllow && force) || (enableMinorCompaction
                     && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)))
                     && (!suspendMinor)) {
                 // enter minor compaction
                 LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
                 minorCompacting.set(true);
-                doCompactEntryLogs(minorCompactionThreshold, minorCompactionMaxTimeMillis);
-                lastMinorCompactionTime = System.currentTimeMillis();
-                gcStats.getMinorCompactionCounter().inc();
-                minorCompacting.set(false);
+                try {
+                    doCompactEntryLogs(minorCompactionThreshold, minorCompactionMaxTimeMillis);
+                } finally {
+                    lastMinorCompactionTime = System.currentTimeMillis();
+                    gcStats.getMinorCompactionCounter().inc();
+                    minorCompacting.set(false);
+                }
             }
-
+            gcStats.getGcThreadRuntime().registerSuccessfulEvent(
+                    MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
+        } catch (EntryLogMetadataMapException e) {
+            LOG.error("Error in entryLog-metadatamap, Failed to complete GC/Compaction due to entry-log {}",
+                    e.getMessage(), e);
+            gcStats.getGcThreadRuntime().registerFailedEvent(
+                    MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
+        } finally {
             if (force && forceGarbageCollection.compareAndSet(true, false)) {
                 LOG.info("{} Set forceGarbageCollection to false after force GC to make it forceGC-able again.",
                         Thread.currentThread().getName());
             }
-        } catch (EntryLogMetadataMapException e) {
-            LOG.error("Error in entryLog-metadatamap, Failed to complete GC/Compaction due to entry-log {}",
-                    e.getMessage(), e);
         }
 
-        gcStats.getGcThreadRuntime().registerSuccessfulEvent(
-                MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
     }
 
     /**
