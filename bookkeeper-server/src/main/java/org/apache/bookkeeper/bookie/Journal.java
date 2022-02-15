@@ -379,9 +379,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 return 0;
             }
 
+            long startTime = MathUtils.nowInNano();
             try {
                 if (shouldForceWrite) {
-                    long startTime = MathUtils.nowInNano();
                     this.logFile.forceWrite(false);
                     journalStats.getJournalSyncStats()
                         .registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
@@ -397,6 +397,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
 
                 return forceWriteWaiters.size();
+            } catch (IOException e) {
+                journalStats.getJournalSyncStats()
+                        .registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                throw e;
             } finally {
                 closeFileIfNecessary();
             }
