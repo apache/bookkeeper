@@ -77,7 +77,7 @@ public class KeyValueStorageTest {
         File tmpDir = Files.createTempDirectory("junitTemporaryFolder").toFile();
         Files.createDirectory(Paths.get(tmpDir.toString(), "subDir"));
 
-        KeyValueStorage db = storageFactory.newKeyValueStorage(tmpDir.toString(), "subDir", DbConfigType.Small,
+        KeyValueStorage db = storageFactory.newKeyValueStorage(tmpDir.toString(), "subDir", DbConfigType.Default,
                 configuration);
 
         assertEquals(null, db.getFloor(toArray(3)));
