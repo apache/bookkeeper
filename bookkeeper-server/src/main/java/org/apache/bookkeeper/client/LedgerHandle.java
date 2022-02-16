@@ -1226,7 +1226,7 @@ public class LedgerHandle implements WriteHandle {
         for (int i = 0; i < sz; i++) {
             int writeBookieIndex = writeSet.get(i);
             if (writeBookieIndex < currentEnsemble.size() &&
-                !clientCtx.getBookieClient().isWritable(currentEnsemble.get(writeBookieIndex), key)) {
+                !clientCtx.getBookieClient().isWritable(currentEnsemble.get(writeBookieIndex), ledgerId)) {
                 nonWritableCount++;
                 if (nonWritableCount >= allowedNonWritableCount) {
                     return false;
