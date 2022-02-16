@@ -44,10 +44,11 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
-      - name: Set up JDK 1.11
-        uses: actions/setup-java@v1
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
         with:
-          java-version: 1.11
+          distribution: 'temurin'
+          java-version: 11
       - name: Build with gradle
         run: |
           ./gradlew test -x bookkeeper-server:test -x tests:integration:cluster:test -x tests:integration:smoke:test -x tests:integration:standalone:test -PexcludeTests="**/distributedlog/**, **/statelib/**, **/clients/**, **/*common/**, **/stream/**, **/stream/*bk*/**, **/*backward*/**" ${GRADLE_ARGS}
