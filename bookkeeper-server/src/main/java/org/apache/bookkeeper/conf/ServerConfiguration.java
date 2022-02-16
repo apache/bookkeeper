@@ -319,6 +319,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String DATA_INTEGRITY_CHECKING_ENABLED = "dataIntegrityChecking";
     protected static final String DATA_INTEGRITY_COOKIE_STAMPING_ENABLED = "dataIntegrityStampMissingCookies";
 
+    // Used for default,command until or test case
+    protected static final String DEFAULT_ROCKSDB_CONF = "defaultRocksdbConf";
+
+    // Used for ledgers db, doesn't need particular configuration
+    protected static final String ENTRY_LOCATION_ROCKSDB_CONF = "entryLocationRocksdbConf";
+
+    // Used for location index, lots of writes and much bigger dataset
+    protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
+
     /**
      * Construct a default configuration object.
      */
@@ -3774,5 +3783,62 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public boolean isDataIntegrityStampMissingCookiesEnabled() {
         return this.getBoolean(DATA_INTEGRITY_COOKIE_STAMPING_ENABLED, false);
+    }
+
+    /**
+     * Get default rocksdb conf.
+     *
+     * @return String configured default rocksdb conf.
+     */
+    public String getDefaultRocksDBConf() {
+        return getString(DEFAULT_ROCKSDB_CONF, "conf/bk_rocksdb/default_rocksdb.conf");
+    }
+
+    /**
+     * Set default rocksdb conf.
+     *
+     * @return Configuration Object with default rocksdb conf
+     */
+    public ServerConfiguration setDefaultRocksDBConf(String defaultRocksdbConf) {
+        this.setProperty(DEFAULT_ROCKSDB_CONF, defaultRocksdbConf);
+        return this;
+    }
+
+    /**
+     * Get entry Location rocksdb conf.
+     *
+     * @return String configured entry Location rocksdb conf.
+     */
+    public String getEntryLocationRocksdbConf() {
+        return getString(ENTRY_LOCATION_ROCKSDB_CONF, "conf/bk_rocksdb/entry_location_rocksdb.conf");
+    }
+
+    /**
+     * Set entry Location rocksdb conf.
+     *
+     * @return Configuration Object with entry Location rocksdb conf
+     */
+    public ServerConfiguration setEntryLocationRocksdbConf(String entryLocationRocksdbConf) {
+        this.setProperty(ENTRY_LOCATION_ROCKSDB_CONF, entryLocationRocksdbConf);
+        return this;
+    }
+
+    /**
+     * Get ledger metadata rocksdb conf.
+     *
+     * @return String configured ledger metadata rocksdb conf.
+     */
+    public String getLedgerMetadataRocksdbConf() {
+        return getString(LEDGER_METADATA_ROCKSDB_CONF, "conf/bk_rocksdb/ledger_metadata_rocksdb.conf");
+    }
+
+    /**
+     * Set ledger metadata rocksdb conf.
+     *
+     * @return Configuration Object with ledger metadata rocksdb conf
+     */
+    public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
+        this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
+        return this;
     }
 }
