@@ -37,8 +37,6 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -101,49 +99,38 @@ public class MavenClassLoader implements AutoCloseable {
 
     private static MavenClassLoader createClassLoader(File[] jars) {
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-        URLClassLoader cl = AccessController.doPrivileged(
-                new PrivilegedAction<URLClassLoader>() {
-                    @Override
-                    public URLClassLoader run() {
-                        /**
-                         * Child-first URLClassLoader.
-                         * This is needed because Gradle uses a different version of
-                         * Netty and it is placed in the System Class loader.
-                         */
-                        return new URLClassLoader(Arrays.stream(jars)
-                                .map((f) -> {
-                                    try {
-                                        return f.toURI().toURL();
-                                    } catch (Throwable t) {
-                                        throw new RuntimeException(t);
-                                    }
-                                })
-                                .toArray(URL[]::new),
-                                systemClassLoader) {
-
-                            @Override
-                            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                                Class<?> loadedClass = findLoadedClass(name);
-                                if (loadedClass == null) {
-                                    try {
-                                        loadedClass = findClass(name);
-                                    } catch (ClassNotFoundException ignored) {
-                                    }
-                                    if (loadedClass == null) {
-                                        try {
-                                            loadedClass = systemClassLoader.loadClass(name);
-                                        } catch (ClassNotFoundException e) {
-                                        }
-                                    }
-                                }
-                                if (resolve && loadedClass != null) {
-                                    resolveClass(loadedClass);
-                                }
-                                return loadedClass;
-                            }
-                        };
+        URLClassLoader cl = new URLClassLoader(Arrays.stream(jars)
+                .map((f) -> {
+                    try {
+                        return f.toURI().toURL();
+                    } catch (Throwable t) {
+                        throw new RuntimeException(t);
                     }
-                });
+                })
+                .toArray(URL[]::new),
+                systemClassLoader) {
+
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                Class<?> loadedClass = findLoadedClass(name);
+                if (loadedClass == null) {
+                    try {
+                        loadedClass = findClass(name);
+                    } catch (ClassNotFoundException ignored) {
+                    }
+                    if (loadedClass == null) {
+                        try {
+                            loadedClass = systemClassLoader.loadClass(name);
+                        } catch (ClassNotFoundException e) {
+                        }
+                    }
+                }
+                if (resolve && loadedClass != null) {
+                    resolveClass(loadedClass);
+                }
+                return loadedClass;
+            }
+        };
         return new MavenClassLoader(cl);
     }
 
