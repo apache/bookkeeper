@@ -28,12 +28,12 @@ ENV BOOKIE_PORT=3181
 EXPOSE $BOOKIE_PORT
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME=/usr/lib/jvm/java-11
+ENV JAVA_HOME=/usr/lib/jvm/java-17
 
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-11-openjdk-devel wget bash python3 sudo\
+    && yum install -y java-17-openjdk-devel wget bash python3 sudo\
     && mkdir -pv /opt \
     && cd /opt \
     && wget -q "${DISTRO_URL}" \
