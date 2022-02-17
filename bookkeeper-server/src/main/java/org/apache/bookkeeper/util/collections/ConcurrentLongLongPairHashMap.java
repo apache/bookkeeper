@@ -410,6 +410,8 @@ public class ConcurrentLongLongPairHashMap {
                     table[bucket + 2] = ValueNotFound;
                     table[bucket + 3] = ValueNotFound;
                     --usedBuckets;
+
+                    bucket = (bucket - 4) & (table.length - 1);
                 }
             } else {
                 table[bucket] = DeletedKey;
