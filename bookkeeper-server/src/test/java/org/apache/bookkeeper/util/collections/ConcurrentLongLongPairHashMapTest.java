@@ -114,6 +114,22 @@ public class ConcurrentLongLongPairHashMapTest {
     }
 
     @Test
+    public void testExpandAndShrink() {
+        ConcurrentLongLongPairHashMap map = new ConcurrentLongLongPairHashMap(2, 1);
+        assertTrue(map.put(1, 1, 11, 11));
+        assertTrue(map.put(2, 2, 22, 22));
+        assertTrue(map.put(3, 3, 33, 33));
+
+        // expand hashmap
+        assertTrue(map.capacity() == 8);
+
+        assertTrue(map.remove(1, 1, 11, 11));
+        assertFalse(map.remove(2, 2, 22, 22));
+        // shrink hashmap
+        assertTrue(map.capacity() == 4);
+    }
+
+    @Test
     public void testNegativeUsedBucketCount() {
         ConcurrentLongLongPairHashMap map = new ConcurrentLongLongPairHashMap(16, 1);
 
