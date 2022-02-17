@@ -404,7 +404,7 @@ public class ConcurrentLongLongPairHashMap {
 
                 // Reduce unnecessary rehash
                 bucket = (bucket - 4) & (table.length - 1);
-                while(table[bucket] == DeletedKey){
+                while (table[bucket] == DeletedKey) {
                     table[bucket] = EmptyKey;
                     table[bucket + 1] = EmptyKey;
                     table[bucket + 2] = ValueNotFound;
