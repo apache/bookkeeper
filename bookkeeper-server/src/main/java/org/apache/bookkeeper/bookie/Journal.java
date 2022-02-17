@@ -618,8 +618,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     final File journalDirectory;
     final ServerConfiguration conf;
     final ForceWriteThread forceWriteThread;
+    final FileChannelProvider fileChannelProvider;
 
-    private FileChannelProvider fileChannelProvider;
     // Time after which we will stop grouping and issue the flush
     private final long maxGroupWaitInNanos;
     // Threshold after which we flush any buffered journal entries
@@ -736,9 +736,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         try {
             this.fileChannelProvider = FileChannelProvider.newProvider(conf.getJournalChannelProvider());
         } catch (IOException e) {
-            LOG.warn("Failed to initiate {}, use default fileSystem provider instead.",
-                conf.getJournalChannelProvider());
-            this.fileChannelProvider = new DefaultFileChannelProvider();
+            LOG.error("Failed to initiate file channel provider: {}", conf.getJournalChannelProvider());
+            throw new RuntimeException(e);
         }
 
         // Expose Stats
