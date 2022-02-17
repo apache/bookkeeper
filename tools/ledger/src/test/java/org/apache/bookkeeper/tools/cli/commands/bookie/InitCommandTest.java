@@ -18,21 +18,18 @@
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link InitCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({BookKeeperAdmin.class})
 public class InitCommandTest extends BookieCommandTestBase {
 
     public InitCommandTest() {
@@ -40,18 +37,21 @@ public class InitCommandTest extends BookieCommandTestBase {
     }
 
     public void setup() throws Exception {
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.mockStatic(BookKeeperAdmin.class);
-        PowerMockito.when(BookKeeperAdmin.initBookie(conf)).thenReturn(true);
+        createMockedServerConfiguration();
+        createMockedBookKeeperAdmin();
     }
 
     @Test
     public void testInitCommand() {
-        InitCommand initCommand = new InitCommand();
-        try {
-            initCommand.apply(bkFlags, new String[] { "" });
-        } catch (Exception e) {
-            fail("Should not throw any exception here.");
+        try (final MockedStatic<BookKeeperAdmin> bookKeeperAdminMockedStatic = mockStatic(BookKeeperAdmin.class);) {
+            bookKeeperAdminMockedStatic.when(() -> BookKeeperAdmin.initBookie(any(ServerConfiguration.class)))
+                    .thenReturn(true);
+            InitCommand initCommand = new InitCommand();
+            try {
+                initCommand.apply(bkFlags, new String[]{""});
+            } catch (Exception e) {
+                fail("Should not throw any exception here.");
+            }
         }
     }
 }

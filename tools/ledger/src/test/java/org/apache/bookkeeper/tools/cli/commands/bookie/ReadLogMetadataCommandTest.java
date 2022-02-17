@@ -19,36 +19,29 @@
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.ReadOnlyEntryLogger;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedConstruction;
 
 /**
  * Unit test for {@link ReadLogMetadataCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ReadLogMetadataCommand.class })
 public class ReadLogMetadataCommandTest extends BookieCommandTestBase {
 
     @Mock
-    private ReadOnlyEntryLogger entryLogger;
+    private MockedConstruction<ReadOnlyEntryLogger> readOnlyEntryLoggerMockedConstruction;
 
-    @Mock
     private EntryLogMetadata entryLogMetadata;
 
     public ReadLogMetadataCommandTest() {
@@ -59,10 +52,13 @@ public class ReadLogMetadataCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
+        createMockedServerConfiguration();
+        entryLogMetadata = mock(EntryLogMetadata.class);
 
-        PowerMockito.whenNew(ReadOnlyEntryLogger.class).withArguments(eq(conf)).thenReturn(entryLogger);
-        when(entryLogger.getEntryLogMetadata(anyLong())).thenReturn(entryLogMetadata);
+        readOnlyEntryLoggerMockedConstruction = mockConstruction(ReadOnlyEntryLogger.class, (entryLogger, context) -> {
+            when(entryLogger.getEntryLogMetadata(anyLong())).thenReturn(entryLogMetadata);
+        });
+        addMockedConstruction(readOnlyEntryLoggerMockedConstruction);
 
         ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap();
         map.put(1, 1);
@@ -80,8 +76,8 @@ public class ReadLogMetadataCommandTest extends BookieCommandTestBase {
     public void commandTest() throws Exception {
         ReadLogMetadataCommand cmd = new ReadLogMetadataCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1" }));
-        verifyNew(ReadOnlyEntryLogger.class, times(1)).withArguments(eq(conf));
-        verify(entryLogger, times(1)).getEntryLogMetadata(anyLong());
+        verify(readOnlyEntryLoggerMockedConstruction.constructed().get(0), times(1))
+                .getEntryLogMetadata(anyLong());
         verify(entryLogMetadata, times(1)).getLedgersMap();
     }
 }

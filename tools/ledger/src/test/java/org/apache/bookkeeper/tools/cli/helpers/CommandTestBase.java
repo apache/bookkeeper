@@ -128,9 +128,7 @@ public class CommandTestBase {
                 indexDirs[i] = dir.getAbsolutePath();
             }
             doReturn(indexDirs).when(serverConfiguration).getIndexDirNames();
-            if (journalDirsName != null) {
-                doReturn(journalDirsName).when(serverConfiguration).getJournalDirNames();
-            }
+            doCallRealMethod().when(serverConfiguration).getIndexDirs();
             if (journalDirsName != null) {
                 doReturn(journalDirsName).when(serverConfiguration).getJournalDirNames();
                 doCallRealMethod().when(serverConfiguration).getJournalDirs();

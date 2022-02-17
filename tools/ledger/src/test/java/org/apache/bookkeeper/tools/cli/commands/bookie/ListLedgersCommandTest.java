@@ -22,33 +22,26 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.Function;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.zookeeper.AsyncCallback;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedConstruction;
 
 /**
  * Unit test for ListLedgers command.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ListLedgersCommand.class, MetadataDrivers.class, BookkeeperInternalCallbacks.class,
-    CountDownLatch.class })
 public class ListLedgersCommandTest extends BookieCommandTestBase {
 
     private final BookieId bookieAddress = BookieId.parse(UUID.randomUUID().toString());
@@ -62,30 +55,25 @@ public class ListLedgersCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
+        createMockedServerConfiguration();
 
-        PowerMockito.whenNew(BookieId.class).withParameterTypes(String.class).withArguments(anyString())
-            .thenReturn(bookieAddress);
+        addMockedConstruction(mockConstruction(BookieId.class, (bookieId, context) -> {
+            doReturn(bookieAddress.getId()).when(bookieId).getId();
+        }));
 
-        PowerMockito.mockStatic(MetadataDrivers.class);
         LedgerManagerFactory mFactory = mock(LedgerManagerFactory.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<LedgerManagerFactory, ?> function = invocationOnMock.getArgument(1);
-            function.apply(mFactory);
-            return true;
-        }).when(MetadataDrivers.class, "runFunctionWithLedgerManagerFactory", any(ServerConfiguration.class),
-                any(Function.class));
-
-        CountDownLatch processDone = mock(CountDownLatch.class);
-        PowerMockito.whenNew(CountDownLatch.class).withArguments(anyInt())
-            .thenReturn(processDone);
+        initMockedMetadataDriversWithLedgerManagerFactory(mFactory);
 
         LedgerManager ledgerManager = mock(LedgerManager.class);
         when(mFactory.newLedgerManager()).thenReturn(ledgerManager);
 
+        final MockedConstruction<CountDownLatch> countDownLatchMockedConstruction = mockConstruction(CountDownLatch.class);
+        addMockedConstruction(countDownLatchMockedConstruction);
+
+        CountDownLatch processDone = new CountDownLatch(1);
         AsyncCallback.VoidCallback callback = mock(AsyncCallback.VoidCallback.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            processDone.countDown();
+        doAnswer(invocationOnMock -> {
+            countDownLatchMockedConstruction.constructed().get(0).countDown();
             return null;
         }).when(callback).processResult(anyInt(), anyString(), any());
     }

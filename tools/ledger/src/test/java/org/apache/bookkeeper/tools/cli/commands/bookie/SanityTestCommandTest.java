@@ -25,14 +25,15 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Enumeration;
 import java.util.Vector;
+
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -41,20 +42,14 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.commons.configuration.Configuration;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedConstruction;
 
 /**
  * Test for sanity command.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ SanityTestCommand.class, LedgerEntry.class})
 public class SanityTestCommandTest extends BookieCommandTestBase {
 
-    private ClientConfiguration clientConf;
-    private BookKeeper bk;
+    private MockedConstruction<BookKeeper> bookKeeperMockedConstruction;
     private LedgerHandle lh;
 
     public SanityTestCommandTest() {
@@ -65,15 +60,14 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        clientConf = mock(ClientConfiguration.class);
-        PowerMockito.whenNew(ClientConfiguration.class).withNoArguments().thenReturn(clientConf);
-
-        bk = mock(BookKeeper.class);
         lh = mock(LedgerHandle.class);
-        PowerMockito.whenNew(BookKeeper.class).withParameterTypes(ClientConfiguration.class)
-            .withArguments(any(ClientConfiguration.class)).thenReturn(bk);
-        when(bk.createLedger(anyInt(), anyInt(), any(BookKeeper.DigestType.class), eq(new byte[0]))).thenReturn(lh);
-        when(bk.openLedger(anyLong(), any(BookKeeper.DigestType.class), eq(new byte[0]))).thenReturn(lh);
+        createMockedClientConfiguration();
+        bookKeeperMockedConstruction = mockConstruction(BookKeeper.class, (bk, context) -> {
+            when(bk.createLedger(anyInt(), anyInt(), any(BookKeeper.DigestType.class), eq(new byte[0]))).thenReturn(lh);
+            when(bk.openLedger(anyLong(), any(BookKeeper.DigestType.class), eq(new byte[0]))).thenReturn(lh);
+        });
+        addMockedConstruction(bookKeeperMockedConstruction);
+
         when(lh.getLastAddConfirmed()).thenReturn(9L);
         Enumeration<LedgerEntry> entryEnumeration = getEntry();
         when(lh.readEntries(anyLong(), anyLong())).thenReturn(entryEnumeration);
@@ -113,6 +107,7 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
 
     private void verifyFunc() {
         try {
+            final ClientConfiguration clientConf = clientConfigurationMockedConstruction.constructed().get(0);
             verify(clientConf, times(1)).setAddEntryTimeout(1);
             verify(clientConf, times(1)).setReadEntryTimeout(1);
             verify(lh, times(1)).addEntry(any());
@@ -132,25 +127,14 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
         testSanityCommand("--timeout", "10");
     }
 
-    private void verifyTimeout() {
-        verify(clientConf, times(1)).setAddEntryTimeout(10);
-        verify(clientConf, times(1)).setReadEntryTimeout(10);
-        try {
-            verify(lh, times(10)).addEntry(any());
-        } catch (Exception e) {
-            throw new UncheckedExecutionException(e.getMessage(), e);
-        }
-    }
-
     public void testSanityCommand(String... args) {
         SanityTestCommand cmd = new SanityTestCommand();
         assertTrue(cmd.apply(bkFlags, args));
         try {
-            verifyNew(ClientConfiguration.class, times(1)).withNoArguments();
+            final ClientConfiguration clientConf = clientConfigurationMockedConstruction.constructed().get(0);
             verify(clientConf, times(1)).addConfiguration(any(Configuration.class));
             verify(clientConf, times(1)).setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class);
-
-            verifyNew(BookKeeper.class).withArguments(clientConf);
+            final BookKeeper bk = bookKeeperMockedConstruction.constructed().get(0);
             verify(bk, times(1)).createLedger(1, 1, BookKeeper.DigestType.MAC, new byte[0]);
             verify(lh, times(6)).getId();
             verify(bk, times(1)).openLedger(anyLong(), eq(BookKeeper.DigestType.MAC), eq(new byte[0]));
