@@ -124,9 +124,21 @@ public class ConcurrentLongLongPairHashMapTest {
         assertTrue(map.capacity() == 8);
 
         assertTrue(map.remove(1, 1, 11, 11));
+        // not shrink
+        assertTrue(map.capacity() == 8);
         assertTrue(map.remove(2, 2, 22, 22));
         // shrink hashmap
         assertTrue(map.capacity() == 4);
+
+        // expand hashmap
+        assertTrue(map.put(4, 4, 44, 44));
+        assertTrue(map.put(5, 5, 55, 55));
+        assertTrue(map.capacity() == 8);
+
+        //verify that the map does not keep shrinking at every remove() operation
+        assertTrue(map.put(6, 6, 66, 66));
+        assertTrue(map.remove(6, 6, 66, 66));
+        assertTrue(map.capacity() == 8);
     }
 
     @Test
