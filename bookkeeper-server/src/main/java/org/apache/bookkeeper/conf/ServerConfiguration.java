@@ -3793,7 +3793,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return String configured default rocksdb conf.
      */
     public String getDefaultRocksDBConf() {
-        return getString(DEFAULT_ROCKSDB_CONF, "conf/bk_rocksdb/default_rocksdb.conf");
+        return getString(DEFAULT_ROCKSDB_CONF, "conf/default_rocksdb.conf");
     }
 
     /**
@@ -3812,7 +3812,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return String configured entry Location rocksdb conf.
      */
     public String getEntryLocationRocksdbConf() {
-        return getString(ENTRY_LOCATION_ROCKSDB_CONF, "conf/bk_rocksdb/entry_location_rocksdb.conf");
+        return getString(ENTRY_LOCATION_ROCKSDB_CONF, "conf/entry_location_rocksdb.conf");
     }
 
     /**
@@ -3831,7 +3831,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return String configured ledger metadata rocksdb conf.
      */
     public String getLedgerMetadataRocksdbConf() {
-        return getString(LEDGER_METADATA_ROCKSDB_CONF, "conf/bk_rocksdb/ledger_metadata_rocksdb.conf");
+        return getString(LEDGER_METADATA_ROCKSDB_CONF, "conf/ledger_metadata_rocksdb.conf");
     }
 
     /**
