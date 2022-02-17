@@ -19,39 +19,39 @@
 package org.apache.bookkeeper.tools.cli.helpers;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.discover.RegistrationClient;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
+import org.mockito.MockedStatic;
 /**
  * A test base for discovery related commands.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ DiscoveryCommand.class })
 public abstract class DiscoveryCommandTestBase extends ClientCommandTestBase {
 
     protected RegistrationClient regClient;
     protected ScheduledExecutorService executor;
+    private MockedStatic<Executors> executorsMockedStatic;
 
     @Before
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.mockStatic(Executors.class);
-
         this.executor = mock(ScheduledExecutorService.class);
-        PowerMockito.when(Executors.newSingleThreadScheduledExecutor())
-            .thenReturn(executor);
-
+        executorsMockedStatic = mockStatic(Executors.class);
+        executorsMockedStatic.when(() -> Executors.newSingleThreadScheduledExecutor()).thenReturn(executor);
         this.regClient = mock(RegistrationClient.class);
-        PowerMockito.when(metadataClientDriver.getRegistrationClient())
+        when(metadataClientDriver.getRegistrationClient())
             .thenReturn(regClient);
+    }
+
+    @After
+    public void cleanupMock() throws Exception {
+        executorsMockedStatic.close();
     }
 
 }

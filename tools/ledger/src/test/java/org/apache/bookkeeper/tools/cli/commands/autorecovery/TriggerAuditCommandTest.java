@@ -18,34 +18,23 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
 
+import lombok.SneakyThrows;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.util.function.Consumer;
 
 /**
  * Unit test for {@link TriggerAuditCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({TriggerAuditCommand.class})
 public class TriggerAuditCommandTest extends BookieCommandTestBase {
 
-    private ClientConfiguration clientConfiguration;
-    private BookKeeperAdmin admin;
 
     public TriggerAuditCommandTest() {
         super(3, 0);
@@ -55,17 +44,18 @@ public class TriggerAuditCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
+        createMockedServerConfiguration();
 
-        clientConfiguration = mock(ClientConfiguration.class);
-        PowerMockito.whenNew(ClientConfiguration.class).withParameterTypes(AbstractConfiguration.class)
-                    .withArguments(eq(conf)).thenReturn(clientConfiguration);
+        createMockedClientConfiguration();
 
-        admin = mock(BookKeeperAdmin.class);
-        PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
-                    .withArguments(eq(clientConfiguration)).thenReturn(admin);
 
-        doNothing().when(admin).triggerAudit();
+        createMockedBookKeeperAdmin(new Consumer<>(){
+            @Override
+            @SneakyThrows
+            public void accept(BookKeeperAdmin bookKeeperAdmin) {
+                doNothing().when(bookKeeperAdmin).triggerAudit();
+            }
+        });
     }
 
     @Test
@@ -73,9 +63,7 @@ public class TriggerAuditCommandTest extends BookieCommandTestBase {
         TriggerAuditCommand cmd = new TriggerAuditCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
 
-        verifyNew(ClientConfiguration.class, times(1)).withArguments(conf);
-        verifyNew(BookKeeperAdmin.class, times(1)).withArguments(clientConfiguration);
-
-        verify(admin, times(1)).triggerAudit();
+        verify(bookkeeperAdminMockedConstruction.constructed().get(0),
+                times(1)).triggerAudit();
     }
 }

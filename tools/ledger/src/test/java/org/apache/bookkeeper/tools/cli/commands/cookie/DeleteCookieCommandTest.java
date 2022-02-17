@@ -40,14 +40,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test {@link DeleteCookieCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ MetadataDrivers.class })
 public class DeleteCookieCommandTest extends CookieCommandTestBase {
 
     @Rule

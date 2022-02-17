@@ -21,36 +21,51 @@ package org.apache.bookkeeper.tools.cli.helpers;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+
 import java.util.function.Function;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.junit.After;
 import org.junit.Before;
+import org.mockito.MockedStatic;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 /**
  * A test base for testing cookie commands.
  */
-@PrepareForTest({ MetadataDrivers.class })
 public class CookieCommandTestBase extends CommandTestBase {
 
     protected static final String INVALID_BOOKIE_ID = "127.0.0.1";
     protected static final String BOOKIE_ID = "127.0.0.1:3181";
 
     protected RegistrationManager rm;
+    private MockedStatic<MetadataDrivers> metadataDriversMockedStatic;
+
 
     @Before
     public void setup() throws Exception {
-        PowerMockito.mockStatic(MetadataDrivers.class);
         this.rm = mock(RegistrationManager.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<RegistrationManager, ?> func = invocationOnMock.getArgument(1);
+
+        metadataDriversMockedStatic = mockStatic(MetadataDrivers.class);
+        metadataDriversMockedStatic.when(() -> MetadataDrivers
+                .runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class))
+        ).then(invocation -> {
+            Function<RegistrationManager, ?> func = invocation.getArgument(1);
             func.apply(rm);
             return true;
-        }).when(MetadataDrivers.class, "runFunctionWithRegistrationManager",
-            any(ServerConfiguration.class), any(Function.class));
+        });
+    }
+
+    @After
+    public void cleanup() {
+        metadataDriversMockedStatic.close();
+
     }
 
     protected void assertBookieIdMissing(String consoleOutput) {

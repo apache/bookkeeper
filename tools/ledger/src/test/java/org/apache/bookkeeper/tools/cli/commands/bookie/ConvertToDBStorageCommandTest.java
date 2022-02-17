@@ -22,13 +22,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.mockito.Mockito.when;
+
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Iterator;
 import java.util.Vector;
@@ -37,27 +38,24 @@ import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link ConvertToDBStorageCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ BookieImpl.class, ConvertToDBStorageCommand.class })
 public class ConvertToDBStorageCommandTest extends BookieCommandTestBase {
 
-    private InterleavedLedgerStorage interleavedLedgerStorage;
-    private DbLedgerStorage dbStorage;
+    private MockedConstruction<InterleavedLedgerStorage> interleavedLedgerStorageMockedConstruction;
+    private MockedConstruction<DbLedgerStorage> dbLedgerStorageMockedConstruction;
     private LedgerCache.LedgerIndexMetadata metadata;
     private LedgerCache.PageEntriesIterable entries;
+    private MockedStatic<BookieImpl> bookieImplMockedStatic;
 
     public ConvertToDBStorageCommandTest() {
         super(3, 0);
@@ -67,29 +65,38 @@ public class ConvertToDBStorageCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class).withArguments(conf)
-            .thenReturn(conf);
+        createMockedServerConfiguration();
 
-        interleavedLedgerStorage = mock(InterleavedLedgerStorage.class);
-        whenNew(InterleavedLedgerStorage.class).withNoArguments().thenReturn(interleavedLedgerStorage);
-        doNothing().when(interleavedLedgerStorage).shutdown();
-        when(interleavedLedgerStorage.getActiveLedgersInRange(anyLong(), anyLong())).thenReturn(this::getLedgerId);
         metadata = mock(LedgerCache.LedgerIndexMetadata.class);
-        when(interleavedLedgerStorage.readLedgerIndexMetadata(anyLong())).thenReturn(metadata);
         entries = mock(LedgerCache.PageEntriesIterable.class);
-        when(interleavedLedgerStorage.getIndexEntries(anyLong())).thenReturn(entries);
 
-        dbStorage = mock(DbLedgerStorage.class);
-        whenNew(DbLedgerStorage.class).withNoArguments().thenReturn(dbStorage);
-        doNothing().when(dbStorage).shutdown();
-        when(dbStorage.addLedgerToIndex(anyLong(), anyBoolean(), eq(new byte[0]),
-            any(LedgerCache.PageEntriesIterable.class))).thenReturn(1L);
+        interleavedLedgerStorageMockedConstruction =
+                mockConstruction(InterleavedLedgerStorage.class, (interleavedLedgerStorage, context) -> {
+                    doNothing().when(interleavedLedgerStorage).shutdown();
+                    when(interleavedLedgerStorage.getActiveLedgersInRange(anyLong(), anyLong())).thenReturn(
+                            ConvertToDBStorageCommandTest.this::getLedgerId);
+                    when(interleavedLedgerStorage.readLedgerIndexMetadata(anyLong())).thenReturn(metadata);
+                    when(interleavedLedgerStorage.getIndexEntries(anyLong())).thenReturn(entries);
+                });
+        dbLedgerStorageMockedConstruction = mockConstruction(DbLedgerStorage.class, (dbStorage, context) -> {
+            doNothing().when(dbStorage).shutdown();
+            when(dbStorage.addLedgerToIndex(anyLong(), anyBoolean(), eq(new byte[0]),
+                    any(LedgerCache.PageEntriesIterable.class))).thenReturn(1L);
+        });
+        bookieImplMockedStatic = mockStatic(BookieImpl.class);
+        bookieImplMockedStatic.when(() -> BookieImpl.mountLedgerStorageOffline(any(ServerConfiguration.class),
+                        any(InterleavedLedgerStorage.class)))
+            .thenReturn(mock(InterleavedLedgerStorage.class));
+        bookieImplMockedStatic.when(() -> BookieImpl.mountLedgerStorageOffline(any(ServerConfiguration.class),
+                any(DbLedgerStorage.class)))
+                .thenAnswer((invocation) -> dbLedgerStorageMockedConstruction.constructed().get(0));
+    }
 
-        PowerMockito.mockStatic(BookieImpl.class);
-        PowerMockito.when(BookieImpl.mountLedgerStorageOffline(eq(conf), eq(interleavedLedgerStorage)))
-            .thenReturn(PowerMockito.mock(InterleavedLedgerStorage.class));
-        PowerMockito.when(BookieImpl.mountLedgerStorageOffline(eq(conf), eq(dbStorage))).thenReturn(dbStorage);
+    @After
+    public void cleanup() {
+        bookieImplMockedStatic.close();
+        interleavedLedgerStorageMockedConstruction.close();
+        dbLedgerStorageMockedConstruction.close();
     }
 
     private Iterator<Long> getLedgerId() {
@@ -104,10 +111,10 @@ public class ConvertToDBStorageCommandTest extends BookieCommandTestBase {
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
 
         try {
-            verifyNew(ServerConfiguration.class, times(1)).withArguments(conf);
-            verifyNew(InterleavedLedgerStorage.class, times(1)).withNoArguments();
-            verifyNew(DbLedgerStorage.class, times(1)).withNoArguments();
+            InterleavedLedgerStorage interleavedLedgerStorage = interleavedLedgerStorageMockedConstruction
+                    .constructed().get(0);
 
+            DbLedgerStorage dbStorage = dbLedgerStorageMockedConstruction.constructed().get(0);
             verify(interleavedLedgerStorage, times(10)).readLedgerIndexMetadata(anyLong());
             verify(interleavedLedgerStorage, times(10)).getIndexEntries(anyLong());
             verify(dbStorage, times(10))
