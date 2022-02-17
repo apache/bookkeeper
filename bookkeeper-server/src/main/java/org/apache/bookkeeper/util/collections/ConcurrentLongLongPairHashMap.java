@@ -48,6 +48,7 @@ public class ConcurrentLongLongPairHashMap {
     private static final long ValueNotFound = -1L;
 
     private static final float MapFillFactor = 0.66f;
+    private static final float MapIdleFactor = 0.25f;
 
     private static final int DefaultExpectedItems = 256;
     private static final int DefaultConcurrencyLevel = 16;
@@ -228,14 +229,16 @@ public class ConcurrentLongLongPairHashMap {
         private volatile int capacity;
         private volatile int size;
         private int usedBuckets;
-        private int resizeThreshold;
+        private int resizeThresholdUp;
+        private int resizeThresholdBelow;
 
         Section(int capacity) {
             this.capacity = alignToPowerOfTwo(capacity);
             this.table = new long[4 * this.capacity];
             this.size = 0;
             this.usedBuckets = 0;
-            this.resizeThreshold = (int) (this.capacity * MapFillFactor);
+            this.resizeThresholdUp = (int) (this.capacity * MapFillFactor);
+            this.resizeThresholdBelow = (int) (this.capacity * MapIdleFactor);
             Arrays.fill(table, EmptyKey);
         }
 
@@ -336,9 +339,10 @@ public class ConcurrentLongLongPairHashMap {
                     bucket = (bucket + 4) & (table.length - 1);
                 }
             } finally {
-                if (usedBuckets > resizeThreshold) {
+                if (usedBuckets > resizeThresholdUp) {
                     try {
-                        rehash();
+                        // Expand the hashmap
+                        rehash(capacity * 2);
                     } finally {
                         unlockWrite(stamp);
                     }
@@ -376,7 +380,16 @@ public class ConcurrentLongLongPairHashMap {
                 }
 
             } finally {
-                unlockWrite(stamp);
+                if (size < resizeThresholdBelow) {
+                    try {
+                        // shrink the hashmap
+                        rehash(capacity / 2);
+                    } finally {
+                        unlockWrite(stamp);
+                    }
+                } else {
+                    unlockWrite(stamp);
+                }
             }
         }
 
@@ -453,9 +466,7 @@ public class ConcurrentLongLongPairHashMap {
             }
         }
 
-        private void rehash() {
-            // Expand the hashmap
-            int newCapacity = capacity * 2;
+        private void rehash(int newCapacity) {
             long[] newTable = new long[4 * newCapacity];
             Arrays.fill(newTable, EmptyKey);
 
@@ -475,7 +486,8 @@ public class ConcurrentLongLongPairHashMap {
             // Capacity needs to be updated after the values, so that we won't see
             // a capacity value bigger than the actual array size
             capacity = newCapacity;
-            resizeThreshold = (int) (capacity * MapFillFactor);
+            resizeThresholdUp = (int) (capacity * MapFillFactor);
+            resizeThresholdBelow = (int) (capacity * MapIdleFactor);
         }
 
         private static void insertKeyValueNoLock(long[] table, int capacity, long key1, long key2, long value1,
