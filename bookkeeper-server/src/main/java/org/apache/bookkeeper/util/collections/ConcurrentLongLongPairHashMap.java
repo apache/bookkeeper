@@ -401,6 +401,16 @@ public class ConcurrentLongLongPairHashMap {
                 table[bucket + 2] = ValueNotFound;
                 table[bucket + 3] = ValueNotFound;
                 --usedBuckets;
+
+                // Reduce unnecessary rehash
+                bucket = (bucket - 4) & (table.length - 1);
+                while(table[bucket] == DeletedKey){
+                    table[bucket] = EmptyKey;
+                    table[bucket + 1] = EmptyKey;
+                    table[bucket + 2] = ValueNotFound;
+                    table[bucket + 3] = ValueNotFound;
+                    --usedBuckets;
+                }
             } else {
                 table[bucket] = DeletedKey;
                 table[bucket + 1] = DeletedKey;
