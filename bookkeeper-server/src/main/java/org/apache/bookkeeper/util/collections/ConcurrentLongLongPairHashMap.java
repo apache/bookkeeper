@@ -405,7 +405,7 @@ public class ConcurrentLongLongPairHashMap {
                 if (usedBuckets > resizeThresholdUp) {
                     try {
                         // Expand the hashmap
-                        rehash((int) (capacity * expandFactor)));
+                        rehash((int) (capacity * expandFactor));
                     } finally {
                         unlockWrite(stamp);
                     }
