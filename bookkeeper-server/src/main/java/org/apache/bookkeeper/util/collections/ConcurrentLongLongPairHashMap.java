@@ -131,7 +131,8 @@ public class ConcurrentLongLongPairHashMap {
         boolean test(long key1, long key2, long value1, long value2);
     }
 
-    private ConcurrentLongLongPairHashMap(int expectedItems, int concurrencyLevel, float mapFillFactor, float mapIdleFactor,
+    private ConcurrentLongLongPairHashMap(int expectedItems, int concurrencyLevel,
+                                          float mapFillFactor, float mapIdleFactor,
                                          boolean autoShrink, float expandFactor, float shrinkFactor) {
         checkArgument(expectedItems > 0);
         checkArgument(concurrencyLevel > 0);
