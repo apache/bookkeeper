@@ -90,11 +90,13 @@ public class ConcurrentLongLongPairHashMap {
         }
 
         public Builder expandFactor(float expandFactor) {
+            checkBiggerN(expandFactor, 1);
             this.expandFactor = expandFactor;
             return this;
         }
 
         public Builder shrinkFactor(float shrinkFactor) {
+            checkBiggerN(shrinkFactor, 1);
             this.shrinkFactor = shrinkFactor;
             return this;
         }
@@ -403,7 +405,7 @@ public class ConcurrentLongLongPairHashMap {
                 if (usedBuckets > resizeThresholdUp) {
                     try {
                         // Expand the hashmap
-                        rehash((int) (capacity * (1 + expandFactor)));
+                        rehash((int) (capacity * expandFactor)));
                     } finally {
                         unlockWrite(stamp);
                     }
@@ -444,7 +446,7 @@ public class ConcurrentLongLongPairHashMap {
                 if (autoShrink && size < resizeThresholdBelow) {
                     try {
                         // shrink the hashmap
-                        rehash((int) (capacity * (1 - shrinkFactor)));
+                        rehash((int) (capacity / shrinkFactor));
                     } finally {
                         unlockWrite(stamp);
                     }
@@ -608,6 +610,12 @@ public class ConcurrentLongLongPairHashMap {
     private static void checkBiggerEqualZero(long n) {
         if (n < 0L) {
             throw new IllegalArgumentException("Keys and values must be >= 0");
+        }
+    }
+
+    private static void checkBiggerN(float m, long n) {
+        if (m <= n) {
+            throw new IllegalArgumentException(String.format("Keys and values must be > %s", n));
         }
     }
 

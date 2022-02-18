@@ -176,7 +176,7 @@ public class ConcurrentLongLongPairHashMapTest {
     public void testRehashing() {
         int n = 16;
         ConcurrentLongLongPairHashMap map = ConcurrentLongLongPairHashMap.newBuilder()
-                .expectedItems(n/2)
+                .expectedItems(n / 2)
                 .concurrencyLevel(1)
                 .build();
         assertEquals(map.capacity(), n);
@@ -194,7 +194,7 @@ public class ConcurrentLongLongPairHashMapTest {
     public void testRehashingWithDeletes() {
         int n = 16;
         ConcurrentLongLongPairHashMap map = ConcurrentLongLongPairHashMap.newBuilder()
-                .expectedItems(n/2)
+                .expectedItems(n / 2)
                 .concurrencyLevel(1)
                 .build();
         assertEquals(map.capacity(), n);
