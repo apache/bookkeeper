@@ -51,6 +51,14 @@ public class ConcurrentLongLongPairHashMap {
     private static final int DefaultExpectedItems = 256;
     private static final int DefaultConcurrencyLevel = 16;
 
+    private static final float DefaultMapFillFactor = 0.66f;
+    private static final float DefaultMapIdleFactor = 0.15f;
+
+    private static final float DefaultExpandFactor = 2;
+    private static final float DefaultShrinkFactor = 2;
+
+    private static final boolean DefaultAutoShrink = false;
+
     private final Section[] sections;
 
     public static Builder newBuilder() {
@@ -63,11 +71,11 @@ public class ConcurrentLongLongPairHashMap {
     public static class Builder {
         int expectedItems = DefaultExpectedItems;
         int concurrencyLevel = DefaultConcurrencyLevel;
-        float mapFillFactor = 0.66f;
-        float mapIdleFactor = 0.15f;
-        float expandFactor = 2;
-        float shrinkFactor = 2;
-        boolean autoShrink = false;
+        float mapFillFactor = DefaultMapFillFactor;
+        float mapIdleFactor = DefaultMapIdleFactor;
+        float expandFactor = DefaultExpandFactor;
+        float shrinkFactor = DefaultShrinkFactor;
+        boolean autoShrink = DefaultAutoShrink;
 
         public Builder expectedItems(int expectedItems) {
             this.expectedItems = expectedItems;
@@ -131,6 +139,22 @@ public class ConcurrentLongLongPairHashMap {
      */
     public interface LongLongPairPredicate {
         boolean test(long key1, long key2, long value1, long value2);
+    }
+
+    @Deprecated
+    public ConcurrentLongLongPairHashMap() {
+        this(DefaultExpectedItems);
+    }
+
+    @Deprecated
+    public ConcurrentLongLongPairHashMap(int expectedItems) {
+        this(expectedItems, DefaultConcurrencyLevel);
+    }
+
+    @Deprecated
+    public ConcurrentLongLongPairHashMap(int expectedItems, int concurrencyLevel) {
+        this(expectedItems, concurrencyLevel, DefaultMapFillFactor, DefaultMapIdleFactor,
+                DefaultAutoShrink, DefaultExpandFactor, DefaultShrinkFactor);
     }
 
     private ConcurrentLongLongPairHashMap(int expectedItems, int concurrencyLevel,
