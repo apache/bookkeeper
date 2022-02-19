@@ -129,6 +129,8 @@ public class ConcurrentLongLongPairHashMapTest {
         ConcurrentLongLongPairHashMap map = ConcurrentLongLongPairHashMap.newBuilder()
                 .expectedItems(2)
                 .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
                 .build();
         assertTrue(map.put(1, 1, 11, 11));
         assertTrue(map.put(2, 2, 22, 22));
