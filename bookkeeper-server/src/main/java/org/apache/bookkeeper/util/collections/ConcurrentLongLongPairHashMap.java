@@ -233,7 +233,7 @@ public class ConcurrentLongLongPairHashMap {
         return true;
     }
 
-    long getUsedBucketCount() {
+    public long getUsedBucketCount() {
         long usedBucketCount = 0;
         for (Section s : sections) {
             usedBucketCount += s.usedBuckets;
