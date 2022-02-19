@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.StampedLock;
 
+import lombok.Data;
+
 /**
  * Concurrent hash map where both keys and values are composed of pairs of longs.
  *
@@ -175,6 +177,36 @@ public class ConcurrentLongLongPairHashMap {
         }
     }
 
+    public void setMapFillFactor(float mapFillFactor) {
+        for (int i = 0; i < sections.length; i++) {
+            sections[i].setMapFillFactor(mapFillFactor);
+        }
+    }
+
+    public void setMapIdleFactor(float mapIdleFactor) {
+        for (int i = 0; i < sections.length; i++) {
+            sections[i].setMapIdleFactor(mapIdleFactor);
+        }
+    }
+
+    public void setExpandFactor(float expandFactor) {
+        for (int i = 0; i < sections.length; i++) {
+            sections[i].setExpandFactor(expandFactor);
+        }
+    }
+
+    public void setShrinkFactor(float shrinkFactor) {
+        for (int i = 0; i < sections.length; i++) {
+            sections[i].setShrinkFactor(shrinkFactor);
+        }
+    }
+
+    public void setAutoShrink(boolean autoShrink) {
+        for (int i = 0; i < sections.length; i++) {
+            sections[i].setAutoShrink(autoShrink);
+        }
+    }
+
     public long size() {
         long size = 0;
         for (Section s : sections) {
@@ -297,6 +329,7 @@ public class ConcurrentLongLongPairHashMap {
     }
 
     // A section is a portion of the hash map that is covered by a single
+    @Data
     @SuppressWarnings("serial")
     private static final class Section extends StampedLock {
         // Keys and values are stored interleaved in the table array
@@ -304,14 +337,14 @@ public class ConcurrentLongLongPairHashMap {
 
         private volatile int capacity;
         private volatile int size;
-        private int usedBuckets;
+        private volatile int usedBuckets;
         private int resizeThresholdUp;
         private int resizeThresholdBelow;
-        private final float mapFillFactor;
-        private final float mapIdleFactor;
-        private final float expandFactor;
-        private final float shrinkFactor;
-        private final boolean autoShrink;
+        private volatile float mapFillFactor;
+        private volatile float mapIdleFactor;
+        private volatile float expandFactor;
+        private volatile float shrinkFactor;
+        private volatile boolean autoShrink;
 
         Section(int capacity, float mapFillFactor, float mapIdleFactor, boolean autoShrink,
                 float expandFactor, float shrinkFactor) {
