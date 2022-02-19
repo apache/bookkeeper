@@ -311,7 +311,7 @@ public class ConcurrentLongLongPairHashMap {
         private final float mapIdleFactor;
         private final float expandFactor;
         private final float shrinkFactor;
-        private boolean autoShrink;
+        private final boolean autoShrink;
 
         Section(int capacity, float mapFillFactor, float mapIdleFactor, boolean autoShrink,
                 float expandFactor, float shrinkFactor) {
