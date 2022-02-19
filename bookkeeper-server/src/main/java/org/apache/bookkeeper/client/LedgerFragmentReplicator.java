@@ -133,6 +133,16 @@ public class LedgerFragmentReplicator {
     private static final Logger LOG = LoggerFactory
             .getLogger(LedgerFragmentReplicator.class);
 
+    private boolean isEntryExpectedOnDeadBookie(final LedgerHandle lh, Long eId, Set<Integer> deadBookieIndex) {
+        DistributionSchedule.WriteSet writeSet = lh.getWriteSetForReadOperation(eId);
+        for (Integer deadIndex : deadBookieIndex) {
+            if (!writeSet.contains(deadIndex)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void replicateFragmentInternal(final LedgerHandle lh,
             final LedgerFragment lf,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
@@ -173,7 +183,9 @@ public class LedgerFragmentReplicator {
         List<Long> entriesToReplicate = new LinkedList<Long>();
         long lastStoredEntryId = lf.getLastStoredEntryId();
         for (long i = lf.getFirstStoredEntryId(); i <= lastStoredEntryId; i++) {
-            entriesToReplicate.add(i);
+            if (isEntryExpectedOnDeadBookie(lh, i, lf.getBookiesIndexes())) {
+                entriesToReplicate.add(i);
+            }
         }
         /*
          * Now asynchronously replicate all of the entries for the ledger

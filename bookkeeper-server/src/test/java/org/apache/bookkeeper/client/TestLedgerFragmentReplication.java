@@ -26,6 +26,7 @@ import static org.junit.Assert.fail;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Enumeration;
@@ -42,8 +43,10 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Test;
@@ -81,6 +84,61 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
             this.result = result;
             latch.countDown();
         }
+    }
+
+    @Test
+    public void testReplicateLFShouldCopyFailedBookieFragmentsToTargetBookieAvoidDup() throws Exception {
+        byte[] data = "TestLedgerFragmentReplication".getBytes();
+        LedgerHandle lh = bkc.createLedger(3, 2, 2, TEST_DIGEST_TYPE,
+                TEST_PSSWD);
+        for (int i = 0; i < 10; i++) {
+            lh.addEntry(data);
+        }
+        List<BookieId> ensemble =  lh.getLedgerMetadata().getAllEnsembles().get(0L);
+
+        class ReadEntryCB  implements BookkeeperInternalCallbacks.ReadEntryCallback {
+            int count;
+            CountDownLatch latch = new CountDownLatch(10);
+            @Override
+            public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
+                if (rc == 0) {
+                    count++;
+                }
+                latch.countDown();
+            }
+        }
+        BookieId replicaToKill = ensemble.get(0);
+        LOG.info("Killing Bookie : {}", replicaToKill);
+        ReadEntryCB cbBefore = new ReadEntryCB();
+        for (int i = 0; i < 10; i++) {
+            bkc.getBookieClient().readEntry(replicaToKill, 0, i, cbBefore, null, 0);
+        }
+        cbBefore.latch.await();
+
+        // Count
+        killBookie(replicaToKill);
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
+        LOG.info("New Bookie addr : {}", newBkAddr);
+        Set<LedgerFragment> result = getFragmentsToReplicate(lh);
+
+        BookKeeperAdmin admin = new BookKeeperAdmin(baseClientConf);
+        lh.close();
+        // 0-9 entries should be copy to new bookie
+
+        for (LedgerFragment lf : result) {
+            admin.replicateLedgerFragment(lh, lf, NOOP_BICONSUMER);
+        }
+        verifyRecoveredLedgers(lh, 0, 9);
+
+        // Verify that newly added ledger does not have all the entries.
+        ReadEntryCB cbAfter = new ReadEntryCB();
+        BookKeeperTestClient lbkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
+        for (int i = 0; i < 10; i++) {
+            lbkc.getBookieClient().readEntry(newBkAddr, 0, i, cbAfter, null, 0);
+        }
+        cbAfter.latch.await();
+        LOG.info("Number of entries on dead bookie {}", cbBefore.count);
+        assertEquals("Number of entries on dead bookie and copied", cbBefore.count, cbAfter.count);
     }
 
     /**
