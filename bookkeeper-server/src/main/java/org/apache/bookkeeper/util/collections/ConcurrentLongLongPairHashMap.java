@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.StampedLock;
 
-import lombok.Setter;
-
 /**
  * Concurrent hash map where both keys and values are composed of pairs of longs.
  *
@@ -100,13 +98,11 @@ public class ConcurrentLongLongPairHashMap {
         }
 
         public Builder expandFactor(float expandFactor) {
-            checkBiggerN(expandFactor, 1);
             this.expandFactor = expandFactor;
             return this;
         }
 
         public Builder shrinkFactor(float shrinkFactor) {
-            checkBiggerN(shrinkFactor, 1);
             this.shrinkFactor = shrinkFactor;
             return this;
         }
@@ -165,6 +161,11 @@ public class ConcurrentLongLongPairHashMap {
         checkArgument(expectedItems > 0);
         checkArgument(concurrencyLevel > 0);
         checkArgument(expectedItems >= concurrencyLevel);
+        checkArgument(mapFillFactor > 0 && mapFillFactor < 1);
+        checkArgument(mapIdleFactor > 0 && mapIdleFactor < 1);
+        checkArgument(mapFillFactor > mapIdleFactor);
+        checkArgument(expandFactor > 1);
+        checkArgument(shrinkFactor > 1);
 
         int numSections = concurrencyLevel;
         int perSectionExpectedItems = expectedItems / numSections;
@@ -329,7 +330,6 @@ public class ConcurrentLongLongPairHashMap {
     }
 
     // A section is a portion of the hash map that is covered by a single
-    @Setter
     @SuppressWarnings("serial")
     private static final class Section extends StampedLock {
         // Keys and values are stored interleaved in the table array
@@ -359,7 +359,40 @@ public class ConcurrentLongLongPairHashMap {
             this.shrinkFactor = shrinkFactor;
             this.resizeThresholdUp = (int) (this.capacity * mapFillFactor);
             this.resizeThresholdBelow = (int) (this.capacity * mapIdleFactor);
+            checkArgument(resizeThresholdBelow > 0 && resizeThresholdUp > resizeThresholdBelow);
             Arrays.fill(table, EmptyKey);
+        }
+
+        public void setMapFillFactor(float mapFillFactor) {
+            checkArgument(mapFillFactor > 0 && mapFillFactor < 1);
+            int resizeThresholdUpTmp = (int) (this.capacity * mapFillFactor);
+            checkArgument(resizeThresholdUpTmp > 0 && resizeThresholdUpTmp > this.resizeThresholdBelow);
+
+            this.mapFillFactor = mapFillFactor;
+            this.resizeThresholdUp = resizeThresholdUpTmp;
+        }
+
+        public void setMapIdleFactor(float mapIdleFactor) {
+            checkArgument(mapIdleFactor > 0 && mapIdleFactor < 1);
+            int resizeThresholdBelowTmp = (int) (this.capacity * mapIdleFactor);
+            checkArgument(resizeThresholdBelowTmp > 0 && resizeThresholdBelowTmp < this.resizeThresholdUp);
+
+            this.mapIdleFactor = mapIdleFactor;
+            this.resizeThresholdBelow = resizeThresholdBelowTmp;
+        }
+
+        public void setExpandFactor(float expandFactor) {
+            checkArgument(mapIdleFactor > 1);
+            this.expandFactor = expandFactor;
+        }
+
+        public void setShrinkFactor(float shrinkFactor) {
+            checkArgument(shrinkFactor > 1);
+            this.shrinkFactor = shrinkFactor;
+        }
+
+        public void setAutoShrink(boolean autoShrink) {
+            this.autoShrink = autoShrink;
         }
 
         LongPair get(long key1, long key2, int keyHash) {
@@ -500,10 +533,11 @@ public class ConcurrentLongLongPairHashMap {
                 }
 
             } finally {
-                if (autoShrink && size < resizeThresholdBelow) {
+                if (autoShrink && size < resizeThresholdBelow
+                        && resizeThresholdUp > resizeThresholdBelow) {
                     try {
                         // shrink the hashmap
-                        rehash((int) (capacity / shrinkFactor));
+                        rehash((int) Math.max(resizeThresholdUp, capacity / shrinkFactor));
                     } finally {
                         unlockWrite(stamp);
                     }
@@ -667,12 +701,6 @@ public class ConcurrentLongLongPairHashMap {
     private static void checkBiggerEqualZero(long n) {
         if (n < 0L) {
             throw new IllegalArgumentException("Keys and values must be >= 0");
-        }
-    }
-
-    private static void checkBiggerN(float m, long n) {
-        if (m <= n) {
-            throw new IllegalArgumentException(String.format("Keys and values must be > %s", n));
         }
     }
 
