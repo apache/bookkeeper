@@ -359,26 +359,23 @@ public class ConcurrentLongLongPairHashMap {
             this.shrinkFactor = shrinkFactor;
             this.resizeThresholdUp = (int) (this.capacity * mapFillFactor);
             this.resizeThresholdBelow = (int) (this.capacity * mapIdleFactor);
-            checkArgument(resizeThresholdBelow > 0 && resizeThresholdUp > resizeThresholdBelow);
             Arrays.fill(table, EmptyKey);
         }
 
         public void setMapFillFactor(float mapFillFactor) {
             checkArgument(mapFillFactor > 0 && mapFillFactor < 1);
-            int resizeThresholdUpTmp = (int) (this.capacity * mapFillFactor);
-            checkArgument(resizeThresholdUpTmp > 0 && resizeThresholdUpTmp > this.resizeThresholdBelow);
+            checkArgument(mapFillFactor > mapIdleFactor);
 
             this.mapFillFactor = mapFillFactor;
-            this.resizeThresholdUp = resizeThresholdUpTmp;
+            this.resizeThresholdUp = (int) (this.capacity * mapFillFactor);
         }
 
         public void setMapIdleFactor(float mapIdleFactor) {
             checkArgument(mapIdleFactor > 0 && mapIdleFactor < 1);
-            int resizeThresholdBelowTmp = (int) (this.capacity * mapIdleFactor);
-            checkArgument(resizeThresholdBelowTmp > 0 && resizeThresholdBelowTmp < this.resizeThresholdUp);
+            checkArgument(mapFillFactor > mapIdleFactor);
 
             this.mapIdleFactor = mapIdleFactor;
-            this.resizeThresholdBelow = resizeThresholdBelowTmp;
+            this.resizeThresholdBelow = (int) (this.capacity * mapIdleFactor);
         }
 
         public void setExpandFactor(float expandFactor) {
@@ -533,11 +530,10 @@ public class ConcurrentLongLongPairHashMap {
                 }
 
             } finally {
-                if (autoShrink && size < resizeThresholdBelow
-                        && resizeThresholdUp > resizeThresholdBelow) {
+                if (autoShrink && size < resizeThresholdBelow) {
                     try {
                         // shrink the hashmap
-                        rehash((int) Math.max(resizeThresholdUp, capacity / shrinkFactor));
+                        rehash((int) Math.max(size / mapFillFactor, capacity / shrinkFactor));
                     } finally {
                         unlockWrite(stamp);
                     }
