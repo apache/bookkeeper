@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.StampedLock;
 
-import lombok.Data;
+import lombok.Setter;
 
 /**
  * Concurrent hash map where both keys and values are composed of pairs of longs.
@@ -329,7 +329,7 @@ public class ConcurrentLongLongPairHashMap {
     }
 
     // A section is a portion of the hash map that is covered by a single
-    @Data
+    @Setter
     @SuppressWarnings("serial")
     private static final class Section extends StampedLock {
         // Keys and values are stored interleaved in the table array
