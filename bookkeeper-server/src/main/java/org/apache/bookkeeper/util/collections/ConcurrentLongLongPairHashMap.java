@@ -178,36 +178,6 @@ public class ConcurrentLongLongPairHashMap {
         }
     }
 
-    public void setMapFillFactor(float mapFillFactor) {
-        for (int i = 0; i < sections.length; i++) {
-            sections[i].setMapFillFactor(mapFillFactor);
-        }
-    }
-
-    public void setMapIdleFactor(float mapIdleFactor) {
-        for (int i = 0; i < sections.length; i++) {
-            sections[i].setMapIdleFactor(mapIdleFactor);
-        }
-    }
-
-    public void setExpandFactor(float expandFactor) {
-        for (int i = 0; i < sections.length; i++) {
-            sections[i].setExpandFactor(expandFactor);
-        }
-    }
-
-    public void setShrinkFactor(float shrinkFactor) {
-        for (int i = 0; i < sections.length; i++) {
-            sections[i].setShrinkFactor(shrinkFactor);
-        }
-    }
-
-    public void setAutoShrink(boolean autoShrink) {
-        for (int i = 0; i < sections.length; i++) {
-            sections[i].setAutoShrink(autoShrink);
-        }
-    }
-
     public long size() {
         long size = 0;
         for (Section s : sections) {
@@ -234,7 +204,7 @@ public class ConcurrentLongLongPairHashMap {
         return true;
     }
 
-    public long getUsedBucketCount() {
+    long getUsedBucketCount() {
         long usedBucketCount = 0;
         for (Section s : sections) {
             usedBucketCount += s.usedBuckets;
@@ -337,14 +307,14 @@ public class ConcurrentLongLongPairHashMap {
 
         private volatile int capacity;
         private volatile int size;
-        private volatile int usedBuckets;
+        private int usedBuckets;
         private int resizeThresholdUp;
         private int resizeThresholdBelow;
-        private volatile float mapFillFactor;
-        private volatile float mapIdleFactor;
-        private volatile float expandFactor;
-        private volatile float shrinkFactor;
-        private volatile boolean autoShrink;
+        private final float mapFillFactor;
+        private final float mapIdleFactor;
+        private final float expandFactor;
+        private final float shrinkFactor;
+        private final boolean autoShrink;
 
         Section(int capacity, float mapFillFactor, float mapIdleFactor, boolean autoShrink,
                 float expandFactor, float shrinkFactor) {
@@ -360,36 +330,6 @@ public class ConcurrentLongLongPairHashMap {
             this.resizeThresholdUp = (int) (this.capacity * mapFillFactor);
             this.resizeThresholdBelow = (int) (this.capacity * mapIdleFactor);
             Arrays.fill(table, EmptyKey);
-        }
-
-        public void setMapFillFactor(float mapFillFactor) {
-            checkArgument(mapFillFactor > 0 && mapFillFactor < 1);
-            checkArgument(mapFillFactor > mapIdleFactor);
-
-            this.mapFillFactor = mapFillFactor;
-            this.resizeThresholdUp = (int) (this.capacity * mapFillFactor);
-        }
-
-        public void setMapIdleFactor(float mapIdleFactor) {
-            checkArgument(mapIdleFactor > 0 && mapIdleFactor < 1);
-            checkArgument(mapFillFactor > mapIdleFactor);
-
-            this.mapIdleFactor = mapIdleFactor;
-            this.resizeThresholdBelow = (int) (this.capacity * mapIdleFactor);
-        }
-
-        public void setExpandFactor(float expandFactor) {
-            checkArgument(mapIdleFactor > 1);
-            this.expandFactor = expandFactor;
-        }
-
-        public void setShrinkFactor(float shrinkFactor) {
-            checkArgument(shrinkFactor > 1);
-            this.shrinkFactor = shrinkFactor;
-        }
-
-        public void setAutoShrink(boolean autoShrink) {
-            this.autoShrink = autoShrink;
         }
 
         LongPair get(long key1, long key2, int keyHash) {
