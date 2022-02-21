@@ -432,7 +432,8 @@ public class ConcurrentLongLongPairHashMap {
                 if (usedBuckets > resizeThresholdUp) {
                     try {
                         // Expand the hashmap
-                        rehash((int) (capacity * expandFactor));
+                        int newCapacity = alignToPowerOfTwo((int) (capacity * expandFactor));
+                        rehash(newCapacity);
                     } finally {
                         unlockWrite(stamp);
                     }
@@ -472,8 +473,11 @@ public class ConcurrentLongLongPairHashMap {
             } finally {
                 if (autoShrink && size < resizeThresholdBelow) {
                     try {
-                        // shrink the hashmap
-                        rehash((int) Math.max(size / mapFillFactor, capacity / shrinkFactor));
+                        int newCapacity = alignToPowerOfTwo((int) (capacity / shrinkFactor));
+                        if (newCapacity < capacity && newCapacity * mapFillFactor > size) {
+                            // shrink the hashmap
+                            rehash(newCapacity);
+                        }
                     } finally {
                         unlockWrite(stamp);
                     }
