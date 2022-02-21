@@ -306,6 +306,7 @@ public class ConcurrentLongLongPairHashMap {
         private volatile long[] table;
 
         private volatile int capacity;
+        private final int initCapacity;
         private volatile int size;
         private int usedBuckets;
         private int resizeThresholdUp;
@@ -319,6 +320,7 @@ public class ConcurrentLongLongPairHashMap {
         Section(int capacity, float mapFillFactor, float mapIdleFactor, boolean autoShrink,
                 float expandFactor, float shrinkFactor) {
             this.capacity = alignToPowerOfTwo(capacity);
+            this.initCapacity = capacity;
             this.table = new long[4 * this.capacity];
             this.size = 0;
             this.usedBuckets = 0;
@@ -523,6 +525,9 @@ public class ConcurrentLongLongPairHashMap {
                 Arrays.fill(table, EmptyKey);
                 this.size = 0;
                 this.usedBuckets = 0;
+                if (autoShrink) {
+                    rehash(initCapacity);
+                }
             } finally {
                 unlockWrite(stamp);
             }
