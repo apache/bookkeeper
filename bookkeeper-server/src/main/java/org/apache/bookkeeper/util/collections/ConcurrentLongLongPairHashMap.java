@@ -474,7 +474,8 @@ public class ConcurrentLongLongPairHashMap {
                 if (autoShrink && size < resizeThresholdBelow) {
                     try {
                         int newCapacity = alignToPowerOfTwo((int) (capacity / shrinkFactor));
-                        if (newCapacity < capacity && newCapacity * mapFillFactor > size) {
+                        int newResizeThresholdUp = (int) (newCapacity * mapFillFactor);
+                        if (newCapacity < capacity && newResizeThresholdUp > size) {
                             // shrink the hashmap
                             rehash(newCapacity);
                         }
