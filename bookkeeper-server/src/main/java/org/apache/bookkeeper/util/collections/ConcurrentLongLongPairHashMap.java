@@ -320,7 +320,7 @@ public class ConcurrentLongLongPairHashMap {
         Section(int capacity, float mapFillFactor, float mapIdleFactor, boolean autoShrink,
                 float expandFactor, float shrinkFactor) {
             this.capacity = alignToPowerOfTwo(capacity);
-            this.initCapacity = capacity;
+            this.initCapacity = this.capacity;
             this.table = new long[4 * this.capacity];
             this.size = 0;
             this.usedBuckets = 0;
