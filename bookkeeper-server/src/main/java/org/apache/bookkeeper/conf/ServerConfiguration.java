@@ -3842,7 +3842,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return String configured ledger metadata rocksdb conf.
      */
     public String getLedgerMetadataRocksdbConf() {
-        String defaultPath = "conf/entry_location_rocksdb.conf";
+        String defaultPath = "conf/ledger_metadata_rocksdb.conf";
         URL defURL = getClass().getClassLoader().getResource(defaultPath);
         if (defURL != null) {
             defaultPath = defURL.getPath();
