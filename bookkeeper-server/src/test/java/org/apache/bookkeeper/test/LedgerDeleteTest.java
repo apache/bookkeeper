@@ -129,7 +129,7 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
             bkc.deleteLedger(lh.getId());
         }
         LOG.info("Finished deleting all ledgers so waiting for the GC thread to clean up the entryLogs");
-        Thread.sleep(2000);
+        Thread.sleep(5000);
 
         // Verify that the first entry log (0.log) has been deleted from all of the Bookie Servers.
         for (File ledgerDirectory : ledgerDirectories) {
@@ -163,7 +163,7 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
             bkc.deleteLedger(lh.getId());
         }
         LOG.info("Finished deleting all ledgers so waiting for the GC thread to clean up the entryLogs");
-        Thread.sleep(2 * baseConf.getGcWaitTime());
+        Thread.sleep(5000);
 
         /*
          * Verify that the first two entry logs ([0,1].log) have been deleted
