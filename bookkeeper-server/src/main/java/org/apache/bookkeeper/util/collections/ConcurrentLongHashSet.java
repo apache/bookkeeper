@@ -306,7 +306,8 @@ public class ConcurrentLongHashSet {
                 table[bucket] = EmptyItem;
                 --usedBuckets;
 
-                // Cleanup all the buckets that were in `DeletedKey` state, so that we can reduce unnecessary expansions
+                // Cleanup all the buckets that were in `DeletedKey` state,
+                // so that we can reduce unnecessary expansions
                 bucket = (bucket - 1) & (table.length - 1);
                 while (table[bucket] == DeletedItem) {
                     table[bucket] = EmptyItem;
