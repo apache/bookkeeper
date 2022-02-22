@@ -60,8 +60,10 @@ public class WriteCache implements Closeable {
         void accept(long ledgerId, long entryId, ByteBuf entry);
     }
 
-    private final ConcurrentLongLongPairHashMap index =
-            new ConcurrentLongLongPairHashMap(4096, 2 * Runtime.getRuntime().availableProcessors());
+    private final ConcurrentLongLongPairHashMap index = ConcurrentLongLongPairHashMap.newBuilder()
+            .expectedItems(4096)
+            .concurrencyLevel(2 * Runtime.getRuntime().availableProcessors())
+            .build();
 
     private final ConcurrentLongLongHashMap lastEntryMap =
             new ConcurrentLongLongHashMap(4096, 2 * Runtime.getRuntime().availableProcessors());
