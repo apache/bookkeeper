@@ -77,7 +77,11 @@ public class ReadCache implements Closeable {
 
         for (int i = 0; i < segmentsCount; i++) {
             cacheSegments.add(Unpooled.directBuffer(segmentSize, segmentSize));
-            cacheIndexes.add(new ConcurrentLongLongPairHashMap(4096, 2 * Runtime.getRuntime().availableProcessors()));
+            ConcurrentLongLongPairHashMap concurrentLongLongPairHashMap = ConcurrentLongLongPairHashMap.newBuilder()
+                    .expectedItems(4096)
+                    .concurrencyLevel(2 * Runtime.getRuntime().availableProcessors())
+                    .build();
+            cacheIndexes.add(concurrentLongLongPairHashMap);
         }
     }
 
