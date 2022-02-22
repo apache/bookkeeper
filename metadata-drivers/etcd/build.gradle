@@ -54,3 +54,6 @@ publishing {
     }
 }
 
+test {
+    forkEvery = 1
+}
