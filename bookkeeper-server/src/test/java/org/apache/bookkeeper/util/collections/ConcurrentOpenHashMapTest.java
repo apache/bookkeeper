@@ -112,7 +112,7 @@ public class ConcurrentOpenHashMapTest {
     @Test
     public void testRemove() {
         ConcurrentOpenHashMap<String, String> map =
-                ConcurrentOpenHashMap.<String,String>newBuilder().build();
+                ConcurrentOpenHashMap.<String, String>newBuilder().build();
 
         assertTrue(map.isEmpty());
         assertNull(map.put("1", "one"));
