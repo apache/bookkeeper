@@ -111,7 +111,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     private int exitCode = ExitCode.OK;
 
-    private final ConcurrentLongHashMap<byte[]> masterKeyCache = new ConcurrentLongHashMap<>();
+    private final ConcurrentLongHashMap<byte[]> masterKeyCache =
+            ConcurrentLongHashMap.<byte[]>newBuilder().build();
 
     protected StateManager stateManager;
 

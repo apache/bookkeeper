@@ -59,14 +59,14 @@ public class ConcurrentOpenHashMap<K, V> {
 
     private final Section<K, V>[] sections;
 
-    public static Builder newBuilder() {
-        return new Builder();
+    public static <K, V> Builder<K, V> newBuilder() {
+        return new Builder<>();
     }
 
     /**
      * Builder of ConcurrentOpenHashMap.
      */
-    public static class Builder {
+    public static class Builder<K, V> {
         int expectedItems = DefaultExpectedItems;
         int concurrencyLevel = DefaultConcurrencyLevel;
         float mapFillFactor = DefaultMapFillFactor;
@@ -75,43 +75,43 @@ public class ConcurrentOpenHashMap<K, V> {
         float shrinkFactor = DefaultShrinkFactor;
         boolean autoShrink = DefaultAutoShrink;
 
-        public Builder expectedItems(int expectedItems) {
+        public Builder<K, V> expectedItems(int expectedItems) {
             this.expectedItems = expectedItems;
             return this;
         }
 
-        public Builder concurrencyLevel(int concurrencyLevel) {
+        public Builder<K, V> concurrencyLevel(int concurrencyLevel) {
             this.concurrencyLevel = concurrencyLevel;
             return this;
         }
 
-        public Builder mapFillFactor(float mapFillFactor) {
+        public Builder<K, V> mapFillFactor(float mapFillFactor) {
             this.mapFillFactor = mapFillFactor;
             return this;
         }
 
-        public Builder mapIdleFactor(float mapIdleFactor) {
+        public Builder<K, V> mapIdleFactor(float mapIdleFactor) {
             this.mapIdleFactor = mapIdleFactor;
             return this;
         }
 
-        public Builder expandFactor(float expandFactor) {
+        public Builder<K, V> expandFactor(float expandFactor) {
             this.expandFactor = expandFactor;
             return this;
         }
 
-        public Builder shrinkFactor(float shrinkFactor) {
+        public Builder<K, V> shrinkFactor(float shrinkFactor) {
             this.shrinkFactor = shrinkFactor;
             return this;
         }
 
-        public Builder autoShrink(boolean autoShrink) {
+        public Builder<K, V> autoShrink(boolean autoShrink) {
             this.autoShrink = autoShrink;
             return this;
         }
 
-        public ConcurrentOpenHashMap build() {
-            return new ConcurrentOpenHashMap(expectedItems, concurrencyLevel,
+        public ConcurrentOpenHashMap<K, V> build() {
+            return new ConcurrentOpenHashMap<>(expectedItems, concurrencyLevel,
                     mapFillFactor, mapIdleFactor, autoShrink, expandFactor, shrinkFactor);
         }
     }

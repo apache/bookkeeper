@@ -59,14 +59,14 @@ public class ConcurrentLongHashMap<V> {
     private static final boolean DefaultAutoShrink = false;
 
 
-    public static Builder newBuilder() {
-        return new Builder();
+    public static <V> Builder<V> newBuilder() {
+        return new Builder<>();
     }
 
     /**
      * Builder of ConcurrentLongHashMap.
      */
-    public static class Builder {
+    public static class Builder<T> {
         int expectedItems = DefaultExpectedItems;
         int concurrencyLevel = DefaultConcurrencyLevel;
         float mapFillFactor = DefaultMapFillFactor;
@@ -75,43 +75,43 @@ public class ConcurrentLongHashMap<V> {
         float shrinkFactor = DefaultShrinkFactor;
         boolean autoShrink = DefaultAutoShrink;
 
-        public Builder expectedItems(int expectedItems) {
+        public Builder<T> expectedItems(int expectedItems) {
             this.expectedItems = expectedItems;
             return this;
         }
 
-        public Builder concurrencyLevel(int concurrencyLevel) {
+        public Builder<T> concurrencyLevel(int concurrencyLevel) {
             this.concurrencyLevel = concurrencyLevel;
             return this;
         }
 
-        public Builder mapFillFactor(float mapFillFactor) {
+        public Builder<T> mapFillFactor(float mapFillFactor) {
             this.mapFillFactor = mapFillFactor;
             return this;
         }
 
-        public Builder mapIdleFactor(float mapIdleFactor) {
+        public Builder<T> mapIdleFactor(float mapIdleFactor) {
             this.mapIdleFactor = mapIdleFactor;
             return this;
         }
 
-        public Builder expandFactor(float expandFactor) {
+        public Builder<T> expandFactor(float expandFactor) {
             this.expandFactor = expandFactor;
             return this;
         }
 
-        public Builder shrinkFactor(float shrinkFactor) {
+        public Builder<T> shrinkFactor(float shrinkFactor) {
             this.shrinkFactor = shrinkFactor;
             return this;
         }
 
-        public Builder autoShrink(boolean autoShrink) {
+        public Builder<T> autoShrink(boolean autoShrink) {
             this.autoShrink = autoShrink;
             return this;
         }
 
-        public ConcurrentLongHashMap build() {
-            return new ConcurrentLongHashMap(expectedItems, concurrencyLevel,
+        public ConcurrentLongHashMap<T> build() {
+            return new ConcurrentLongHashMap<>(expectedItems, concurrencyLevel,
                     mapFillFactor, mapIdleFactor, autoShrink, expandFactor, shrinkFactor);
         }
     }

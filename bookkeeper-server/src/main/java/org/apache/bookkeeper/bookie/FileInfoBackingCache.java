@@ -33,7 +33,8 @@ class FileInfoBackingCache {
     static final int DEAD_REF = -0xdead;
 
     final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    final ConcurrentLongHashMap<CachedFileInfo> fileInfos = new ConcurrentLongHashMap<>();
+    final ConcurrentLongHashMap<CachedFileInfo> fileInfos =
+            ConcurrentLongHashMap.<CachedFileInfo>newBuilder().build();
     final FileLoader fileLoader;
     final int fileInfoVersionToWrite;
 

@@ -60,8 +60,8 @@ public class ConcurrentLongLongHashMap {
 
     private final Section[] sections;
 
-    public static ConcurrentLongLongPairHashMap.Builder newBuilder() {
-        return new ConcurrentLongLongPairHashMap.Builder();
+    public static Builder newBuilder() {
+        return new Builder();
     }
 
     /**

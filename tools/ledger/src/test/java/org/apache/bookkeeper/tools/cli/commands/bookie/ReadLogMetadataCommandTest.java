@@ -64,7 +64,7 @@ public class ReadLogMetadataCommandTest extends BookieCommandTestBase {
         PowerMockito.whenNew(ReadOnlyEntryLogger.class).withArguments(eq(conf)).thenReturn(entryLogger);
         when(entryLogger.getEntryLogMetadata(anyLong())).thenReturn(entryLogMetadata);
 
-        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap();
+        ConcurrentLongLongHashMap map = ConcurrentLongLongHashMap.newBuilder().build();
         map.put(1, 1);
         when(entryLogMetadata.getLedgersMap()).thenReturn(map);
 

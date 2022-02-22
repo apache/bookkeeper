@@ -57,14 +57,14 @@ public class ConcurrentOpenHashSet<V> {
 
     private final Section<V>[] sections;
 
-    public static Builder newBuilder() {
-        return new Builder();
+    public static <V> Builder<V> newBuilder() {
+        return new Builder<>();
     }
 
     /**
      * Builder of ConcurrentOpenHashSet.
      */
-    public static class Builder {
+    public static class Builder<V> {
         int expectedItems = DefaultExpectedItems;
         int concurrencyLevel = DefaultConcurrencyLevel;
         float mapFillFactor = DefaultMapFillFactor;
@@ -73,43 +73,43 @@ public class ConcurrentOpenHashSet<V> {
         float shrinkFactor = DefaultShrinkFactor;
         boolean autoShrink = DefaultAutoShrink;
 
-        public Builder expectedItems(int expectedItems) {
+        public Builder<V> expectedItems(int expectedItems) {
             this.expectedItems = expectedItems;
             return this;
         }
 
-        public Builder concurrencyLevel(int concurrencyLevel) {
+        public Builder<V> concurrencyLevel(int concurrencyLevel) {
             this.concurrencyLevel = concurrencyLevel;
             return this;
         }
 
-        public Builder mapFillFactor(float mapFillFactor) {
+        public Builder<V> mapFillFactor(float mapFillFactor) {
             this.mapFillFactor = mapFillFactor;
             return this;
         }
 
-        public Builder mapIdleFactor(float mapIdleFactor) {
+        public Builder<V> mapIdleFactor(float mapIdleFactor) {
             this.mapIdleFactor = mapIdleFactor;
             return this;
         }
 
-        public Builder expandFactor(float expandFactor) {
+        public Builder<V> expandFactor(float expandFactor) {
             this.expandFactor = expandFactor;
             return this;
         }
 
-        public Builder shrinkFactor(float shrinkFactor) {
+        public Builder<V> shrinkFactor(float shrinkFactor) {
             this.shrinkFactor = shrinkFactor;
             return this;
         }
 
-        public Builder autoShrink(boolean autoShrink) {
+        public Builder<V> autoShrink(boolean autoShrink) {
             this.autoShrink = autoShrink;
             return this;
         }
 
-        public ConcurrentOpenHashSet build() {
-            return new ConcurrentOpenHashSet(expectedItems, concurrencyLevel,
+        public ConcurrentOpenHashSet<V> build() {
+            return new ConcurrentOpenHashSet<>(expectedItems, concurrencyLevel,
                     mapFillFactor, mapIdleFactor, autoShrink, expandFactor, shrinkFactor);
         }
     }
