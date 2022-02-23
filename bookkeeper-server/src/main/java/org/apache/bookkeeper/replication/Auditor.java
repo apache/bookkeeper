@@ -763,18 +763,20 @@ public class Auditor implements AutoCloseable {
             executor.scheduleAtFixedRate(safeRun(new Runnable() {
                 @Override
                 public void run() {
+                    Stopwatch stopwatch = Stopwatch.createStarted();
+                    boolean checkSuccess = false;
                     try {
                         if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
                             LOG.info("Ledger replication disabled, skipping checkAllLedgers");
                             return;
                         }
 
-                        Stopwatch stopwatch = Stopwatch.createStarted();
                         LOG.info("Starting checkAllLedgers");
                         checkAllLedgers();
                         long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
                         LOG.info("Completed checkAllLedgers in {} milliSeconds", checkAllLedgersDuration);
                         checkAllLedgersTime.registerSuccessfulEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
+                        checkSuccess = true;
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         LOG.error("Interrupted while running periodic check", ie);
@@ -787,6 +789,11 @@ public class Auditor implements AutoCloseable {
                         submitShutdownTask();
                     } catch (ReplicationException.UnavailableException ue) {
                         LOG.error("Underreplication manager unavailable running periodic check", ue);
+                    } finally {
+                        if (!checkSuccess) {
+                            long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
+                            checkAllLedgersTime.registerFailedEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
+                        }
                     }
                 }
                 }), initialDelay, interval, TimeUnit.SECONDS);
