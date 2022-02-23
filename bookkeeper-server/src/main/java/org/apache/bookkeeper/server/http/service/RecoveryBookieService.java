@@ -46,7 +46,6 @@ import org.slf4j.LoggerFactory;
  * The parameter of input body should be like this format:
  * {
  *   "bookie_src": [ "bookie_src1", "bookie_src2"... ],
- *   "bookie_dest": [ "bookie_dest1", "bookie_dest2"... ],
  *   "delete_cookie": &lt;bool_value&gt;
  * }
  */
