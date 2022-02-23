@@ -147,13 +147,13 @@ public class MVCCStoreFactoryImplTest {
             assertTrue(store.spec().getKeyCoder() instanceof ByteArrayCoder);
             assertTrue(store.spec().getValCoder() instanceof ByteArrayCoder);
             assertSame(
-                factory.writeIOScheduler().chooseThread(streamId % 3),
+                factory.writeIOScheduler().chooseThread(streamId),
                 store.spec().getWriteIOScheduler());
             assertSame(
-                factory.readIOScheduler().chooseThread(streamId % 3),
+                factory.readIOScheduler().chooseThread(streamId),
                 store.spec().getReadIOScheduler());
             assertSame(
-                factory.checkpointScheduler().chooseThread(streamId % 3),
+                factory.checkpointScheduler().chooseThread(streamId),
                 store.spec().getCheckpointIOScheduler());
             assertTrue(store.spec().getCheckpointStore() instanceof FSCheckpointManager);
             assertEquals(Duration.ofMinutes(15), store.spec().getCheckpointDuration());
