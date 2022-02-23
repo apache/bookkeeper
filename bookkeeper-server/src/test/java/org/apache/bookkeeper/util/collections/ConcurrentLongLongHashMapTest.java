@@ -107,6 +107,58 @@ public class ConcurrentLongLongHashMapTest {
     }
 
     @Test
+    public void testClear() {
+        ConcurrentLongLongHashMap map = ConcurrentLongLongHashMap.newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+        assertTrue(map.capacity() == 4);
+
+        assertTrue(map.put(1, 1) == -1);
+        assertTrue(map.put(2, 2) == -1);
+        assertTrue(map.put(3, 3) == -1);
+
+        assertTrue(map.capacity() == 8);
+        map.clear();
+        assertTrue(map.capacity() == 4);
+    }
+
+    @Test
+    public void testExpandAndShrink() {
+        ConcurrentLongLongHashMap map = ConcurrentLongLongHashMap.newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+        assertTrue(map.put(1, 1) == -1);
+        assertTrue(map.put(2, 2) == -1);
+        assertTrue(map.put(3, 3) == -1);
+
+        // expand hashmap
+        assertTrue(map.capacity() == 8);
+
+        assertTrue(map.remove(1, 1));
+        // not shrink
+        assertTrue(map.capacity() == 8);
+        assertTrue(map.remove(2, 2));
+        // shrink hashmap
+        assertTrue(map.capacity() == 4);
+
+        // expand hashmap
+        assertTrue(map.put(4, 4) == -1);
+        assertTrue(map.put(5, 5) == -1);
+        assertTrue(map.capacity() == 8);
+
+        //verify that the map does not keep shrinking at every remove() operation
+        assertTrue(map.put(6, 6) == -1);
+        assertTrue(map.remove(6, 6));
+        assertTrue(map.capacity() == 8);
+    }
+
+    @Test
     public void testRemove() {
         ConcurrentLongLongHashMap map = ConcurrentLongLongHashMap.newBuilder().build();
 

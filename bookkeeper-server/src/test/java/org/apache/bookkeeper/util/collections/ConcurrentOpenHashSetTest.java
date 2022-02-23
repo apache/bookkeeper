@@ -105,6 +105,60 @@ public class ConcurrentOpenHashSetTest {
     }
 
     @Test
+    public void testClear() {
+        ConcurrentOpenHashSet<String> map = ConcurrentOpenHashSet.<String>newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+        assertTrue(map.capacity() == 4);
+
+        assertTrue(map.add("k1"));
+        assertTrue(map.add("k2"));
+        assertTrue(map.add("k3"));
+
+        assertTrue(map.capacity() == 8);
+        map.clear();
+        assertTrue(map.capacity() == 4);
+    }
+
+    @Test
+    public void testExpandAndShrink() {
+        ConcurrentOpenHashSet<String> map = ConcurrentOpenHashSet.<String>newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+        assertTrue(map.capacity() == 4);
+
+        assertTrue(map.add("k1"));
+        assertTrue(map.add("k2"));
+        assertTrue(map.add("k3"));
+
+        // expand hashmap
+        assertTrue(map.capacity() == 8);
+
+        assertTrue(map.remove("k1"));
+        // not shrink
+        assertTrue(map.capacity() == 8);
+        assertTrue(map.remove("k2"));
+        // shrink hashmap
+        assertTrue(map.capacity() == 4);
+
+        // expand hashmap
+        assertTrue(map.add("k4"));
+        assertTrue(map.add("k5"));
+        assertTrue(map.capacity() == 8);
+
+        //verify that the map does not keep shrinking at every remove() operation
+        assertTrue(map.add("k6"));
+        assertTrue(map.remove("k6"));
+        assertTrue(map.capacity() == 8);
+    }
+
+    @Test
     public void testRemove() {
         ConcurrentOpenHashSet<String> set =
                 ConcurrentOpenHashSet.<String>newBuilder().build();
