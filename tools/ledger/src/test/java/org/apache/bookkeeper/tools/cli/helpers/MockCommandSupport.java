@@ -67,7 +67,10 @@ public abstract class MockCommandSupport {
 
     protected <T> MockedStatic<T> mockStatic(Class<T> classToMock, MockSettings settings) {
         final String key = mockedClassKey(classToMock);
-        miscMockedStatic.remove(key);
+        final MockedStatic<?> prev = miscMockedStatic.remove(key);
+        if (prev != null) {
+            prev.close();
+        }
         final MockedStatic mockedStatic = Mockito.mockStatic(classToMock, settings);
         miscMockedStatic.put(key, mockedStatic);
         return mockedStatic;
@@ -82,6 +85,10 @@ public abstract class MockCommandSupport {
         return mockStatic(classToMock, withSettings());
     }
 
+    protected <T> MockedStatic<T> unsafeGetMockedStatic(Class<T> mockedClass) {
+        return  (MockedStatic<T>) miscMockedStatic.get(mockedClassKey(mockedClass));
+    }
+
     protected <T> MockedStatic<T> getMockedStatic(Class<T> mockedClass) {
         final MockedStatic<T> mockedStatic = (MockedStatic<T>)
                 miscMockedStatic.get(mockedClassKey(mockedClass));
@@ -93,7 +100,7 @@ public abstract class MockCommandSupport {
     }
 
     protected <T> MockedConstruction<T> mockConstruction(Class<T> classToMock) {
-        return mockConstruction(classToMock, null);
+        return mockConstruction(classToMock, (mocked, context) -> {});
     }
 
     protected <T> MockedConstruction<T> mockConstruction(Class<T> classToMock,
@@ -106,11 +113,14 @@ public abstract class MockCommandSupport {
                                                          MockSettings settings,
                                                          MockedConstruction.MockInitializer<T> initializer) {
         final String key = mockedClassKey(classToMock);
-        miscMockedConstructions.remove(key);
+        final MockedConstruction<?> prev = miscMockedConstructions.remove(key);
+        if (prev != null) {
+            prev.close();
+        }
 
-        final MockedConstruction<T> mockedConstruction = Mockito.mockConstruction(classToMock, initializer);
+        final MockedConstruction<T> mockedConstruction = Mockito.mockConstruction(classToMock, settings, initializer);
         miscMockedConstructions.put(key, mockedConstruction);
-        return Mockito.mockConstruction(classToMock, initializer);
+        return mockedConstruction;
     }
 
     protected <T> MockedConstruction<T> getMockedConstruction(Class<T> mockedClass) {

@@ -24,7 +24,6 @@ import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Test;
-import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link InitCommand}.
@@ -38,19 +37,18 @@ public class InitCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         mockServerConfigurationConstruction();
         mockBookKeeperAdminConstruction();
+        mockStatic(BookKeeperAdmin.class).when(() -> BookKeeperAdmin.initBookie(any(ServerConfiguration.class)))
+                .thenReturn(true);
     }
 
     @Test
     public void testInitCommand() {
-        try (final MockedStatic<BookKeeperAdmin> bookKeeperAdminMockedStatic = mockStatic(BookKeeperAdmin.class);) {
-            bookKeeperAdminMockedStatic.when(() -> BookKeeperAdmin.initBookie(any(ServerConfiguration.class)))
-                    .thenReturn(true);
             InitCommand initCommand = new InitCommand();
             try {
                 initCommand.apply(bkFlags, new String[]{""});
             } catch (Exception e) {
                 fail("Should not throw any exception here.");
             }
-        }
+
     }
 }

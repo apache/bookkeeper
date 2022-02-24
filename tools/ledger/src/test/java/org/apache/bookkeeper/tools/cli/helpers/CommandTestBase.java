@@ -32,6 +32,7 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.MockedStatic;
 
 import java.io.File;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -51,10 +52,10 @@ public class CommandTestBase extends MockCommandSupport {
     protected String[] ledgerDirNames;
 
     protected final BKFlags bkFlags;
-    protected ServerConfiguration conf;
-
     protected MockedStatic<MetadataDrivers> mockMetadataDrivers() {
-        return mockStatic(MetadataDrivers.class);
+        return Objects.requireNonNullElseGet(
+                unsafeGetMockedStatic(MetadataDrivers.class),
+                () -> mockStatic(MetadataDrivers.class));
     }
 
     protected void mockMetadataDriversWithRegistrationManager(RegistrationManager registrationManager) {
@@ -93,6 +94,7 @@ public class CommandTestBase extends MockCommandSupport {
 
     protected void mockServerConfigurationConstruction(Consumer<ServerConfiguration> consumer) {
         mockConstruction(ServerConfiguration.class, (serverConfiguration, context) -> {
+            final ServerConfiguration defaultConf = new ServerConfiguration();
             doReturn("zk://127.0.0.1/path/to/ledgers").when(serverConfiguration).getMetadataServiceUri();
             String[] indexDirs = new String[3];
             for (int i = 0; i < indexDirs.length; i++) {
@@ -110,6 +112,8 @@ public class CommandTestBase extends MockCommandSupport {
                 doReturn(ledgerDirNames).when(serverConfiguration).getLedgerDirNames();
                 doCallRealMethod().when(serverConfiguration).getLedgerDirs();
             }
+            doReturn(defaultConf.getDiskUsageThreshold()).when(serverConfiguration).getDiskUsageThreshold();
+            doReturn(defaultConf.getDiskUsageWarnThreshold()).when(serverConfiguration).getDiskUsageWarnThreshold();
             if (consumer != null) {
                 consumer.accept(serverConfiguration);
             }

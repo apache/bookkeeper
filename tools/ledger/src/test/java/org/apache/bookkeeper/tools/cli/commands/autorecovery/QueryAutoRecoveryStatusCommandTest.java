@@ -47,12 +47,10 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
-import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link QueryAutoRecoveryStatusCommand}.
@@ -66,7 +64,6 @@ public class QueryAutoRecoveryStatusCommandTest extends BookieCommandTestBase {
         super(3, 0);
     }
     LedgerUnderreplicationManager underreplicationManager;
-    private MockedStatic<CommandHelpers> commandHelpersMockedStatic;
 
     @Override
     public void setup() throws Exception {
@@ -135,17 +132,10 @@ public class QueryAutoRecoveryStatusCommandTest extends BookieCommandTestBase {
 
         when(underreplicationManager.listLedgersToRereplicate(any())).thenReturn(iter);
 
-        commandHelpersMockedStatic = mockStatic(CommandHelpers.class, CALLS_REAL_METHODS);
-        commandHelpersMockedStatic.when(() -> CommandHelpers
+        mockStatic(CommandHelpers.class, CALLS_REAL_METHODS).when(() -> CommandHelpers
                 .getBookieSocketAddrStringRepresentation(
                         eq(bookieId), any(BookieAddressResolver.class))).thenReturn("");
     }
-
-    @After
-    public void after() {
-        commandHelpersMockedStatic.close();
-    }
-
 
     @Test()
     public void testQueryRecoverStatusCommand() {

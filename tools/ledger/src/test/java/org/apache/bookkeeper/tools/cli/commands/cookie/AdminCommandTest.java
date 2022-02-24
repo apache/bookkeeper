@@ -158,15 +158,14 @@ public class AdminCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testWithHostName() throws Exception {
-        AtomicBoolean constructorCalled = new AtomicBoolean();
         mockServerConfigurationConstruction(serverConfiguration -> {
             doReturn(true).when(serverConfiguration).getUseHostNameAsBookieID();
-            constructorCalled.set(true);
         });
         testCommand("-host");
         verify(cookie, times(2)).verify(any(Cookie.class));
         verify(getMockedConstruction(ServerConfiguration.class).constructed().get(1),
                 times(3)).setUseHostNameAsBookieID(anyBoolean());
+
     }
 
     @Ignore

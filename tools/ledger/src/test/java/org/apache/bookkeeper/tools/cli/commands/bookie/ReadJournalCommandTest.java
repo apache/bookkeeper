@@ -18,6 +18,8 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,7 +50,9 @@ public class ReadJournalCommandTest extends BookieCommandTestBase {
         AtomicInteger journalCount = new AtomicInteger();
         AtomicInteger ledgerDirsManagerCount = new AtomicInteger();
         AtomicInteger diskCheckerCount = new AtomicInteger();
-        mockServerConfigurationConstruction();
+        mockServerConfigurationConstruction(conf -> {
+            doReturn(new String[] {new File(journalDirsName[0]).getAbsolutePath()}).when(conf).getJournalDirNames();
+        });
         mockConstruction(DiskChecker.class, (c, context) -> {
 
             final ServerConfiguration defaultConf = new ServerConfiguration();
@@ -61,7 +65,9 @@ public class ReadJournalCommandTest extends BookieCommandTestBase {
             ledgerDirsManagerCount.incrementAndGet();
         });
         mockConstruction(Journal.class, (journal, context) -> {
-            when(journal.getJournalDirectory()).thenReturn(conf.getJournalDirs()[0]);
+            doAnswer(invocation ->
+                    getMockedConstruction(ServerConfiguration.class).constructed().get(0).getJournalDirs()[0]
+            ).when(journal).getJournalDirectory();
             journalCount.incrementAndGet();
         });
 
@@ -76,9 +82,10 @@ public class ReadJournalCommandTest extends BookieCommandTestBase {
         AtomicInteger journalCount = new AtomicInteger();
         AtomicInteger ledgerDirsManagerCount = new AtomicInteger();
         AtomicInteger diskCheckerCount = new AtomicInteger();
-        mockServerConfigurationConstruction();
+        mockServerConfigurationConstruction(conf -> {
+            doReturn(new String[] {new File(journalDirsName[0]).getAbsolutePath()}).when(conf).getJournalDirNames();
+        });
         mockConstruction(DiskChecker.class, (c, context) -> {
-
             final ServerConfiguration defaultConf = new ServerConfiguration();
             assertEquals(defaultConf.getDiskUsageThreshold(), context.arguments().get(0));
             assertEquals(defaultConf.getDiskUsageWarnThreshold(), context.arguments().get(1));
@@ -89,7 +96,9 @@ public class ReadJournalCommandTest extends BookieCommandTestBase {
             ledgerDirsManagerCount.incrementAndGet();
         });
         mockConstruction(Journal.class, (journal, context) -> {
-            when(journal.getJournalDirectory()).thenReturn(conf.getJournalDirs()[0]);
+            doAnswer(invocation ->
+                    getMockedConstruction(ServerConfiguration.class).constructed().get(0).getJournalDirs()[0]
+            ).when(journal).getJournalDirectory();
             journalCount.incrementAndGet();
         });
         File file = testDir.newFile("1.txn");
@@ -117,10 +126,12 @@ public class ReadJournalCommandTest extends BookieCommandTestBase {
             ledgerDirsManagerCount.incrementAndGet();
         });
         mockConstruction(Journal.class, (journal, context) -> {
-            when(journal.getJournalDirectory()).thenReturn(conf.getJournalDirs()[0]);
+            doAnswer(invocation ->
+                    getMockedConstruction(ServerConfiguration.class).constructed().get(0).getJournalDirs()[0]
+            ).when(journal).getJournalDirectory();
             journalCount.incrementAndGet();
         });
-        testCommand("-id", "1", "-d", conf.getJournalDirs()[0].getAbsolutePath());
+        testCommand("-id", "1", "-d", new File(journalDirsName[0]).getAbsolutePath());
         assertEquals(3, journalCount.get());
         assertEquals(3, ledgerDirsManagerCount.get());
         assertEquals(3, diskCheckerCount.get());

@@ -35,23 +35,15 @@ public abstract class DiscoveryCommandTestBase extends ClientCommandTestBase {
 
     protected RegistrationClient regClient;
     protected ScheduledExecutorService executor;
-    private MockedStatic<Executors> executorsMockedStatic;
 
     @Before
     public void setup() throws Exception {
         super.setup();
 
         this.executor = mock(ScheduledExecutorService.class);
-        executorsMockedStatic = mockStatic(Executors.class);
-        executorsMockedStatic.when(() -> Executors.newSingleThreadScheduledExecutor()).thenReturn(executor);
+        mockStatic(Executors.class).when(() -> Executors.newSingleThreadScheduledExecutor()).thenReturn(executor);
         this.regClient = mock(RegistrationClient.class);
         when(metadataClientDriver.getRegistrationClient())
             .thenReturn(regClient);
     }
-
-    @After
-    public void cleanupMock() throws Exception {
-        executorsMockedStatic.close();
-    }
-
 }

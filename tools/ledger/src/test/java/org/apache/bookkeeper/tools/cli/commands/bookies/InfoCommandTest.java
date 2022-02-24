@@ -30,7 +30,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockedConstruction;
 /**
  * Unit test of {@link InfoCommand}.
  */

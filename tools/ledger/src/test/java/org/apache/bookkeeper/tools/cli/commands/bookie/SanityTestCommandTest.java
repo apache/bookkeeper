@@ -42,7 +42,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.commons.configuration.Configuration;
 import org.junit.Test;
-import org.mockito.MockedConstruction;
 
 /**
  * Test for sanity command.

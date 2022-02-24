@@ -45,27 +45,12 @@ public class CookieCommandTestBase extends CommandTestBase {
     protected static final String BOOKIE_ID = "127.0.0.1:3181";
 
     protected RegistrationManager rm;
-    private MockedStatic<MetadataDrivers> metadataDriversMockedStatic;
 
 
     @Before
     public void setup() throws Exception {
         this.rm = mock(RegistrationManager.class);
-
-        metadataDriversMockedStatic = mockStatic(MetadataDrivers.class);
-        metadataDriversMockedStatic.when(() -> MetadataDrivers
-                .runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class))
-        ).then(invocation -> {
-            Function<RegistrationManager, ?> func = invocation.getArgument(1);
-            func.apply(rm);
-            return true;
-        });
-    }
-
-    @After
-    public void cleanup() {
-        metadataDriversMockedStatic.close();
-
+        mockMetadataDriversWithRegistrationManager(rm);
     }
 
     protected void assertBookieIdMissing(String consoleOutput) {

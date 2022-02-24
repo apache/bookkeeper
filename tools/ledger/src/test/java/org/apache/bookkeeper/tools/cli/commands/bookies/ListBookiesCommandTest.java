@@ -24,9 +24,9 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -40,10 +40,8 @@ import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.tools.cli.helpers.DiscoveryCommandTestBase;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockedStatic;
 
 /**
  * Unit test of {@link ListBookiesCommand}.
@@ -61,7 +59,6 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
     private Set<BookieId> writableBookies;
     private Set<BookieId> readonlyBookies;
     private Set<BookieId> allBookies;
-    private MockedStatic<CommandHelpers> commandHelpersMockedStatic;
 
     @Before
     public void setup() throws Exception {
@@ -84,12 +81,7 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         when(regClient.getAllBookies())
             .thenReturn(value(new Versioned<>(allBookies, new LongVersion(0L))));
 
-        commandHelpersMockedStatic = mockStatic(CommandHelpers.class, CALLS_REAL_METHODS);
-    }
-
-    @After
-    public void after() {
-        commandHelpersMockedStatic.close();
+        mockStatic(CommandHelpers.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
     }
 
     private static Set<BookieId> createBookies(int startPort, int numBookies) {
@@ -107,14 +99,14 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         for (int i = 0; i < numBookies; i++) {
             if (i == numBookies - 1){
                 final BookieId expectedBookieId = BookieId.parse("unknown" + (startPort + i));
-                commandHelpersMockedStatic
+                getMockedStatic(CommandHelpers.class)
                     .verify(() -> CommandHelpers.getBookieSocketAddrStringRepresentation(
                                         eq(expectedBookieId),
                                         any(BookieAddressResolver.class)),
                                 times(numCalls));
             } else {
                 final BookieId expectedBookieId = BookieId.parse("127.0.0.1" + (startPort + i));
-                commandHelpersMockedStatic
+                getMockedStatic(CommandHelpers.class)
                         .verify(() -> CommandHelpers.getBookieSocketAddrStringRepresentation(
                                         eq(expectedBookieId),
                                         any(BookieAddressResolver.class)),
@@ -233,13 +225,13 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         ListBookiesCommand cmd = new ListBookiesCommand();
         assertTrue(cmd.apply(bkFlags, new String[] { "-rw"}));
 
-        commandHelpersMockedStatic
+        getMockedStatic(CommandHelpers.class)
                 .verify(() -> CommandHelpers.getBookieSocketAddrStringRepresentation(any(), any()),
                         times(0));
 
         assertTrue(cmd.apply(bkFlags, new String[]{"-ro"}));
 
-        commandHelpersMockedStatic
+        getMockedStatic(CommandHelpers.class)
                 .verify(() -> CommandHelpers.getBookieSocketAddrStringRepresentation(any(), any()),
                 times(0));
     }

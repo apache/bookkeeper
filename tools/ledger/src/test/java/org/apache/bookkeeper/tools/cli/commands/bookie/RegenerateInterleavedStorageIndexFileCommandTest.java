@@ -19,9 +19,7 @@
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -29,7 +27,6 @@ import org.apache.bookkeeper.bookie.InterleavedStorageRegenerateIndexOp;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.MockedConstruction;
 
 /**
  * Unit test for {@link RegenerateInterleavedStorageIndexFileCommand}.
@@ -50,14 +47,14 @@ public class RegenerateInterleavedStorageIndexFileCommandTest extends BookieComm
     public void testCommand() throws Exception {
         String ledgerIds = "1,2,3";
         String password = "12345";
-        try (final MockedConstruction<InterleavedStorageRegenerateIndexOp> mocked =
-                     mockConstruction(InterleavedStorageRegenerateIndexOp.class, (op, context) -> {
+
+        mockConstruction(InterleavedStorageRegenerateIndexOp.class, (op, context) -> {
                          doNothing().when(op).initiate(anyBoolean());
-                     })) {
-            RegenerateInterleavedStorageIndexFileCommand cmd = new RegenerateInterleavedStorageIndexFileCommand();
-            Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-p", password, "-l", ledgerIds }));
-            verify(mocked.constructed().get(0), times(1)).initiate(anyBoolean());
-        }
+        });
+        RegenerateInterleavedStorageIndexFileCommand cmd = new RegenerateInterleavedStorageIndexFileCommand();
+        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-p", password, "-l", ledgerIds }));
+        verify(getMockedConstruction(InterleavedStorageRegenerateIndexOp.class).constructed().get(0),
+                times(1)).initiate(anyBoolean());
     }
 }
 
