@@ -25,7 +25,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
@@ -45,11 +44,9 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link AdminCommand}.
@@ -61,22 +58,19 @@ public class AdminCommandTest extends BookieCommandTestBase {
     private Versioned<Cookie> cookieVersioned;
     private Cookie cookie;
 
-    private MockedStatic<BookieImpl> bookieImplMockedStatic;
-    private MockedStatic<Cookie> cookieMockedStatic;
-
     public AdminCommandTest() throws IOException {
         super(3, 3);
     }
 
     @Override
-    protected void createMockedServerConfiguration(Consumer<ServerConfiguration> consumer) {
+    protected void mockServerConfigurationConstruction(Consumer<ServerConfiguration> consumer) {
         Consumer<ServerConfiguration> compositeConsumer = (serverConfiguration) -> {
             doReturn(bookieSocketAddress.getId()).when(serverConfiguration).getBookieId();
             if (consumer != null) {
                 consumer.accept(serverConfiguration);
             }
         };
-        super.createMockedServerConfiguration(compositeConsumer);
+        super.mockServerConfigurationConstruction(compositeConsumer);
     }
 
     @Override
@@ -86,8 +80,8 @@ public class AdminCommandTest extends BookieCommandTestBase {
         cookieVersioned = mock(Versioned.class);
         cookie = mock(Cookie.class);
 
-        cookieMockedStatic = mockStatic(Cookie.class);
-        bookieImplMockedStatic = mockStatic(BookieImpl.class);
+        mockStatic(Cookie.class);
+        mockStatic(BookieImpl.class);
 
         mockUpdateBookieIdInCookie();
         mockVerifyCookie();
@@ -97,35 +91,29 @@ public class AdminCommandTest extends BookieCommandTestBase {
 
     }
 
-    @After
-    public void after() {
-        cookieMockedStatic.close();
-        bookieImplMockedStatic.close();
-    }
-
     private void mockInitDirecotory() throws IOException {
         File[] files = new File[1];
         files[0] = testDir.getRoot();
         testDir.newFile(BookKeeperConstants.VERSION_FILENAME);
-        bookieImplMockedStatic.when(() -> BookieImpl.getCurrentDirectories(any())).thenReturn(files);
+        getMockedStatic(BookieImpl.class).when(() -> BookieImpl.getCurrentDirectories(any())).thenReturn(files);
     }
 
     private void mockUpdateBookieIdInCookie() throws Exception {
         RegistrationManager registrationManager = mock(RegistrationManager.class);
 
-        initMockedMetadataDriversWithRegistrationManager(registrationManager);
+        mockMetadataDriversWithRegistrationManager(registrationManager);
 
-        cookieMockedStatic.when(() -> Cookie
+        getMockedStatic(Cookie.class).when(() -> Cookie
                 .readFromRegistrationManager(eq(registrationManager), any(ServerConfiguration.class)))
                         .thenReturn(cookieVersioned);
 
-        cookieMockedStatic.when(() -> Cookie
+        getMockedStatic(Cookie.class).when(() -> Cookie
                         .readFromRegistrationManager(eq(registrationManager), eq(bookieSocketAddress)))
                 .thenReturn(cookieVersioned);
 
         when(cookieVersioned.getValue()).thenReturn(cookie);
         Cookie.Builder builder = mock(Cookie.Builder.class);
-        cookieMockedStatic.when(() -> Cookie.newBuilder(eq(cookie))).thenReturn(builder);
+        getMockedStatic(Cookie.class).when(() -> Cookie.newBuilder(eq(cookie))).thenReturn(builder);
         when(builder.setBookieId(anyString())).thenReturn(builder);
         when(builder.build()).thenReturn(cookie);
 
@@ -144,7 +132,7 @@ public class AdminCommandTest extends BookieCommandTestBase {
     }
 
     private void mockVerifyCookie() throws IOException, BookieException.InvalidCookieException {
-        cookieMockedStatic.when(() -> Cookie
+        getMockedStatic(Cookie.class).when(() -> Cookie
                         .readFromDirectory(any(File.class)))
                 .thenReturn(cookie);
         doNothing().when(cookie).verify(any(Cookie.class));
@@ -153,12 +141,12 @@ public class AdminCommandTest extends BookieCommandTestBase {
     private void mockExpandStorage() throws Exception {
         MetadataBookieDriver metadataBookieDriver = mock(MetadataBookieDriver.class);
         RegistrationManager registrationManager = mock(RegistrationManager.class);
-        initMockedMetadataDriversWithMetadataBookieDriver(metadataBookieDriver);
+        mockMetadataDriversWithMetadataBookieDriver(metadataBookieDriver);
         when(metadataBookieDriver.createRegistrationManager()).thenReturn(registrationManager);
     }
 
     private void mockListOrDeleteCookies() throws UnknownHostException {
-        bookieImplMockedStatic.when(() -> BookieImpl.getBookieId(any(ServerConfiguration.class)))
+        getMockedStatic(BookieImpl.class).when(() -> BookieImpl.getBookieId(any(ServerConfiguration.class)))
                 .thenReturn(bookieSocketAddress);
     }
 
@@ -171,13 +159,13 @@ public class AdminCommandTest extends BookieCommandTestBase {
     @Test
     public void testWithHostName() throws Exception {
         AtomicBoolean constructorCalled = new AtomicBoolean();
-        createMockedServerConfiguration(serverConfiguration -> {
+        mockServerConfigurationConstruction(serverConfiguration -> {
             doReturn(true).when(serverConfiguration).getUseHostNameAsBookieID();
             constructorCalled.set(true);
         });
         testCommand("-host");
         verify(cookie, times(2)).verify(any(Cookie.class));
-        verify(serverConfigurationMockedConstruction.constructed().get(1),
+        verify(getMockedConstruction(ServerConfiguration.class).constructed().get(1),
                 times(3)).setUseHostNameAsBookieID(anyBoolean());
     }
 

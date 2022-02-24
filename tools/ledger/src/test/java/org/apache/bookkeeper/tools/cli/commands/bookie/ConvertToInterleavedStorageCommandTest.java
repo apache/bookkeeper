@@ -24,7 +24,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,15 +47,12 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.MockedConstruction;
 
 /**
  * Unit test for {@link ConvertToInterleavedStorageCommand}.
  */
 public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBase {
 
-    private MockedConstruction<DbLedgerStorage> dbLedgerStorageMockedConstruction;
-    private MockedConstruction<InterleavedLedgerStorage> interleavedLedgerStorageMockedConstruction;
     private LedgerCache interleavedLedgerCache;
 
 
@@ -69,33 +65,29 @@ public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBas
         super.setup();
 
         createTmpFile();
-        createMockedServerConfiguration();
+        mockServerConfigurationConstruction();
 
-        addMockedConstruction(mockConstruction(DiskChecker.class));
+        mockConstruction(DiskChecker.class);
 
-        addMockedConstruction(mockConstruction(LedgerDirsManager.class, (ledgersDirManager, context) -> {
+        mockConstruction(LedgerDirsManager.class, (ledgersDirManager, context) -> {
             when(ledgersDirManager.getAllLedgerDirs()).thenReturn(getFileList());
-        }));
+        });
 
 
-        dbLedgerStorageMockedConstruction = mockConstruction(DbLedgerStorage.class, (dbStorage, context) -> {
+        mockConstruction(DbLedgerStorage.class, (dbStorage, context) -> {
             when(dbStorage.getActiveLedgersInRange(anyLong(), anyLong()))
                     .thenReturn(ConvertToInterleavedStorageCommandTest.this::getLedgerId);
         });
-        addMockedConstruction(dbLedgerStorageMockedConstruction);
-        
 
         interleavedLedgerCache = mock(LedgerCache.class);
         doNothing().when(interleavedLedgerCache).flushLedger(anyBoolean());
 
-        interleavedLedgerStorageMockedConstruction = mockConstruction(InterleavedLedgerStorage.class,
+        mockConstruction(InterleavedLedgerStorage.class,
                 (interleavedLedgerStorage, context) -> {
                     doNothing().when(interleavedLedgerStorage).flush();
                     doNothing().when(interleavedLedgerStorage).shutdown();
                     when(interleavedLedgerStorage.getLedgerCache()).thenReturn(interleavedLedgerCache);
                 });
-        addMockedConstruction(interleavedLedgerStorageMockedConstruction);
-
     }
 
 
@@ -126,8 +118,8 @@ public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBas
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
 
         try {
-            final DbLedgerStorage dbStorage = dbLedgerStorageMockedConstruction.constructed().get(0);
-            final InterleavedLedgerStorage interleavedLedgerStorage = interleavedLedgerStorageMockedConstruction.constructed().get(0);
+            final DbLedgerStorage dbStorage = getMockedConstruction(DbLedgerStorage.class).constructed().get(0);
+            final InterleavedLedgerStorage interleavedLedgerStorage = getMockedConstruction(InterleavedLedgerStorage.class).constructed().get(0);
             verify(dbStorage, times(1)).initialize(any(ServerConfiguration.class), eq(null), any(LedgerDirsManager.class),
                 any(LedgerDirsManager.class), eq(NullStatsLogger.INSTANCE), eq(PooledByteBufAllocator.DEFAULT));
             verify(interleavedLedgerStorage, times(1))

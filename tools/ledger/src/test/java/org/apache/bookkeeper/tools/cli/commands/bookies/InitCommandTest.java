@@ -41,7 +41,7 @@ public class InitCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        createMockedServerConfiguration();
+        mockServerConfigurationConstruction();
         final MockedStatic<BookKeeperAdmin> bookKeeperAdminMockedStatic = mockStatic(BookKeeperAdmin.class);
         bookKeeperAdminMockedStatic.when(() -> BookKeeperAdmin.initNewCluster(any(ServerConfiguration.class)))
                 .thenReturn(true);

@@ -27,29 +27,23 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.tools.common.BKFlags;
-import org.junit.After;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mockConstruction;
-import static org.mockito.Mockito.mockStatic;
 
 /**
  * A test base providing an environment for run a command.
  */
 @Slf4j
-public class CommandTestBase {
+public class CommandTestBase extends MockCommandSupport {
 
     @Rule
     public final TemporaryFolder testDir = new TemporaryFolder();
@@ -57,31 +51,14 @@ public class CommandTestBase {
     protected String[] ledgerDirNames;
 
     protected final BKFlags bkFlags;
-    protected MockedConstruction<ServerConfiguration> serverConfigurationMockedConstruction;
-    protected MockedConstruction<ClientConfiguration> clientConfigurationMockedConstruction;
-    protected MockedConstruction<BookKeeperAdmin> bookkeeperAdminMockedConstruction;
-    private MockedStatic<MetadataDrivers> metadataDriversMockedStatic;
     protected ServerConfiguration conf;
-    private List<MockedConstruction<?>> miscMockedConstructions = new ArrayList<>();
-    private List<MockedStatic<?>> miscMockedStatic = new ArrayList<>();
 
-    protected void addMockedConstruction(MockedConstruction<?> mockedConstruction) {
-        miscMockedConstructions.add(mockedConstruction);
-    }
-    protected void addMockedStatic(MockedStatic<?> mockedStatic) {
-        miscMockedStatic.add(mockedStatic);
+    protected MockedStatic<MetadataDrivers> mockMetadataDrivers() {
+        return mockStatic(MetadataDrivers.class);
     }
 
-    protected void initMockedMetadataDrivers() {
-        if (metadataDriversMockedStatic == null) {
-            metadataDriversMockedStatic = mockStatic(MetadataDrivers.class);
-        }
-    }
-
-    protected void initMockedMetadataDriversWithRegistrationManager(RegistrationManager registrationManager) {
-        initMockedMetadataDrivers();
-
-        metadataDriversMockedStatic.when(() -> MetadataDrivers
+    protected void mockMetadataDriversWithRegistrationManager(RegistrationManager registrationManager) {
+        mockMetadataDrivers().when(() -> MetadataDrivers
                 .runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class))
         ).then(invocation -> {
             Function<RegistrationManager, ?> func = invocation.getArgument(1);
@@ -90,10 +67,8 @@ public class CommandTestBase {
         });
     }
 
-    protected void initMockedMetadataDriversWithMetadataBookieDriver(MetadataBookieDriver metadataBookieDriver) {
-        initMockedMetadataDrivers();
-
-        metadataDriversMockedStatic.when(() -> MetadataDrivers
+    protected void mockMetadataDriversWithMetadataBookieDriver(MetadataBookieDriver metadataBookieDriver) {
+        mockMetadataDrivers().when(() -> MetadataDrivers
                 .runFunctionWithMetadataBookieDriver(any(ServerConfiguration.class), any(Function.class))
         ).then(invocation -> {
             Function<MetadataBookieDriver, ?> func = invocation.getArgument(1);
@@ -102,10 +77,8 @@ public class CommandTestBase {
         });
     }
 
-    protected void initMockedMetadataDriversWithLedgerManagerFactory(LedgerManagerFactory ledgerManagerFactory) {
-        initMockedMetadataDrivers();
-
-        metadataDriversMockedStatic.when(() -> MetadataDrivers
+    protected void mockMetadataDriversWithLedgerManagerFactory(LedgerManagerFactory ledgerManagerFactory) {
+        mockMetadataDrivers().when(() -> MetadataDrivers
                 .runFunctionWithLedgerManagerFactory(any(ServerConfiguration.class), any(Function.class))
         ).then(invocation -> {
             Function<LedgerManagerFactory, ?> func = invocation.getArgument(1);
@@ -114,16 +87,12 @@ public class CommandTestBase {
         });
     }
 
-    protected void createMockedServerConfiguration() {
-        createMockedServerConfiguration(null);
+    protected void mockServerConfigurationConstruction() {
+        mockServerConfigurationConstruction(null);
     }
 
-    protected void createMockedServerConfiguration(Consumer<ServerConfiguration> consumer) {
-        if (serverConfigurationMockedConstruction != null) {
-            serverConfigurationMockedConstruction.close();
-            serverConfigurationMockedConstruction = null;
-        }
-        serverConfigurationMockedConstruction = mockConstruction(ServerConfiguration.class, (serverConfiguration, context) -> {
+    protected void mockServerConfigurationConstruction(Consumer<ServerConfiguration> consumer) {
+        mockConstruction(ServerConfiguration.class, (serverConfiguration, context) -> {
             doReturn("zk://127.0.0.1/path/to/ledgers").when(serverConfiguration).getMetadataServiceUri();
             String[] indexDirs = new String[3];
             for (int i = 0; i < indexDirs.length; i++) {
@@ -147,12 +116,12 @@ public class CommandTestBase {
         });
     }
 
-    protected void createMockedClientConfiguration() {
-        createMockedClientConfiguration(null);
+    protected void mockClientConfigurationConstruction() {
+        mockClientConfigurationConstruction(null);
     }
 
-    protected void createMockedClientConfiguration(Consumer<ClientConfiguration> consumer) {
-        clientConfigurationMockedConstruction = mockConstruction(ClientConfiguration.class, (clientConfiguration, context) -> {
+    protected void mockClientConfigurationConstruction(Consumer<ClientConfiguration> consumer) {
+        mockConstruction(ClientConfiguration.class, (clientConfiguration, context) -> {
             doReturn("zk://127.0.0.1/path/to/ledgers").when(clientConfiguration).getMetadataServiceUri();
             if (consumer != null) {
                 consumer.accept(clientConfiguration);
@@ -160,12 +129,12 @@ public class CommandTestBase {
         });
     }
 
-    protected void createMockedBookKeeperAdmin() {
-        createMockedBookKeeperAdmin(null);
+    protected void mockBookKeeperAdminConstruction() {
+        mockBookKeeperAdminConstruction(null);
     }
 
-    protected void createMockedBookKeeperAdmin(Consumer<BookKeeperAdmin> consumer) {
-        bookkeeperAdminMockedConstruction = mockConstruction(BookKeeperAdmin.class, (bookKeeperAdmin, context) -> {
+    protected void mockBookKeeperAdminConstruction(Consumer<BookKeeperAdmin> consumer) {
+        mockConstruction(BookKeeperAdmin.class, (bookKeeperAdmin, context) -> {
             if (consumer != null) {
                 consumer.accept(bookKeeperAdmin);
             }
@@ -175,25 +144,4 @@ public class CommandTestBase {
     public CommandTestBase() {
         this.bkFlags = new BKFlags();
     }
-
-    @After
-    public void afterMethod() {
-        if (serverConfigurationMockedConstruction != null) {
-            serverConfigurationMockedConstruction.close();
-        }
-        if (clientConfigurationMockedConstruction != null) {
-            clientConfigurationMockedConstruction.close();
-        }
-        if (bookkeeperAdminMockedConstruction != null) {
-            bookkeeperAdminMockedConstruction.close();
-        }
-        if (metadataDriversMockedStatic != null) {
-            metadataDriversMockedStatic.close();
-        }
-        miscMockedConstructions.forEach(MockedConstruction::close);
-        miscMockedConstructions.clear();
-        miscMockedStatic.forEach(MockedStatic::close);
-        miscMockedStatic.clear();
-    }
-
 }

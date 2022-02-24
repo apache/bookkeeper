@@ -19,7 +19,6 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mockStatic;
 
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -37,8 +36,8 @@ public class InitCommandTest extends BookieCommandTestBase {
     }
 
     public void setup() throws Exception {
-        createMockedServerConfiguration();
-        createMockedBookKeeperAdmin();
+        mockServerConfigurationConstruction();
+        mockBookKeeperAdminConstruction();
     }
 
     @Test

@@ -74,8 +74,8 @@ public class QueryAutoRecoveryStatusCommandTest extends BookieCommandTestBase {
         BookieId bookieId = BookieId.parse(UUID.randomUUID().toString());
         LedgerManagerFactory ledgerManagerFactory = mock(LedgerManagerFactory.class);
 
-        createMockedServerConfiguration(null);
-        initMockedMetadataDriversWithLedgerManagerFactory(ledgerManagerFactory);
+        mockServerConfigurationConstruction(null);
+        mockMetadataDriversWithLedgerManagerFactory(ledgerManagerFactory);
 
         LedgerManager ledgerManager = mock(LedgerManager.class);
         underreplicationManager = mock(LedgerUnderreplicationManager.class);

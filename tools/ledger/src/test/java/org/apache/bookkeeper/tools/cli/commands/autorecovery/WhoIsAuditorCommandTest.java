@@ -45,9 +45,6 @@ import org.mockito.MockedStatic;
  */
 public class WhoIsAuditorCommandTest extends BookieCommandTestBase {
 
-    private MockedStatic<CommandHelpers> commandHelpersMockedStatic;
-    private MockedStatic<ZooKeeperClient> zKClientMockedStatic;
-
     public WhoIsAuditorCommandTest() {
         super(3, 0);
     }
@@ -56,31 +53,22 @@ public class WhoIsAuditorCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        createMockedClientConfiguration();
+        mockClientConfigurationConstruction();
 
         ZooKeeperClient zk = mock(ZooKeeperClient.class);
         ZooKeeperClient.Builder builder = mock(ZooKeeperClient.Builder.class);
 
-        zKClientMockedStatic = mockStatic(ZooKeeperClient.class);
-        zKClientMockedStatic.when(() -> ZooKeeperClient.newBuilder()).thenReturn(builder);
+        mockStatic(ZooKeeperClient.class).when(() -> ZooKeeperClient.newBuilder()).thenReturn(builder);
         when(builder.connectString(anyString())).thenReturn(builder);
         when(builder.sessionTimeoutMs(anyInt())).thenReturn(builder);
         when(builder.build()).thenReturn(zk);
 
         BookieId bookieId = BookieId.parse(UUID.randomUUID().toString());
 
-        commandHelpersMockedStatic = mockStatic(CommandHelpers.class, CALLS_REAL_METHODS);
-        commandHelpersMockedStatic.when(() -> CommandHelpers
+        mockStatic(CommandHelpers.class, CALLS_REAL_METHODS).when(() -> CommandHelpers
                 .getBookieSocketAddrStringRepresentation(
                         eq(bookieId), any(BookieAddressResolver.class))).thenReturn("");
     }
-
-    @After
-    public void after() {
-        commandHelpersMockedStatic.close();
-        zKClientMockedStatic.close();
-    }
-
 
     @Test
     public void testCommand() throws Exception {

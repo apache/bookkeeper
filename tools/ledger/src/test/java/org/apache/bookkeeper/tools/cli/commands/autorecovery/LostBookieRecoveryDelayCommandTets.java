@@ -45,8 +45,8 @@ public class LostBookieRecoveryDelayCommandTets extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        createMockedClientConfiguration();
-        createMockedBookKeeperAdmin(
+        mockClientConfigurationConstruction();
+        mockBookKeeperAdminConstruction(
                 new Consumer<BookKeeperAdmin>() {
                     @Override
                     @SneakyThrows
@@ -68,14 +68,14 @@ public class LostBookieRecoveryDelayCommandTets extends BookieCommandTestBase {
     @Test
     public void testWithSet() throws Exception {
         testCommand("-s", "1");
-        verify(bookkeeperAdminMockedConstruction.constructed().get(0),
+        verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0),
                 times(1)).setLostBookieRecoveryDelay(1);
     }
 
     @Test
     public void testWithGet() throws Exception {
         testCommand("-g");
-        verify(bookkeeperAdminMockedConstruction.constructed().get(0),
+        verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0),
                 times(1)).getLostBookieRecoveryDelay();
     }
 

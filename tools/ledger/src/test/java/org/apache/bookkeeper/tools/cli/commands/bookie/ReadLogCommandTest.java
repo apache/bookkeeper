@@ -20,8 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.mockConstruction;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
+import static org.mockito.Mockito.doNothing;
 
 import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.ReadOnlyEntryLogger;
@@ -42,10 +41,10 @@ public class ReadLogCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        createMockedServerConfiguration();
-        addMockedConstruction(mockConstruction(ReadOnlyEntryLogger.class, (entryLogger, context) -> {
+        mockServerConfigurationConstruction();
+        mockConstruction(ReadOnlyEntryLogger.class, (entryLogger, context) -> {
             doNothing().when(entryLogger).scanEntryLog(anyLong(), any(EntryLogger.EntryLogScanner.class));
-        }));
+        });
     }
 
     @Test

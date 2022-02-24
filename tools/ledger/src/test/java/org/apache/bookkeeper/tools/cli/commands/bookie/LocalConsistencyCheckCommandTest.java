@@ -21,7 +21,6 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,9 +49,8 @@ public class LocalConsistencyCheckCommandTest extends BookieCommandTestBase {
         super.setup();
 
         ledgerStorage = mock(LedgerStorage.class);
-        createMockedServerConfiguration();
+        mockServerConfigurationConstruction();
         final MockedStatic<BookieImpl> bookieMockedStatic = mockStatic(BookieImpl.class);
-        addMockedStatic(bookieMockedStatic);
         bookieMockedStatic.when(() -> BookieImpl.mountLedgerStorageOffline(any(ServerConfiguration.class), eq(null)))
                     .thenReturn(ledgerStorage);
         List<LedgerStorage.DetectedInconsistency> errors = new ArrayList<>();

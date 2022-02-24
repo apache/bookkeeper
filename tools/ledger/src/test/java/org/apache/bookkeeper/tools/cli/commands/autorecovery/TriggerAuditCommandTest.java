@@ -44,12 +44,12 @@ public class TriggerAuditCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        createMockedServerConfiguration();
+        mockServerConfigurationConstruction();
 
-        createMockedClientConfiguration();
+        mockClientConfigurationConstruction();
 
 
-        createMockedBookKeeperAdmin(new Consumer<>(){
+        mockBookKeeperAdminConstruction(new Consumer<>(){
             @Override
             @SneakyThrows
             public void accept(BookKeeperAdmin bookKeeperAdmin) {
@@ -63,7 +63,7 @@ public class TriggerAuditCommandTest extends BookieCommandTestBase {
         TriggerAuditCommand cmd = new TriggerAuditCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
 
-        verify(bookkeeperAdminMockedConstruction.constructed().get(0),
+        verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0),
                 times(1)).triggerAudit();
     }
 }

@@ -46,7 +46,6 @@ import org.mockito.MockedStatic;
 public class LedgerCommandTest extends BookieCommandTestBase {
 
     private LedgerCache.LedgerIndexMetadata metadata;
-    private ServerConfiguration tConf;
 
     public LedgerCommandTest() {
         super(3, 0);
@@ -54,12 +53,11 @@ public class LedgerCommandTest extends BookieCommandTestBase {
 
     public void setup() throws Exception {
         super.setup();
-        createMockedServerConfiguration(serverconf -> {
+        mockServerConfigurationConstruction(serverconf -> {
             final ServerConfiguration defaultValue = new ServerConfiguration();
             when(serverconf.getLedgerStorageClass()).thenReturn(defaultValue.getLedgerStorageClass());
         });
         final MockedStatic<DbLedgerStorage> dbLedgerStorageMockedStatic = mockStatic(DbLedgerStorage.class);
-        addMockedStatic(dbLedgerStorageMockedStatic);
         dbLedgerStorageMockedStatic
                 .when(() -> DbLedgerStorage.readLedgerIndexEntries(anyLong(),
                         any(ServerConfiguration.class),
@@ -71,20 +69,16 @@ public class LedgerCommandTest extends BookieCommandTestBase {
                 });
 
 
-        /*PowerMockito.when(DbLedgerStorage.class.getName())
-                .thenReturn("org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage");*/
-
         LedgerCache.PageEntries e = mock(LedgerCache.PageEntries.class);
         LedgerCache.PageEntriesIterable i = mock(LedgerCache.PageEntriesIterable.class);
 
         metadata = mock(LedgerCache.LedgerIndexMetadata.class);
-        addMockedConstruction(mockConstruction(InterleavedLedgerStorage.class, (interleavedLedgerStorage, context) -> {
+        mockConstruction(InterleavedLedgerStorage.class, (interleavedLedgerStorage, context) -> {
             when(interleavedLedgerStorage.getIndexEntries(anyLong())).thenReturn(i);
             when(interleavedLedgerStorage.readLedgerIndexMetadata(anyLong())).thenReturn(metadata);
-        }));
+        });
 
         final MockedStatic<BookieImpl> bookieMockedStatic = mockStatic(BookieImpl.class);
-        addMockedStatic(bookieMockedStatic);
         bookieMockedStatic.when(() -> BookieImpl.mountLedgerStorageOffline(any(), any()))
                 .thenReturn(mock(LedgerStorage.class));
 
@@ -141,7 +135,7 @@ public class LedgerCommandTest extends BookieCommandTestBase {
     @Test
     public void testDbLedgerStorage() throws Exception {
 
-        createMockedServerConfiguration(conf -> {
+        mockServerConfigurationConstruction(conf -> {
             when(conf.getLedgerStorageClass()).thenReturn("org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage");
         });
         LedgerCommand cmd = new LedgerCommand();

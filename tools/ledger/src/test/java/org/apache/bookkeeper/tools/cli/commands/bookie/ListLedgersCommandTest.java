@@ -25,7 +25,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
@@ -37,14 +36,13 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.zookeeper.AsyncCallback;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.MockedConstruction;
 
 /**
  * Unit test for ListLedgers command.
  */
 public class ListLedgersCommandTest extends BookieCommandTestBase {
 
-    private final BookieId bookieAddress = BookieId.parse(UUID.randomUUID().toString());
+    private final static BookieId bookieAddress = BookieId.parse(UUID.randomUUID().toString());
 
     public ListLedgersCommandTest() {
         super(3, 3);
@@ -55,25 +53,23 @@ public class ListLedgersCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        createMockedServerConfiguration();
+        mockServerConfigurationConstruction();
 
-        addMockedConstruction(mockConstruction(BookieId.class, (bookieId, context) -> {
+        mockConstruction(BookieId.class, (bookieId, context) -> {
             doReturn(bookieAddress.getId()).when(bookieId).getId();
-        }));
+        });
 
         LedgerManagerFactory mFactory = mock(LedgerManagerFactory.class);
-        initMockedMetadataDriversWithLedgerManagerFactory(mFactory);
+        mockMetadataDriversWithLedgerManagerFactory(mFactory);
 
         LedgerManager ledgerManager = mock(LedgerManager.class);
         when(mFactory.newLedgerManager()).thenReturn(ledgerManager);
 
-        final MockedConstruction<CountDownLatch> countDownLatchMockedConstruction = mockConstruction(CountDownLatch.class);
-        addMockedConstruction(countDownLatchMockedConstruction);
+        mockConstruction(CountDownLatch.class);
 
-        CountDownLatch processDone = new CountDownLatch(1);
         AsyncCallback.VoidCallback callback = mock(AsyncCallback.VoidCallback.class);
         doAnswer(invocationOnMock -> {
-            countDownLatchMockedConstruction.constructed().get(0).countDown();
+            getMockedConstruction(CountDownLatch.class).constructed().get(0).countDown();
             return null;
         }).when(callback).processResult(anyInt(), anyString(), any());
     }

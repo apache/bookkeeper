@@ -51,20 +51,18 @@ public class FormatCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        createMockedServerConfiguration();
+        mockServerConfigurationConstruction();
 
         RegistrationManager rm = mock(RegistrationManager.class);
-        initMockedMetadataDriversWithRegistrationManager(rm);
+        mockMetadataDriversWithRegistrationManager(rm);
 
-        final MockedConstruction<Versioned> versionedMockedConstruction = mockConstruction(Versioned.class, (cookie, context) -> {
+        mockConstruction(Versioned.class, (cookie, context) -> {
             assertEquals(context.arguments().get(1), new LongVersion(1L));
             when(cookie.getValue()).thenReturn(mock(Cookie.class));
         });
-        addMockedConstruction(versionedMockedConstruction);
 
 
         final MockedStatic<Cookie> cookieMockedStatic = mockStatic(Cookie.class);
-        addMockedStatic(cookieMockedStatic);
         cookieMockedStatic.when(() -> Cookie.readFromRegistrationManager(eq(rm), any(ServerConfiguration.class)))
                 .thenAnswer(invocation -> new Versioned<>(mock(Cookie.class), new LongVersion(1L)));
     }

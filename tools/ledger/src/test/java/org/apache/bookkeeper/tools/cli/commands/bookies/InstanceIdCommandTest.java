@@ -40,7 +40,7 @@ public class InstanceIdCommandTest extends BookieCommandTestBase {
         super.setup();
 
         final RegistrationManager manager = mock(RegistrationManager.class);
-        initMockedMetadataDriversWithRegistrationManager(manager);
+        mockMetadataDriversWithRegistrationManager(manager);
         when(manager.getClusterInstanceId()).thenReturn("");
     }
 

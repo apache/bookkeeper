@@ -25,16 +25,11 @@ import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.InterleavedStorageRegenerateIndexOp;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.MockedConstruction;
-import org.mockito.Mockito;
 
 /**
  * Unit test for {@link RegenerateInterleavedStorageIndexFileCommand}.
@@ -48,7 +43,7 @@ public class RegenerateInterleavedStorageIndexFileCommandTest extends BookieComm
     @Override
     public void setup() throws Exception {
         super.setup();
-        createMockedServerConfiguration();
+        mockServerConfigurationConstruction();
     }
 
     @Test

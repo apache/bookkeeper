@@ -20,7 +20,6 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,14 +31,12 @@ import org.apache.bookkeeper.bookie.LogMark;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockedConstruction;
 
 /**
  * Unit test of {@link LastMarkCommand}.
  */
 public class LastMarkCommandTest extends BookieCommandTestBase {
 
-    private MockedConstruction<Journal> journalMockedConstruction;
     private LastLogMark lastLogMark;
     private LogMark logMark;
     private static final int NUM_JOURNAL_DIRS = 3;
@@ -52,19 +49,18 @@ public class LastMarkCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        createMockedServerConfiguration(conf -> {
+        mockServerConfigurationConstruction(conf -> {
             doReturn(0.95f).when(conf).getDiskUsageThreshold();
         });
-        addMockedConstruction(mockConstruction(LedgerDirsManager.class));
+        mockConstruction(LedgerDirsManager.class);
 
         this.lastLogMark = mock(LastLogMark.class);
         this.logMark = mock(LogMark.class);
         when(lastLogMark.getCurMark()).thenReturn(logMark);
 
-        journalMockedConstruction = mockConstruction(Journal.class, (journal, context) -> {
+        mockConstruction(Journal.class, (journal, context) -> {
             when(journal.getLastLogMark()).thenReturn(lastLogMark);
         });
-        addMockedConstruction(journalMockedConstruction);
     }
 
     @Test
@@ -73,7 +69,7 @@ public class LastMarkCommandTest extends BookieCommandTestBase {
         cmd.apply(bkFlags, new String[] { "" });
 
         for (int i = 0; i < NUM_JOURNAL_DIRS; i++) {
-            verify(journalMockedConstruction.constructed().get(i), times(1)).getLastLogMark();
+            verify(getMockedConstruction(Journal.class).constructed().get(i), times(1)).getLastLogMark();
         }
 
         verify(lastLogMark, times(3)).getCurMark();

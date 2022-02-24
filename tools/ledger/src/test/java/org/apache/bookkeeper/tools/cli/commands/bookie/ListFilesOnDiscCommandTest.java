@@ -22,6 +22,7 @@ import static org.mockito.Mockito.doReturn;
 
 import java.io.File;
 import org.apache.bookkeeper.bookie.BookieShell;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,7 +52,7 @@ public class ListFilesOnDiscCommandTest extends BookieCommandTestBase {
             File.createTempFile("ledger-" + i, ".log", ledgers);
             File.createTempFile("index-" + i, ".idx", index);
         }
-        createMockedServerConfiguration(conf -> {
+        mockServerConfigurationConstruction(conf -> {
             doReturn(new String[] { index.getAbsolutePath() }).when(conf).getIndexDirNames();
             doReturn(new String[] { ledgers.getAbsolutePath() }).when(conf).getLedgerDirNames();
             doReturn(new String[] { journals.getAbsolutePath() }).when(conf).getJournalDirNames();
@@ -62,42 +63,42 @@ public class ListFilesOnDiscCommandTest extends BookieCommandTestBase {
     public void testListJournalCommand() {
         testCommand("-txn");
         Assert.assertEquals(10, BookieShell.listFilesAndSort(
-                serverConfigurationMockedConstruction.constructed().get(0).getJournalDirs(), "txn").size());
+                getMockedConstruction(ServerConfiguration.class).constructed().get(0).getJournalDirs(), "txn").size());
     }
 
     @Test
     public void testListJournalLongCommand() {
         testCommand("--journal");
         Assert.assertEquals(10, BookieShell.listFilesAndSort(
-                serverConfigurationMockedConstruction.constructed().get(0).getJournalDirs(), "txn").size());
+                getMockedConstruction(ServerConfiguration.class).constructed().get(0).getJournalDirs(), "txn").size());
     }
 
     @Test
     public void testListEntryLogCommand() {
         testCommand("-log");
         Assert.assertEquals(10, BookieShell.listFilesAndSort(
-                serverConfigurationMockedConstruction.constructed().get(0).getLedgerDirs(), "log").size());
+                getMockedConstruction(ServerConfiguration.class).constructed().get(0).getLedgerDirs(), "log").size());
     }
 
     @Test
     public void testListEntryLogLongCommand() {
         testCommand("--entrylog");
         Assert.assertEquals(10, BookieShell.listFilesAndSort(
-                serverConfigurationMockedConstruction.constructed().get(0).getLedgerDirs(), "log").size());
+                getMockedConstruction(ServerConfiguration.class).constructed().get(0).getLedgerDirs(), "log").size());
     }
 
     @Test
     public void testListIndexCommand() {
         testCommand("-idx");
         Assert.assertEquals(10, BookieShell.listFilesAndSort(
-                serverConfigurationMockedConstruction.constructed().get(0).getIndexDirs(), "idx").size());
+                getMockedConstruction(ServerConfiguration.class).constructed().get(0).getIndexDirs(), "idx").size());
     }
 
     @Test
     public void testListIndexLongCommand() {
         testCommand("--index");
         Assert.assertEquals(10, BookieShell.listFilesAndSort(
-                serverConfigurationMockedConstruction.constructed().get(0).getIndexDirs(), "idx").size());
+                getMockedConstruction(ServerConfiguration.class).constructed().get(0).getIndexDirs(), "idx").size());
     }
 
     private void testCommand(String... args) {

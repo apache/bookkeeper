@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,7 +38,6 @@ public class InfoCommandTest extends BookieCommandTestBase {
 
     private BookieId bookieId;
     private BookieInfoReader.BookieInfo bInfo;
-    private MockedConstruction<BookKeeper> bookKeeperMockedConstruction;
     private Map<BookieId, BookieInfoReader.BookieInfo> map = new HashMap<>();
 
     public InfoCommandTest() {
@@ -50,18 +48,17 @@ public class InfoCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        createMockedServerConfiguration();
-        createMockedClientConfiguration();
+        mockServerConfigurationConstruction();
+        mockClientConfigurationConstruction();
 
         this.bookieId = BookieId.parse("localhost:9999");
         this.bInfo = mock(BookieInfoReader.BookieInfo.class);
         map.put(bookieId, bInfo);
 
-        bookKeeperMockedConstruction = mockConstruction(BookKeeper.class, (bk, context) -> {
+        mockConstruction(BookKeeper.class, (bk, context) -> {
             when(bk.getBookieAddressResolver()).thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
             when(bk.getBookieInfo()).thenReturn(map);
         });
-        addMockedConstruction(bookKeeperMockedConstruction);
     }
 
     @Test
@@ -69,7 +66,7 @@ public class InfoCommandTest extends BookieCommandTestBase {
         InfoCommand cmd = new InfoCommand();
         cmd.apply(bkFlags, new String[]{""});
 
-        verify(bookKeeperMockedConstruction.constructed().get(0), times(1)).getBookieInfo();
+        verify(getMockedConstruction(BookKeeper.class).constructed().get(0), times(1)).getBookieInfo();
         verify(bInfo, times(1 * 3)).getFreeDiskSpace();
         verify(bInfo, times(1 * 3)).getTotalDiskSpace();
     }

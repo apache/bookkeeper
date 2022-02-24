@@ -49,7 +49,6 @@ import org.mockito.MockedConstruction;
  */
 public class SanityTestCommandTest extends BookieCommandTestBase {
 
-    private MockedConstruction<BookKeeper> bookKeeperMockedConstruction;
     private LedgerHandle lh;
 
     public SanityTestCommandTest() {
@@ -61,12 +60,11 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
         super.setup();
 
         lh = mock(LedgerHandle.class);
-        createMockedClientConfiguration();
-        bookKeeperMockedConstruction = mockConstruction(BookKeeper.class, (bk, context) -> {
+        mockClientConfigurationConstruction();
+        mockConstruction(BookKeeper.class, (bk, context) -> {
             when(bk.createLedger(anyInt(), anyInt(), any(BookKeeper.DigestType.class), eq(new byte[0]))).thenReturn(lh);
             when(bk.openLedger(anyLong(), any(BookKeeper.DigestType.class), eq(new byte[0]))).thenReturn(lh);
         });
-        addMockedConstruction(bookKeeperMockedConstruction);
 
         when(lh.getLastAddConfirmed()).thenReturn(9L);
         Enumeration<LedgerEntry> entryEnumeration = getEntry();
@@ -107,7 +105,7 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
 
     private void verifyFunc() {
         try {
-            final ClientConfiguration clientConf = clientConfigurationMockedConstruction.constructed().get(0);
+            final ClientConfiguration clientConf = getMockedConstruction(ClientConfiguration.class).constructed().get(0);
             verify(clientConf, times(1)).setAddEntryTimeout(1);
             verify(clientConf, times(1)).setReadEntryTimeout(1);
             verify(lh, times(1)).addEntry(any());
@@ -131,10 +129,10 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
         SanityTestCommand cmd = new SanityTestCommand();
         assertTrue(cmd.apply(bkFlags, args));
         try {
-            final ClientConfiguration clientConf = clientConfigurationMockedConstruction.constructed().get(0);
+            final ClientConfiguration clientConf = getMockedConstruction(ClientConfiguration.class).constructed().get(0);
             verify(clientConf, times(1)).addConfiguration(any(Configuration.class));
             verify(clientConf, times(1)).setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class);
-            final BookKeeper bk = bookKeeperMockedConstruction.constructed().get(0);
+            final BookKeeper bk = getMockedConstruction(BookKeeper.class).constructed().get(0);
             verify(bk, times(1)).createLedger(1, 1, BookKeeper.DigestType.MAC, new byte[0]);
             verify(lh, times(6)).getId();
             verify(bk, times(1)).openLedger(anyLong(), eq(BookKeeper.DigestType.MAC), eq(new byte[0]));

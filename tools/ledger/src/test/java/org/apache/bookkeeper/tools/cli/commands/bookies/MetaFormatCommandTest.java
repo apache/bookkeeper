@@ -20,7 +20,6 @@ package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.mockStatic;
 
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -45,7 +44,6 @@ public class MetaFormatCommandTest extends BookieCommandTestBase {
         final MockedStatic<BookKeeperAdmin> bookKeeperAdminMockedStatic = mockStatic(BookKeeperAdmin.class);
         bookKeeperAdminMockedStatic.when(() -> BookKeeperAdmin.format(any(ServerConfiguration.class),
                         anyBoolean(), anyBoolean())).thenReturn(true);
-        addMockedStatic(bookKeeperAdminMockedStatic);
 
     }
 

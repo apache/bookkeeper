@@ -22,8 +22,6 @@ import static org.mockito.Answers.CALLS_REAL_METHODS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
@@ -33,10 +31,7 @@ import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.junit.After;
 import org.junit.Before;
-import org.mockito.MockedConstruction;
-import org.mockito.MockedStatic;
 
 /**
  * A test base for testing client commands.
@@ -47,38 +42,24 @@ public abstract class ClientCommandTestBase extends CommandTestBase {
     protected BookKeeper mockBk;
     protected MetadataClientDriver metadataClientDriver;
 
-    private MockedStatic<BookKeeper> bookKeeperMockedStatic;
-    private MockedStatic<MetadataDrivers> metadataDriversMockedStatic;
-    private MockedConstruction<ClientConfiguration> clientConfigurationMockedConstruction;
-
     @Before
     public void setup() throws Exception {
         mockBk = mock(BookKeeper.class);
-        clientConfigurationMockedConstruction =
-                mockConstruction(ClientConfiguration.class, withSettings().defaultAnswer(CALLS_REAL_METHODS),
+        mockConstruction(ClientConfiguration.class, withSettings().defaultAnswer(CALLS_REAL_METHODS),
                         (mock, context) ->
                         doReturn("zk://127.0.0.1/path/to/ledgers").when(mock).getMetadataServiceUri()
                 );
 
-        this.bookKeeperMockedStatic = mockStatic(BookKeeper.class);
+        mockStatic(BookKeeper.class);
         this.mockBkBuilder = mock(BookKeeperBuilder.class, CALLS_REAL_METHODS);
         this.mockBk = mock(BookKeeper.class);
-        this.bookKeeperMockedStatic.when(() -> BookKeeper.newBuilder(any(ClientConfiguration.class)))
+        getMockedStatic(BookKeeper.class).when(() -> BookKeeper.newBuilder(any(ClientConfiguration.class)))
                 .thenReturn(mockBkBuilder);
         when(mockBkBuilder.build()).thenReturn(mockBk);
 
         this.metadataClientDriver = mock(MetadataClientDriver.class);
-        this.metadataDriversMockedStatic = mockStatic(MetadataDrivers.class);
-        metadataDriversMockedStatic.when(() -> MetadataDrivers.getClientDriver(any(URI.class)))
+        mockStatic(MetadataDrivers.class);
+        getMockedStatic(MetadataDrivers.class).when(() -> MetadataDrivers.getClientDriver(any(URI.class)))
             .thenReturn(metadataClientDriver);
     }
-
-    @After
-    public void cleanup() throws Exception {
-        bookKeeperMockedStatic.close();
-        metadataDriversMockedStatic.close();
-        clientConfigurationMockedConstruction.close();
-    }
-
-
 }

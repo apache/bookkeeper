@@ -39,9 +39,6 @@ import org.mockito.MockedConstruction;
  */
 public class ReadLogMetadataCommandTest extends BookieCommandTestBase {
 
-    @Mock
-    private MockedConstruction<ReadOnlyEntryLogger> readOnlyEntryLoggerMockedConstruction;
-
     private EntryLogMetadata entryLogMetadata;
 
     public ReadLogMetadataCommandTest() {
@@ -52,13 +49,12 @@ public class ReadLogMetadataCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        createMockedServerConfiguration();
+        mockServerConfigurationConstruction();
         entryLogMetadata = mock(EntryLogMetadata.class);
 
-        readOnlyEntryLoggerMockedConstruction = mockConstruction(ReadOnlyEntryLogger.class, (entryLogger, context) -> {
+        mockConstruction(ReadOnlyEntryLogger.class, (entryLogger, context) -> {
             when(entryLogger.getEntryLogMetadata(anyLong())).thenReturn(entryLogMetadata);
         });
-        addMockedConstruction(readOnlyEntryLoggerMockedConstruction);
 
         ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap();
         map.put(1, 1);
@@ -76,7 +72,7 @@ public class ReadLogMetadataCommandTest extends BookieCommandTestBase {
     public void commandTest() throws Exception {
         ReadLogMetadataCommand cmd = new ReadLogMetadataCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1" }));
-        verify(readOnlyEntryLoggerMockedConstruction.constructed().get(0), times(1))
+        verify(getMockedConstruction(ReadOnlyEntryLogger.class).constructed().get(0), times(1))
                 .getEntryLogMetadata(anyLong());
         verify(entryLogMetadata, times(1)).getLedgersMap();
     }

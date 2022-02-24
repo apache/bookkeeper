@@ -49,7 +49,7 @@ public class AutoRecoveryCommandTest extends BookieCommandTestBase {
         super.setup();
 
         ledgerManagerFactory = mock(LedgerManagerFactory.class);
-        initMockedMetadataDriversWithLedgerManagerFactory(ledgerManagerFactory);
+        mockMetadataDriversWithLedgerManagerFactory(ledgerManagerFactory);
 
         ledgerUnderreplicationManager = mock(LedgerUnderreplicationManager.class);
         when(ledgerManagerFactory.newLedgerUnderreplicationManager()).thenReturn(ledgerUnderreplicationManager);

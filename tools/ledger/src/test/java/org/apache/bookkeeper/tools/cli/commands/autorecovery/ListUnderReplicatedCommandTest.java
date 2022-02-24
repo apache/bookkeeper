@@ -53,7 +53,7 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
         super.setup();
 
         factory = mock(LedgerManagerFactory.class);
-        initMockedMetadataDriversWithLedgerManagerFactory(factory);
+        mockMetadataDriversWithLedgerManagerFactory(factory);
 
         underreplicationManager = mock(LedgerUnderreplicationManager.class);
         when(factory.newLedgerUnderreplicationManager()).thenReturn(underreplicationManager);
