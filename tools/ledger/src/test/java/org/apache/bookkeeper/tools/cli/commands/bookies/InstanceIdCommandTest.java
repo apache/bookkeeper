@@ -18,13 +18,13 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
-
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit test for {@link InstanceIdCommand}.

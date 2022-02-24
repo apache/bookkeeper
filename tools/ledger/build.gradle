@@ -43,8 +43,6 @@ dependencies {
     testImplementation depLibs.commonsConfiguration
     testImplementation depLibs.mockito
     testImplementation depLibs.mockitoInline
-    testImplementation depLibs.powermockJunit
-    testImplementation depLibs.powermockMockito
     testImplementation depLibs.zookeeperTest
 
     annotationProcessor depLibs.lombok
