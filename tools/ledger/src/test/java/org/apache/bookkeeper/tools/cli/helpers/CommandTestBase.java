@@ -119,6 +119,10 @@ public class CommandTestBase {
     }
 
     protected void createMockedServerConfiguration(Consumer<ServerConfiguration> consumer) {
+        if (serverConfigurationMockedConstruction != null) {
+            serverConfigurationMockedConstruction.close();
+            serverConfigurationMockedConstruction = null;
+        }
         serverConfigurationMockedConstruction = mockConstruction(ServerConfiguration.class, (serverConfiguration, context) -> {
             doReturn("zk://127.0.0.1/path/to/ledgers").when(serverConfiguration).getMetadataServiceUri();
             String[] indexDirs = new String[3];
