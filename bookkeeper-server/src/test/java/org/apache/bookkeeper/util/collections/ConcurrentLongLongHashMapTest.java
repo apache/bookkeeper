@@ -49,7 +49,9 @@ public class ConcurrentLongLongHashMapTest {
     @Test
     public void testConstructor() {
         try {
-            ConcurrentLongLongHashMap.newBuilder().build();
+            ConcurrentLongLongHashMap.newBuilder()
+                    .expectedItems(0)
+                    .build();
             fail("should have thrown exception");
         } catch (IllegalArgumentException e) {
             // ok
