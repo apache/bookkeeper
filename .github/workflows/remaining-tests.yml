@@ -50,7 +50,7 @@ jobs:
         with:
           java-version: 1.8
       - name: Run remaining tests
-        run: ./gradlew bookkeeper-server:test -PexcludeTests="*org.apache.bookkeeper.bookie.*, *org.apache.bookkeeper.client.*, *org.apache.bookkeeper.replication.*, *org.apache.bookkeeper.tls.*" ${GRADLE_ARGS}
+        run: ./gradlew bookkeeper-server:test -PexcludeTests="**/org/apache/bookkeeper/bookie/*, **/org/apache/bookkeeper/client/*, **/org/apache/bookkeeper/replication/*, **/org/apache/bookkeeper/tls/*" ${GRADLE_ARGS}
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()
