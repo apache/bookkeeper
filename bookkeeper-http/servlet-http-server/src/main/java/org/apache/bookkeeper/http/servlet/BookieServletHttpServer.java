@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.http.servlet;
 
 import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.HttpServerConfiguration;
 import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +79,11 @@ public class BookieServletHttpServer implements HttpServer {
     setPort(port);
     setHost(host);
     return true;
+  }
+
+  @Override
+  public boolean startServer(int port, String host, HttpServerConfiguration httpServerConfiguration) {
+    return startServer(port, host);
   }
 
   @Override

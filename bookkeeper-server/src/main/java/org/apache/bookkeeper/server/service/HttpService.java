@@ -24,7 +24,9 @@ import java.io.IOException;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher.EndpointInfo;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.HttpServerConfiguration;
 import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
@@ -54,7 +56,11 @@ public class HttpService extends ServerLifecycleComponent {
 
     @Override
     protected void doStart() {
-        server.startServer(conf.getServerConf().getHttpServerPort(), conf.getServerConf().getHttpServerHost());
+        ServerConfiguration serverConf = conf.getServerConf();
+        HttpServerConfiguration tlsOption = new HttpServerConfiguration(serverConf.isHttpServerTlsEnable(),
+                serverConf.getHttpServerKeystorePath(), serverConf.getHttpServerKeystorePassword(),
+                serverConf.getHttpServerTrustStorePath(), serverConf.getHttpServerTrustStorePassword());
+        server.startServer(serverConf.getHttpServerPort(), serverConf.getHttpServerHost(), tlsOption);
     }
 
     @Override

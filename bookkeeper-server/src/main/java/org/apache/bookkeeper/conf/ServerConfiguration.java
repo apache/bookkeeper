@@ -266,6 +266,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String HTTP_SERVER_ENABLED = "httpServerEnabled";
     protected static final String HTTP_SERVER_PORT = "httpServerPort";
     protected static final String HTTP_SERVER_HOST = "httpServerHost";
+    protected static final String HTTP_SERVER_TLS_ENABLE = "httpServerTlsEnable";
+    protected static final String HTTP_SERVER_KEY_STORE_PATH = "httpServerKeyStorePath";
+    protected static final String HTTP_SERVER_KEY_STORE_PASSWORD = "httpServerKeyStorePassword";
+    protected static final String HTTP_SERVER_TRUST_STORE_PATH = "httpServerTrustStorePath";
+    protected static final String HTTP_SERVER_TRUST_STORE_PASSWORD = "httpServerTrustStorePassword";
 
     // Lifecycle Components
     protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
@@ -3478,6 +3483,108 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setHttpServerHost(String host) {
         setProperty(HTTP_SERVER_HOST, host);
+        return this;
+    }
+
+    /**
+     * Get if Http Server Tls enable.
+     * @return
+     */
+    public boolean isHttpServerTlsEnable() {
+        return getBoolean(HTTP_SERVER_TLS_ENABLE, false);
+    }
+
+    /**
+     * Set if Http Server Tls enable.
+     * @param tlsEnable
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerTlsEnable(boolean tlsEnable) {
+        setProperty(HTTP_SERVER_TLS_ENABLE, tlsEnable);
+        return this;
+    }
+
+    /**
+     * Get the http server keystore path.
+     *
+     * @return http server keystore path
+     */
+    public String getHttpServerKeystorePath() {
+        return getString(HTTP_SERVER_KEY_STORE_PATH);
+    }
+
+    /**
+     * Set Http server keystore path.
+     *
+     * @param keystorePath
+     *          http server keystore path
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerKeystorePath(String keystorePath) {
+        setProperty(HTTP_SERVER_KEY_STORE_PATH, keystorePath);
+        return this;
+    }
+
+    /**
+     * Get the http server keyStore password.
+     *
+     * @return http server keyStore password
+     */
+    public String getHttpServerKeystorePassword() {
+        return getString(HTTP_SERVER_KEY_STORE_PASSWORD);
+    }
+
+    /**
+     * Set Http server keyStore password.
+     *
+     * @param keyStorePassword
+     *          http server keyStore password
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerKeyStorePassword(String keyStorePassword) {
+        setProperty(HTTP_SERVER_KEY_STORE_PASSWORD, keyStorePassword);
+        return this;
+    }
+
+    /**
+     * Get the http server trustStore path.
+     *
+     * @return http server trustStore path
+     */
+    public String getHttpServerTrustStorePath() {
+        return getString(HTTP_SERVER_TRUST_STORE_PATH);
+    }
+
+    /**
+     * Set Http server trustStore path.
+     *
+     * @param trustStorePath
+     *          http server trustStore path
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerTrustStorePath(String trustStorePath) {
+        setProperty(HTTP_SERVER_TRUST_STORE_PATH, trustStorePath);
+        return this;
+    }
+
+    /**
+     * Get the http server trustStore password.
+     *
+     * @return http server trustStore password
+     */
+    public String getHttpServerTrustStorePassword() {
+        return getString(HTTP_SERVER_KEY_STORE_PASSWORD);
+    }
+
+    /**
+     * Set Http server trustStore password.
+     *
+     * @param trustStorePassword
+     *          http server trustStore password
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerTrustStorePasswordPassword(String trustStorePassword) {
+        setProperty(HTTP_SERVER_TRUST_STORE_PASSWORD, trustStorePassword);
         return this;
     }
 
