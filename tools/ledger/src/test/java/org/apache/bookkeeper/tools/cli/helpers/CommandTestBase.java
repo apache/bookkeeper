@@ -32,7 +32,6 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.MockedStatic;
 
 import java.io.File;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -53,9 +52,10 @@ public class CommandTestBase extends MockCommandSupport {
 
     protected final BKFlags bkFlags;
     protected MockedStatic<MetadataDrivers> mockMetadataDrivers() {
-        return Objects.requireNonNullElseGet(
-                unsafeGetMockedStatic(MetadataDrivers.class),
-                () -> mockStatic(MetadataDrivers.class));
+        if (unsafeGetMockedStatic(MetadataDrivers.class) == null) {
+            mockStatic(MetadataDrivers.class);
+        }
+        return getMockedStatic(MetadataDrivers.class);
     }
 
     protected void mockMetadataDriversWithRegistrationManager(RegistrationManager registrationManager) {

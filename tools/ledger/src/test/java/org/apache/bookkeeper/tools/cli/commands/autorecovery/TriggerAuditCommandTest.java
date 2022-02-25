@@ -49,7 +49,7 @@ public class TriggerAuditCommandTest extends BookieCommandTestBase {
         mockClientConfigurationConstruction();
 
 
-        mockBookKeeperAdminConstruction(new Consumer<>(){
+        mockBookKeeperAdminConstruction(new Consumer<BookKeeperAdmin>(){
             @Override
             @SneakyThrows
             public void accept(BookKeeperAdmin bookKeeperAdmin) {
