@@ -25,16 +25,16 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.configuration.Configuration;
 import org.junit.Test;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 
 /**
  * Unit test for {@link DeleteLedgerCommand}.

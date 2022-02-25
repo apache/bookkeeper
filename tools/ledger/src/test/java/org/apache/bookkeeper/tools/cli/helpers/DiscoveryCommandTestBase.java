@@ -19,15 +19,12 @@
 package org.apache.bookkeeper.tools.cli.helpers;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.discover.RegistrationClient;
-import org.junit.After;
 import org.junit.Before;
-import org.mockito.MockedStatic;
 /**
  * A test base for discovery related commands.
  */

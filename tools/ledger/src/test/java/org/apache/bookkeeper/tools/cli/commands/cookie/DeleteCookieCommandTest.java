@@ -31,7 +31,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.CookieCommandTestBase;
 import org.apache.bookkeeper.tools.common.BKFlags;
@@ -39,7 +38,6 @@ import org.apache.bookkeeper.versioning.LongVersion;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 
 /**
  * Unit test {@link DeleteCookieCommand}.

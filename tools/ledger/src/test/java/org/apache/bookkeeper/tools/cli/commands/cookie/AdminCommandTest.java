@@ -31,7 +31,6 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -121,14 +120,17 @@ public class AdminCommandTest extends BookieCommandTestBase {
         when(cookieVersioned.getVersion()).thenReturn(version);
         when(cookieVersioned.getValue()).thenReturn(cookie);
         doNothing().when(cookie)
-                   .deleteFromRegistrationManager(eq(registrationManager),  any(ServerConfiguration.class), eq(version));
+                   .deleteFromRegistrationManager(
+                           eq(registrationManager),  any(ServerConfiguration.class), eq(version));
 
         doNothing().when(cookie).writeToDirectory(any(File.class));
         doNothing().when(cookie)
-                   .writeToRegistrationManager(eq(registrationManager),  any(ServerConfiguration.class), eq(Version.NEW));
+                   .writeToRegistrationManager(
+                           eq(registrationManager),  any(ServerConfiguration.class), eq(Version.NEW));
 
         doNothing().when(cookie)
-                   .deleteFromRegistrationManager(eq(registrationManager), any(ServerConfiguration.class), eq(version));
+                   .deleteFromRegistrationManager(
+                           eq(registrationManager), any(ServerConfiguration.class), eq(version));
     }
 
     private void mockVerifyCookie() throws IOException, BookieException.InvalidCookieException {

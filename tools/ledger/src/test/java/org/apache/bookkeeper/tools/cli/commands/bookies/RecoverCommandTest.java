@@ -59,7 +59,7 @@ import org.junit.Test;
  */
 public class RecoverCommandTest extends BookieCommandTestBase {
 
-    private final static BookieId bookieSocketAddress = BookieId.parse("127.0.0.1:8000");
+    private static final BookieId bookieSocketAddress = BookieId.parse("127.0.0.1:8000");
 
     private LedgerMetadata ledgerMetadata;
     private RegistrationManager registrationManager;
@@ -117,7 +117,8 @@ public class RecoverCommandTest extends BookieCommandTestBase {
     }
 
     private void mockDeleteCookie() throws BookieException {
-        mockStatic(Cookie.class).when(() -> Cookie.readFromRegistrationManager(eq(registrationManager), eq(bookieSocketAddress)))
+        mockStatic(Cookie.class).when(() -> Cookie.readFromRegistrationManager(eq(registrationManager),
+                        eq(bookieSocketAddress)))
             .thenReturn(cookieVersioned);
         Cookie cookie = mock(Cookie.class);
         when(cookieVersioned.getValue()).thenReturn(cookie);

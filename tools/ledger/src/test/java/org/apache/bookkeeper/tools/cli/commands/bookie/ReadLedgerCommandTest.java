@@ -87,7 +87,8 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
             @Override
             @SneakyThrows
             public void accept(BookKeeperAdmin bookKeeperAdmin) {
-                when(bookKeeperAdmin.getBookieAddressResolver()).thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+                when(bookKeeperAdmin.getBookieAddressResolver())
+                        .thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
                 when(bookKeeperAdmin.openLedger(anyLong())).thenReturn(ledgerHandle);
                 when(bookKeeperAdmin.readEntries(anyLong(), anyLong(), anyLong())).thenReturn(entries);
             }
@@ -107,7 +108,8 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
         mockConstruction(DefaultThreadFactory.class);
 
         mockStatic(Executors.class).when(() -> Executors
-                .newSingleThreadScheduledExecutor(any(DefaultThreadFactory.class))).thenReturn(scheduledExecutorService);
+                .newSingleThreadScheduledExecutor(any(DefaultThreadFactory.class)))
+                .thenReturn(scheduledExecutorService);
 
         mockConstruction(BookieClientImpl.class);
 

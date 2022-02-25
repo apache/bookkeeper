@@ -20,8 +20,6 @@ package org.apache.bookkeeper.tools.cli.helpers;
 
 import java.io.File;
 import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 
 /**
  * A test base for testing bookie commands.

@@ -75,12 +75,13 @@ public class ConvertToDBStorageCommandTest extends BookieCommandTestBase {
                     any(LedgerCache.PageEntriesIterable.class))).thenReturn(1L);
         });
         mockStatic(BookieImpl.class);
-        getMockedStatic(BookieImpl.class).when(() -> BookieImpl.mountLedgerStorageOffline(any(ServerConfiguration.class),
-                        any(InterleavedLedgerStorage.class)))
+        getMockedStatic(BookieImpl.class).when(() -> BookieImpl
+                        .mountLedgerStorageOffline(any(ServerConfiguration.class), any(InterleavedLedgerStorage.class)))
             .thenReturn(mock(InterleavedLedgerStorage.class));
-        getMockedStatic(BookieImpl.class).when(() -> BookieImpl.mountLedgerStorageOffline(any(ServerConfiguration.class),
-                any(DbLedgerStorage.class)))
-                .thenAnswer((invocation) -> getMockedConstruction(InterleavedLedgerStorage.class).constructed().get(0));
+        getMockedStatic(BookieImpl.class).when(() -> BookieImpl
+                        .mountLedgerStorageOffline(any(ServerConfiguration.class), any(DbLedgerStorage.class)))
+                .thenAnswer((invocation) ->
+                        getMockedConstruction(InterleavedLedgerStorage.class).constructed().get(0));
     }
 
     private Iterator<Long> getLedgerId() {

@@ -42,7 +42,7 @@ import org.junit.Test;
  */
 public class ListLedgersCommandTest extends BookieCommandTestBase {
 
-    private final static BookieId bookieAddress = BookieId.parse(UUID.randomUUID().toString());
+    private static final BookieId bookieAddress = BookieId.parse(UUID.randomUUID().toString());
 
     public ListLedgersCommandTest() {
         super(3, 3);

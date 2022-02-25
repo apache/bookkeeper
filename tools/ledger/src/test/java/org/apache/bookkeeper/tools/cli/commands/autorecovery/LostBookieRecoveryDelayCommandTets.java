@@ -24,13 +24,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.function.Consumer;
 import lombok.SneakyThrows;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.function.Consumer;
 
 /**
  * Unit test for {@link LostBookieRecoveryDelayCommand}.

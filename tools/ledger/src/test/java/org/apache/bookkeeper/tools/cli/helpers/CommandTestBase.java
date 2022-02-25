@@ -18,6 +18,13 @@
  */
 package org.apache.bookkeeper.tools.cli.helpers;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doReturn;
+
+import java.io.File;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -31,13 +38,7 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.MockedStatic;
 
-import java.io.File;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.doReturn;
 
 /**
  * A test base providing an environment for run a command.

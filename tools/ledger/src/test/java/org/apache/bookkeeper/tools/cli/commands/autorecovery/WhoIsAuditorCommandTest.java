@@ -35,10 +35,8 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link WhoIsAuditorCommand}.

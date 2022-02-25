@@ -84,7 +84,9 @@ public class DiscoveryCommandTest {
             assertTrue(cmd.apply(serverConf, cliFlags));
             verify(cmd, times(1)).run(eq(regClient), same(cliFlags));
             verify(clientDriver, times(1))
-                .initialize(any(ClientConfiguration.class), eq(executor), eq(NullStatsLogger.INSTANCE), eq(Optional.empty()));
+                .initialize(
+                        any(ClientConfiguration.class), eq(executor),
+                        eq(NullStatsLogger.INSTANCE), eq(Optional.empty()));
             verify(clientDriver, times(1)).getRegistrationClient();
             verify(clientDriver, times(1)).close();
             verify(executor, times(1)).shutdown();

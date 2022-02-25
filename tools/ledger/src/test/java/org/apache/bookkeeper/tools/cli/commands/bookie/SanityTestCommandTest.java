@@ -104,7 +104,8 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
 
     private void verifyFunc() {
         try {
-            final ClientConfiguration clientConf = getMockedConstruction(ClientConfiguration.class).constructed().get(0);
+            final ClientConfiguration clientConf =
+                    getMockedConstruction(ClientConfiguration.class).constructed().get(0);
             verify(clientConf, times(1)).setAddEntryTimeout(1);
             verify(clientConf, times(1)).setReadEntryTimeout(1);
             verify(lh, times(1)).addEntry(any());
@@ -128,9 +129,12 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
         SanityTestCommand cmd = new SanityTestCommand();
         assertTrue(cmd.apply(bkFlags, args));
         try {
-            final ClientConfiguration clientConf = getMockedConstruction(ClientConfiguration.class).constructed().get(0);
-            verify(clientConf, times(1)).addConfiguration(any(Configuration.class));
-            verify(clientConf, times(1)).setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class);
+            final ClientConfiguration clientConf =
+                    getMockedConstruction(ClientConfiguration.class).constructed().get(0);
+            verify(clientConf, times(1))
+                    .addConfiguration(any(Configuration.class));
+            verify(clientConf, times(1))
+                    .setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class);
             final BookKeeper bk = getMockedConstruction(BookKeeper.class).constructed().get(0);
             verify(bk, times(1)).createLedger(1, 1, BookKeeper.DigestType.MAC, new byte[0]);
             verify(lh, times(6)).getId();
