@@ -1340,7 +1340,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         CompletionKey key = acquireV2Key(response.ledgerId, response.entryId, operationType);
         CompletionValue completionValue = getCompletionValue(key);
-        key.release();
 
         if (null == completionValue) {
             // Unexpected response, so log it. The txnId should have been present.
