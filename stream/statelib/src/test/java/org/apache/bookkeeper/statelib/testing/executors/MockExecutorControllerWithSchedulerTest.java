@@ -18,15 +18,20 @@
  */
 package org.apache.bookkeeper.statelib.testing.executors;
 
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,10 +74,12 @@ public class MockExecutorControllerWithSchedulerTest {
     }
 
     @Test
-    public void testExecute() {
+    public void testExecute() throws ExecutionException, InterruptedException, TimeoutException {
+        final CompletableFuture<Void> future = new CompletableFuture<>();
         Runnable task = mock(Runnable.class);
-        doNothing().when(task).run();
+        doAnswer(x -> future.complete(null)).when(task).run();
         mockExecutor.execute(task);
+        future.get(5000, TimeUnit.MILLISECONDS);
         verify(task, times(1)).run();
     }
 

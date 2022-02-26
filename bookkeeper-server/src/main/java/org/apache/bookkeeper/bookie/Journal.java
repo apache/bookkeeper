@@ -622,6 +622,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     final File journalDirectory;
     final ServerConfiguration conf;
     final ForceWriteThread forceWriteThread;
+    final FileChannelProvider fileChannelProvider;
+
     // Time after which we will stop grouping and issue the flush
     private final long maxGroupWaitInNanos;
     // Threshold after which we flush any buffered journal entries
@@ -735,6 +737,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             LOG.debug("Last Log Mark : {}", lastLogMark.getCurMark());
         }
 
+        try {
+            this.fileChannelProvider = FileChannelProvider.newProvider(conf.getJournalChannelProvider());
+        } catch (IOException e) {
+            LOG.error("Failed to initiate file channel provider: {}", conf.getJournalChannelProvider());
+            throw new RuntimeException(e);
+        }
+
         // Expose Stats
         this.journalStats = new JournalStats(journalStatsLogger, journalMaxMemory,
                 () -> memoryLimitController.currentUsage());
@@ -820,10 +829,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         throws IOException {
         JournalChannel recLog;
         if (journalPos <= 0) {
-            recLog = new JournalChannel(journalDirectory, journalId, journalPreAllocSize, journalWriteBufferSize, conf);
+            recLog = new JournalChannel(journalDirectory, journalId, journalPreAllocSize, journalWriteBufferSize,
+                conf, fileChannelProvider);
         } else {
             recLog = new JournalChannel(journalDirectory, journalId, journalPreAllocSize, journalWriteBufferSize,
-                    journalPos, conf);
+                    journalPos, conf, fileChannelProvider);
         }
         int journalVersion = recLog.getFormatVersion();
         try {
@@ -1002,7 +1012,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     journalCreationWatcher.reset().start();
                     logFile = new JournalChannel(journalDirectory, logId, journalPreAllocSize, journalWriteBufferSize,
                                         journalAlignmentSize, removePagesFromCache,
-                                        journalFormatVersionToWrite, getBufferedChannelBuilder(), conf);
+                                        journalFormatVersionToWrite, getBufferedChannelBuilder(),
+                                        conf, fileChannelProvider);
 
                     journalStats.getJournalCreationStats().registerSuccessfulEvent(
                             journalCreationWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
@@ -1215,6 +1226,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 return;
             }
             LOG.info("Shutting down Journal");
+            if (fileChannelProvider != null) {
+                fileChannelProvider.close();
+            }
+
             forceWriteThread.shutdown();
             cbThreadPool.shutdown();
             if (!cbThreadPool.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -1226,7 +1241,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             this.interrupt();
             this.join();
             LOG.info("Finished Shutting down Journal thread");
-        } catch (InterruptedException ie) {
+        } catch (IOException | InterruptedException ie) {
             Thread.currentThread().interrupt();
             LOG.warn("Interrupted during shutting down journal : ", ie);
         }
