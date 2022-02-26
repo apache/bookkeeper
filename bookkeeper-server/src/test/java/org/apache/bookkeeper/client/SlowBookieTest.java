@@ -55,7 +55,6 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         super(4);
         baseConf.setNumAddWorkerThreads(0);
         baseConf.setNumReadWorkerThreads(0);
-        baseConf.setListeningInterface(null);
     }
 
     @Test
