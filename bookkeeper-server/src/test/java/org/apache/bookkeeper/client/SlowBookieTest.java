@@ -312,20 +312,24 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
 
         byte[] pwd = new byte[]{};
         final LedgerHandle lh = bkc.createLedger(4, 2, 2, BookKeeper.DigestType.CRC32, pwd);
-        lh.addEntry(entry); // [b0, b1]
-        long entryId = lh.addEntry(entry); // [b1, b2]
+        try {
+            lh.addEntry(entry); // [b0, b1]
+            long entryId = lh.addEntry(entry); // [b1, b2]
 
-        long nextEntryId = entryId + 1;
-        RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(2, 2, 4);
-        DistributionSchedule.WriteSet writeSet = schedule.getWriteSet(nextEntryId);
+            long nextEntryId = entryId + 1;
+            RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(2, 2, 4);
+            DistributionSchedule.WriteSet writeSet = schedule.getWriteSet(nextEntryId);
 
-        // b2 or b3 is no more writeable
-        int slowBookieIndex = writeSet.get(ThreadLocalRandom.current().nextInt(writeSet.size()));
-        List<BookieId> curEns = lh.getCurrentEnsemble();
-        setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
+            // b2 or b3 is no more writeable
+            int slowBookieIndex = writeSet.get(ThreadLocalRandom.current().nextInt(writeSet.size()));
+            List<BookieId> curEns = lh.getCurrentEnsemble();
+            setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
 
-        boolean isWriteable = lh.waitForWritable(writeSet, 0, 1000);
-        assertFalse("We should check b2,b3 both are writeable", isWriteable);
+            boolean isWriteable = lh.waitForWritable(writeSet, 0, 1000);
+            assertFalse("We should check b2,b3 both are writeable", isWriteable);
+        } finally {
+            lh.close();
+        }
     }
 
     @Test
