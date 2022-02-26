@@ -1241,6 +1241,7 @@ public class LedgerHandle implements WriteHandle {
         return true;
     }
 
+    @VisibleForTesting
     protected boolean waitForWritable(DistributionSchedule.WriteSet writeSet,
                                     int allowedNonWritableCount, long durationMs) {
         if (durationMs < 0) {
