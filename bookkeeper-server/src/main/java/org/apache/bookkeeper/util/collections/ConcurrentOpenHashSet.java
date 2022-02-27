@@ -285,6 +285,16 @@ public class ConcurrentOpenHashSet<V> {
                         if (values[nextInArray] == EmptyValue) {
                             values[bucket] = (V) EmptyValue;
                             --usedBuckets;
+
+                            // Cleanup all the buckets that were in `DeletedValue` state,
+                            // so that we can reduce unnecessary expansions
+                            int lastBucket = signSafeMod(bucket - 1, capacity);
+                            while (values[bucket] == DeletedValue) {
+                                values[bucket] = (V) EmptyValue;
+                                --usedBuckets;
+
+                                lastBucket = signSafeMod(--lastBucket, capacity);
+                            }
                         } else {
                             values[bucket] = (V) DeletedValue;
                         }

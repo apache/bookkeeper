@@ -499,7 +499,8 @@ public class ConcurrentLongLongPairHashMap {
                 table[bucket + 3] = ValueNotFound;
                 --usedBuckets;
 
-                // Cleanup all the buckets that were in `DeletedKey` state, so that we can reduce unnecessary expansions
+                // Cleanup all the buckets that were in `DeletedKey` state,
+                // so that we can reduce unnecessary expansions
                 bucket = (bucket - 4) & (table.length - 1);
                 while (table[bucket] == DeletedKey) {
                     table[bucket] = EmptyKey;
