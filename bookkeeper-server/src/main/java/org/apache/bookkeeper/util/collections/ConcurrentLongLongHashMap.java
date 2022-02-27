@@ -608,6 +608,16 @@ public class ConcurrentLongLongHashMap {
                 table[bucket] = EmptyKey;
                 table[bucket + 1] = ValueNotFound;
                 --usedBuckets;
+
+                // Cleanup all the buckets that were in `DeletedKey` state, so that we can reduce unnecessary expansions
+                bucket = (bucket - 2) & (table.length - 1);
+                while (table[bucket] == DeletedKey) {
+                    table[bucket] = EmptyKey;
+                    table[bucket + 1] = ValueNotFound;
+                    --usedBuckets;
+
+                    bucket = (bucket - 2) & (table.length - 1);
+                }
             } else {
                 table[bucket] = DeletedKey;
                 table[bucket + 1] = ValueNotFound;

@@ -355,6 +355,18 @@ public class ConcurrentLongHashMap<V> {
             }
         }
 
+        private void cleanDeletedStatus(int startBucket) {
+            // Cleanup all the buckets that were in `DeletedValue` state,
+            // so that we can reduce unnecessary expansions
+            int lastBucket = signSafeMod(startBucket - 1, capacity);
+            while (values[lastBucket] == DeletedValue) {
+                values[lastBucket] = (V) EmptyValue;
+                --usedBuckets;
+
+                lastBucket = signSafeMod(--lastBucket, capacity);
+            }
+        }
+
         private V remove(long key, Object value, int keyHash) {
             int bucket = keyHash;
             long stamp = writeLock();
@@ -377,6 +389,8 @@ public class ConcurrentLongHashMap<V> {
                             if (nextValueInArray == EmptyValue) {
                                 values[bucket] = (V) EmptyValue;
                                 --usedBuckets;
+
+                                cleanDeletedStatus(bucket);
                             } else {
                                 values[bucket] = (V) DeletedValue;
                             }
@@ -419,6 +433,8 @@ public class ConcurrentLongHashMap<V> {
                             if (nextValueInArray == EmptyValue) {
                                 values[bucket] = (V) EmptyValue;
                                 --usedBuckets;
+
+                                cleanDeletedStatus(bucket);
                             } else {
                                 values[bucket] = (V) DeletedValue;
                             }
