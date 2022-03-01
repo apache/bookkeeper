@@ -18,23 +18,19 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link InitCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ InitCommand.class, BookKeeperAdmin.class })
 public class InitCommandTest extends BookieCommandTestBase {
 
     public InitCommandTest() {
@@ -45,9 +41,10 @@ public class InitCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.mockStatic(BookKeeperAdmin.class);
-        PowerMockito.when(BookKeeperAdmin.initNewCluster(eq(conf))).thenReturn(true);
+        mockServerConfigurationConstruction();
+        final MockedStatic<BookKeeperAdmin> bookKeeperAdminMockedStatic = mockStatic(BookKeeperAdmin.class);
+        bookKeeperAdminMockedStatic.when(() -> BookKeeperAdmin.initNewCluster(any(ServerConfiguration.class)))
+                .thenReturn(true);
     }
 
     @Test
