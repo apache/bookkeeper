@@ -22,13 +22,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -43,34 +41,20 @@ import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link ConvertToInterleavedStorageCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ConvertToInterleavedStorageCommand.class, LedgerCache.class })
 public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBase {
 
-    private LedgerDirsManager ledgerDirsManager;
-    private DbLedgerStorage dbStorage;
-    private InterleavedLedgerStorage interleavedLedgerStorage;
     private LedgerCache interleavedLedgerCache;
 
-    @Rule
-    private TemporaryFolder folder = new TemporaryFolder();
 
     public ConvertToInterleavedStorageCommandTest() {
         super(3, 0);
@@ -81,32 +65,31 @@ public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBas
         super.setup();
 
         createTmpFile();
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
-            .withArguments(eq(conf)).thenReturn(conf);
+        mockServerConfigurationConstruction();
 
-        DiskChecker diskChecker = mock(DiskChecker.class);
-        whenNew(DiskChecker.class).withArguments(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())
-            .thenReturn(diskChecker);
+        mockConstruction(DiskChecker.class);
 
-        ledgerDirsManager = mock(LedgerDirsManager.class);
-        whenNew(LedgerDirsManager.class).withParameterTypes(ServerConfiguration.class, File[].class, DiskChecker.class)
-            .withArguments(conf, conf.getLedgerDirs(), diskChecker).thenReturn(ledgerDirsManager);
-        when(ledgerDirsManager.getAllLedgerDirs()).thenReturn(getFileList());
+        mockConstruction(LedgerDirsManager.class, (ledgersDirManager, context) -> {
+            when(ledgersDirManager.getAllLedgerDirs()).thenReturn(getFileList());
+        });
 
-        dbStorage = mock(DbLedgerStorage.class);
-        whenNew(DbLedgerStorage.class).withNoArguments().thenReturn(dbStorage);
-        when(dbStorage.getActiveLedgersInRange(anyLong(), anyLong())).thenReturn(this::getLedgerId);
+
+        mockConstruction(DbLedgerStorage.class, (dbStorage, context) -> {
+            when(dbStorage.getActiveLedgersInRange(anyLong(), anyLong()))
+                    .thenReturn(ConvertToInterleavedStorageCommandTest.this::getLedgerId);
+        });
 
         interleavedLedgerCache = mock(LedgerCache.class);
         doNothing().when(interleavedLedgerCache).flushLedger(anyBoolean());
 
-        interleavedLedgerStorage = mock(InterleavedLedgerStorage.class);
-        whenNew(InterleavedLedgerStorage.class).withNoArguments().thenReturn(interleavedLedgerStorage);
-        doNothing().when(interleavedLedgerStorage).flush();
-        doNothing().when(interleavedLedgerStorage).shutdown();
-        when(interleavedLedgerStorage.getLedgerCache()).thenReturn(interleavedLedgerCache);
+        mockConstruction(InterleavedLedgerStorage.class,
+                (interleavedLedgerStorage, context) -> {
+                    doNothing().when(interleavedLedgerStorage).flush();
+                    doNothing().when(interleavedLedgerStorage).shutdown();
+                    when(interleavedLedgerStorage.getLedgerCache()).thenReturn(interleavedLedgerCache);
+                });
     }
+
 
     private Iterator<Long> getLedgerId() {
         Vector<Long> longs = new Vector<>();
@@ -116,15 +99,14 @@ public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBas
 
     private List<File> getFileList() {
         List<File> files = new LinkedList<>();
-        files.add(folder.getRoot());
+        files.add(testDir.getRoot());
         return files;
     }
 
     private void createTmpFile() {
         try {
-            folder.newFile("ledgers");
-            folder.newFile("locations");
-            System.out.println(folder.getRoot().getAbsolutePath());
+            testDir.newFile("ledgers");
+            testDir.newFile("locations");
         } catch (IOException e) {
             throw new UncheckedExecutionException(e.getMessage(), e);
         }
@@ -136,16 +118,15 @@ public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBas
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
 
         try {
-            verifyNew(ServerConfiguration.class).withArguments(eq(conf));
-            verifyNew(LedgerDirsManager.class, times(2))
-                .withArguments(eq(conf), any(File[].class), any(DiskChecker.class));
-            verifyNew(DbLedgerStorage.class, times(1)).withNoArguments();
-            verifyNew(InterleavedLedgerStorage.class, times(1)).withNoArguments();
-
-            verify(dbStorage, times(1)).initialize(eq(conf), eq(null), any(LedgerDirsManager.class),
+            final DbLedgerStorage dbStorage = getMockedConstruction(DbLedgerStorage.class).constructed().get(0);
+            final InterleavedLedgerStorage interleavedLedgerStorage =
+                    getMockedConstruction(InterleavedLedgerStorage.class).constructed().get(0);
+            verify(dbStorage, times(1)).initialize(
+                    any(ServerConfiguration.class), eq(null), any(LedgerDirsManager.class),
                 any(LedgerDirsManager.class), eq(NullStatsLogger.INSTANCE), eq(PooledByteBufAllocator.DEFAULT));
+
             verify(interleavedLedgerStorage, times(1))
-                .initialize(eq(conf), eq(null), any(LedgerDirsManager.class),
+                .initialize(any(ServerConfiguration.class), eq(null), any(LedgerDirsManager.class),
                     any(LedgerDirsManager.class), eq(NullStatsLogger.INSTANCE), eq(PooledByteBufAllocator.DEFAULT));
             verify(dbStorage, times(1)).getActiveLedgersInRange(anyLong(), anyLong());
             verify(dbStorage, times(10)).readMasterKey(anyLong());

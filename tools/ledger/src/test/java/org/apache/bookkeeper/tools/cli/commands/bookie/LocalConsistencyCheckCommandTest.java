@@ -18,10 +18,12 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -30,25 +32,14 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link LocalConsistencyCheckCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ LocalConsistencyCheckCommand.class, BookieImpl.class })
 public class LocalConsistencyCheckCommandTest extends BookieCommandTestBase {
 
-    @Mock
-    private ServerConfiguration serverConfiguration;
-
-    @Mock
     private LedgerStorage ledgerStorage;
-
     public LocalConsistencyCheckCommandTest() {
         super(3, 0);
     }
@@ -57,20 +48,19 @@ public class LocalConsistencyCheckCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(ServerConfiguration.class).withArguments(eq(conf)).thenReturn(serverConfiguration);
-        PowerMockito.mockStatic(BookieImpl.class);
-        PowerMockito.when(BookieImpl.mountLedgerStorageOffline(eq(serverConfiguration), eq(null)))
+        ledgerStorage = mock(LedgerStorage.class);
+        mockServerConfigurationConstruction();
+        final MockedStatic<BookieImpl> bookieMockedStatic = mockStatic(BookieImpl.class);
+        bookieMockedStatic.when(() -> BookieImpl.mountLedgerStorageOffline(any(ServerConfiguration.class), eq(null)))
                     .thenReturn(ledgerStorage);
         List<LedgerStorage.DetectedInconsistency> errors = new ArrayList<>();
-        PowerMockito.when(ledgerStorage.localConsistencyCheck(eq(java.util.Optional.empty()))).thenReturn(errors);
+        when(ledgerStorage.localConsistencyCheck(eq(java.util.Optional.empty()))).thenReturn(errors);
     }
 
     @Test
     public void testCommand() throws Exception {
         LocalConsistencyCheckCommand cmd = new LocalConsistencyCheckCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] {}));
-        verifyNew(ServerConfiguration.class, times(1)).withArguments(eq(conf));
         verify(ledgerStorage, times(1)).localConsistencyCheck(eq(java.util.Optional.empty()));
     }
 }

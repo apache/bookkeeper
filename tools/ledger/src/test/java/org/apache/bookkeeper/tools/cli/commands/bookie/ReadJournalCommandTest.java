@@ -17,102 +17,124 @@
  * under the License.
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 
 /**
  * Unit test for read journal command.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ReadJournalCommand.class, Journal.class, LedgerDirsManager.class,
-    DiskChecker.class })
 public class ReadJournalCommandTest extends BookieCommandTestBase {
-
-    private Journal journal;
-
-    @Rule
-    private TemporaryFolder folder = new TemporaryFolder();
 
     public ReadJournalCommandTest() {
         super(3, 0);
     }
 
-    @Override
-    public void setup() throws Exception {
-        super.setup();
-        whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-
-        DiskChecker checker = mock(DiskChecker.class);
-        whenNew(DiskChecker.class).withArguments(eq(conf.getDiskUsageThreshold()), eq(conf.getDiskUsageWarnThreshold()))
-            .thenReturn(checker);
-        LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
-        whenNew(LedgerDirsManager.class).withArguments(eq(conf), eq(conf.getLedgerDirs()), eq(checker))
-            .thenReturn(ledgerDirsManager);
-        journal = mock(Journal.class);
-        whenNew(Journal.class).withArguments(anyInt(), any(File.class), eq(conf), eq(ledgerDirsManager))
-            .thenReturn(journal);
-        when(journal.getJournalDirectory()).thenReturn(conf.getJournalDirs()[0]);
-    }
-
     @Test
     public void testWithJournalId() throws Exception {
-        conf.setJournalDirsName(new String[] { folder.getRoot().getAbsolutePath() });
-        when(journal.getJournalDirectory()).thenReturn(new File(""));
+        AtomicInteger journalCount = new AtomicInteger();
+        AtomicInteger ledgerDirsManagerCount = new AtomicInteger();
+        AtomicInteger diskCheckerCount = new AtomicInteger();
+        mockServerConfigurationConstruction(conf -> {
+            doReturn(new String[] {new File(journalDirsName[0]).getAbsolutePath()}).when(conf).getJournalDirNames();
+        });
+        mockConstruction(DiskChecker.class, (c, context) -> {
+
+            final ServerConfiguration defaultConf = new ServerConfiguration();
+            assertEquals(defaultConf.getDiskUsageThreshold(), context.arguments().get(0));
+            assertEquals(defaultConf.getDiskUsageWarnThreshold(), context.arguments().get(1));
+            diskCheckerCount.incrementAndGet();
+
+        });
+        mockConstruction(LedgerDirsManager.class, (c, context) -> {
+            ledgerDirsManagerCount.incrementAndGet();
+        });
+        mockConstruction(Journal.class, (journal, context) -> {
+            doAnswer(invocation ->
+                    getMockedConstruction(ServerConfiguration.class).constructed().get(0).getJournalDirs()[0]
+            ).when(journal).getJournalDirectory();
+            journalCount.incrementAndGet();
+        });
+
         testCommand("-id", "1");
-        verifyNew(Journal.class, times(1))
-            .withArguments(anyInt(), any(File.class), eq(conf), any(LedgerDirsManager.class));
-        verifyNew(LedgerDirsManager.class, times(1))
-            .withArguments(eq(conf), eq(conf.getLedgerDirs()), any(DiskChecker.class));
-        verifyNew(DiskChecker.class, times(1))
-            .withArguments(eq(conf.getDiskUsageThreshold()), eq(conf.getDiskUsageWarnThreshold()));
+        assertEquals(1, diskCheckerCount.get());
+        assertEquals(1, ledgerDirsManagerCount.get());
+        assertEquals(1, journalCount.get());
     }
 
     @Test
     public void testWithFilename() throws Exception {
-        conf.setJournalDirsName(new String[] { folder.getRoot().getAbsolutePath() });
-        when(journal.getJournalDirectory()).thenReturn(new File(""));
-        File file = folder.newFile("1.txn");
+        AtomicInteger journalCount = new AtomicInteger();
+        AtomicInteger ledgerDirsManagerCount = new AtomicInteger();
+        AtomicInteger diskCheckerCount = new AtomicInteger();
+        mockServerConfigurationConstruction(conf -> {
+            doReturn(new String[] {new File(journalDirsName[0]).getAbsolutePath()}).when(conf).getJournalDirNames();
+        });
+        mockConstruction(DiskChecker.class, (c, context) -> {
+            final ServerConfiguration defaultConf = new ServerConfiguration();
+            assertEquals(defaultConf.getDiskUsageThreshold(), context.arguments().get(0));
+            assertEquals(defaultConf.getDiskUsageWarnThreshold(), context.arguments().get(1));
+            diskCheckerCount.incrementAndGet();
+
+        });
+        mockConstruction(LedgerDirsManager.class, (c, context) -> {
+            ledgerDirsManagerCount.incrementAndGet();
+        });
+        mockConstruction(Journal.class, (journal, context) -> {
+            doAnswer(invocation ->
+                    getMockedConstruction(ServerConfiguration.class).constructed().get(0).getJournalDirs()[0]
+            ).when(journal).getJournalDirectory();
+            journalCount.incrementAndGet();
+        });
+        File file = testDir.newFile("1.txn");
         testCommand("-f", file.getAbsolutePath(), "-m");
-        verifyNew(Journal.class, times(1))
-            .withArguments(anyInt(), any(File.class), eq(conf), any(LedgerDirsManager.class));
-        verifyNew(LedgerDirsManager.class, times(1))
-            .withArguments(eq(conf), eq(conf.getLedgerDirs()), any(DiskChecker.class));
-        verifyNew(DiskChecker.class, times(1))
-            .withArguments(eq(conf.getDiskUsageThreshold()), eq(conf.getDiskUsageWarnThreshold()));
+        assertEquals(1, diskCheckerCount.get());
+        assertEquals(1, ledgerDirsManagerCount.get());
+        assertEquals(1, journalCount.get());
     }
 
     @Test
     public void testWithMsg() throws Exception {
-        testCommand("-id", "1", "-d", conf.getJournalDirs()[0].getAbsolutePath());
-        verifyNew(Journal.class, times(3))
-            .withArguments(anyInt(), any(File.class), eq(conf), any(LedgerDirsManager.class));
-        verifyNew(LedgerDirsManager.class, times(3))
-            .withArguments(eq(conf), eq(conf.getLedgerDirs()), any(DiskChecker.class));
-        verifyNew(DiskChecker.class, times(3))
-            .withArguments(eq(conf.getDiskUsageThreshold()), eq(conf.getDiskUsageWarnThreshold()));
-        verify(journal, times(1)).getJournalDirectory();
+        AtomicInteger journalCount = new AtomicInteger();
+        AtomicInteger ledgerDirsManagerCount = new AtomicInteger();
+        AtomicInteger diskCheckerCount = new AtomicInteger();
+        mockServerConfigurationConstruction();
+        mockConstruction(DiskChecker.class, (c, context) -> {
+
+            final ServerConfiguration defaultConf = new ServerConfiguration();
+            assertEquals(defaultConf.getDiskUsageThreshold(), context.arguments().get(0));
+            assertEquals(defaultConf.getDiskUsageWarnThreshold(), context.arguments().get(1));
+            diskCheckerCount.incrementAndGet();
+
+        });
+        mockConstruction(LedgerDirsManager.class, (c, context) -> {
+            ledgerDirsManagerCount.incrementAndGet();
+        });
+        mockConstruction(Journal.class, (journal, context) -> {
+            doAnswer(invocation ->
+                    getMockedConstruction(ServerConfiguration.class).constructed().get(0).getJournalDirs()[0]
+            ).when(journal).getJournalDirectory();
+            journalCount.incrementAndGet();
+        });
+        testCommand("-id", "1", "-d", new File(journalDirsName[0]).getAbsolutePath());
+        assertEquals(3, journalCount.get());
+        assertEquals(3, ledgerDirsManagerCount.get());
+        assertEquals(3, diskCheckerCount.get());
+        verify(getMockedConstruction(Journal.class).constructed().get(0), times(1)).getJournalDirectory();
     }
 
     public void testCommand(String... args) throws Exception {

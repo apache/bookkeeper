@@ -18,27 +18,17 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import java.util.function.Function;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link InstanceIdCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ InstanceIdCommand.class, MetadataDrivers.class, RegistrationManager.class })
 public class InstanceIdCommandTest extends BookieCommandTestBase {
 
     public InstanceIdCommandTest() {
@@ -49,15 +39,8 @@ public class InstanceIdCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.mockStatic(MetadataDrivers.class);
-
-        RegistrationManager manager = mock(RegistrationManager.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<RegistrationManager, ?> function = invocationOnMock.getArgument(1);
-            function.apply(manager);
-            return null;
-        }).when(MetadataDrivers.class, "runFunctionWithRegistrationManager",
-                any(ServerConfiguration.class), any(Function.class));
+        final RegistrationManager manager = mock(RegistrationManager.class);
+        mockMetadataDriversWithRegistrationManager(manager);
         when(manager.getClusterInstanceId()).thenReturn("");
     }
 

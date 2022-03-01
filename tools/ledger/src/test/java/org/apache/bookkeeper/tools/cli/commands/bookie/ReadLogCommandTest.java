@@ -18,34 +18,20 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
+import static org.mockito.Mockito.doNothing;
 
 import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.ReadOnlyEntryLogger;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link ReadLogCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ReadLogCommand.class })
 public class ReadLogCommandTest extends BookieCommandTestBase {
-
-    @Mock
-    private ReadOnlyEntryLogger entryLogger;
-
-    @Mock
-    private EntryLogger.EntryLogScanner entryLogScanner;
 
     public ReadLogCommandTest() {
         super(3, 0);
@@ -55,9 +41,10 @@ public class ReadLogCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(ReadOnlyEntryLogger.class).withArguments(eq(conf)).thenReturn(entryLogger);
-        doNothing().when(entryLogger).scanEntryLog(anyLong(), eq(entryLogScanner));
+        mockServerConfigurationConstruction();
+        mockConstruction(ReadOnlyEntryLogger.class, (entryLogger, context) -> {
+            doNothing().when(entryLogger).scanEntryLog(anyLong(), any(EntryLogger.EntryLogScanner.class));
+        });
     }
 
     @Test

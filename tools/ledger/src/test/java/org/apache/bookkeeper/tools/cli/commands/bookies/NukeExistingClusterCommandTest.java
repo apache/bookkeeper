@@ -27,16 +27,10 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link NukeExistingClusterCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ NukeExistingClusterCommand.class, BookKeeperAdmin.class })
 public class NukeExistingClusterCommandTest extends BookieCommandTestBase {
 
     public NukeExistingClusterCommandTest() {
@@ -47,7 +41,6 @@ public class NukeExistingClusterCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-//        PowerMockito.mockStatic(BookKeeperAdmin.classs);
     }
 
     @Test
@@ -64,8 +57,7 @@ public class NukeExistingClusterCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testCommand() throws Exception {
-        PowerMockito.mockStatic(BookKeeperAdmin.class);
-        PowerMockito.when(
+        mockStatic(BookKeeperAdmin.class).when(() ->
             BookKeeperAdmin.nukeExistingCluster(any(ServerConfiguration.class), anyString(), anyString(), anyBoolean()))
                     .thenReturn(true);
 

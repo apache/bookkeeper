@@ -20,8 +20,11 @@ package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
+
 import com.google.common.collect.Lists;
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
@@ -30,17 +33,13 @@ import java.util.List;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
@@ -48,24 +47,19 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-
+import org.junit.rules.Timeout;
 
 /**
  * Unit test for {@link QueryAutoRecoveryStatusCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ QueryAutoRecoveryStatusCommand.class, ZKMetadataDriverBase.class, ZooKeeperClient.class,
-        CommandHelpers.class, MetadataDrivers.class
-})
 public class QueryAutoRecoveryStatusCommandTest extends BookieCommandTestBase {
+
+    @Rule
+    public final Timeout globalTimeout = Timeout.seconds(30);
+
     public QueryAutoRecoveryStatusCommandTest() {
         super(3, 0);
     }
@@ -77,13 +71,8 @@ public class QueryAutoRecoveryStatusCommandTest extends BookieCommandTestBase {
         BookieId bookieId = BookieId.parse(UUID.randomUUID().toString());
         LedgerManagerFactory ledgerManagerFactory = mock(LedgerManagerFactory.class);
 
-        PowerMockito.mockStatic(MetadataDrivers.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<LedgerManagerFactory, ?> function = invocationOnMock.getArgument(1);
-            function.apply(ledgerManagerFactory);
-            return true;
-        }).when(MetadataDrivers.class, "runFunctionWithLedgerManagerFactory", any(ServerConfiguration.class),
-                any(Function.class));
+        mockServerConfigurationConstruction(null);
+        mockMetadataDriversWithLedgerManagerFactory(ledgerManagerFactory);
 
         LedgerManager ledgerManager = mock(LedgerManager.class);
         underreplicationManager = mock(LedgerUnderreplicationManager.class);
@@ -143,13 +132,12 @@ public class QueryAutoRecoveryStatusCommandTest extends BookieCommandTestBase {
 
         when(underreplicationManager.listLedgersToRereplicate(any())).thenReturn(iter);
 
-        PowerMockito.mockStatic(CommandHelpers.class);
-        PowerMockito.when(CommandHelpers
+        mockStatic(CommandHelpers.class, CALLS_REAL_METHODS).when(() -> CommandHelpers
                 .getBookieSocketAddrStringRepresentation(
                         eq(bookieId), any(BookieAddressResolver.class))).thenReturn("");
     }
 
-    @Test(timeout = 30000)
+    @Test()
     public void testQueryRecoverStatusCommand() {
         try {
             when(underreplicationManager.getReplicationWorkerIdRereplicatingLedger(1)).thenReturn("192.168.0.103");
@@ -160,7 +148,7 @@ public class QueryAutoRecoveryStatusCommandTest extends BookieCommandTestBase {
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
     }
 
-    @Test(timeout = 30000)
+    @Test()
     public void testQueryRecoverStatusCommandWithDetail() {
         try {
             when(underreplicationManager.getReplicationWorkerIdRereplicatingLedger(1)).thenReturn("192.168.0.103");
@@ -171,7 +159,7 @@ public class QueryAutoRecoveryStatusCommandTest extends BookieCommandTestBase {
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-v" }));
     }
 
-    @Test(timeout = 3000)
+    @Test()
     public void testNoLedgerIsBeingRecovered() {
         QueryAutoRecoveryStatusCommand cmd = new QueryAutoRecoveryStatusCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-v" }));

@@ -22,13 +22,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
@@ -39,54 +38,31 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.function.Function;
+import java.util.function.Consumer;
+
+import lombok.SneakyThrows;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.Cookie;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link RecoverCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ RecoverCommand.class, MetadataDrivers.class, Cookie.class})
 public class RecoverCommandTest extends BookieCommandTestBase {
 
-    private BookieId bookieSocketAddress = BookieId.parse("127.0.0.1:8000");
+    private static final BookieId bookieSocketAddress = BookieId.parse("127.0.0.1:8000");
 
-    @Mock
-    private ClientConfiguration clientConfiguration;
-
-    @Mock
-    private BookKeeperAdmin bookKeeperAdmin;
-
-    @Mock
     private LedgerMetadata ledgerMetadata;
-
-    @Mock
-    private ServerConfiguration serverConfiguration;
-
-    @Mock
     private RegistrationManager registrationManager;
-
-    @Mock
     private Versioned<Cookie> cookieVersioned;
 
     public RecoverCommandTest() {
@@ -96,25 +72,33 @@ public class RecoverCommandTest extends BookieCommandTestBase {
     @Override
     public void setup() throws Exception {
         super.setup();
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
-                    .withArguments(eq(clientConfiguration)).thenReturn(conf);
-        PowerMockito.whenNew(ClientConfiguration.class).withParameterTypes(AbstractConfiguration.class)
-                    .withArguments(eq(conf)).thenReturn(clientConfiguration);
-        PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
-                    .withArguments(eq(clientConfiguration)).thenReturn(bookKeeperAdmin);
+        mockServerConfigurationConstruction();
+        mockClientConfigurationConstruction();
+        ledgerMetadata = mock(LedgerMetadata.class);
+        registrationManager = mock(RegistrationManager.class);
+        cookieVersioned = mock(Versioned.class);
+
 
         mockBkQuery();
         mockDeleteCookie();
         mockDeleteCookies();
-        mockBkRecovery();
-
     }
 
-    private void mockBkQuery() throws BKException, InterruptedException {
+    private void mockBkQuery() {
         SortedMap<Long, LedgerMetadata> ledgerMetadataSortedMap = new TreeMap<>();
         ledgerMetadataSortedMap.put(1L, ledgerMetadata);
-        when(bookKeeperAdmin.getLedgersContainBookies(any())).thenReturn(ledgerMetadataSortedMap);
+
+        mockBookKeeperAdminConstruction(new Consumer<BookKeeperAdmin>() {
+            @Override
+            @SneakyThrows
+            public void accept(BookKeeperAdmin bookKeeperAdmin) {
+                when(bookKeeperAdmin.getLedgersContainBookies(any())).thenReturn(ledgerMetadataSortedMap);
+                doNothing().when(bookKeeperAdmin).recoverBookieData(any(), anyBoolean(), anyBoolean());
+                when(bookKeeperAdmin.getConf()).thenAnswer(i ->
+                        getMockedConstruction(ClientConfiguration.class).constructed().get(0));
+            }
+        });
+
         ArrayList<BookieId> arrayList = new ArrayList<>();
         arrayList.add(bookieSocketAddress);
         Map<Long, List<BookieId>> map = new HashMap<>();
@@ -129,18 +113,12 @@ public class RecoverCommandTest extends BookieCommandTestBase {
 
 
     private void mockDeleteCookies() throws Exception {
-        PowerMockito.mockStatic(MetadataDrivers.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<RegistrationManager, ?> function = invocationOnMock.getArgument(1);
-            function.apply(registrationManager);
-            return null;
-        }).when(MetadataDrivers.class, "runFunctionWithRegistrationManager", any(ServerConfiguration.class),
-                any(Function.class));
+        mockMetadataDriversWithRegistrationManager(registrationManager);
     }
 
     private void mockDeleteCookie() throws BookieException {
-        PowerMockito.mockStatic(Cookie.class);
-        when(Cookie.readFromRegistrationManager(eq(registrationManager), eq(bookieSocketAddress)))
+        mockStatic(Cookie.class).when(() -> Cookie.readFromRegistrationManager(eq(registrationManager),
+                        eq(bookieSocketAddress)))
             .thenReturn(cookieVersioned);
         Cookie cookie = mock(Cookie.class);
         when(cookieVersioned.getValue()).thenReturn(cookie);
@@ -148,11 +126,6 @@ public class RecoverCommandTest extends BookieCommandTestBase {
         when(cookieVersioned.getVersion()).thenReturn(version);
         doNothing().when(cookie)
                    .deleteFromRegistrationManager(eq(registrationManager), eq(bookieSocketAddress), eq(version));
-    }
-
-    private void mockBkRecovery() throws BKException, InterruptedException {
-        doNothing().when(bookKeeperAdmin).recoverBookieData(any(), anyBoolean(), anyBoolean());
-        when(bookKeeperAdmin.getConf()).thenReturn(clientConfiguration);
     }
 
     @Test
@@ -165,18 +138,15 @@ public class RecoverCommandTest extends BookieCommandTestBase {
     public void testQuery() throws Exception {
         RecoverCommand cmd = new RecoverCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-q", "-bs", "127.0.0.1:8000", "-f" }));
-        verifyNew(ClientConfiguration.class, times(1)).withArguments(eq(conf));
-        verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(clientConfiguration));
-        verify(bookKeeperAdmin, times(1)).getLedgersContainBookies(any());
+        verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0),
+                times(1)).getLedgersContainBookies(any());
     }
 
     @Test
     public void testLedgerId() throws Exception {
         RecoverCommand cmd = new RecoverCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-bs", "127.0.0.1:8000", "-f", "-l", "1" }));
-        verifyNew(ClientConfiguration.class, times(1)).withArguments(eq(conf));
-        verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(clientConfiguration));
-        verify(bookKeeperAdmin, times(1))
+        verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0), times(1))
             .recoverBookieData(anyLong(), any(), anyBoolean(), anyBoolean());
     }
 
@@ -184,11 +154,10 @@ public class RecoverCommandTest extends BookieCommandTestBase {
     public void testWithLedgerIdAndRemoveCookies() throws Exception {
         RecoverCommand cmd = new RecoverCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-bs", "127.0.0.1:8000", "-f", "-l", "1", "-d" }));
-        verifyNew(ClientConfiguration.class, times(1)).withArguments(eq(conf));
-        verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(clientConfiguration));
-        verify(bookKeeperAdmin, times(1)).recoverBookieData(anyLong(), any(), anyBoolean(), anyBoolean());
-        verify(bookKeeperAdmin, times(1)).getConf();
-        verifyNew(ServerConfiguration.class, times(1)).withArguments(eq(clientConfiguration));
+        verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0),
+                times(1)).recoverBookieData(anyLong(), any(), anyBoolean(), anyBoolean());
+        verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0),
+                times(1)).getConf();
         verify(cookieVersioned, times(1)).getValue();
     }
 }

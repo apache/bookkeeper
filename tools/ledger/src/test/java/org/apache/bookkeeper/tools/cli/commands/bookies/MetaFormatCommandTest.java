@@ -26,16 +26,11 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link MetaFormatCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ MetaFormatCommand.class, BookKeeperAdmin.class })
 public class MetaFormatCommandTest extends BookieCommandTestBase {
 
     public MetaFormatCommandTest() {
@@ -46,9 +41,9 @@ public class MetaFormatCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.mockStatic(BookKeeperAdmin.class);
-        PowerMockito.when(BookKeeperAdmin.class, "format", any(ServerConfiguration.class), anyBoolean(), anyBoolean())
-                    .thenReturn(true);
+        final MockedStatic<BookKeeperAdmin> bookKeeperAdminMockedStatic = mockStatic(BookKeeperAdmin.class);
+        bookKeeperAdminMockedStatic.when(() -> BookKeeperAdmin.format(any(ServerConfiguration.class),
+                        anyBoolean(), anyBoolean())).thenReturn(true);
 
     }
 

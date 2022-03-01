@@ -19,37 +19,19 @@
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.InterleavedStorageRegenerateIndexOp;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link RegenerateInterleavedStorageIndexFileCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ RegenerateInterleavedStorageIndexFileCommand.class, InterleavedStorageRegenerateIndexOp.class,
-    ServerConfiguration.class })
 public class RegenerateInterleavedStorageIndexFileCommandTest extends BookieCommandTestBase {
-
-    @Mock
-    private ServerConfiguration serverConfiguration;
-
-    @Mock
-    private InterleavedStorageRegenerateIndexOp op;
 
     public RegenerateInterleavedStorageIndexFileCommandTest() {
         super(3, 0);
@@ -58,28 +40,21 @@ public class RegenerateInterleavedStorageIndexFileCommandTest extends BookieComm
     @Override
     public void setup() throws Exception {
         super.setup();
-
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(ServerConfiguration.class).withArguments(eq(conf)).thenReturn(serverConfiguration);
+        mockServerConfigurationConstruction();
     }
 
     @Test
     public void testCommand() throws Exception {
         String ledgerIds = "1,2,3";
         String password = "12345";
-        Set<Long> ledgerIdsSet = Arrays.stream(ledgerIds.split(",")).map((id) -> Long.parseLong(id))
-                                       .collect(Collectors.toSet());
-        byte[] bytes = password.getBytes();
-        PowerMockito.whenNew(InterleavedStorageRegenerateIndexOp.class)
-                    .withArguments(eq(serverConfiguration), eq(ledgerIdsSet), eq(bytes)).thenReturn(op);
-        PowerMockito.doNothing().when(op).initiate(anyBoolean());
 
+        mockConstruction(InterleavedStorageRegenerateIndexOp.class, (op, context) -> {
+                         doNothing().when(op).initiate(anyBoolean());
+        });
         RegenerateInterleavedStorageIndexFileCommand cmd = new RegenerateInterleavedStorageIndexFileCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-p", password, "-l", ledgerIds }));
-        PowerMockito.verifyNew(ServerConfiguration.class, times(1)).withArguments(eq(conf));
-        PowerMockito.verifyNew(InterleavedStorageRegenerateIndexOp.class, times(1))
-                    .withArguments(eq(serverConfiguration), eq(ledgerIdsSet), eq(bytes));
-        verify(op, times(1)).initiate(anyBoolean());
+        verify(getMockedConstruction(InterleavedStorageRegenerateIndexOp.class).constructed().get(0),
+                times(1)).initiate(anyBoolean());
     }
 }
 

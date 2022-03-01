@@ -22,35 +22,25 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
-import java.net.URI;
 import java.util.UUID;
 import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
-import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link WhoIsAuditorCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ WhoIsAuditorCommand.class, ZKMetadataDriverBase.class, ZooKeeperClient.class, AuditorElector.class,
-    CommandHelpers.class
-})
 public class WhoIsAuditorCommandTest extends BookieCommandTestBase {
 
     public WhoIsAuditorCommandTest() {
@@ -61,24 +51,19 @@ public class WhoIsAuditorCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-
-        PowerMockito.mockStatic(ZKMetadataDriverBase.class);
-        PowerMockito.when(ZKMetadataDriverBase.getZKServersFromServiceUri(eq(URI.create(conf.getMetadataServiceUri()))))
-                    .thenReturn("");
+        mockClientConfigurationConstruction();
 
         ZooKeeperClient zk = mock(ZooKeeperClient.class);
         ZooKeeperClient.Builder builder = mock(ZooKeeperClient.Builder.class);
-        PowerMockito.mockStatic(ZooKeeperClient.class);
-        PowerMockito.when(ZooKeeperClient.newBuilder()).thenReturn(builder);
+
+        mockStatic(ZooKeeperClient.class).when(() -> ZooKeeperClient.newBuilder()).thenReturn(builder);
         when(builder.connectString(anyString())).thenReturn(builder);
         when(builder.sessionTimeoutMs(anyInt())).thenReturn(builder);
         when(builder.build()).thenReturn(zk);
 
         BookieId bookieId = BookieId.parse(UUID.randomUUID().toString());
 
-        PowerMockito.mockStatic(CommandHelpers.class);
-        PowerMockito.when(CommandHelpers
+        mockStatic(CommandHelpers.class, CALLS_REAL_METHODS).when(() -> CommandHelpers
                 .getBookieSocketAddrStringRepresentation(
                         eq(bookieId), any(BookieAddressResolver.class))).thenReturn("");
     }

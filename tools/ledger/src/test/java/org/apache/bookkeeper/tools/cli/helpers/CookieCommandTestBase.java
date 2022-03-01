@@ -20,20 +20,14 @@
 package org.apache.bookkeeper.tools.cli.helpers;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import java.util.function.Function;
-import org.apache.bookkeeper.conf.ServerConfiguration;
+
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.junit.Before;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 
 /**
  * A test base for testing cookie commands.
  */
-@PrepareForTest({ MetadataDrivers.class })
 public class CookieCommandTestBase extends CommandTestBase {
 
     protected static final String INVALID_BOOKIE_ID = "127.0.0.1";
@@ -41,16 +35,11 @@ public class CookieCommandTestBase extends CommandTestBase {
 
     protected RegistrationManager rm;
 
+
     @Before
     public void setup() throws Exception {
-        PowerMockito.mockStatic(MetadataDrivers.class);
         this.rm = mock(RegistrationManager.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<RegistrationManager, ?> func = invocationOnMock.getArgument(1);
-            func.apply(rm);
-            return true;
-        }).when(MetadataDrivers.class, "runFunctionWithRegistrationManager",
-            any(ServerConfiguration.class), any(Function.class));
+        mockMetadataDriversWithRegistrationManager(rm);
     }
 
     protected void assertBookieIdMissing(String consoleOutput) {

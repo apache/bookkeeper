@@ -20,8 +20,11 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 import java.util.Iterator;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -29,29 +32,20 @@ import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerEntryPage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
-import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link LedgerCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ DbLedgerStorage.class, SortedLedgerStorage.class, InterleavedLedgerStorage.class, BookieImpl.class,
-        LedgerStorage.class, LedgerCache.PageEntries.class, LedgerCache.PageEntriesIterable.class, LedgerCommand.class,
-        LedgerCache.LedgerIndexMetadata.class })
 public class LedgerCommandTest extends BookieCommandTestBase {
 
     private LedgerCache.LedgerIndexMetadata metadata;
-    private ServerConfiguration tConf;
 
     public LedgerCommandTest() {
         super(3, 0);
@@ -59,39 +53,42 @@ public class LedgerCommandTest extends BookieCommandTestBase {
 
     public void setup() throws Exception {
         super.setup();
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
+        mockServerConfigurationConstruction(serverconf -> {
+            final ServerConfiguration defaultValue = new ServerConfiguration();
+            when(serverconf.getLedgerStorageClass()).thenReturn(defaultValue.getLedgerStorageClass());
+        });
+        final MockedStatic<DbLedgerStorage> dbLedgerStorageMockedStatic = mockStatic(DbLedgerStorage.class);
+        dbLedgerStorageMockedStatic
+                .when(() -> DbLedgerStorage.readLedgerIndexEntries(anyLong(),
+                        any(ServerConfiguration.class),
+                        any(SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor.class)))
+                .thenAnswer(invocation -> {
+                    SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor p = invocation.getArgument(2);
+                    p.process(1L, 1L, 1L);
+                    return true;
+                });
 
-        PowerMockito.mockStatic(DbLedgerStorage.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor p = invocationOnMock.getArgument(2);
-            p.process(1L, 1L, 1L);
-            return true;
-        }).when(DbLedgerStorage.class, "readLedgerIndexEntries", anyLong(), any(ServerConfiguration.class),
-                any(SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor.class));
-        PowerMockito.when(DbLedgerStorage.class.getName())
-                .thenReturn("org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage");
 
-        tConf = PowerMockito.mock(ServerConfiguration.class);
-        PowerMockito.whenNew(ServerConfiguration.class).withArguments(ServerConfiguration.class)
-                .thenReturn(tConf);
+        LedgerCache.PageEntries e = mock(LedgerCache.PageEntries.class);
+        LedgerCache.PageEntriesIterable i = mock(LedgerCache.PageEntriesIterable.class);
 
-        InterleavedLedgerStorage interleavedLedgerStorage = PowerMockito.mock(InterleavedLedgerStorage.class);
-        PowerMockito.whenNew(InterleavedLedgerStorage.class).withNoArguments().thenReturn(interleavedLedgerStorage);
+        metadata = mock(LedgerCache.LedgerIndexMetadata.class);
+        mockConstruction(InterleavedLedgerStorage.class, (interleavedLedgerStorage, context) -> {
+            when(interleavedLedgerStorage.getIndexEntries(anyLong())).thenReturn(i);
+            when(interleavedLedgerStorage.readLedgerIndexMetadata(anyLong())).thenReturn(metadata);
+        });
 
-        PowerMockito.mockStatic(BookieImpl.class);
-        PowerMockito.when(BookieImpl.mountLedgerStorageOffline(eq(tConf), eq(interleavedLedgerStorage)))
-                .thenReturn(PowerMockito.mock(LedgerStorage.class));
+        final MockedStatic<BookieImpl> bookieMockedStatic = mockStatic(BookieImpl.class);
+        bookieMockedStatic.when(() -> BookieImpl.mountLedgerStorageOffline(any(), any()))
+                .thenReturn(mock(LedgerStorage.class));
 
-        LedgerCache.PageEntries e = PowerMockito.mock(LedgerCache.PageEntries.class);
-        LedgerCache.PageEntriesIterable i = PowerMockito.mock(LedgerCache.PageEntriesIterable.class);
-        PowerMockito.when(interleavedLedgerStorage.getIndexEntries(anyLong())).thenReturn(i);
-        PowerMockito.when(i.iterator()).thenReturn(getPageIterator(e));
-        LedgerEntryPage lep = PowerMockito.mock(LedgerEntryPage.class);
-        PowerMockito.when(e.getLEP()).thenReturn(lep);
+        when(i.iterator()).thenReturn(getPageIterator(e));
+        LedgerEntryPage lep = mock(LedgerEntryPage.class);
+        when(e.getLEP()).thenReturn(lep);
 
-        metadata = PowerMockito.mock(LedgerCache.LedgerIndexMetadata.class);
-        PowerMockito.when(interleavedLedgerStorage.readLedgerIndexMetadata(anyLong())).thenReturn(metadata);
-        PowerMockito.when(metadata.getMasterKeyHex()).thenReturn("");
+
+
+        when(metadata.getMasterKeyHex()).thenReturn("");
     }
 
     public Iterator<LedgerCache.PageEntries> getPageIterator(LedgerCache.PageEntries page) {
@@ -132,16 +129,15 @@ public class LedgerCommandTest extends BookieCommandTestBase {
         LedgerCommand cmd = new LedgerCommand();
         cmd.apply(bkFlags, new String[] { "-id", "1", "-m" });
 
-        PowerMockito.verifyNew(ServerConfiguration.class, times(1)).withArguments(eq(conf));
-        PowerMockito.verifyNew(InterleavedLedgerStorage.class, times(1)).withNoArguments();
-
         verify(metadata, times(1)).getMasterKeyHex();
     }
 
     @Test
     public void testDbLedgerStorage() throws Exception {
-        conf.setLedgerStorageClass("org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage");
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
+
+        mockServerConfigurationConstruction(conf -> {
+            when(conf.getLedgerStorageClass()).thenReturn("org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage");
+        });
         LedgerCommand cmd = new LedgerCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[]{"-id", "1"}));
     }

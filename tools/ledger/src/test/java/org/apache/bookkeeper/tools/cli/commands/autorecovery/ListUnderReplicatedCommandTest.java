@@ -19,34 +19,25 @@
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Vector;
-import java.util.function.Function;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.zookeeper.KeeperException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link ListUnderReplicatedCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ListUnderReplicatedCommand.class, MetadataDrivers.class, UnderreplicatedLedger.class })
 public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
 
     private UnderreplicatedLedger ledger;
@@ -61,16 +52,8 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-
-        PowerMockito.mockStatic(MetadataDrivers.class);
         factory = mock(LedgerManagerFactory.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<LedgerManagerFactory, ?> function = invocationOnMock.getArgument(1);
-            function.apply(factory);
-            return true;
-        }).when(MetadataDrivers.class, "runFunctionWithLedgerManagerFactory", any(ServerConfiguration.class),
-                any(Function.class));
+        mockMetadataDriversWithLedgerManagerFactory(factory);
 
         underreplicationManager = mock(LedgerUnderreplicationManager.class);
         when(factory.newLedgerUnderreplicationManager()).thenReturn(underreplicationManager);

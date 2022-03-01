@@ -18,35 +18,28 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
-import java.util.function.Function;
-
 import org.apache.bookkeeper.bookie.Cookie;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.versioning.LongVersion;
-import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
 
 /**
  * Unit test {@link FormatCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ FormatCommand.class, MetadataDrivers.class, Cookie.class })
 public class FormatCommandTest extends BookieCommandTestBase {
 
     public FormatCommandTest() {
@@ -57,28 +50,20 @@ public class FormatCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
+        mockServerConfigurationConstruction();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
-                .withArguments(eq(conf)).thenReturn(conf);
-
-        PowerMockito.mockStatic(MetadataDrivers.class);
         RegistrationManager rm = mock(RegistrationManager.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<RegistrationManager, ?> func = invocationOnMock.getArgument(1);
-            func.apply(rm);
-            return true;
-        }).when(MetadataDrivers.class, "runFunctionWithRegistrationManager", any(ServerConfiguration.class),
-                any(Function.class));
+        mockMetadataDriversWithRegistrationManager(rm);
 
-        Versioned cookie = mock(Versioned.class);
-        PowerMockito.whenNew(Versioned.class).withParameterTypes(Object.class, Version.class)
-                .withArguments(any(Cookie.class), eq(new LongVersion(1L))).thenReturn(cookie);
+        mockConstruction(Versioned.class, (cookie, context) -> {
+            assertEquals(context.arguments().get(1), new LongVersion(1L));
+            when(cookie.getValue()).thenReturn(mock(Cookie.class));
+        });
 
-        PowerMockito.mockStatic(Cookie.class);
-        when(Cookie.readFromRegistrationManager(rm, conf)).thenReturn((Versioned<Cookie>) cookie);
 
-        when(cookie.getValue()).thenReturn(mock(Cookie.class));
+        final MockedStatic<Cookie> cookieMockedStatic = mockStatic(Cookie.class);
+        cookieMockedStatic.when(() -> Cookie.readFromRegistrationManager(eq(rm), any(ServerConfiguration.class)))
+                .thenAnswer(invocation -> new Versioned<>(mock(Cookie.class), new LongVersion(1L)));
     }
 
     /**
@@ -129,6 +114,7 @@ public class FormatCommandTest extends BookieCommandTestBase {
         try {
             assertTrue(cmd.apply(bkFlags, args));
         } catch (Exception e) {
+            e.printStackTrace();
             fail("Should not throw any exception here");
         }
     }

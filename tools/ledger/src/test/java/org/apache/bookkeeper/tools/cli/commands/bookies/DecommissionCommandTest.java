@@ -19,57 +19,34 @@
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
+
 import java.util.UUID;
-import java.util.function.Function;
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
 
 /**
  * Unit test for {@link DecommissionCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ DecommissionCommand.class, Bookie.class, MetadataDrivers.class, Cookie.class })
 public class DecommissionCommandTest extends BookieCommandTestBase {
 
-    @Mock
-    private ClientConfiguration clientConfiguration;
-
-    @Mock
-    private BookKeeperAdmin bookKeeperAdmin;
-
-    private BookieId bookieSocketAddress = BookieId.parse(UUID.randomUUID().toString());
-
-    @Mock
     private Versioned<Cookie> cookieVersioned;
+    private static final String bookieID = UUID.randomUUID().toString();
 
-    @Mock
-    private Cookie cookie;
-
-    @Mock
-    private Version version;
     public DecommissionCommandTest() {
         super(3, 0);
     }
@@ -78,29 +55,33 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(ClientConfiguration.class).withArguments(eq(conf)).thenReturn(clientConfiguration);
-        PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
-                    .withArguments(eq(clientConfiguration)).thenReturn(bookKeeperAdmin);
-        PowerMockito.whenNew(BookieId.class).withArguments(anyString()).thenReturn(bookieSocketAddress);
-        conf.setBookieId(bookieSocketAddress.getId());
-        PowerMockito.doNothing().when(bookKeeperAdmin).decommissionBookie(eq(bookieSocketAddress));
-        RegistrationManager registrationManager = mock(RegistrationManager.class);
-        PowerMockito.mockStatic(MetadataDrivers.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<RegistrationManager, ?> f = invocationOnMock.getArgument(1);
-            f.apply(registrationManager);
-            return true;
-        }).when(MetadataDrivers.class, "runFunctionWithRegistrationManager", any(ServerConfiguration.class),
-                any(Function.class));
 
-        PowerMockito.mockStatic(Cookie.class);
-        when(Cookie.readFromRegistrationManager(eq(registrationManager), eq(bookieSocketAddress)))
+        mockServerConfigurationConstruction(conf -> {
+            doReturn(bookieID).when(conf).getBookieId();
+        });
+        mockClientConfigurationConstruction();
+        mockBookKeeperAdminConstruction();
+        mockConstruction(BookieId.class, (mocked, context) -> {
+            doReturn(bookieID).when(mocked).getId();
+        });
+
+        RegistrationManager registrationManager = mock(RegistrationManager.class);
+        mockMetadataDriversWithRegistrationManager(registrationManager);
+
+
+        cookieVersioned = mock(Versioned.class);
+        final MockedStatic<Cookie> cookieMockedStatic = mockStatic(Cookie.class);
+        cookieMockedStatic.when(() -> Cookie.readFromRegistrationManager(eq(registrationManager),
+                        any(BookieId.class)))
                     .thenReturn(cookieVersioned);
+
+        final Cookie cookie = mock(Cookie.class);
+        final Version version = mock(Version.class);
+
         when(cookieVersioned.getValue()).thenReturn(cookie);
         when(cookieVersioned.getVersion()).thenReturn(version);
-        PowerMockito.doNothing().when(cookie)
-                    .deleteFromRegistrationManager(eq(registrationManager), eq(bookieSocketAddress), eq(version));
+        doNothing().when(cookie)
+                    .deleteFromRegistrationManager(eq(registrationManager), any(BookieId.class), eq(version));
     }
 
     @Test
@@ -108,9 +89,8 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
         DecommissionCommand cmd = new DecommissionCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
 
-        verifyNew(ClientConfiguration.class, times(1)).withArguments(eq(conf));
-        verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(clientConfiguration));
-        verify(bookKeeperAdmin, times(1)).decommissionBookie(eq(bookieSocketAddress));
+        verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0),
+                times(1)).decommissionBookie(any(BookieId.class));
         verify(cookieVersioned, times(1)).getValue();
         verify(cookieVersioned, times(1)).getVersion();
     }
@@ -118,11 +98,10 @@ public class DecommissionCommandTest extends BookieCommandTestBase {
     @Test
     public void testWithBookieId() throws Exception {
         DecommissionCommand cmd = new DecommissionCommand();
-        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-b", bookieSocketAddress.getId() }));
+        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-b", bookieID }));
 
-        verifyNew(ClientConfiguration.class, times(1)).withArguments(eq(conf));
-        verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(clientConfiguration));
-        verify(bookKeeperAdmin, times(1)).decommissionBookie(eq(bookieSocketAddress));
+        verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0),
+                times(1)).decommissionBookie(any(BookieId.class));
         verify(cookieVersioned, times(1)).getValue();
         verify(cookieVersioned, times(1)).getVersion();
     }
