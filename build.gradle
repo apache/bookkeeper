@@ -350,9 +350,9 @@ allprojects {
 
     repositories {
         mavenCentral()
+        mavenLocal()
     }
 }
-
 
 def javadocProjects = [
         ":bookkeeper-common",
