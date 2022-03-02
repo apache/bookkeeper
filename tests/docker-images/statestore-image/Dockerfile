@@ -25,12 +25,12 @@ ENV BOOKIE_GRPC_PORT=4181
 EXPOSE ${BOOKIE_PORT} ${BOOKIE_HTTP_PORT} ${BOOKIE_GRPC_PORT}
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
+ENV JAVA_HOME=/usr/lib/jvm/java-11
 
 
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-1.8.0-openjdk-headless wget bash sudo \
+    && yum install -y java-11-openjdk-devel wget bash python-pip python-devel sudo netcat gcc gcc-c++ \
     && wget -q https://bootstrap.pypa.io/pip/2.7/get-pip.py \
     && python get-pip.py \
     && pip install zk-shell \

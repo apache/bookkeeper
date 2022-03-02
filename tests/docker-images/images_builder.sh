@@ -28,5 +28,4 @@ cd ${BASE_DIR}
 time /bin/bash -e tests/docker-images/statestore-image/image_builder.sh
 time /bin/bash -e tests/docker-images/all-released-versions-image/image_builder.sh
 time /bin/bash -e tests/docker-images/all-versions-image/image_builder.sh ${BK_VERSION}
-time /bin/bash -e tests/docker-images/current-version-image/image_builder.sh ${BK_VERSION}
 
