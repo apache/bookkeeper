@@ -152,8 +152,12 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                     tableOptions.setFilterPolicy(new BloomFilter(bloomFilterBitsPerKey, false));
                 }
 
-                // Options best suited for HDDs
+                // Cache index & filter in block cache to limit the memory usage
                 tableOptions.setCacheIndexAndFilterBlocks(true);
+                // Options below are tune to mitigate the performance regression when limiting the memory usage
+                tableOptions.setCacheIndexAndFilterBlocksWithHighPriority(true);
+                tableOptions.setPinL0FilterAndIndexBlocksInCache(true);
+
                 options.setLevelCompactionDynamicLevelBytes(true);
 
                 options.setTableFormatConfig(tableOptions);
