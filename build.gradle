@@ -356,7 +356,6 @@ def javadocProjects = [
 ]
 
 task generateApiJavadoc(type: Javadoc) {
-    outputs.upToDateWhen {false}
     javadocProjects.each { dependsOn("${it}:delombok");  }
     options.addBooleanOption("package", true)
     options.addBooleanOption('Xdoclint:none', true)

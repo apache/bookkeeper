@@ -30,6 +30,7 @@ jobs:
       - name: publish
         run: |
           cd site
+          make setup
           make latest_javadoc
           make apache
           ./scripts/publish-website.sh
