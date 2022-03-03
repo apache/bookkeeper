@@ -44,7 +44,10 @@ public class EntryLogMetadata {
     private static final short DEFAULT_SERIALIZATION_VERSION = 0;
 
     protected EntryLogMetadata() {
-        ledgersMap = new ConcurrentLongLongHashMap(256, 1);
+        ledgersMap = ConcurrentLongLongHashMap.newBuilder()
+                .expectedItems(256)
+                .concurrencyLevel(1)
+                .build();
     }
 
     public EntryLogMetadata(long logId) {

@@ -275,7 +275,8 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         super(conf, ledgerDirsManager, entryLoggerAllocator, listeners);
         this.recentlyCreatedEntryLogsStatus = recentlyCreatedEntryLogsStatus;
         this.rotatedLogChannels = new CopyOnWriteArrayList<BufferedLogChannel>();
-        this.replicaOfCurrentLogChannels = new ConcurrentLongHashMap<BufferedLogChannelWithDirInfo>();
+        this.replicaOfCurrentLogChannels =
+                ConcurrentLongHashMap.<BufferedLogChannelWithDirInfo>newBuilder().build();
         this.entrylogMapAccessExpiryTimeInSeconds = conf.getEntrylogMapAccessExpiryTimeInSeconds();
         this.maximumNumberOfActiveEntryLogs = conf.getMaximumNumberOfActiveEntryLogs();
         this.entryLogPerLedgerCounterLimitsMultFactor = conf.getEntryLogPerLedgerCounterLimitsMultFactor();

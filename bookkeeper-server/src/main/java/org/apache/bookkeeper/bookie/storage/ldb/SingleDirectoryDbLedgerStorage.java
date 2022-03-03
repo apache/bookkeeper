@@ -176,8 +176,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         entryLocationIndex = new EntryLocationIndex(conf,
                 KeyValueStorageRocksDB.factory, baseDir, ledgerDirStatsLogger);
 
-        transientLedgerInfoCache = new ConcurrentLongHashMap<>(16 * 1024,
-                Runtime.getRuntime().availableProcessors() * 2);
+        transientLedgerInfoCache = ConcurrentLongHashMap.<TransientLedgerInfo>newBuilder()
+                .expectedItems(16 * 1024)
+                .concurrencyLevel(Runtime.getRuntime().availableProcessors() * 2)
+                .build();
         cleanupExecutor.scheduleAtFixedRate(this::cleanupStaleTransientLedgerInfo,
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES,
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES, TimeUnit.MINUTES);

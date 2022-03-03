@@ -73,7 +73,7 @@ class EtcdLedgerManager implements LedgerManager {
     private final KV kvClient;
     private final EtcdWatchClient watchClient;
     private final ConcurrentLongHashMap<ValueStream<LedgerMetadata>> watchers =
-        new ConcurrentLongHashMap<>();
+            ConcurrentLongHashMap.<ValueStream<LedgerMetadata>>newBuilder().build();
     private final ConcurrentMap<LedgerMetadataListener, LedgerMetadataConsumer> listeners =
         new ConcurrentHashMap<>();
 

@@ -66,9 +66,9 @@ public class EtcdWatchClient implements AutoCloseable {
     private volatile StreamObserver<WatchRequest> grpcWatchStreamObserver;
     // watchers stores a mapping between watchID -> EtcdWatcher.
     private final ConcurrentLongHashMap<EtcdWatcher> watchers =
-        new ConcurrentLongHashMap<>();
+            ConcurrentLongHashMap.<EtcdWatcher>newBuilder().build();
     private final LinkedList<EtcdWatcher> pendingWatchers = new LinkedList<>();
-    private final ConcurrentLongHashSet cancelSet = new ConcurrentLongHashSet();
+    private final ConcurrentLongHashSet cancelSet = ConcurrentLongHashSet.newBuilder().build();
 
     // scheduler
     private final OrderedScheduler scheduler;

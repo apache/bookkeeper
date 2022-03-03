@@ -92,7 +92,7 @@ public class ZkStorageContainerManager
             new ThreadFactoryBuilder().setNameFormat("zk-storage-container-manager").build());
         this.liveContainers = Collections.synchronizedMap(Maps.newConcurrentMap());
         this.pendingStartStopContainers = Collections.synchronizedSet(Sets.newConcurrentHashSet());
-        this.containerAssignmentMap = new ConcurrentLongHashMap<>();
+        this.containerAssignmentMap = ConcurrentLongHashMap.<Endpoint>newBuilder().build();
         this.clusterAssignmentMap = Maps.newHashMap();
         // probe the containers every 1/2 of controller scheduling interval. this ensures the manager
         // can attempt to start containers before controller reassign them.
