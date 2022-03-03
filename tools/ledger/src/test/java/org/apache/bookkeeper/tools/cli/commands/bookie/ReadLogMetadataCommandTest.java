@@ -53,7 +53,7 @@ public class ReadLogMetadataCommandTest extends BookieCommandTestBase {
             when(entryLogger.getEntryLogMetadata(anyLong())).thenReturn(entryLogMetadata);
         });
 
-        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap();
+        ConcurrentLongLongHashMap map = ConcurrentLongLongHashMap.newBuilder().build();
         map.put(1, 1);
         when(entryLogMetadata.getLedgersMap()).thenReturn(map);
 

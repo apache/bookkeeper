@@ -34,8 +34,8 @@ class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
 
     HandleFactoryImpl(LedgerStorage ledgerStorage) {
         this.ledgerStorage = ledgerStorage;
-        this.ledgers = new ConcurrentLongHashMap<>();
-        this.readOnlyLedgers = new ConcurrentLongHashMap<>();
+        this.ledgers = ConcurrentLongHashMap.<LedgerDescriptor>newBuilder().build();
+        this.readOnlyLedgers = ConcurrentLongHashMap.<LedgerDescriptor>newBuilder().build();
 
         ledgerStorage.registerLedgerDeletionListener(this);
     }

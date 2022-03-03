@@ -65,8 +65,10 @@ public class WriteCache implements Closeable {
             .concurrencyLevel(2 * Runtime.getRuntime().availableProcessors())
             .build();
 
-    private final ConcurrentLongLongHashMap lastEntryMap =
-            new ConcurrentLongLongHashMap(4096, 2 * Runtime.getRuntime().availableProcessors());
+    private final ConcurrentLongLongHashMap lastEntryMap = ConcurrentLongLongHashMap.newBuilder()
+            .expectedItems(4096)
+            .concurrencyLevel(2 * Runtime.getRuntime().availableProcessors())
+            .build();
 
     private final ByteBuf[] cacheSegments;
     private final int segmentsCount;
@@ -80,7 +82,7 @@ public class WriteCache implements Closeable {
     private final AtomicLong cacheOffset = new AtomicLong(0);
     private final LongAdder cacheCount = new LongAdder();
 
-    private final ConcurrentLongHashSet deletedLedgers = new ConcurrentLongHashSet();
+    private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
 
     private final ByteBufAllocator allocator;
 
