@@ -44,15 +44,16 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
-      - name: Set up JDK 1.8
-        uses: actions/setup-java@v1
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
         with:
-          java-version: 1.8
+          distribution: 'temurin'
+          java-version: 11
 
       - name: Build tar
         run: ./gradlew stream:server:build -x test ${GRADLE_ARGS}
       - name: run cluster integration test
-        run: ./gradlew :tests:integration:cluster:test ${GRADLE_ARGS}
+        run: ./gradlew :tests:integration:cluster:test ${GRADLE_ARGS} || (tail -n +1 tests/integration/cluster/build/reports/tests/test/classes/* && tail -n +1 tests/integration/cluster/build/container-logs/**/* && exit 1)
       - name: run smoke test
         run: ./gradlew tests:integration:smoke:test ${GRADLE_ARGS}
       - name: run standalone test

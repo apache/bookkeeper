@@ -18,30 +18,20 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.health;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import java.util.function.Function;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 
 /**
  * Unit test for {@link SwitchOfHealthCheckCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SwitchOfHealthCheckCommand.class, MetadataDrivers.class})
 public class SwitchOfHealthCheckCommandTest extends BookieCommandTestBase {
     MetadataClientDriver metadataClientDriver;
     private MetadataBookieDriver metadataBookieDriver;
@@ -54,15 +44,9 @@ public class SwitchOfHealthCheckCommandTest extends BookieCommandTestBase {
     @Override
     public void setup() throws Exception {
         super.setup();
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
+        mockServerConfigurationConstruction();
         metadataBookieDriver = mock(MetadataBookieDriver.class);
-        PowerMockito.mockStatic(MetadataDrivers.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<MetadataBookieDriver, ?> function = invocationOnMock.getArgument(1);
-            function.apply(metadataBookieDriver);
-            return true;
-        }).when(MetadataDrivers.class, "runFunctionWithMetadataBookieDriver", any(ServerConfiguration.class),
-                any(Function.class));
+        mockMetadataDriversWithMetadataBookieDriver(metadataBookieDriver);
         metadataClientDriver = mock(MetadataClientDriver.class);
         when(metadataBookieDriver.isHealthCheckEnabled()).thenReturn(FutureUtils.value(true));
         when(metadataBookieDriver.disableHealthCheck()).thenReturn(FutureUtils.value(null));
