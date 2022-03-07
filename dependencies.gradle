@@ -84,7 +84,7 @@ depVersions = [
     testcontainers: "1.15.1",
     vertx: "3.9.8",
     yahooDatasketches: "0.8.3",
-    zookeeper: "3.6.2",
+    zookeeper: "3.8.0",
 ]
 
 depLibs = [
