@@ -232,7 +232,9 @@ depLibs = [
     yahooDatasketches: "com.yahoo.datasketches:sketches-core:${depVersions.yahooDatasketches}",
     zookeeper: dependencies.create("org.apache.zookeeper:zookeeper:${depVersions.zookeeper}") {
         exclude group: 'io.netty', module: 'netty-transport-native-epoll'
-        exclude group: 'log4j', module: 'log4j'
+        exclude group: 'io.netty', module: 'netty-tcnative'
+        exclude group: 'ch.qos.logback', module: 'logback-classic'
+        exclude group: 'ch.qos.logback', module: 'logback-core'
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
     },
     zookeeperTest: "org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests"
