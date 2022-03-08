@@ -16,6 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import io.franzbecker.gradle.lombok.task.DelombokTask
+
 buildscript {
     repositories {
         mavenCentral()
@@ -30,6 +32,7 @@ plugins {
     id 'org.nosphere.apache.rat'
     id 'com.github.spotbugs'
     id 'org.owasp.dependencycheck'
+    id 'io.franzbecker.gradle-lombok' version "5.0.0"
 }
 
 subprojects {
@@ -238,16 +241,7 @@ allprojects {
             options.compilerArgs = ["-Xlint:unchecked", "-Xlint:deprecation", "-Werror"]
         }
 
-        javadoc {
-            options.addBooleanOption('Xdoclint:none', true)
-            includes = [
-                    '**/org/apache/bookkeeper/client/api/**',
-                    '**/org/apache/bookkeeper/common/annotation/**',
-                    '**/org/apache/bookkeeper/conf/**',
-                    '**/org/apache/bookkeeper/feature/**',
-                    '**/org/apache/bookkeeper/stats/**',
-            ]
-        }
+
 
         def componentName = it.name
         publishing {
@@ -333,10 +327,54 @@ allprojects {
             // error message you got
             suppressedValidationErrors.add('enforced-platform')
         }
+        
+        apply plugin: 'io.franzbecker.gradle-lombok'
+
+        task delombok(type: DelombokTask, dependsOn: compileJava) {
+            ext.outputDir = file("$buildDir/delombok")
+            outputs.dir(outputDir)
+            sourceSets.main.java.srcDirs.each {
+                inputs.dir(it)
+                args(it, "-d", outputDir)
+            }
+        }
+
+        task generateJavadoc(type: Javadoc, dependsOn: delombok) {
+            options.addBooleanOption('Xdoclint:none', true)
+            source = delombok.outputDir
+            classpath = sourceSets.main.compileClasspath
+        }
 
     }
 
     repositories {
         mavenCentral()
     }
+}
+
+
+def javadocProjects = [
+        ":bookkeeper-common",
+        ":bookkeeper-server",
+        ":bookkeeper-stats",
+        ":bookkeeper-stats-providers:prometheus-metrics-provider",
+        ":bookkeeper-stats-providers:codahale-metrics-provider",
+]
+
+task generateApiJavadoc(type: Javadoc) {
+    javadocProjects.each { dependsOn("${it}:delombok");  }
+    options.addBooleanOption("package", true)
+    options.addBooleanOption('Xdoclint:none', true)
+    options.addBooleanOption('-no-module-directories', true)
+
+    options.addMultilineMultiValueOption("group").setValue([
+            ["Bookkeeper Client", "org.apache.bookkeeper.client*:org.apache.bookkeeper.common.annotation*:org.apache.bookkeeper.conf*:org.apache.bookkeeper.feature*"],
+            ["Bookkeeper Stats API", "org.apache.bookkeeper.stats*"],
+            ["Bookkeeper Stats Providers", "org.apache.bookkeeper.stats.codahale*:org.apache.bookkeeper.stats.prometheus*"]
+    ])
+    source = javadocProjects.collect { project(it).buildDir.getAbsolutePath() + "/delombok" }
+    classpath = files(javadocProjects.collect { project(it).sourceSets.main.compileClasspath })
+
+    title = "BookKeeper Java API (version ${project.version})"
+    destinationDir = file("${buildDir}/docs/javadoc")
 }

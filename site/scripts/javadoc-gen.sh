@@ -7,18 +7,31 @@ function build_javadoc() {
 
   echo "Building the javadoc for version ${version}."
   if [ "$version" == "latest" ]; then
-    javadoc_gen_dir="${ROOT_DIR}/target/site/apidocs"
+    javadoc_gen_dir="${ROOT_DIR}/build/docs/javadoc"
+    use_gradle=true
     cd $ROOT_DIR
   else
-    javadoc_gen_dir="/tmp/bookkeeper-${version}/target/site/apidocs"
+
     rm -rf /tmp/bookkeeper-${version}
-    git clone https://github.com/apache/bookkeeper /tmp/bookkeeper-${version}
+    git clone https://github.com/apache/bookkeeper  -b "release-${version}" /tmp/bookkeeper-${version}
     cd /tmp/bookkeeper-${version}
-    git checkout "release-${version}"
+    if [[ -f "pom.xml" ]]; then
+      use_gradle=false
+      javadoc_gen_dir="/tmp/bookkeeper-${version}/target/site/apidocs"
+    else
+      use_gradle=true
+      javadoc_gen_dir="/tmp/bookkeeper-${version}/build/docs/javadoc"
+    fi
+
   fi
   javadoc_dest_dir="${ROOT_DIR}/site/docs/${version}/api/javadoc"
   rm -rf $javadoc_dest_dir
-  mvn clean install javadoc:aggregate -DskipTests
+  if [[ "$use_gradle" == "true" ]]; then
+    ./gradlew generateApiJavadoc
+  else
+    mvn clean install javadoc:aggregate -DskipTests
+  fi
+
   mv $javadoc_gen_dir $javadoc_dest_dir
 
   echo "Built the javadoc for version ${version}."
