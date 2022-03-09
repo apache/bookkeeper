@@ -1283,7 +1283,7 @@ For the complete list of commands in `BookieShell`, please read [BookKeeper CLI 
 </li>
 </ul>
                             
-##### Bug
+<b>Bug</b>
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-852'>BOOKKEEPER-852</a>] -         Release LedgerDescriptor and master-key objects when not used anymore
 </li>
@@ -1381,7 +1381,7 @@ For the complete list of commands in `BookieShell`, please read [BookKeeper CLI 
 </li>
 </ul>
                             
-##### Improvement
+<b>Improvement</b>
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-612'>BOOKKEEPER-612</a>] -         RegionAwarePlacement Policy
 </li>
@@ -1483,7 +1483,7 @@ For the complete list of commands in `BookieShell`, please read [BookKeeper CLI 
 </li>
 </ul>
                 
-##### New Feature
+<b>New Feature</b>
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-390'>BOOKKEEPER-390</a>] -         Provide support for ZooKeeper authentication
 </li>
@@ -1521,13 +1521,13 @@ For the complete list of commands in `BookieShell`, please read [BookKeeper CLI 
 </li>
 </ul>
                                             
-##### Story
+<b>Story</b>
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-932'>BOOKKEEPER-932</a>] -         Move to JDK 8
 </li>
 </ul>
                 
-##### Task
+<b>Task</b>
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-931'>BOOKKEEPER-931</a>] -         Update the committers list on website
 </li>
@@ -1553,7 +1553,8 @@ For the complete list of commands in `BookieShell`, please read [BookKeeper CLI 
 </li>
 </ul>
             
-##### Test
+<b>Test</b>
+
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-967'>BOOKKEEPER-967</a>] -         Create new testsuite for testing RackAwareEnsemblePlacementPolicy using ScriptBasedMapping.
 </li>
@@ -1567,7 +1568,7 @@ For the complete list of commands in `BookieShell`, please read [BookKeeper CLI 
 </li>
 </ul>
         
-##### Wish
+<b>Wish</b>
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-943'>BOOKKEEPER-943</a>] -         Reduce log level of AbstractZkLedgerManager for register/unregister ReadOnlyLedgerHandle
 </li>

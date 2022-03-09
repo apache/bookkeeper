@@ -9,16 +9,15 @@ Version **{{ site.latest_release }}** is the [latest release](#latest-release) o
 
 If you want to download older, archived releases, they are available in the [Apache archive](http://archive.apache.org/dist/bookkeeper/).
 
-## Latest release (version {{ site.latest_release }})
-<a name="latest-release"></a>
+[Release notes](/release-notes#)
+## Latest release (version {{ site.latest_release }}) {#latest-release}
 
 Release | Link | Crypto files
 :-------|:-----|:------------
 Source | [bookkeeper-{{ site.latest_release }}-src.tar.gz]({{ site.mirror_base_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-{{ site.latest_release }}-src.tar.gz) | [asc]({{ site.dist_base_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-{{ site.latest_release }}-src.tar.gz.asc), [sha512]({{ site.dist_base_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-{{ site.latest_release }}-src.tar.gz.sha512)
 Binary | [bookkeeper-server-{{ site.latest_release }}-bin.tar.gz]({{ site.mirror_base_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-server-{{ site.latest_release }}-bin.tar.gz) | [asc]({{ site.dist_base_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-server-{{ site.latest_release }}-bin.tar.gz.asc), [sha512]({{ site.dist_base_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-server-{{ site.latest_release }}-bin.tar.gz.sha512)
 
-## Latest stable release (version {{ site.stable_release }})
-<a name="latest-stable-release"></a>
+## Latest stable release (version {{ site.stable_release }}) {#latest-stable-release}
 
 Release | Link | Crypto files
 :-------|:-----|:------------
