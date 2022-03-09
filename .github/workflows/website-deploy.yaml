@@ -37,8 +37,17 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+          
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.6 # Not needed with a .ruby-version file
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+
       - name: publish
         run: |
+          #!/bin/bash
+          set -e
           cd site
           make setup
           make latest_javadoc
