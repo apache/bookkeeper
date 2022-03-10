@@ -186,6 +186,14 @@ public class ConcurrentLongLongPairHashMap {
         return size;
     }
 
+    public long sizeInBytes() {
+        long size = 0;
+        for (Section s : sections) {
+            size += (long) s.table.length * Long.BYTES;
+        }
+        return size;
+    }
+
     public long capacity() {
         long capacity = 0;
         for (Section s : sections) {
