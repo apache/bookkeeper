@@ -235,7 +235,11 @@ depLibs = [
         exclude group: 'io.netty', module: 'netty-tcnative'
         exclude group: 'ch.qos.logback', module: 'logback-classic'
         exclude group: 'ch.qos.logback', module: 'logback-core'
-        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
     },
-    zookeeperTest: "org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests"
+    zookeeperTest: dependencies.create("org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests") {
+        exclude group: 'io.netty', module: 'netty-transport-native-epoll'
+        exclude group: 'io.netty', module: 'netty-tcnative'
+        exclude group: 'ch.qos.logback', module: 'logback-classic'
+        exclude group: 'ch.qos.logback', module: 'logback-core'
+    }
 ]

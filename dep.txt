@@ -1,0 +1,157 @@
+
+------------------------------------------------------------
+Root project 'bookkeeper'
+------------------------------------------------------------
+
+annotationProcessor - Annotation processors and their dependencies for source set 'main'.
+No dependencies
+
+apiElements - API elements for main. (n)
+No dependencies
+
+archives - Configuration for archive artifacts. (n)
+No dependencies
+
+checkstyle - The Checkstyle libraries to be used for this project.
+\--- com.puppycrawl.tools:checkstyle:6.19
+     +--- antlr:antlr:2.7.7
+     +--- org.antlr:antlr4-runtime:4.5.3
+     +--- commons-beanutils:commons-beanutils:1.9.2
+     +--- commons-collections:commons-collections:3.2.2
+     +--- commons-cli:commons-cli:1.3.1
+     \--- com.google.guava:guava:19.0
+
+compileClasspath - Compile classpath for source set 'main'.
++--- io.netty:netty-bom:4.1.74.Final
+\--- com.google.guava:guava-bom:31.0.1-jre
+
+compileOnly - Compile only dependencies for source set 'main'. (n)
+No dependencies
+
+compileProtoPath
++--- io.netty:netty-bom:4.1.74.Final
+\--- com.google.guava:guava-bom:31.0.1-jre
+
+default - Configuration for default artifacts. (n)
+No dependencies
+
+implementation - Implementation only dependencies for source set 'main'. (n)
++--- io.netty:netty-bom:4.1.74.Final (n)
+\--- com.google.guava:guava-bom:31.0.1-jre (n)
+
+previewSite
++--- project :bookkeeper-dist
++--- project :bookkeeper-dist-all
++--- project :bookkeeper-dist-bkctl
+\--- project :bookkeeper-dist-server
+
+protobuf
+No dependencies
+
+releaseFiles
++--- project :bookkeeper-dist
++--- project :bookkeeper-dist-all
++--- project :bookkeeper-dist-bkctl
+\--- project :bookkeeper-dist-server
+
+releaseSignatures
++--- project :bookkeeper-dist
++--- project :bookkeeper-dist-all
++--- project :bookkeeper-dist-bkctl
+\--- project :bookkeeper-dist-server
+
+runtimeClasspath - Runtime classpath of source set 'main'.
++--- io.netty:netty-bom:4.1.74.Final
+\--- com.google.guava:guava-bom:31.0.1-jre
+
+runtimeElements - Elements of runtime for main. (n)
+No dependencies
+
+runtimeOnly - Runtime only dependencies for source set 'main'. (n)
+No dependencies
+
+signatures
+No dependencies
+
+spotbugs - configuration for the SpotBugs engine
+\--- com.github.spotbugs:spotbugs:3.1.8
+     +--- org.ow2.asm:asm:6.2.1
+     +--- org.ow2.asm:asm-analysis:6.2.1
+     |    \--- org.ow2.asm:asm-tree:6.2.1
+     |         \--- org.ow2.asm:asm:6.2.1
+     +--- org.ow2.asm:asm-commons:6.2.1
+     |    +--- org.ow2.asm:asm:6.2.1
+     |    +--- org.ow2.asm:asm-tree:6.2.1 (*)
+     |    \--- org.ow2.asm:asm-analysis:6.2.1 (*)
+     +--- org.ow2.asm:asm-tree:6.2.1 (*)
+     +--- org.ow2.asm:asm-util:6.2.1
+     |    +--- org.ow2.asm:asm:6.2.1
+     |    +--- org.ow2.asm:asm-tree:6.2.1 (*)
+     |    \--- org.ow2.asm:asm-analysis:6.2.1 (*)
+     +--- org.ow2.asm:asm-xml:6.2.1
+     |    +--- org.ow2.asm:asm:6.2.1
+     |    \--- org.ow2.asm:asm-util:6.2.1 (*)
+     +--- org.apache.bcel:bcel:6.2
+     +--- net.jcip:jcip-annotations:1.0
+     +--- org.dom4j:dom4j:2.1.0
+     |    \--- jaxen:jaxen:1.1.6
+     +--- jaxen:jaxen:1.1.6
+     +--- commons-lang:commons-lang:2.6
+     \--- com.github.spotbugs:spotbugs-annotations:3.1.8
+          \--- com.google.code.findbugs:jsr305:3.0.2
+
+spotbugsPlugins - configuration for the external SpotBugs plugins
+No dependencies
+
+spotbugsSlf4j - configuration for the SLF4J provider to run SpotBugs
+\--- org.slf4j:slf4j-simple:1.8.0-beta4
+     \--- org.slf4j:slf4j-api:1.8.0-beta4
+
+testAnnotationProcessor - Annotation processors and their dependencies for source set 'test'.
+No dependencies
+
+testArtifacts
+No dependencies
+
+testCompileClasspath - Compile classpath for source set 'test'.
++--- io.netty:netty-bom:4.1.74.Final
++--- com.google.guava:guava-bom:31.0.1-jre
+\--- org.apache.logging.log4j:log4j-slf4j-impl:2.17.1
+     +--- org.slf4j:slf4j-api:1.7.25
+     \--- org.apache.logging.log4j:log4j-api:2.17.1
+
+testCompileOnly - Compile only dependencies for source set 'test'. (n)
+No dependencies
+
+testCompileProtoPath
++--- io.netty:netty-bom:4.1.74.Final
++--- com.google.guava:guava-bom:31.0.1-jre
+\--- org.apache.logging.log4j:log4j-slf4j-impl:2.17.1
+     +--- org.slf4j:slf4j-api:1.7.25
+     +--- org.apache.logging.log4j:log4j-api:2.17.1
+     \--- org.apache.logging.log4j:log4j-core:2.17.1
+          \--- org.apache.logging.log4j:log4j-api:2.17.1
+
+testImplementation - Implementation only dependencies for source set 'test'. (n)
+\--- org.apache.logging.log4j:log4j-slf4j-impl:2.17.1 (n)
+
+testProtobuf
+No dependencies
+
+testRuntimeClasspath - Runtime classpath of source set 'test'.
++--- io.netty:netty-bom:4.1.74.Final
++--- com.google.guava:guava-bom:31.0.1-jre
+\--- org.apache.logging.log4j:log4j-slf4j-impl:2.17.1
+     +--- org.slf4j:slf4j-api:1.7.25
+     +--- org.apache.logging.log4j:log4j-api:2.17.1
+     \--- org.apache.logging.log4j:log4j-core:2.17.1
+          \--- org.apache.logging.log4j:log4j-api:2.17.1
+
+testRuntimeOnly - Runtime only dependencies for source set 'test'. (n)
+No dependencies
+
+(*) - dependencies omitted (listed previously)
+
+(n) - Not resolved (configuration is not meant to be resolved)
+
+A web-based, searchable dependency report is available by adding the --scan option.
