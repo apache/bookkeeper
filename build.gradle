@@ -252,6 +252,7 @@ allprojects {
                     version = buildVersion
 
                     from components.java
+                    artifact testJar
                 }
             }
         }
