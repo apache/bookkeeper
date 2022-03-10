@@ -28,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -300,6 +301,34 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         ((BookieClientImpl) bkc.getBookieClient()).lookupClient(address).obtain((rc, pcbc) -> {
             pcbc.setWritable(state);
         }, key);
+    }
+
+    @Test
+    public void testWritesetWriteableCheck() throws Exception {
+        final ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        BookKeeper bkc = new BookKeeper(conf);
+
+        byte[] pwd = new byte[]{};
+        final LedgerHandle lh = bkc.createLedger(4, 2, 2, BookKeeper.DigestType.CRC32, pwd);
+        try {
+            lh.addEntry(entry); // [b0, b1]
+            long entryId = lh.addEntry(entry); // [b1, b2]
+
+            long nextEntryId = entryId + 1;
+            RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(2, 2, 4);
+            DistributionSchedule.WriteSet writeSet = schedule.getWriteSet(nextEntryId);
+
+            // b2 or b3 is no more writeable
+            int slowBookieIndex = writeSet.get(ThreadLocalRandom.current().nextInt(writeSet.size()));
+            List<BookieId> curEns = lh.getCurrentEnsemble();
+            setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
+
+            boolean isWriteable = lh.waitForWritable(writeSet, 0, 1000);
+            assertFalse("We should check b2,b3 both are writeable", isWriteable);
+        } finally {
+            lh.close();
+        }
     }
 
     @Test

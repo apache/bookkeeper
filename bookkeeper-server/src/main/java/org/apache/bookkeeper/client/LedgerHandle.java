@@ -1224,7 +1224,9 @@ public class LedgerHandle implements WriteHandle {
         int nonWritableCount = 0;
         List<BookieId> currentEnsemble = getCurrentEnsemble();
         for (int i = 0; i < sz; i++) {
-            if (!clientCtx.getBookieClient().isWritable(currentEnsemble.get(i), ledgerId)) {
+            int writeBookieIndex = writeSet.get(i);
+            if (writeBookieIndex < currentEnsemble.size()
+                && !clientCtx.getBookieClient().isWritable(currentEnsemble.get(writeBookieIndex), ledgerId)) {
                 nonWritableCount++;
                 if (nonWritableCount >= allowedNonWritableCount) {
                     return false;
@@ -1239,6 +1241,7 @@ public class LedgerHandle implements WriteHandle {
         return true;
     }
 
+    @VisibleForTesting
     protected boolean waitForWritable(DistributionSchedule.WriteSet writeSet,
                                     int allowedNonWritableCount, long durationMs) {
         if (durationMs < 0) {
