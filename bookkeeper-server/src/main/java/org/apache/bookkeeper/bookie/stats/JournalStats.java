@@ -31,6 +31,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_W
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_BATCH_ENTRIES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_ENQUEUE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_GROUPING_COUNT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_GROUPING_FAILURES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_QUEUE_SIZE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_MEMORY_MAX;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_MEMORY_USED;
@@ -133,6 +134,11 @@ public class JournalStats {
     )
     private final OpStatsLogger forceWriteBatchBytesStats;
     @StatsDoc(
+        name = JOURNAL_FORCE_WRITE_GROUPING_FAILURES,
+        help = "The number of force write grouping failures"
+    )
+    private final Counter forceWriteGroupingFailures;
+    @StatsDoc(
         name = JOURNAL_QUEUE_SIZE,
         help = "The journal queue size"
     )
@@ -190,6 +196,7 @@ public class JournalStats {
         journalProcessTimeStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_PROCESS_TIME_LATENCY);
         forceWriteGroupingCountStats =
                 statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FORCE_WRITE_GROUPING_COUNT);
+        forceWriteGroupingFailures = statsLogger.getCounter(JOURNAL_FORCE_WRITE_GROUPING_FAILURES);
         forceWriteBatchEntriesStats =
                 statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FORCE_WRITE_BATCH_ENTRIES);
         forceWriteBatchBytesStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FORCE_WRITE_BATCH_BYTES);
