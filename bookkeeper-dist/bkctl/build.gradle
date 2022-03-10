@@ -72,6 +72,9 @@ distributions {
                             "log4j.cli.properties",
                             "log4j.shell.properties",
                             "nettyenv.sh",
+                            "default_rocksdb.conf",
+                            "entry_location_rocksdb.conf",
+                            "ledger_metadata_rocksdb.conf",
                     )
                 }
             }

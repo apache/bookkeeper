@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import io.netty.util.internal.PlatformDependent;
 // CHECKSTYLE.ON: IllegalImport
 import java.io.File;
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.FileChannelProvider;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
@@ -322,6 +323,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     protected static final String DATA_INTEGRITY_CHECKING_ENABLED = "dataIntegrityChecking";
     protected static final String DATA_INTEGRITY_COOKIE_STAMPING_ENABLED = "dataIntegrityStampMissingCookies";
+
+    // Used for default,command until or test case
+    protected static final String DEFAULT_ROCKSDB_CONF = "defaultRocksdbConf";
+
+    // Used for ledgers db, doesn't need particular configuration
+    protected static final String ENTRY_LOCATION_ROCKSDB_CONF = "entryLocationRocksdbConf";
+
+    // Used for location index, lots of writes and much bigger dataset
+    protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
 
     /**
      * Construct a default configuration object.
@@ -3883,5 +3893,77 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public boolean isDataIntegrityStampMissingCookiesEnabled() {
         return this.getBoolean(DATA_INTEGRITY_COOKIE_STAMPING_ENABLED, false);
+    }
+
+    /**
+     * Get default rocksdb conf.
+     *
+     * @return String configured default rocksdb conf.
+     */
+    public String getDefaultRocksDBConf() {
+        String defaultPath = "conf/default_rocksdb.conf";
+        URL defURL = getClass().getClassLoader().getResource(defaultPath);
+        if (defURL != null) {
+            defaultPath = defURL.getPath();
+        }
+        return getString(DEFAULT_ROCKSDB_CONF, defaultPath);
+    }
+
+    /**
+     * Set default rocksdb conf.
+     *
+     * @return Configuration Object with default rocksdb conf
+     */
+    public ServerConfiguration setDefaultRocksDBConf(String defaultRocksdbConf) {
+        this.setProperty(DEFAULT_ROCKSDB_CONF, defaultRocksdbConf);
+        return this;
+    }
+
+    /**
+     * Get entry Location rocksdb conf.
+     *
+     * @return String configured entry Location rocksdb conf.
+     */
+    public String getEntryLocationRocksdbConf() {
+        String defaultPath = "conf/entry_location_rocksdb.conf";
+        URL defURL = getClass().getClassLoader().getResource(defaultPath);
+        if (defURL != null) {
+            defaultPath = defURL.getPath();
+        }
+        return getString(ENTRY_LOCATION_ROCKSDB_CONF, defaultPath);
+    }
+
+    /**
+     * Set entry Location rocksdb conf.
+     *
+     * @return Configuration Object with entry Location rocksdb conf
+     */
+    public ServerConfiguration setEntryLocationRocksdbConf(String entryLocationRocksdbConf) {
+        this.setProperty(ENTRY_LOCATION_ROCKSDB_CONF, entryLocationRocksdbConf);
+        return this;
+    }
+
+    /**
+     * Get ledger metadata rocksdb conf.
+     *
+     * @return String configured ledger metadata rocksdb conf.
+     */
+    public String getLedgerMetadataRocksdbConf() {
+        String defaultPath = "conf/ledger_metadata_rocksdb.conf";
+        URL defURL = getClass().getClassLoader().getResource(defaultPath);
+        if (defURL != null) {
+            defaultPath = defURL.getPath();
+        }
+        return getString(LEDGER_METADATA_ROCKSDB_CONF, defaultPath);
+    }
+
+    /**
+     * Set ledger metadata rocksdb conf.
+     *
+     * @return Configuration Object with ledger metadata rocksdb conf
+     */
+    public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
+        this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
+        return this;
     }
 }

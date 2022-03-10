@@ -41,6 +41,9 @@
         <include>log4j.cli.properties</include>
         <include>log4j.shell.properties</include>
         <include>nettyenv.sh</include>
+        <include>default_rocksdb.conf</include>
+        <include>entry_location_rocksdb.conf</include>
+        <include>ledger_metadata_rocksdb.conf</include>
       </includes>
     </fileSet>
     <fileSet>
