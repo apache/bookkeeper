@@ -33,8 +33,9 @@ public interface KeyValueStorageFactory {
      * Enum used to specify different config profiles in the underlying storage.
      */
     enum DbConfigType {
-        Small, // Used for ledgers db, doesn't need particular configuration
-        Huge // Used for location index, lots of writes and much bigger dataset
+        Default, // Used for default,command until or test case
+        LedgerMetadata, // Used for ledgers db, doesn't need particular configuration
+        EntryLocation // Used for location index, lots of writes and much bigger dataset
     }
 
     KeyValueStorage newKeyValueStorage(String defaultBasePath, String subPath, DbConfigType dbConfigType,

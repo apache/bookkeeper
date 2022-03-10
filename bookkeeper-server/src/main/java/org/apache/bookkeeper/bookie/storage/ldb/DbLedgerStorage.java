@@ -379,7 +379,7 @@ public class DbLedgerStorage implements LedgerStorage {
 
         EntryLocationIndex entryLocationIndex = new EntryLocationIndex(serverConf,
                 (basePath, subPath, dbConfigType, conf1) ->
-                        new KeyValueStorageRocksDB(basePath, subPath, DbConfigType.Small, conf1, true),
+                        new KeyValueStorageRocksDB(basePath, subPath, DbConfigType.Default, conf1, true),
                 ledgerBasePath, NullStatsLogger.INSTANCE);
         try {
             long lastEntryId = entryLocationIndex.getLastEntryInLedger(ledgerId);

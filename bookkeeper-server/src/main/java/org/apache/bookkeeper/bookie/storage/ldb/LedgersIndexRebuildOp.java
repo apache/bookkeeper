@@ -91,7 +91,7 @@ public class LedgersIndexRebuildOp {
                     + "Starting to build a new ledgers index", ledgers.size());
 
             try (KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(
-                    basePath, tempLedgersSubPath, DbConfigType.Small, conf)) {
+                    basePath, tempLedgersSubPath, DbConfigType.Default, conf)) {
                 LOG.info("Created ledgers index at temp location {}", tempPath);
 
                 for (Long ledgerId : ledgers) {

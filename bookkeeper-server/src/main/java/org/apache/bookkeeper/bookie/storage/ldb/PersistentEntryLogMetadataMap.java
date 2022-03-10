@@ -85,7 +85,7 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
             throw new IOException(err);
         }
         metadataMapDB = KeyValueStorageRocksDB.factory.newKeyValueStorage(metadataPath, METADATA_CACHE,
-                DbConfigType.Small, conf);
+                DbConfigType.Default, conf);
     }
 
     @Override

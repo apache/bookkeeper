@@ -77,7 +77,7 @@ public class LocationsIndexRebuildOp {
         LOG.info("Found {} active ledgers in ledger manager", activeLedgers.size());
 
         KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(basePath, "locations",
-                DbConfigType.Huge, conf);
+                DbConfigType.Default, conf);
 
         int totalEntryLogs = entryLogs.size();
         int completedEntryLogs = 0;

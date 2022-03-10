@@ -59,7 +59,7 @@ public class LedgersIndexCheckOp {
 
         try {
             KeyValueStorage index = new KeyValueStorageRocksDB(basePath, LedgersSubPath,
-                    DbConfigType.Small, conf, true);
+                    DbConfigType.Default, conf, true);
             // Read all ledgers from db
             KeyValueStorage.CloseableIterator<Map.Entry<byte[], byte[]>> iterator = index.iterator();
             int ctr = 0;
