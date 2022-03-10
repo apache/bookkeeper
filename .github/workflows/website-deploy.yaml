@@ -19,8 +19,11 @@
 
 name: Website deploy
 on:
-  schedule:
-    - cron: '0 */24 * * *'
+  push:
+    branches:
+      - master
+    paths:
+      - 'site/**'
 
 jobs:
   build-website:
