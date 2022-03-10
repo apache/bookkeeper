@@ -427,4 +427,24 @@ public class ConcurrentLongLongPairHashMapTest {
 
         assertEquals(map, lmap.asMap());
     }
+
+    @Test
+    public void testSizeInBytes() {
+        ConcurrentLongLongPairHashMap lmap = new ConcurrentLongLongPairHashMap(4, 2);
+        assertEquals(256, lmap.sizeInBytes());
+        lmap.put(1, 1, 1, 1);
+        assertEquals(256, lmap.sizeInBytes());
+        lmap.put(2, 2, 2, 2);
+        assertEquals(256, lmap.sizeInBytes());
+        lmap.put(3, 3, 3, 3);
+        assertEquals(256, lmap.sizeInBytes());
+        lmap.put(4, 4, 4, 4);
+        assertEquals(256, lmap.sizeInBytes());
+        lmap.put(5, 5, 5, 5);
+        assertEquals(384, lmap.sizeInBytes());
+        lmap.put(6, 6, 6, 6);
+        assertEquals(512, lmap.sizeInBytes());
+        lmap.put(7, 7, 7, 7);
+        assertEquals(512, lmap.sizeInBytes());
+    }
 }

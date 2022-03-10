@@ -340,4 +340,24 @@ public class ConcurrentLongHashSetTest {
         assertTrue(set.isEmpty());
     }
 
+    @Test
+    public void testSizeInBytes() {
+        ConcurrentLongHashSet set = new ConcurrentLongHashSet(4, 2);
+        assertEquals(64, set.sizeInBytes());
+        set.add(1);
+        assertEquals(64, set.sizeInBytes());
+        set.add(2);
+        assertEquals(64, set.sizeInBytes());
+        set.add(3);
+        assertEquals(64, set.sizeInBytes());
+        set.add(4);
+        assertEquals(96, set.sizeInBytes());
+        set.add(5);
+        assertEquals(96, set.sizeInBytes());
+        set.add(6);
+        assertEquals(128, set.sizeInBytes());
+        set.add(7);
+        assertEquals(128, set.sizeInBytes());
+    }
+
 }
