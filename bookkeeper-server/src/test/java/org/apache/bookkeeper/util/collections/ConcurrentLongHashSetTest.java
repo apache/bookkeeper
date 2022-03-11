@@ -20,6 +20,11 @@
  */
 package org.apache.bookkeeper.util.collections;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -32,9 +37,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.junit.Test;
-
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertNull;
 
 /**
  * Test the ConcurrentLongHashSet class.
