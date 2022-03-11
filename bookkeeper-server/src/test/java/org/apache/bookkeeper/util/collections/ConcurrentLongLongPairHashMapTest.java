@@ -194,6 +194,24 @@ public class ConcurrentLongLongPairHashMapTest {
     }
 
     @Test
+    public void testReduceUnnecessaryExpansions() {
+        ConcurrentLongLongPairHashMap map = ConcurrentLongLongPairHashMap.newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .mapFillFactor(0.9f)
+                .build();
+        map.put(1, 1, 1, 1);
+        map.put(2, 2, 2, 2);
+        map.put(3, 3, 3, 3);
+
+        map.remove(1, 1);
+        map.remove(2, 2);
+        map.remove(3, 3);
+
+        assertEquals(0, map.getUsedBucketCount());
+    }
+
+    @Test
     public void testRehashing() {
         int n = 16;
         ConcurrentLongLongPairHashMap map = ConcurrentLongLongPairHashMap.newBuilder()

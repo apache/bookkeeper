@@ -20,11 +20,6 @@
  */
 package org.apache.bookkeeper.util.collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -37,6 +32,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.junit.Test;
+
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
 
 /**
  * Test the ConcurrentLongHashSet class.
@@ -95,6 +93,25 @@ public class ConcurrentLongHashSetTest {
         assertEquals(set.size(), 3);
         assertFalse(set.add(1));
         assertEquals(set.size(), 3);
+    }
+
+    @Test
+    public void testReduceUnnecessaryExpansions() {
+        ConcurrentLongHashSet set = ConcurrentLongHashSet.newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .build();
+        assertTrue(set.add(1));
+        assertTrue(set.add(2));
+        assertTrue(set.add(3));
+        assertTrue(set.add(4));
+
+        assertTrue(set.remove(1));
+        assertTrue(set.remove(2));
+        assertTrue(set.remove(3));
+        assertTrue(set.remove(4));
+
+        assertEquals(0, set.getUsedBucketCount());
     }
 
     @Test
