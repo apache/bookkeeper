@@ -1095,7 +1095,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getReadBytesStats().registerSuccessfulValue(entrySize);
             } else {
                 bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                bookieStats.getReadEntryStats().registerFailedValue(entrySize);
+                bookieStats.getReadBytesStats().registerFailedValue(entrySize);
             }
         }
     }
