@@ -20,6 +20,7 @@ package org.apache.bookkeeper.server.http;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -54,6 +55,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.server.http.service.BookieInfoService;
+import org.apache.bookkeeper.server.http.service.BookieStateReadOnlyService.ReadOnlyState;
 import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -896,5 +898,73 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
         HttpServiceResponse response2 = bookieStateServer.handle(request2);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+    }
+
+    @Test
+    public void testBookieReadOnlyState() throws Exception {
+        HttpEndpointService bookieStateServer = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_STATE);
+        HttpEndpointService bookieReadOnlyService = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_STATE_READONLY);
+
+        // responses from both endpoints should indicate the bookie is not read only
+        HttpServiceRequest request = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response = bookieStateServer.handle(request);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response.getStatusCode());
+
+        BookieState bs = JsonUtil.fromJson(response.getBody(), BookieState.class);
+        assertTrue(bs.isRunning());
+        assertFalse(bs.isReadOnly());
+        assertTrue(bs.isAvailableForHighPriorityWrites());
+        assertFalse(bs.isShuttingDown());
+
+        request = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        response = bookieReadOnlyService.handle(request);
+        ReadOnlyState readOnlyState = JsonUtil.fromJson(response.getBody(), ReadOnlyState.class);
+        assertFalse(readOnlyState.isReadOnly());
+
+        // update the state to read only
+        request = new HttpServiceRequest(JsonUtil.toJson(new ReadOnlyState(true)), HttpServer.Method.PUT,  null);
+        response = bookieReadOnlyService.handle(request);
+        readOnlyState = JsonUtil.fromJson(response.getBody(), ReadOnlyState.class);
+        assertTrue(readOnlyState.isReadOnly());
+
+        // responses from both endpoints should indicate the bookie is read only
+        request = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        response = bookieStateServer.handle(request);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response.getStatusCode());
+
+        bs = JsonUtil.fromJson(response.getBody(), BookieState.class);
+        assertTrue(bs.isRunning());
+        assertTrue(bs.isReadOnly());
+        assertTrue(bs.isAvailableForHighPriorityWrites());
+        assertFalse(bs.isShuttingDown());
+
+        request = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        response = bookieReadOnlyService.handle(request);
+        readOnlyState = JsonUtil.fromJson(response.getBody(), ReadOnlyState.class);
+        assertTrue(readOnlyState.isReadOnly());
+
+        // should be able to update the state to writable again
+        request = new HttpServiceRequest(JsonUtil.toJson(new ReadOnlyState(false)), HttpServer.Method.PUT,  null);
+        response = bookieReadOnlyService.handle(request);
+        readOnlyState = JsonUtil.fromJson(response.getBody(), ReadOnlyState.class);
+        assertFalse(readOnlyState.isReadOnly());
+
+        // responses from both endpoints should indicate the bookie is writable
+        request = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        response = bookieStateServer.handle(request);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response.getStatusCode());
+
+        bs = JsonUtil.fromJson(response.getBody(), BookieState.class);
+        assertTrue(bs.isRunning());
+        assertFalse(bs.isReadOnly());
+        assertTrue(bs.isAvailableForHighPriorityWrites());
+        assertFalse(bs.isShuttingDown());
+
+        request = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        response = bookieReadOnlyService.handle(request);
+        readOnlyState = JsonUtil.fromJson(response.getBody(), ReadOnlyState.class);
+        assertFalse(readOnlyState.isReadOnly());
     }
 }
