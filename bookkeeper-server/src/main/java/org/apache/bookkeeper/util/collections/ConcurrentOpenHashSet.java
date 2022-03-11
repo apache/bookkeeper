@@ -169,6 +169,14 @@ public class ConcurrentOpenHashSet<V> {
         return capacity;
     }
 
+    long getUsedBucketCount() {
+        long usedBucketCount = 0;
+        for (Section<V> s : sections) {
+            usedBucketCount += s.usedBuckets;
+        }
+        return usedBucketCount;
+    }
+
     public boolean isEmpty() {
         for (Section<V> s : sections) {
             if (s.size != 0) {
