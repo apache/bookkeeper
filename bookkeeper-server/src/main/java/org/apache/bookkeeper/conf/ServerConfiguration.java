@@ -1893,7 +1893,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the number of threads that handle write requests.
      */
     public int getNumAddWorkerThreads() {
-        return getInt(NUM_ADD_WORKER_THREADS, 1);
+        return getInt(NUM_ADD_WORKER_THREADS, Runtime.getRuntime().availableProcessors());
     }
 
     /**
@@ -1940,7 +1940,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public int getNumHighPriorityWorkerThreads() {
-        return getInt(NUM_HIGH_PRIORITY_WORKER_THREADS, 8);
+        return getInt(NUM_HIGH_PRIORITY_WORKER_THREADS, Runtime.getRuntime().availableProcessors());
     }
 
     /**
@@ -1983,7 +1983,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Get the number of threads that should handle read requests.
      */
     public int getNumReadWorkerThreads() {
-        return getInt(NUM_READ_WORKER_THREADS, 8);
+        return getInt(NUM_READ_WORKER_THREADS, Runtime.getRuntime().availableProcessors());
     }
 
     /**
@@ -2108,7 +2108,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the number of threads that handle journal callbacks.
      */
     public int getNumJournalCallbackThreads() {
-        return getInt(NUM_JOURNAL_CALLBACK_THREADS, 1);
+        return getInt(NUM_JOURNAL_CALLBACK_THREADS, Runtime.getRuntime().availableProcessors());
     }
 
     /**
