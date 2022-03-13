@@ -33,7 +33,6 @@ import java.io.PrintStream;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.bookie.Cookie;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.CookieCommandTestBase;
 import org.apache.bookkeeper.tools.common.BKFlags;
@@ -42,15 +41,10 @@ import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test {@link GetCookieCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ MetadataDrivers.class })
 public class GetCookieCommandTest extends CookieCommandTestBase {
 
     @Rule

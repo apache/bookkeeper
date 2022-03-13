@@ -20,32 +20,24 @@ package org.apache.bookkeeper.tools.cli.helpers;
 
 import static org.mockito.Answers.CALLS_REAL_METHODS;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.spy;
+import static org.mockito.Mockito.withSettings;
 
 import java.net.URI;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.client.api.BookKeeperBuilder;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * A test base for testing client commands.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ClientCommand.class, BookKeeper.class, MetadataDrivers.class })
 public abstract class ClientCommandTestBase extends CommandTestBase {
 
-    protected ClientConfiguration clientConf;
     protected BookKeeperBuilder mockBkBuilder;
     protected BookKeeper mockBk;
     protected MetadataClientDriver metadataClientDriver;
@@ -53,28 +45,21 @@ public abstract class ClientCommandTestBase extends CommandTestBase {
     @Before
     public void setup() throws Exception {
         mockBk = mock(BookKeeper.class);
-        this.clientConf = spy(new ClientConfiguration(conf));
-        this.clientConf.setMetadataServiceUri("zk://127.0.0.1/path/to/ledgers");
-        PowerMockito.whenNew(ClientConfiguration.class)
-            .withNoArguments()
-            .thenReturn(clientConf);
-        PowerMockito.whenNew(ClientConfiguration.class)
-            .withParameterTypes(AbstractConfiguration.class)
-            .withArguments(eq(conf))
-            .thenReturn(clientConf);
-        PowerMockito.mockStatic(BookKeeper.class);
+        mockConstruction(ClientConfiguration.class, withSettings().defaultAnswer(CALLS_REAL_METHODS),
+                        (mock, context) ->
+                        doReturn("zk://127.0.0.1/path/to/ledgers").when(mock).getMetadataServiceUri()
+                );
+
+        mockStatic(BookKeeper.class);
         this.mockBkBuilder = mock(BookKeeperBuilder.class, CALLS_REAL_METHODS);
         this.mockBk = mock(BookKeeper.class);
-        PowerMockito.when(
-            BookKeeper.class, "newBuilder", eq(clientConf))
-            .thenReturn(mockBkBuilder);
+        getMockedStatic(BookKeeper.class).when(() -> BookKeeper.newBuilder(any(ClientConfiguration.class)))
+                .thenReturn(mockBkBuilder);
         when(mockBkBuilder.build()).thenReturn(mockBk);
 
-        PowerMockito.mockStatic(MetadataDrivers.class);
         this.metadataClientDriver = mock(MetadataClientDriver.class);
-        PowerMockito.when(
-            MetadataDrivers.getClientDriver(any(URI.class)))
+        mockStatic(MetadataDrivers.class);
+        getMockedStatic(MetadataDrivers.class).when(() -> MetadataDrivers.getClientDriver(any(URI.class)))
             .thenReturn(metadataClientDriver);
     }
-
 }

@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -110,7 +111,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     private int exitCode = ExitCode.OK;
 
-    private final ConcurrentLongHashMap<byte[]> masterKeyCache = new ConcurrentLongHashMap<>();
+    private final ConcurrentLongHashMap<byte[]> masterKeyCache =
+            ConcurrentLongHashMap.<byte[]>newBuilder().build();
 
     protected StateManager stateManager;
 
@@ -1082,7 +1084,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 LOG.trace("Reading {}@{}", entryId, ledgerId);
             }
             ByteBuf entry = handle.readEntry(entryId);
-            bookieStats.getReadBytes().add(entry.readableBytes());
+            entrySize = entry.readableBytes();
+            bookieStats.getReadBytes().add(entrySize);
             success = true;
             return entry;
         } finally {
@@ -1092,7 +1095,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getReadBytesStats().registerSuccessfulValue(entrySize);
             } else {
                 bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                bookieStats.getReadEntryStats().registerFailedValue(entrySize);
+                bookieStats.getReadBytesStats().registerFailedValue(entrySize);
             }
         }
     }
@@ -1192,10 +1195,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
         // Clean up metadata directories if they are separate from the
         // ledger dirs
-        File metadataDir = new File(conf.getGcEntryLogMetadataCachePath());
-        if (!cleanDir(metadataDir)) {
-            LOG.error("Formatting ledger metadata directory {} failed", metadataDir);
-            return false;
+        if (!Strings.isNullOrEmpty(conf.getGcEntryLogMetadataCachePath())) {
+            File metadataDir = new File(conf.getGcEntryLogMetadataCachePath());
+            if (!cleanDir(metadataDir)) {
+                LOG.error("Formatting ledger metadata directory {} failed", metadataDir);
+                return false;
+            }
         }
         LOG.info("Bookie format completed successfully");
         return true;

@@ -237,6 +237,15 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
     long getReplicasCheckCTime() throws ReplicationException.UnavailableException;
 
     /**
+     * Receive notification asynchronously when the num of under-replicated ledgers  Changed.
+     *
+     * @param cb
+     * @throws ReplicationException.UnavailableException
+     */
+    void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb)
+            throws ReplicationException.UnavailableException;
+
+    /**
      * Receive notification asynchronously when the lostBookieRecoveryDelay value is Changed.
      *
      * @param cb

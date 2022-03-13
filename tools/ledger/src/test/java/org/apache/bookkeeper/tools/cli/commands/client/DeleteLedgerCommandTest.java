@@ -18,36 +18,28 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.client;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.IOUtils;
-import org.junit.Assert;
+import org.apache.commons.configuration.Configuration;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+
 
 /**
  * Unit test for {@link DeleteLedgerCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ DeleteLedgerCommand.class, BookKeeper.class, IOUtils.class, ClientConfiguration.class })
 public class DeleteLedgerCommandTest extends BookieCommandTestBase {
-
-    private BookKeeper bookKeeper;
-    private ClientConfiguration clientConf;
 
     public DeleteLedgerCommandTest() {
         super(3, 0);
@@ -56,42 +48,46 @@ public class DeleteLedgerCommandTest extends BookieCommandTestBase {
     @Override
     public void setup() throws Exception {
 
-        this.clientConf = mock(ClientConfiguration.class);
-        PowerMockito.whenNew(ClientConfiguration.class).withNoArguments().thenReturn(clientConf);
-        PowerMockito.doNothing().when(clientConf).addConfiguration(eq(conf));
 
-        this.bookKeeper = mock(BookKeeper.class);
-        PowerMockito.whenNew(BookKeeper.class).withParameterTypes(ClientConfiguration.class)
-                    .withArguments(eq(clientConf)).thenReturn(bookKeeper);
-        PowerMockito.doNothing().when(bookKeeper).deleteLedger(anyLong());
-        PowerMockito.doNothing().when(bookKeeper).close();
-
-        PowerMockito.mockStatic(IOUtils.class);
-
+        mockStatic(IOUtils.class);
     }
 
     @Test
     public void testCommandWithoutForce() throws Exception {
-        PowerMockito.when(IOUtils.class, "confirmPrompt", anyString()).thenReturn(false);
+        getMockedStatic(IOUtils.class).when(() -> IOUtils.confirmPrompt(anyString())).thenReturn(false);
+        mockClientConfigurationConstruction(conf -> {
+            doThrow(new RuntimeException("unexpected call")).when(conf).addConfiguration(any(Configuration.class));
+        });
+
+        mockConstruction(BookKeeper.class, (bk, context) -> {
+            throw new RuntimeException("unexpected call");
+        });
 
         DeleteLedgerCommand cmd = new DeleteLedgerCommand();
-        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1" }));
-
-        PowerMockito.verifyNew(ClientConfiguration.class, never()).withNoArguments();
-        verify(clientConf, never()).addConfiguration(conf);
-        PowerMockito.verifyNew(BookKeeper.class, never()).withArguments(eq(clientConf));
-        verify(bookKeeper, never()).deleteLedger(1);
+        assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1" }));
+        assertTrue(getMockedConstruction(BookKeeper.class).constructed().isEmpty());
     }
 
     @Test
     public void testCommandWithForce() throws Exception {
-        DeleteLedgerCommand cmd = new DeleteLedgerCommand();
-        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1", "-f" }));
+        AtomicBoolean calledAddConf = new AtomicBoolean();
+        mockClientConfigurationConstruction(conf -> {
+            doAnswer(invocation -> {
+                calledAddConf.set(true);
+                return conf;
+            }).when(conf).addConfiguration(any(Configuration.class));
+        });
 
-        PowerMockito.verifyNew(ClientConfiguration.class, times(1)).withNoArguments();
-        verify(clientConf, times(1)).addConfiguration(any(ServerConfiguration.class));
-        PowerMockito.verifyNew(BookKeeper.class, times(1)).withArguments(eq(clientConf));
-        verify(bookKeeper, times(1)).deleteLedger(1);
+        mockConstruction(BookKeeper.class, (bk, context) -> {
+            doNothing().when(bk).deleteLedger(anyLong());
+            doNothing().when(bk).close();
+        });
+
+        DeleteLedgerCommand cmd = new DeleteLedgerCommand();
+        assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1", "-f" }));
+
+        assertTrue(calledAddConf.get());
+        verify(getMockedConstruction(BookKeeper.class).constructed().get(0), times(1)).deleteLedger(1);
     }
 
 }

@@ -41,6 +41,9 @@
         <include>log4j.cli.properties</include>
         <include>log4j.shell.properties</include>
         <include>nettyenv.sh</include>
+        <include>default_rocksdb.conf</include>
+        <include>entry_location_rocksdb.conf</include>
+        <include>ledger_metadata_rocksdb.conf</include>
       </includes>
     </fileSet>
     <fileSet>
@@ -66,7 +69,7 @@
       <includes>
         <include>checker-qual-3.5.0/LICENSE</include>
         <include>google-auth-library-credentials-0.20.0/LICENSE</include>
-        <include>netty-4.1.73.Final/*</include>
+        <include>netty-4.1.74.Final/*</include>
         <include>bouncycastle-1.0.2.1/LICENSE.html</include>
         <include>protobuf-3.14.0/LICENSE</include>
         <include>protobuf-3.12.0/LICENSE</include>

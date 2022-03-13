@@ -45,21 +45,29 @@ public class ConcurrentOpenHashSetTest {
     @Test
     public void testConstructor() {
         try {
-            new ConcurrentOpenHashSet<String>(0);
+            ConcurrentOpenHashSet.<String>newBuilder()
+                    .expectedItems(0)
+                    .build();
             fail("should have thrown exception");
         } catch (IllegalArgumentException e) {
             // ok
         }
 
         try {
-            new ConcurrentOpenHashSet<String>(16, 0);
+            ConcurrentOpenHashSet.<String>newBuilder()
+                    .expectedItems(14)
+                    .concurrencyLevel(0)
+                    .build();
             fail("should have thrown exception");
         } catch (IllegalArgumentException e) {
             // ok
         }
 
         try {
-            new ConcurrentOpenHashSet<String>(4, 8);
+            ConcurrentOpenHashSet.<String>newBuilder()
+                    .expectedItems(4)
+                    .concurrencyLevel(8)
+                    .build();
             fail("should have thrown exception");
         } catch (IllegalArgumentException e) {
             // ok
@@ -68,7 +76,9 @@ public class ConcurrentOpenHashSetTest {
 
     @Test
     public void simpleInsertions() {
-        ConcurrentOpenHashSet<String> set = new ConcurrentOpenHashSet<>(16);
+        ConcurrentOpenHashSet<String> set = ConcurrentOpenHashSet.<String>newBuilder()
+                .expectedItems(16)
+                .build();
 
         assertTrue(set.isEmpty());
         assertTrue(set.add("1"));
@@ -95,8 +105,63 @@ public class ConcurrentOpenHashSetTest {
     }
 
     @Test
+    public void testClear() {
+        ConcurrentOpenHashSet<String> map = ConcurrentOpenHashSet.<String>newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+        assertTrue(map.capacity() == 4);
+
+        assertTrue(map.add("k1"));
+        assertTrue(map.add("k2"));
+        assertTrue(map.add("k3"));
+
+        assertTrue(map.capacity() == 8);
+        map.clear();
+        assertTrue(map.capacity() == 4);
+    }
+
+    @Test
+    public void testExpandAndShrink() {
+        ConcurrentOpenHashSet<String> map = ConcurrentOpenHashSet.<String>newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+        assertTrue(map.capacity() == 4);
+
+        assertTrue(map.add("k1"));
+        assertTrue(map.add("k2"));
+        assertTrue(map.add("k3"));
+
+        // expand hashmap
+        assertTrue(map.capacity() == 8);
+
+        assertTrue(map.remove("k1"));
+        // not shrink
+        assertTrue(map.capacity() == 8);
+        assertTrue(map.remove("k2"));
+        // shrink hashmap
+        assertTrue(map.capacity() == 4);
+
+        // expand hashmap
+        assertTrue(map.add("k4"));
+        assertTrue(map.add("k5"));
+        assertTrue(map.capacity() == 8);
+
+        //verify that the map does not keep shrinking at every remove() operation
+        assertTrue(map.add("k6"));
+        assertTrue(map.remove("k6"));
+        assertTrue(map.capacity() == 8);
+    }
+
+    @Test
     public void testRemove() {
-        ConcurrentOpenHashSet<String> set = new ConcurrentOpenHashSet<>();
+        ConcurrentOpenHashSet<String> set =
+                ConcurrentOpenHashSet.<String>newBuilder().build();
 
         assertTrue(set.isEmpty());
         assertTrue(set.add("1"));
@@ -111,7 +176,10 @@ public class ConcurrentOpenHashSetTest {
     @Test
     public void testRehashing() {
         int n = 16;
-        ConcurrentOpenHashSet<Integer> set = new ConcurrentOpenHashSet<>(n / 2, 1);
+        ConcurrentOpenHashSet<Integer> set = ConcurrentOpenHashSet.<Integer>newBuilder()
+                .expectedItems(n / 2)
+                .concurrencyLevel(1)
+                .build();
         assertEquals(set.capacity(), n);
         assertEquals(set.size(), 0);
 
@@ -126,7 +194,10 @@ public class ConcurrentOpenHashSetTest {
     @Test
     public void testRehashingWithDeletes() {
         int n = 16;
-        ConcurrentOpenHashSet<Integer> set = new ConcurrentOpenHashSet<>(n / 2, 1);
+        ConcurrentOpenHashSet<Integer> set = ConcurrentOpenHashSet.<Integer>newBuilder()
+                .expectedItems(n / 2)
+                .concurrencyLevel(1)
+                .build();
         assertEquals(set.capacity(), n);
         assertEquals(set.size(), 0);
 
@@ -148,7 +219,8 @@ public class ConcurrentOpenHashSetTest {
 
     @Test
     public void concurrentInsertions() throws Throwable {
-        ConcurrentOpenHashSet<Long> set = new ConcurrentOpenHashSet<>();
+        ConcurrentOpenHashSet<Long> set =
+                ConcurrentOpenHashSet.<Long>newBuilder().build();
         ExecutorService executor = Executors.newCachedThreadPool();
 
         final int nThreads = 16;
@@ -182,7 +254,8 @@ public class ConcurrentOpenHashSetTest {
 
     @Test
     public void concurrentInsertionsAndReads() throws Throwable {
-        ConcurrentOpenHashSet<Long> map = new ConcurrentOpenHashSet<>();
+        ConcurrentOpenHashSet<Long> map =
+                ConcurrentOpenHashSet.<Long>newBuilder().build();
         ExecutorService executor = Executors.newCachedThreadPool();
 
         final int nThreads = 16;
@@ -216,7 +289,8 @@ public class ConcurrentOpenHashSetTest {
 
     @Test
     public void testIteration() {
-        ConcurrentOpenHashSet<Long> set = new ConcurrentOpenHashSet<>();
+        ConcurrentOpenHashSet<Long> set =
+                ConcurrentOpenHashSet.<Long>newBuilder().build();
 
         assertEquals(set.values(), Collections.emptyList());
 
@@ -243,7 +317,10 @@ public class ConcurrentOpenHashSetTest {
     @Test
     public void testHashConflictWithDeletion() {
         final int buckets = 16;
-        ConcurrentOpenHashSet<Long> set = new ConcurrentOpenHashSet<>(buckets, 1);
+        ConcurrentOpenHashSet<Long> set = ConcurrentOpenHashSet.<Long>newBuilder()
+                .expectedItems(buckets)
+                .concurrencyLevel(1)
+                .build();
 
         // Pick 2 keys that fall into the same bucket
         long key1 = 1;
@@ -298,7 +375,8 @@ public class ConcurrentOpenHashSetTest {
             }
         }
 
-        ConcurrentOpenHashSet<T> set = new ConcurrentOpenHashSet<>();
+        ConcurrentOpenHashSet<T> set =
+                ConcurrentOpenHashSet.<T>newBuilder().build();
 
         T t1 = new T(1);
         T t1B = new T(1);

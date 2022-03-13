@@ -5,21 +5,21 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
 ------------------------------------------------------------------------------------
-- lib/io.netty-netty-buffer-4.1.73.Final.jar
-- lib/io.netty-netty-codec-4.1.73.Final.jar
-- lib/io.netty-netty-codec-http-4.1.73.Final.jar
-- lib/io.netty-netty-codec-http2-4.1.73.Final.jar
-- lib/io.netty-netty-codec-socks-4.1.73.Final.jar
-- lib/io.netty-netty-common-4.1.73.Final.jar
-- lib/io.netty-netty-handler-4.1.73.Final.jar
-- lib/io.netty-netty-handler-proxy-4.1.73.Final.jar
-- lib/io.netty-netty-resolver-4.1.73.Final.jar
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.46.Final.jar
-- lib/io.netty-netty-tcnative-classes-2.0.46.Final.jar
-- lib/io.netty-netty-transport-4.1.73.Final.jar
-- lib/io.netty-netty-transport-classes-epoll-4.1.73.Final.jar
-- lib/io.netty-netty-transport-native-epoll-4.1.73.Final-linux-x86_64.jar
-- lib/io.netty-netty-transport-native-unix-common-4.1.73.Final.jar
+- lib/io.netty-netty-buffer-4.1.74.Final.jar
+- lib/io.netty-netty-codec-4.1.74.Final.jar
+- lib/io.netty-netty-codec-http-4.1.74.Final.jar
+- lib/io.netty-netty-codec-http2-4.1.74.Final.jar
+- lib/io.netty-netty-codec-socks-4.1.74.Final.jar
+- lib/io.netty-netty-common-4.1.74.Final.jar
+- lib/io.netty-netty-handler-4.1.74.Final.jar
+- lib/io.netty-netty-handler-proxy-4.1.74.Final.jar
+- lib/io.netty-netty-resolver-4.1.74.Final.jar
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.48.Final.jar
+- lib/io.netty-netty-tcnative-classes-2.0.48.Final.jar
+- lib/io.netty-netty-transport-4.1.74.Final.jar
+- lib/io.netty-netty-transport-classes-epoll-4.1.74.Final.jar
+- lib/io.netty-netty-transport-native-epoll-4.1.74.Final-linux-x86_64.jar
+- lib/io.netty-netty-transport-native-unix-common-4.1.74.Final.jar
 
 
                             The Netty Project

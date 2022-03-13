@@ -24,47 +24,22 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link FlipBookieIdCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ FlipBookieIdCommand.class, BookieImpl.class, UpdateLedgerOp.class })
 public class FlipBookieIdCommandTest extends BookieCommandTestBase {
 
-    @Mock
-    private ClientConfiguration clientConfiguration;
-
-    @Mock
-    private BookKeeper bookKeeper;
-
-    @Mock
-    private BookKeeperAdmin bookKeeperAdmin;
-
-    @Mock
-    private UpdateLedgerOp updateLedgerOp;
-
-    @Mock
-    private ServerConfiguration serverConfiguration;
-
-    private BookieId bookieSocketAddress = BookieId.parse("localhost:9000");
+    private static final BookieId bookieSocketAddress = BookieId.parse("localhost:9000");
 
     public FlipBookieIdCommandTest() {
         super(3, 0);
@@ -74,32 +49,25 @@ public class FlipBookieIdCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(ClientConfiguration.class).withNoArguments().thenReturn(clientConfiguration);
-        PowerMockito.whenNew(BookKeeper.class).withParameterTypes(ClientConfiguration.class)
-                    .withArguments(eq(clientConfiguration)).thenReturn(bookKeeper);
-        PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(BookKeeper.class).withArguments(eq(bookKeeper))
-                    .thenReturn(bookKeeperAdmin);
-        PowerMockito.whenNew(UpdateLedgerOp.class).withArguments(eq(bookKeeper), eq(bookKeeperAdmin))
-                    .thenReturn(updateLedgerOp);
-        PowerMockito.whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
-                    .withArguments(eq(conf)).thenReturn(serverConfiguration);
-        PowerMockito.mockStatic(BookieImpl.class);
-        PowerMockito.when(BookieImpl.getBookieId(eq(serverConfiguration))).thenReturn(bookieSocketAddress);
+        mockClientConfigurationConstruction();
+        mockServerConfigurationConstruction();
+        mockConstruction(BookKeeper.class);
+        mockBookKeeperAdminConstruction();
+        mockConstruction(UpdateLedgerOp.class);
+        mockStatic(BookieImpl.class).when(() -> BookieImpl.getBookieId(any(ServerConfiguration.class)))
+                .thenReturn(bookieSocketAddress);
     }
 
     @Test
     public void testCommand() throws Exception {
         FlipBookieIdCommand cmd = new FlipBookieIdCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "" }));
-        verifyNew(ClientConfiguration.class, times(1)).withNoArguments();
-        verify(clientConfiguration, times(1)).addConfiguration(eq(conf));
-        verifyNew(BookKeeper.class, times(1)).withArguments(eq(clientConfiguration));
-        verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(bookKeeper));
-        verifyNew(UpdateLedgerOp.class, times(1)).withArguments(eq(bookKeeper), eq(bookKeeperAdmin));
-        verifyNew(ServerConfiguration.class, times(1)).withArguments(eq(conf));
-        verify(serverConfiguration, times(1)).setUseHostNameAsBookieID(anyBoolean());
-        verify(updateLedgerOp, times(1)).updateBookieIdInLedgers(eq(bookieSocketAddress), eq(bookieSocketAddress),
+        verify(getMockedConstruction(ClientConfiguration.class).constructed().get(0), times(1))
+                .addConfiguration(any(ServerConfiguration.class));
+        verify(getMockedConstruction(ServerConfiguration.class).constructed().get(1), times(1))
+                .setUseHostNameAsBookieID(anyBoolean());
+        verify(getMockedConstruction(UpdateLedgerOp.class).constructed().get(0), times(1))
+            .updateBookieIdInLedgers(eq(bookieSocketAddress), eq(bookieSocketAddress),
                 anyInt(), anyInt(), anyInt(), any());
     }
 

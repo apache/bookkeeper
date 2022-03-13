@@ -17,7 +17,6 @@
  */
 package org.apache.bookkeeper.conf;
 
-import static org.apache.bookkeeper.util.BookKeeperConstants.ENTRYLOG_INDEX_CACHE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
 import com.google.common.annotations.Beta;
@@ -27,6 +26,7 @@ import com.google.common.collect.Lists;
 import io.netty.util.internal.PlatformDependent;
 // CHECKSTYLE.ON: IllegalImport
 import java.io.File;
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.FileChannelProvider;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
@@ -268,6 +268,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String HTTP_SERVER_ENABLED = "httpServerEnabled";
     protected static final String HTTP_SERVER_PORT = "httpServerPort";
     protected static final String HTTP_SERVER_HOST = "httpServerHost";
+    protected static final String HTTP_SERVER_TLS_ENABLE = "httpServerTlsEnable";
+    protected static final String HTTP_SERVER_KEY_STORE_PATH = "httpServerKeyStorePath";
+    protected static final String HTTP_SERVER_KEY_STORE_PASSWORD = "httpServerKeyStorePassword";
+    protected static final String HTTP_SERVER_TRUST_STORE_PATH = "httpServerTrustStorePath";
+    protected static final String HTTP_SERVER_TRUST_STORE_PASSWORD = "httpServerTrustStorePassword";
 
     // Lifecycle Components
     protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
@@ -319,6 +324,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     protected static final String DATA_INTEGRITY_CHECKING_ENABLED = "dataIntegrityChecking";
     protected static final String DATA_INTEGRITY_COOKIE_STAMPING_ENABLED = "dataIntegrityStampMissingCookies";
+
+    // Used for default,command until or test case
+    protected static final String DEFAULT_ROCKSDB_CONF = "defaultRocksdbConf";
+
+    // Used for ledgers db, doesn't need particular configuration
+    protected static final String ENTRY_LOCATION_ROCKSDB_CONF = "entryLocationRocksdbConf";
+
+    // Used for location index, lots of writes and much bigger dataset
+    protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
 
     /**
      * Construct a default configuration object.
@@ -516,17 +530,20 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * gcPersistentEntrylogMetadataMapEnabled is true.
      *
      * @return entrylog metadata-map persistent store dir path.(default: it
-     *         creates a sub-directory under a first available base ledger
-     *         directory with name "entrylogIndexCache").
+     *         creates a sub-directory under each ledger
+     *         directory with name "metadata-cache". If it set, it only works for one ledger directory
+     *         configured for ledgerDirectories).
      */
     public String getGcEntryLogMetadataCachePath() {
-        return getString(GC_ENTRYLOG_METADATA_CACHE_PATH, getLedgerDirNames()[0] + "/" + ENTRYLOG_INDEX_CACHE);
+        return getString(GC_ENTRYLOG_METADATA_CACHE_PATH, null);
     }
 
     /**
      * Set directory to persist Entrylog metadata if gcPersistentEntrylogMetadataMapEnabled is true.
+     * If it set, it only works for one ledger directory configured for ledgerDirectories. For multi ledgerDirectory
+     * configured, keep the default value is the best practice.
      *
-     * @param gcPersistentEntrylogMetadataMapPath.
+     * @param gcEntrylogMetadataCachePath
      * @return server configuration.
      */
     public ServerConfiguration setGcEntryLogMetadataCachePath(String gcEntrylogMetadataCachePath) {
@@ -3503,6 +3520,108 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Get if Http Server Tls enable.
+     * @return
+     */
+    public boolean isHttpServerTlsEnable() {
+        return getBoolean(HTTP_SERVER_TLS_ENABLE, false);
+    }
+
+    /**
+     * Set if Http Server Tls enable.
+     * @param tlsEnable
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerTlsEnable(boolean tlsEnable) {
+        setProperty(HTTP_SERVER_TLS_ENABLE, tlsEnable);
+        return this;
+    }
+
+    /**
+     * Get the http server keystore path.
+     *
+     * @return http server keystore path
+     */
+    public String getHttpServerKeystorePath() {
+        return getString(HTTP_SERVER_KEY_STORE_PATH);
+    }
+
+    /**
+     * Set Http server keystore path.
+     *
+     * @param keystorePath
+     *          http server keystore path
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerKeystorePath(String keystorePath) {
+        setProperty(HTTP_SERVER_KEY_STORE_PATH, keystorePath);
+        return this;
+    }
+
+    /**
+     * Get the http server keyStore password.
+     *
+     * @return http server keyStore password
+     */
+    public String getHttpServerKeystorePassword() {
+        return getString(HTTP_SERVER_KEY_STORE_PASSWORD);
+    }
+
+    /**
+     * Set Http server keyStore password.
+     *
+     * @param keyStorePassword
+     *          http server keyStore password
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerKeyStorePassword(String keyStorePassword) {
+        setProperty(HTTP_SERVER_KEY_STORE_PASSWORD, keyStorePassword);
+        return this;
+    }
+
+    /**
+     * Get the http server trustStore path.
+     *
+     * @return http server trustStore path
+     */
+    public String getHttpServerTrustStorePath() {
+        return getString(HTTP_SERVER_TRUST_STORE_PATH);
+    }
+
+    /**
+     * Set Http server trustStore path.
+     *
+     * @param trustStorePath
+     *          http server trustStore path
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerTrustStorePath(String trustStorePath) {
+        setProperty(HTTP_SERVER_TRUST_STORE_PATH, trustStorePath);
+        return this;
+    }
+
+    /**
+     * Get the http server trustStore password.
+     *
+     * @return http server trustStore password
+     */
+    public String getHttpServerTrustStorePassword() {
+        return getString(HTTP_SERVER_KEY_STORE_PASSWORD);
+    }
+
+    /**
+     * Set Http server trustStore password.
+     *
+     * @param trustStorePassword
+     *          http server trustStore password
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerTrustStorePasswordPassword(String trustStorePassword) {
+        setProperty(HTTP_SERVER_TRUST_STORE_PASSWORD, trustStorePassword);
+        return this;
+    }
+
+    /**
      * Get the extra list of server lifecycle components to enable on a bookie server.
      *
      * @return the extra list of server lifecycle components to enable on a bookie server.
@@ -3797,5 +3916,77 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public boolean isDataIntegrityStampMissingCookiesEnabled() {
         return this.getBoolean(DATA_INTEGRITY_COOKIE_STAMPING_ENABLED, false);
+    }
+
+    /**
+     * Get default rocksdb conf.
+     *
+     * @return String configured default rocksdb conf.
+     */
+    public String getDefaultRocksDBConf() {
+        String defaultPath = "conf/default_rocksdb.conf";
+        URL defURL = getClass().getClassLoader().getResource(defaultPath);
+        if (defURL != null) {
+            defaultPath = defURL.getPath();
+        }
+        return getString(DEFAULT_ROCKSDB_CONF, defaultPath);
+    }
+
+    /**
+     * Set default rocksdb conf.
+     *
+     * @return Configuration Object with default rocksdb conf
+     */
+    public ServerConfiguration setDefaultRocksDBConf(String defaultRocksdbConf) {
+        this.setProperty(DEFAULT_ROCKSDB_CONF, defaultRocksdbConf);
+        return this;
+    }
+
+    /**
+     * Get entry Location rocksdb conf.
+     *
+     * @return String configured entry Location rocksdb conf.
+     */
+    public String getEntryLocationRocksdbConf() {
+        String defaultPath = "conf/entry_location_rocksdb.conf";
+        URL defURL = getClass().getClassLoader().getResource(defaultPath);
+        if (defURL != null) {
+            defaultPath = defURL.getPath();
+        }
+        return getString(ENTRY_LOCATION_ROCKSDB_CONF, defaultPath);
+    }
+
+    /**
+     * Set entry Location rocksdb conf.
+     *
+     * @return Configuration Object with entry Location rocksdb conf
+     */
+    public ServerConfiguration setEntryLocationRocksdbConf(String entryLocationRocksdbConf) {
+        this.setProperty(ENTRY_LOCATION_ROCKSDB_CONF, entryLocationRocksdbConf);
+        return this;
+    }
+
+    /**
+     * Get ledger metadata rocksdb conf.
+     *
+     * @return String configured ledger metadata rocksdb conf.
+     */
+    public String getLedgerMetadataRocksdbConf() {
+        String defaultPath = "conf/ledger_metadata_rocksdb.conf";
+        URL defURL = getClass().getClassLoader().getResource(defaultPath);
+        if (defURL != null) {
+            defaultPath = defURL.getPath();
+        }
+        return getString(LEDGER_METADATA_ROCKSDB_CONF, defaultPath);
+    }
+
+    /**
+     * Set ledger metadata rocksdb conf.
+     *
+     * @return Configuration Object with ledger metadata rocksdb conf
+     */
+    public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
+        this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
+        return this;
     }
 }
