@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class EntryLocationIndex implements Closeable {
 
-    private final KeyValueStorage locationsDb;
+    protected final KeyValueStorage locationsDb;
     private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
 
     private final EntryLocationIndexStats stats;
