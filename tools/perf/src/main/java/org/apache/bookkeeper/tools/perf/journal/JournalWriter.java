@@ -89,7 +89,7 @@ public class JournalWriter implements Runnable {
                 "-r", "--rate"
             },
             description = "Write rate bytes/s across journals")
-        public int writeRate = 0;
+        public long writeRate = 0;
 
         @Parameter(
             names = {
