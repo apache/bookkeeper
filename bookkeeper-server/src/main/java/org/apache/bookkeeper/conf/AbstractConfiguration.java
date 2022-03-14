@@ -268,7 +268,11 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @throws ConfigurationException if the metadata service uri is invalid.
      */
     public String getMetadataServiceUri() throws ConfigurationException {
-        String serviceUri = getString(METADATA_SERVICE_URI);
+        List servers = getList(METADATA_SERVICE_URI, null);
+        if (null == servers || 0 == servers.size()) {
+            return null;
+        }
+        String serviceUri = StringUtils.join(servers, ",");
         if (StringUtils.isBlank(serviceUri)) {
             // no service uri is defined, fallback to old settings
             String ledgerManagerType;
