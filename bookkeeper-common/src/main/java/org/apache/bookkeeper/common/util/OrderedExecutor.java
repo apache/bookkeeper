@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
+import org.apache.bookkeeper.common.collections.GrowableArrayBlockingQueue;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -305,7 +306,7 @@ public class OrderedExecutor implements ExecutorService {
             queue = new BlockingMpscQueue<>(maxTasksInQueue > 0 ? maxTasksInQueue : DEFAULT_MAX_ARRAY_QUEUE_SIZE);
         } else {
             // By default, use regular JDK LinkedBlockingQueue
-            queue = new LinkedBlockingQueue<>();
+            queue = new GrowableArrayBlockingQueue<>();
         }
         return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, queue, factory);
     }
