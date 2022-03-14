@@ -62,7 +62,8 @@ distributions {
                             "**/.vertx",
                             ".git/**",
                             "dev/**",
-                            "site/**"
+                            "site/**",
+                            "**/src/generated/**"
                 }
             }
             from("site/apidocs") {
