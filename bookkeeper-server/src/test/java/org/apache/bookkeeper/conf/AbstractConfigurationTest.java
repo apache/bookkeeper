@@ -57,6 +57,12 @@ public class AbstractConfigurationTest {
     }
 
     @Test
+    public void testSetGetServiceUri() throws Exception {
+        this.conf.setMetadataServiceUri("zk1:2181,zk2:2181/test");
+        assertEquals("zk1:2181,zk2:2181/test", this.conf.getMetadataServiceUri());
+    }
+
+    @Test
     public void testDefaultServiceUri() throws Exception {
         assertEquals(
             DEFAULT_METADATA_SERVICE_URI,
