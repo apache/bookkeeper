@@ -77,6 +77,10 @@ protobuf {
     generatedFilesBaseDir = "${projectDir}/src/generated"
 }
 
+clean {
+    delete protobuf.generatedFilesBaseDir
+}
+
 test {
     retry {
         maxFailures = 200

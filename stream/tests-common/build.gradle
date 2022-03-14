@@ -51,3 +51,7 @@ protobuf {
 
     generatedFilesBaseDir = "${projectDir}/src/generated"
 }
+
+clean {
+    delete protobuf.generatedFilesBaseDir
+}
