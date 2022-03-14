@@ -82,6 +82,7 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
         try {
             if (SIZE_UPDATER.get(this) > 0) {
                 T item = data[headIndex.value];
+                data[headIndex.value] = null;
                 headIndex.value = (headIndex.value + 1) & (data.length - 1);
                 SIZE_UPDATER.decrementAndGet(this);
                 return item;
