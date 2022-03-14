@@ -26,6 +26,7 @@ pluginManagement {
         id "com.adarshr.test-logger" version  "${testLogger}"
         id "org.gradle.test-retry" version "${testRetry}"
         id "org.owasp.dependencycheck" version "${owaspPlugin}"
+        id "org.jetbrains.gradle.plugin.idea-ext" version "1.1.3"
     }
 }
 
