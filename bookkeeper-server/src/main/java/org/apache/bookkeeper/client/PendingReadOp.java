@@ -564,7 +564,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
     }
 
-    public static ReadContext createReadContext(int bookieIndex, BookieId to, LedgerEntryRequest entry) {
+    private static ReadContext createReadContext(int bookieIndex, BookieId to, LedgerEntryRequest entry) {
         return new ReadContext(bookieIndex, to, entry);
     }
 
