@@ -70,6 +70,11 @@ class DbLedgerStorageStats {
     private static final String READ_CACHE_SIZE = "read-cache-size";
     private static final String READ_CACHE_COUNT = "read-cache-count";
 
+    private static final String READ_AHEAD_TOTAL_TIME = "read-ahead-total-time";
+    private static final String READ_AHEAD_ASYNC_QUEUE_TIME = "read-ahead-async-queue-time";
+    private static final String READ_AHEAD_ASYNC_TOTAL_TIME = "read-ahead-async-total-time";
+    private static final String READ_AHEAD_ASYNC_BLOCK_TIME = "read-ahead-async-block-time";
+
     @StatsDoc(
         name = ADD_ENTRY,
         help = "operation stats of adding entries to db ledger storage",
@@ -122,12 +127,12 @@ class DbLedgerStorageStats {
         name = READAHEAD_BATCH_COUNT,
         help = "the distribution of num of entries to read in one readahead batch"
     )
-    private final OpStatsLogger readAheadBatchCountStats;
+    private final Counter readAheadBatchCountCounter;
     @StatsDoc(
         name = READAHEAD_BATCH_SIZE,
         help = "the distribution of num of bytes to read in one readahead batch"
     )
-    private final OpStatsLogger readAheadBatchSizeStats;
+    private final Counter readAheadBatchSizeCounter;
     @StatsDoc(
             name = READAHEAD_TIME,
             help = "Time spent on readahead operations"
@@ -195,6 +200,33 @@ class DbLedgerStorageStats {
     )
     private final Gauge<Long> readCacheCountGauge;
 
+    /********** Read-ahead async **********/
+    @StatsDoc(
+            name = READ_AHEAD_TOTAL_TIME,
+            help = "time spent in reading ahead",
+            parent = READ_ENTRY
+    )
+    private final OpStatsLogger readAheadTotalTime;
+    @StatsDoc(
+            name = READ_AHEAD_ASYNC_QUEUE_TIME,
+            help = "time spent in the queue of reading ahead async",
+            parent = READ_ENTRY
+    )
+    private final OpStatsLogger readAheadAsyncQueueTime;
+    @StatsDoc(
+            name = READ_AHEAD_ASYNC_TOTAL_TIME,
+            help = "time spent of the entire task of reading ahead async",
+            parent = READ_ENTRY
+    )
+    private final OpStatsLogger readAheadAsyncTotalTime;
+    @StatsDoc(
+            name = READ_AHEAD_ASYNC_BLOCK_TIME,
+            help = "time spent in waiting the completion of reading ahead async",
+            parent = READ_ENTRY
+    )
+    private final OpStatsLogger readAheadAsyncBlockTime;
+    /********** End read-ahead async **********/
+
     DbLedgerStorageStats(StatsLogger stats,
                          Supplier<Long> writeCacheSizeSupplier,
                          Supplier<Long> writeCacheCountSupplier,
@@ -208,8 +240,8 @@ class DbLedgerStorageStats {
         readCacheMissCounter = stats.getCounter(READ_CACHE_MISSES);
         writeCacheHitCounter = stats.getCounter(WRITE_CACHE_HITS);
         writeCacheMissCounter = stats.getCounter(WRITE_CACHE_MISSES);
-        readAheadBatchCountStats = stats.getOpStatsLogger(READAHEAD_BATCH_COUNT);
-        readAheadBatchSizeStats = stats.getOpStatsLogger(READAHEAD_BATCH_SIZE);
+        readAheadBatchCountCounter = stats.getCounter(READAHEAD_BATCH_COUNT);
+        readAheadBatchSizeCounter = stats.getCounter(READAHEAD_BATCH_SIZE);
         readAheadTime = stats.getThreadScopedCounter(READAHEAD_TIME);
         flushStats = stats.getOpStatsLogger(FLUSH);
         flushEntryLogStats = stats.getOpStatsLogger(FLUSH_ENTRYLOG);
@@ -270,6 +302,11 @@ class DbLedgerStorageStats {
             }
         };
         stats.registerGauge(READ_CACHE_COUNT, readCacheCountGauge);
+
+        readAheadTotalTime = stats.getOpStatsLogger(READ_AHEAD_TOTAL_TIME);
+        readAheadAsyncQueueTime = stats.getOpStatsLogger(READ_AHEAD_ASYNC_QUEUE_TIME);
+        readAheadAsyncTotalTime = stats.getOpStatsLogger(READ_AHEAD_ASYNC_TOTAL_TIME);
+        readAheadAsyncBlockTime = stats.getOpStatsLogger(READ_AHEAD_ASYNC_BLOCK_TIME);
     }
 
 }

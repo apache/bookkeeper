@@ -142,6 +142,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private final Counter flushExecutorTime;
 
+    private static final String ENABLE_READ_AHEAD_ASYNC = "dbStorage_enableReadAheadAsync";
+    private static final boolean DEFAULT_ENABLE_READ_AHEAD_ASYNC = false;
+
+    private final boolean enableReadAheadAsync;
+    private final ReadAheadManager readAheadManager;
+
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
             LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, EntryLogger entryLogger,
             StatsLogger statsLogger, ByteBufAllocator allocator, ScheduledExecutorService gcExecutor,
@@ -219,6 +225,16 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         if (!ledgerBaseDir.equals(indexBaseDir)) {
             indexDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         }
+
+        enableReadAheadAsync = conf.getBoolean(ENABLE_READ_AHEAD_ASYNC, DEFAULT_ENABLE_READ_AHEAD_ASYNC);
+        if (enableReadAheadAsync) {
+            readAheadManager = new ReadAheadManager(
+                    entryLogger, entryLocationIndex, readCache, dbLedgerStorageStats, conf);
+            log.info("Read-ahead running in async mode.");
+        } else {
+            readAheadManager = null;
+            log.info("Read-ahead running in sync mode.");
+        }
     }
 
     @Override
@@ -290,6 +306,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             writeCacheBeingFlushed.close();
             readCache.close();
             executor.shutdown();
+
+            if (readAheadManager != null) {
+                readAheadManager.shutdown();
+            }
 
         } catch (IOException e) {
             log.error("Error closing db storage", e);
@@ -549,44 +569,53 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         dbLedgerStorageStats.getWriteCacheMissCounter().inc();
 
-        // Try reading from read-ahead cache
-        entry = readCache.get(ledgerId, entryId);
-        if (entry != null) {
-            dbLedgerStorageStats.getReadCacheHitCounter().inc();
-            return entry;
-        }
-
-        dbLedgerStorageStats.getReadCacheMissCounter().inc();
-
-        // Read from main storage
-        long entryLocation;
-        long locationIndexStartNano = MathUtils.nowInNano();
-        try {
-            entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
-            if (entryLocation == 0) {
-                // Only a negative result while in limbo equates to unknown
-                throwIfLimbo(ledgerId);
-
-                throw new NoEntryException(ledgerId, entryId);
+        // Get entry from storage and trigger read-ahead
+        long readAheadTotalStartNano = MathUtils.nowInNano();
+        if (enableReadAheadAsync) {
+            // Async mode
+            entry = readAheadManager.readEntryOrWait(ledgerId, entryId);
+        } else {
+            // Sync mode
+            // Try reading from read-ahead cache
+            entry = readCache.get(ledgerId, entryId);
+            if (entry != null) {
+                dbLedgerStorageStats.getReadCacheHitCounter().inc();
+                return entry;
             }
-        } finally {
-            dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
+
+            dbLedgerStorageStats.getReadCacheMissCounter().inc();
+
+            // Read from main storage
+            long entryLocation;
+            long locationIndexStartNano = MathUtils.nowInNano();
+            try {
+                entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
+                if (entryLocation == 0) {
+                    // Only a negative result while in limbo equates to unknown
+                    throwIfLimbo(ledgerId);
+
+                    throw new NoEntryException(ledgerId, entryId);
+                }
+            } finally {
+                dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
                     MathUtils.elapsedNanos(locationIndexStartNano), TimeUnit.NANOSECONDS);
-        }
+            }
 
-        long readEntryStartNano = MathUtils.nowInNano();
-        try {
-            entry = entryLogger.readEntry(ledgerId, entryId, entryLocation);
-        } finally {
-            dbLedgerStorageStats.getReadFromEntryLogTime().addLatency(
+            long readEntryStartNano = MathUtils.nowInNano();
+            try {
+                entry = entryLogger.readEntry(ledgerId, entryId, entryLocation);
+            } finally {
+                dbLedgerStorageStats.getReadFromEntryLogTime().addLatency(
                     MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
+            }
+
+            readCache.put(ledgerId, entryId, entry);
+
+            // Try to read more entries
+            long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
+            fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
         }
-
-        readCache.put(ledgerId, entryId, entry);
-
-        // Try to read more entries
-        long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
-        fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
+        recordSuccessfulEvent(dbLedgerStorageStats.getReadAheadTotalTime(), readAheadTotalStartNano);
 
         return entry;
     }
@@ -634,8 +663,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 log.debug("Exception during read ahead for ledger: {}: e", orginalLedgerId, e);
             }
         } finally {
-            dbLedgerStorageStats.getReadAheadBatchCountStats().registerSuccessfulValue(count);
-            dbLedgerStorageStats.getReadAheadBatchSizeStats().registerSuccessfulValue(size);
+            dbLedgerStorageStats.getReadAheadBatchCountCounter().add(count);
+            dbLedgerStorageStats.getReadAheadBatchSizeCounter().add(size);
             dbLedgerStorageStats.getReadAheadTime().addLatency(
                     MathUtils.elapsedNanos(readAheadStartNano), TimeUnit.NANOSECONDS);
         }
