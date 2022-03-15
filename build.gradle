@@ -25,7 +25,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.google.protobuf'
+    id "org.jetbrains.gradle.plugin.idea-ext"
     id 'java'
     id "com.github.vlsi.stage-vote-release" version "1.77"
     id 'checkstyle'
@@ -378,4 +378,17 @@ task generateApiJavadoc(type: Javadoc) {
 
     title = "BookKeeper Java API (version ${project.version})"
     destinationDir = file("${buildDir}/docs/javadoc")
+}
+
+idea.project.settings {
+    subprojects { subproject ->
+        subproject.plugins.withId('com.google.protobuf') {
+            it.project.afterEvaluate {
+                taskTriggers {
+                    // run all generateProto tasks after project import or refresh
+                    afterSync subproject.protobuf.generateProtoTasks.all()
+                }
+            }
+        }
+    }
 }
