@@ -98,6 +98,25 @@ public class ConcurrentLongHashSetTest {
     }
 
     @Test
+    public void testReduceUnnecessaryExpansions() {
+        ConcurrentLongHashSet set = ConcurrentLongHashSet.newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .build();
+        assertTrue(set.add(1));
+        assertTrue(set.add(2));
+        assertTrue(set.add(3));
+        assertTrue(set.add(4));
+
+        assertTrue(set.remove(1));
+        assertTrue(set.remove(2));
+        assertTrue(set.remove(3));
+        assertTrue(set.remove(4));
+
+        assertEquals(0, set.getUsedBucketCount());
+    }
+
+    @Test
     public void testRemove() {
         ConcurrentLongHashSet set = ConcurrentLongHashSet.newBuilder().build();
 

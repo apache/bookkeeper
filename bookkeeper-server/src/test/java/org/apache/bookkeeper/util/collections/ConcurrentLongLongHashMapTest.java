@@ -461,6 +461,25 @@ public class ConcurrentLongLongHashMapTest {
     }
 
     @Test
+    public void testReduceUnnecessaryExpansions() {
+        ConcurrentLongLongHashMap map = ConcurrentLongLongHashMap.newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .build();
+        map.put(1L, 1L);
+        map.put(2L, 2L);
+        map.put(3L, 3L);
+        map.put(4L, 4L);
+
+        map.remove(1L);
+        map.remove(2L);
+        map.remove(3L);
+        map.remove(4L);
+        assertEquals(0, map.getUsedBucketCount());
+    }
+
+
+    @Test
     public void testRemoveIf() {
         ConcurrentLongLongHashMap map = ConcurrentLongLongHashMap.newBuilder()
                 .expectedItems(16)

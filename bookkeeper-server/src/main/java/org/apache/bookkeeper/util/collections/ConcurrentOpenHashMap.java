@@ -155,6 +155,14 @@ public class ConcurrentOpenHashMap<K, V> {
         }
     }
 
+    long getUsedBucketCount() {
+        long usedBucketCount = 0;
+        for (Section<K, V> s : sections) {
+            usedBucketCount += s.usedBuckets;
+        }
+        return usedBucketCount;
+    }
+
     public long size() {
         long size = 0;
         for (Section<K, V> s : sections) {
