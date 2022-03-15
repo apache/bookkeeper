@@ -110,7 +110,9 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
         @Override
         public void close() {
-            entryImpl.close();
+            if (complete.compareAndSet(false, true)) {
+                entryImpl.close();
+            }
         }
 
         /**
@@ -561,6 +563,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         public long getLastAddConfirmed() {
             return lac;
         }
+    }
+
+    public static ReadContext createReadContext(int bookieIndex, BookieId to, LedgerEntryRequest entry) {
+        return new ReadContext(bookieIndex, to, entry);
     }
 
     void sendReadTo(int bookieIndex, BookieId to, LedgerEntryRequest entry) throws InterruptedException {
