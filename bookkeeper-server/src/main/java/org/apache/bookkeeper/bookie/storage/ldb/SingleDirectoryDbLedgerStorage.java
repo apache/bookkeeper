@@ -426,6 +426,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private void triggerFlushAndAddEntry(long ledgerId, long entryId, ByteBuf entry)
             throws IOException, BookieException {
+        long throttledStartTime = MathUtils.nowInNano();
         dbLedgerStorageStats.getThrottledWriteRequests().inc();
         long absoluteTimeoutNanos = System.nanoTime() + maxThrottleTimeNanos;
 
@@ -452,6 +453,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             try {
                 if (writeCache.put(ledgerId, entryId, entry)) {
                     // We succeeded in putting the entry in write cache in the
+                    recordSuccessfulEvent(dbLedgerStorageStats.getThrottledWriteStats(), throttledStartTime);
                     return;
                 }
             } finally {
@@ -469,6 +471,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         // Timeout expired and we weren't able to insert in write cache
         dbLedgerStorageStats.getRejectedWriteRequests().inc();
+        recordFailedEvent(dbLedgerStorageStats.getThrottledWriteStats(), throttledStartTime);
         throw new OperationRejectedException();
     }
 
