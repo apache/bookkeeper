@@ -1,0 +1,45 @@
+@import url(https://fonts.googleapis.com/css?family=Lato|Source+Code+Pro);
+
+
+:root {
+  --ifm-color-primary: #c88e56;
+  --ifm-color-primary-dark: #c18040;
+  --ifm-color-primary-darker: #b7783c;
+  --ifm-color-primary-darkest: #976331;
+  --ifm-color-primary-light: #cf9c6c;
+  --ifm-color-primary-lighter: #d3a476;
+  --ifm-color-primary-lightest: #ddb997;
+  
+  --ifm-font-family-base: 'Lato', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif
+  
+}
+
+[data-theme='light'] {
+  --ifm-font-color-base: #4a4a4a;
+}
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #c88e56;
+  --ifm-color-primary-dark: #c18040;
+  --ifm-color-primary-darker: #b7783c;
+  --ifm-color-primary-darkest: #976331;
+  --ifm-color-primary-light: #cf9c6c;
+  --ifm-color-primary-lighter: #d3a476;
+  --ifm-color-primary-lightest: #ddb997;
+  --ifm-background-color: #332828;
+}
+
+.docusaurus-highlight-code-line {
+  background-color: rgba(0, 0, 0, 0.1);
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+}
+
+[data-theme='dark'] .docusaurus-highlight-code-line {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.bk-hero-container {
+  height: 100%;
+}

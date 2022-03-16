@@ -197,6 +197,7 @@ allprojects {
                     '**/*.ipr',
                     'site/**',
                     'site2/**',
+                    'site3/**',
                     '**/*.log',
                     'data/**',
                     'dev/.vagrant/**',
