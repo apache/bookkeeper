@@ -200,7 +200,6 @@ class DbLedgerStorageStats {
     )
     private final Gauge<Long> readCacheCountGauge;
 
-    /********** Read-ahead async **********/
     @StatsDoc(
             name = READ_AHEAD_TOTAL_TIME,
             help = "time spent in reading ahead",
@@ -225,7 +224,6 @@ class DbLedgerStorageStats {
             parent = READ_ENTRY
     )
     private final OpStatsLogger readAheadAsyncBlockTime;
-    /********** End read-ahead async **********/
 
     DbLedgerStorageStats(StatsLogger stats,
                          Supplier<Long> writeCacheSizeSupplier,

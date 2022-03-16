@@ -22,16 +22,6 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.EntryLogger;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.SafeRunnable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +38,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.EntryLogger;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.SafeRunnable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A management tool that supports asynchronous read-ahead operations for {@link SingleDirectoryDbLedgerStorage}.
@@ -56,15 +55,15 @@ public class ReadAheadManager {
 
     private static final Logger log = LoggerFactory.getLogger(ReadAheadManager.class);
 
-    private static final String READ_AHEAD_MAX_MESSAGES = "dbStorage_readAheadMaxMessages";
-    private static final String READ_AHEAD_MAX_BYTES = "dbStorage_readAheadMaxBytes";
-    private static final String READ_AHEAD_PRE_TRIGGER_RATIO = "dbStorage_readAheadPreTriggerRatio";
-    private static final String READ_AHEAD_TASK_EXPIRED_TIME_MS = "dbStorage_readAheadTaskExpiredTimeMs";
-    private static final String READ_AHEAD_TIMEOUT_MS = "dbStorage_readAheadTimeoutMs";
+    public static final String READ_AHEAD_MAX_MESSAGES = "dbStorage_readAheadMaxMessages";
+    public static final String READ_AHEAD_MAX_BYTES = "dbStorage_readAheadMaxBytes";
+    public static final String READ_AHEAD_PRE_TRIGGER_RATIO = "dbStorage_readAheadPreTriggerRatio";
+    public static final String READ_AHEAD_TASK_EXPIRED_TIME_MS = "dbStorage_readAheadTaskExpiredTimeMs";
+    public static final String READ_AHEAD_TIMEOUT_MS = "dbStorage_readAheadTimeoutMs";
 
     // operation behavior indicator
-    private static final String SUBMIT_READ_AHEAD_TASK_IMMEDIATELY = "dbStorage_submitReadAheadTaskImmediately";
-    private static final String READ_AHEAD_TASK_POOL_SIZE = "dbStorage_readAheadTaskPoolSize";
+    public static final String SUBMIT_READ_AHEAD_TASK_IMMEDIATELY = "dbStorage_submitReadAheadTaskImmediately";
+    public static final String READ_AHEAD_TASK_POOL_SIZE = "dbStorage_readAheadTaskPoolSize";
 
     private static final int DEFAULT_READ_AHEAD_MESSAGES = 1000;
     private static final int DEFAULT_READ_AHEAD_BYTES = 256 * 1024;
@@ -88,11 +87,15 @@ public class ReadAheadManager {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             LedgerEntryPosition that = (LedgerEntryPosition) o;
-            return ledgerId == that.ledgerId &&
-                    entryId == that.entryId;
+            return ledgerId == that.ledgerId
+                    && entryId == that.entryId;
         }
 
         @Override
@@ -160,6 +163,14 @@ public class ReadAheadManager {
     private final long readAheadTaskExpiredTimeMs;
     private final long readAheadTimeoutMs;
 
+    /**
+     * Entrance for test cases.
+     *
+     * @param entryLogger
+     * @param entryLocationIndex
+     * @param cache
+     * @param dbLedgerStorageStats
+     */
     public ReadAheadManager(EntryLogger entryLogger, EntryLocationIndex entryLocationIndex,
                             ReadCache cache, DbLedgerStorageStats dbLedgerStorageStats) {
         this(entryLogger, entryLocationIndex, cache, dbLedgerStorageStats,
@@ -169,7 +180,7 @@ public class ReadAheadManager {
     }
 
     /**
-     * Entrance for test cases.
+     * Entrance for normal use.
      *
      * @param entryLogger
      * @param entryLocationIndex
@@ -189,21 +200,6 @@ public class ReadAheadManager {
                 conf.getLong(READ_AHEAD_TIMEOUT_MS, DEFAULT_READ_AHEAD_TIMEOUT_MS));
     }
 
-    /**
-     * Entrance for normal use.
-     *
-     * @param entryLogger
-     * @param entryLocationIndex
-     * @param cache
-     * @param dbLedgerStorageStats
-     * @param submitReadAheadTaskImmediately
-     * @param readAheadTaskPoolSize
-     * @param readAheadMessages
-     * @param readAheadBytes
-     * @param preTriggerReadAheadRatio
-     * @param readAheadTaskExpiredTimeMs
-     * @param readAheadTimeoutMs
-     */
     public ReadAheadManager(EntryLogger entryLogger, EntryLocationIndex entryLocationIndex,
                             ReadCache cache, DbLedgerStorageStats dbLedgerStorageStats,
                             boolean submitReadAheadTaskImmediately, int readAheadTaskPoolSize,
@@ -263,9 +259,9 @@ public class ReadAheadManager {
         pendingDeletePositions.add(lep);
     }
 
-    private ReadAheadTaskStatus getNearestTask(long ledgerId, long entryId) {
-        NavigableMap<Long, ReadAheadTaskStatus> ledgerReadAheadTaskStatuses
-                = inProgressReadAheadTaskStatuses.get(ledgerId);
+    protected ReadAheadTaskStatus getNearestTask(long ledgerId, long entryId) {
+        NavigableMap<Long, ReadAheadTaskStatus> ledgerReadAheadTaskStatuses =
+                inProgressReadAheadTaskStatuses.get(ledgerId);
         if (ledgerReadAheadTaskStatuses != null) {
             Map.Entry<Long, ReadAheadTaskStatus> floorEntry = ledgerReadAheadTaskStatuses.floorEntry(entryId);
             if (floorEntry != null) {
@@ -293,7 +289,7 @@ public class ReadAheadManager {
                     });
             if (pos == null) {
                 pendingDeletePositions.poll();
-                reclaimedPositions ++;
+                reclaimedPositions++;
             } else {
                 break;
             }
@@ -304,7 +300,7 @@ public class ReadAheadManager {
         while (!pendingDeleteReadAheadTaskStatuses.isEmpty()
                 && pendingDeleteReadAheadTaskStatuses.peek().isExpired()) {
             ReadAheadTaskStatus readAheadTaskStatus = pendingDeleteReadAheadTaskStatuses.poll();
-            reclaimedTasks ++;
+            reclaimedTasks++;
             inProgressReadAheadTaskStatuses.computeIfPresent(
                     readAheadTaskStatus.ledgerId,
                     (lid, ledgerReadAheadTaskStatuses) -> {
@@ -474,7 +470,7 @@ public class ReadAheadManager {
                         log.debug("[L{} E{}] Entry already exists.", ledgerId, entryId);
                     }
                     readFromCacheBefore = true;
-                    entryId ++;
+                    entryId++;
                     location += (4 + entry.readableBytes());
                     entry.release();
                     continue;
@@ -513,10 +509,10 @@ public class ReadAheadManager {
                     }
 
                     // update stats
-                    messages ++;
+                    messages++;
                     bytes += entry.readableBytes();
 
-                    entryId ++;
+                    entryId++;
                     location += (4 + entry.readableBytes());
                 } finally {
                     entry.release();
@@ -570,6 +566,9 @@ public class ReadAheadManager {
                 () -> internalReadAhead(ledgerId, entryId, location, maxMessages, maxBytes, MathUtils.nowInNano())));
     }
 
+    /**
+     * A structure that records the transitions of the task status.
+     */
     public static class ReadAheadTaskStatus {
         private long ledgerId;
         private long startEntryId;
@@ -605,6 +604,10 @@ public class ReadAheadManager {
 
         public void updateEndEntry(long endEntryId) {
             this.endEntryId = endEntryId;
+        }
+
+        public long getEndEntryId() {
+            return endEntryId;
         }
 
         public boolean isExpired() {
