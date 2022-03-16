@@ -1053,6 +1053,14 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         return entryLocationIndex;
     }
 
+    public ReadCache getReadCache() {
+        return readCache;
+    }
+
+    public DbLedgerStorageStats getDbLedgerStorageStats() {
+        return dbLedgerStorageStats;
+    }
+
     private void recordSuccessfulEvent(OpStatsLogger logger, long startTimeNanos) {
         logger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
     }
