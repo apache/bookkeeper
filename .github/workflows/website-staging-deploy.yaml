@@ -27,8 +27,11 @@ on:
       - 'site3/**'
       - '.github/workflows/website-staging-deploy.yaml'
 
+env:
+  DEPLOY_URL: "https://bookkeeper.staged.apache.org/"
+
 jobs:
-  build-website:
+  stage-website:
     name: Build and stage website
     runs-on: ubuntu-latest
     timeout-minutes: 180
@@ -42,12 +45,15 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
-      - uses: actions/setup-node@v2
+      - name: Setup NodeJS
+        uses: actions/setup-node@v2
         with:
           node-version: '14'
-          cache: 'yarn'
 
-      - name: publish
+      - name: Setup yarn
+        run: npm install -g yarn
+
+      - name: Publish
         run: |
           ./site3/website/scripts/build-website.sh
           ./site3/website/scripts/publish-website.sh

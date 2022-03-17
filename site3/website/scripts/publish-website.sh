@@ -37,7 +37,8 @@ TMP_DIR=/tmp/bookkeeper-site
   git config user.email "dev@bookkeeper.apache.org"
   git checkout asf-staging
   # copy the apache generated dir
-  cp -r $ROOT_DIR/site3/website/build/* $TMP_DIR/content
+  mkdir -p content
+  cp -r $ROOT_DIR/site3/website/build/* content
 
   git add -A .
   git diff-index --quiet HEAD || (git commit -m "Updated site at revision $REVISION" && git push -q origin HEAD:asf-staging)
