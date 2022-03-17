@@ -1,8 +1,0 @@
-org.apache.bookkeeper.client
-org.apache.bookkeeper.conf
-org.apache.hedwig.client
-org.apache.hedwig.client.api
-org.apache.hedwig.client.conf
-org.apache.hedwig.exceptions
-org.apache.hedwig.protocol
-org.apache.hedwig.util
