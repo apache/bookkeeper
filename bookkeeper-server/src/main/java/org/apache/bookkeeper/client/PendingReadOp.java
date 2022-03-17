@@ -110,6 +110,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
         @Override
         public void close() {
+            // this request has succeeded before, can't recycle writeSet again
+            if (!complete.get()) {
+                writeSet.recycle();
+            }
             // To be able to close this when complete = true, can't use compareAndSet.
             // Because readComplete will make complete = true then close will not close LedgerEntryImpl
             complete.set(true);
@@ -172,7 +176,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             if (complete.compareAndSet(false, true)) {
                 this.rc = rc;
                 submitCallback(rc);
-                writeSet.recycle();
                 return true;
             } else {
                 return false;
@@ -587,11 +590,15 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
     @Override
     public void readEntryComplete(int rc, long ledgerId, final long entryId, final ByteBuf buffer, Object ctx) {
+
         final ReadContext rctx = (ReadContext) ctx;
         final LedgerEntryRequest entry = rctx.entry;
 
         if (rc != BKException.Code.OK) {
-            entry.logErrorAndReattemptRead(rctx.bookieIndex, rctx.to, "Error: " + BKException.getMessage(rc), rc);
+            // if entry complete = true, don't need logErrorAndReattemptRead
+            if (!entry.complete.get()) {
+                entry.logErrorAndReattemptRead(rctx.bookieIndex, rctx.to, "Error: " + BKException.getMessage(rc), rc);
+            }
             return;
         }
 
@@ -599,6 +606,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         heardFromHostsBitSet.set(rctx.bookieIndex, true);
 
         buffer.retain();
+        // if entry has completed don't handle twice
         if (entry.complete(rctx.bookieIndex, rctx.to, buffer)) {
             if (!isRecoveryRead) {
                 // do not advance LastAddConfirmed for recovery reads
