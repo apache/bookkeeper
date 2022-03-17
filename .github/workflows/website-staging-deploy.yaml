@@ -17,15 +17,19 @@
 # under the License.
 #
 
-name: Website deploy
+name: Website staging deploy
 on:
-  schedule:
-  # DISABLED UNTIL WE DECIDE TO DEPLOY IT
-  #  - cron: '0 */24 * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'site3/**'
+      - '.github/workflows/website-staging-deploy.yaml'
 
 jobs:
   build-website:
-    name: Build and publish website
+    name: Build and stage website
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:

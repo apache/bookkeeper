@@ -26,6 +26,7 @@ on:
       - master
     paths-ignore:
       - 'site/**'
+      - 'site3/**'
     workflow_dispatch:
 
 env:

@@ -35,12 +35,12 @@ TMP_DIR=/tmp/bookkeeper-site
   git clone "https://$ORIGIN_REPO" .
   git config user.name "Apache BookKeeper Site Updater"
   git config user.email "dev@bookkeeper.apache.org"
-  git checkout asf-site
+  git checkout asf-staging
   # copy the apache generated dir
   cp -r $ROOT_DIR/site3/website/build/* $TMP_DIR/content
 
   git add -A .
-  git diff-index --quiet HEAD || (git commit -m "Updated site at revision $REVISION" && git push -q origin HEAD:asf-site)
+  git diff-index --quiet HEAD || (git commit -m "Updated site at revision $REVISION" && git push -q origin HEAD:asf-staging)
 
   rm -rf $TMP_DIR
 )
