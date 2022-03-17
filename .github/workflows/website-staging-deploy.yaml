@@ -55,6 +55,5 @@ jobs:
 
       - name: Publish
         run: |
-          git remote set-url origin git@github.com:apache/bookkeeper.git
           ./site3/website/scripts/build-website.sh
           ./site3/website/scripts/publish-website.sh
