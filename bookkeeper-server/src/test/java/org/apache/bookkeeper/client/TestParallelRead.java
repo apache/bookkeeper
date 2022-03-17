@@ -300,6 +300,24 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         assertNull(first.entryImpl.getEntryBuffer());
         // ledgerEntryRequest has been complete
         assertTrue(first.complete.get());
+
+        pendingReadOp = new PendingReadOp(lh, clientContext, 1, 2, false);
+        pendingReadOp.parallelRead(true);
+        pendingReadOp.initiate();
+
+        // read entry failed twice, will not close twice
+        pendingReadOp.readEntryComplete(BKException.Code.TooManyRequestsException, 1, 1, Unpooled.buffer(10),
+                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+
+        pendingReadOp.readEntryComplete(BKException.Code.TooManyRequestsException, 1, 1, Unpooled.buffer(10),
+                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+
+        // will not complete twice when completed
+        byteBuf = Unpooled.buffer(10);
+        pendingReadOp.readEntryComplete(Code.OK, 1, 1, Unpooled.buffer(10),
+                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+        assertEquals(1, byteBuf.refCnt());
+
     }
 
 }

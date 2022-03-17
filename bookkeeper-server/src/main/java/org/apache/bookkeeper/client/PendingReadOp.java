@@ -590,15 +590,11 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
     @Override
     public void readEntryComplete(int rc, long ledgerId, final long entryId, final ByteBuf buffer, Object ctx) {
-
         final ReadContext rctx = (ReadContext) ctx;
         final LedgerEntryRequest entry = rctx.entry;
 
         if (rc != BKException.Code.OK) {
-            // if entry complete = true, don't need logErrorAndReattemptRead
-            if (!entry.complete.get()) {
-                entry.logErrorAndReattemptRead(rctx.bookieIndex, rctx.to, "Error: " + BKException.getMessage(rc), rc);
-            }
+            entry.logErrorAndReattemptRead(rctx.bookieIndex, rctx.to, "Error: " + BKException.getMessage(rc), rc);
             return;
         }
 
