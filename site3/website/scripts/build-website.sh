@@ -15,5 +15,4 @@ node $SCRIPTS_DIR/replace.js
 yarn build
 
 # inject Javadocs
-$SCRIPTS_DIR/javadoc-gen.sh all
 $SCRIPTS_DIR/javadoc-gen.sh latest
