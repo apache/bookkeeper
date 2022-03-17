@@ -22,9 +22,6 @@
 #       staging the changes, try the `staging-website.sh` script.
 source scripts/common.sh
 
-ORIGIN_REPO=$(git remote show origin | grep 'Push  URL' | awk -F// '{print $NF}')
-echo "ORIGIN_REPO: $ORIGIN_REPO"
-
 (
   cd $APACHE_GENERATED_DIR
 
@@ -33,7 +30,8 @@ echo "ORIGIN_REPO: $ORIGIN_REPO"
   cd $TMP_DIR
 
   # clone the remote repo
-  git clone "https://$ORIGIN_REPO" .
+  # Workaround: https://stackoverflow.com/questions/22147574/fatal-could-not-read-username-for-https-github-com-no-such-file-or-directo
+  git clone "git@github.com:apache/bookkeeper.git" .
   git config user.name "Apache BookKeeper Site Updater"
   git config user.email "dev@bookkeeper.apache.org"
   git checkout asf-site
