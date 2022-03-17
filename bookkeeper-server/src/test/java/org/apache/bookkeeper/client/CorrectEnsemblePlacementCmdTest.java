@@ -46,6 +46,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookies.CorrectEnsemblePlacement
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.StaticDNSResolver;
+import org.junit.After;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -65,6 +66,12 @@ public class CorrectEnsemblePlacementCmdTest extends BookKeeperClusterTestCase {
         baseConf.setLedgerStorageClass(DbLedgerStorage.class.getName());
         baseConf.setGcWaitTime(60000);
         baseConf.setFlushInterval(1);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+        StaticDNSResolver.reset();
     }
 
     /**

@@ -1131,6 +1131,13 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     prevNode = replaceToAdherePlacementPolicyInternal(
                             curRack, excludeNodes, ensemble, ensemble,
                             provisionalEnsembleNodes, i, ensembleSize, minNumRacksPerWriteQuorumForThisEnsemble);
+                    // got a good candidate
+                    if (ensemble.addNode(prevNode)) {
+                        // add the candidate to exclude set
+                        excludeNodes.add(prevNode);
+                    } else {
+                        throw new BKNotEnoughBookiesException();
+                    }
                     // replace to newer node
                     provisionalEnsembleNodes.set(i, prevNode);
                 } catch (BKNotEnoughBookiesException e) {
@@ -1159,10 +1166,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         final BookieNode currentNode = provisionalEnsembleNodes.get(ensembleIndex);
         // if the current bookie could be applied to the ensemble, apply it to minify the number of bookies replaced
         if (!excludeBookies.contains(currentNode) && predicate.apply(currentNode, ensemble)) {
-            if (ensemble.addNode(currentNode)) {
-                // add the candidate to exclude set
-                excludeBookies.add(currentNode);
-            }
             return currentNode;
         }
 
@@ -1234,11 +1237,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     continue;
                 }
                 BookieNode bn = (BookieNode) n;
-                // got a good candidate
-                if (ensemble.addNode(bn)) {
-                    // add the candidate to exclude set
-                    excludeBookies.add(bn);
-                }
                 return bn;
             }
         }
