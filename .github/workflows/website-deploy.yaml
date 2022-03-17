@@ -45,13 +45,14 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.0.3 # Not needed with a .ruby-version file
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          ruby-version: 2.6.9
 
       - name: publish
         run: |
           #!/bin/bash
           set -e
+          sudo apt-get update
+          sudo apt-get install -y libxslt-dev libxml2-dev
           cd site
           make setup
           make latest_javadoc
