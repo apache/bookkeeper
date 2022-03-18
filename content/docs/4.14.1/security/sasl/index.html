@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper&trade; - Authentication using SASL</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -25); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<nav class="navbar bk-topnav">
+  <div class="navbar-brand">
+    <a class="navbar-item bk-brand" href="/">
+      Apache BookKeeper&trade;
+    </a>
+
+    <div class="navbar-burger burger" data-target="bkNav">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+
+  <div id="bkNav" class="navbar-menu">
+    <div class="navbar-start">
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">Documentation</a>
+        <div class="navbar-dropdown is-boxed">
+          <a class="navbar-item" href="/docs/latest/overview/overview">
+            Version 4.15.0-SNAPSHOT
+            <span class="tag is-warning">Development</span>
+          </a>
+          <a class="navbar-item" href="/docs/latest/api/javadoc">
+            <span class="icon bk-javadoc-icon">
+              <img src="/img/java-icon.svg">
+            </span>
+            Javadoc
+          </a>
+          <hr class="dropdown-divider">
+          
+          <a class="navbar-item" href="/docs/4.14.4/overview/overview">
+            Release 4.14.4
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.14.3/overview/overview">
+            Release 4.14.3
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.14.2/overview/overview">
+            Release 4.14.2
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.14.1/overview/overview">
+            Release 4.14.1
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.14.0/overview/overview">
+            Release 4.14.0
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.13.0/overview/overview">
+            Release 4.13.0
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.12.1/overview/overview">
+            Release 4.12.1
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.12.0/overview/overview">
+            Release 4.12.0
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.11.1/overview/overview">
+            Release 4.11.1
+            
+              <span class="tag is-success">Stable</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.11.0/overview/overview">
+            Release 4.11.0
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.10.0/overview/overview">
+            Release 4.10.0
+            
+          </a>
+          
+          
+          <a class="navbar-item" href="/archives/docs/r4.9.2">
+            Release 4.9.2
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.9.1">
+            Release 4.9.1
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.9.0">
+            Release 4.9.0
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.8.2">
+            Release 4.8.2
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.8.1">
+            Release 4.8.1
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.8.0">
+            Release 4.8.0
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.7.3">
+            Release 4.7.3
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.7.2">
+            Release 4.7.2
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.7.1">
+            Release 4.7.1
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.7.0">
+            Release 4.7.0
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.6.2">
+            Release 4.6.2
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.6.1">
+            Release 4.6.1
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.6.0">
+            Release 4.6.0
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.5.1">
+            Release 4.5.1
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.5.0">
+            Release 4.5.0
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.4.0">
+            Release 4.4.0
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.3.2">
+            Release 4.3.2
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.3.1">
+            Release 4.3.1
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.3.0">
+            Release 4.3.0
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.2.4">
+            Release 4.2.4
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.2.3">
+            Release 4.2.3
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.2.2">
+            Release 4.2.2
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.2.1">
+            Release 4.2.1
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.2.0">
+            Release 4.2.0
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.1.0">
+            Release 4.1.0
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.0.0">
+            Release 4.0.0
+            
+              <span class="tag is-warning">EOL</span>
+            
+          </a>
+          
+        </div>
+      </div>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">Community</a>
+        <div class="navbar-dropdown is-boxed">
+          <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+          <a class="navbar-item" href="/community/slack">Slack</a>
+          <a class="navbar-item" href="https://github.com/apache/bookkeeper/issues">Github Issues</a>
+          <a class="navbar-item" href="/community/releases">Release Management</a>
+          <a class="navbar-item" href="/community/meeting">Community Meetings</a>
+          <hr class="dropdown-divider">
+          <a class="navbar-item" href="/community/contributing">Contribution Guide</a>
+          <a class="navbar-item" href="/community/coding_guide">Coding Guide</a>
+          <a class="navbar-item" href="/community/testing">Testing Guide</a>
+          <a class="navbar-item" href="/community/issue-report">Issue Report Guide</a>
+          <a class="navbar-item" href="/community/release_guide">Release Guide</a>
+          <hr class="dropdown-divider">
+          <a class="navbar-item" href="/community/presentations">Presentations</a>
+          <a class="navbar-item" href="/community/bookkeeper_proposals">BookKeeper Proposals</a>
+        </div>
+      </div>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">Project</a>
+        <div class="navbar-dropdown is-boxed">
+          <a class="navbar-item" href="/project/who">Who are we?</a>
+          <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+          <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+          <hr class="dropdown-divider">
+          <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+          <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+          <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <div class="field is-grouped">
+          <p class="control">
+            <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+              <span class="icon">
+                <i class="fa fa-twitter"></i>
+              </span>
+              <span>Twitter</span>
+            </a>
+          </p>
+          <p class="control">
+            <a class="button" href="https://github.com/apache/bookkeeper">
+              <span class="icon">
+                <i class="fa fa-github"></i>
+              </span>
+              <span>GitHub</span>
+            </a>
+          </p>
+          <p class="control">
+            <a class="button is-primary" href="/releases">
+              <span class="icon">
+                <i class="fa fa-download"></i>
+              </span>
+              <span>Download</span>
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <a class="button is-info">
+    Version: 4.14.1
+  </a>
+  <hr />
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="../../getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="../../deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../deployment/kubernetes">
+      BookKeeper on Kubernetes
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="../../admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../admin/upgrade">
+      Upgrade
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../admin/http">
+      BookKeeper Admin REST API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../admin/decomission">
+      Decommissioning Bookies
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="../../api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../api/ledger-adv-api">
+      Advanced Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../api/javadoc">
+      Java API Docs
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Security
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="../../security/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../security/tls">
+      TLS Authentication
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../security/sasl">
+      SASL Authentication
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../security/zookeeper">
+      ZooKeeper Authentication
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="../../development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="../../reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="../../reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+</aside>
+
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">Authentication using SASL</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          <p>Bookies support client authentication via SASL. Currently we only support GSSAPI (Kerberos). We will start
+with a general description of how to configure <code class="highlighter-rouge">SASL</code> for bookies, clients and autorecovery daemons, followed
+by mechanism-specific details and wrap up with some operational details.</p>
+
+<h2 id="sasl-configuration-for-bookies">SASL configuration for Bookies</h2>
+
+<ol>
+  <li>Select the mechanisms to enable in the bookies. <code class="highlighter-rouge">GSSAPI</code> is the only mechanism currently supported by BookKeeper.</li>
+  <li>Add a <code class="highlighter-rouge">JAAS</code> config file for the selected mechanisms as described in the examples for setting up <a href="#kerberos">GSSAPI (Kerberos)</a>.</li>
+  <li>
+    <p>Pass the <code class="highlighter-rouge">JAAS</code> config file location as JVM parameter to each Bookie. For example:</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookie_jaas.conf 
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Enable SASL auth plugin in bookies, by setting <code class="highlighter-rouge">bookieAuthProviderFactoryClass</code> to <code class="highlighter-rouge">org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory</code>.</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">bookieAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>If you are running <code class="highlighter-rouge">autorecovery</code> along with bookies, then you want to enable SASL auth plugin for <code class="highlighter-rouge">autorecovery</code>, by setting
+ <code class="highlighter-rouge">clientAuthProviderFactoryClass</code> to <code class="highlighter-rouge">org.apache.bookkeeper.sasl.SASLClientProviderFactory</code>.</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
+</code></pre></div>    </div>
+  </li>
+  <li>Follow the steps in <a href="#kerberos">GSSAPI (Kerberos)</a> to configure SASL.</li>
+</ol>
+
+<h4 id="-important-notes"><a name="notes"></a> Important Notes</h4>
+
+<ol>
+  <li><code class="highlighter-rouge">Bookie</code> is a section name in the JAAS file used by each bookie. This section tells the bookie which principal to use
+ and the location of the keytab where the principal is stored. It allows the bookie to login using the keytab specified in this section.</li>
+  <li><code class="highlighter-rouge">Auditor</code> is a section name in the JASS file used by <code class="highlighter-rouge">autorecovery</code> daemon (it can be co-run with bookies). This section tells the
+ <code class="highlighter-rouge">autorecovery</code> daemon which principal to use and the location of the keytab where the principal is stored. It allows the bookie to
+ login using the keytab specified in this section.</li>
+  <li>The <code class="highlighter-rouge">Client</code> section is used to authenticate a SASL connection with ZooKeeper. It also allows the bookies to set ACLs on ZooKeeper nodes
+ which locks these nodes down so that only the bookies can modify it. It is necessary to have the same primary name across all bookies.
+ If you want to use a section name other than <code class="highlighter-rouge">Client</code>, set the system property <code class="highlighter-rouge">zookeeper.sasl.client</code> to the appropriate name
+ (e.g <code class="highlighter-rouge">-Dzookeeper.sasl.client=ZKClient</code>).</li>
+  <li>ZooKeeper uses <code class="highlighter-rouge">zookeeper</code> as the service name by default. If you want to change this, set the system property
+ <code class="highlighter-rouge">zookeeper.sasl.client.username</code> to the appropriate name (e.g. <code class="highlighter-rouge">-Dzookeeper.sasl.client.username=zk</code>).</li>
+</ol>
+
+<h2 id="sasl-configuration-for-clients">SASL configuration for Clients</h2>
+
+<p>To configure <code class="highlighter-rouge">SASL</code> authentication on the clients:</p>
+
+<ol>
+  <li>Select a <code class="highlighter-rouge">SASL</code> mechanism for authentication and add a <code class="highlighter-rouge">JAAS</code> config file for the selected mechanism as described in the examples for
+ setting up <a href="#kerberos">GSSAPI (Kerberos)</a>.</li>
+  <li>
+    <p>Pass the <code class="highlighter-rouge">JAAS</code> config file location as JVM parameter to each client JVM. For example:</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookkeeper_jaas.conf 
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Configure the following properties in bookkeeper <code class="highlighter-rouge">ClientConfiguration</code>:</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<p>Follow the steps in <a href="#kerberos">GSSAPI (Kerberos)</a> to configure SASL for the selected mechanism.</p>
+
+<h2 id="-authentication-using-saslkerberos"><a name="kerberos"></a> Authentication using SASL/Kerberos</h2>
+
+<h3 id="prerequisites">Prerequisites</h3>
+
+<h4 id="kerberos">Kerberos</h4>
+
+<p>If your organization is already using a Kerberos server (for example, by using <code class="highlighter-rouge">Active Directory</code>), there is no need to
+install a new server just for BookKeeper. Otherwise you will need to install one, your Linux vendor likely has packages
+for <code class="highlighter-rouge">Kerberos</code> and a short guide on how to install and configure it (<a href="https://help.ubuntu.com/community/Kerberos">Ubuntu</a>,
+<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Managing_Smart_Cards/installing-kerberos.html">Redhat</a>).
+Note that if you are using Oracle Java, you will need to download JCE policy files for your Java version and copy them to <code class="highlighter-rouge">$JAVA_HOME/jre/lib/security</code>.</p>
+
+<h4 id="kerberos-principals">Kerberos Principals</h4>
+
+<p>If you are using the organization’s Kerberos or Active Directory server, ask your Kerberos administrator for a principal
+for each Bookie in your cluster and for every operating system user that will access BookKeeper with Kerberos authentication
+(via clients and tools).</p>
+
+<p>If you have installed your own Kerberos, you will need to create these principals yourself using the following commands:</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo</span> /usr/sbin/kadmin.local <span class="nt">-q</span> <span class="s1">'addprinc -randkey bookkeeper/{hostname}@{REALM}'</span>
+<span class="nb">sudo</span> /usr/sbin/kadmin.local <span class="nt">-q</span> <span class="s2">"ktadd -k /etc/security/keytabs/{keytabname}.keytab bookkeeper/{hostname}@{REALM}"</span>
+</code></pre></div></div>
+
+<h5 id="all-hosts-must-be-reachable-using-hostnames">All hosts must be reachable using hostnames</h5>
+
+<p>It is a <em>Kerberos</em> requirement that all your hosts can be resolved with their FQDNs.</p>
+
+<h3 id="configuring-bookies">Configuring Bookies</h3>
+
+<ol>
+  <li>
+    <p>Add a suitably modified JAAS file similar to the one below to each Bookie’s config directory, let’s call it <code class="highlighter-rouge">bookie_jaas.conf</code>
+for this example (note that each bookie should have its own keytab):</p>
+
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> Bookie {
+     com.sun.security.auth.module.Krb5LoginModule required
+     useKeyTab=true
+     storeKey=true
+     keyTab="/etc/security/keytabs/bookie.keytab"
+     principal="bookkeeper/bk1.hostname.com@EXAMPLE.COM";
+ };
+ // ZooKeeper client authentication
+ Client {
+     com.sun.security.auth.module.Krb5LoginModule required
+     useKeyTab=true
+     storeKey=true
+     keyTab="/etc/security/keytabs/bookie.keytab"
+     principal="bookkeeper/bk1.hostname.com@EXAMPLE.COM";
+ };
+ // If you are running `autorecovery` along with bookies
+ Auditor {
+     com.sun.security.auth.module.Krb5LoginModule required
+     useKeyTab=true
+     storeKey=true
+     keyTab="/etc/security/keytabs/bookie.keytab"
+     principal="bookkeeper/bk1.hostname.com@EXAMPLE.COM";
+ };
+</code></pre></div>    </div>
+
+    <p>The <code class="highlighter-rouge">Bookie</code> section in the JAAS file tells the bookie which principal to use and the location of the keytab where this principal is stored.
+ It allows the bookie to login using the keytab specified in this section. See <a href="#notes">notes</a> for more details on Zookeeper’s SASL configuration.</p>
+  </li>
+  <li>
+    <p>Pass the name of the JAAS file as a JVM parameter to each Bookie:</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookie_jaas.conf
+</code></pre></div>    </div>
+
+    <p>You may also wish to specify the path to the <code class="highlighter-rouge">krb5.conf</code> file
+ (see <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html">JDK’s Kerberos Requirements</a> for more details):</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.krb5.conf<span class="o">=</span>/etc/bookkeeper/krb5.conf
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Make sure the keytabs configured in the JAAS file are readable by the operating system user who is starting the Bookies.</p>
+  </li>
+  <li>
+    <p>Enable SASL authentication plugin in the bookies by setting following parameters.</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">bookieAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory
+ <span class="c"># if you run `autorecovery` along with bookies</span>
+ <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<h3 id="configuring-clients">Configuring Clients</h3>
+
+<p>To configure SASL authentication on the clients:</p>
+
+<ol>
+  <li>
+    <p>Clients will authenticate to the cluster with their own principal (usually with the same name as the user running the client),
+ so obtain or create these principals as needed. Then create a <code class="highlighter-rouge">JAAS</code> file for each principal. The <code class="highlighter-rouge">BookKeeper</code> section describes
+ how the clients like writers and readers can connect to the Bookies. The following is an example configuration for a client using
+ a keytab (recommended for long-running processes):</p>
+
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> BookKeeper {
+     com.sun.security.auth.module.Krb5LoginModule required
+     useKeyTab=true
+     storeKey=true
+     keyTab="/etc/security/keytabs/bookkeeper.keytab"
+     principal="bookkeeper-client-1@EXAMPLE.COM";
+ };
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Pass the name of the JAAS file as a JVM parameter to the client JVM:</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookkeeper_jaas.conf
+</code></pre></div>    </div>
+
+    <p>You may also wish to specify the path to the <code class="highlighter-rouge">krb5.conf</code> file (see
+ <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html">JDK’s Kerberos Requirements</a> for more details).</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.krb5.conf<span class="o">=</span>/etc/bookkeeper/krb5.conf
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Make sure the keytabs configured in the <code class="highlighter-rouge">bookkeeper_jaas.conf</code> are readable by the operating system user who is starting bookkeeper client.</p>
+  </li>
+  <li>
+    <p>Enable SASL authentication plugin in the client by setting following parameters.</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<h2 id="enabling-logging-for-sasl">Enabling Logging for SASL</h2>
+
+<p>To enable SASL debug output, you can set <code class="highlighter-rouge">sun.security.krb5.debug</code> system property to <code class="highlighter-rouge">true</code>.</p>
+
+
+        </section>
+
+        
+        <nav class="pagination is-centered">
+          
+          <a class="pagination-previous" href="../tls">Previous</a>
+          
+          
+          <a class="pagination-next" href="../zookeeper">Next</a>
+          
+          <ul class="pagination-list"></ul>
+        </nav>
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">Authentication using SASL</h2>
+  <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#sasl-configuration-for-bookies">SASL configuration for Bookies</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#-important-notes"> Important Notes</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#sasl-configuration-for-clients">SASL configuration for Clients</a></li>
+<li class="toc-entry toc-h2"><a href="#-authentication-using-saslkerberos"> Authentication using SASL/Kerberos</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#prerequisites">Prerequisites</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#kerberos">Kerberos</a></li>
+<li class="toc-entry toc-h4"><a href="#kerberos-principals">Kerberos Principals</a>
+<ul>
+<li class="toc-entry toc-h5"><a href="#all-hosts-must-be-reachable-using-hostnames">All hosts must be reachable using hostnames</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#configuring-bookies">Configuring Bookies</a></li>
+<li class="toc-entry toc-h3"><a href="#configuring-clients">Configuring Clients</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#enabling-logging-for-sasl">Enabling Logging for SASL</a></li>
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individual BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="striped-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striped-popover', {
+  html: '#striped-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+      <p>
+        Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+  
+  <!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+      http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-104419626-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+  
+</html>

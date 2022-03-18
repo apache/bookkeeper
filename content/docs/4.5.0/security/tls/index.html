@@ -55,6 +55,26 @@
           </a>
           <hr class="dropdown-divider">
           
+          <a class="navbar-item" href="/docs/4.14.4/overview/overview">
+            Release 4.14.4
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.14.3/overview/overview">
+            Release 4.14.3
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.14.2/overview/overview">
+            Release 4.14.2
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.14.1/overview/overview">
+            Release 4.14.1
+            
+          </a>
+          
           <a class="navbar-item" href="/docs/4.14.0/overview/overview">
             Release 4.14.0
             
@@ -730,6 +750,7 @@ netty bindings to leverage installed OpenSSL.</p>
 <p>The following TLS configs are needed on the bookie side:</p>
 
 <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">tlsProvider</span><span class="o">=</span>OpenSSL
+<span class="nv">tlsProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.tls.TLSContextFactory
 <span class="c"># key store</span>
 <span class="nv">tlsKeyStoreType</span><span class="o">=</span>JKS
 <span class="nv">tlsKeyStore</span><span class="o">=</span>/var/private/tls/bookie.keystore.jks
@@ -779,6 +800,7 @@ supported. The configs for TLS will be the same as bookies.</p>
 <p>If client authentication is not required by the bookies, the following is a minimal configuration example:</p>
 
 <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">tlsProvider</span><span class="o">=</span>OpenSSL
+<span class="nv">tlsProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.tls.TLSContextFactory
 <span class="nv">clientTrustStore</span><span class="o">=</span>/var/private/tls/client.truststore.jks
 <span class="nv">clientTrustStorePasswordPath</span><span class="o">=</span>/var/private/tls/client.truststore.passwd
 </code></pre></div></div>
@@ -964,7 +986,7 @@ tippy('#record-popover', {
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        Copyright &copy; 2016 - 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+        Copyright &copy; 2016 - 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
       <p>
         Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.

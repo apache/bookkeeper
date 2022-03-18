@@ -55,6 +55,26 @@
           </a>
           <hr class="dropdown-divider">
           
+          <a class="navbar-item" href="/docs/4.14.4/overview/overview">
+            Release 4.14.4
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.14.3/overview/overview">
+            Release 4.14.3
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.14.2/overview/overview">
+            Release 4.14.2
+            
+          </a>
+          
+          <a class="navbar-item" href="/docs/4.14.1/overview/overview">
+            Release 4.14.1
+            
+          </a>
+          
           <a class="navbar-item" href="/docs/4.14.0/overview/overview">
             Release 4.14.0
             
@@ -614,99 +634,30 @@
 <ul>
   <li><a href="http://www.opengroup.org/unix">Unix environment</a></li>
   <li><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit 1.8</a> or later</li>
-  <li><a href="https://maven.apache.org/install.html">Maven 3.0</a> or later</li>
 </ul>
 
 <h2 id="download">Download</h2>
 
-<p>You can download Apache BookKeeper releases from one of many <a href="http://www.apache.org/dyn/closer.cgi/bookkeeper">Apache mirrors</a>. Here’s an example for the <a href="http://apache.claz.org/bookkeeper">apache.claz.org</a> mirror:</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl <span class="nt">-O</span> http://apache.claz.org/bookkeeper/bookkeeper-4.14.0/bookkeeper-4.14.0-src.tar.gz
-<span class="nv">$ </span><span class="nb">tar </span>xvf bookkeeper-4.14.0-src.tar.gz
-<span class="nv">$ </span><span class="nb">cd </span>bookkeeper-4.14.0
-</code></pre></div></div>
+<p>You can download Apache BookKeeper releases from one of many <a href="https://dlcdn.apache.org/bookkeeper/">Apache mirrors</a>.</p>
 
 <h2 id="clone">Clone</h2>
 
-<p>To build BookKeeper from source, clone the repository, either from the <a href="https://github.com/apache/bookkeeper">GitHub mirror</a> or from the <a href="http://git.apache.org/bookkeeper.git/">Apache repository</a>:</p>
+<p>To build BookKeeper from source, clone the repository, either from the <a href="https://github.com/apache/bookkeeper">GitHub mirror</a>:</p>
 
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># From the GitHub mirror</span>
-<span class="nv">$ </span>git clone https://github.com/apache/bookkeeper
-
-<span class="c"># From Apache directly</span>
-<span class="nv">$ </span>git clone git://git.apache.org/bookkeeper.git/
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git clone https://github.com/apache/bookkeeper
 </code></pre></div></div>
 
-<h2 id="build-using-maven">Build using Maven</h2>
+<h2 id="build-using-gradle">Build using Gradle</h2>
 
-<p>Once you have the BookKeeper on your local machine, either by <a href="#download">downloading</a> or <a href="#clone">cloning</a> it, you can then build BookKeeper from source using Maven:</p>
+<p>Once you have the BookKeeper on your local machine, either by <a href="#download">downloading</a> or <a href="#clone">cloning</a> it, you can then build BookKeeper from source using Gradle:</p>
 
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>mvn package
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>./gradlew build <span class="nt">-x</span> signDistTar <span class="nt">-x</span> <span class="nb">test</span>
 </code></pre></div></div>
 
-<p>Since 4.8.0, bookkeeper introduces <code class="highlighter-rouge">table service</code>. If you would like to build and tryout table service, you can build it with <code class="highlighter-rouge">stream</code> profile.</p>
+<p>To run all the tests:</p>
 
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>mvn package <span class="nt">-Dstream</span>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>./gradlew <span class="nb">test</span> <span class="nt">-x</span> signDistTar
 </code></pre></div></div>
-
-<blockquote>
-  <p>You can skip tests by adding the <code class="highlighter-rouge">-DskipTests</code> flag when running <code class="highlighter-rouge">mvn package</code>.</p>
-</blockquote>
-
-<h3 id="useful-maven-commands">Useful Maven commands</h3>
-
-<p>Some other useful Maven commands beyond <code class="highlighter-rouge">mvn package</code>:</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: left">Command</th>
-      <th style="text-align: left">Action</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn clean</code></td>
-      <td style="text-align: left">Removes build artifacts</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn compile</code></td>
-      <td style="text-align: left">Compiles JAR files from Java sources</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn compile spotbugs:spotbugs</code></td>
-      <td style="text-align: left">Compile using the Maven <a href="https://github.com/spotbugs/spotbugs-maven-plugin">SpotBugs</a> plugin</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn install</code></td>
-      <td style="text-align: left">Install the BookKeeper JAR locally in your local Maven cache (usually in the <code class="highlighter-rouge">~/.m2</code> directory)</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn deploy</code></td>
-      <td style="text-align: left">Deploy the BookKeeper JAR to the Maven repo (if you have the proper credentials)</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn verify</code></td>
-      <td style="text-align: left">Performs a wide variety of verification and validation tasks</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn apache-rat:check</code></td>
-      <td style="text-align: left">Run Maven using the <a href="http://creadur.apache.org/rat/apache-rat-plugin/">Apache Rat</a> plugin</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn compile javadoc:aggregate</code></td>
-      <td style="text-align: left">Build Javadocs locally</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn -am -pl bookkeeper-dist/server package</code></td>
-      <td style="text-align: left">Build a server distribution using the Maven <a href="http://maven.apache.org/plugins/maven-assembly-plugin/">Assembly</a> plugin</td>
-    </tr>
-  </tbody>
-</table>
-
-<blockquote>
-  <p>You can enable <code class="highlighter-rouge">table service</code> by adding the <code class="highlighter-rouge">-Dstream</code> flag when running above commands.</p>
-</blockquote>
 
 <h2 id="package-directory">Package directory</h2>
 
@@ -762,11 +713,7 @@
 <li class="toc-entry toc-h2"><a href="#requirements">Requirements</a></li>
 <li class="toc-entry toc-h2"><a href="#download">Download</a></li>
 <li class="toc-entry toc-h2"><a href="#clone">Clone</a></li>
-<li class="toc-entry toc-h2"><a href="#build-using-maven">Build using Maven</a>
-<ul>
-<li class="toc-entry toc-h3"><a href="#useful-maven-commands">Useful Maven commands</a></li>
-</ul>
-</li>
+<li class="toc-entry toc-h2"><a href="#build-using-gradle">Build using Gradle</a></li>
 <li class="toc-entry toc-h2"><a href="#package-directory">Package directory</a></li>
 </ul>
 </div>
@@ -895,7 +842,7 @@ tippy('#record-popover', {
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        Copyright &copy; 2016 - 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+        Copyright &copy; 2016 - 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
       <p>
         Apache BookKeeper, BookKeeper®, Apache®, the Apache feature logo, and the Apache BookKeeper logo are either registered trademarks or trademarks of The Apache Software Foundation.
