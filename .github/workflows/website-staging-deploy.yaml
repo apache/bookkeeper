@@ -55,6 +55,8 @@ jobs:
         run: npm install -g yarn
 
       - name: Publish
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           ./site3/website/scripts/build-website.sh
           ./site3/website/scripts/publish-website.sh
