@@ -13,7 +13,7 @@ DistributedLog (DL) maintains sequences of records in categories called *logs* (
 
 The diagram below illustrates how the DistributedLog API works with BookKeeper:
 
-![DistributedLog API]({{ img/distributedlog.png)
+![DistributedLog API](/img/distributedlog.png)
 
 ## Logs
 
@@ -21,7 +21,7 @@ A *log* in DistributedLog is an ordered, immutable sequence of *log records*.
 
 The diagram below illustrates the anatomy of a log stream:
 
-![DistributedLog log]({{ img/logs.png)
+![DistributedLog log](/img/logs.png)
 
 ### Log records
 
