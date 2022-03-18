@@ -33,6 +33,7 @@ env:
 jobs:
   stage-website:
     name: Build and stage website
+    if: ${{ github.repository == 'apache/bookkeeper' }}
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:

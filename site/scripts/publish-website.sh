@@ -21,6 +21,8 @@
 # NOTE: this is the script used by CI to push to apache. If you are looking for
 #       staging the changes, try the `staging-website.sh` script.
 source scripts/common.sh
+ORIGIN_REPO=$(git remote show origin | grep 'Push  URL' | awk -F// '{print $NF}')
+echo "ORIGIN_REPO: $ORIGIN_REPO"
 
 (
   cd $APACHE_GENERATED_DIR
@@ -30,11 +32,9 @@ source scripts/common.sh
   cd $TMP_DIR
 
   # clone the remote repo
-  # Workaround: https://stackoverflow.com/questions/22147574/fatal-could-not-read-username-for-https-github-com-no-such-file-or-directo
-  git clone "git@github.com:apache/bookkeeper.git" .
+  git clone --depth 1 -b asf-site "https://$GH_TOKEN@$ORIGIN_REPO" .
   git config user.name "Apache BookKeeper Site Updater"
   git config user.email "dev@bookkeeper.apache.org"
-  git checkout asf-site
   # copy the apache generated dir
   cp -r $APACHE_GENERATED_DIR/content/* $TMP_DIR/content
 
