@@ -32,7 +32,7 @@ TMP_DIR=/tmp/bookkeeper-site
   cd $TMP_DIR
 
   # clone the remote repo
-  git clone --depth 1 -b asf-staging "https://$GH_TOKEN@$ORIGIN_REPO" .
+  git clone --depth 1 -b asf-staging "https://site-updater:${GITHUB_TOKEN}@$ORIGIN_REPO" .
   git config user.name "Apache BookKeeper Site Updater"
   git config user.email "dev@bookkeeper.apache.org"
   # copy the apache generated dir
