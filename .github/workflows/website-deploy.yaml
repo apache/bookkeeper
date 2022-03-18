@@ -49,6 +49,8 @@ jobs:
           ruby-version: 2.6.9
 
       - name: publish
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           #!/bin/bash
           set -e
