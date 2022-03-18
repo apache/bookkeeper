@@ -35,7 +35,6 @@ echo "ORIGIN_REPO: $ORIGIN_REPO"
   git clone --depth 1 -b asf-site "https://$GH_TOKEN@$ORIGIN_REPO" .
   git config user.name "Apache BookKeeper Site Updater"
   git config user.email "dev@bookkeeper.apache.org"
-  git checkout asf-site
   # copy the apache generated dir
   cp -r $APACHE_GENERATED_DIR/content/* $TMP_DIR/content
 
