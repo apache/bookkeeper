@@ -29,6 +29,7 @@ on:
 jobs:
   build-website:
     name: Build and publish website
+    if: ${{ github.repository == 'apache/bookkeeper' }}
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
