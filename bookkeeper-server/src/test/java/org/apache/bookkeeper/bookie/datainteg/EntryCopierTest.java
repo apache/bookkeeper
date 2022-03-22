@@ -69,6 +69,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Tests for EntryCopierImpl.
  */
+@SuppressWarnings("deprecation")
 public class EntryCopierTest {
     private static final Logger log = LoggerFactory.getLogger(EntryCopierTest.class);
     private static final BookieId bookie1 = BookieId.parse("bookie1:3181");
