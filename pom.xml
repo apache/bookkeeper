@@ -1014,6 +1014,7 @@
             <!-- Website -->
             <exclude>site/**</exclude>
             <exclude>site2/**</exclude>
+            <exclude>site3/**</exclude>
 
             <!-- Thrift generated files -->
             <exclude>**/org/apache/distributedlog/thrift/*</exclude>
