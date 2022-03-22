@@ -31,7 +31,7 @@ on:
     workflow_dispatch:
 
 env:
-  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
+  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
 
 jobs:
   check:
@@ -50,9 +50,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 11
-      - name: Build with gradle
-        run: |
-          ./gradlew test -x bookkeeper-server:test -x tests:integration:cluster:test -x tests:integration:smoke:test -x tests:integration:standalone:test -PexcludeTests="**/distributedlog/**, **/statelib/**, **/clients/**, **/*common/**, **/stream/**, **/stream/*bk*/**, **/*backward*/**" ${GRADLE_ARGS}
+      - name: Build with Maven
+        run: mvn clean package -B -nsu -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
       - name: print JVM thread dumps when cancelled
         if: cancelled()
         run: ./dev/ci-tool print_thread_dumps
