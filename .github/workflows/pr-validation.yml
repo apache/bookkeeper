@@ -55,7 +55,7 @@ jobs:
         run: ./gradlew build -x signDistTar -x test ${GRADLE_ARGS}
         
       - name: Check license files
-        run: dev/check-all-licenses
+        run: dev/check-all-licenses-gradle
 
       - name: Generate Javadoc
         run: ./gradlew generateApiJavadoc
