@@ -201,7 +201,7 @@
                 <!-- distributedlog -->
                 <relocation>
                   <pattern>org.apache.distributedlog</pattern>
-                  <shadedPattern>org.apache.distributedlog</shadedPattern>
+                  <shadedPattern>dlshade.org.apache.distributedlog</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
