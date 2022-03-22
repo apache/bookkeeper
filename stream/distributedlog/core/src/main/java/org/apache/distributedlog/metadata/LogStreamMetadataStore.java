@@ -86,13 +86,25 @@ public interface LogStreamMetadataStore extends Closeable {
                                         boolean createIfNotExists);
 
     /**
-     * Delete the metadata of a log.
+     * Delete the metadata of a log, this method will delete all child node.
      *
      * @param uri the location to store the metadata of the log
      * @param streamName the name of the log stream
      * @return future represents the result of the deletion.
      */
     CompletableFuture<Void> deleteLog(URI uri, String streamName);
+
+    /**
+     * Delete the metadata of a log, this method will not delete any child node,
+     * When {@param streamName} is not empty, delete nothing.
+     *
+     * @param uri the location to store the metadata of the log
+     * @param streamName the name of the log stream
+     * @return When delete finish return {@link Boolean#TRUE};
+     *         when {@param streamName} not exists return {@link Boolean#TRUE}
+     *         when delete nothing return {@link Boolean#FALSE}
+     */
+    CompletableFuture<Boolean> deleteLogUnRecursive(URI uri, final String streamName);
 
     /**
      * Rename the log from <i>oldStreamName</i> to <i>newStreamName</i>.

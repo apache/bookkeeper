@@ -82,6 +82,7 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -589,6 +590,23 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
 
         String newLogName = "path_rename_locked/to/new/" + logName;
         FutureUtils.result(metadataStore.renameLog(uri, logName, newLogName));
+    }
+
+    @Test(timeout = 60000)
+    public void testDeleteLogUnRecursive() throws Exception {
+        String logName = testName.getMethodName();
+        String logIdentifier = "<default>";
+        String rootPath = getLogRootPath(uri, logName, logIdentifier);
+        String testPath = rootPath + "/test";
+        String logNameChildTest = logName + "/test";
+        // no node
+        Assert.assertEquals(true, metadataStore.deleteLogUnRecursive(uri, logNameChildTest).get());
+        // delete nothing
+        Utils.zkCreateFullPathOptimistic(zkc, testPath, new byte[0],
+                zkc.getDefaultACL(), CreateMode.PERSISTENT);
+        Assert.assertEquals(false, metadataStore.deleteLogUnRecursive(uri, logName).get());
+        // delete finish
+        Assert.assertEquals(true, metadataStore.deleteLogUnRecursive(uri, logNameChildTest).get());
     }
 
 }

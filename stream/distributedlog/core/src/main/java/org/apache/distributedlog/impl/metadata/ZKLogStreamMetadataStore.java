@@ -680,6 +680,40 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         return promise;
     }
 
+    @Override
+    public CompletableFuture<Boolean> deleteLogUnRecursive(URI uri, final String logName) {
+        final CompletableFuture<Boolean> promise = new CompletableFuture<Boolean>();
+        try {
+            String streamPath = LogMetadata.getLogStreamPath(uri, logName);
+            zooKeeperClient.get().delete(streamPath, -1, new AsyncCallback.VoidCallback() {
+                @Override
+                public void processResult(int rc, String path, Object ctx) {
+                    if (KeeperException.Code.OK.intValue() == rc){
+                        FutureUtils.complete(promise, true);
+                    } else if (KeeperException.Code.NONODE.intValue() == rc){
+                        FutureUtils.complete(promise, true);
+                    } else if (KeeperException.Code.NOTEMPTY.intValue() == rc ) {
+                        FutureUtils.complete(promise, false);
+                    }else {
+                        FutureUtils.completeExceptionally(promise,
+                                new ZKException("Encountered zookeeper issue on deleting log stream "
+                                        + logName, KeeperException.Code.get(rc)));
+                        return;
+                    }
+                }
+            }, null);
+        } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
+            FutureUtils.completeExceptionally(promise,
+                    new ZKException("Encountered zookeeper issue on deleting log stream "
+                            + logName, KeeperException.Code.CONNECTIONLOSS));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            FutureUtils.completeExceptionally(promise,
+                    new DLInterruptedException("Interrupted while deleting log stream " + logName));
+        }
+        return promise;
+    }
+
     //
     // Rename Log
     //
