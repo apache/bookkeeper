@@ -43,6 +43,7 @@ import org.junit.Test;
 /**
  * Unit test for {@link LedgerMetaDataCommand}.
  */
+@SuppressWarnings("unchecked")
 public class LedgerMetaDataCommandTest extends BookieCommandTestBase {
 
     private LedgerManager ledgerManager;
