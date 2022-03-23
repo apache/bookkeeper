@@ -66,6 +66,48 @@
         <sha1>6dac6efe035a2be9ba299fbf31be5f903401869f</sha1>
         <cve>CVE-2020-15113</cve>
     </suppress>
+    <!-- matches BK's http server against apache's http server CVEs -->
+    <suppress>
+        <notes><![CDATA[
+   file name: org.apache.bookkeeper.http:http-server:4.15.0-SNAPSHOT
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.bookkeeper\.http/http\-server@.*$</packageUrl>
+        <cpe>cpe:/a:apache:http_server</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: org.apache.bookkeeper.http:vertx-http-server:4.15.0-SNAPSHOT
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.bookkeeper\.http/vertx\-http\-server@.*$</packageUrl>
+        <cve>CVE-2009-1890</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2021-43045 affects only .NET distro, see https://github.com/apache/avro/pull/1357</notes>
+        <gav regex="true">org\.apache\.avro:.*</gav>
+        <cve>CVE-2021-43045</cve>
+    </suppress>
+    <suppress base="true">
+        <notes><![CDATA[
+        False positive
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/netty\-tcnative\-classes@.*$</packageUrl>
+        <cpe>cpe:/a:netty:netty</cpe>
+    </suppress>
+    <!-- matches against docker CVEs -->
+    <suppress>
+        <notes><![CDATA[
+   file name: arquillian-cube-docker-1.18.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.arquillian\.cube/arquillian\-cube\-docker@.*$</packageUrl>
+        <cpe>cpe:/a:docker:docker</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: arquillian-cube-docker-1.18.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.arquillian\.cube/arquillian\-cube\-docker@.*$</packageUrl>
+        <cpe>cpe:/a:redhat:docker</cpe>
+    </suppress>
 
 </suppressions>
 

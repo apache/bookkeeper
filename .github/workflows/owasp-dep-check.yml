@@ -62,7 +62,9 @@ jobs:
 
       - name: run "clean install verify" to trigger dependency check
         if: ${{ steps.changes.outputs.poms == 'true' }}
-        run: mvn -q -B -ntp clean install verify -PskipDocker,owasp-dependency-check -DskipTests
+        # excluding dlfs because it includes hadoop lib with
+        # CVEs that we cannot patch up anyways
+        run: mvn -q -B -ntp clean install verify -Powasp-dependency-check -DskipTests -pl '!stream/distributedlog/io/dlfs'
 
       - name: Upload report
         uses: actions/upload-artifact@v2
