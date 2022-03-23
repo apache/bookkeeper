@@ -25,7 +25,8 @@ ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
 ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
 
 ENV BOOKIE_PORT=3181
-EXPOSE $BOOKIE_PORT
+ENV BOOKIE_HTTP_PORT=8080
+EXPOSE $BOOKIE_PORT $BOOKIE_HTTP_PORT
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
 ENV JAVA_HOME=/usr/lib/jvm/java-11
