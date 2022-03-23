@@ -196,7 +196,6 @@ allprojects {
                     '**/*.iws',
                     '**/*.ipr',
                     'site/**',
-                    'site2/**',
                     'site3/**',
                     '**/*.log',
                     'data/**',
