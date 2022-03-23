@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.util.collections;
+package org.apache.bookkeeper.common.collections;
 
 import java.util.AbstractQueue;
 import java.util.Collection;
@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.bookkeeper.util.MathUtils;
 
 
@@ -83,6 +82,7 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
         try {
             if (SIZE_UPDATER.get(this) > 0) {
                 T item = data[headIndex.value];
+                data[headIndex.value] = null;
                 headIndex.value = (headIndex.value + 1) & (data.length - 1);
                 SIZE_UPDATER.decrementAndGet(this);
                 return item;

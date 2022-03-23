@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.util.collections;
+package org.apache.bookkeeper.common.collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
