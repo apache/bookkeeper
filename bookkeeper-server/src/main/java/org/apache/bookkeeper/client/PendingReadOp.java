@@ -110,6 +110,11 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
         @Override
         public void close() {
+            // this request has succeeded before, can't recycle writeSet again
+            if (complete.compareAndSet(false, true)) {
+                rc = BKException.Code.UnexpectedConditionException;
+                writeSet.recycle();
+            }
             entryImpl.close();
         }
 
@@ -169,7 +174,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             if (complete.compareAndSet(false, true)) {
                 this.rc = rc;
                 submitCallback(rc);
-                writeSet.recycle();
                 return true;
             } else {
                 return false;
@@ -563,6 +567,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
     }
 
+    private static ReadContext createReadContext(int bookieIndex, BookieId to, LedgerEntryRequest entry) {
+        return new ReadContext(bookieIndex, to, entry);
+    }
+
     void sendReadTo(int bookieIndex, BookieId to, LedgerEntryRequest entry) throws InterruptedException {
         if (lh.throttler != null) {
             lh.throttler.acquire();
@@ -592,6 +600,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         heardFromHostsBitSet.set(rctx.bookieIndex, true);
 
         buffer.retain();
+        // if entry has completed don't handle twice
         if (entry.complete(rctx.bookieIndex, rctx.to, buffer)) {
             if (!isRecoveryRead) {
                 // do not advance LastAddConfirmed for recovery reads
