@@ -230,7 +230,6 @@ allprojects {
                     dependsOn(':bookkeeper-common:jar')
                     dependsOn(':bookkeeper-common-allocator:jar')
                 }
-                archiveClassifier = "bin"
                 compression = Compression.GZIP
                 archiveExtension = 'tar.gz'
             }
