@@ -74,6 +74,5 @@ test {
 }
 
 jar {
-    dependsOn tasks.named("writeClasspath")
     archiveBaseName = 'bookkeeper-benchmark'
 }

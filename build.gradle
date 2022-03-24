@@ -158,11 +158,9 @@ allprojects {
         tasks.withType(Tar) {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
-
         tasks.withType(Zip) {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
-
         task testJar(type: Jar, dependsOn: testClasses) {
             archiveClassifier = 'tests'
             from sourceSets.test.output
@@ -311,12 +309,6 @@ allprojects {
         dependencies {
             implementation(enforcedPlatform(depLibs.nettyBom))
             testImplementation depLibs.log4jSlf4jImpl
-        }
-        tasks.register('writeClasspath') {
-            doLast {
-                buildDir.mkdirs()
-                new File(buildDir, "classpath.txt").text = sourceSets.main.runtimeClasspath.collect { it.absolutePath }.join(':') + "\n"
-            }
         }
 
         dependencies {

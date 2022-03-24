@@ -44,6 +44,7 @@ import org.mockito.MockedStatic;
  * A test base providing an environment for run a command.
  */
 @Slf4j
+@SuppressWarnings("unchecked")
 public class CommandTestBase extends MockCommandSupport {
 
     @Rule
