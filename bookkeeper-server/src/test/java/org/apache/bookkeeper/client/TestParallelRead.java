@@ -24,18 +24,27 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerEntry;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -236,6 +245,79 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         lh.close();
         newBk.close();
+    }
+
+    @Test
+    public void testLedgerEntryRequestComplete() throws Exception {
+        LedgerHandle lh = mock(LedgerHandle.class);
+        LedgerMetadata ledgerMetadata = mock(LedgerMetadata.class);
+        ClientContext clientContext = mock(ClientContext.class);
+        ClientInternalConf clientInternalConf = mock(ClientInternalConf.class);
+        doReturn(clientInternalConf).when(clientContext).getConf();
+        BookKeeperClientStats bookKeeperClientStats = mock(BookKeeperClientStats.class);
+        doReturn(bookKeeperClientStats).when(clientContext).getClientStats();
+        OpStatsLogger opStatsLogger = mock(OpStatsLogger.class);
+        doReturn(opStatsLogger).when(bookKeeperClientStats).getReadOpLogger();
+        doReturn(ledgerMetadata).when(lh).getLedgerMetadata();
+        doReturn(2).when(ledgerMetadata).getWriteQuorumSize();
+        doReturn(1).when(ledgerMetadata).getAckQuorumSize();
+        doReturn(new TreeMap<>()).when(ledgerMetadata).getAllEnsembles();
+        DistributionSchedule.WriteSet writeSet = mock(DistributionSchedule.WriteSet.class);
+        doReturn(writeSet).when(lh).getWriteSetForReadOperation(anyLong());
+        PendingReadOp pendingReadOp = new PendingReadOp(lh, clientContext, 1, 2, false);
+        pendingReadOp.parallelRead(true);
+        pendingReadOp.initiate();
+        PendingReadOp.LedgerEntryRequest first = pendingReadOp.seq.get(0);
+        PendingReadOp.LedgerEntryRequest second = pendingReadOp.seq.get(1);
+
+        pendingReadOp.submitCallback(-105);
+
+        // pendingReadOp.submitCallback(-105) will close all ledgerEntryImpl
+        assertEquals(-1, first.entryImpl.getEntryId());
+        assertEquals(-1, first.entryImpl.getLedgerId());
+        assertEquals(-1, first.entryImpl.getLength());
+        assertNull(first.entryImpl.getEntryBuffer());
+        assertTrue(first.complete.get());
+
+        assertEquals(-1, second.entryImpl.getEntryId());
+        assertEquals(-1, second.entryImpl.getLedgerId());
+        assertEquals(-1, second.entryImpl.getLength());
+        assertNull(second.entryImpl.getEntryBuffer());
+        assertTrue(second.complete.get());
+
+        // Mock ledgerEntryImpl reuse
+        Method method = PendingReadOp.class.getDeclaredMethod("createReadContext",
+                int.class, BookieId.class, PendingReadOp.LedgerEntryRequest.class);
+        method.setAccessible(true);
+
+        ByteBuf byteBuf = Unpooled.buffer(10);
+        pendingReadOp.readEntryComplete(BKException.Code.OK, 1, 1, Unpooled.buffer(10),
+                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+
+        // byteBuf has been release
+        assertEquals(byteBuf.refCnt(), 1);
+        // entryBuffer is not replaced
+        assertNull(first.entryImpl.getEntryBuffer());
+        // ledgerEntryRequest has been complete
+        assertTrue(first.complete.get());
+
+        pendingReadOp = new PendingReadOp(lh, clientContext, 1, 2, false);
+        pendingReadOp.parallelRead(true);
+        pendingReadOp.initiate();
+
+        // read entry failed twice, will not close twice
+        pendingReadOp.readEntryComplete(BKException.Code.TooManyRequestsException, 1, 1, Unpooled.buffer(10),
+                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+
+        pendingReadOp.readEntryComplete(BKException.Code.TooManyRequestsException, 1, 1, Unpooled.buffer(10),
+                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+
+        // will not complete twice when completed
+        byteBuf = Unpooled.buffer(10);
+        pendingReadOp.readEntryComplete(Code.OK, 1, 1, Unpooled.buffer(10),
+                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+        assertEquals(1, byteBuf.refCnt());
+
     }
 
 }
