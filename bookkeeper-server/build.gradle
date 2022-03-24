@@ -31,6 +31,7 @@ dependencies {
     implementation project(':bookkeeper-tools-framework')
     implementation project(':circe-checksum')
     implementation project(':cpu-affinity')
+    implementation project(':native-io')
 
     compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations
