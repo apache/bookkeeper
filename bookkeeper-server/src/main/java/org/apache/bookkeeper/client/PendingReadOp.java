@@ -115,9 +115,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 rc = BKException.Code.UnexpectedConditionException;
                 writeSet.recycle();
             }
-            // To be able to close this when complete = true, can't use compareAndSet.
-            // Because readComplete will make complete = true then close will not close LedgerEntryImpl
-            complete.set(true);
             entryImpl.close();
         }
 
