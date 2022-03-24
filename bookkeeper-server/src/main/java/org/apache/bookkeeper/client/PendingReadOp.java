@@ -111,7 +111,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         @Override
         public void close() {
             // this request has succeeded before, can't recycle writeSet again
-            if (!complete.get()) {
+            if (complete.compareAndSet(false, true)) {
+                rc = BKException.Code.UnexpectedConditionException;
                 writeSet.recycle();
             }
             // To be able to close this when complete = true, can't use compareAndSet.
