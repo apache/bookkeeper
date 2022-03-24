@@ -60,6 +60,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Test the DataIntegrityCookieValidation implementation of CookieValidation.
  */
+@SuppressWarnings("deprecation")
 public class CookieValidationTest {
     private static Logger log = LoggerFactory.getLogger(CookieValidationTest.class);
     final TmpDirs tmpDirs = new TmpDirs();

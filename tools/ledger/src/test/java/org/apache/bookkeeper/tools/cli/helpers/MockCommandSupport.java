@@ -35,6 +35,7 @@ import org.mockito.stubbing.Answer;
  * A test base providing utility methods to mock environment to run commands test.
  */
 @Slf4j
+@SuppressWarnings("unchecked")
 public abstract class MockCommandSupport {
 
     private Map<String, MockedConstruction<?>> miscMockedConstructions = new HashMap<>();

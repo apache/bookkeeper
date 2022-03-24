@@ -80,6 +80,11 @@ dependencies {
     testImplementation depLibs.log4jCore
 }
 
+task writeClasspath {
+    buildDir.mkdirs()
+    new File(buildDir, "classpath.txt").text = sourceSets.main.runtimeClasspath.collect { it.absolutePath }.join(':') + "\n"
+}
+
 test {
     retry {
         maxFailures = 200
@@ -95,7 +100,4 @@ test.doFirst {
         .resolvedArtifacts.find { it.name == 'junit-foundation' }
     jvmArgs("-Djunit.timeout.test=600000", "-Djunit.max.retry=3",
             "-Djava.net.preferIPv4Stack=true", "-Dio.netty.leakDetection.level=paranoid")
-}
-jar {
-    dependsOn tasks.named("writeClasspath")
 }

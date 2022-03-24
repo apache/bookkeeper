@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Unit test for {@link GarbageCollectorThread}.
  */
+@SuppressWarnings("deprecation")
 public class GarbageCollectorThreadTest {
     private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThreadTest.class);
     @InjectMocks

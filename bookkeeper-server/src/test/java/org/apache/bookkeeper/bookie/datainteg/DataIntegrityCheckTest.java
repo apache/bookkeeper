@@ -84,6 +84,7 @@ import org.junit.Test;
 /**
  * Test of DataIntegrityCheckImpl.
  */
+@SuppressWarnings("deprecation")
 public class DataIntegrityCheckTest {
     private static final byte[] PASSWD = new byte[0];
 

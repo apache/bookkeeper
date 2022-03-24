@@ -74,8 +74,12 @@ application {
     mainClassName = "org.apache.bookkeeper.stream.cluster.StandaloneStarter"
 }
 
+task writeClasspath {
+    buildDir.mkdirs()
+    new File(buildDir, "classpath.txt").text = sourceSets.main.runtimeClasspath.collect { it.absolutePath }.join(':') + "\n"
+}
+
 jar {
-    dependsOn tasks.named("writeClasspath")
     archiveBaseName = 'stream-storage-server'
 }
 

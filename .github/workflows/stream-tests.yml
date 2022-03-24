@@ -30,7 +30,7 @@ on:
     workflow_dispatch:
 
 env:
-  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
+  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
 
 jobs:
   test:
@@ -49,22 +49,10 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 11
-      - name: Run stream:distributedlog:core tests
-        run: ./gradlew stream:distributedlog:core:test ${GRADLE_ARGS}
-      - name: Run stream:distributedlog:common tests
-        run: ./gradlew stream:distributedlog:common:test ${GRADLE_ARGS}
-      - name: Run stream:distributedlog:protocol tests
-        run: ./gradlew stream:distributedlog:protocol:test ${GRADLE_ARGS}
-      - name: Run stream:proto tests
-        run: ./gradlew stream:proto:test ${GRADLE_ARGS}
-      - name: Run stream:serve tests
-        run: ./gradlew stream:server:test ${GRADLE_ARGS}
-      - name: Run stream:statelib tests
-        run: ./gradlew stream:statelib:test ${GRADLE_ARGS}
-      - name: Run stream:storage:api:test tests
-        run: ./gradlew stream:storage:api:test ${GRADLE_ARGS}
-      - name: Run stream:storage:impl tests
-        run: ./gradlew stream:storage:impl:test ${GRADLE_ARGS}
+      - name: Build with Maven
+        run: mvn -B -nsu clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+      - name: Run StreamStorage tests
+        run: mvn -B -nsu -f stream/pom.xml verify -DstreamTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()

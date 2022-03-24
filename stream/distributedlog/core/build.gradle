@@ -75,7 +75,6 @@ test.doFirst {
 }
 
 jar {
-    dependsOn tasks.named("writeClasspath")
     archiveBaseName = 'distributedlog-core'
 }
 

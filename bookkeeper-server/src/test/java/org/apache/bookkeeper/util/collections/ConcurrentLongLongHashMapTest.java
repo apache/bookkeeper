@@ -44,6 +44,7 @@ import org.junit.Test;
 /**
  * Test the ConcurrentLongLongHashMap class.
  */
+@SuppressWarnings("deprecation")
 public class ConcurrentLongLongHashMapTest {
 
     @Test

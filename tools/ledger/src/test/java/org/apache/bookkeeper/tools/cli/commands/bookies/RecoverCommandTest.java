@@ -57,6 +57,7 @@ import org.junit.Test;
 /**
  * Unit test for {@link RecoverCommand}.
  */
+@SuppressWarnings("unchecked")
 public class RecoverCommandTest extends BookieCommandTestBase {
 
     private static final BookieId bookieSocketAddress = BookieId.parse("127.0.0.1:8000");

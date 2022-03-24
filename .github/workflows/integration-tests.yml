@@ -31,7 +31,7 @@ on:
     workflow_dispatch:
 
 env:
-  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
+  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
 
 jobs:
   test:
@@ -51,14 +51,14 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
-      - name: Build tar
-        run: ./gradlew stream:server:build -x test ${GRADLE_ARGS}
-      - name: run cluster integration test
-        run: ./gradlew :tests:integration:cluster:test ${GRADLE_ARGS} || (tail -n +1 tests/integration/cluster/build/reports/tests/test/classes/* && tail -n +1 tests/integration/cluster/build/container-logs/**/* && exit 1)
-      - name: run smoke test
-        run: ./gradlew tests:integration:smoke:test ${GRADLE_ARGS}
-      - name: run standalone test
-        run: ./gradlew tests:integration:standalone:test ${GRADLE_ARGS}
+      - name: Build with Maven
+        run: mvn -B -nsu clean install -Pdocker -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+
+      - name: Run metadata driver tests
+        run: mvn -B -nsu -f metadata-drivers/pom.xml test -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+
+      - name: Run all integration tests
+        run: mvn -B -nsu -f tests/pom.xml test -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()

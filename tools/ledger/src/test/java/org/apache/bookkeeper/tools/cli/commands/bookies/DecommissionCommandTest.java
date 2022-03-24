@@ -42,6 +42,7 @@ import org.mockito.MockedStatic;
 /**
  * Unit test for {@link DecommissionCommand}.
  */
+@SuppressWarnings("unchecked")
 public class DecommissionCommandTest extends BookieCommandTestBase {
 
     private Versioned<Cookie> cookieVersioned;

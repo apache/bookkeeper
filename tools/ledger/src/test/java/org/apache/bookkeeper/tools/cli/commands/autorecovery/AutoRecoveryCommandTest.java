@@ -35,6 +35,7 @@ import org.junit.Test;
 /**
  * Unit test for {@link ToggleCommand}.
  */
+@SuppressWarnings("unchecked")
 public class AutoRecoveryCommandTest extends BookieCommandTestBase {
 
     private LedgerManagerFactory ledgerManagerFactory;

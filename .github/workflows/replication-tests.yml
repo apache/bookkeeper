@@ -31,7 +31,7 @@ on:
     workflow_dispatch:
 
 env:
-  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
+  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
 
 jobs:
   test:
@@ -51,7 +51,7 @@ jobs:
           distribution: 'temurin'
           java-version: 11
       - name: Run replication tests
-        run: ./gradlew bookkeeper-server:test --tests="org.apache.bookkeeper.replication.*" ${GRADLE_ARGS}
+        run: mvn -B -nsu -am -pl bookkeeper-server clean install test -Dtest="org.apache.bookkeeper.replication.**" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()

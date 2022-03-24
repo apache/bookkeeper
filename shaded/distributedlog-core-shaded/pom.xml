@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.apache.bookkeeper</groupId>
+    <artifactId>shaded-parent</artifactId>
+    <version>4.15.0-SNAPSHOT</version>
+    <relativePath>..</relativePath>
+  </parent>
+  <groupId>org.apache.distributedlog</groupId>
+  <artifactId>distributedlog-core-shaded</artifactId>
+  <name>Apache BookKeeper :: Shaded :: distributedlog-core-shaded</name>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>distributedlog-core</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>true</createDependencyReducedPom>
+              <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+              <minimizeJar>false</minimizeJar>
+              <artifactSet>
+                <includes>
+                  <include>commons-codec:commons-codec</include>
+                  <include>commons-cli:commons-cli</include>
+                  <include>commons-io:commons-io</include>
+                  <include>commons-lang:commons-lang</include>
+                  <include>commons-logging:commons-logging</include>
+                  <include>com.fasterxml.jackson.core:jackson-core</include>
+                  <include>com.fasterxml.jackson.core:jackson-databind</include>
+                  <include>com.fasterxml.jackson.core:jackson-annotations</include>
+                  <include>com.google.guava:guava</include>
+                  <include>com.google.protobuf:protobuf-java</include>
+                  <include>net.java.dev.jna:jna</include>
+                  <include>net.jpountz.lz4:lz4</include>
+                  <include>org.apache.bookkeeper:bookkeeper-common</include>
+                  <include>org.apache.bookkeeper:bookkeeper-common-allocator</include>
+                  <include>org.apache.bookkeeper:cpu-affinity</include>
+                  <include>org.apache.bookkeeper:bookkeeper-tools-framework</include>
+                  <include>org.apache.bookkeeper:bookkeeper-proto</include>
+                  <include>org.apache.bookkeeper:bookkeeper-server</include>
+                  <include>org.apache.bookkeeper:circe-checksum</include>
+                  <include>org.apache.bookkeeper.http:http-server</include>
+                  <include>org.apache.bookkeeper.stats:bookkeeper-stats-api</include>
+                  <include>org.apache.commons:commons-collections4</include>
+                  <include>org.apache.commons:commons-lang3</include>
+                  <include>org.apache.distributedlog:distributedlog-common</include>
+                  <include>org.apache.distributedlog:distributedlog-core</include>
+                  <include>org.apache.distributedlog:distributedlog-protocol</include>
+                  <include>org.apache.httpcomponents:httpclient</include>
+                  <include>org.apache.httpcomponents:httpcore</include>
+                  <include>org.apache.thrift:libthrift</include>
+                  <include>org.apache.zookeeper:zookeeper</include>
+                  <include>org.apache.zookeeper:zookeeper-jute</include>
+                  <include>org.rocksdb:rocksdbjni</include>
+                </includes>
+              </artifactSet>
+              <relocations>
+                <!-- apache commons -->
+                <relocation>
+                  <pattern>org.apache.commons.cli</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.cli</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons.codec</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.codec</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons.collections4</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.collections4</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons.lang</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.lang</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons.lang3</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.lang3</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons.logging</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.logging</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons.io</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.io</shadedPattern>
+                </relocation>
+                <!-- apache httpcomponents -->
+                <relocation>
+                  <pattern>org.apache.httpcomponents</pattern>
+                  <shadedPattern>dlshade.org.apache.httpcomponents</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.http</pattern>
+                  <shadedPattern>dlshade.org.apache.http</shadedPattern>
+                </relocation>
+                <!-- apache thrift -->
+                <relocation>
+                  <pattern>org.apache.thrift</pattern>
+                  <shadedPattern>dlshade.org.apache.thrift</shadedPattern>
+                </relocation>
+                <!-- apache zookeeper -->
+                <relocation>
+                  <pattern>org.apache.zookeeper</pattern>
+                  <shadedPattern>dlshade.org.apache.zookeeper</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.jute</pattern>
+                  <shadedPattern>dlshade.org.apache.jute</shadedPattern>
+                </relocation>
+                <!-- jackson -->
+                <relocation>
+                  <pattern>com.fasterxml.jackson</pattern>
+                  <shadedPattern>dlshade.com.fasterxml.jackson</shadedPattern>
+                </relocation>
+                <!-- jna -->
+                <relocation>
+                  <pattern>com.sun.jna</pattern>
+                  <shadedPattern>dlshade.com.sun.jna</shadedPattern>
+                </relocation>
+                <!-- guava & protobuf -->
+                <relocation>
+                  <pattern>com.google</pattern>
+                  <shadedPattern>dlshade.com.google</shadedPattern>
+                </relocation>
+                <!-- netty -->
+                <relocation>
+                  <pattern>org.jboss.netty</pattern>
+                  <shadedPattern>dlshade.org.jboss.netty</shadedPattern>
+                </relocation>
+                <!-- lz4 -->
+                <relocation>
+                  <pattern>net.jpountz</pattern>
+                  <shadedPattern>dlshade.net.jpountz</shadedPattern>
+                </relocation>
+                <!-- rocksdb -->
+                <relocation>
+                  <pattern>org.rocksdb</pattern>
+                  <shadedPattern>dlshade.org.rocksdb</shadedPattern>
+                </relocation>
+                <!-- bookkeeper -->
+                <relocation>
+                  <pattern>com.scurrilous.circe</pattern>
+                  <shadedPattern>dlshade.com.scurrilous.circe</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.bookkeeper</pattern>
+                  <shadedPattern>dlshade.org.apache.bookkeeper</shadedPattern>
+                </relocation>
+                <!-- distributedlog -->
+                <relocation>
+                  <pattern>org.apache.distributedlog</pattern>
+                  <shadedPattern>dlshade.org.apache.distributedlog</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>${license-maven-plugin.version}</version>
+        <configuration>
+          <canUpdateCopyright>false</canUpdateCopyright>
+          <roots><root>${project.basedir}</root></roots>
+        </configuration>
+        <executions>
+          <execution>
+            <id>update-pom-license</id>
+            <goals>
+              <goal>update-file-header</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <licenseName>apache_v2</licenseName>
+              <includes>
+                <include>dependency-reduced-pom.xml</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>${maven-clean-plugin.version}</version>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>${project.basedir}</directory>
+              <includes>
+                <include>dependency-reduced-pom.xml</include>
+              </includes>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

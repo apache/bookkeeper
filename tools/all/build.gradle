@@ -36,6 +36,5 @@ dependencies {
 }
 
 jar {
-    dependsOn tasks.named("writeClasspath")
     archiveBaseName = 'bookkeeper-tools'
 }
