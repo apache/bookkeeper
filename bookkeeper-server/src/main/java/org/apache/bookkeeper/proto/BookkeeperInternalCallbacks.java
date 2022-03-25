@@ -78,6 +78,10 @@ public class BookkeeperInternalCallbacks {
         void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx);
     }
 
+    public interface WriteAndFlushCallback {
+        void complete();
+    }
+
     /**
      * A last-add-confirmed (LAC) reader callback interface.
      */

@@ -199,6 +199,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING =
             "clientConnectBookieUnavailableLogThrottling";
 
+    // client memory limit options
+    protected static final String CLIENT_MEMORY_LIMIT_ENABLED = "clientMemoryLimitEnabled";
+    protected static final String CLIENT_MEMORY_LIMIT_BY_BYTES = "clientMemoryLimitByBytes";
+
     /**
      * Construct a default client-side configuration.
      */
@@ -2056,6 +2060,24 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public long getClientConnectBookieUnavailableLogThrottlingMs() {
         return getLong(CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING, 5_000L);
+    }
+
+    public ClientConfiguration setClientMemoryLimitEnabled(boolean enabled) {
+        setProperty(CLIENT_MEMORY_LIMIT_ENABLED, enabled);
+        return this;
+    }
+
+    public boolean getClientMemoryLimitEnabled() {
+        return getBoolean(CLIENT_MEMORY_LIMIT_ENABLED, false);
+    }
+
+    public ClientConfiguration setClientMemoryLimitByBytes(int bytes) {
+        setProperty(CLIENT_MEMORY_LIMIT_BY_BYTES, bytes);
+        return this;
+    }
+
+    public int getClientMemoryLimitByBytes() {
+        return getInt(CLIENT_MEMORY_LIMIT_BY_BYTES, 64 * 1024 * 1024);
     }
 
     @Override
