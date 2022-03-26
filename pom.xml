@@ -160,7 +160,7 @@
     <protoc3.version>3.17.2</protoc3.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
-    <rocksdb.version>6.27.3</rocksdb.version>
+    <rocksdb.version>6.29.4.1</rocksdb.version>
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <slf4j.version>1.7.32</slf4j.version>
     <snakeyaml.version>1.30</snakeyaml.version>
