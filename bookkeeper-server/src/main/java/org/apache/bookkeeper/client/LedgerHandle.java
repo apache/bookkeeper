@@ -811,6 +811,7 @@ public class LedgerHandle implements WriteHandle {
                                     return entry;
                                 })),
                             ctx);
+                        entries.close();
                     }
 
                     @Override
