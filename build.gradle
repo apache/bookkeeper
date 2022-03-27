@@ -309,6 +309,7 @@ allprojects {
         dependencies {
             implementation(enforcedPlatform(depLibs.nettyBom))
             testImplementation depLibs.log4jSlf4jImpl
+            implementation(enforcedPlatform(depLibs.jacksonBom))
         }
 
         dependencies {
