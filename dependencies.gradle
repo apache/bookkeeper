@@ -69,7 +69,7 @@ depVersions = [
     prometheus: "0.0.21",
     protobuf: "3.14.0",
     reflections: "0.9.11",
-    rocksDb: "6.13.3",
+    rocksDb: "6.29.4.1",
     slf4j: "1.7.25",
     snakeyaml: "1.19",
     spotbugsAnnotations: "3.1.8",
