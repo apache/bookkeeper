@@ -249,7 +249,6 @@ public class ReplicationWorker implements Runnable {
                 if (Thread.currentThread().isInterrupted()) {
                     LOG.error("Interrupted  while replicating fragments");
                     shutdown();
-                    Thread.currentThread().interrupt();
                     return;
                 }
             }
