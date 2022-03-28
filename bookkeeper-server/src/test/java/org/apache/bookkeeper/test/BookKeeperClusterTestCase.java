@@ -61,6 +61,7 @@ import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.replication.ReplicationWorker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.PortManager;
 import org.apache.commons.io.FileUtils;
@@ -820,7 +821,13 @@ public abstract class BookKeeperClusterTestCase {
         while (System.nanoTime() < timeoutAt) {
             for (AutoRecoveryMain p : autoRecoveryProcesses.values()) {
                 Auditor a = p.getAuditor();
-                if (a != null) {
+                ReplicationWorker replicationWorker = p.getReplicationWorker();
+                if (a != null && a.isRunning() && replicationWorker != null && replicationWorker.isRunning()) {
+                    int deathWatchInterval = baseConf.getDeathWatchInterval();
+                    Thread.sleep(deathWatchInterval + 1000);
+                }
+
+                if (a != null && a.isRunning() && replicationWorker != null && replicationWorker.isRunning()) {
                     return a;
                 }
             }

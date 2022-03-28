@@ -193,6 +193,11 @@ public class AutoRecoveryMain {
         return auditorElector.getAuditor();
     }
 
+    @VisibleForTesting
+    public ReplicationWorker getReplicationWorker() {
+        return replicationWorker;
+    }
+
     /** Is auto-recovery service running? */
     public boolean isAutoRecoveryRunning() {
         return running;
