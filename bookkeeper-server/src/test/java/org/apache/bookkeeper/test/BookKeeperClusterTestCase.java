@@ -73,6 +73,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
+import org.apache.bookkeeper.replication.ReplicationWorker;
 import org.apache.bookkeeper.server.Main;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -426,6 +427,11 @@ public abstract class BookKeeperClusterTestCase {
     public ServerConfiguration killBookie(BookieId addr) throws Exception {
         Optional<ServerTester> tester = byAddress(addr);
         if (tester.isPresent()) {
+            if (tester.get().autoRecovery != null
+                    && tester.get().autoRecovery.getAuditor() != null
+                    && tester.get().autoRecovery.getAuditor().isRunning()) {
+                LOG.warn("Killing bookie {} who is the current Auditor", addr);
+            }
             servers.remove(tester.get());
             tester.get().shutdown();
             return tester.get().getConfiguration();
@@ -763,7 +769,20 @@ public abstract class BookKeeperClusterTestCase {
         while (System.nanoTime() < timeoutAt) {
             for (ServerTester t : servers) {
                 Auditor a = t.getAuditor();
-                if (a != null) {
+                ReplicationWorker replicationWorker = t.getReplicationWorker();
+
+                // found a candidate Auditor + ReplicationWorker
+                if (a != null && a.isRunning()
+                    && replicationWorker != null && replicationWorker.isRunning()) {
+                    int deathWatchInterval = t.getConfiguration().getDeathWatchInterval();
+                    Thread.sleep(deathWatchInterval + 1000);
+                }
+
+                // double check, because in the meantime AutoRecoveryDeathWatcher may have killed the
+                // AutoRecovery daemon
+                if (a != null && a.isRunning()
+                        && replicationWorker != null && replicationWorker.isRunning()) {
+                    LOG.info("Found Auditor Bookie {}", t.server.getBookieId());
                     return a;
                 }
             }
@@ -894,6 +913,14 @@ public abstract class BookKeeperClusterTestCase {
         Auditor getAuditor() {
             if (autoRecovery != null) {
                 return autoRecovery.getAuditor();
+            } else {
+                return null;
+            }
+        }
+
+        ReplicationWorker getReplicationWorker() {
+            if (autoRecovery != null) {
+                return autoRecovery.getReplicationWorker();
             } else {
                 return null;
             }
