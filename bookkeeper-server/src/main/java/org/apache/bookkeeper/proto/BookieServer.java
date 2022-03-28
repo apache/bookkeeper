@@ -270,8 +270,7 @@ public class BookieServer {
                     Thread.currentThread().interrupt();
                 }
                 if (!isBookieRunning()) {
-                    LOG.info("BookieDeathWatcher noticed the bookie {} is not running any more, " +
-                            "exiting the watch loop!", bookie);
+                    LOG.info("BookieDeathWatcher noticed the bookie is not running any more, exiting the watch loop!");
                     // death watcher has noticed that bookie is not running any more
                     // throw an exception to fail the death watcher thread and it will
                     // trigger the uncaught exception handler to handle this "bookie not running" situation.
