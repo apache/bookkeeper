@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.SPECULATIVE_READ_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -35,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -380,5 +382,21 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
             l.close();
             bkspec.close();
         }
+    }
+
+    @Test
+    public void testSequenceReadLocalEnsemble() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration()
+                .setSpeculativeReadTimeout(1000)
+                .setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class)
+                .setReorderReadSequenceEnabled(true)
+                .setEnsemblePlacementPolicySlowBookies(true)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        BookKeeper bkspec = new BookKeeperTestClient(conf, new TestStatsProvider());
+        LedgerHandle l = bkspec.createLedger(1, 1, digestType, passwd);
+        List<BookieId> ensemble = l.getLedgerMetadata().getAllEnsembles().get(0L);
+        PendingReadOp op = new PendingReadOp(l, bkspec.getClientCtx(), 0, 5, false);
+        PendingReadOp.LedgerEntryRequest req0 = op.new SequenceReadRequest(ensemble, l.getId(), 0);
+        assertNotNull(req0.writeSet);
     }
 }
