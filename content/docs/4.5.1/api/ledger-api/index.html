@@ -867,7 +867,7 @@ With this method you can even read entries before the LastAddConfirmed and entri
 <span class="nc">Enumeration</span><span class="o">&lt;</span><span class="nc">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">lh</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">numberOfEntries</span> <span class="o">-</span> <span class="mi">1</span><span class="o">);</span>
 
 <span class="k">while</span><span class="o">(</span><span class="n">entries</span><span class="o">.</span><span class="na">hasMoreElements</span><span class="o">())</span> <span class="o">{</span>
-	<span class="nc">ByteBuffer</span> <span class="n">result</span> <span class="o">=</span> <span class="nc">ByteBuffer</span><span class="o">.</span><span class="na">wrap</span><span class="o">(</span><span class="n">ls</span><span class="o">.</span><span class="na">nextElement</span><span class="o">().</span><span class="na">getEntry</span><span class="o">());</span>
+	<span class="nc">ByteBuffer</span> <span class="n">result</span> <span class="o">=</span> <span class="nc">ByteBuffer</span><span class="o">.</span><span class="na">wrap</span><span class="o">(</span><span class="n">entries</span><span class="o">.</span><span class="na">nextElement</span><span class="o">().</span><span class="na">getEntry</span><span class="o">());</span>
 	<span class="nc">Integer</span> <span class="n">retrEntry</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getInt</span><span class="o">();</span>
 
     <span class="c1">// Print the integer stored in each entry</span>
