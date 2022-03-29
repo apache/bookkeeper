@@ -29,7 +29,7 @@ depVersions = [
     commonsCli: "1.2",
     commonsCodec: "1.6",
     commonsCollections4: "4.1",
-    commonsCompress: "1.19",
+    commonsCompress: "1.21",
     commonsConfiguration: "1.10",
     commonsIO: "2.7",
     commonsLang2: "2.6",
