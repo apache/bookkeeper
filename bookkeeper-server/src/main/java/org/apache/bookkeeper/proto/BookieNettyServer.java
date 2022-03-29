@@ -93,6 +93,7 @@ class BookieNettyServer {
     final int maxFrameSize;
     final ServerConfiguration conf;
     final EventLoopGroup eventLoopGroup;
+    final EventLoopGroup acceptorGroup;
     final EventLoopGroup jvmEventLoopGroup;
     RequestProcessor requestProcessor;
     final AtomicBoolean isRunning = new AtomicBoolean(false);
@@ -119,9 +120,11 @@ class BookieNettyServer {
 
         if (!conf.isDisableServerSocketBind()) {
             this.eventLoopGroup = EventLoopUtil.getServerEventLoopGroup(conf, new DefaultThreadFactory("bookie-io"));
+            this.acceptorGroup = EventLoopUtil.getServerAcceptorGroup(conf, new DefaultThreadFactory("bookie-acceptor"));
             allChannels = new CleanupChannelGroup(eventLoopGroup);
         } else {
             this.eventLoopGroup = null;
+            this.acceptorGroup = null;
         }
 
         if (conf.isEnableLocalTransport()) {
@@ -301,7 +304,7 @@ class BookieNettyServer {
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.option(ChannelOption.ALLOCATOR, allocator);
             bootstrap.childOption(ChannelOption.ALLOCATOR, allocator);
-            bootstrap.group(eventLoopGroup, eventLoopGroup);
+            bootstrap.group(acceptorGroup, eventLoopGroup);
             bootstrap.childOption(ChannelOption.TCP_NODELAY, conf.getServerTcpNoDelay());
             bootstrap.childOption(ChannelOption.SO_LINGER, conf.getServerSockLinger());
             bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR,
