@@ -172,12 +172,13 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     @Override
     public void writeAllMetrics(Writer writer) throws IOException {
-        PrometheusTextFormatUtil.writeMetricsCollectedByPrometheusClient(writer, registry);
+        PrometheusTextFormat prometheusTextFormat = new PrometheusTextFormat();
+        PrometheusTextFormat.writeMetricsCollectedByPrometheusClient(writer, registry);
 
-        gauges.forEach((sc, gauge) -> PrometheusTextFormatUtil.writeGauge(writer, sc.getScope(), gauge));
-        counters.forEach((sc, counter) -> PrometheusTextFormatUtil.writeCounter(writer, sc.getScope(), counter));
+        gauges.forEach((sc, gauge) -> prometheusTextFormat.writeGauge(writer, sc.getScope(), gauge));
+        counters.forEach((sc, counter) -> prometheusTextFormat.writeCounter(writer, sc.getScope(), counter));
         opStats.forEach((sc, opStatLogger) ->
-                PrometheusTextFormatUtil.writeOpStat(writer, sc.getScope(), opStatLogger));
+                prometheusTextFormat.writeOpStat(writer, sc.getScope(), opStatLogger));
     }
 
     @Override

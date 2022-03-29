@@ -24,18 +24,23 @@ import io.prometheus.client.CollectorRegistry;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Logic to write metrics in Prometheus text format.
  */
-public class PrometheusTextFormatUtil {
-    static void writeGauge(Writer w, String name, SimpleGauge<? extends Number> gauge) {
+public class PrometheusTextFormat {
+
+    Set<String> metricNameSet = new HashSet<>();
+
+    void writeGauge(Writer w, String name, SimpleGauge<? extends Number> gauge) {
         // Example:
         // # TYPE bookie_storage_entries_count gauge
         // bookie_storage_entries_count 519
         try {
-            w.append("# TYPE ").append(name).append(" gauge\n");
+            writeType(w, name, "gauge");
             w.append(name);
             writeLabels(w, gauge.getLabels());
             w.append(' ').append(gauge.getSample().toString()).append('\n');
@@ -44,12 +49,12 @@ public class PrometheusTextFormatUtil {
         }
     }
 
-    static void writeCounter(Writer w, String name, LongAdderCounter counter) {
+    void writeCounter(Writer w, String name, LongAdderCounter counter) {
         // Example:
         // # TYPE jvm_threads_started_total counter
         // jvm_threads_started_total 59
         try {
-            w.append("# TYPE ").append(name).append(" counter\n");
+            writeType(w, name, "counter");
             w.append(name);
             writeLabels(w, counter.getLabels());
             w.append(' ').append(counter.get().toString()).append('\n');
@@ -58,7 +63,7 @@ public class PrometheusTextFormatUtil {
         }
     }
 
-    static void writeOpStat(Writer w, String name, DataSketchesOpStatsLogger opStat) {
+    void writeOpStat(Writer w, String name, DataSketchesOpStatsLogger opStat) {
         // Example:
         // # TYPE bookie_journal_JOURNAL_ADD_ENTRY summary
         // bookie_journal_JOURNAL_ADD_ENTRY{success="false",quantile="0.5",} NaN
@@ -80,7 +85,7 @@ public class PrometheusTextFormatUtil {
         // bookie_journal_JOURNAL_ADD_ENTRY_count{success="true",} 658.0
         // bookie_journal_JOURNAL_ADD_ENTRY_sum{success="true",} 1265.0800000000002
         try {
-            w.append("# TYPE ").append(name).append(" summary\n");
+            writeType(w, name, "summary");
             writeQuantile(w, opStat, name, false, 0.5);
             writeQuantile(w, opStat, name, false, 0.75);
             writeQuantile(w, opStat, name, false, 0.95);
@@ -106,7 +111,7 @@ public class PrometheusTextFormatUtil {
         }
     }
 
-    private static void writeLabels(Writer w, Map<String, String> labels) throws IOException {
+    private void writeLabels(Writer w, Map<String, String> labels) throws IOException {
         if (labels.isEmpty()) {
             return;
         }
@@ -116,7 +121,7 @@ public class PrometheusTextFormatUtil {
         w.append('}');
     }
 
-    private static void writeLabelsNoBraces(Writer w, Map<String, String> labels) throws IOException {
+    private void writeLabelsNoBraces(Writer w, Map<String, String> labels) throws IOException {
         if (labels.isEmpty()) {
             return;
         }
@@ -134,7 +139,7 @@ public class PrometheusTextFormatUtil {
         }
     }
 
-    private static void writeQuantile(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success,
+    private void writeQuantile(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success,
             double quantile) throws IOException {
         w.append(name)
                 .append("{success=\"").append(success.toString())
@@ -148,7 +153,7 @@ public class PrometheusTextFormatUtil {
                 .append(Double.toString(opStat.getQuantileValue(success, quantile))).append('\n');
     }
 
-    private static void writeCount(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success)
+    private void writeCount(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success)
             throws IOException {
         w.append(name).append("_count{success=\"").append(success.toString()).append("\"");
         if (!opStat.getLabels().isEmpty()) {
@@ -159,7 +164,7 @@ public class PrometheusTextFormatUtil {
                 .append(Long.toString(opStat.getCount(success))).append('\n');
     }
 
-    private static void writeSum(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success)
+    private void writeSum(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success)
             throws IOException {
         w.append(name).append("_sum{success=\"").append(success.toString()).append("\"");
         if (!opStat.getLabels().isEmpty()) {
@@ -195,4 +200,13 @@ public class PrometheusTextFormatUtil {
             }
         }
     }
+
+    void writeType(Writer w, String name, String type) throws IOException {
+        if (metricNameSet.contains(name)) {
+            return;
+        }
+        metricNameSet.add(name);
+        w.append("# TYPE ").append(name).append(" ").append(type).append("\n");
+    }
+
 }
