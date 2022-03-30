@@ -110,6 +110,7 @@ public class LedgerFragmentReplicator {
 
     private static final int INITIAL_AVERAGE_ENTRY_SIZE = 1024;
     private static final double AVERAGE_ENTRY_SIZE_RATIO = 0.8;
+    private ClientConfiguration conf;
 
     public LedgerFragmentReplicator(BookKeeper bkc, StatsLogger statsLogger, ClientConfiguration conf) {
         this.bkc = bkc;
@@ -124,6 +125,7 @@ public class LedgerFragmentReplicator {
             this.replicationThrottle = new Throttler(conf.getReplicationRateByBytes());
         }
         averageEntrySize = new AtomicInteger(INITIAL_AVERAGE_ENTRY_SIZE);
+        this.conf = conf;
     }
 
     public LedgerFragmentReplicator(BookKeeper bkc, ClientConfiguration conf) {
@@ -182,6 +184,9 @@ public class LedgerFragmentReplicator {
         MultiCallback ledgerFragmentEntryMcb = new MultiCallback(
                 entriesToReplicate.size(), ledgerFragmentMcb, null, BKException.Code.OK,
                 BKException.Code.LedgerRecoveryException);
+        if (this.replicationThrottle != null) {
+            this.replicationThrottle.resetRate(this.conf.getReplicationRateByBytes());
+        }
         for (final Long entryId : entriesToReplicate) {
             recoverLedgerFragmentEntry(entryId, lh, ledgerFragmentEntryMcb,
                     newBookies, onReadEntryFailureCallback);
@@ -505,6 +510,16 @@ public class LedgerFragmentReplicator {
 
         Throttler(int throttleBytes) {
             this.rateLimiter = RateLimiter.create(throttleBytes);
+        }
+
+        // reset rate of limiter before compact one entry log file
+        void resetRate(int throttleBytes) {
+            this.rateLimiter.setRate(throttleBytes);
+        }
+
+        // get rate of limiter for unit test
+        double getRate() {
+            return this.rateLimiter.getRate();
         }
 
         // acquire. if bybytes: bytes of this entry; if byentries: 1.
