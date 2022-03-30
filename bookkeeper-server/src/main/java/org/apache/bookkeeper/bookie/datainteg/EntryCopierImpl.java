@@ -48,7 +48,6 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.checkerframework.checker.units.qual.K;
 
 /**
  * Implementation for the EntryCopier interface. Handles the reading of entries
@@ -118,7 +117,7 @@ public class EntryCopierImpl implements EntryCopier {
         @VisibleForTesting
         void notifyBookieError(BookieId bookie) {
             if (sinBin.addFailed(bookie)) {
-                // updateWriteSets();
+                updateWriteSets();
             }
         }
 
