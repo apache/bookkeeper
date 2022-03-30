@@ -2,11 +2,33 @@
 title: Apache BookKeeper 4.15.0 Release Notes
 ---
 
-Release 4.15 addresses multiple CVEs, adds more configuration options, extends REST API, 
+Release 4.15 includes many upgrades to third party libraries marked with CVEs, 
+adds more configuration options, extends REST API, 
 adds an option to run without journal, improves memory utilization and stability, and more!
 
 Apache BookKeeper users are encouraged to upgrade to 4.15.0. The technical details of this release are summarized
 below.
+
+## Breaking Changes
+
+* `BookieServer` API changed and the code that creates its instances will require addition
+of the `UncleanShutdownDetection` parameter.
+See [BP-46](https://github.com/apache/bookkeeper/pull/2706) for details and examples.
+
+* `Bookie` class now is an interface with implementation in `BookieImpl`.
+Code that uses it may need changes.
+For details please refer to [PR 2717](https://github.com/apache/bookkeeper/pull/2717).
+
+* `LedgerUnderreplicationManager` interface added a new method.
+Code that implements the interface will need changes.
+See [PR 2805](https://github.com/apache/bookkeeper/pull/2805) for details.
+
+* `MetadataBookieDriver` interface added a new method and removed an old one.
+`RegistrationManager` interface added a new method.
+`ByteBufAllocatorWithOomHandler` interface is added and used instead of
+the `ByteBufAllocator` in multiple places.
+Code that implements the interfaces will need changes.
+See [PR 2901](https://github.com/apache/bookkeeper/pull/2901) for details.
 
 ## Highlights
 
