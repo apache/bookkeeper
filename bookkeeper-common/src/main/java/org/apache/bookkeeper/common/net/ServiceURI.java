@@ -215,21 +215,21 @@ public class ServiceURI {
     }
 
     private static String validateHostName(String serviceName, String hostname) {
-        String[] parts = hostname.split(":");
-        if (parts.length >= 3) {
+        URI uri = null;
+        try {
+            uri = URI.create("dummyscheme://" + hostname);
+        } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid hostname : " + hostname);
-        } else if (parts.length == 2) {
-            try {
-                Integer.parseUnsignedInt(parts[1]);
-            } catch (NumberFormatException nfe) {
-                throw new IllegalArgumentException("Invalid hostname : " + hostname);
-            }
-            return hostname;
-        } else if (parts.length == 1 && serviceName.toLowerCase().equals(SERVICE_BK)) {
-            return hostname + ":" + SERVICE_BK_PORT;
-        } else {
-            return hostname;
         }
+        String host = uri.getHost();
+        if (host == null) {
+            throw new IllegalArgumentException("Invalid hostname : " + hostname);
+        }
+        int port = uri.getPort();
+        if (port == -1) {
+            port = SERVICE_BK_PORT;
+        }
+        return host + ":" + port;
     }
 
     private final String serviceName;
