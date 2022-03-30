@@ -119,8 +119,10 @@ class BookieNettyServer {
         this.authProviderFactory = AuthProviderFactoryFactory.newBookieAuthProviderFactory(conf);
 
         if (!conf.isDisableServerSocketBind()) {
-            this.eventLoopGroup = EventLoopUtil.getServerEventLoopGroup(conf, new DefaultThreadFactory("bookie-io"));
-            this.acceptorGroup = EventLoopUtil.getServerAcceptorGroup(conf, new DefaultThreadFactory("bookie-acceptor"));
+            this.eventLoopGroup = EventLoopUtil.getServerEventLoopGroup(conf,
+                    new DefaultThreadFactory("bookie-io"));
+            this.acceptorGroup = EventLoopUtil.getServerAcceptorGroup(conf,
+                    new DefaultThreadFactory("bookie-acceptor"));
             allChannels = new CleanupChannelGroup(eventLoopGroup);
         } else {
             this.eventLoopGroup = null;
