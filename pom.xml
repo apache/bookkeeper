@@ -145,6 +145,8 @@
     <jsoup.version>1.14.3</jsoup.version>
     <jna.version>3.2.7</jna.version>
     <junit.version>4.12</junit.version>
+    <!-- required by zookeeper test utilities imported from ZooKeeper -->
+    <junit5.version>5.6.2</junit5.version>
     <libthrift.version>0.14.2</libthrift.version>
     <lombok.version>1.18.20</lombok.version>
     <log4j.version>2.17.1</log4j.version>
@@ -169,7 +171,7 @@
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.15.1</testcontainers.version>
     <vertx.version>3.9.8</vertx.version>
-    <zookeeper.version>3.6.2</zookeeper.version>
+    <zookeeper.version>3.8.0</zookeeper.version>
     <snappy.version>1.1.7</snappy.version>
     <jctools.version>2.1.2</jctools.version>
     <!-- plugin dependencies -->
@@ -486,16 +488,8 @@
             <artifactId>javacc</artifactId>
           </exclusion>
           <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>*</artifactId>
           </exclusion>
           <exclusion>
             <groupId>io.netty</groupId>
@@ -511,21 +505,24 @@
         <exclusions>
           <exclusion>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
           </exclusion>
           <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>*</artifactId>
           </exclusion>
           <exclusion>
             <groupId>io.netty</groupId>
             <artifactId>*</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+
+      <dependency>
+         <!-- needed by ZooKeeper server tests utilities -->
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit5.version}</version>
       </dependency>
 
       <dependency>

@@ -250,9 +250,9 @@ Apache Software License, Version 2.
 - lib/net.java.dev.jna-jna-3.2.7.jar [18]
 - lib/org.apache.commons-commons-collections4-4.1.jar [19]
 - lib/org.apache.commons-commons-lang3-3.6.jar [20]
-- lib/org.apache.zookeeper-zookeeper-3.6.2.jar [21]
-- lib/org.apache.zookeeper-zookeeper-jute-3.6.2.jar [21]
-- lib/org.apache.zookeeper-zookeeper-3.6.2-tests.jar [21]
+- lib/org.apache.zookeeper-zookeeper-3.8.0.jar [21]
+- lib/org.apache.zookeeper-zookeeper-jute-3.8.0.jar [21]
+- lib/org.apache.zookeeper-zookeeper-3.8.0-tests.jar [21]
 - lib/org.eclipse.jetty-jetty-http-9.4.43.v20210629.jar [22]
 - lib/org.eclipse.jetty-jetty-io-9.4.43.v20210629.jar [22]
 - lib/org.eclipse.jetty-jetty-security-9.4.43.v20210629.jar [22]
@@ -290,7 +290,7 @@ Apache Software License, Version 2.
 - lib/org.apache.curator-curator-recipes-5.1.0.jar [34]
 - lib/org.inferred-freebuilder-2.7.0.jar [35]
 - lib/com.google.errorprone-error_prone_annotations-2.9.0.jar [36]
-- lib/org.apache.yetus-audience-annotations-0.5.0.jar [37]
+- lib/org.apache.yetus-audience-annotations-0.12.0.jar [37]
 - lib/org.jctools-jctools-core-2.1.2.jar [38]
 - lib/org.apache.httpcomponents-httpclient-4.5.13.jar [39]
 - lib/org.apache.httpcomponents-httpcore-4.4.13.jar [40]
@@ -329,7 +329,7 @@ Apache Software License, Version 2.
 [18] Source available at https://github.com/java-native-access/jna/tree/3.2.7
 [19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
 [20] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
-[21] Source available at https://github.com/apache/zookeeper/tree/release-3.6.2
+[21] Source available at https://github.com/apache/zookeeper/tree/release-3.8.0
 [22] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.43.v20210629
 [23] Source available at https://github.com/facebook/rocksdb/tree/v6.22.1
 [24] Source available at https://github.com/cbeust/jcommander/tree/1.78
@@ -342,7 +342,7 @@ Apache Software License, Version 2.
 [34] Source available at https://github.com/apache/curator/releases/tag/apache.curator-5.1.0
 [35] Source available at https://github.com/inferred/FreeBuilder/tree/v2.7.0
 [36] Source available at https://github.com/google/error-prone/tree/v2.9.0
-[37] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
+[37] Source available at https://github.com/apache/yetus/tree/rel/0.12.0
 [38] Source available at https://github.com/JCTools/JCTools/tree/v2.1.2
 [39] Source available at https://github.com/apache/httpcomponents-client/tree/rel/v4.4.1
 [40] Source available at https://github.com/apache/httpcomponents-core/tree/rel/v4.4.1

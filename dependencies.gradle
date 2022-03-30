@@ -74,7 +74,7 @@ depVersions = [
     prometheus: "0.8.1",
     protobuf: "3.16.1",
     reflections: "0.9.11",
-    rocksDb: "6.29.4.1",
+    rocksDb: "6.27.3",
     rxjava: "3.0.1",
     slf4j: "1.7.32",
     snakeyaml: "1.30",
@@ -86,7 +86,7 @@ depVersions = [
     testcontainers: "1.16.3",
     vertx: "3.9.8",
     yahooDatasketches: "0.8.3",
-    zookeeper: "3.6.2",
+    zookeeper: "3.8.0",
 ]
 
 depLibs = [
@@ -235,9 +235,11 @@ depLibs = [
     },
     yahooDatasketches: "com.yahoo.datasketches:sketches-core:${depVersions.yahooDatasketches}",
     zookeeper: dependencies.create("org.apache.zookeeper:zookeeper:${depVersions.zookeeper}") {
-        exclude group: 'io.netty', module: 'netty-transport-native-epoll'
-        exclude group: 'log4j', module: 'log4j'
-        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+        exclude group: 'io.netty'
+        exclude group: 'ch.qos.logback'
     },
-    zookeeperTest: "org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests"
+    zookeeperTest: dependencies.create("org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests") {
+        exclude group: 'io.netty'
+        exclude group: 'ch.qos.logback'
+    }
 ]
