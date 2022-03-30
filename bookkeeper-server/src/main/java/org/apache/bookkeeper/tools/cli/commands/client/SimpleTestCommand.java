@@ -21,9 +21,8 @@ package org.apache.bookkeeper.tools.cli.commands.client;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 
 import com.beust.jcommander.Parameter;
-import java.util.concurrent.TimeUnit;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.util.concurrent.TimeUnit;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.api.BookKeeper;

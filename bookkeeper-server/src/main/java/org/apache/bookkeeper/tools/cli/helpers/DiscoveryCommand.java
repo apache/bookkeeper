@@ -18,12 +18,11 @@
  */
 package org.apache.bookkeeper.tools.cli.helpers;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.api.BookKeeper;

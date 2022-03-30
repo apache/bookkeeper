@@ -24,9 +24,8 @@ import static org.apache.bookkeeper.stream.cli.Commands.OP_INIT;
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import java.net.URI;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
