@@ -26,6 +26,8 @@ import java.net.UnknownHostException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.BKException;
@@ -48,6 +50,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Command for list all ledgers on the cluster.
  */
+@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
 public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ListLedgersCommand.class);

@@ -22,6 +22,8 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 
 import com.beust.jcommander.Parameter;
 import java.util.concurrent.TimeUnit;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.api.BookKeeper;
@@ -73,6 +75,7 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
     }
 
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     protected void run(BookKeeper bk, Flags flags) throws Exception {
         byte[] data = new byte[100]; // test data
 

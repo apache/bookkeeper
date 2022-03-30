@@ -29,6 +29,8 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+
+import io.reactivex.rxjava3.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -76,25 +78,26 @@ public class MetadataAsyncIterator {
 
     public CompletableFuture<Void> forEach(BiFunction<Long, LedgerMetadata, CompletableFuture<Void>> consumer) {
         CompletableFuture<Void> promise = new CompletableFuture<>();
-        Flowable.<Long, FlatIterator>generate(
-                () -> new FlatIterator(ledgerManager.getLedgerRanges(zkTimeoutMs)),
-                (iter, emitter) -> {
-                    try {
-                        if (iter.hasNext()) {
-                            emitter.onNext(iter.next());
-                        } else {
-                            emitter.onComplete();
-                        }
-                    } catch (Exception e) {
-                        emitter.onError(e);
-                    }
-                })
-            .subscribeOn(scheduler)
-            .flatMapCompletable((ledgerId) -> Completable.fromCompletionStage(processOne(ledgerId, consumer)),
-                                false /* delayErrors */,
-                                maxInFlight)
-            .subscribe(() -> promise.complete(null),
-                       t -> promise.completeExceptionally(unwrap(t)));
+        final Disposable disposable = Flowable.<Long, FlatIterator>generate(
+                        () -> new FlatIterator(ledgerManager.getLedgerRanges(zkTimeoutMs)),
+                        (iter, emitter) -> {
+                            try {
+                                if (iter.hasNext()) {
+                                    emitter.onNext(iter.next());
+                                } else {
+                                    emitter.onComplete();
+                                }
+                            } catch (Exception e) {
+                                emitter.onError(e);
+                            }
+                        })
+                .subscribeOn(scheduler)
+                .flatMapCompletable((ledgerId) -> Completable.fromCompletionStage(processOne(ledgerId, consumer)),
+                        false /* delayErrors */,
+                        maxInFlight)
+                .subscribe(() -> promise.complete(null),
+                        t -> promise.completeExceptionally(unwrap(t)));
+        promise.whenComplete((result, ex) -> disposable.dispose());
         return promise;
     }
 

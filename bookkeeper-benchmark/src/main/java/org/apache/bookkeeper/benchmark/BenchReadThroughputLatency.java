@@ -31,6 +31,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -147,6 +149,7 @@ public class BenchReadThroughputLatency {
     }
 
     @SuppressWarnings("deprecation")
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public static void main(String[] args) throws Exception {
         Options options = new Options();
         options.addOption("ledger", true, "Ledger to read. If empty, read all ledgers which come available. "

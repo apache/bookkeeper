@@ -48,6 +48,7 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.checkerframework.checker.units.qual.K;
 
 /**
  * Implementation for the EntryCopier interface. Handles the reading of entries
@@ -117,7 +118,7 @@ public class EntryCopierImpl implements EntryCopier {
         @VisibleForTesting
         void notifyBookieError(BookieId bookie) {
             if (sinBin.addFailed(bookie)) {
-                updateWriteSets();
+                // updateWriteSets();
             }
         }
 
@@ -154,7 +155,15 @@ public class EntryCopierImpl implements EntryCopier {
         @VisibleForTesting
         CompletableFuture<ByteBuf> fetchEntry(long entryId) {
             List<BookieId> ensemble = metadata.getEnsembleAt(entryId);
-            ImmutableList<Integer> writeSet = writeSets.floorEntry(entryId).getValue().getForEntry(entryId);
+            final Map.Entry<Long, WriteSets> writeSetsForEntryId = this.writeSets
+                    .floorEntry(entryId);
+            if (writeSetsForEntryId == null) {
+                log.error("writeSets for entryId {} not found, writeSets {}", entryId, writeSets);
+                throw new IllegalStateException("writeSets for entryId: " + entryId + " not found");
+            }
+            ImmutableList<Integer> writeSet = writeSetsForEntryId
+                    .getValue()
+                    .getForEntry(entryId);
             int attempt = 0;
             CompletableFuture<ByteBuf> promise = new CompletableFuture<>();
             fetchRetryLoop(entryId, attempt,

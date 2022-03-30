@@ -33,6 +33,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -305,6 +307,7 @@ public final class MetadataDrivers {
      * @throws MetadataException when failed to access metadata store
      * @throws ExecutionException exception thrown when processing <tt>function</tt>.
      */
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public static <T> T runFunctionWithMetadataClientDriver(ClientConfiguration conf,
                                                             Function<MetadataClientDriver, T> function,
                                                             ScheduledExecutorService executorService)
@@ -336,6 +339,7 @@ public final class MetadataDrivers {
      * @throws MetadataException when failed to access metadata store
      * @throws ExecutionException exception thrown when processing <tt>function</tt>.
      */
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public static <T> T runFunctionWithMetadataBookieDriver(ServerConfiguration conf,
                                                             Function<MetadataBookieDriver, T> function)
             throws MetadataException, ExecutionException {

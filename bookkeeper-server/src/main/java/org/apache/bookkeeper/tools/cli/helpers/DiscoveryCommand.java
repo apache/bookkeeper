@@ -22,6 +22,8 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.api.BookKeeper;
@@ -44,6 +46,7 @@ public abstract class DiscoveryCommand<DiscoveryFlagsT extends CliFlags> extends
     }
 
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     protected boolean apply(ClientConfiguration clientConf, DiscoveryFlagsT cmdFlags) {
         try {
             URI metadataServiceUri = URI.create(clientConf.getMetadataServiceUri());

@@ -24,6 +24,8 @@ import java.io.File;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.LegacyCookieValidation;
@@ -61,6 +63,7 @@ public class ExpandStorageService implements HttpEndpointService {
      * Update the directories info in the conf file before running the command.
      */
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
 

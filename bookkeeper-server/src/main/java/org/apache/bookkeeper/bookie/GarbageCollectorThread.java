@@ -595,6 +595,7 @@ public class GarbageCollectorThread extends SafeRunnable {
      *
      * @throws InterruptedException if there is an exception stopping gc thread.
      */
+    @SuppressFBWarnings("SWL_SLEEP_WITH_LOCK_HELD")
     public synchronized void shutdown() throws InterruptedException {
         if (!this.running) {
             return;

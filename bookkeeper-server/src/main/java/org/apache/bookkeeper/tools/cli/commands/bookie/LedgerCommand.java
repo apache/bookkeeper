@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -164,6 +165,7 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
         }
     }
 
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     private boolean printPageEntries(LedgerCache.PageEntries page) {
         final MutableLong curEntry = new MutableLong(page.getFirstEntry());
         try (LedgerEntryPage lep = page.getLEP()) {
