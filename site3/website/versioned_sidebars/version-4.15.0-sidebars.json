@@ -1,0 +1,166 @@
+{
+  "docsSidebar": [
+    {
+      "type": "doc",
+      "id": "overview/overview",
+      "label": "Overview"
+    },
+    {
+      "type": "category",
+      "label": "Getting started",
+      "items": [
+        {
+          "type": "doc",
+          "id": "getting-started/installation",
+          "label": "Installation"
+        },
+        {
+          "type": "doc",
+          "id": "getting-started/run-locally",
+          "label": "Run bookies locally"
+        },
+        {
+          "type": "doc",
+          "id": "getting-started/concepts",
+          "label": "Concepts and architecture"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Deployment",
+      "items": [
+        {
+          "type": "doc",
+          "id": "deployment/manual",
+          "label": "Manual deployment"
+        },
+        {
+          "type": "doc",
+          "id": "deployment/dcos",
+          "label": "BookKeeper on DC/OS"
+        },
+        {
+          "type": "doc",
+          "id": "deployment/kubernetes",
+          "label": "BookKeeper on Kubernetes"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Administration",
+      "items": [
+        {
+          "type": "doc",
+          "id": "admin/bookies",
+          "label": "BookKeeper administration"
+        },
+        {
+          "type": "doc",
+          "id": "admin/autorecovery",
+          "label": "AutoRecovery"
+        },
+        {
+          "type": "doc",
+          "id": "admin/metrics",
+          "label": "Metrics collection"
+        },
+        {
+          "type": "doc",
+          "id": "admin/upgrade",
+          "label": "Upgrade"
+        },
+        {
+          "type": "doc",
+          "id": "admin/http",
+          "label": "Admin REST API"
+        },
+        {
+          "type": "doc",
+          "id": "admin/decomission",
+          "label": "Decommissioning Bookies"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "API",
+      "items": [
+        {
+          "type": "doc",
+          "id": "api/overview",
+          "label": "Overview"
+        },
+        {
+          "type": "doc",
+          "id": "api/ledger-api",
+          "label": "Ledger API"
+        },
+        {
+          "type": "doc",
+          "id": "api/ledger-adv-api",
+          "label": "Advanced Ledger API"
+        },
+        {
+          "type": "doc",
+          "id": "api/distributedlog-api",
+          "label": "DistributedLog"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Security",
+      "items": [
+        {
+          "type": "doc",
+          "id": "security/overview",
+          "label": "Overview"
+        },
+        {
+          "type": "doc",
+          "id": "security/tls",
+          "label": "TLS Authentication"
+        },
+        {
+          "type": "doc",
+          "id": "security/sasl",
+          "label": "SASL Authentication"
+        },
+        {
+          "type": "doc",
+          "id": "security/zookeeper",
+          "label": "ZooKeeper Authentication"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Development",
+      "items": [
+        {
+          "type": "doc",
+          "id": "development/protocol",
+          "label": "BookKeeper protocol"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Reference",
+      "items": [
+        {
+          "type": "doc",
+          "id": "reference/config",
+          "label": "Configuration"
+        },
+        {
+          "type": "doc",
+          "id": "reference/cli",
+          "label": "Command-line tools"
+        }
+      ]
+    }
+  ]
+}
