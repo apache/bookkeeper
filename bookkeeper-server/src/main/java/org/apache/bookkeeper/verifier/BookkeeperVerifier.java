@@ -27,9 +27,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -182,15 +182,12 @@ public class BookkeeperVerifier {
      */
     class EntryInfo {
         private final long entryID;
-        private final long seed;
-        EntryInfo(long entryID, long seed) {
+        EntryInfo(long entryID) {
             this.entryID = entryID;
-            this.seed = seed;
         }
         byte[] getBuffer() {
-            Random rand = new Random(seed);
             byte[] ret = new byte[targetEntrySize];
-            rand.nextBytes(ret);
+            ThreadLocalRandom.current().nextBytes(ret);
             return ret;
         }
         long getEntryID() {
@@ -200,8 +197,7 @@ public class BookkeeperVerifier {
 
     /**
      * Contains the state required to reconstruct the contents of any entry in the ledger.
-     * The seed value passed into the constructor fully determines the contents of the
-     * ledger.  Each EntryInfo has its own seed generated sequentially from a Random instance
+     * Each EntryInfo has its own seed generated sequentially from a ThreadLocalRandom instance
      * seeded from the original seed.  It then uses that seed to generate a secondary Random
      * instance for generating the bytes within the entry.  See EntryIterator for details.
      * Random(seed)
@@ -220,7 +216,6 @@ public class BookkeeperVerifier {
      */
     class LedgerInfo {
         private final long ledgerID;
-        private final long seed;
         private long lastEntryIDCompleted = -1;
         private long confirmedLAC = -1;
         private boolean closed = false;
@@ -233,9 +228,8 @@ public class BookkeeperVerifier {
 
         EntryIterator iter;
 
-        LedgerInfo(long ledgerID, long seed) {
+        LedgerInfo(long ledgerID) {
             this.ledgerID = ledgerID;
-            this.seed = seed;
             iter = new EntryIterator();
         }
 
@@ -256,9 +250,7 @@ public class BookkeeperVerifier {
         }
 
         class EntryIterator implements Iterator<EntryInfo> {
-            Random rand;
             long currentID;
-            long currentSeed;
 
             EntryIterator() {
                 seek(-1);
@@ -266,20 +258,17 @@ public class BookkeeperVerifier {
 
             void seek(long entryID) {
                 currentID = -1;
-                currentSeed = seed;
-                rand = new Random(seed);
                 while (currentID < entryID) {
                     advance();
                 }
             }
 
             void advance() {
-                currentSeed = rand.nextLong();
                 currentID++;
             }
 
             EntryInfo get() {
-                return new EntryInfo(currentID, currentSeed);
+                return new EntryInfo(currentID);
             }
 
             @Override
@@ -413,10 +402,9 @@ public class BookkeeperVerifier {
     private final Set<LedgerInfo> openingLedgers = new HashSet<>();
     private final Set<LedgerInfo> openLedgers = new HashSet<>();
     private final Set<LedgerInfo> liveLedgers = new HashSet<>();
-    private final Random opRand = new Random();
 
     private LedgerInfo getRandomLedger(Collection<LedgerInfo> ledgerCollection) {
-        int elem = opRand.nextInt(ledgerCollection.size());
+        int elem = ThreadLocalRandom.current().nextInt(ledgerCollection.size());
         Iterator<LedgerInfo> iter = ledgerCollection.iterator();
         for (int i = 0; i < elem; ++i) {
             iter.next();
@@ -431,7 +419,7 @@ public class BookkeeperVerifier {
             return false;
         }
         LedgerInfo ledger;
-        if (!openLedgers.isEmpty() && (opRand.nextDouble() > coldToHotRatio)) {
+        if (!openLedgers.isEmpty() && (ThreadLocalRandom.current().nextDouble() > coldToHotRatio)) {
             ledger = getRandomLedger(openLedgers);
             System.out.format("Reading from open ledger %d%n", ledger.ledgerID);
         } else if (!liveLedgers.isEmpty()) {
@@ -449,7 +437,7 @@ public class BookkeeperVerifier {
             /* Either startWrite can make progress or there are already a bunch in progress */
             return false;
         }
-        long start = Math.abs(opRand.nextLong() % lastEntryCompleted);
+        long start = Math.abs(ThreadLocalRandom.current().nextLong() % lastEntryCompleted);
         long end = start + targetReadGroup > lastEntryCompleted ? lastEntryCompleted : start + targetReadGroup;
         System.out.format("Reading %d -> %d from ledger %d%n", start, end, ledger.ledgerID);
         LedgerInfo finalLedger = ledger;
@@ -551,7 +539,7 @@ public class BookkeeperVerifier {
             /* Not enough open ledgers, open a new one -- counts as a write */
             long newID = getNextLedgerID();
             System.out.format("Creating new ledger %d%n", newID);
-            LedgerInfo ledger = new LedgerInfo(newID, opRand.nextLong());
+            LedgerInfo ledger = new LedgerInfo(newID);
             openingLedgers.add(ledger);
             driver.createLedger(newID, ensembleSize, writeQuorum, ackQuorum, (rc) -> {
                 synchronized (BookkeeperVerifier.this) {

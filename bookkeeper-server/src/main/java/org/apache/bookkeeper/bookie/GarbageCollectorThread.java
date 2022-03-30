@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.util.BookKeeperConstants.METADATA_CACHE;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
