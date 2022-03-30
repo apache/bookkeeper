@@ -24,7 +24,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -225,7 +225,7 @@ public class CookieValidationTest {
 
         v1.checkCookies(dirs); // stamp original cookies
         verify(dataIntegCheck, times(0)).runPreBootCheck("INVALID_COOKIE");
-        verify(regManager, times(1)).writeCookie(anyObject(), anyObject());
+        verify(regManager, times(1)).writeCookie(any(), any());
 
         // add a directory to trigger data integrity check
         dirs.add(initializedDir());
@@ -236,7 +236,7 @@ public class CookieValidationTest {
             // expected
         }
         verify(dataIntegCheck, times(1)).runPreBootCheck("INVALID_COOKIE");
-        verify(regManager, times(1)).writeCookie(anyObject(), anyObject());
+        verify(regManager, times(1)).writeCookie(any(), any());
 
         // running the check again should run data integrity again, as stamping didn't happen
         try {
@@ -246,7 +246,7 @@ public class CookieValidationTest {
             // expected
         }
         verify(dataIntegCheck, times(2)).runPreBootCheck("INVALID_COOKIE");
-        verify(regManager, times(1)).writeCookie(anyObject(), anyObject());
+        verify(regManager, times(1)).writeCookie(any(), any());
     }
 
     @Test
@@ -289,7 +289,7 @@ public class CookieValidationTest {
         v1.checkCookies(dirs); // stamp original cookies
 
         verify(dataIntegCheck, times(0)).runPreBootCheck("INVALID_COOKIE");
-        verify(regManager, times(1)).writeCookie(anyObject(), anyObject());
+        verify(regManager, times(1)).writeCookie(any(), any());
 
         Cookie current = Cookie.readFromDirectory(dirs.get(0));
         Cookie mismatch = Cookie.newBuilder(current).setBookieId("mismatch:3181").build();
@@ -298,7 +298,7 @@ public class CookieValidationTest {
 
         v1.checkCookies(dirs);
         verify(dataIntegCheck, times(1)).runPreBootCheck("INVALID_COOKIE");
-        verify(regManager, times(2)).writeCookie(anyObject(), anyObject());
+        verify(regManager, times(2)).writeCookie(any(), any());
 
         Cookie afterCheck = Cookie.readFromDirectory(dirs.get(0));
         assertThat(afterCheck, equalTo(current));
@@ -318,7 +318,7 @@ public class CookieValidationTest {
         v1.checkCookies(dirs); // stamp original cookies
 
         verify(dataIntegCheck, times(0)).runPreBootCheck("INVALID_COOKIE");
-        verify(regManager, times(1)).writeCookie(anyObject(), anyObject());
+        verify(regManager, times(1)).writeCookie(any(), any());
 
         File cookieFile = new File(dirs.get(0), BookKeeperConstants.VERSION_FILENAME);
         try (FileOutputStream out = new FileOutputStream(cookieFile)) {

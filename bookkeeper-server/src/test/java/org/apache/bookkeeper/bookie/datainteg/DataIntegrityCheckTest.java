@@ -26,9 +26,9 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -812,12 +812,12 @@ public class DataIntegrityCheckTest {
 
         for (long e = 0; e <= metadata1.getLastEntryId(); e++) {
             if (e % 2 == 0) {
-                verify(bookieClient, times(0)).readEntry(anyObject(), eq(id1), eq(e),
-                                                         anyObject(), anyObject(), anyInt());
+                verify(bookieClient, times(0)).readEntry(any(), eq(id1), eq(e),
+                                                         any(), any(), anyInt());
             }
             if (e % 2 == 1) {
-                verify(bookieClient, times(1)).readEntry(anyObject(), eq(id1), eq(e),
-                                                         anyObject(), anyObject(), anyInt());
+                verify(bookieClient, times(1)).readEntry(any(), eq(id1), eq(e),
+                                                         any(), any(), anyInt());
             }
 
             assertThat(storage.entryExists(id1, e), equalTo(true));

@@ -23,9 +23,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.spy;
@@ -136,17 +136,17 @@ public class EntryCopierTest {
         CompletableFuture.allOf(f1, f2, f3, f4).get();
 
         verify(bookieClient, times(1)).readEntry(eq(bookie2), eq(ledgerId), eq(0L),
-                                                 anyObject(), anyObject(), anyInt(), anyObject());
+                                                 any(), any(), anyInt(), any());
         verify(bookieClient, times(1)).readEntry(eq(bookie2), eq(ledgerId), eq(2L),
-                                                 anyObject(), anyObject(), anyInt(), anyObject());
+                                                 any(), any(), anyInt(), any());
         verify(bookieClient, times(1)).readEntry(eq(bookie2), eq(ledgerId), eq(4L),
-                                                 anyObject(), anyObject(), anyInt(), anyObject());
+                                                 any(), any(), anyInt(), any());
         verify(bookieClient, times(1)).readEntry(eq(bookie2), eq(ledgerId), eq(10L),
-                                                 anyObject(), anyObject(), anyInt(), anyObject());
+                                                 any(), any(), anyInt(), any());
         verify(bookieClient, times(4)).readEntry(eq(bookie2), eq(ledgerId), anyLong(),
-                                                 anyObject(), anyObject(), anyInt(), anyObject());
+                                                 any(), any(), anyInt(), any());
 
-        verify(storage, times(4)).addEntry(anyObject());
+        verify(storage, times(4)).addEntry(any());
         assertThat(storage.entryExists(ledgerId, 0), equalTo(true));
         assertThat(storage.entryExists(ledgerId, 2), equalTo(true));
         assertThat(storage.entryExists(ledgerId, 4), equalTo(true));
@@ -229,7 +229,7 @@ public class EntryCopierTest {
         }
 
         // other entries should still have been added
-        verify(storage, times(3)).addEntry(anyObject());
+        verify(storage, times(3)).addEntry(any());
         assertThat(storage.entryExists(ledgerId, 0), equalTo(true));
         assertThat(storage.entryExists(ledgerId, 4), equalTo(true));
         assertThat(storage.entryExists(ledgerId, 10), equalTo(true));
@@ -272,7 +272,7 @@ public class EntryCopierTest {
         }
 
         // Nothing should have been added
-        verify(storage, times(0)).addEntry(anyObject());
+        verify(storage, times(0)).addEntry(any());
     }
 
     @Test
@@ -319,7 +319,7 @@ public class EntryCopierTest {
         }
 
         // other entries should still have been added
-        verify(storage, times(4)).addEntry(anyObject());
+        verify(storage, times(4)).addEntry(any());
         assertThat(storage.entryExists(ledgerId, 0), equalTo(false));
         assertThat(storage.entryExists(ledgerId, 2), equalTo(true));
         assertThat(storage.entryExists(ledgerId, 4), equalTo(true));
@@ -366,7 +366,7 @@ public class EntryCopierTest {
         }
 
         // other entries should still have been added
-        verify(storage, times(4)).addEntry(anyObject());
+        verify(storage, times(4)).addEntry(any());
         assertThat(storage.entryExists(ledgerId, 0), equalTo(false));
         assertThat(storage.entryExists(ledgerId, 2), equalTo(false));
         assertThat(storage.entryExists(ledgerId, 4), equalTo(false));
@@ -397,10 +397,10 @@ public class EntryCopierTest {
         EntryCopierImpl.BatchImpl batch = (EntryCopierImpl.BatchImpl) copier.newBatch(ledgerId, metadata);
         for (int i = 0; i <= 10; i++) {
             batch.fetchEntry(i).get();
-            verify(bookieClient, times(i + 1)).readEntry(anyObject(), anyLong(), anyLong(),
-                                                       anyObject(), anyObject(), anyInt());
+            verify(bookieClient, times(i + 1)).readEntry(any(), anyLong(), anyLong(),
+                                                       any(), any(), anyInt());
             verify(bookieClient, times(i + 1)).readEntry(eq(bookie3), anyLong(), anyLong(),
-                                                       anyObject(), anyObject(), anyInt());
+                                                       any(), any(), anyInt());
         }
     }
 
@@ -440,20 +440,20 @@ public class EntryCopierTest {
         batch.fetchEntry(0).get();
 
         // will read twice, fail at bookie3, succeed at bookie1
-        verify(bookieClient, times(2)).readEntry(anyObject(), anyLong(), anyLong(),
-                                                 anyObject(), anyObject(), anyInt());
+        verify(bookieClient, times(2)).readEntry(any(), anyLong(), anyLong(),
+                                                 any(), any(), anyInt());
         verify(bookieClient, times(1)).readEntry(eq(bookie3), anyLong(), anyLong(),
-                                                 anyObject(), anyObject(), anyInt());
+                                                 any(), any(), anyInt());
         verify(bookieClient, times(1)).readEntry(eq(bookie1), anyLong(), anyLong(),
-                                                 anyObject(), anyObject(), anyInt());
+                                                 any(), any(), anyInt());
         errorProcessedPromise.get(10, TimeUnit.SECONDS);
         batch.fetchEntry(1).get();
 
         // subsequent read should go straight for bookie1
-        verify(bookieClient, times(3)).readEntry(anyObject(), anyLong(), anyLong(),
-                                                       anyObject(), anyObject(), anyInt());
+        verify(bookieClient, times(3)).readEntry(any(), anyLong(), anyLong(),
+                                                       any(), any(), anyInt());
         verify(bookieClient, times(2)).readEntry(eq(bookie1), anyLong(), anyLong(),
-                                                   anyObject(), anyObject(), anyInt());
+                                                   any(), any(), anyInt());
     }
 
     @Test
@@ -497,9 +497,9 @@ public class EntryCopierTest {
 
         InOrder inOrder = inOrder(bookieClient);
         inOrder.verify(bookieClient, times(1)).readEntry(eq(bookie3), anyLong(), anyLong(),
-                                                         anyObject(), anyObject(), anyInt());
+                                                         any(), any(), anyInt());
         inOrder.verify(bookieClient, times(1)).readEntry(eq(bookie1), anyLong(), anyLong(),
-                                                         anyObject(), anyObject(), anyInt());
+                                                         any(), any(), anyInt());
     }
 
     @Test
@@ -537,9 +537,9 @@ public class EntryCopierTest {
             };
         batch.fetchEntry(0).get();
         verify(bookieClient, times(1)).readEntry(eq(bookie3), anyLong(), anyLong(),
-                                                 anyObject(), anyObject(), anyInt());
+                                                 any(), any(), anyInt());
         verify(bookieClient, times(1)).readEntry(eq(bookie1), anyLong(), anyLong(),
-                                                 anyObject(), anyObject(), anyInt());
+                                                 any(), any(), anyInt());
         errorProcessedPromise.get(10, TimeUnit.SECONDS);
 
         // bookie3 should be fine to use again, but we shouldn't use it until if come out
@@ -550,9 +550,9 @@ public class EntryCopierTest {
         EntryCopierImpl.BatchImpl batch2 = copier.new BatchImpl(bookie2, ledgerId, metadata, sinBin);
         batch2.fetchEntry(0).get();
         verify(bookieClient, times(1)).readEntry(eq(bookie3), anyLong(), anyLong(),
-                                                 anyObject(), anyObject(), anyInt());
+                                                 any(), any(), anyInt());
         verify(bookieClient, times(2)).readEntry(eq(bookie1), anyLong(), anyLong(),
-                                                 anyObject(), anyObject(), anyInt());
+                                                 any(), any(), anyInt());
         // advance time
         ticker.advance(70, TimeUnit.SECONDS);
 
@@ -560,9 +560,9 @@ public class EntryCopierTest {
         EntryCopierImpl.BatchImpl batch3 = copier.new BatchImpl(bookie2, ledgerId, metadata, sinBin);
         batch3.fetchEntry(0).get();
         verify(bookieClient, times(2)).readEntry(eq(bookie3), anyLong(), anyLong(),
-                                                 anyObject(), anyObject(), anyInt());
+                                                 any(), any(), anyInt());
         verify(bookieClient, times(2)).readEntry(eq(bookie1), anyLong(), anyLong(),
-                                                 anyObject(), anyObject(), anyInt());
+                                                 any(), any(), anyInt());
     }
 
     @Test
@@ -595,8 +595,8 @@ public class EntryCopierTest {
         } catch (ExecutionException ee) {
             assertThat(ee.getCause(), instanceOf(BKException.BKReadException.class));
         }
-        verify(bookieClient, times(0)).readEntry(anyObject(), anyLong(), anyLong(),
-                                                 anyObject(), anyObject(), anyInt());
+        verify(bookieClient, times(0)).readEntry(any(), anyLong(), anyLong(),
+                                                 any(), any(), anyInt());
     }
 
     @Test
