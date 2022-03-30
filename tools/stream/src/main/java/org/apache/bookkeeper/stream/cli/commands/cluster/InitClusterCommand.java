@@ -25,6 +25,8 @@ import com.beust.jcommander.Parameter;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.net.URI;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -107,6 +109,7 @@ public class InitClusterCommand extends BKCommand<Flags> {
     }
 
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     protected boolean apply(ServiceURI ignored,
                             CompositeConfiguration conf,
                             BKFlags globalFlags,
