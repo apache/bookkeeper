@@ -83,6 +83,9 @@ class DirectMemoryCRC32Digest implements CRC32Digest {
             updateBytesMethod = CRC32.class.getDeclaredMethod("updateBytes", int.class, byte[].class, int.class,
                     int.class);
             updateBytesMethod.setAccessible(true);
+        } catch (RuntimeException e) {
+            updateByteBufferMethod = null;
+            updateBytesMethod = null;
         } catch (Exception e) {
             updateByteBufferMethod = null;
             updateBytesMethod = null;
