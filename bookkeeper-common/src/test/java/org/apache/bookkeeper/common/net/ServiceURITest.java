@@ -207,6 +207,30 @@ public class ServiceURITest {
     }
 
     @Test
+    public void testIPv6Address() {
+        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "bk",
+                new String[0],
+                null,
+                new String[] { "[fec0:0:0:ffff::1]:2181" },
+                "/path/to/namespace");
+    }
+
+    @Test
+    public void testMultipleIPv6Address() {
+        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181;[fec0:0:0:ffff::2]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "bk",
+                new String[0],
+                null,
+                new String[] { "[fec0:0:0:ffff::1]:2181", "[fec0:0:0:ffff::2]:2181"},
+                "/path/to/namespace");
+    }
+
+    @Test
     public void testServiceInfoMinus() {
         String serviceUri = "bk-ssl://host:2181/path/to/namespace";
         assertServiceUri(
