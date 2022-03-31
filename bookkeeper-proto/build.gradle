@@ -17,8 +17,9 @@
  * under the License.
  */
 plugins {
-    id 'com.google.protobuf'
     id 'java'
+    id 'idea'
+    id 'com.google.protobuf'
 }
 
 dependencies {
@@ -29,4 +30,9 @@ protobuf {
     protoc {
         artifact = depLibs.protoc
     }
+    generatedFilesBaseDir = "${projectDir}/src/generated"
+}
+
+clean {
+    delete protobuf.generatedFilesBaseDir
 }

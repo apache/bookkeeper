@@ -125,6 +125,8 @@ public class GarbageCollectorThread extends SafeRunnable {
     final ServerConfiguration conf;
     final LedgerDirsManager ledgerDirsManager;
 
+    private static final AtomicLong threadNum = new AtomicLong(0);
+    final AbstractLogCompactor.Throttler throttler;
     /**
      * Create a garbage collector thread.
      *
@@ -215,6 +217,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             this.compactor = new EntryLogCompactor(conf, entryLogger, ledgerStorage, remover);
         }
 
+        this.throttler = new AbstractLogCompactor.Throttler(conf);
         if (minorCompactionInterval > 0 && minorCompactionThreshold > 0) {
             if (minorCompactionThreshold > 1.0f) {
                 throw new IOException("Invalid minor compaction threshold "
@@ -349,7 +352,22 @@ public class GarbageCollectorThread extends SafeRunnable {
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
         }
-        scheduledFuture = gcExecutor.scheduleAtFixedRate(this, gcWaitTime, gcWaitTime, TimeUnit.MILLISECONDS);
+        long initialDelay = getModInitialDelay();
+        scheduledFuture = gcExecutor.scheduleAtFixedRate(this, initialDelay, gcWaitTime, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * when number of ledger's Dir are more than 1,the same of GarbageCollectorThread will do the same thing,
+     * Especially
+     * 1) deleting ledger, then SyncThread will be timed to do rocksDB compact
+     * 2) compact: entry, cost cpu.
+     * then get Mod initial Delay time to simply avoid GarbageCollectorThread working at the same time
+     */
+    public long getModInitialDelay() {
+        int ledgerDirsNum = conf.getLedgerDirs().length;
+        long splitTime = gcWaitTime / ledgerDirsNum;
+        long currentThreadNum = threadNum.incrementAndGet();
+        return gcWaitTime + currentThreadNum * splitTime;
     }
 
     @Override
@@ -680,7 +698,7 @@ public class GarbageCollectorThread extends SafeRunnable {
 
             try {
                 // Read through the entry log file and extract the entry log meta
-                EntryLogMetadata entryLogMeta = entryLogger.getEntryLogMetadata(entryLogId);
+                EntryLogMetadata entryLogMeta = entryLogger.getEntryLogMetadata(entryLogId, throttler);
                 removeIfLedgerNotExists(entryLogMeta);
                 if (entryLogMeta.isEmpty()) {
                     entryLogger.removeEntryLog(entryLogId);

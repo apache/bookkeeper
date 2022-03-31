@@ -18,54 +18,32 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import org.apache.bookkeeper.bookie.storage.ldb.LocationsIndexRebuildOp;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link RebuildDBLedgerLocationsIndexCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ RebuildDBLedgerLocationsIndexCommand.class })
 public class RebuildDBLedgerLocationsIndexCommandTest extends BookieCommandTestBase {
-
-    @Mock
-    private LocationsIndexRebuildOp locationsIndexRebuildOp;
 
     public RebuildDBLedgerLocationsIndexCommandTest() {
         super(3, 0);
     }
 
-    @Override
-    public void setup() throws Exception {
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(ServerConfiguration.class).withParameterTypes(AbstractConfiguration.class)
-                    .withArguments(eq(conf)).thenReturn(conf);
-
-        PowerMockito.whenNew(LocationsIndexRebuildOp.class).withParameterTypes(ServerConfiguration.class)
-                    .withArguments(eq(conf)).thenReturn(locationsIndexRebuildOp);
-        PowerMockito.doNothing().when(locationsIndexRebuildOp).initiate();
-    }
-
     @Test
     public void testCommand() throws Exception {
+        mockServerConfigurationConstruction();
+        mockConstruction(LocationsIndexRebuildOp.class);
+
         RebuildDBLedgerLocationsIndexCommand command = new RebuildDBLedgerLocationsIndexCommand();
         Assert.assertTrue(command.apply(bkFlags, new String[] { "" }));
 
-        PowerMockito.verifyNew(ServerConfiguration.class, times(1)).withArguments(eq(conf));
-        PowerMockito.verifyNew(LocationsIndexRebuildOp.class, times(1)).withArguments(eq(conf));
-        verify(locationsIndexRebuildOp, times(1)).initiate();
+        verify(getMockedConstruction(LocationsIndexRebuildOp.class).constructed().get(0),
+                times(1)).initiate();
     }
 }

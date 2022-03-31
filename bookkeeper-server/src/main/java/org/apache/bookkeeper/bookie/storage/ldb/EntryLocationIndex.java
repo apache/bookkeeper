@@ -47,13 +47,13 @@ import org.slf4j.LoggerFactory;
 public class EntryLocationIndex implements Closeable {
 
     private final KeyValueStorage locationsDb;
-    private final ConcurrentLongHashSet deletedLedgers = new ConcurrentLongHashSet();
+    private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
 
     private final EntryLocationIndexStats stats;
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
-        locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.Huge, conf);
+        locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.EntryLocation, conf);
 
         this.stats = new EntryLocationIndexStats(
             stats,

@@ -36,7 +36,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +45,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
+import org.apache.bookkeeper.common.collections.GrowableArrayBlockingQueue;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -305,7 +305,7 @@ public class OrderedExecutor implements ExecutorService {
             queue = new BlockingMpscQueue<>(maxTasksInQueue > 0 ? maxTasksInQueue : DEFAULT_MAX_ARRAY_QUEUE_SIZE);
         } else {
             // By default, use regular JDK LinkedBlockingQueue
-            queue = new LinkedBlockingQueue<>();
+            queue = new GrowableArrayBlockingQueue<>();
         }
         return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, queue, factory);
     }
@@ -570,7 +570,7 @@ public class OrderedExecutor implements ExecutorService {
             return threadIds[0];
         }
 
-        return threadIds[MathUtils.signSafeMod(orderingKey, threadIds.length)];
+        return threadIds[chooseThreadIdx(orderingKey, threads.length)];
     }
 
     public ExecutorService chooseThread() {
@@ -591,7 +591,7 @@ public class OrderedExecutor implements ExecutorService {
         if (null == orderingKey) {
             return threads[rand.nextInt(threads.length)];
         } else {
-            return threads[MathUtils.signSafeMod(orderingKey.hashCode(), threads.length)];
+            return threads[chooseThreadIdx(orderingKey.hashCode(), threads.length)];
         }
     }
 
@@ -606,7 +606,11 @@ public class OrderedExecutor implements ExecutorService {
             return threads[0];
         }
 
-        return threads[MathUtils.signSafeMod(orderingKey, threads.length)];
+        return threads[chooseThreadIdx(orderingKey, threads.length)];
+    }
+
+    protected static int chooseThreadIdx(long orderingKey, int numThreads) {
+        return MathUtils.signSafeMod(orderingKey >>> 1, numThreads);
     }
 
     protected Runnable timedRunnable(Runnable r) {

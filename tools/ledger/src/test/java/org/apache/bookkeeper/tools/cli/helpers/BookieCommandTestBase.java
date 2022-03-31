@@ -20,16 +20,11 @@ package org.apache.bookkeeper.tools.cli.helpers;
 
 import java.io.File;
 import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 
 /**
  * A test base for testing bookie commands.
  */
 public abstract class BookieCommandTestBase extends CommandTestBase {
-
-    @Rule
-    public final TemporaryFolder testDir = new TemporaryFolder();
 
     protected final int numJournalDirs;
     protected final int numLedgerDirs;
@@ -42,23 +37,19 @@ public abstract class BookieCommandTestBase extends CommandTestBase {
     @Before
     public void setup() throws Exception {
         String[] journalDirs = new String[numJournalDirs];
-        if (numJournalDirs > 0) {
-            for (int i = 0; i < numJournalDirs; i++) {
-                File dir = testDir.newFile();
-                dir.mkdirs();
-                journalDirs[i] = dir.getAbsolutePath();
-            }
-            conf.setJournalDirsName(journalDirs);
+        for (int i = 0; i < numJournalDirs; i++) {
+            File dir = testDir.newFile();
+            dir.mkdirs();
+            journalDirs[i] = dir.getAbsolutePath();
         }
+        journalDirsName = journalDirs;
         String[] ledgerDirs = new String[numLedgerDirs];
-        if (numLedgerDirs > 0) {
-            for (int i = 0; i < numLedgerDirs; i++) {
-                File dir = testDir.newFile();
-                dir.mkdirs();
-                ledgerDirs[i] = dir.getAbsolutePath();
-            }
-            conf.setLedgerDirNames(ledgerDirs);
+        for (int i = 0; i < numLedgerDirs; i++) {
+            File dir = testDir.newFile();
+            dir.mkdirs();
+            ledgerDirs[i] = dir.getAbsolutePath();
         }
+        ledgerDirNames = ledgerDirs;
     }
 
 }

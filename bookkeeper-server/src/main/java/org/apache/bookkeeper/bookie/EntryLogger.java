@@ -1055,7 +1055,7 @@ public class EntryLogger {
     }
 
     public EntryLogMetadata getEntryLogMetadata(long entryLogId) throws IOException {
-        // First try to extract the EntryLogMetada from the index, if there's no index then fallback to scanning the
+        // First try to extract the EntryLogMetadata from the index, if there's no index then fallback to scanning the
         // entry log
         try {
             return extractEntryLogMetadataFromIndex(entryLogId);
@@ -1064,6 +1064,20 @@ public class EntryLogger {
 
             // Fall-back to scanning
             return extractEntryLogMetadataByScanning(entryLogId);
+        }
+    }
+
+    public EntryLogMetadata getEntryLogMetadata(long entryLogId, AbstractLogCompactor.Throttler throttler)
+        throws IOException {
+        // First try to extract the EntryLogMetadata from the index, if there's no index then fallback to scanning the
+        // entry log
+        try {
+            return extractEntryLogMetadataFromIndex(entryLogId);
+        } catch (Exception e) {
+            LOG.info("Failed to get ledgers map index from: {}.log : {}", entryLogId, e.getMessage());
+
+            // Fall-back to scanning
+            return extractEntryLogMetadataByScanning(entryLogId, throttler);
         }
     }
 
@@ -1151,12 +1165,21 @@ public class EntryLogger {
     }
 
     private EntryLogMetadata extractEntryLogMetadataByScanning(long entryLogId) throws IOException {
+        return extractEntryLogMetadataByScanning(entryLogId, null);
+    }
+
+    private EntryLogMetadata extractEntryLogMetadataByScanning(long entryLogId,
+                                                               AbstractLogCompactor.Throttler throttler)
+        throws IOException {
         final EntryLogMetadata meta = new EntryLogMetadata(entryLogId);
 
         // Read through the entry log file and extract the entry log meta
         scanEntryLog(entryLogId, new EntryLogScanner() {
             @Override
             public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
+                if (throttler != null) {
+                    throttler.acquire(conf.getIsThrottleByBytes() ? entry.readableBytes() : 1);
+                }
                 // add new entry size of a ledger to entry log meta
                 meta.addLedgerSize(ledgerId, entry.readableBytes() + 4);
             }

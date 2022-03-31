@@ -21,11 +21,12 @@ package org.apache.bookkeeper.tools.cli.commands.bookies;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.value;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Answers.CALLS_REAL_METHODS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -41,16 +42,10 @@ import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test of {@link ListBookiesCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ListBookiesCommand.class, CommandHelpers.class })
 public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
 
     private static class BookieAddressComparator implements Comparator<BookieId> {
@@ -86,7 +81,7 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         when(regClient.getAllBookies())
             .thenReturn(value(new Versioned<>(allBookies, new LongVersion(0L))));
 
-        PowerMockito.mockStatic(CommandHelpers.class, CALLS_REAL_METHODS);
+        mockStatic(CommandHelpers.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
     }
 
     private static Set<BookieId> createBookies(int startPort, int numBookies) {
@@ -100,19 +95,22 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         return bookies;
     }
 
-    private static void verifyPrintBookies(int startPort, int numBookies, int numCalls) {
+    private void verifyPrintBookies(int startPort, int numBookies, int numCalls) {
         for (int i = 0; i < numBookies; i++) {
-            PowerMockito.verifyStatic(
-                CommandHelpers.class,
-                times(numCalls));
             if (i == numBookies - 1){
-                CommandHelpers.getBookieSocketAddrStringRepresentation(
-                        eq(BookieId.parse("unknown" + (startPort + i))),
-                        any(BookieAddressResolver.class));
+                final BookieId expectedBookieId = BookieId.parse("unknown" + (startPort + i));
+                getMockedStatic(CommandHelpers.class)
+                    .verify(() -> CommandHelpers.getBookieSocketAddrStringRepresentation(
+                                        eq(expectedBookieId),
+                                        any(BookieAddressResolver.class)),
+                                times(numCalls));
             } else {
-                CommandHelpers.getBookieSocketAddrStringRepresentation(
-                        eq(BookieId.parse("127.0.0.1" + (startPort + i))),
-                        any(BookieAddressResolver.class));
+                final BookieId expectedBookieId = BookieId.parse("127.0.0.1" + (startPort + i));
+                getMockedStatic(CommandHelpers.class)
+                        .verify(() -> CommandHelpers.getBookieSocketAddrStringRepresentation(
+                                        eq(expectedBookieId),
+                                        any(BookieAddressResolver.class)),
+                                times(numCalls));
             }
         }
     }
@@ -186,6 +184,7 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         try {
             assertTrue(cmd.apply(bkFlags, args));
         } catch (Exception e) {
+            e.printStackTrace();
             fail("Should not throw any exception here");
         }
 
@@ -226,17 +225,15 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         ListBookiesCommand cmd = new ListBookiesCommand();
         assertTrue(cmd.apply(bkFlags, new String[] { "-rw"}));
 
-        PowerMockito.verifyStatic(
-                CommandHelpers.class,
-                times(0));
-        CommandHelpers.getBookieSocketAddrStringRepresentation(any(), any());
+        getMockedStatic(CommandHelpers.class)
+                .verify(() -> CommandHelpers.getBookieSocketAddrStringRepresentation(any(), any()),
+                        times(0));
 
         assertTrue(cmd.apply(bkFlags, new String[]{"-ro"}));
 
-        PowerMockito.verifyStatic(
-                CommandHelpers.class,
+        getMockedStatic(CommandHelpers.class)
+                .verify(() -> CommandHelpers.getBookieSocketAddrStringRepresentation(any(), any()),
                 times(0));
-        CommandHelpers.getBookieSocketAddrStringRepresentation(any(), any());
     }
 
 }

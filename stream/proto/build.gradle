@@ -17,6 +17,7 @@
  * under the License.
  */
 plugins {
+    id 'idea'
     id 'com.google.protobuf'
     id 'com.adarshr.test-logger'
 }
@@ -50,6 +51,12 @@ protobuf {
             grpc {}
         }
     }
+
+    generatedFilesBaseDir = "${projectDir}/src/generated"
+}
+
+clean {
+    delete protobuf.generatedFilesBaseDir
 }
 
 jar {

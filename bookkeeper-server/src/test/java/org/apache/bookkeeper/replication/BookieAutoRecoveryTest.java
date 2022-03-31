@@ -403,8 +403,12 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         assertTrue("Should be marked as underreplicated", latch.await(5, TimeUnit.SECONDS));
         latch = new CountDownLatch(1);
         s = watchUrLedgerNode(urZNode, latch); // should be marked as replicated
+
+        startNewBookie();
+        getAuditor(10, TimeUnit.SECONDS).submitAuditTask().get(); // ensure auditor runs
+
         if (s != null) {
-            assertTrue("Should be marked as replicated", latch.await(5, TimeUnit.SECONDS));
+            assertTrue("Should be marked as replicated", latch.await(20, TimeUnit.SECONDS));
         }
 
         // should be able to open ledger without issue
