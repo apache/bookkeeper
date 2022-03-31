@@ -1422,6 +1422,54 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
+    public void testRecoveryOnNodeFailure() throws Exception {
+        repp.uninitalize();
+        repp = new RegionAwareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL,
+            NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
+
+        // Update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region2/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region2/r2");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region3/r3");
+        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region3/r3");
+
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+
+        repp.onClusterChanged(addrs, new HashSet<>());
+
+        Set<BookieId> bookiesLeftSet = new HashSet<>();
+        bookiesLeftSet.add(addr1.toBookieId());
+        repp.handleBookiesThatLeft(bookiesLeftSet);
+
+        List<BookieId> currentEnsemble = new ArrayList<>();
+        currentEnsemble.add(addr1.toBookieId());
+        currentEnsemble.add(addr3.toBookieId());
+        currentEnsemble.add(addr6.toBookieId());
+
+        EnsemblePlacementPolicy.PlacementResult<BookieId> placementResult = repp.replaceBookie(3,
+            3, 2, null,
+            currentEnsemble, addr1.toBookieId(), new HashSet<>());
+
+        assertEquals(placementResult.getResult(), addr2.toBookieId());
+    }
+
+    @Test
     public void testNodeWithFailures() throws Exception {
         repp.uninitalize();
         updateMyRack("/r2/rack1");
