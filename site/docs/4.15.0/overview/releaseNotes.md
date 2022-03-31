@@ -13,7 +13,7 @@ below.
 
 * `BookieServer` API changed and the code that creates its instances will require addition
 of the `UncleanShutdownDetection` parameter.
-See [BP-46](https://github.com/apache/bookkeeper/pull/2706) for details and examples.
+See [PR 2936](https://github.com/apache/bookkeeper/pull/2936) for details and examples.
 
 * `Bookie` class now is an interface with implementation in `BookieImpl`.
 Code that uses it may need changes.
