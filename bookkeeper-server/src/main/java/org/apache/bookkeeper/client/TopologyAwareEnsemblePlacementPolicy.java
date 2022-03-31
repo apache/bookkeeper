@@ -47,6 +47,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.NetworkTopologyImpl;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
@@ -740,16 +741,20 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     public void onBookieRackChange(List<BookieId> bookieAddressList) {
         rwLock.writeLock().lock();
         try {
-            for (BookieId bookieAddress : bookieAddressList) {
-                BookieNode node = knownBookies.get(bookieAddress);
-                if (node != null) {
-                    // refresh the rack info if its a known bookie
-                    BookieNode newNode = createBookieNode(bookieAddress);
-                    topology.remove(node);
-                    topology.add(newNode);
-                    knownBookies.put(bookieAddress, newNode);
+            bookieAddressList.forEach(bookieAddress -> {
+                try {
+                    BookieNode node = knownBookies.get(bookieAddress);
+                    if (node != null) {
+                        // refresh the rack info if its a known bookie
+                        BookieNode newNode = createBookieNode(bookieAddress);
+                        topology.remove(node);
+                        topology.add(newNode);
+                        knownBookies.put(bookieAddress, newNode);
+                    }
+                } catch (IllegalArgumentException | NetworkTopologyImpl.InvalidTopologyException e) {
+                    LOG.error("Failed to update bookie rack info: {} ", bookieAddress, e);
                 }
-            }
+            });
         } finally {
             rwLock.writeLock().unlock();
         }
