@@ -235,7 +235,10 @@ public class LedgerMetadataIndex implements Closeable {
         lock.lock();
         try {
             LedgerData ledgerData = get(ledgerId);
-            boolean oldValue = ledgerData != null ? ledgerData.getLimbo() : false;
+            if (ledgerData == null) {
+                throw new Bookie.NoLedgerException(ledgerId);
+            }
+            final boolean oldValue = ledgerData.getLimbo();
             LedgerData newLedgerData = LedgerData.newBuilder(ledgerData).setLimbo(false).build();
 
             if (ledgers.put(ledgerId, newLedgerData) == null) {

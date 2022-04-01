@@ -40,6 +40,7 @@ dependencies {
     implementation project(':stream:distributedlog:protocol')
     implementation project(':stream:proto')
 
+    compileOnly depLibs.spotbugsAnnotations
     compileOnly depLibs.lombok
     implementation depLibs.commonsConfiguration
     implementation depLibs.guava

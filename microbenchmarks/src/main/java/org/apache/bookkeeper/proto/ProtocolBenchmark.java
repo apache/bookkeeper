@@ -25,7 +25,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.proto.BookieProtoEncoding.EnDecoder;
@@ -69,12 +69,11 @@ public class ProtocolBenchmark {
     @Setup
     public void prepare() {
         this.masterKey = "test-benchmark-key".getBytes(UTF_8);
-        Random r = new Random(System.currentTimeMillis());
         byte[] data = new byte[this.size];
-        r.nextBytes(data);
+        ThreadLocalRandom.current().nextBytes(data);
         this.entry = Unpooled.wrappedBuffer(data);
-        this.ledgerId = r.nextLong();
-        this.entryId = r.nextLong();
+        this.ledgerId = ThreadLocalRandom.current().nextLong();
+        this.entryId = ThreadLocalRandom.current().nextLong();
         this.flags = 1;
 
         // prepare the encoder

@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import lombok.SneakyThrows;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -71,6 +73,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
@@ -1238,38 +1241,42 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public static boolean format(ServerConfiguration conf,
             boolean isInteractive, boolean force) throws Exception {
-        return runFunctionWithMetadataBookieDriver(conf, driver -> {
-            try {
-                try (RegistrationManager regManager = driver.createRegistrationManager()) {
-                    boolean ledgerRootExists = regManager.prepareFormat();
+        return runFunctionWithMetadataBookieDriver(conf, new Function<MetadataBookieDriver, Boolean>() {
+            @Override
+            @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
+            public Boolean apply(MetadataBookieDriver driver) {
+                try {
+                    try (RegistrationManager regManager = driver.createRegistrationManager()) {
+                        boolean ledgerRootExists = regManager.prepareFormat();
 
-                    // If old data was there then confirm with admin.
-                    boolean doFormat = true;
-                    if (ledgerRootExists) {
-                        if (!isInteractive) {
-                            // If non interactive and force is set, then delete old data.
-                            doFormat = force;
-                        } else {
-                            // Confirm with the admin.
-                            doFormat = IOUtils
-                                    .confirmPrompt("Ledger root already exists. "
-                                            + "Are you sure to format bookkeeper metadata? "
-                                            + "This may cause data loss.");
+                        // If old data was there then confirm with admin.
+                        boolean doFormat = true;
+                        if (ledgerRootExists) {
+                            if (!isInteractive) {
+                                // If non interactive and force is set, then delete old data.
+                                doFormat = force;
+                            } else {
+                                // Confirm with the admin.
+                                doFormat = IOUtils
+                                        .confirmPrompt("Ledger root already exists. "
+                                                + "Are you sure to format bookkeeper metadata? "
+                                                + "This may cause data loss.");
+                            }
                         }
+
+                        if (!doFormat) {
+                            return false;
+                        }
+
+                        driver.getLedgerManagerFactory().format(
+                                conf,
+                                driver.getLayoutManager());
+
+                        return regManager.format();
                     }
-
-                    if (!doFormat) {
-                        return false;
-                    }
-
-                    driver.getLedgerManagerFactory().format(
-                            conf,
-                            driver.getLayoutManager());
-
-                    return regManager.format();
+                } catch (Exception e) {
+                    throw new UncheckedExecutionException(e.getMessage(), e);
                 }
-            } catch (Exception e) {
-                throw new UncheckedExecutionException(e.getMessage(), e);
             }
         });
     }

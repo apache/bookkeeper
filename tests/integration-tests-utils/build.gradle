@@ -20,6 +20,7 @@ dependencies {
     implementation depLibs.arquillianCubeDocker
     implementation depLibs.zookeeper
     implementation depLibs.junit
+    compileOnly depLibs.spotbugsAnnotations
     compileOnly depLibs.lombok
     implementation depLibs.slf4j
     implementation depLibs.groovy
