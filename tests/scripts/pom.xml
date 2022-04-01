@@ -36,7 +36,6 @@
       <plugin>
         <groupId>com.googlecode.maven-download-plugin</groupId>
         <artifactId>download-maven-plugin</artifactId>
-        <version>${download-maven-plugin.version}</version>
         <executions>
           <execution>
             <id>install-shunit2</id>
@@ -56,7 +55,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>${exec-maven-plugin.version}</version>
         <executions>
           <execution>
             <id>bash-tests</id>
