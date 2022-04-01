@@ -82,8 +82,6 @@ detect_jdk8() {
 
 # default netty settings
 NETTY_LEAK_DETECTION_LEVEL=${NETTY_LEAK_DETECTION_LEVEL:-"disabled"}
-NETTY_RECYCLER_MAXCAPACITY=${NETTY_RECYCLER_MAXCAPACITY:-"1000"}
-NETTY_RECYCLER_LINKCAPACITY=${NETTY_RECYCLER_LINKCAPACITY:-"1024"}
 
 USING_JDK8=$(detect_jdk8)
 
@@ -268,9 +266,7 @@ build_cli_jvm_opts() {
 }
 
 build_netty_opts() {
-  echo "-Dio.netty.leakDetectionLevel=${NETTY_LEAK_DETECTION_LEVEL} \
-    -Dio.netty.recycler.maxCapacity.default=${NETTY_RECYCLER_MAXCAPACITY} \
-    -Dio.netty.recycler.linkCapacity=${NETTY_RECYCLER_LINKCAPACITY}"
+  echo "-Dio.netty.leakDetectionLevel=${NETTY_LEAK_DETECTION_LEVEL}"
 }
 
 build_logging_opts() {
