@@ -206,6 +206,11 @@ testBuildNettyOpts() {
 
   ACTUAL_NETTY_OPTS=$(build_netty_opts)
   EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled"
+  if [ "$USING_JDK8" -ne "1" ]; then
+      EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled --add-opens java.base/java.nio=ALL-UNNAMED"
+  else
+      EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled"
+  fi
 
     assertEquals "Netty OPTS is not set correctly" "${EXPECTED_NETTY_OPTS}" "${ACTUAL_NETTY_OPTS}"
 }
@@ -214,7 +219,12 @@ testBuildBookieOpts() {
   source ${BK_BINDIR}/common_gradle.sh
 
   ACTUAL_OPTS=$(build_bookie_opts)
-  EXPECTED_OPTS="-Djava.net.preferIPv4Stack=true"
+  USEJDK8=$(detect_jdk8)
+  if [ "$USING_JDK8" -ne "1" ]; then
+    EXPECTED_OPTS="-Djava.net.preferIPv4Stack=true --add-opens java.base/java.io=ALL-UNNAMED"
+  else
+    EXPECTED_OPTS="-Djava.net.preferIPv4Stack=true"
+  fi
 
   assertEquals "Bookie OPTS is not set correctly" "${EXPECTED_OPTS}" "${ACTUAL_OPTS}"
 }
