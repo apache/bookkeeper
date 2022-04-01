@@ -97,7 +97,7 @@ public class GetLastLogMarkService implements HttpEndpointService {
                 response.setBody(jsonResponse);
                 response.setCode(HttpServer.StatusCode.OK);
                 return response;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 LOG.error("Exception occurred while getting last log mark", e);
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("ERROR handling request: " + e.getMessage());

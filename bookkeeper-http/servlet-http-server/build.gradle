@@ -28,6 +28,7 @@ dependencies {
     implementation depLibs.commonsIO
 
     compileOnly depLibs.lombok
+    compileOnly depLibs.spotbugsAnnotations
     annotationProcessor depLibs.lombok
 
     testImplementation depLibs.junit

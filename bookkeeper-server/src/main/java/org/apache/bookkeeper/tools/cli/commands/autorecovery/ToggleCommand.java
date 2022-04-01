@@ -20,6 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.ExecutionException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -39,6 +40,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Command to enable or disable auto recovery in the cluster.
  */
+@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
 public class ToggleCommand extends BookieCommand<ToggleCommand.AutoRecoveryFlags> {
 
     static final Logger LOG = LoggerFactory.getLogger(ToggleCommand.class);

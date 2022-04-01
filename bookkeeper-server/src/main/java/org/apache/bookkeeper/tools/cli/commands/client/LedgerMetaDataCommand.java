@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerMa
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.Optional;
@@ -44,6 +45,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Print the metadata for a ledger.
  */
+@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
 public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.LedgerMetadataFlag> {
 
     private static final String NAME = "show";

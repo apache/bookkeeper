@@ -22,6 +22,7 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -29,7 +30,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.rocksdb.ColumnFamilyDescriptor;
@@ -171,6 +171,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     }
 
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public Entry<byte[], byte[]> getFloor(byte[] key) throws IOException {
         try (Slice upperBound = new Slice(key);
                  ReadOptions option = new ReadOptions(optionCache).setIterateUpperBound(upperBound);
@@ -184,6 +185,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     }
 
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public Entry<byte[], byte[]> getCeil(byte[] key) throws IOException {
         try (RocksIterator iterator = db.newIterator(optionCache)) {
             // Position the iterator on the record whose key is >= to the supplied key

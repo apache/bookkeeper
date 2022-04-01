@@ -48,8 +48,12 @@ public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
         for (File ledgerDir : ledgerDirsManager.getAllLedgerDirs()) {
             try {
                 File dirtyFile = new File(ledgerDir, DIRTY_FILENAME);
-                dirtyFile.createNewFile();
-                LOG.info("Created dirty file in ledger dir: {}", ledgerDir.getAbsolutePath());
+                if (dirtyFile.createNewFile()) {
+                    LOG.info("Created dirty file in ledger dir: {}", ledgerDir.getAbsolutePath());
+                } else {
+                    LOG.info("Dirty file already exists in ledger dir: {}", ledgerDir.getAbsolutePath());
+                }
+
             } catch (IOException e) {
                 LOG.error("Unable to register start-up (so an unclean shutdown cannot"
                         + " be detected). Dirty file of ledger dir {} could not be created.",

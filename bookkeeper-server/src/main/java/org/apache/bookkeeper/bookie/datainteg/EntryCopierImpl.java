@@ -154,7 +154,15 @@ public class EntryCopierImpl implements EntryCopier {
         @VisibleForTesting
         CompletableFuture<ByteBuf> fetchEntry(long entryId) {
             List<BookieId> ensemble = metadata.getEnsembleAt(entryId);
-            ImmutableList<Integer> writeSet = writeSets.floorEntry(entryId).getValue().getForEntry(entryId);
+            final Map.Entry<Long, WriteSets> writeSetsForEntryId = this.writeSets
+                    .floorEntry(entryId);
+            if (writeSetsForEntryId == null) {
+                log.error("writeSets for entryId {} not found, writeSets {}", entryId, writeSets);
+                throw new IllegalStateException("writeSets for entryId: " + entryId + " not found");
+            }
+            ImmutableList<Integer> writeSet = writeSetsForEntryId
+                    .getValue()
+                    .getForEntry(entryId);
             int attempt = 0;
             CompletableFuture<ByteBuf> promise = new CompletableFuture<>();
             fetchRetryLoop(entryId, attempt,

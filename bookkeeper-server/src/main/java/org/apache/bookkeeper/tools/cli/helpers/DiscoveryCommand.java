@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.tools.cli.helpers;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -44,6 +45,7 @@ public abstract class DiscoveryCommand<DiscoveryFlagsT extends CliFlags> extends
     }
 
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     protected boolean apply(ClientConfiguration clientConf, DiscoveryFlagsT cmdFlags) {
         try {
             URI metadataServiceUri = URI.create(clientConf.getMetadataServiceUri());

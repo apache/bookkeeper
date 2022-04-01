@@ -471,7 +471,7 @@ public class BookkeeperVerifier {
                                 current, ledger.ledgerID, result.length, check.length)
                         ));
                     }
-                        /* Verify contents */
+                    /* Verify contents */
                     if (!Arrays.equals(check, result)) {
                         int i = 0;
                         for (; i < check.length; ++i) {
@@ -657,7 +657,7 @@ public class BookkeeperVerifier {
 
         /* Wait for all in progress ops to complete, outstanding*Count is updated under the lock */
         while ((System.currentTimeMillis() < testDrainEnd)
-               && (outstandingReadCount > 0 || outstandingWriteCount > 0)) {
+                && (outstandingReadCount > 0 || outstandingWriteCount > 0)) {
             System.out.format("reads: %d, writes: %d%n", outstandingReadCount, outstandingWriteCount);
             System.out.format("openingLedgers:%n");
             for (LedgerInfo li: openingLedgers) {
