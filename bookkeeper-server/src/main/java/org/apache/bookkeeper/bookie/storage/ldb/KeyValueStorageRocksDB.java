@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 import static com.google.common.base.Preconditions.checkState;
 
 //CHECKSTYLE.OFF: IllegalImport
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.util.internal.PlatformDependent;
 //CHECKSTYLE.ON: IllegalImport
 
@@ -252,6 +253,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     }
 
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public Entry<byte[], byte[]> getFloor(byte[] key) throws IOException {
         try (Slice upperBound = new Slice(key);
                  ReadOptions option = new ReadOptions(optionCache).setIterateUpperBound(upperBound);
@@ -265,6 +267,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     }
 
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public Entry<byte[], byte[]> getCeil(byte[] key) throws IOException {
         try (RocksIterator iterator = db.newIterator(optionCache)) {
             // Position the iterator on the record whose key is >= to the supplied key

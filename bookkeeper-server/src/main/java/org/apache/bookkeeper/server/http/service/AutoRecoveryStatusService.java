@@ -20,6 +20,7 @@ package org.apache.bookkeeper.server.http.service;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Collections;
 import java.util.Map;
 import org.apache.bookkeeper.common.util.JsonUtil;
@@ -42,6 +43,7 @@ import org.apache.commons.lang3.ObjectUtils;
  * the same as desired. The output would be the current status after the action.
  *
  */
+@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
 public class AutoRecoveryStatusService implements HttpEndpointService {
     protected final ServerConfiguration conf;
 
