@@ -24,7 +24,7 @@ ext {
 depVersions = [
     arquillianCubeDocker: "1.18.2",
     arquillianJunit: "1.6.0.Final",
-    bcFips: "1.0.2.1",
+    bcFips: "1.0.2.3",
     bouncycastle: "1.69",
     commonsCli: "1.2",
     commonsCodec: "1.6",
