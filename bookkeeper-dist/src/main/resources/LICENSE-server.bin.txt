@@ -650,10 +650,10 @@ Bundled as
 Source available at https://github.com/googleapis/google-auth-library-java/releases/tag/v0.22.2
 ------------------------------------------------------------------------------------
 This product bundles the bouncycastle Library.
-For license details, see deps/bouncycastle-1.0.2.1/LICENSE.html
+For license details, see deps/bouncycastle-1.0.2.3/LICENSE.html
 
 Bundled as
-  - lib/org.bouncycastle-bc-fips-1.0.2.1.jar
+  - lib/org.bouncycastle-bc-fips-1.0.2.3.jar
 ------------------------------------------------------------------------------------
 This product uses the annotations from The Checker Framework, which are licensed under
 MIT License. For details, see deps/checker-qual-3.5.0/LICENSE
