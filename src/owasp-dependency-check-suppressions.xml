@@ -173,5 +173,146 @@
     <sha1>6560f966bcf1aa78d27bcfa75fb6c4463a72c6c5</sha1>
     <cve>CVE-2021-34429</cve>
   </suppress>
+<!--    Netty false positive https://github.com/netty/netty-tcnative/issues/710 -->
+    <suppress>
+        <notes><![CDATA[
+   file name: netty-tcnative-boringssl-static-2.0.50.Final-linux-x86_64.jar
+   ]]></notes>
+        <sha1>5bb97a0278391b55db468cab30b883dc85a07770</sha1>
+        <cve>CVE-2015-1346</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: netty-tcnative-boringssl-static-2.0.50.Final-linux-x86_64.jar
+   ]]></notes>
+        <sha1>5bb97a0278391b55db468cab30b883dc85a07770</sha1>
+        <cve>CVE-2011-1797</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: netty-tcnative-boringssl-static-2.0.50.Final-linux-x86_64.jar
+   ]]></notes>
+        <sha1>5bb97a0278391b55db468cab30b883dc85a07770</sha1>
+        <cve>CVE-2017-7000</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: netty-tcnative-boringssl-static-2.0.50.Final-linux-x86_64.jar
+   ]]></notes>
+        <sha1>5bb97a0278391b55db468cab30b883dc85a07770</sha1>
+        <cve>CVE-2015-1205</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-linux-aarch_64.jar
+]]></notes>
+        <sha1>028abc2b9c67d195a906997fec08dd0262bd859a</sha1>
+        <cve>CVE-2015-1346</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-linux-aarch_64.jar
+]]></notes>
+        <sha1>028abc2b9c67d195a906997fec08dd0262bd859a</sha1>
+        <cve>CVE-2011-1797</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-linux-aarch_64.jar
+]]></notes>
+        <sha1>028abc2b9c67d195a906997fec08dd0262bd859a</sha1>
+        <cve>CVE-2017-7000</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-linux-aarch_64.jar
+]]></notes>
+        <sha1>028abc2b9c67d195a906997fec08dd0262bd859a</sha1>
+        <cve>CVE-2015-1205</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: netty-tcnative-boringssl-static-2.0.50.Final-osx-x86_64.jar
+   ]]></notes>
+        <sha1>ffc6648b33707f51dc64f2466d6f98a4f6a9ffd7</sha1>
+        <cve>CVE-2015-1346</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: netty-tcnative-boringssl-static-2.0.50.Final-osx-x86_64.jar
+   ]]></notes>
+        <sha1>ffc6648b33707f51dc64f2466d6f98a4f6a9ffd7</sha1>
+        <cve>CVE-2011-1797</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: netty-tcnative-boringssl-static-2.0.50.Final-osx-x86_64.jar
+   ]]></notes>
+        <sha1>ffc6648b33707f51dc64f2466d6f98a4f6a9ffd7</sha1>
+        <cve>CVE-2017-7000</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: netty-tcnative-boringssl-static-2.0.50.Final-osx-x86_64.jar
+   ]]></notes>
+        <sha1>ffc6648b33707f51dc64f2466d6f98a4f6a9ffd7</sha1>
+        <cve>CVE-2015-1205</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-osx-aarch_64.jar
+]]></notes>
+        <sha1>6ee88ad317bd9e492e7bf48eda9120a83085e464</sha1>
+        <cve>CVE-2015-1346</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-osx-aarch_64.jar
+]]></notes>
+        <sha1>6ee88ad317bd9e492e7bf48eda9120a83085e464</sha1>
+        <cve>CVE-2011-1797</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-osx-aarch_64.jar
+]]></notes>
+        <sha1>6ee88ad317bd9e492e7bf48eda9120a83085e464</sha1>
+        <cve>CVE-2017-7000</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-osx-aarch_64.jar
+]]></notes>
+        <sha1>6ee88ad317bd9e492e7bf48eda9120a83085e464</sha1>
+        <cve>CVE-2015-1205</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-windows-x86_64.jar
+]]></notes>
+        <sha1>b6211fb3224bfd2dadf10273a15211f592174652</sha1>
+        <cve>CVE-2015-1346</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-windows-x86_64.jar
+]]></notes>
+        <sha1>b6211fb3224bfd2dadf10273a15211f592174652</sha1>
+        <cve>CVE-2011-1797</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-windows-x86_64.jar
+]]></notes>
+        <sha1>b6211fb3224bfd2dadf10273a15211f592174652</sha1>
+        <cve>CVE-2017-7000</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+file name: netty-tcnative-boringssl-static-2.0.50.Final-windows-x86_64.jar
+]]></notes>
+        <sha1>b6211fb3224bfd2dadf10273a15211f592174652</sha1>
+        <cve>CVE-2015-1205</cve>
+    </suppress>
 </suppressions>
 
