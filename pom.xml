@@ -130,7 +130,7 @@
     <freebuilder.version>2.7.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.9.0</google.errorprone.version>
-    <grpc.version>1.42.1</grpc.version>
+    <grpc.version>1.45.1</grpc.version>
     <guava.version>31.0.1-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
     <hadoop.version>2.10.0</hadoop.version>
@@ -152,15 +152,15 @@
     <log4j.version>2.17.1</log4j.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>3.12.4</mockito.version>
-    <netty.version>4.1.74.Final</netty.version>
-    <netty-boringssl.version>2.0.48.Final</netty-boringssl.version>
+    <netty.version>4.1.75.Final</netty.version>
+    <netty-boringssl.version>2.0.50.Final</netty-boringssl.version>
     <ostrich.version>9.1.3</ostrich.version>
     <powermock.version>2.0.2</powermock.version>
     <prometheus.version>0.8.1</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
-    <protobuf.version>3.17.2</protobuf.version>
-    <protoc3.version>3.17.2</protoc3.version>
+    <protobuf.version>3.19.2</protobuf.version>
+    <protoc3.version>3.19.2</protoc3.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
     <rocksdb.version>6.29.4.1</rocksdb.version>
