@@ -205,9 +205,7 @@ testBuildNettyOpts() {
   source ${BK_BINDIR}/common_gradle.sh
 
   ACTUAL_NETTY_OPTS=$(build_netty_opts)
-  EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled \
-    -Dio.netty.recycler.maxCapacity.default=1000 \
-    -Dio.netty.recycler.linkCapacity=1024"
+  EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled"
 
     assertEquals "Netty OPTS is not set correctly" "${EXPECTED_NETTY_OPTS}" "${ACTUAL_NETTY_OPTS}"
 }
