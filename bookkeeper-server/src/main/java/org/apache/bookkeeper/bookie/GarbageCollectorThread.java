@@ -494,8 +494,8 @@ public class GarbageCollectorThread extends SafeRunnable {
             }
         }
         LOG.info(
-            "Compaction: entry log usage buckets[10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}, compacted {}, cost " 
-                + "{}ms",
+            "Compaction: entry log usage buckets[10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}, compacted {}, cost"
+                + " {}ms",
             entryLogUsageBuckets, compactedBuckets, System.currentTimeMillis() - start);
     }
 
