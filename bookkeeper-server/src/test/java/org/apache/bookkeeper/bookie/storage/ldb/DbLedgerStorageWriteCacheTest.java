@@ -75,13 +75,7 @@ public class DbLedgerStorageWriteCacheTest {
           public void flush() throws IOException {
               flushMutex.lock();
               try {
-                  // Swap the write caches and block indefinitely to simulate a slow disk
-                  WriteCache tmp = writeCacheBeingFlushed;
-                  writeCacheBeingFlushed = writeCache;
-                  writeCache = tmp;
-
-                  // since the cache is switched, we can allow flush to be triggered
-                  hasFlushBeenTriggered.set(false);
+                  writeCacheContainer.swapWriteCache();
 
                   // Block the flushing thread
                   try {
