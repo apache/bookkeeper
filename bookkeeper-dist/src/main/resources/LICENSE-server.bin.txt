@@ -243,7 +243,7 @@ Apache Software License, Version 2.
 - lib/io.vertx-vertx-core-3.9.8.jar [15]
 - lib/io.vertx-vertx-web-3.9.8.jar [16]
 - lib/io.vertx-vertx-web-common-3.9.8.jar [16]
-- lib/log4j-log4j-1.2.17.jar [17]
+- lib/ch.qos.reload4j-reload4j-1.2.19.jar [17]
 - lib/net.java.dev.jna-jna-3.2.7.jar [18]
 - lib/org.apache.commons-commons-collections4-4.1.jar [19]
 - lib/org.apache.commons-commons-lang3-3.6.jar [20]
@@ -302,6 +302,8 @@ Apache Software License, Version 2.
 - lib/io.perfmark-perfmark-api-0.23.0.jar [48]
 - lib/org.conscrypt-conscrypt-openjdk-uber-2.5.1.jar [49]
 - lib/org.xerial.snappy-snappy-java-1.1.7.jar [50]
+- lib/org.slf4j-slf4j-api-1.7.36.jar [51]
+- lib/org.slf4j-slf4j-reload4j-1.7.36.jar [51]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.11.0
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.11.0
@@ -319,7 +321,7 @@ Apache Software License, Version 2.
 [14] Source available at https://github.com/vert-x3/vertx-bridge-common/tree/3.9.8
 [15] Source available at https://github.com/eclipse/vert.x/tree/3.9.8
 [16] Source available at https://github.com/vert-x3/vertx-web/tree/3.9.8
-[17] Source available at http://logging.apache.org/log4j/1.2/download.html
+[17] Source available at https://reload4j.qos.ch/
 [18] Source available at https://github.com/java-native-access/jna/tree/3.2.7
 [19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
 [20] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
@@ -350,6 +352,7 @@ Apache Software License, Version 2.
 [48] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.23.0
 [49] Source available at https://github.com/google/conscrypt/releases/tag/2.5.1
 [50] Source available at https://github.com/google/snappy/releases/tag/1.1.7
+[51] Source available at https://github.com/qos-ch/slf4j
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.72.Final.jar bundles some 3rd party dependencies
@@ -628,14 +631,6 @@ CDDL 1.1 license. For details, see deps/javax.servlet-api-4.0.0/CDDL+GPL-1.1.
 
 Bundled as lib/javax.servlet-javax.servlet-api-4.0.0.jar
 Source available at https://github.com/javaee/servlet-spec/tree/4.0.0
-------------------------------------------------------------------------------------
-This product bundles Simple Logging Facade for Java, which is available under a
-MIT license. For details, see deps/slf4j-1.7.32/LICENSE.txt.
-
-Bundled as
-  - lib/org.slf4j-slf4j-api-1.7.32.jar
-  - lib/org.slf4j-slf4j-log4j12-1.7.32.jar
-Source available at https://github.com/qos-ch/slf4j/tree/v_1.7.32
 ------------------------------------------------------------------------------------
 This product bundles the Google Auth Library, which is available under a "3-clause BSD"
 license. For details, see deps/google-auth-library-credentials-0.20.0/LICENSE
