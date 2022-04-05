@@ -21,6 +21,15 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.StampedLock;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.EntryLogger;
@@ -33,16 +42,9 @@ import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.StampedLock;
-
+/**
+ * Write cache container.
+ */
 public class WriteCacheContainer {
     private final StampedLock writeCacheRotationLock = new StampedLock();
 
@@ -269,8 +271,8 @@ public class WriteCacheContainer {
             // Write cache is full, we need to trigger a flush so that it gets rotated
             // If the flush has already been triggered or flush has already switched the
             // cache, we don't need to trigger another flush
-            if (!isFlushOngoing.get() &&
-                    hasFlushBeenTriggered.compareAndSet(false, true)) {
+            if (!isFlushOngoing.get()
+                    && hasFlushBeenTriggered.compareAndSet(false, true)) {
                 // Trigger an early flush in background
                 log.info("Write cache is full, triggering flush");
                 executor.execute(() -> {
@@ -436,7 +438,6 @@ public class WriteCacheContainer {
 
 
     public ByteBuf getLastEntry(long ledgerId) {
-
         long stamp = writeCacheRotationLock.readLock();
         try {
             // First try to read from the write cache of recent entries
@@ -474,9 +475,8 @@ public class WriteCacheContainer {
                     return entry;
                 }
             }
-
             dbLedgerStorageStats.getWriteCacheMissCounter().inc();
-            return entry;
+            return null;
         } finally {
             writeCacheRotationLock.unlockRead(stamp);
         }
