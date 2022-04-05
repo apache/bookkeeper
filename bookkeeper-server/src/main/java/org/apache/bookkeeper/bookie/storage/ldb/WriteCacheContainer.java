@@ -1,5 +1,4 @@
 /**
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,16 +6,15 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
@@ -36,7 +34,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.StampedLock;
@@ -232,8 +234,10 @@ public class WriteCacheContainer {
 
         inserted = writeCache.put(ledgerId, entryId, entry);
         if (!writeCacheRotationLock.validate(stamp)) {
-            // The write cache was rotated while we were inserting. We need to acquire the proper read lock and repeat
-            // the operation because we might have inserted in a write cache that was already being flushed and cleared,
+            // The write cache was rotated while we were inserting.
+            // We need to acquire the proper read lock and repeat
+            // the operation because we might have inserted in
+            // a write cache that was already being flushed and cleared,
             // without being sure about this last entry being flushed or not.
             stamp = writeCacheRotationLock.readLock();
             try {
@@ -265,7 +269,8 @@ public class WriteCacheContainer {
             // Write cache is full, we need to trigger a flush so that it gets rotated
             // If the flush has already been triggered or flush has already switched the
             // cache, we don't need to trigger another flush
-            if (!isFlushOngoing.get() && hasFlushBeenTriggered.compareAndSet(false, true)) {
+            if (!isFlushOngoing.get() &&
+                    hasFlushBeenTriggered.compareAndSet(false, true)) {
                 // Trigger an early flush in background
                 log.info("Write cache is full, triggering flush");
                 executor.execute(() -> {
@@ -335,7 +340,6 @@ public class WriteCacheContainer {
         return flushingSize;
     }
 
-
     public long getFlushingCount() {
         long flushingCount = 0;
         for (WriteCache cache : fullCaches) {
@@ -343,7 +347,6 @@ public class WriteCacheContainer {
         }
         return flushingCount;
     }
-    
 
     public void checkpoint(CheckpointSource.Checkpoint checkpoint) throws IOException {
         CheckpointSource.Checkpoint thisCheckpoint = checkpointSource.newCheckpoint();
@@ -352,7 +355,6 @@ public class WriteCacheContainer {
         }
 
         long startTime = MathUtils.nowInNano();
-
         // Only a single flush operation can happen at a time
         flushMutex.lock();
         try {
@@ -366,7 +368,6 @@ public class WriteCacheContainer {
                         sizeToFlush / 1024.0 / 1024);
             }
 
-
             cleanupExecutor.execute(() -> {
                 // There can only be one single cleanup task running because the cleanupExecutor
                 // is single-threaded
@@ -374,7 +375,6 @@ public class WriteCacheContainer {
                     if (log.isDebugEnabled()) {
                         log.debug("Removing deleted ledgers from db indexes");
                     }
-
                     entryLocationIndex.removeOffsetFromDeletedLedgers();
                     ledgerIndex.removeDeletedLedgers();
                 } catch (Throwable t) {
@@ -384,8 +384,10 @@ public class WriteCacheContainer {
 
             lastCheckpoint = thisCheckpoint;
 
-            double flushTimeSeconds = MathUtils.elapsedNanos(startTime) / (double) TimeUnit.SECONDS.toNanos(1);
-            double flushThroughput = sizeToFlush / 1024.0 / 1024.0 / flushTimeSeconds;
+            double flushTimeSeconds =
+                    MathUtils.elapsedNanos(startTime) / (double) TimeUnit.SECONDS.toNanos(1);
+            double flushThroughput =
+                    sizeToFlush / 1024.0 / 1024.0 / flushTimeSeconds;
 
             if (log.isDebugEnabled()) {
                 log.debug("Flushing done time {} s -- Written {} MB/s", flushTimeSeconds, flushThroughput);
@@ -445,8 +447,8 @@ public class WriteCacheContainer {
                     long entryId = entry.readLong();
                     entry.resetReaderIndex();
                     if (log.isDebugEnabled()) {
-                        log.debug("Found last entry for ledger {} in write cache: {}@{}", ledgerId, foundLedgerId,
-                                entryId);
+                        log.debug("Found last entry for ledger {} in write cache: {}@{}",
+                                ledgerId, foundLedgerId, entryId);
                     }
                 }
 
@@ -464,10 +466,10 @@ public class WriteCacheContainer {
                         long entryId = entry.readLong();
                         entry.resetReaderIndex();
                         if (log.isDebugEnabled()) {
-                            log.debug("Found last entry for ledger {} in write cache being flushed: {}", ledgerId, entryId);
+                            log.debug("Found last entry for ledger {} in write cache being flushed: {}",
+                                    ledgerId, entryId);
                         }
                     }
-
                     dbLedgerStorageStats.getWriteCacheHitCounter().inc();
                     return entry;
                 }
@@ -480,11 +482,13 @@ public class WriteCacheContainer {
         }
     }
 
-
-    public ByteBuf doGetEntry(long ledgerId, long entryId) throws IOException, BookieException {
-        // We need to try to read from both write caches, since recent entries could be found in either of the two. The
-        // write caches are already thread safe on their own, here we just need to make sure we get references to both
-        // of them. Using an optimistic lock since the read lock is always free, unless we're swapping the caches.
+    public ByteBuf doGetEntry(long ledgerId, long entryId) {
+        // We need to try to read from both write caches,
+        // since recent entries could be found in either of the two.
+        // The write caches are already thread safe on their own,
+        // here we just need to make sure we get references to both
+        // of them. Using an optimistic lock since the read lock is always free,
+        // unless we're swapping the caches.
         long stamp = writeCacheRotationLock.tryOptimisticRead();
         WriteCache localWriteCache = writeCache;
         LinkedBlockingQueue<WriteCache> localFullCaches = fullCaches;
@@ -549,7 +553,7 @@ public class WriteCacheContainer {
         ledgerIndex.delete(ledgerId);
     }
 
-    public void shutdown() throws InterruptedException {
+    public void shutdown() {
         close();
         executor.shutdown();
     }

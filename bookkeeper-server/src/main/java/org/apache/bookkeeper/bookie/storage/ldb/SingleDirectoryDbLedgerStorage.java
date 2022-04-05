@@ -112,7 +112,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private final long readCacheMaxSize;
     private final int readAheadCacheBatchSize;
-    
     private final DbLedgerStorageStats dbLedgerStorageStats;
 
     private static final long DEFAULT_MAX_THROTTLE_TIME_MILLIS = TimeUnit.SECONDS.toMillis(10);
@@ -157,8 +156,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 transientLedgerInfoCache, entryLocationIndex, entryLogger, ledgerIndex, flushMutex);
 
         readCache = new ReadCache(allocator, readCacheMaxSize);
-
-        
         cleanupExecutor.scheduleAtFixedRate(this::cleanupStaleTransientLedgerInfo,
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES,
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES, TimeUnit.MINUTES);
@@ -264,9 +261,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             return false;
         }
 
-        boolean inCache = writeCacheContainer.entryExists(ledgerId,entryId)
-             || readCache.hasEntry(ledgerId, entryId);
-
+        boolean inCache = writeCacheContainer.entryExists(ledgerId, entryId)
+                || readCache.hasEntry(ledgerId, entryId);
         if (inCache) {
             return true;
         }
