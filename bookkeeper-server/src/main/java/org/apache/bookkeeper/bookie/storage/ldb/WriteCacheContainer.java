@@ -26,7 +26,7 @@ public class WriteCacheContainer {
 
     // Write cache where all new entries are inserted into
     protected volatile WriteCache writeCache;
-    
+
     private volatile LinkedBlockingQueue<WriteCache> freeCaches = new LinkedBlockingQueue<>();
     private volatile LinkedBlockingQueue<WriteCache> fullCaches = new LinkedBlockingQueue<>();
 
@@ -59,7 +59,7 @@ public class WriteCacheContainer {
     private final long writeCacheMaxSize;
 
 
-    public WriteCacheContainer(ByteBufAllocator allocator, long writeCacheSize, int cacheCount,
+    public WriteCacheContainer(ByteBufAllocator allocator, long writeCacheSize, int writeCacheNum,
                                long maxThrottleTimeNanos, StatsLogger ledgerDirStatsLogger,
                                ConcurrentLongHashMap<TransientLedgerInfo> transientLedgerInfoCache,
                                EntryLocationIndex entryLocationIndex,
@@ -67,8 +67,8 @@ public class WriteCacheContainer {
                                LedgerMetadataIndex ledgerIndex,
                                ReentrantLock flushMutex) {
         this.writeCacheMaxSize = writeCacheSize;
-        for (int i = 0; i < cacheCount; i++) {
-            freeCaches.add(new WriteCache(allocator, writeCacheMaxSize / cacheCount));
+        for (int i = 0; i < writeCacheNum; i++) {
+            freeCaches.add(new WriteCache(allocator, writeCacheMaxSize / writeCacheNum));
         }
         this.writeCache = freeCaches.poll();
 

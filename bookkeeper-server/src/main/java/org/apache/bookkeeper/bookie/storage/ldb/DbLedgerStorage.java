@@ -77,6 +77,8 @@ public class DbLedgerStorage implements LedgerStorage {
 
     public static final String WRITE_CACHE_MAX_SIZE_MB = "dbStorage_writeCacheMaxSizeMb";
 
+    public static final String WRITE_CACHE_NUM = "dbStorage_writeCacheNum";
+
     public static final String READ_AHEAD_CACHE_MAX_SIZE_MB = "dbStorage_readAheadCacheMaxSizeMb";
 
     static final String MAX_THROTTLE_TIME_MILLIS = "dbStorage_maxThrottleTimeMs";
@@ -125,6 +127,9 @@ public class DbLedgerStorage implements LedgerStorage {
             throws IOException {
         long writeCacheMaxSize = getLongVariableOrDefault(conf, WRITE_CACHE_MAX_SIZE_MB,
                 DEFAULT_WRITE_CACHE_MAX_SIZE_MB) * MB;
+
+        int writeCacheNum = getIntVariableOrDefault(conf, WRITE_CACHE_NUM, 2);
+
         long readCacheMaxSize = getLongVariableOrDefault(conf, READ_AHEAD_CACHE_MAX_SIZE_MB,
                 DEFAULT_READ_CACHE_MAX_SIZE_MB) * MB;
 
@@ -155,7 +160,7 @@ public class DbLedgerStorage implements LedgerStorage {
             LedgerDirsManager ldm = new LedgerDirsManager(conf, dirs, ledgerDirsManager.getDiskChecker(), statsLogger);
             ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm, indexDirsManager,
                     statsLogger, gcExecutor, perDirectoryWriteCacheSize,
-                    perDirectoryReadCacheSize, readAheadCacheBatchSize));
+                    perDirectoryReadCacheSize, readAheadCacheBatchSize, writeCacheNum));
             ldm.getListeners().forEach(ledgerDirsManager::addLedgerDirsListener);
         }
 
@@ -191,11 +196,11 @@ public class DbLedgerStorage implements LedgerStorage {
     protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
             StatsLogger statsLogger, ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize,
-            int readAheadCacheBatchSize)
+            int readAheadCacheBatchSize, int writeCacheNum)
             throws IOException {
         return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
                                                   statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize,
-                                                  readAheadCacheBatchSize);
+                                                  readAheadCacheBatchSize, writeCacheNum);
     }
 
     @Override
@@ -424,6 +429,20 @@ public class DbLedgerStorage implements LedgerStorage {
             return defaultValue;
         } else {
             return conf.getLong(keyName);
+        }
+    }
+
+
+    static int getIntVariableOrDefault(ServerConfiguration conf, String keyName, int defaultValue) {
+        Object obj = conf.getProperty(keyName);
+        if (obj instanceof Number) {
+            return ((Number) obj).intValue();
+        } else if (obj == null) {
+            return defaultValue;
+        } else if (StringUtils.isEmpty(conf.getString(keyName))) {
+            return defaultValue;
+        } else {
+            return conf.getInt(keyName);
         }
     }
 
