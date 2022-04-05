@@ -124,6 +124,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                                           int readAheadCacheBatchSize, int writeCacheNum) throws IOException {
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
+        checkArgument(writeCacheNum > 1, "dbStorage_writeCacheNum <2");
 
         String baseDir = ledgerDirsManager.getAllLedgerDirs().get(0).toString();
         log.info("Creating single directory db ledger storage on {}", baseDir);
