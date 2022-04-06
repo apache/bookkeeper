@@ -32,7 +32,7 @@ TMP_DIR=/tmp/bookkeeper-site
   cd $TMP_DIR
 
   # clone the remote repo
-  git clone --depth 1 -b asf-staging "https://site-updater:${GITHUB_TOKEN}@$ORIGIN_REPO" .
+  git clone --depth 1 -b asf-site "https://site-updater:${GITHUB_TOKEN}@$ORIGIN_REPO" .
   git config user.name "Apache BookKeeper Site Updater"
   git config user.email "dev@bookkeeper.apache.org"
   # copy the apache generated dir
@@ -40,7 +40,7 @@ TMP_DIR=/tmp/bookkeeper-site
   cp -r $ROOT_DIR/site3/website/build/* content
 
   git add -A .
-  git diff-index --quiet HEAD || (git commit -m "Updated site at revision $REVISION" && git push -q origin HEAD:asf-staging)
+  git diff-index --quiet HEAD || (git commit -m "Updated site at revision $REVISION" && git push -q origin HEAD:asf-site)
 
   rm -rf $TMP_DIR
 )
