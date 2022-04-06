@@ -139,7 +139,7 @@
     <jackson.version>2.13.2</jackson.version>
     <jackson-databind.version>2.13.2.1</jackson-databind.version>
     <jcommander.version>1.78</jcommander.version>
-    <jetty.version>9.4.43.v20210629</jetty.version>
+    <jetty.version>9.4.44.v20210927</jetty.version>
     <jmh.version>1.19</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <jsoup.version>1.14.3</jsoup.version>
