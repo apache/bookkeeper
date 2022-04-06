@@ -17,7 +17,7 @@
 # under the License.
 #
 
-name: Website staging deploy
+name: Website deploy
 on:
   workflow_dispatch:
   push:
@@ -31,8 +31,8 @@ env:
   DEPLOY_URL: "https://bookkeeper.apache.org/"
 
 jobs:
-  stage-website:
-    name: Build and stage website
+  build-website:
+    name: Build and deploy the website
     if: ${{ github.repository == 'apache/bookkeeper' }}
     runs-on: ubuntu-latest
     timeout-minutes: 180
