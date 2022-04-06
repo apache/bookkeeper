@@ -2143,6 +2143,55 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
+    public void testUpdateTopologyWithRackChange() throws Exception {
+        String defaultRackForThisTest = NetworkTopology.DEFAULT_REGION_AND_RACK;
+        repp.uninitalize();
+        updateMyRack(defaultRackForThisTest);
+
+        // Update cluster
+        BookieSocketAddress newAddr1 = new BookieSocketAddress("127.0.0.100", 3181);
+        BookieSocketAddress newAddr2 = new BookieSocketAddress("127.0.0.101", 3181);
+        BookieSocketAddress newAddr3 = new BookieSocketAddress("127.0.0.102", 3181);
+        BookieSocketAddress newAddr4 = new BookieSocketAddress("127.0.0.103", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(newAddr1.getHostName(), defaultRackForThisTest);
+        StaticDNSResolver.addNodeToRack(newAddr2.getHostName(), defaultRackForThisTest);
+        StaticDNSResolver.addNodeToRack(newAddr3.getHostName(), defaultRackForThisTest);
+        StaticDNSResolver.addNodeToRack(newAddr4.getHostName(), defaultRackForThisTest);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer,
+                DISABLE_ALL, statsLogger, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(defaultRackForThisTest);
+
+        Gauge<? extends Number> numBookiesInDefaultRackGauge = statsLogger
+                .getGauge(BookKeeperClientStats.NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK);
+
+        Set<BookieId> writeableBookies = new HashSet<>();
+        Set<BookieId> readOnlyBookies = new HashSet<>();
+        writeableBookies.add(newAddr1.toBookieId());
+        writeableBookies.add(newAddr2.toBookieId());
+        writeableBookies.add(newAddr3.toBookieId());
+        writeableBookies.add(newAddr4.toBookieId());
+        repp.onClusterChanged(writeableBookies, readOnlyBookies);
+        // only writable bookie - newAddr1 in default rack
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 4, numBookiesInDefaultRackGauge.getSample());
+
+        // newAddr4 rack is changed and it is not in default anymore
+        StaticDNSResolver
+                .changeRack(Collections.singletonList(newAddr3), Collections.singletonList("/default-region/r4"));
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 3, numBookiesInDefaultRackGauge.getSample());
+
+        StaticDNSResolver
+                .changeRack(Collections.singletonList(newAddr1), Collections.singletonList(defaultRackForThisTest));
+        assertEquals("NUM_WRITABLE_BOOKIES_IN_DEFAULT_RACK guage value", 3, numBookiesInDefaultRackGauge.getSample());
+    }
+
+    @Test
     public void testNumBookiesInDefaultRackGauge() throws Exception {
         String defaultRackForThisTest = NetworkTopology.DEFAULT_REGION_AND_RACK;
         repp.uninitalize();

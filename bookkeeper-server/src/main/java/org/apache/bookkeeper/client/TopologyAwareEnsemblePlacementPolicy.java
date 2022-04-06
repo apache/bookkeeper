@@ -749,10 +749,12 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                     if (node != null) {
                         // refresh the rack info if its a known bookie
                         BookieNode newNode = createBookieNode(bookieAddress);
-                        topology.remove(node);
-                        topology.add(newNode);
-                        knownBookies.put(bookieAddress, newNode);
-                        historyBookies.put(bookieAddress, newNode);
+                        if (!newNode.getNetworkLocation().equals(node.getNetworkLocation())) {
+                            topology.remove(node);
+                            topology.add(newNode);
+                            knownBookies.put(bookieAddress, newNode);
+                            historyBookies.put(bookieAddress, newNode);
+                        }
                     }
                 } catch (IllegalArgumentException | NetworkTopologyImpl.InvalidTopologyException e) {
                     LOG.error("Failed to update bookie rack info: {} ", bookieAddress, e);
