@@ -71,6 +71,7 @@
     <module>shaded</module>
     <module>microbenchmarks</module>
     <module>tests</module>
+    <module>bookkeeper-slogger</module>
   </modules>
   <mailingLists>
     <mailingList>
