@@ -51,7 +51,9 @@ class NativeUtils {
         checkArgument(path.startsWith("/"), "absolute path must start with /");
 
         String[] parts = path.split("/");
-        String filename = (parts.length > 0) ? parts[parts.length - 1] : null;
+        checkArgument(parts.length > 0, "absolute path must contain file name");
+
+        String filename = parts[parts.length - 1];
 
         File dir = Files.createTempDirectory("native").toFile();
         dir.deleteOnExit();
