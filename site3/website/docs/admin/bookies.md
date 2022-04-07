@@ -172,3 +172,25 @@ If the change was the result of an accidental configuration change, the change c
    ```
 
    See the [AutoRecovery](autorecovery) documentation for more info on the re-replication process.
+
+## Add or Remove ledger/journal directories.
+Accidentally replacing disks or removing directories without updating cookie data can cause a bookie to fail. Here's 
+the steps of updating bookie cookie data after replacing disks or removing directories.
+1. Check the instanceid of bookie server:
+
+   ```bash
+      $ bin/bookkeeper shell whatisinstanceid
+   ```
+2. Generate new cookie version file:
+
+   ```bash
+      $ bin/bookkeeper shell cookie_generate -i <instanceid> -j <all journal directories> -l <all ledger 
+   directories> -o VERSION <bookie id>
+   ```
+3. Copy the cookie version file to all journal and ledger directories.
+
+4. update cookie data in Zookeeper:
+
+   ```bash
+      $ bin/bookkeeper shell cookie_update --cookie-file <cookie file>
+   ```
