@@ -1530,6 +1530,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         conf.setGcWaitTime(500);
         conf.setMinorCompactionInterval(1);
         conf.setMajorCompactionInterval(2);
+        conf.setMajorCompactionMaxTimeMillis(5000);
         runFunctionWithLedgerManagerFactory(conf, lmf -> {
             try (LedgerManager lm = lmf.newLedgerManager()) {
                 testSuspendGarbageCollection(conf, lm);
@@ -1579,8 +1580,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         int majorCompactions = stats.getCounter("storage.gc." + MAJOR_COMPACTION_COUNT).get().intValue();
         int minorCompactions = stats.getCounter("storage.gc." + MINOR_COMPACTION_COUNT).get().intValue();
-        Thread.sleep(conf.getMajorCompactionInterval() * 1000
-                + conf.getGcWaitTime());
+        Thread.sleep(3 * (conf.getMajorCompactionInterval() * 1000
+                + conf.getGcWaitTime()
+                + conf.getMajorCompactionMaxTimeMillis()));
         assertTrue(
                 "Major compaction should have happened",
                 stats.getCounter("storage.gc." + MAJOR_COMPACTION_COUNT).get() > majorCompactions);
@@ -1764,11 +1766,16 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         restartBookies(c -> {
                 // now enable normal compaction
                 c.setMajorCompactionThreshold(0.5f);
+                c.setMajorCompactionMaxTimeMillis(5000);
                 return c;
             });
 
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+
         Thread.sleep(confByIndex(0).getMajorCompactionInterval() * 1000
-                + confByIndex(0).getGcWaitTime());
+                + confByIndex(0).getGcWaitTime()
+                + confByIndex(0).getMajorCompactionMaxTimeMillis());
         // compaction worker should compact [0-4].log
         for (File ledgerDirectory : bookieLedgerDirs()) {
             assertFalse("Entry log file ([0,1,2].log should have been compacted in ledgerDirectory: "

@@ -21,7 +21,6 @@
 # NOTE: this is the script used by CI to push to apache. If you are looking for
 #       staging the changes, try the `staging-website.sh` script.
 source scripts/common.sh
-
 ORIGIN_REPO=$(git remote show origin | grep 'Push  URL' | awk -F// '{print $NF}')
 echo "ORIGIN_REPO: $ORIGIN_REPO"
 
@@ -33,10 +32,9 @@ echo "ORIGIN_REPO: $ORIGIN_REPO"
   cd $TMP_DIR
 
   # clone the remote repo
-  git clone "https://$ORIGIN_REPO" .
+  git clone --depth 1 -b asf-site "https://site-updater:${GITHUB_TOKEN}@$ORIGIN_REPO" .
   git config user.name "Apache BookKeeper Site Updater"
   git config user.email "dev@bookkeeper.apache.org"
-  git checkout asf-site
   # copy the apache generated dir
   cp -r $APACHE_GENERATED_DIR/content/* $TMP_DIR/content
 

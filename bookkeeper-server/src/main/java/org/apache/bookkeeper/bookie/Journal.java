@@ -588,7 +588,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
     }
 
-    private class CbThreadFactory implements ThreadFactory {
+    private static class CbThreadFactory implements ThreadFactory {
         private int counter = 0;
         private String threadBaseName = "bookie-journal-callback";
 

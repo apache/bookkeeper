@@ -20,7 +20,6 @@
 
 BINDIR=$(dirname "$0")
 SS_HOME=`cd $BINDIR/..;pwd`
-BK_HOME=${BK_HOME:-"`cd ${BINDIR}/../..;pwd`"}
 
 DEFAULT_STANDALONE_CONF=$SS_HOME/conf/standalone.conf
 DEFAULT_LOG_CONF=$SS_HOME/conf/log4j.properties
@@ -80,14 +79,18 @@ EOF
 }
 
 add_maven_deps_to_classpath() {
+    MVN="mvn"
+    if [ "$MAVEN_HOME" != "" ]; then
+	    MVN=${MAVEN_HOME}/bin/mvn
+    fi
+
     # Need to generate classpath from maven pom. This is costly so generate it
     # and cache it. Save the file into our target dir so a mvn clean will get
     # clean it up and force us create a new one.
-    f="${SS_HOME}/server/build/classpath.txt"
+    f="${SS_HOME}/server/target/classpath.txt"
     if [ ! -f "${f}" ]
     then
-      echo "no classpath.txt found at ${SS_HOME}/server/build"
-      exit 1
+	    ${MVN} -f "${SS_HOME}/server/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
     fi
     SS_CLASSPATH=${CLASSPATH}:`cat "${f}"`
 }

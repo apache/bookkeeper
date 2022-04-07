@@ -41,6 +41,7 @@ import org.junit.Test;
 /**
  * Test the ConcurrentLongHashSet class.
  */
+@SuppressWarnings("deprecation")
 public class ConcurrentLongHashSetTest {
 
     @Test

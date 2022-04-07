@@ -20,6 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.IOException;
 import lombok.Setter;
@@ -139,6 +140,7 @@ public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> 
         });
     }
 
+    @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
     private synchronized void initEntryLogger(ServerConfiguration conf) throws IOException {
         // provide read only entry logger
         if (null == entryLogger) {

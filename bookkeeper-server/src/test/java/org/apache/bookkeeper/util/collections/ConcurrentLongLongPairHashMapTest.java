@@ -43,6 +43,7 @@ import org.junit.Test;
 /**
  * Test the concurrent long-long pair hashmap class.
  */
+@SuppressWarnings("deprecation")
 public class ConcurrentLongLongPairHashMapTest {
 
     @Test

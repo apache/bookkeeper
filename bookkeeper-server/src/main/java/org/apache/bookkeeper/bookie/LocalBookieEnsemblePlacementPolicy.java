@@ -99,7 +99,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
             List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
-        return null;
+        return writeSet;
     }
 
     @Override
@@ -107,7 +107,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
             List<BookieId> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
-        return null;
+        return writeSet;
     }
 
     @Override

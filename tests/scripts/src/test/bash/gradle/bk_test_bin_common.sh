@@ -27,7 +27,7 @@
 #
 
 testDefaultVariables() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
   assertEquals "BINDIR is not set correctly" "${BK_BINDIR}" "${BINDIR}"
   assertEquals "BK_HOME is not set correctly" "${BK_HOMEDIR}" "${BK_HOME}"
   assertEquals "DEFAULT_LOG_CONF is not set correctly" "${BK_CONFDIR}/log4j.properties" "${DEFAULT_LOG_CONF}"
@@ -48,7 +48,7 @@ testDefaultVariables() {
 }
 
 testFindModuleJarAt() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   MODULE="test-module"
 
@@ -113,7 +113,7 @@ testFindModuleJar() {
   echo "" > ${BK_HOME}/conf/bkenv.sh
   echo "" > ${BK_HOME}/conf/bk_cli_env.sh
 
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   MODULE="test-module"
   MODULE_PATH="testmodule"
@@ -159,7 +159,7 @@ testLoadEnvfiles() {
   echo "CLI_MAX_HEAP_MEMORY=2048M" > ${BK_HOME}/conf/bk_cli_env.sh
 
   # load the common_gradle.sh
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   assertEquals "NETTY_LEAK_DETECTION_LEVEL is not set correctly" "enabled" "${NETTY_LEAK_DETECTION_LEVEL}"
   assertEquals "BOOKIE_MAX_HEAP_MEMORY is not set correctly" "2048M" "${BOOKIE_MAX_HEAP_MEMORY}"
@@ -172,7 +172,7 @@ testLoadEnvfiles() {
 }
 
 testBuildBookieJVMOpts() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   TEST_LOG_DIR=${BK_TMPDIR}/logdir
   TEST_GC_LOG_FILENAME="test-gc.log"
@@ -187,7 +187,7 @@ testBuildBookieJVMOpts() {
 }
 
 testBuildCLIJVMOpts() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   TEST_LOG_DIR=${BK_TMPDIR}/logdir
   TEST_GC_LOG_FILENAME="test-gc.log"
@@ -202,18 +202,16 @@ testBuildCLIJVMOpts() {
 }
 
 testBuildNettyOpts() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   ACTUAL_NETTY_OPTS=$(build_netty_opts)
-  EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled \
-    -Dio.netty.recycler.maxCapacity.default=1000 \
-    -Dio.netty.recycler.linkCapacity=1024"
+  EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled"
 
     assertEquals "Netty OPTS is not set correctly" "${EXPECTED_NETTY_OPTS}" "${ACTUAL_NETTY_OPTS}"
 }
 
 testBuildBookieOpts() {
-  source ${BK_BINDIR}/common.sh
+  source ${BK_BINDIR}/common_gradle.sh
 
   ACTUAL_OPTS=$(build_bookie_opts)
   EXPECTED_OPTS="-Djava.net.preferIPv4Stack=true"

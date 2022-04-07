@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.tests.integration.utils;
 
 import com.google.common.collect.Lists;
-
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Closure;
 
 import java.io.Closeable;
@@ -270,6 +270,7 @@ public class MavenClassLoader implements AutoCloseable {
         }
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private static void extractTarGz(File tarGz, File output) throws Exception {
         File tarFile = new File(output, tarGz.getName().replace(".gz", ""));
         tarFile.delete();
@@ -289,11 +290,12 @@ public class MavenClassLoader implements AutoCloseable {
         return tarFile;
     }
 
+    @SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"})
     private static void unTar(final File inputFile, final File outputDir) throws Exception {
-        try (TarArchiveInputStream debInputStream = (TarArchiveInputStream)
-                new ArchiveStreamFactory().createArchiveInputStream("tar",
-                        new FileInputStream(inputFile))) {
-            TarArchiveEntry entry = null;
+        try (final FileInputStream fis = new FileInputStream(inputFile);
+                TarArchiveInputStream debInputStream = (TarArchiveInputStream)
+                new ArchiveStreamFactory().createArchiveInputStream("tar", fis)) {
+            TarArchiveEntry entry;
             while ((entry = (TarArchiveEntry) debInputStream.getNextEntry()) != null) {
                 final File outputFile = new File(outputDir, entry.getName());
                 if (entry.isDirectory()) {

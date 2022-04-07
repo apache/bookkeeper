@@ -50,6 +50,7 @@ import org.junit.Test;
 /**
  * Unit test for {@link AdminCommand}.
  */
+@SuppressWarnings("unchecked")
 public class AdminCommandTest extends BookieCommandTestBase {
 
     private static final BookieId bookieSocketAddress = BookieId.parse("localhost:9000");
