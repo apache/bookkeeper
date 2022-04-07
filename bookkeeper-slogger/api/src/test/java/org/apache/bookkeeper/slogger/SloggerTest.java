@@ -18,15 +18,16 @@
  */
 package org.apache.bookkeeper.slogger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import org.junit.Test;
 
 /**
  * Test Slogger.
