@@ -71,6 +71,7 @@
     <module>shaded</module>
     <module>microbenchmarks</module>
     <module>tests</module>
+    <module>native-io</module>
   </modules>
   <mailingLists>
     <mailingList>
