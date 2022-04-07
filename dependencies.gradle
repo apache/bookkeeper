@@ -65,7 +65,7 @@ depVersions = [
     junit: "4.12",
     junitFoundation: "11.0.0",
     kerby: "1.1.1",
-    log4j: "2.17.1",
+    log4j: "2.17.2",
     lombok: "1.18.22",
     lz4: "1.3.0",
     mockito: "3.12.4",
