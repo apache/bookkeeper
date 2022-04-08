@@ -73,14 +73,15 @@ public class BufferedReadChannel extends BufferedChannelBase  {
      * from the file channel, return the prefetched bytes for throttle.
      * @param dest
      * @param pos
-     * @return Pair<Integer, Integer>
+     * @return
      * @throws IOException
      */
     public Pair<Integer, Integer> readWithPrefetchedBytes(ByteBuf dest, long pos) throws IOException {
         return readWithPrefetchedBytes(dest, pos, dest.writableBytes());
     }
 
-    public synchronized Pair<Integer, Integer> readWithPrefetchedBytes(ByteBuf dest, long pos, int length) throws IOException {
+    public synchronized Pair<Integer, Integer> readWithPrefetchedBytes(ByteBuf dest, long pos, int length)
+        throws IOException {
         invocationCount++;
         long currentPosition = pos;
         long eof = validateAndGetFileChannel().size();
