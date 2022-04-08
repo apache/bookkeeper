@@ -59,7 +59,7 @@ public class EntryLogCompactor extends AbstractLogCompactor {
     public boolean compact(EntryLogMetadata entryLogMeta) {
         try {
             entryLogger.scanEntryLog(entryLogMeta.getEntryLogId(),
-                scannerFactory.newScanner(entryLogMeta));
+                scannerFactory.newScanner(entryLogMeta), throttler);
             scannerFactory.flush();
             LOG.info("Removing entry log {} after compaction", entryLogMeta.getEntryLogId());
             logRemovalListener.removeEntryLog(entryLogMeta.getEntryLogId());

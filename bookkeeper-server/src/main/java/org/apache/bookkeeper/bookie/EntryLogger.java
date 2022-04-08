@@ -62,6 +62,7 @@ import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -416,6 +417,21 @@ public class EntryLogger {
             }
         }
         return channel.read(buff, pos);
+    }
+
+    private Pair<Integer, Integer> readFromLogChannelWithPrefetchBytes(long entryLogId,
+                                                                       BufferedReadChannel channel,
+                                                                       ByteBuf buff,
+                                                                       long pos) throws IOException {
+        BufferedLogChannel bc = entryLogManager.getCurrentLogIfPresent(entryLogId);
+        if (null != bc) {
+            synchronized (bc) {
+                if (pos + buff.writableBytes() >= bc.getFileChannelPosition()) {
+                    return bc.readWithPrefetchedBytes(buff, pos);
+                }
+            }
+        }
+        return channel.readWithPrefetchedBytes(buff, pos);
     }
 
     /**
@@ -983,12 +999,23 @@ public class EntryLogger {
 
     /**
      * Scan entry log.
-     *
      * @param entryLogId Entry Log Id
      * @param scanner Entry Log Scanner
      * @throws IOException
      */
     public void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws IOException {
+        scanEntryLog(entryLogId, scanner, null);
+    }
+    /**
+     * Scan entry log.
+     *
+     * @param entryLogId Entry Log Id
+     * @param scanner Entry Log Scanner
+     * @param throttler throttle for the scan
+     * @throws IOException
+     */
+    public void scanEntryLog(long entryLogId, EntryLogScanner scanner, AbstractLogCompactor.Throttler throttler)
+        throws IOException {
         // Buffer where to read the entrySize (4 bytes) and the ledgerId (8 bytes)
         ByteBuf headerBuffer = Unpooled.buffer(4 + 8);
         BufferedReadChannel bc;
@@ -1014,10 +1041,18 @@ public class EntryLogger {
                 if (pos >= bc.size()) {
                     break;
                 }
-                if (readFromLogChannel(entryLogId, bc, headerBuffer, pos) != headerBuffer.capacity()) {
+
+                Pair<Integer, Integer> readBytesPair =
+                    readFromLogChannelWithPrefetchBytes(entryLogId, bc, headerBuffer, pos);
+                if (readBytesPair.getLeft() != headerBuffer.capacity()) {
                     LOG.warn("Short read for entry size from entrylog {}", entryLogId);
                     return;
                 }
+
+                if (throttler != null) {
+                    throttler.acquire(readBytesPair.getRight());
+                }
+
                 long offset = pos;
                 pos += 4;
                 int entrySize = headerBuffer.readInt();
