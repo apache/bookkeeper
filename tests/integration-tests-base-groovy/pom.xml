@@ -85,7 +85,7 @@
              https://issues.apache.org/jira/browse/SUREFIRE-1476 //-->
         <version>2.8.1</version>
         <configuration>
-          <argLine>-Xmx4G -Djava.net.preferIPv4Stack=true</argLine>
+          <argLine>-Xmx4G -Djava.net.preferIPv4Stack=true ${test.additional.args}</argLine>
           <forkCount>1</forkCount>
           <useSystemClassLoader>false</useSystemClassLoader>
           <systemPropertyVariables>

@@ -106,7 +106,7 @@
         <configuration>
           <trimStackTrace>false</trimStackTrace>
           <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
-          <argLine>-Xmx3G -Djava.net.preferIPv4Stack=true -XX:MaxDirectMemorySize=2G</argLine>
+          <argLine>-Xmx3G -Djava.net.preferIPv4Stack=true -XX:MaxDirectMemorySize=2G ${test.additional.args}</argLine>
           <forkMode>always</forkMode>
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
           <properties>
