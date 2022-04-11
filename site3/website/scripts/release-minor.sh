@@ -37,18 +37,22 @@ find versioned_sidebars -name "version-${LATEST_RELEASED}-sidebars.json"
 find versioned_docs -name "version-${LATEST_RELEASED}"
 
 # replace sidebar items identifier
-sed -i '' "s/version-${LATEST_RELEASED}/version-${NEW_RELEASE}/" versioned_sidebars/$sidebar_file
+sed -i'.bak' "s/version-${LATEST_RELEASED}/version-${NEW_RELEASE}/" versioned_sidebars/$sidebar_file
+rm "versioned_sidebars/${sidebar_file}.bak"
 # rename sidebar file
 mv versioned_sidebars/$sidebar_file versioned_sidebars/version-${NEW_RELEASE}-sidebars.json
 
 # replace version in files
-find versioned_docs/version-${LATEST_RELEASED} -type f -exec sed -i '' "s/${LATEST_RELEASED}/${NEW_RELEASE}/g" {} +
+find versioned_docs/version-${LATEST_RELEASED} -type f -exec sed -i'.bak' "s/${LATEST_RELEASED}/${NEW_RELEASE}/g" {} +
+find versioned_docs/version-${LATEST_RELEASED} -name "*.bak" | xargs rm
 latest_released_md_link=${LATEST_RELEASED//./}
 new_release_md_link=${NEW_RELEASE//./}
 # replace Markdown links
-find versioned_docs/version-${LATEST_RELEASED} -type f -exec sed -i '' "s/#${latest_released_md_link}/#${new_release_md_link}/g" {} +
+find versioned_docs/version-${LATEST_RELEASED} -type f -exec sed -i'.bak' "s/#${latest_released_md_link}/#${new_release_md_link}/g" {} +
+find versioned_docs/version-${LATEST_RELEASED} -name "*.bak" | xargs rm
 # rename versioned_docs directory
 mv versioned_docs/version-${LATEST_RELEASED} versioned_docs/version-${NEW_RELEASE}
 
 # update versions.json
-sed -i '' "s/${LATEST_RELEASED}/${NEW_RELEASE}/" versions.json
+sed -i'.bak' "s/${LATEST_RELEASED}/${NEW_RELEASE}/" versions.json
+rm versions.json.bak

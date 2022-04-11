@@ -34,16 +34,19 @@ cd site3/website
 # create versioned sidebar file
 cp $sidebar_file versioned_sidebars/version-${NEW_RELEASE}-sidebars.json
 # add unique id for each item in the sidebar
-sed -i '' "s/\"id\": \"/\"id\": \"version-${NEW_RELEASE}\//" versioned_sidebars/version-${NEW_RELEASE}-sidebars.json
+sed -i'.bak' "s/\"id\": \"/\"id\": \"version-${NEW_RELEASE}\//" versioned_sidebars/version-${NEW_RELEASE}-sidebars.json
+rm versioned_sidebars/version-${NEW_RELEASE}-sidebars.json.bak
 
 
 # create new versioned_docs from "docs" dir
 cp -R $docs_dir versioned_docs/version-${NEW_RELEASE}
 # replace {{ site.latest_release }} with the current release
-find versioned_docs/version-${NEW_RELEASE} -type f -exec sed -i '' "s/{{ site.latest_release }}/${NEW_RELEASE}/g" {} +
+find versioned_docs/version-${NEW_RELEASE} -type f -exec sed -i'.bak' "s/{{ site.latest_release }}/${NEW_RELEASE}/g" {} +
+find versioned_docs/version-${NEW_RELEASE} -name "*.bak" | xargs rm
 # resolve release notes link
 new_release_md_link=${NEW_RELEASE//./}
-find versioned_docs/version-${NEW_RELEASE} -type f -exec sed -i '' "s/(\/release-notes)/(\/release-notes#${new_release_md_link})/g" {} +
+find versioned_docs/version-${NEW_RELEASE} -type f -exec sed -i'.bak' "s/(\/release-notes)/(\/release-notes#${new_release_md_link})/g" {} +
+find versioned_docs/version-${NEW_RELEASE} -name "*.bak" | xargs rm
 
 # update versions.json with the new release
 node > versions.json <<EOF
