@@ -12,8 +12,8 @@ Ensure you have [yarn](https://classic.yarnpkg.com/lang/en/docs/install) install
 For each minor release only the latest patch version documentation is kept.
 
 ```
-LATEST_RELEASED=4.14.4
-NEW_RELEASE=4.14.5
+export LATEST_RELEASED=4.14.4
+export NEW_RELEASE=4.14.5
 
 ./site3/website/scripts/release-minor.sh
 ```
@@ -23,7 +23,7 @@ Then you have to:
 ### Major/minor release
 
 ```
-NEW_RELEASE=4.15.0
+export NEW_RELEASE=4.15.0
 
 ./site3/website/scripts/release-major.sh
 ```
