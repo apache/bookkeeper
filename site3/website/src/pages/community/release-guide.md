@@ -174,7 +174,8 @@ For Github, we can use the milestone link in the Release Notes. E.g. [Release 4.
 
 #### Prepare Release Notes
 
-After review the release notes on both Github, you should write a `releaseNotes` under `site/docs/${release_version}/overview/releaseNotes.md` and then send out a pull request for review.
+After review the release notes on both Github, you should write a the release notes under `site3/website/src/release-notes.md` and then send out a pull request for review.
+Follow the [instructions](https://github.com/apache/bookkeeper/tree/master/site3/) 
 
 [4.5.0 Release Notes](https://github.com/apache/bookkeeper/pull/402) is a good example to follow.
 
