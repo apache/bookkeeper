@@ -112,6 +112,7 @@
     <javac.target>1.8</javac.target>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
     <testRetryCount>2</testRetryCount>
+    <test.additional.args/>
 
     <!-- dependencies -->
     <arquillian-cube.version>1.18.2</arquillian-cube.version>
@@ -907,7 +908,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
-          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid</argLine>
+          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid ${test.additional.args}</argLine>
           <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           <forkCount>${forkCount.variable}</forkCount>
           <reuseForks>false</reuseForks>
@@ -1209,6 +1210,19 @@
       </activation>
       <properties>
         <nar.aolProperties>src/apple_m1_aol.properties</nar.aolProperties>
+      </properties>
+    </profile>
+    <profile>
+      <id>jdk11</id>
+      <activation>
+        <jdk>[11,)</jdk>
+      </activation>
+      <properties>
+        <test.additional.args>
+          --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
+          --add-opens java.base/java.lang=ALL-UNNAMED
+          --add-opens java.base/java.io=ALL-UNNAMED
+        </test.additional.args>
       </properties>
     </profile>
     <profile>
