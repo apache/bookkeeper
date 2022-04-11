@@ -16,6 +16,7 @@ LATEST_RELEASED=4.14.4
 NEW_RELEASE=4.14.5
 
 cd site3/website
+yarn install
 yarn run docusaurus docs:version $NEW_RELEASE
 rm -rf versioned_docs/version-${LATEST_RELEASED}
 rm -rf versioned_sidebars/version-${LATEST_RELEASED}-sidebars.json
