@@ -19,9 +19,6 @@
 #
 set -e
 
-# LATEST_RELEASED=4.14.4
-# NEW_RELEASE=4.14.5
-
 if [[ -z $NEW_RELEASE ]]; then
   echo "env NEW_RELEASE not set"
   exit 1

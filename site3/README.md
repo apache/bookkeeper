@@ -15,32 +15,17 @@ For each minor release only the latest patch version documentation is kept.
 LATEST_RELEASED=4.14.4
 NEW_RELEASE=4.14.5
 
-cd site3/website
-yarn install
-yarn run docusaurus docs:version $NEW_RELEASE
-rm -rf versioned_docs/version-${LATEST_RELEASED}
-rm -rf versioned_sidebars/version-${LATEST_RELEASED}-sidebars.json
-
-# remove $LATEST_RELEASED from versions.json
-
+./site3/website/scripts/release-minor.sh
 ```
 Then you have to:
-- remove $LATEST_RELEASED from versions.json
 - add release notes for the new release in the `src/pages/release-notes.md` file.
-- - commit and push the changes
 
 ### Major/minor release
 
 ```
 NEW_RELEASE=4.15.0
 
-cd site3/website
-yarn install
-yarn run docusaurus docs:version $NEW_RELEASE
-
+./site3/website/scripts/release-major.sh
 ```
 Then you have to:
 - add release notes for the new release in the `src/pages/release-notes.md` file.
-- commit and push the changes
-
-

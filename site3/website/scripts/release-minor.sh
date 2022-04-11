@@ -19,10 +19,6 @@
 #
 set -e
 
-# LATEST_RELEASED=4.14.4
-# NEW_RELEASE=4.14.5
-
-
 if [[ -z $LATEST_RELEASED ]]; then
   echo "env LATEST_RELEASED not set"
   exit 1
@@ -37,20 +33,22 @@ fi
 sidebar_file="version-${LATEST_RELEASED}-sidebars.json"
 
 cd site3/website
-find versioned_sidebars -name "version-${LATEST_RELEASED}-sidebars.json" || (echo "sidebar json file not found for ${LATEST_RELEASED}" && exit 1)
-find versioned_docs -name "version-${LATEST_RELEASED}" || (echo "docs directory not found for ${LATEST_RELEASED}" && exit 1)
+find versioned_sidebars -name "version-${LATEST_RELEASED}-sidebars.json"
+find versioned_docs -name "version-${LATEST_RELEASED}"
 
-# Sidebar
+# replace sidebar items identifier
 sed -i '' "s/version-${LATEST_RELEASED}/version-${NEW_RELEASE}/" versioned_sidebars/$sidebar_file
+# rename sidebar file
 mv versioned_sidebars/$sidebar_file versioned_sidebars/version-${NEW_RELEASE}-sidebars.json
 
-# Docs
+# replace version in files
 find versioned_docs/version-${LATEST_RELEASED} -type f -exec sed -i '' "s/${LATEST_RELEASED}/${NEW_RELEASE}/g" {} +
-# markdown links
 latest_released_md_link=${LATEST_RELEASED//./}
 new_release_md_link=${NEW_RELEASE//./}
+# replace Markdown links
 find versioned_docs/version-${LATEST_RELEASED} -type f -exec sed -i '' "s/#${latest_released_md_link}/#${new_release_md_link}/g" {} +
+# rename versioned_docs directory
 mv versioned_docs/version-${LATEST_RELEASED} versioned_docs/version-${NEW_RELEASE}
 
-# Versions
+# update versions.json
 sed -i '' "s/${LATEST_RELEASED}/${NEW_RELEASE}/" versions.json
