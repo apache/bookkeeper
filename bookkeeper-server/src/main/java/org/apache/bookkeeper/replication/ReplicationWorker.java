@@ -25,10 +25,13 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PAR
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
+
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -244,6 +247,11 @@ public class ReplicationWorker implements Runnable {
                 LOG.error("UnavailableException "
                         + "while replicating fragments", e);
                 waitBackOffTime(rwRereplicateBackoffMs);
+                if (Thread.currentThread().isInterrupted()) {
+                    LOG.error("Interrupted  while replicating fragments");
+                    shutdown();
+                    return;
+                }
             }
         }
         LOG.info("ReplicationWorker exited loop!");
@@ -349,6 +357,7 @@ public class ReplicationWorker implements Runnable {
         return (returnRCValue.get() == BKException.Code.OK);
     }
 
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     private boolean rereplicate(long ledgerIdToReplicate) throws InterruptedException, BKException,
             UnavailableException {
         if (LOG.isDebugEnabled()) {
@@ -646,7 +655,8 @@ public class ReplicationWorker implements Runnable {
     /**
      * Gives the running status of ReplicationWorker.
      */
-    boolean isRunning() {
+    @VisibleForTesting
+    public boolean isRunning() {
         return workerRunning && workerThread.isAlive();
     }
 

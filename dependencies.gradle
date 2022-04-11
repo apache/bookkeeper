@@ -24,7 +24,7 @@ ext {
 depVersions = [
     arquillianCubeDocker: "1.18.2",
     arquillianJunit: "1.6.0.Final",
-    bcFips: "1.0.2.1",
+    bcFips: "1.0.2.3",
     bouncycastle: "1.69",
     commonsCli: "1.2",
     commonsCodec: "1.6",
@@ -43,13 +43,16 @@ depVersions = [
     freebuilder: "2.7.0",
     googleHTTPClient: "1.34.0",
     gradleTooling: "4.0.1",
-    grpc: "1.42.1",
+    grpc: "1.45.1",
     groovy: "2.5.8",
     guava: "31.0.1-jre",
     hamcrest: "1.3",
     hdrhistogram: "2.1.10",
     httpclient: "4.5.13",
+    httpcore: "4.4.15",
     jackson: "2.13.2",
+    jacksonBom: "2.13.2.20220324",
+    jacksonDatabind: "2.13.2.1",
     javaxServlet: "4.0.0",
     javaAnnotations:"1.3.2",
     jcommander: "1.78",
@@ -62,12 +65,12 @@ depVersions = [
     junit: "4.12",
     junitFoundation: "11.0.0",
     kerby: "1.1.1",
-    log4j: "2.17.1",
+    log4j: "2.17.2",
     lombok: "1.18.22",
     lz4: "1.3.0",
     mockito: "3.12.4",
-    netty: "4.1.74.Final",
-    nettyTcnativeBoringSsl: "2.0.48.Final",
+    netty: "4.1.75.Final",
+    nettyTcnativeBoringSsl: "2.0.50.Final",
     powermock: "2.0.2",
     prometheus: "0.8.1",
     protobuf: "3.16.1",
@@ -84,7 +87,7 @@ depVersions = [
     testcontainers: "1.16.3",
     vertx: "3.9.8",
     yahooDatasketches: "0.8.3",
-    zookeeper: "3.6.2",
+    zookeeper: "3.8.0",
 ]
 
 depLibs = [
@@ -149,8 +152,10 @@ depLibs = [
         exclude group: 'commons-codec', module: 'commons-codec'
         exclude group: 'commons-logging', module: 'commons-logging'
     },
+    httpcore: "org.apache.httpcomponents:httpcore:${depVersions.httpcore}",
     jacksonAnnotations: "com.fasterxml.jackson.core:jackson-annotations:${depVersions.jackson}",
     javaAnnotations: "javax.annotation:javax.annotation-api:${depVersions.javaAnnotations}",
+    jacksonBom: "com.fasterxml.jackson:jackson-bom:${depVersions.jacksonBom}",
     jacksonCore: "com.fasterxml.jackson.core:jackson-core:${depVersions.jackson}",
     jacksonDatabind: "com.fasterxml.jackson.core:jackson-databind:${depVersions.jackson}",
     javaxServlet: "javax.servlet:javax.servlet-api:${depVersions.javaxServlet}",
@@ -232,9 +237,11 @@ depLibs = [
     },
     yahooDatasketches: "com.yahoo.datasketches:sketches-core:${depVersions.yahooDatasketches}",
     zookeeper: dependencies.create("org.apache.zookeeper:zookeeper:${depVersions.zookeeper}") {
-        exclude group: 'io.netty', module: 'netty-transport-native-epoll'
-        exclude group: 'log4j', module: 'log4j'
-        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+        exclude group: 'io.netty'
+        exclude group: 'ch.qos.logback'
     },
-    zookeeperTest: "org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests"
+    zookeeperTest: dependencies.create("org.apache.zookeeper:zookeeper:${depVersions.zookeeper}:tests") {
+        exclude group: 'io.netty'
+        exclude group: 'ch.qos.logback'
+    }
 ]

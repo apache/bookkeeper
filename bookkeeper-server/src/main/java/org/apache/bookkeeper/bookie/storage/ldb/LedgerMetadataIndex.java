@@ -235,7 +235,10 @@ public class LedgerMetadataIndex implements Closeable {
         lock.lock();
         try {
             LedgerData ledgerData = get(ledgerId);
-            boolean oldValue = ledgerData != null ? ledgerData.getLimbo() : false;
+            if (ledgerData == null) {
+                throw new Bookie.NoLedgerException(ledgerId);
+            }
+            final boolean oldValue = ledgerData.getLimbo();
             LedgerData newLedgerData = LedgerData.newBuilder(ledgerData).setLimbo(false).build();
 
             if (ledgers.put(ledgerId, newLedgerData) == null) {
@@ -321,16 +324,12 @@ public class LedgerMetadataIndex implements Closeable {
 
     public void removeDeletedLedgers() throws IOException {
         LongWrapper key = LongWrapper.get();
-        final byte[] startKey = new byte[key.array.length];
 
         int deletedLedgers = 0;
         while (!pendingDeletedLedgers.isEmpty()) {
             long ledgerId = pendingDeletedLedgers.poll();
             key.set(ledgerId);
             ledgersDb.delete(key.array);
-            if (deletedLedgers++ == 0) {
-                System.arraycopy(key.array, 0, startKey, 0, startKey.length);
-            }
         }
 
         if (log.isDebugEnabled()) {
@@ -338,9 +337,6 @@ public class LedgerMetadataIndex implements Closeable {
         }
 
         ledgersDb.sync();
-        if (deletedLedgers != 0) {
-            ledgersDb.compact(startKey, key.array);
-        }
         key.recycle();
     }
 

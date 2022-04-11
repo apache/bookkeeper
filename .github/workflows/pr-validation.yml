@@ -52,7 +52,7 @@ jobs:
           distribution: 'temurin'
           java-version: 11
       - name: Validate pull request
-        run: mvn clean -B -nsu apache-rat:check checkstyle:check package -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn clean -B -nsu apache-rat:check checkstyle:check spotbugs:check package -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
         
       - name: Check license files
         run: dev/check-all-licenses

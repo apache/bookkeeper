@@ -1,7 +1,7 @@
 import React from 'react';
 import versions from "@site/versions.json"
 
-const releases = versions.slice(1, 6)
+const releases = versions.slice(0, 4)
 
 export default function RecentReleases() {
 

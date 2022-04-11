@@ -268,7 +268,7 @@ lh = bkc.openLedger(ledgerId, BookKeeper.DigestType.MAC, ledgerPassword);
 Enumeration<LedgerEntry> entries = lh.readEntries(0, numberOfEntries - 1);
 
 while(entries.hasMoreElements()) {
-	ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
+	ByteBuffer result = ByteBuffer.wrap(entries.nextElement().getEntry());
 	Integer retrEntry = result.getInt();
 
     // Print the integer stored in each entry

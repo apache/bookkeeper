@@ -23,7 +23,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>4.15.0-SNAPSHOT</version>
+  <version>4.16.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
@@ -70,7 +70,9 @@
     <module>bookkeeper-dist</module>
     <module>shaded</module>
     <module>microbenchmarks</module>
+    <module>bookkeeper-slogger</module>
     <module>tests</module>
+    <module>native-io</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -110,6 +112,7 @@
     <javac.target>1.8</javac.target>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
     <testRetryCount>2</testRetryCount>
+    <test.additional.args/>
 
     <!-- dependencies -->
     <arquillian-cube.version>1.18.2</arquillian-cube.version>
@@ -123,20 +126,21 @@
     <commons-lang.version>2.6</commons-lang.version>
     <commons-lang3.version>3.6</commons-lang3.version>
     <commons-io.version>2.7</commons-io.version>
-    <bouncycastle.version>1.0.2.1</bouncycastle.version>
+    <bouncycastle.version>1.0.2.3</bouncycastle.version>
     <curator.version>5.1.0</curator.version>
     <dropwizard.version>3.2.5</dropwizard.version>
     <etcd.version>0.5.11</etcd.version>
     <freebuilder.version>2.7.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.9.0</google.errorprone.version>
-    <grpc.version>1.42.1</grpc.version>
+    <grpc.version>1.45.1</grpc.version>
     <guava.version>31.0.1-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
     <hadoop.version>2.10.0</hadoop.version>
     <hamcrest.version>1.3</hamcrest.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.13.2</jackson.version>
+    <jackson-databind.version>2.13.2.1</jackson-databind.version>
     <jcommander.version>1.78</jcommander.version>
     <jetty.version>9.4.43.v20210629</jetty.version>
     <jmh.version>1.19</jmh.version>
@@ -144,23 +148,26 @@
     <jsoup.version>1.14.3</jsoup.version>
     <jna.version>3.2.7</jna.version>
     <junit.version>4.12</junit.version>
+    <!-- required by zookeeper test utilities imported from ZooKeeper -->
+    <junit5.version>5.6.2</junit5.version>
     <libthrift.version>0.14.2</libthrift.version>
     <lombok.version>1.18.22</lombok.version>
-    <log4j.version>2.17.1</log4j.version>
+    <log4j.version>2.17.2</log4j.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>3.12.4</mockito.version>
-    <netty.version>4.1.74.Final</netty.version>
-    <netty-boringssl.version>2.0.48.Final</netty-boringssl.version>
+    <netty.version>4.1.75.Final</netty.version>
+    <netty-boringssl.version>2.0.50.Final</netty-boringssl.version>
     <ostrich.version>9.1.3</ostrich.version>
     <powermock.version>2.0.2</powermock.version>
     <prometheus.version>0.8.1</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
-    <protobuf.version>3.17.2</protobuf.version>
-    <protoc3.version>3.17.2</protoc3.version>
+    <httpcore.version>4.4.15</httpcore.version>
+    <protobuf.version>3.19.2</protobuf.version>
+    <protoc3.version>3.19.2</protoc3.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
-    <rocksdb.version>6.27.3</rocksdb.version>
+    <rocksdb.version>6.29.4.1</rocksdb.version>
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <slf4j.version>1.7.32</slf4j.version>
     <snakeyaml.version>1.30</snakeyaml.version>
@@ -168,7 +175,7 @@
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.15.1</testcontainers.version>
     <vertx.version>3.9.8</vertx.version>
-    <zookeeper.version>3.6.2</zookeeper.version>
+    <zookeeper.version>3.8.0</zookeeper.version>
     <snappy.version>1.1.7</snappy.version>
     <jctools.version>2.1.2</jctools.version>
     <!-- plugin dependencies -->
@@ -176,6 +183,7 @@
     <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
     <coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
     <dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
+    <download-maven-plugin.version>1.6.8</download-maven-plugin.version>
     <exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
     <license-maven-plugin.version>1.6</license-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.0</jacoco-maven-plugin.version>
@@ -349,6 +357,12 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson-databind.version}</version>
+      </dependency>
       <dependency>
         <groupId>javax.servlet</groupId>
         <artifactId>javax.servlet-api</artifactId>
@@ -479,16 +493,8 @@
             <artifactId>javacc</artifactId>
           </exclusion>
           <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>*</artifactId>
           </exclusion>
           <exclusion>
             <groupId>io.netty</groupId>
@@ -504,21 +510,24 @@
         <exclusions>
           <exclusion>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
           </exclusion>
           <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>*</artifactId>
           </exclusion>
           <exclusion>
             <groupId>io.netty</groupId>
             <artifactId>*</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+
+      <dependency>
+         <!-- needed by ZooKeeper server tests utilities -->
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit5.version}</version>
       </dependency>
 
       <dependency>
@@ -635,6 +644,11 @@
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
         <version>${httpclient.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>${httpcore.version}</version>
       </dependency>
 
       <!-- tools dependencies -->
@@ -894,7 +908,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
-          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid</argLine>
+          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid ${test.additional.args}</argLine>
           <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           <forkCount>${forkCount.variable}</forkCount>
           <reuseForks>false</reuseForks>
@@ -1038,6 +1052,16 @@
           <consoleOutput>true</consoleOutput>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>com.googlecode.maven-download-plugin</groupId>
+        <artifactId>download-maven-plugin</artifactId>
+        <version>${download-maven-plugin.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${exec-maven-plugin.version}</version>
+      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -1176,25 +1200,31 @@
         </plugins>
       </build>
     </profile>
-
     <profile>
-      <id>jdk11-no-spotbugs</id>
+      <id>mac-apple-silicon</id>
+      <activation>
+        <os>
+          <family>mac</family>
+          <arch>aarch64</arch>
+        </os>
+      </activation>
+      <properties>
+        <nar.aolProperties>src/apple_m1_aol.properties</nar.aolProperties>
+      </properties>
+    </profile>
+    <profile>
+      <id>jdk11</id>
       <activation>
         <jdk>[11,)</jdk>
       </activation>
-      <build>
-        <plugins>
-           <plugin>
-             <groupId>com.github.spotbugs</groupId>
-             <artifactId>spotbugs-maven-plugin</artifactId>
-             <configuration>
-                 <skip>true</skip>
-             </configuration>
-          </plugin>
-        </plugins>
-      </build>
+      <properties>
+        <test.additional.args>
+          --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
+          --add-opens java.base/java.lang=ALL-UNNAMED
+          --add-opens java.base/java.io=ALL-UNNAMED
+        </test.additional.args>
+      </properties>
     </profile>
-
     <profile>
       <id>apache-release</id>
       <build>

@@ -24,6 +24,7 @@ import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.disposables.Disposable;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
@@ -39,7 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.LedgerStorage;
@@ -84,12 +84,10 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
     }
 
     @Override
-    public CompletableFuture<Void> runPreBootCheck(String reason) {
+    public synchronized CompletableFuture<Void> runPreBootCheck(String reason) {
         // we only run this once, it could be kicked off by different checks
-        synchronized (this) {
-            if (preBootFuture == null) {
-                preBootFuture = runPreBootSequence(reason);
-            }
+        if (preBootFuture == null) {
+            preBootFuture = runPreBootSequence(reason);
         }
         return preBootFuture;
 
@@ -355,46 +353,47 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
     CompletableFuture<Set<LedgerResult>> checkAndRecoverLedgers(Map<Long, LedgerMetadata> ledgers,
                                                                 String runId) {
         CompletableFuture<Set<LedgerResult>> promise = new CompletableFuture<>();
-        Flowable.fromIterable(ledgers.entrySet())
-            .subscribeOn(scheduler, false)
-            .flatMapSingle((mapEntry) -> {
-                    long ledgerId = mapEntry.getKey();
-                    LedgerMetadata originalMetadata = mapEntry.getValue();
-                    return recoverLedgerIfInLimbo(ledgerId, mapEntry.getValue(), runId)
-                        .map(newMetadata -> LedgerResult.ok(ledgerId, newMetadata))
-                        .onErrorReturn(t -> LedgerResult.error(ledgerId, originalMetadata, t))
-                        .defaultIfEmpty(LedgerResult.missing(ledgerId))
-                        .flatMap((res) -> {
-                                try {
-                                    if (res.isOK()) {
-                                        this.ledgerStorage.clearLimboState(ledgerId);
-                                    }
-                                    return Single.just(res);
-                                } catch (IOException ioe) {
-                                    return Single.just(LedgerResult.error(res.getLedgerId(),
-                                                                          res.getMetadata(), ioe));
-                                }
-                            });
-                },
-                true /* delayErrors */,
-                MAX_INFLIGHT)
-            .flatMapSingle((res) -> {
-                    if (res.isOK()) {
-                        return checkAndRecoverLedgerEntries(res.getLedgerId(),
-                                                            res.getMetadata(), runId)
-                            .map(ignore -> LedgerResult.ok(res.getLedgerId(),
-                                                           res.getMetadata()))
-                            .onErrorReturn(t -> LedgerResult.error(res.getLedgerId(),
-                                                                   res.getMetadata(), t));
-                    } else {
-                        return Single.just(res);
-                    }
-                },
-                true /* delayErrors */,
-                1 /* copy 1 ledger at a time to keep entries together in entrylog */)
-            .collect(Collectors.toSet())
-            .subscribe(resolved -> promise.complete(resolved),
-                       throwable -> promise.completeExceptionally(throwable));
+        final Disposable disposable = Flowable.fromIterable(ledgers.entrySet())
+                .subscribeOn(scheduler, false)
+                .flatMapSingle((mapEntry) -> {
+                            long ledgerId = mapEntry.getKey();
+                            LedgerMetadata originalMetadata = mapEntry.getValue();
+                            return recoverLedgerIfInLimbo(ledgerId, mapEntry.getValue(), runId)
+                                    .map(newMetadata -> LedgerResult.ok(ledgerId, newMetadata))
+                                    .onErrorReturn(t -> LedgerResult.error(ledgerId, originalMetadata, t))
+                                    .defaultIfEmpty(LedgerResult.missing(ledgerId))
+                                    .flatMap((res) -> {
+                                        try {
+                                            if (res.isOK()) {
+                                                this.ledgerStorage.clearLimboState(ledgerId);
+                                            }
+                                            return Single.just(res);
+                                        } catch (IOException ioe) {
+                                            return Single.just(LedgerResult.error(res.getLedgerId(),
+                                                    res.getMetadata(), ioe));
+                                        }
+                                    });
+                        },
+                        true /* delayErrors */,
+                        MAX_INFLIGHT)
+                .flatMapSingle((res) -> {
+                            if (res.isOK()) {
+                                return checkAndRecoverLedgerEntries(res.getLedgerId(),
+                                        res.getMetadata(), runId)
+                                        .map(ignore -> LedgerResult.ok(res.getLedgerId(),
+                                                res.getMetadata()))
+                                        .onErrorReturn(t -> LedgerResult.error(res.getLedgerId(),
+                                                res.getMetadata(), t));
+                            } else {
+                                return Single.just(res);
+                            }
+                        },
+                        true /* delayErrors */,
+                        1 /* copy 1 ledger at a time to keep entries together in entrylog */)
+                .collect(Collectors.toSet())
+                .subscribe(resolved -> promise.complete(resolved),
+                        throwable -> promise.completeExceptionally(throwable));
+        promise.whenComplete((result, ex) -> disposable.dispose());
         return promise;
     }
 
