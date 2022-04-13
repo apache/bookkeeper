@@ -94,9 +94,6 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
             logger.debug("No ledger found while trying to read last entry: {}", ledgerId, e);
-        } catch (Bookie.NoEntryException e) {
-            status = StatusCode.ENOENTRY;
-            logger.warn("No Entry found while trying to read last entry: {}", ledgerId, e);
         } catch (BookieException.DataUnknownException e) {
             status = StatusCode.EUNKNOWNLEDGERSTATE;
             logger.error("Ledger in an unknown state while trying to read last entry: {}", ledgerId, e);
