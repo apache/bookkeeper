@@ -1178,7 +1178,7 @@ public class EntryLogger {
             @Override
             public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
                 if (throttler != null) {
-                    throttler.acquire(conf.getIsThrottleByBytes() ? entry.readableBytes() : 1);
+                    throttler.acquire(entry.readableBytes());
                 }
                 // add new entry size of a ledger to entry log meta
                 meta.addLedgerSize(ledgerId, entry.readableBytes() + 4);
