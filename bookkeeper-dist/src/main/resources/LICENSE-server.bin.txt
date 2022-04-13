@@ -309,7 +309,7 @@ Apache Software License, Version 2.
 - lib/io.dropwizard.metrics-metrics-core-3.2.5.jar [47]
 - lib/io.perfmark-perfmark-api-0.23.0.jar [48]
 - lib/org.conscrypt-conscrypt-openjdk-uber-2.5.1.jar [49]
-- lib/org.xerial.snappy-snappy-java-1.1.7.jar [50]
+- lib/org.xerial.snappy-snappy-java-1.1.7.7.jar [50]
 - lib/io.reactivex.rxjava3-rxjava-3.0.1.jar [51]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.11.0
@@ -358,7 +358,7 @@ Apache Software License, Version 2.
 [47] Source available at https://github.com/dropwizard/metrics/releases/tag/v3.2.5
 [48] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.23.0
 [49] Source available at https://github.com/google/conscrypt/releases/tag/2.5.1
-[50] Source available at https://github.com/google/snappy/releases/tag/1.1.7
+[50] Source available at https://github.com/google/snappy/releases/tag/1.1.7.7
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
 
 ------------------------------------------------------------------------------------

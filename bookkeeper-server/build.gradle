@@ -76,7 +76,6 @@ dependencies {
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
     testImplementation depLibs.log4jSlf4jImpl
-    testImplementation depLibs.log4j12api
     testImplementation depLibs.log4jCore
 }
 
