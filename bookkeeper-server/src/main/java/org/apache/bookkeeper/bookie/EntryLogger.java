@@ -1049,7 +1049,7 @@ public class EntryLogger {
                     return;
                 }
 
-                if (throttler != null) {
+                if (readBytesPair.getRight() > 0 && throttler != null) {
                     throttler.acquire(readBytesPair.getRight());
                 }
 
