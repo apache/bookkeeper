@@ -117,6 +117,13 @@
     <sha1>e395c1d8a71557b7569cc6a83487b2e30e2e58fe</sha1>
     <cve>CVE-2021-28164</cve>
   </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: zookeeper-3.8.0.jar
+   ]]></notes>
+        <sha1>e395c1d8a71557b7569cc6a83487b2e30e2e58fe</sha1>
+        <cve>CVE-2021-28165</cve>
+    </suppress>
   <suppress>
     <notes><![CDATA[
    file name: zookeeper-3.8.0.jar
@@ -164,6 +171,13 @@
    file name: zookeeper-jute-3.8.0.jar
    ]]></notes>
     <sha1>6560f966bcf1aa78d27bcfa75fb6c4463a72c6c5</sha1>
+    <cve>CVE-2021-28165</cve>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+   file name: zookeeper-jute-3.8.0.jar
+   ]]></notes>
+    <sha1>6560f966bcf1aa78d27bcfa75fb6c4463a72c6c5</sha1>
     <cve>CVE-2021-29425</cve>
   </suppress>
   <suppress>
@@ -172,6 +186,13 @@
    ]]></notes>
     <sha1>6560f966bcf1aa78d27bcfa75fb6c4463a72c6c5</sha1>
     <cve>CVE-2021-34429</cve>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+   file name: zookeeper-3.8.0-tests.jar
+   ]]></notes>
+     <sha1>9b78a289a3aa34eb47fac8c432f664fc140387df</sha1>
+     <cve>CVE-2021-28165</cve>
   </suppress>
 <!--    Netty false positive https://github.com/netty/netty-tcnative/issues/710 -->
     <suppress>
