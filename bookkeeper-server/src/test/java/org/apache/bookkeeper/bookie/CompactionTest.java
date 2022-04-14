@@ -33,6 +33,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.ByteBuf;
@@ -81,6 +84,7 @@ import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -330,6 +334,39 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             }
             return null;
         });
+    }
+
+    @Test
+    public void testForceGarbageCollectionWhenDiskIsFull() throws Exception {
+        testForceGarbageCollectionWhenDiskIsFull(true);
+        testForceGarbageCollectionWhenDiskIsFull(false);
+    }
+
+    public void testForceGarbageCollectionWhenDiskIsFull(boolean isForceCompactionAllowWhenDisableCompaction)
+        throws Exception {
+
+        restartBookies(c -> {
+            c.setForceAllowCompaction(isForceCompactionAllowWhenDisableCompaction);
+            c.setMinorCompactionInterval(30000);
+            c.setMajorCompactionInterval(120000);
+            c.setMinorCompactionThreshold(0.2f);
+            c.setMajorCompactionThreshold(0.5f);
+            c.setGcWaitTime(60000);
+            return c;
+        });
+
+        GarbageCollectorThread garbageCollectorThread = Mockito.spy(getGCThread());
+        garbageCollectorThread.suspendMinorGC();
+        garbageCollectorThread.suspendMajorGC();
+
+        garbageCollectorThread.triggerGC(true, true, true).get();
+
+        if (isForceCompactionAllowWhenDisableCompaction) {
+            Mockito.verify(garbageCollectorThread, Mockito.atLeastOnce()).doCompactEntryLogs(anyDouble(), anyLong());
+        } else {
+            Mockito.verify(garbageCollectorThread, Mockito.never()).doCompactEntryLogs(anyDouble(), anyLong());
+        }
+
     }
 
     @Test
