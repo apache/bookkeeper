@@ -25,7 +25,6 @@ on:
       - master
       - branch-*
     paths:
-      - 'site/**'
       - 'site3/**'
       - '.github/workflows/website-pr-validation.yaml'
     workflow_dispatch:
@@ -44,23 +43,6 @@ jobs:
                 distribution: 'temurin'
                 java-version: 11
 
-
-            - name: Set up Ruby
-              uses: ruby/setup-ruby@v1
-              with:
-                ruby-version: 2.6.9
-
-            - name: Build Website
-              run: |
-                #!/bin/bash
-                set -e
-                sudo apt-get update
-                sudo apt-get install -y libxslt-dev libxml2-dev
-                cd site
-                make setup
-                make latest_javadoc
-                make apache
-
             - name: Setup NodeJS
               uses: actions/setup-node@v2
               with:
@@ -69,6 +51,6 @@ jobs:
             - name: Setup yarn
               run: npm install -g yarn
 
-            - name: Build staging website
+            - name: Build website
               run: |
                 ./site3/website/scripts/build-website.sh
