@@ -294,6 +294,15 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
     }
 
+    public void enableForceGC(Boolean forceMajor, Boolean forceMinor) {
+        if (forceGarbageCollection.compareAndSet(false, true)) {
+            LOG.info("Forced garbage collection triggered by thread: {}, forceMajor: {}, forceMinor: {}",
+                Thread.currentThread().getName(), forceMajor, forceMinor);
+            triggerGC(true, forceMajor == null ? suspendMajorCompaction.get() : !forceMajor,
+                forceMinor == null ? suspendMinorCompaction.get() : !forceMinor);
+        }
+    }
+
     public void disableForceGC() {
         if (forceGarbageCollection.compareAndSet(true, false)) {
             LOG.info("{} disabled force garbage collection since bookie has enough space now.", Thread
@@ -413,9 +422,9 @@ public class GarbageCollectorThread extends SafeRunnable {
             }
 
             long curTime = System.currentTimeMillis();
-            if ((isForceMajorCompactionAllow && force) || ((enableMajorCompaction
-                    && (force || curTime - lastMajorCompactionTime > majorCompactionInterval))
-                    && (!suspendMajor))) {
+            if (((isForceMajorCompactionAllow && force) || (enableMajorCompaction
+                    && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)))
+                    && (!suspendMajor)) {
                 // enter major compaction
                 LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
                 majorCompacting.set(true);
@@ -428,9 +437,9 @@ public class GarbageCollectorThread extends SafeRunnable {
                     gcStats.getMajorCompactionCounter().inc();
                     majorCompacting.set(false);
                 }
-            } else if ((isForceMinorCompactionAllow && force) || ((enableMinorCompaction
-                    && (force || curTime - lastMinorCompactionTime > minorCompactionInterval))
-                    && (!suspendMinor))) {
+            } else if (((isForceMinorCompactionAllow && force) || (enableMinorCompaction
+                    && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)))
+                    && (!suspendMinor)) {
                 // enter minor compaction
                 LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
                 minorCompacting.set(true);
