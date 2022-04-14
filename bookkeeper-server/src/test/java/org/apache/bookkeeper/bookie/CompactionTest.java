@@ -81,7 +81,6 @@ import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -342,30 +341,33 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     public void testForceGarbageCollectionWhenDiskIsFull(boolean isForceCompactionAllowWhenDisableCompaction)
         throws Exception {
 
-        restartBookies(c -> {
-            c.setForceAllowCompaction(isForceCompactionAllowWhenDisableCompaction);
-            c.setMinorCompactionInterval(30000);
-            c.setMajorCompactionInterval(120000);
-            c.setMinorCompactionThreshold(0.2f);
-            c.setMajorCompactionThreshold(0.5f);
-            c.setGcWaitTime(60000);
-            return c;
+        restartBookies(conf -> {
+            if (isForceCompactionAllowWhenDisableCompaction) {
+                conf.setMinorCompactionInterval(0);
+                conf.setMajorCompactionInterval(0);
+                conf.setForceAllowCompaction(true);
+                conf.setMajorCompactionThreshold(0.5f);
+                conf.setMinorCompactionThreshold(0.2f);
+            } else {
+                conf.setMinorCompactionInterval(120000);
+                conf.setMajorCompactionInterval(240000);
+            }
+            return conf;
         });
 
-        GarbageCollectorThread garbageCollectorThread = Mockito.spy(getGCThread());
-        garbageCollectorThread.suspendMajorGC();
-        garbageCollectorThread.suspendMinorGC();
+        getGCThread().suspendMajorGC();
+        getGCThread().suspendMinorGC();
         long majorCompactionCntBeforeGC = 0;
         long minorCompactionCntBeforeGC = 0;
         long majorCompactionCntAfterGC = 0;
         long minorCompactionCntAfterGC = 0;
 
         // disable forceMajor and forceMinor
-        majorCompactionCntBeforeGC = garbageCollectorThread.getGarbageCollectionStatus().getMajorCompactionCounter();
-        minorCompactionCntBeforeGC = garbageCollectorThread.getGarbageCollectionStatus().getMinorCompactionCounter();
-        garbageCollectorThread.triggerGC(true, true, true).get();
-        majorCompactionCntAfterGC = garbageCollectorThread.getGarbageCollectionStatus().getMajorCompactionCounter();
-        minorCompactionCntAfterGC = garbageCollectorThread.getGarbageCollectionStatus().getMinorCompactionCounter();
+        majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        getGCThread().triggerGC(true, true, true).get();
+        majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
         if (isForceCompactionAllowWhenDisableCompaction) {
             assertEquals(majorCompactionCntBeforeGC, majorCompactionCntAfterGC);
             assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
@@ -375,11 +377,11 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         }
 
         // enable forceMajor and forceMinor
-        majorCompactionCntBeforeGC = garbageCollectorThread.getGarbageCollectionStatus().getMajorCompactionCounter();
-        minorCompactionCntBeforeGC = garbageCollectorThread.getGarbageCollectionStatus().getMinorCompactionCounter();
-        garbageCollectorThread.triggerGC(true, false, false).get();
-        majorCompactionCntAfterGC = garbageCollectorThread.getGarbageCollectionStatus().getMajorCompactionCounter();
-        minorCompactionCntAfterGC = garbageCollectorThread.getGarbageCollectionStatus().getMinorCompactionCounter();
+        majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        getGCThread().triggerGC(true, false, false).get();
+        majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
 
         if (isForceCompactionAllowWhenDisableCompaction) {
             assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
@@ -390,25 +392,25 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         }
 
         // enable forceMajor and disable forceMinor
-        majorCompactionCntBeforeGC = garbageCollectorThread.getGarbageCollectionStatus().getMajorCompactionCounter();
-        minorCompactionCntBeforeGC = garbageCollectorThread.getGarbageCollectionStatus().getMinorCompactionCounter();
-        garbageCollectorThread.triggerGC(true, false, true).get();
-        majorCompactionCntAfterGC = garbageCollectorThread.getGarbageCollectionStatus().getMajorCompactionCounter();
-        minorCompactionCntAfterGC = garbageCollectorThread.getGarbageCollectionStatus().getMinorCompactionCounter();
+        majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        getGCThread().triggerGC(true, false, true).get();
+        majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
         if (isForceCompactionAllowWhenDisableCompaction) {
             assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
             assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
         } else {
-            assertEquals(majorCompactionCntBeforeGC+1, majorCompactionCntAfterGC);
+            assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
             assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
         }
 
         // disable forceMajor and enable forceMinor
-        majorCompactionCntBeforeGC = garbageCollectorThread.getGarbageCollectionStatus().getMajorCompactionCounter();
-        minorCompactionCntBeforeGC = garbageCollectorThread.getGarbageCollectionStatus().getMinorCompactionCounter();
-        garbageCollectorThread.triggerGC(true, true, false).get();
-        majorCompactionCntAfterGC = garbageCollectorThread.getGarbageCollectionStatus().getMajorCompactionCounter();
-        minorCompactionCntAfterGC = garbageCollectorThread.getGarbageCollectionStatus().getMinorCompactionCounter();
+        majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        getGCThread().triggerGC(true, true, false).get();
+        majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
         if (isForceCompactionAllowWhenDisableCompaction) {
             assertEquals(majorCompactionCntBeforeGC, majorCompactionCntAfterGC);
             assertEquals(minorCompactionCntBeforeGC + 1, minorCompactionCntAfterGC);
