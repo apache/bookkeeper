@@ -21,6 +21,7 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.HashMap;
+import java.util.Map;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -67,7 +68,7 @@ public class TriggerGCService implements HttpEndpointService {
                 bookieServer.getBookie().getLedgerStorage().forceGC();
             } else {
                 @SuppressWarnings("unchecked")
-                HashMap<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
+                Map<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
                 Boolean forceMajor = (Boolean) configMap.getOrDefault("forceMajor", null);
                 Boolean forceMinor = (Boolean) configMap.getOrDefault("forceMinor", null);
                 bookieServer.getBookie().getLedgerStorage().forceGC(forceMajor, forceMinor);
