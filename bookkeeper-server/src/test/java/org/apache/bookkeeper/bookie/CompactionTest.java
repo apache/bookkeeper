@@ -1009,10 +1009,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
          * purpose.
          */
         newBookieConf.setMetadataServiceUri(null);
-        String entryLogCachePath = newBookieConf.getGcEntryLogMetadataCachePath();
-        if (StringUtils.isBlank(entryLogCachePath)) {
-            entryLogCachePath = tmpDirs.createNew("entryLogCache", "bk2").getAbsolutePath();
-        }
+        String entryLogCachePath = tmpDirs.createNew("entry", "bk2").getAbsolutePath();
         newBookieConf.setGcEntryLogMetadataCachePath(entryLogCachePath);
         Bookie newbookie = new TestBookieImpl(newBookieConf);
 
