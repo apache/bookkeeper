@@ -540,7 +540,7 @@ public class ReadAheadManager {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Read-ahead task [L{} E:{} - E{} len={}] eventually collected {} messages and {} bytes in {}ms",
+            log.debug("Read-ahead task [L{} E{} - E{} len={}] eventually collected {} messages and {} bytes in {}ms",
                     readAheadTaskStatus.ledgerId, readAheadTaskStatus.startEntryId, readAheadTaskStatus.endEntryId,
                     readAheadTaskStatus.readAheadEntries, messages, bytes,
                     TimeUnit.NANOSECONDS.toMillis(MathUtils.elapsedNanos(readAheadStartNanos)));
@@ -556,8 +556,15 @@ public class ReadAheadManager {
         // add a new ReadAheadTaskStatus before actually read-ahead
         inProgressReadAheadTaskStatuses.computeIfAbsent(ledgerId, lid -> new TreeMap<>());
         inProgressReadAheadTaskStatuses.computeIfPresent(ledgerId, (lid, ledgerReadAheadTaskStatuses) -> {
-            ledgerReadAheadTaskStatuses.put(entryId, new ReadAheadTaskStatus(
-                    ledgerId, entryId, maxMessages, readAheadTaskExpiredTimeMs, readAheadTimeoutMs));
+            // ensure that the read-ahead task is unique
+            if (ledgerReadAheadTaskStatuses.containsKey(entryId)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Read-ahead task of L{} E{} is redundant", ledgerId, entryId);
+                }
+            } else {
+                ledgerReadAheadTaskStatuses.put(entryId, new ReadAheadTaskStatus(
+                        ledgerId, entryId, maxMessages, readAheadTaskExpiredTimeMs, readAheadTimeoutMs));
+            }
             return ledgerReadAheadTaskStatuses;
         });
 
@@ -621,10 +628,15 @@ public class ReadAheadManager {
             try {
                 while (!readCompleted) {
                     try {
-                        condition.await(readAheadTimeoutMs, TimeUnit.MILLISECONDS);
+                        boolean signalled = condition.await(readAheadTimeoutMs, TimeUnit.MILLISECONDS);
+                        if (!signalled) {
+                            log.warn("Failed to read entries={} ahead from L{} E{} due to timeout={}ms",
+                                    readAheadEntries, ledgerId, startEntryId, readAheadTimeoutMs);
+                            readCompleted();
+                        }
                     } catch (InterruptedException e) {
-                        log.warn("Failed to read entries={} ahead from L{} E{} due to timeout={}ms",
-                                readAheadEntries, ledgerId, startEntryId, readAheadTimeoutMs);
+                        log.warn("Failed to read entries={} ahead from L{} E{} due to the interruption of the thread",
+                                readAheadEntries, ledgerId, startEntryId, e);
                         readCompleted();
                     }
                 }
