@@ -78,7 +78,6 @@ import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.TestUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.junit.Before;
 import org.junit.Test;
