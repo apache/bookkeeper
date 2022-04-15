@@ -25,6 +25,9 @@ dependencies {
     implementation depLibs.guava
     implementation depLibs.nettyBuffer
     implementation depLibs.slf4j
+
+    testImplementation project(':testtools')
+
     testImplementation depLibs.junit
     testImplementation depLibs.mockito
 }

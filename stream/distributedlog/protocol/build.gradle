@@ -32,6 +32,7 @@ dependencies {
     implementation depLibs.slf4j
 
     testImplementation project(':bookkeeper-common')
+    testImplementation project(':testtools')
     testImplementation depLibs.junit
     testImplementation depLibs.lombok
     annotationProcessor depLibs.lombok
