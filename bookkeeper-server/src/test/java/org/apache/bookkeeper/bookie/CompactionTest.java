@@ -78,6 +78,7 @@ import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.TestUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.junit.Before;
 import org.junit.Test;
@@ -1009,7 +1010,10 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
          */
         newBookieConf.setMetadataServiceUri(null);
         String entryLogCachePath = newBookieConf.getGcEntryLogMetadataCachePath();
-        newBookieConf.setGcEntryLogMetadataCachePath(entryLogCachePath + "-bk2");
+        if (StringUtils.isBlank(entryLogCachePath)) {
+            entryLogCachePath = tmpDirs.createNew("entryLogCache", "bk2").getAbsolutePath();
+        }
+        newBookieConf.setGcEntryLogMetadataCachePath(entryLogCachePath);
         Bookie newbookie = new TestBookieImpl(newBookieConf);
 
         DigestManager digestManager = DigestManager.instantiate(ledgerId, passwdBytes,
