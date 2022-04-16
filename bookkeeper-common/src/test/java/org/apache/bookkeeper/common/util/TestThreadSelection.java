@@ -118,7 +118,8 @@ public class TestThreadSelection {
     private void validateTest(long[] placement, int numThreads) {
         long min = Longs.min(placement);
         long max = Longs.max(placement);
-        log.info("got min={}, max={} (disparity: {}) for {} threads with {} ids", min, max, numThreads, MAX_KEY);
+        log.info("got min={}, max={} (disparity: {}) for {} threads with {} ids",
+                min, max, max - min, numThreads, MAX_KEY);
         Assert.assertTrue("all threads were used [numThreads: " + numThreads + "]",
                 min > 0);
         log.info("disparity = {}", String.format("%,.2f", (double) max / min));
