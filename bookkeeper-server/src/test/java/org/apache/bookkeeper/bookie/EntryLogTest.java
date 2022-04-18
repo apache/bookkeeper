@@ -1398,8 +1398,8 @@ public class EntryLogTest {
          */
         for (long i = 0; i < numOfActiveLedgers; i++) {
             BufferedLogChannel logChannel = entryLogManager.getCurrentLogForLedger(i);
-            Assert.assertEquals("unpersistedBytes should be LOGFILE_HEADER_SIZE", DefaultEntryLogger.LOGFILE_HEADER_SIZE,
-                    logChannel.getUnpersistedBytes());
+            Assert.assertEquals("unpersistedBytes should be LOGFILE_HEADER_SIZE",
+                DefaultEntryLogger.LOGFILE_HEADER_SIZE, logChannel.getUnpersistedBytes());
         }
 
         for (int j = numEntries; j < 2 * numEntries; j++) {

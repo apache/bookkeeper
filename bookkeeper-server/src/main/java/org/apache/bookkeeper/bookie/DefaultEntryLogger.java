@@ -1328,7 +1328,9 @@ public class DefaultEntryLogger implements EntryLogger {
         public void abort() {
             removeCurCompactionLog();
             if (compactedLogFile.exists()) {
-                compactedLogFile.delete();
+                if (!compactedLogFile.delete()) {
+                    LOG.warn("Could not delete file: {}", compactedLogFile);
+                }
             }
         }
 
@@ -1354,12 +1356,12 @@ public class DefaultEntryLogger implements EntryLogger {
         public void cleanup() {
             if (compactedLogFile.exists()) {
                 if (!compactedLogFile.delete()) {
-                    LOG.warn("Could not delete file: " + compactedLogFile);
+                    LOG.warn("Could not delete file: {}", compactedLogFile);
                 }
             }
             if (compactingLogFile.exists()) {
                 if (!compactingLogFile.delete()) {
-                    LOG.warn("Could not delete file: " + compactingLogFile);
+                    LOG.warn("Could not delete file: {}", compactingLogFile);
                 }
             }
         }
@@ -1407,7 +1409,7 @@ public class DefaultEntryLogger implements EntryLogger {
                     LOG.info("Found compacted log file {} has partially flushed index, recovering index.",
                              compactedFile);
 
-                    File compactingLogFile = new File("/doesntexist");
+                    File compactingLogFile = new File(compactedFile.getParentFile(), "doesntexist");
                     long compactionLogId = -1L;
                     long compactedLogId = -1L;
                     String[] parts = compactedFile.getName().split(Pattern.quote("."));
