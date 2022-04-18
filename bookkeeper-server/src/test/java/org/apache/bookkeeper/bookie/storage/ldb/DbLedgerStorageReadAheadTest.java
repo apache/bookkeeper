@@ -150,12 +150,12 @@ public class DbLedgerStorageReadAheadTest {
         long location = firstEntry.getRight();
 
         assertNull(cache.get(lid, eid));
-        ByteBuf entry = readAheadManager.readEntryOrWait(lid, eid); // miss
+        ByteBuf entry = readAheadManager.readEntry(lid, eid); // miss
         assertEquals(lid, entry.getLong(0));
         assertEquals(eid, entry.getLong(8));
 
         assertNotNull(cache.get(lid, eid));
-        entry = readAheadManager.readEntryOrWait(lid, eid + 1); // hit
+        entry = readAheadManager.readEntry(lid, eid + 1); // hit
         assertEquals(lid, entry.getLong(0));
         assertEquals(eid + 1, entry.getLong(8));
     }
@@ -196,12 +196,12 @@ public class DbLedgerStorageReadAheadTest {
         long location = firstEntry.getRight();
 
         // multi reads
-        readAheadManager.readEntryOrWait(lid, eid); // miss
+        readAheadManager.readEntry(lid, eid); // miss
 
         new Thread(() -> {
             try {
                 assertNull(cache.get(lid, eid + 1));
-                ByteBuf entry = readAheadManager.readEntryOrWait(lid, eid + 1);
+                ByteBuf entry = readAheadManager.readEntry(lid, eid + 1);
                 assertEquals(lid, entry.getLong(0));
                 assertEquals(eid + 1, entry.getLong(8));
             } catch (Exception e) {
@@ -216,7 +216,7 @@ public class DbLedgerStorageReadAheadTest {
             }
 
             try {
-                ByteBuf entry = readAheadManager.readEntryOrWait(lid, eid + 95);
+                ByteBuf entry = readAheadManager.readEntry(lid, eid + 95);
                 assertEquals(lid, entry.getLong(0));
                 assertEquals(eid + 95, entry.getLong(8));
             } catch (Exception e) {
@@ -260,11 +260,11 @@ public class DbLedgerStorageReadAheadTest {
         long eid = firstEntry.getLeft().getRight();
         long location = firstEntry.getRight();
 
-        ByteBuf entry = readAheadManager.readEntryOrWait(lid, eid + entries - 2); // miss
+        ByteBuf entry = readAheadManager.readEntry(lid, eid + entries - 2); // miss
         assertEquals(lid, entry.getLong(0));
         assertEquals(eid + entries - 2, entry.getLong(8));
 
-        entry = readAheadManager.readEntryOrWait(lid, eid + entries - 1); // hit
+        entry = readAheadManager.readEntry(lid, eid + entries - 1); // hit
         assertEquals(lid, entry.getLong(0));
         assertEquals(eid + entries - 1, entry.getLong(8));
     }
@@ -290,7 +290,7 @@ public class DbLedgerStorageReadAheadTest {
                 entryLogger, entryLocationIndex, cache, singleDirStorage.getDbLedgerStorageStats());
 
         assertNull(cache.get(lid, eid));
-        entry = readAheadManager.readEntryOrWait(lid, eid);
+        entry = readAheadManager.readEntry(lid, eid);
         assertEquals(lid, entry.getLong(0));
         assertEquals(eid, entry.getLong(8));
     }
@@ -323,7 +323,8 @@ public class DbLedgerStorageReadAheadTest {
 
         final long maxEntries = 100;
         ServerConfiguration conf = new ServerConfiguration();
-        conf.setProperty(ReadAheadManager.READ_AHEAD_MAX_MESSAGES, maxEntries);
+        conf.setProperty(ReadAheadManager.ENABLE_READ_AHEAD_ASYNC, true);
+        conf.setProperty(ReadAheadManager.READ_AHEAD_MAX_ENTRIES, maxEntries);
         conf.setProperty(ReadAheadManager.READ_AHEAD_TASK_POOL_SIZE, 1);
         ReadAheadManager readAheadManager = new ReadAheadManager(
                 entryLogger, entryLocationIndex, cache, singleDirStorage.getDbLedgerStorageStats(), conf);
@@ -335,17 +336,17 @@ public class DbLedgerStorageReadAheadTest {
         long location = firstEntry.getRight();
 
         // set init pos
-        readAheadManager.readEntryOrWait(lid, eid); // miss
+        readAheadManager.readEntry(lid, eid); // miss
 
         // read some entries
         int skipEntries = 5;
         for (int i = 0; i < 5; i++) {
             // do not read sequentially
-            readAheadManager.readEntryOrWait(lid, eid + maxEntries - i);
+            readAheadManager.readEntry(lid, eid + maxEntries - i);
         }
 
         // start reading ahead
-        ByteBuf entry = readAheadManager.readEntryOrWait(lid, eid + 1);
+        ByteBuf entry = readAheadManager.readEntry(lid, eid + 1);
         assertEquals(lid, entry.getLong(0));
         assertEquals(eid + 1, entry.getLong(8));
 
