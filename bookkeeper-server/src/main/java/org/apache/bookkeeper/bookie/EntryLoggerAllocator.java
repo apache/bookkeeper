@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
@@ -61,14 +61,14 @@ class EntryLoggerAllocator {
     private final LedgerDirsManager ledgerDirsManager;
     private final Object createEntryLogLock = new Object();
     private final Object createCompactionLogLock = new Object();
-    private final EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
+    private final DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
     private final boolean entryLogPreAllocationEnabled;
     private final ByteBufAllocator byteBufAllocator;
-    final ByteBuf logfileHeader = Unpooled.buffer(EntryLogger.LOGFILE_HEADER_SIZE);
+    final ByteBuf logfileHeader = Unpooled.buffer(DefaultEntryLogger.LOGFILE_HEADER_SIZE);
 
     EntryLoggerAllocator(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
-            EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus, long logId,
-            ByteBufAllocator byteBufAllocator) {
+                         DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus, long logId,
+                         ByteBufAllocator byteBufAllocator) {
         this.conf = conf;
         this.byteBufAllocator = byteBufAllocator;
         this.ledgerDirsManager = ledgerDirsManager;
@@ -83,8 +83,8 @@ class EntryLoggerAllocator {
         // so there can be race conditions when entry logs are rolled over and
         // this header buffer is cleared before writing it into the new logChannel.
         logfileHeader.writeBytes("BKLO".getBytes(UTF_8));
-        logfileHeader.writeInt(EntryLogger.HEADER_CURRENT_VERSION);
-        logfileHeader.writerIndex(EntryLogger.LOGFILE_HEADER_SIZE);
+        logfileHeader.writeInt(DefaultEntryLogger.HEADER_CURRENT_VERSION);
+        logfileHeader.writerIndex(DefaultEntryLogger.LOGFILE_HEADER_SIZE);
 
     }
 
@@ -175,7 +175,7 @@ class EntryLoggerAllocator {
             setLastLogId(f, preallocatedLogId);
         }
 
-        if (suffix.equals(EntryLogger.LOG_FILE_SUFFIX)) {
+        if (suffix.equals(DefaultEntryLogger.LOG_FILE_SUFFIX)) {
             recentlyCreatedEntryLogsStatus.createdEntryLog(preallocatedLogId);
         }
 

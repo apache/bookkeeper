@@ -36,7 +36,7 @@ import org.apache.bookkeeper.bookie.EntryLogMetadata;
  * The location is a long, with 32 bits each for the log ID and the offset. This
  * naturally limits the offset and thus the size of the log to Integer.MAX_VALUE.
  */
-public interface EntryLoggerIface extends AutoCloseable {
+public interface EntryLogger extends AutoCloseable {
     /**
      * Add an entry for ledger ```ledgerId``` to the entrylog.
      * @param ledgerId the ledger for which the entry is being added

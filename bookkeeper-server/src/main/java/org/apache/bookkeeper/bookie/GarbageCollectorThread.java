@@ -42,7 +42,7 @@ import lombok.Getter;
 import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.bookie.stats.GarbageCollectorStats;
-import org.apache.bookkeeper.bookie.storage.EntryLoggerIface;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.ldb.PersistentEntryLogMetadataMap;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -90,7 +90,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     final boolean isForceGCAllowWhenNoSpace;
 
     // Entry Logger Handle
-    final EntryLoggerIface entryLogger;
+    final EntryLogger entryLogger;
     final AbstractLogCompactor compactor;
 
     // Stats loggers for garbage collection operations

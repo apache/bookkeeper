@@ -25,8 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.bookie.EntryLogger;
-import org.apache.bookkeeper.bookie.ReadOnlyEntryLogger;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger;
+import org.apache.bookkeeper.bookie.ReadOnlyDefaultEntryLogger;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
@@ -47,7 +47,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
     private static final String DESC = "Scan an entry file and format the entries into readable format.";
     private static final Logger LOG = LoggerFactory.getLogger(ReadLogCommand.class);
 
-    private EntryLogger entryLogger;
+    private DefaultEntryLogger entryLogger;
     private EntryFormatter entryFormatter;
     private LedgerIdFormatter ledgerIdFormatter;
 
@@ -230,7 +230,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
     private synchronized void initEntryLogger(ServerConfiguration conf) throws IOException {
         if (null == entryLogger) {
             // provide read only entry logger
-            entryLogger = new ReadOnlyEntryLogger(conf);
+            entryLogger = new ReadOnlyDefaultEntryLogger(conf);
         }
     }
 

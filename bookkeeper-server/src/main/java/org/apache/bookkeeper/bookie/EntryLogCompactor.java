@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
-import org.apache.bookkeeper.bookie.storage.EntryLoggerIface;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 import org.slf4j.Logger;
@@ -43,13 +43,13 @@ public class EntryLogCompactor extends AbstractLogCompactor {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogCompactor.class);
 
     final CompactionScannerFactory scannerFactory = new CompactionScannerFactory();
-    final EntryLoggerIface entryLogger;
+    final EntryLogger entryLogger;
     final CompactableLedgerStorage ledgerStorage;
     private final int maxOutstandingRequests;
 
     public EntryLogCompactor(
             ServerConfiguration conf,
-            EntryLoggerIface entryLogger,
+            EntryLogger entryLogger,
             CompactableLedgerStorage ledgerStorage,
             LogRemovalListener logRemover) {
         super(conf, logRemover);

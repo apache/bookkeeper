@@ -37,7 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
-import org.apache.bookkeeper.bookie.storage.EntryLoggerIface;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
  */
 public class SortedLedgerStorage
         implements LedgerStorage, CacheCallback, SkipListFlusher,
-            CompactableLedgerStorage, EntryLogger.EntryLogListener {
+            CompactableLedgerStorage, DefaultEntryLogger.EntryLogListener {
     private static final Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
 
     EntryMemTable memTable;
@@ -261,7 +261,7 @@ public class SortedLedgerStorage
     @Override
     public void checkpoint(final Checkpoint checkpoint) throws IOException {
         long numBytesFlushed = memTable.flush(this, checkpoint);
-        ((EntryLogger) interleavedLedgerStorage.getEntryLogger()).prepareSortedLedgerStorageCheckpoint(numBytesFlushed);
+        ((DefaultEntryLogger) interleavedLedgerStorage.getEntryLogger()).prepareSortedLedgerStorageCheckpoint(numBytesFlushed);
         interleavedLedgerStorage.checkpoint(checkpoint);
     }
 
@@ -316,9 +316,9 @@ public class SortedLedgerStorage
             public void run() {
                 try {
                     LOG.info("Started flushing mem table.");
-                    ((EntryLogger) interleavedLedgerStorage.getEntryLogger()).prepareEntryMemTableFlush();
+                    ((DefaultEntryLogger) interleavedLedgerStorage.getEntryLogger()).prepareEntryMemTableFlush();
                     memTable.flush(SortedLedgerStorage.this);
-                    if (((EntryLogger) interleavedLedgerStorage.getEntryLogger()).commitEntryMemTableFlush()) {
+                    if (((DefaultEntryLogger) interleavedLedgerStorage.getEntryLogger()).commitEntryMemTableFlush()) {
                         interleavedLedgerStorage.checkpointer.startCheckpoint(cp);
                     }
                 } catch (Exception e) {
@@ -342,7 +342,7 @@ public class SortedLedgerStorage
     }
 
     @Override
-    public EntryLoggerIface getEntryLogger() {
+    public EntryLogger getEntryLogger() {
         return interleavedLedgerStorage.getEntryLogger();
     }
 

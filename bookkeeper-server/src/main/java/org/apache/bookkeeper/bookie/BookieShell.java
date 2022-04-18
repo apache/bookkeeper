@@ -176,7 +176,7 @@ public class BookieShell implements Tool {
     File[] ledgerDirectories;
     File[] journalDirectories;
 
-    EntryLogger entryLogger = null;
+    DefaultEntryLogger entryLogger = null;
     List<Journal> journals = null;
     EntryFormatter entryFormatter;
     LedgerIdFormatter ledgerIdFormatter;
@@ -2441,7 +2441,7 @@ public class BookieShell implements Tool {
     private synchronized void initEntryLogger() throws IOException {
         if (null == entryLogger) {
             // provide read only entry logger
-            entryLogger = new ReadOnlyEntryLogger(bkConf);
+            entryLogger = new ReadOnlyDefaultEntryLogger(bkConf);
         }
     }
 

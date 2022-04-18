@@ -59,7 +59,7 @@ import java.util.regex.Pattern;
 
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
-import org.apache.bookkeeper.bookie.storage.EntryLoggerIface;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -78,8 +78,8 @@ import org.slf4j.LoggerFactory;
  * the actual ledger entry. The entry log files created by this class are
  * identified by a long.
  */
-public class EntryLogger implements EntryLoggerIface {
-    private static final Logger LOG = LoggerFactory.getLogger(EntryLogger.class);
+public class DefaultEntryLogger implements EntryLogger {
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogger.class);
     static final long UNASSIGNED_LEDGERID = -1L;
     // log file suffix
     static final String LOG_FILE_SUFFIX = ".log";
@@ -302,7 +302,7 @@ public class EntryLogger implements EntryLoggerIface {
         void onRotateEntryLog();
     }
 
-    public EntryLogger(ServerConfiguration conf) throws IOException {
+    public DefaultEntryLogger(ServerConfiguration conf) throws IOException {
         this(conf, new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())));
     }
@@ -310,14 +310,14 @@ public class EntryLogger implements EntryLoggerIface {
     /**
      * Create an EntryLogger that stores it's log files in the given directories.
      */
-    public EntryLogger(ServerConfiguration conf,
-            LedgerDirsManager ledgerDirsManager) throws IOException {
+    public DefaultEntryLogger(ServerConfiguration conf,
+                              LedgerDirsManager ledgerDirsManager) throws IOException {
         this(conf, ledgerDirsManager, null, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
     }
 
-    public EntryLogger(ServerConfiguration conf,
-            LedgerDirsManager ledgerDirsManager, EntryLogListener listener, StatsLogger statsLogger,
-            ByteBufAllocator allocator) throws IOException {
+    public DefaultEntryLogger(ServerConfiguration conf,
+                              LedgerDirsManager ledgerDirsManager, EntryLogListener listener, StatsLogger statsLogger,
+                              ByteBufAllocator allocator) throws IOException {
         //We reserve 500 bytes as overhead for the protocol.  This is not 100% accurate
         // but the protocol varies so an exact value is difficult to determine
         this.maxSaneEntrySize = conf.getNettyMaxFrameSizeBytes() - 500;
@@ -1444,7 +1444,7 @@ public class EntryLogger implements EntryLoggerIface {
     private static File compactedLogFileFromCompacting(File compactionLogFile, long compactingLogId) {
         File dir = compactionLogFile.getParentFile();
         String filename = compactionLogFile.getName();
-        String newSuffix = ".log." + EntryLogger.logId2HexString(compactingLogId)
+        String newSuffix = ".log." + DefaultEntryLogger.logId2HexString(compactingLogId)
             + TransactionalEntryLogCompactor.COMPACTED_SUFFIX;
         String hardLinkFilename = filename.replace(TransactionalEntryLogCompactor.COMPACTING_SUFFIX, newSuffix);
         return new File(dir, hardLinkFilename);

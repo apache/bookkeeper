@@ -29,9 +29,9 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 /**
  * Read Only Entry Logger.
  */
-public class ReadOnlyEntryLogger extends EntryLogger {
+public class ReadOnlyDefaultEntryLogger extends DefaultEntryLogger {
 
-    public ReadOnlyEntryLogger(ServerConfiguration conf) throws IOException {
+    public ReadOnlyDefaultEntryLogger(ServerConfiguration conf) throws IOException {
         super(conf);
     }
 

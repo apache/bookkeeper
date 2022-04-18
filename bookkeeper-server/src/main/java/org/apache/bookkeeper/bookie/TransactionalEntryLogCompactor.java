@@ -29,7 +29,7 @@ import java.util.List;
 
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
-import org.apache.bookkeeper.bookie.storage.EntryLoggerIface;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;
@@ -46,7 +46,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
 
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalEntryLogCompactor.class);
 
-    final EntryLoggerIface entryLogger;
+    final EntryLogger entryLogger;
     final CompactableLedgerStorage ledgerStorage;
     final LedgerDirsManager ledgerDirsManager;
     final List<EntryLocation> offsets = new ArrayList<>();
@@ -58,7 +58,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
 
     public TransactionalEntryLogCompactor(
             ServerConfiguration conf,
-            EntryLoggerIface entryLogger,
+            EntryLogger entryLogger,
             CompactableLedgerStorage ledgerStorage,
             LedgerDirsManager ledgerDirsManager,
             LogRemovalListener logRemover) {
