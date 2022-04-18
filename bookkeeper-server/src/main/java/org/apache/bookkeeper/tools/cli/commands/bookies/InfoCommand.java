@@ -87,10 +87,10 @@ public class InfoCommand extends BookieCommand<CliFlags> {
             for (Map.Entry<BookieId, BookieInfo> e : map.entrySet()) {
                 BookieInfo bInfo = e.getValue();
                 BookieId bookieId = e.getKey();
-                LOG.info(CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId,
-                        bk.getBookieAddressResolver())
-                    + ":\tFree: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace())
-                    + "\tTotal: " + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
+                LOG.info("{}: \tFree: {}\tTotal: {}",
+                    CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId, bk.getBookieAddressResolver()),
+                    bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace()),
+                    bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
             }
 
             // group by hostname
@@ -106,8 +106,8 @@ public class InfoCommand extends BookieCommand<CliFlags> {
                 total += bookieInfo.getTotalDiskSpace();
             }
 
-            LOG.info("Total free disk space in the cluster:\t" + totalFree + getReadable(totalFree));
-            LOG.info("Total disk capacity in the cluster:\t" + total + getReadable(total));
+            LOG.info("Total free disk space in the cluster:\t{}", totalFree + getReadable(totalFree));
+            LOG.info("Total disk capacity in the cluster:\t{}", total + getReadable(total));
             bk.close();
 
             return true;
