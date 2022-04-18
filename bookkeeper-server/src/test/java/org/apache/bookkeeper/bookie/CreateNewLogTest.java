@@ -40,7 +40,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.IntStream;
 
 import org.apache.bookkeeper.bookie.EntryLogManagerForEntryLogPerLedger.BufferedLogChannelWithDirInfo;
-import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.Counter;
@@ -243,7 +242,7 @@ public class CreateNewLogTest {
                 expectedPreAllocatedLogID, entryLoggerAllocator.getPreallocatedLogId());
         Assert.assertEquals("Number of current ", numOfLedgers,
                 entryLogManager.getCopyOfCurrentLogs().size());
-        List<BufferedLogChannel> rotatedLogChannels = entryLogManager.getRotatedLogChannels();
+        List<DefaultEntryLogger.BufferedLogChannel> rotatedLogChannels = entryLogManager.getRotatedLogChannels();
         Assert.assertEquals("Number of LogChannels rotated", 1, rotatedLogChannels.size());
         Assert.assertEquals("Rotated logchannel logid", rotatedLedger, rotatedLogChannels.iterator().next().getLogId());
         entryLogger.flush();
@@ -331,7 +330,7 @@ public class CreateNewLogTest {
         File nonFilledLedgerDir = BookieImpl.getCurrentDirectory(new File(ledgerDirs[numDirs - 1]));
 
         entryLogManager.createNewLog(ledgerId);
-        BufferedLogChannel newLogChannel = entryLogManager.getCurrentLogForLedger(ledgerId);
+        DefaultEntryLogger.BufferedLogChannel newLogChannel = entryLogManager.getCurrentLogForLedger(ledgerId);
         Assert.assertEquals("Directory of newly created BufferedLogChannel file", nonFilledLedgerDir.getAbsolutePath(),
                 newLogChannel.getLogFile().getParentFile().getAbsolutePath());
 

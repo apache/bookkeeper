@@ -43,7 +43,6 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import org.apache.bookkeeper.bookie.EntryLogManagerForEntryLogPerLedger.BufferedLogChannelWithDirInfo;
-import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -547,7 +546,7 @@ public class LedgerStorageCheckpointTest {
          * since checkpoint happenend, there shouldn't be any logChannelsToFlush
          * and bytesWrittenSinceLastFlush should be zero.
          */
-        List<BufferedLogChannel> copyOfRotatedLogChannels = entryLogManager.getRotatedLogChannels();
+        List<DefaultEntryLogger.BufferedLogChannel> copyOfRotatedLogChannels = entryLogManager.getRotatedLogChannels();
         Assert.assertTrue("There shouldn't be logChannelsToFlush",
                 ((copyOfRotatedLogChannels == null) || (copyOfRotatedLogChannels.size() == 0)));
 

@@ -261,7 +261,8 @@ public class SortedLedgerStorage
     @Override
     public void checkpoint(final Checkpoint checkpoint) throws IOException {
         long numBytesFlushed = memTable.flush(this, checkpoint);
-        ((DefaultEntryLogger) interleavedLedgerStorage.getEntryLogger()).prepareSortedLedgerStorageCheckpoint(numBytesFlushed);
+        ((DefaultEntryLogger) interleavedLedgerStorage.getEntryLogger())
+            .prepareSortedLedgerStorageCheckpoint(numBytesFlushed);
         interleavedLedgerStorage.checkpoint(checkpoint);
     }
 

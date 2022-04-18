@@ -49,7 +49,9 @@ public class SlowInterleavedLedgerStorage extends InterleavedLedgerStorage {
         public volatile long addDelay = 0;
         public volatile long flushDelay = 0;
 
-        public SlowDefaultEntryLogger(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager, EntryLogListener listener,
+        public SlowDefaultEntryLogger(ServerConfiguration conf,
+                                      LedgerDirsManager ledgerDirsManager,
+                                      EntryLogListener listener,
                                       StatsLogger statsLogger) throws IOException {
             super(conf, ledgerDirsManager, listener, statsLogger, UnpooledByteBufAllocator.DEFAULT);
         }

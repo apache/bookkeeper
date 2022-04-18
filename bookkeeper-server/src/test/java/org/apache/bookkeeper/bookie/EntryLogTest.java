@@ -969,12 +969,15 @@ public class EntryLogTest {
         }
     }
 
-    private DefaultEntryLogger.BufferedLogChannel createDummyBufferedLogChannel(DefaultEntryLogger entryLogger, long logid,
-                                                                                ServerConfiguration servConf) throws IOException {
+    private DefaultEntryLogger.BufferedLogChannel createDummyBufferedLogChannel(DefaultEntryLogger entryLogger,
+                                                                                long logid,
+                                                                                ServerConfiguration servConf)
+        throws IOException {
         File tmpFile = File.createTempFile("entrylog", logid + "");
         tmpFile.deleteOnExit();
         FileChannel fc = new RandomAccessFile(tmpFile, "rw").getChannel();
-        DefaultEntryLogger.BufferedLogChannel logChannel = new BufferedLogChannel(UnpooledByteBufAllocator.DEFAULT, fc, 10, 10,
+        DefaultEntryLogger.BufferedLogChannel logChannel =
+            new BufferedLogChannel(UnpooledByteBufAllocator.DEFAULT, fc, 10, 10,
                 logid, tmpFile, servConf.getFlushIntervalInBytes());
         return logChannel;
     }

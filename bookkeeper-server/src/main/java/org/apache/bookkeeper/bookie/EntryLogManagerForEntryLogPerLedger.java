@@ -269,9 +269,10 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     final EntryLogsPerLedgerCounter entryLogsPerLedgerCounter;
 
     EntryLogManagerForEntryLogPerLedger(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
-                                        EntryLoggerAllocator entryLoggerAllocator, List<DefaultEntryLogger.EntryLogListener> listeners,
-                                        DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus, StatsLogger statsLogger)
-            throws IOException {
+                                        EntryLoggerAllocator entryLoggerAllocator,
+                                        List<DefaultEntryLogger.EntryLogListener> listeners,
+                                        DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus,
+                                        StatsLogger statsLogger) throws IOException {
         super(conf, ledgerDirsManager, entryLoggerAllocator, listeners);
         this.recentlyCreatedEntryLogsStatus = recentlyCreatedEntryLogsStatus;
         this.rotatedLogChannels = new CopyOnWriteArrayList<BufferedLogChannel>();
