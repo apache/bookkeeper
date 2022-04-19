@@ -22,7 +22,7 @@ It is suitable for being used in following scenarios:
 
 ## Documentation
 
-Please visit the [Documentation](https://bookkeeper.apache.org/docs/latest/overview/overview/) from the project website for more information.
+Please visit the [Documentation](https://bookkeeper.apache.org/docs/overview/) from the project website for more information.
 
 ## Get In Touch
 
