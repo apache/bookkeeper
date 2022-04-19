@@ -33,6 +33,8 @@ dependencies {
     testImplementation depLibs.junit
     compileOnly depLibs.javaAnnotations
     annotationProcessor depLibs.lombok
+
+    testImplementation project(':testtools')
 }
 
 protobuf {

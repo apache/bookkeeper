@@ -30,6 +30,7 @@ dependencies {
     compileOnly depLibs.lombok
     implementation depLibs.slf4j
 
+    testImplementation project(':testtools')
     testImplementation project(path: ':stream:clients:java:base', configuration: 'testArtifacts')
     testImplementation depLibs.mockito
     testImplementation depLibs.powermockJunit

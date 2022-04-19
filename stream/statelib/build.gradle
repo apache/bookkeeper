@@ -43,6 +43,7 @@ dependencies {
     implementation depLibs.rocksDb
     implementation depLibs.slf4j
 
+    testImplementation project(':testtools')
     testImplementation depLibs.commonsConfiguration
     testImplementation depLibs.commonsIO
     testImplementation depLibs.junit
