@@ -375,6 +375,7 @@ public class ReplicationWorker implements Runnable {
             }
 
             boolean foundOpenFragments = false;
+            long numFragsReplicated = 0;
             for (LedgerFragment ledgerFragment : fragments) {
                 if (!ledgerFragment.isClosed()) {
                     foundOpenFragments = true;
@@ -387,6 +388,7 @@ public class ReplicationWorker implements Runnable {
                 }
                 try {
                     admin.replicateLedgerFragment(lh, ledgerFragment, onReadEntryFailureCallback);
+                    numFragsReplicated++;
                 } catch (BKException.BKBookieHandleNotAvailableException e) {
                     LOG.warn("BKBookieHandleNotAvailableException while replicating the fragment", e);
                 } catch (BKException.BKLedgerRecoveryException e) {
@@ -395,6 +397,11 @@ public class ReplicationWorker implements Runnable {
                     LOG.warn("BKNotEnoughBookiesException while replicating the fragment", e);
                 }
             }
+
+            if (numFragsReplicated > 0) {
+                numLedgersReplicated.inc();
+            }
+
             if (foundOpenFragments || isLastSegmentOpenAndMissingBookies(lh)) {
                 deferLedgerLockRelease = true;
                 deferLedgerLockRelease(ledgerIdToReplicate);
