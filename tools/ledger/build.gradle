@@ -38,6 +38,7 @@ dependencies {
     implementation depLibs.nettyCodecHTTP
     implementation depLibs.nettyProxy
     testImplementation project(":bookkeeper-stats")
+    testImplementation project(':testtools')
     testCompileOnly depLibs.lombok
     testImplementation depLibs.junit
     testImplementation depLibs.commonsConfiguration

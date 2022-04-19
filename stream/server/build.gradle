@@ -68,6 +68,8 @@ dependencies {
     compileOnly depLibs.javaAnnotations
 
     annotationProcessor depLibs.lombok
+
+    testImplementation project(':testtools')
 }
 
 application {

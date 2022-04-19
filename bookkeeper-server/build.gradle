@@ -57,6 +57,7 @@ dependencies {
     runtimeOnly depLibs.metricsCore
     runtimeOnly depLibs.snappy
 
+    testImplementation project(':testtools')
     testImplementation project(':bookkeeper-stats-providers:prometheus-metrics-provider')
     testImplementation project(':bookkeeper-http:vertx-http-server')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
@@ -76,7 +77,6 @@ dependencies {
     annotationProcessor depLibs.lombok
     testAnnotationProcessor depLibs.lombok
     testImplementation depLibs.log4jSlf4jImpl
-    testImplementation depLibs.log4j12api
     testImplementation depLibs.log4jCore
 }
 

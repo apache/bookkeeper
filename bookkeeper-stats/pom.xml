@@ -55,9 +55,5 @@
     </plugins>
   </build>
   <dependencies>
-    <dependency>
-      <groupId>commons-configuration</groupId>
-      <artifactId>commons-configuration</artifactId>
-    </dependency>
   </dependencies>
 </project>

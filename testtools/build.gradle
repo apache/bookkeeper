@@ -18,29 +18,26 @@
  */
 plugins {
     id 'java'
-    id 'com.adarshr.test-logger'
+    id 'maven-publish'
 }
+
+description = 'Apache BookKeeper :: Test Tools'
 
 dependencies {
-    implementation depLibs.guava
-    implementation depLibs.nettyBuffer
-    implementation depLibs.slf4j
 
-    testImplementation project(':testtools')
 
-    testImplementation depLibs.junit
-    testImplementation depLibs.mockito
-}
+    compileOnly depLibs.lombok
+    compileOnly depLibs.spotbugsAnnotations
 
-compileJava {
-    options.headerOutputDirectory = file("${buildDir}/javahGenerated")
-    // override args and remove -Werror
-    // Object.finalize() is deprecated at java 9
-    options.compilerArgs = ["-Xlint:unchecked", "-Xlint:deprecation"]
+
+
+    testCompileOnly depLibs.lombok
+
+
+    annotationProcessor depLibs.lombok
+    testAnnotationProcessor depLibs.lombok
 }
 
 jar {
-    from (tasks.getByPath(":circe-checksum:src:main:circe:linkRelease").outputs.files.filter { f -> f.isFile()} ) {
-        into "/lib"
-    }
+    archiveBaseName = 'testtools'
 }

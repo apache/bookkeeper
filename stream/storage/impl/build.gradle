@@ -47,6 +47,7 @@ dependencies {
     compileOnly depLibs.jsr305
     testImplementation project(':stream:distributedlog:common')
     testImplementation project(':stream:distributedlog:protocol')
+    testImplementation project(':testtools')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
     testImplementation project(path: ':stream:clients:java:base', configuration: 'testArtifacts')
     testImplementation project(path: ':stream:distributedlog:core', configuration: 'testArtifacts')

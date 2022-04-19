@@ -46,6 +46,7 @@ dependencies {
     testRuntimeOnly depLibs.metricsCore
     testRuntimeOnly depLibs.snappy
 
+    testImplementation project(':testtools')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
     testImplementation project(path: ':bookkeeper-server', configuration: 'testArtifacts')
     testImplementation project(path: ':stream:distributedlog:common', configuration: 'testArtifacts')

@@ -78,6 +78,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -85,6 +86,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test of {@link AbstractZkLedgerManager}.
  */
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore("javax.management.*")
 @PrepareForTest({ AbstractZkLedgerManager.class, ZkUtils.class })
 public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
