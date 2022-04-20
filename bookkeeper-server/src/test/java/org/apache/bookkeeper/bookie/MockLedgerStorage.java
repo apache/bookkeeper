@@ -271,6 +271,11 @@ public class MockLedgerStorage implements LedgerStorage {
     }
 
     @Override
+    public void forceGC(Boolean forceMajor, Boolean forceMinor) {
+        LedgerStorage.super.forceGC(forceMajor, forceMinor);
+    }
+
+    @Override
     public List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
         return LedgerStorage.super.localConsistencyCheck(rateLimiter);
     }

@@ -371,6 +371,11 @@ public class SortedLedgerStorage
     }
 
     @Override
+    public void forceGC(Boolean forceMajor, Boolean forceMinor) {
+        interleavedLedgerStorage.forceGC(forceMajor, forceMinor);
+    }
+
+    @Override
     public List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
         return interleavedLedgerStorage.localConsistencyCheck(rateLimiter);
     }

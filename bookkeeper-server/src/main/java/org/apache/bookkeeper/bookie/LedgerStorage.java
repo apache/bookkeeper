@@ -231,6 +231,13 @@ public interface LedgerStorage {
     }
 
     /**
+     * Force trigger Garbage Collection with forceMajor or forceMinor parameter.
+     */
+    default void forceGC(Boolean forceMajor, Boolean forceMinor) {
+        return;
+    }
+
+    /**
      * Class for describing location of a generic inconsistency.  Implementations should
      * ensure that detail is populated with an exception which adequately describes the
      * nature of the problem.

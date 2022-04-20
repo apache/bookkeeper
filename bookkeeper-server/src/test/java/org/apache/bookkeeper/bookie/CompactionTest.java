@@ -333,6 +333,74 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testForceGarbageCollectionWhenDiskIsFull() throws Exception {
+        testForceGarbageCollectionWhenDiskIsFull(true);
+        testForceGarbageCollectionWhenDiskIsFull(false);
+    }
+
+    public void testForceGarbageCollectionWhenDiskIsFull(boolean isForceCompactionAllowWhenDisableCompaction)
+        throws Exception {
+
+        restartBookies(conf -> {
+            if (isForceCompactionAllowWhenDisableCompaction) {
+                conf.setMinorCompactionInterval(0);
+                conf.setMajorCompactionInterval(0);
+                conf.setForceAllowCompaction(true);
+                conf.setMajorCompactionThreshold(0.5f);
+                conf.setMinorCompactionThreshold(0.2f);
+            } else {
+                conf.setMinorCompactionInterval(120000);
+                conf.setMajorCompactionInterval(240000);
+            }
+            return conf;
+        });
+
+        getGCThread().suspendMajorGC();
+        getGCThread().suspendMinorGC();
+        long majorCompactionCntBeforeGC = 0;
+        long minorCompactionCntBeforeGC = 0;
+        long majorCompactionCntAfterGC = 0;
+        long minorCompactionCntAfterGC = 0;
+
+        // disable forceMajor and forceMinor
+        majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        getGCThread().triggerGC(true, true, true).get();
+        majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        assertEquals(majorCompactionCntBeforeGC, majorCompactionCntAfterGC);
+        assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
+
+        // enable forceMajor and forceMinor
+        majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        getGCThread().triggerGC(true, false, false).get();
+        majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
+        assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
+
+        // enable forceMajor and disable forceMinor
+        majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        getGCThread().triggerGC(true, false, true).get();
+        majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
+        assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
+
+        // disable forceMajor and enable forceMinor
+        majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        getGCThread().triggerGC(true, true, false).get();
+        majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
+        minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
+        assertEquals(majorCompactionCntBeforeGC, majorCompactionCntAfterGC);
+        assertEquals(minorCompactionCntBeforeGC + 1, minorCompactionCntAfterGC);
+
+    }
+
+    @Test
     public void testMinorCompaction() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
