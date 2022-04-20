@@ -110,10 +110,10 @@ $ bin/bookkeeper shell autorecovery \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -enable | Enable autorecovery of underreplicated ledgers | 
-| -disable | Disable autorecovery of underreplicated ledgers | 
+| Flag         | Description |
+|--------------| ----------- |
+| -e,--enable  | Enable autorecovery of underreplicated ledgers | 
+| -d,--disable | Disable autorecovery of underreplicated ledgers | 
 
 
 ### bookieformat {#bookkeeper-shell-bookieformat}
@@ -127,11 +127,11 @@ $ bin/bookkeeper shell bookieformat \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -nonInteractive | Whether to confirm if old data exists. | 
-| -force | If [nonInteractive] is specified, then whether to force delete the old data without prompt..? | 
-| -deleteCookie | Delete its cookie on zookeeper | 
+| Flag                | Description |
+|---------------------| ----------- |
+| -n,--nonInteractive | Whether to confirm if old data exists. | 
+| -f,--force          | If [nonInteractive] is specified, then whether to force delete the old data without prompt..? | 
+| -d,--deleteCookie   | Delete its cookie on zookeeper | 
 
 
 ### initbookie {#bookkeeper-shell-initbookie}
@@ -170,10 +170,10 @@ $ bin/bookkeeper shell bookiesanity \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -entries N | Total entries to be added for the test (default 10) | 
-| -timeout N | Timeout for write/read operations in seconds (default 1) | 
+| Flag           | Description |
+|----------------| ----------- |
+| -e,--entries N | Total entries to be added for the test (default 10) | 
+| -t,--timeout N | Timeout for write/read operations in seconds (default 1) | 
 
 
 ### decommissionbookie {#bookkeeper-shell-decommissionbookie}
@@ -197,10 +197,10 @@ $ bin/bookkeeper shell deleteledger \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -ledgerid N | Ledger ID | 
-| -force | Whether to force delete the Ledger without prompt..? | 
+| Flag                    | Description |
+|-------------------------| ----------- |
+| -l,--ledgerid LEDGER_ID | Ledger ID | 
+| -f,--force              | Whether to force delete the Ledger without prompt..? | 
 
 
 ### endpointinfo {#bookkeeper-shell-endpointinfo}
@@ -254,9 +254,9 @@ $ bin/bookkeeper shell ledger \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -m LEDGER_ID | Print meta information | 
+| Flag                | Description |
+|---------------------| ----------- |
+| -m,--meta LEDGER_ID | Print meta information | 
 
 
 ### ledgermetadata {#bookkeeper-shell-ledgermetadata}
@@ -270,9 +270,11 @@ $ bin/bookkeeper shell ledgermetadata \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -ledgerid N | Ledger ID | 
+| Flag                    | Description |
+|-------------------------| ----------- |
+| -l,--ledgerid LEDGER_ID | Ledger ID | 
+ | --dump-to-file FILENAME | Dump metadata for ledger, to a file |
+ | --restore-from-file FILENAME | Restore metadata for ledger, from a file | 
 
 
 ### listbookies {#bookkeeper-shell-listbookies}
@@ -288,9 +290,10 @@ $ bin/bookkeeper shell listbookies \
 
 | Flag | Description |
 | ---- | ----------- |
-| -readwrite | Print readwrite bookies | 
-| -readonly | Print readonly bookies | 
-| -hostnames | Also print hostname of the bookie | 
+| -a,--all | Print all bookies | 
+| -rw,--readwrite | Print readwrite bookies | 
+| -ro,--readonly | Print readonly bookies | 
+| -h,--hostnames | Also print hostname of the bookie | 
 
 
 ### listfilesondisc {#bookkeeper-shell-listfilesondisc}
@@ -306,9 +309,9 @@ $ bin/bookkeeper shell listfilesondisc \
 
 | Flag | Description |
 | ---- | ----------- |
-| -journal | Print list of journal files | 
-| -entrylog | Print list of entryLog files | 
-| -index | Print list of index files | 
+| -txn,--journal | Print list of journal files | 
+| -log,--entrylog | Print list of entryLog files | 
+| -idx,--index | Print list of index files | 
 
 
 ### listledgers {#bookkeeper-shell-listledgers}
@@ -322,9 +325,10 @@ $ bin/bookkeeper shell listledgers \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -meta | Print metadata | 
+| Flag                | Description |
+|---------------------| ----------- |
+| -bookieid BOOKIE_ID | List ledgers residing in this bookie | 
+| -m,--meta           | Print metadata | 
 
 
 ### listunderreplicated {#bookkeeper-shell-listunderreplicated}
@@ -338,11 +342,12 @@ $ bin/bookkeeper shell listunderreplicated \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -missingreplica N | Bookie Id of missing replica | 
-| -excludingmissingreplica N | Bookie Id of missing replica to ignore | 
-| -printmissingreplica | Whether to print missingreplicas list? | 
+| Flag                                    | Description |
+|-----------------------------------------| ----------- |
+| -missingreplica BOOKIE_ADDRESS          | Bookie Id of missing replica | 
+| -excludingmissingreplica BOOKIE_ADDRESS | Bookie Id of missing replica to ignore | 
+| -printmissingreplica                    | Whether to print missingreplicas list? | 
+| -printreplicationworkerid               | Whether to print replicationworkerid? | 
 
 
 ### metaformat {#bookkeeper-shell-metaformat}
@@ -360,8 +365,8 @@ $ bin/bookkeeper shell metaformat \
 
 | Flag | Description |
 | ---- | ----------- |
-| -nonInteractive | Whether to confirm if old data exists..? | 
-| -force | If [nonInteractive] is specified, then whether to force delete the old data without prompt. | 
+| -n,--nonInteractive | Whether to confirm if old data exists..? | 
+| -f,--force | If [nonInteractive] is specified, then whether to force delete the old data without prompt. | 
 
 
 ### initnewcluster {#bookkeeper-shell-initnewcluster}
@@ -387,11 +392,11 @@ $ bin/bookkeeper shell nukeexistingcluster \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -zkledgersrootpath | zookeeper ledgers rootpath | 
-| -instanceid | instance id | 
-| -force | If instanceid is not specified, then whether to force nuke the metadata without validating instanceid | 
+| Flag                           | Description |
+|--------------------------------| ----------- |
+| -p,--zkledgersrootpath ZK_LEDGER_ROOT_PATH | zookeeper ledgers rootpath | 
+| -i,--instanceid INSTANCE_ID    | instance id | 
+| -f,--force                     | If instanceid is not specified, then whether to force nuke the metadata without validating instanceid | 
 
 
 ### lostbookierecoverydelay {#bookkeeper-shell-lostbookierecoverydelay}
@@ -405,10 +410,10 @@ $ bin/bookkeeper shell lostbookierecoverydelay \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -get | Get LostBookieRecoveryDelay value (in seconds) | 
-| -set N | Set LostBookieRecoveryDelay value (in seconds) | 
+| Flag           | Description |
+|----------------| ----------- |
+| -g,--get       | Get LostBookieRecoveryDelay value (in seconds) | 
+| -s,--set VALUE | Set LostBookieRecoveryDelay value (in seconds) | 
 
 
 ### readjournal {#bookkeeper-shell-readjournal}
@@ -422,10 +427,10 @@ $ bin/bookkeeper shell readjournal \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -msg JOURNAL_ID|JOURNAL_FILENAME | Print message body | 
-| -dir | Journal directory (needed if more than one journal configured) | 
+| Flag                                            | Description |
+|-------------------------------------------------|--|
+| -m,--msg                                        | Print message body | 
+| -dir JOURNAL_ID or JOURNAL_FILE_NAME | Journal directory (needed if more than one journal configured) | 
 
 
 ### readledger {#bookkeeper-shell-readledger}
@@ -439,6 +444,16 @@ $ bin/bookkeeper shell readledger \
 	<ledger_id> [<start_entry_id> [<end_entry_id>]]
 ```
 
+| Flag                  | Description                                  |
+|-----------------------|----------------------------------------------|
+| -m,--msg              | Print message body                           | 
+| -l,--ledgerid LEDGER_ID | Ledger ID                                    | 
+| -fe,--firstentryid ENTRY_ID | First EntryID                                | 
+| -le,--lastentryid ENTRY_ID | Last EntryID                                 | 
+| -b,--bookie BOOKIE_ID | Only read from a specific bookie             | 
+| -r,--force-recovery   | Ensure the ledger is properly closed before reading | 
+
+
 ### readlog {#bookkeeper-shell-readlog}
 
 Scan an entry file and format the entries into readable format.
@@ -451,13 +466,13 @@ $ bin/bookkeeper shell readlog \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -msg | Print message body | 
-| -ledgerid N | Ledger ID | 
-| -entryid N | Entry ID | 
-| -startpos N | Start Position | 
-| -endpos | End Position | 
+| Flag                                | Description |
+|-------------------------------------| ----------- |
+| -m,--msg                            | Print message body | 
+| -l,--ledgerid LEDGER_ID             | Ledger ID | 
+| -e,--entryid ENTRY_ID               | Entry ID | 
+| -sp,--startpos START_ENTRY_LOG_BYTE_POS | Start Position | 
+| -ep,--endpos END_ENTRY_LOG_BYTE_POS | End Position | 
 
 
 ### recover {#bookkeeper-shell-recover}
@@ -472,9 +487,15 @@ $ bin/bookkeeper shell recover \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -deleteCookie | Delete cookie node for the bookie. | 
+| Flag                  | Description                                  |
+|-----------------------|----------------------------------------------|
+| -d,--deleteCookie     | Delete cookie node for the bookie.           | 
+| -dr,--dryrun          | Printing the recovery plan w/o doing actual recovery | 
+| -f,--force            | Force recovery without confirmation          | 
+| -l,--ledger LEDGER_ID | Recover a specific ledger                    | 
+| -q,--query            | Query the ledgers that contain given bookies | 
+| -sk,--skipOpenLedgers | Skip recovering open ledgers                 | 
+| -sku,--skipUnrecoverableLedgers | Skip unrecoverable ledgers                   | 
 
 
 ### simpletest {#bookkeeper-shell-simpletest}
@@ -488,12 +509,12 @@ $ bin/bookkeeper shell simpletest \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -ensemble N | Ensemble size (default 3) | 
-| -writeQuorum N | Write quorum size (default 2) | 
-| ackQuorum N | Ack quorum size (default 2) | 
-| -numEntries N | Entries to write (default 1000) | 
+| Flag             | Description |
+|------------------| ----------- |
+| -e,--ensemble N  | Ensemble size (default 3) | 
+| -w,--writeQuorum N | Write quorum size (default 2) | 
+| -a,--ackQuorum N | Ack quorum size (default 2) | 
+| -n,--numEntries N | Entries to write (default 1000) | 
 
 
 ### triggeraudit {#bookkeeper-shell-triggeraudit}
@@ -517,9 +538,12 @@ $ bin/bookkeeper shell updatecookie \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -bookieId <hostname|ip> | Bookie Id | 
+| Flag                                  | Description |
+|---------------------------------------|--|
+| -b,--bookieId HOSTNAME or IP | Bookie Id | 
+| -d,--delete FORCE              | Delete cookie both locally and in ZooKeeper | 
+| -e,--expandstorage                    | Expand Storage | 
+| -l,--list                             | List paths of all the cookies present locally and on zookkeeper | 
 
 
 ### updateledgers {#bookkeeper-shell-updateledgers}
@@ -533,14 +557,14 @@ $ bin/bookkeeper shell updateledgers \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -bookieId <hostname|ip> | Bookie Id | 
-| -updatespersec N | Number of ledgers updating per second (default 5 per sec) | 
-| -limit N | Maximum number of ledgers to update (default no limit) | 
-| -verbose | Print status of the ledger updation (default false) | 
-| -printprogress N | Print messages on every configured seconds if verbose turned on (default 10 secs) | 
-
+| Flag                         | Description                                                                       |
+|------------------------------|-----------------------------------------------------------------------------------|
+| -b,--bookieId HOSTNAME or IP | Bookie Id                                                                         | 
+| -s,--updatespersec           | Number of ledgers updating per second (default 5 per sec)                         | 
+| -l,--limit N                 | Maximum number of ledgers to update (default no limit)                            | 
+| -v,--verbose                 | Print status of the ledger updation (default false)                               | 
+| -p,--printprogress N         | Print messages on every configured seconds if verbose turned on (default 10 secs) | 
+| -r,--maxOutstandingReads N   | Max outstanding reads (default: 5 * updatespersec)                                |
 
 ### updateBookieInLedger {#bookkeeper-shell-updateBookieInLedger}
 
@@ -557,15 +581,15 @@ $ bin/bookkeeper shell updateBookieInLedger \
 	<options>
 ```
 
-| Flag | Description |
-| ---- | ----------- |
-| -srcBookie BOOKIE_ID | Source Bookie Id | 
-| -destBookie BOOKIE_ID | Destination Bookie Id | 
-| -updatespersec N | Number of ledgers updating per second (default 5 per sec) | 
-| -limit N | Maximum number of ledgers to update (default no limit) | 
-| -verbose | Print status of the ledger updation (default false) | 
-| -printprogress N | Print messages on every configured seconds if verbose turned on (default 10 secs) | 
-
+| Flag                      | Description |
+|---------------------------| ----------- |
+| -sb,--srcBookie BOOKIE_ID | Source Bookie Id | 
+| -db,--destBookie BOOKIE_ID     | Destination Bookie Id | 
+| -s,--updatespersec N          | Number of ledgers updating per second (default 5 per sec) | 
+| -l,--limit N              | Maximum number of ledgers to update (default no limit) | 
+| -v,--verbose                  | Print status of the ledger updation (default false) | 
+| -p,--printprogress N      | Print messages on every configured seconds if verbose turned on (default 10 secs) | 
+| -r,--maxOutstandingReads N | Max outstanding reads (default: 5 * updatespersec)                                |
 
 ### whoisauditor {#bookkeeper-shell-whoisauditor}
 
