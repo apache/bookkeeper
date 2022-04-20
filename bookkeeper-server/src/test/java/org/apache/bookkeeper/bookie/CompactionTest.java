@@ -368,13 +368,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         getGCThread().triggerGC(true, true, true).get();
         majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
         minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
-        if (isForceCompactionAllowWhenDisableCompaction) {
-            assertEquals(majorCompactionCntBeforeGC, majorCompactionCntAfterGC);
-            assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
-        } else {
-            assertEquals(majorCompactionCntBeforeGC, majorCompactionCntAfterGC);
-            assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
-        }
+        assertEquals(majorCompactionCntBeforeGC, majorCompactionCntAfterGC);
+        assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
 
         // enable forceMajor and forceMinor
         majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
@@ -382,14 +377,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         getGCThread().triggerGC(true, false, false).get();
         majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
         minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
-
-        if (isForceCompactionAllowWhenDisableCompaction) {
-            assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
-            assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
-        } else {
-            assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
-            assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
-        }
+        assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
+        assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
 
         // enable forceMajor and disable forceMinor
         majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
@@ -397,13 +386,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         getGCThread().triggerGC(true, false, true).get();
         majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
         minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
-        if (isForceCompactionAllowWhenDisableCompaction) {
-            assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
-            assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
-        } else {
-            assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
-            assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
-        }
+        assertEquals(majorCompactionCntBeforeGC + 1, majorCompactionCntAfterGC);
+        assertEquals(minorCompactionCntBeforeGC, minorCompactionCntAfterGC);
 
         // disable forceMajor and enable forceMinor
         majorCompactionCntBeforeGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
@@ -411,13 +395,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         getGCThread().triggerGC(true, true, false).get();
         majorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMajorCompactionCounter();
         minorCompactionCntAfterGC = getGCThread().getGarbageCollectionStatus().getMinorCompactionCounter();
-        if (isForceCompactionAllowWhenDisableCompaction) {
-            assertEquals(majorCompactionCntBeforeGC, majorCompactionCntAfterGC);
-            assertEquals(minorCompactionCntBeforeGC + 1, minorCompactionCntAfterGC);
-        } else {
-            assertEquals(majorCompactionCntBeforeGC, majorCompactionCntAfterGC);
-            assertEquals(minorCompactionCntBeforeGC + 1, minorCompactionCntAfterGC);
-        }
+        assertEquals(majorCompactionCntBeforeGC, majorCompactionCntAfterGC);
+        assertEquals(minorCompactionCntBeforeGC + 1, minorCompactionCntAfterGC);
 
     }
 
