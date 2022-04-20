@@ -64,7 +64,7 @@ fi
 BINDIR=${BK_BINDIR:-"`dirname "$0"`"}
 BK_HOME=${BK_HOME:-"`cd ${BINDIR}/..;pwd`"}
 BK_CONFDIR=${BK_HOME}/conf
-DEFAULT_LOG_CONF=${BK_CONFDIR}/log4j.properties
+DEFAULT_LOG_CONF=${BK_CONFDIR}/log4j2.xml
 
 source ${BK_CONFDIR}/nettyenv.sh
 source ${BK_CONFDIR}/bkenv.sh
@@ -289,24 +289,28 @@ build_netty_opts() {
 
 build_logging_opts() {
   CONF_FILE=$1
-  LOG_DIR=$2
-  LOG_FILE=$3
-  LOGGER=$4
+  LOG_LEVEL=$2
+  LOG_APPENDER=$3
+  LOG_DIR=$4
+  LOG_FILE=$5
 
-  echo "-Dlog4j.configuration=`basename ${CONF_FILE}` \
-    -Dbookkeeper.root.logger=${LOGGER} \
+  echo "-Dlog4j.configurationFile=`basename ${CONF_FILE}` \
+    -Dbookkeeper.log.root.level=${LOG_LEVEL} \
+    -Dbookkeeper.log.root.appender=${LOG_APPENDER} \
     -Dbookkeeper.log.dir=${LOG_DIR} \
     -Dbookkeeper.log.file=${LOG_FILE}"
 }
 
 build_cli_logging_opts() {
   CONF_FILE=$1
-  LOG_DIR=$2
-  LOG_FILE=$3
-  LOGGER=$4
+  LOG_LEVEL=$2
+  LOG_APPENDER=$3
+  LOG_DIR=$4
+  LOG_FILE=$5
 
-  echo "-Dlog4j.configuration=`basename ${CONF_FILE}` \
-    -Dbookkeeper.cli.root.logger=${LOGGER} \
+  echo "-Dlog4j.configurationFile=`basename ${CONF_FILE}` \
+    -Dbookkeeper.cli.log.root.level=${LOG_LEVEL} \
+    -Dbookkeeper.cli.log.root.appender=${LOG_APPENDER} \
     -Dbookkeeper.cli.log.dir=${LOG_DIR} \
     -Dbookkeeper.cli.log.file=${LOG_FILE}"
 }

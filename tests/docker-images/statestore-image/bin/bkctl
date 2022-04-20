@@ -34,7 +34,7 @@ if [ -z "${CLI_CONF}" ]; then
   CLI_CONF=${DEFAULT_CONF}
 fi
 
-DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j.cli.properties
+DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j2.cli.xml
 if [ -z "${CLI_LOG_CONF}" ]; then
   CLI_LOG_CONF=${DEFAULT_LOG_CONF}
 fi

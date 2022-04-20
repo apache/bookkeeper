@@ -88,7 +88,7 @@ fi
 
 SS_CLASSPATH="$SS_JAR:$SS_CLASSPATH:$SS_EXTRA_CLASSPATH"
 SS_CLASSPATH="`dirname $SS_LOG_CONF`:$SS_CLASSPATH"
-OPTS="$OPTS -Dlog4j.configuration=`basename $SS_LOG_CONF`"
+OPTS="$OPTS -Dlog4j.configurationFile=`basename $SS_LOG_CONF`"
 OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
 
 OPTS="-cp $SS_CLASSPATH $OPTS"

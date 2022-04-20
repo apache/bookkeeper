@@ -22,7 +22,7 @@ BINDIR=$(dirname "$0")
 SS_HOME=`cd $BINDIR/..;pwd`
 
 DEFAULT_STANDALONE_CONF=$SS_HOME/conf/standalone.conf
-DEFAULT_LOG_CONF=$SS_HOME/conf/log4j.properties
+DEFAULT_LOG_CONF=$SS_HOME/conf/log4j2.xml
 
 if [ -f "$SS_HOME/conf/streamstorage_env.sh" ]
 then
@@ -121,7 +121,7 @@ fi
 
 SS_CLASSPATH="$SS_JAR:$SS_CLASSPATH:$SS_EXTRA_CLASSPATH"
 SS_CLASSPATH="`dirname $SS_LOG_CONF`:$SS_CLASSPATH"
-OPTS="$OPTS -Dlog4j.configuration=`basename $SS_LOG_CONF`"
+OPTS="$OPTS -Dlog4j.configurationFile=`basename $SS_LOG_CONF`"
 
 # Ensure we can read bigger content from ZK. (It might be
 # rarely needed when trying to list many z-nodes under a
