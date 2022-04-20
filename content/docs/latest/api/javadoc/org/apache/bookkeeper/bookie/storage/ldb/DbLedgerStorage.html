@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":9,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":9,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":9,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":9,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -311,12 +311,20 @@ implements <a href="../../LedgerStorage.html" title="interface in org.apache.boo
 </td>
 </tr>
 <tr id="i10" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#forceGC(java.lang.Boolean,java.lang.Boolean)">forceGC</a></span>&#8203;(java.lang.Boolean&nbsp;forceMajor,
+       java.lang.Boolean&nbsp;forceMinor)</code></th>
+<td class="colLast">
+<div class="block">Force trigger Garbage Collection with forceMajor or forceMinor parameter.</div>
+</td>
+</tr>
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>java.lang.Iterable&lt;java.lang.Long&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getActiveLedgersInRange(long,long)">getActiveLedgersInRange</a></span>&#8203;(long&nbsp;firstLedgerId,
                        long&nbsp;lastLedgerId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>io.netty.buffer.ByteBuf</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEntry(long,long)">getEntry</a></span>&#8203;(long&nbsp;ledgerId,
         long&nbsp;entryId)</code></th>
@@ -324,41 +332,41 @@ implements <a href="../../LedgerStorage.html" title="interface in org.apache.boo
 <div class="block">Read an entry from storage.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>io.netty.buffer.ByteBuf</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExplicitLac(long)">getExplicitLac</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>java.util.List&lt;<a href="../../GarbageCollectionStatus.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getGarbageCollectionStatus()">getGarbageCollectionStatus</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get Garbage Collection status.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLastAddConfirmed(long)">getLastAddConfirmed</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">
 <div class="block">Get last add confirmed.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>io.netty.buffer.ByteBuf</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLastEntry(long)">getLastEntry</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLastEntryInLedger(long)">getLastEntryInLedger</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>(package private) java.util.List&lt;<a href="SingleDirectoryDbLedgerStorage.html" title="class in org.apache.bookkeeper.bookie.storage.ldb">SingleDirectoryDbLedgerStorage</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLedgerStorageList()">getLedgerStorageList</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>java.util.PrimitiveIterator.OfLong</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getListOfEntriesOfLedger(long)">getListOfEntriesOfLedger</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">
@@ -366,34 +374,34 @@ implements <a href="../../LedgerStorage.html" title="interface in org.apache.boo
  this LedgerStorage.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLocation(long,long)">getLocation</a></span>&#8203;(long&nbsp;ledgerId,
            long&nbsp;entryId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>(package private) static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLongVariableOrDefault(org.apache.bookkeeper.conf.ServerConfiguration,java.lang.String,long)">getLongVariableOrDefault</a></span>&#8203;(<a href="../../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                         java.lang.String&nbsp;keyName,
                         long&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>java.util.EnumSet&lt;<a href="../../LedgerStorage.StorageState.html" title="enum in org.apache.bookkeeper.bookie">LedgerStorage.StorageState</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getStorageStateFlags()">getStorageStateFlags</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the storage state flags currently set for the storage instance.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hasLimboState(long)">hasLimboState</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">
 <div class="block">Check whether a ledger is in limbo state.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initialize(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">initialize</a></span>&#8203;(<a href="../../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
           <a href="../../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
@@ -405,33 +413,33 @@ implements <a href="../../LedgerStorage.html" title="interface in org.apache.boo
 <div class="block">Initialize the LedgerStorage implementation.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isFenced(long)">isFenced</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">
 <div class="block">Check whether the ledger is fenced in ledger storage or not.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isFlushRequired()">isFlushRequired</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isInForceGC()">isInForceGC</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Whether force triggered Garbage Collection is running or not.</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ledgerExists(long)">ledgerExists</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">
 <div class="block">Whether a ledger exists.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>protected <a href="SingleDirectoryDbLedgerStorage.html" title="class in org.apache.bookkeeper.bookie.storage.ldb">SingleDirectoryDbLedgerStorage</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newSingleDirectoryDbLedgerStorage(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,java.util.concurrent.ScheduledExecutorService,long,long,int)">newSingleDirectoryDbLedgerStorage</a></span>&#8203;(<a href="../../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                                  <a href="../../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
@@ -444,7 +452,7 @@ implements <a href="../../LedgerStorage.html" title="interface in org.apache.boo
                                  int&nbsp;readAheadCacheBatchSize)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readLedgerIndexEntries(long,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor)">readLedgerIndexEntries</a></span>&#8203;(long&nbsp;ledgerId,
                       <a href="../../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;serverConf,
@@ -453,51 +461,51 @@ implements <a href="../../LedgerStorage.html" title="interface in org.apache.boo
 <div class="block">Reads ledger index entries to get list of entry-logger that contains given ledgerId.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>byte[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readMasterKey(long)">readMasterKey</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">
 <div class="block">Get the master key for a ledger.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerLedgerDeletionListener(org.apache.bookkeeper.bookie.LedgerStorage.LedgerDeletionListener)">registerLedgerDeletionListener</a></span>&#8203;(<a href="../../LedgerStorage.LedgerDeletionListener.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage.LedgerDeletionListener</a>&nbsp;listener)</code></th>
 <td class="colLast">
 <div class="block">Register a listener for ledgers deletion notifications.</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setCheckpointer(org.apache.bookkeeper.bookie.Checkpointer)">setCheckpointer</a></span>&#8203;(<a href="../../Checkpointer.html" title="interface in org.apache.bookkeeper.bookie">Checkpointer</a>&nbsp;checkpointer)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setCheckpointSource(org.apache.bookkeeper.bookie.CheckpointSource)">setCheckpointSource</a></span>&#8203;(<a href="../../CheckpointSource.html" title="interface in org.apache.bookkeeper.bookie">CheckpointSource</a>&nbsp;checkpointSource)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setExplicitLac(long,io.netty.buffer.ByteBuf)">setExplicitLac</a></span>&#8203;(long&nbsp;ledgerId,
               io.netty.buffer.ByteBuf&nbsp;lac)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setFenced(long)">setFenced</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">
 <div class="block">Fenced the ledger id in ledger storage.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLimboState(long)">setLimboState</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">
 <div class="block">Set a ledger to limbo state.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setMasterKey(long,byte%5B%5D)">setMasterKey</a></span>&#8203;(long&nbsp;ledgerId,
             byte[]&nbsp;masterKey)</code></th>
@@ -505,33 +513,33 @@ implements <a href="../../LedgerStorage.html" title="interface in org.apache.boo
 <div class="block">Set the master key for a ledger.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setStateManager(org.apache.bookkeeper.bookie.StateManager)">setStateManager</a></span>&#8203;(<a href="../../StateManager.html" title="interface in org.apache.bookkeeper.bookie">StateManager</a>&nbsp;stateManager)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setStorageStateFlag(org.apache.bookkeeper.bookie.LedgerStorage.StorageState)">setStorageStateFlag</a></span>&#8203;(<a href="../../LedgerStorage.StorageState.html" title="enum in org.apache.bookkeeper.bookie">LedgerStorage.StorageState</a>&nbsp;flag)</code></th>
 <td class="colLast">
 <div class="block">Set a storage state flag for the storage instance.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shutdown()">shutdown</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Cleanup and free any resources being used by the storage system.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#start()">start</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Start any background threads belonging to the storage system.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#waitForLastAddConfirmedUpdate(long,long,org.apache.bookkeeper.common.util.Watcher)">waitForLastAddConfirmedUpdate</a></span>&#8203;(long&nbsp;ledgerId,
                              long&nbsp;previousLAC,
@@ -1249,6 +1257,22 @@ implements <a href="../../LedgerStorage.html" title="interface in org.apache.boo
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../LedgerStorage.html#forceGC()">forceGC</a></code>&nbsp;in interface&nbsp;<code><a href="../../LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="forceGC(java.lang.Boolean,java.lang.Boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>forceGC</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;forceGC&#8203;(java.lang.Boolean&nbsp;forceMajor,
+                    java.lang.Boolean&nbsp;forceMinor)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../LedgerStorage.html#forceGC(java.lang.Boolean,java.lang.Boolean)">LedgerStorage</a></code></span></div>
+<div class="block">Force trigger Garbage Collection with forceMajor or forceMinor parameter.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../LedgerStorage.html#forceGC(java.lang.Boolean,java.lang.Boolean)">forceGC</a></code>&nbsp;in interface&nbsp;<code><a href="../../LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a></code></dd>
 </dl>
 </li>
 </ul>
