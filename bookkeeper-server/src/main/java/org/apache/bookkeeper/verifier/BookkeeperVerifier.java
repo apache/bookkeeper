@@ -30,9 +30,12 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.SneakyThrows;
 import org.apache.bookkeeper.client.BKException;
 
 /**
@@ -180,6 +183,7 @@ public class BookkeeperVerifier {
     /**
      * State required to regenerate an entry.
      */
+    @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
     class EntryInfo {
         private final long entryID;
         private final long seed;
