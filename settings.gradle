@@ -99,7 +99,9 @@ include(':bookkeeper-benchmark',
         'tests:scripts',
         'tests:shaded:bookkeeper-server-shaded-test',
         'tests:shaded:bookkeeper-server-tests-shaded-test',
-        'tests:shaded:distributedlog-core-shaded-test')
+        'tests:shaded:distributedlog-core-shaded-test',
+        'testtools',
+)
 
 project(':bookkeeper-tools').projectDir = file('tools/all')
 project(':bookkeeper-tools-framework').projectDir = file('tools/framework')

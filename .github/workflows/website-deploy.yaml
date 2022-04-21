@@ -24,11 +24,15 @@ on:
     branches:
       - master
     paths:
-      - 'site/**'
+      - 'site3/**'
       - '.github/workflows/website-deploy.yaml'
+
+env:
+  DEPLOY_URL: "https://bookkeeper.apache.org/"
+
 jobs:
   build-website:
-    name: Build and publish website
+    name: Build and deploy the website
     if: ${{ github.repository == 'apache/bookkeeper' }}
     runs-on: ubuntu-latest
     timeout-minutes: 180
@@ -42,22 +46,17 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
-          
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - name: Setup NodeJS
+        uses: actions/setup-node@v2
         with:
-          ruby-version: 2.6.9
+          node-version: '14'
 
-      - name: publish
+      - name: Setup yarn
+        run: npm install -g yarn
+
+      - name: Publish
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
-          #!/bin/bash
-          set -e
-          sudo apt-get update
-          sudo apt-get install -y libxslt-dev libxml2-dev
-          cd site
-          make setup
-          make latest_javadoc
-          make apache
-          ./scripts/publish-website.sh
+          ./site3/website/scripts/build-website.sh
+          ./site3/website/scripts/publish-website.sh

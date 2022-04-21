@@ -26,6 +26,7 @@ dependencies {
     testImplementation project(':bookkeeper-server')
     testImplementation project(':tests:integration-tests-utils')
     testImplementation project(':tests:integration-tests-topologies')
+    testImplementation project(':testtools')
     testCompileOnly depLibs.lombok
     testImplementation depLibs.arquillianJunitContainer
     testImplementation depLibs.testcontainers

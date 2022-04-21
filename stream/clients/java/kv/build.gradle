@@ -30,6 +30,7 @@ dependencies {
     implementation depLibs.protobuf
     implementation depLibs.slf4j
     compileOnly depLibs.jsr305
+    testImplementation project(':testtools')
     testImplementation project(path: ':stream:clients:java:base', configuration: 'testArtifacts')
     testImplementation depLibs.mockito
     testImplementation depLibs.junit

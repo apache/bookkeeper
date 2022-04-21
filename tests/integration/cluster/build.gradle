@@ -36,6 +36,7 @@ dependencies {
     testImplementation project(':bookkeeper-stats')
     testImplementation project(':tests:integration-tests-topologies')
     testImplementation project(':stream:clients:java:kv')
+    testImplementation project(':testtools')
 
     testCompileOnly depLibs.lombok
     testImplementation depLibs.log4j12api

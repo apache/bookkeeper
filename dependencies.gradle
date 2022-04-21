@@ -82,7 +82,7 @@ depVersions = [
     spotbugsAnnotations: "3.1.8",
     protocGenGrpcJava: "1.12.0",
     shrinkwrap:"3.1.4",
-    snappy: "1.1.7",
+    snappy: "1.1.7.7",
     thrift: "0.14.2",
     testcontainers: "1.16.3",
     vertx: "3.9.8",
