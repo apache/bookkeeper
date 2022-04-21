@@ -284,14 +284,13 @@ build_cli_jvm_opts() {
 }
 
 build_netty_opts() {
-  NETTY_OPTS="-Dio.netty.leakDetectionLevel=${NETTY_LEAK_DETECTION_LEVEL}"
-  echo "-Dio.netty.leakDetectionLevel=${NETTY_LEAK_DETECTION_LEVEL}"
-
+  NETTY_OPTS="-Dio.netty.leakDetectionLevel=${NETTY_LEAK_DETECTION_LEVEL} -Dio.netty.tryReflectionSetAccessible=true"
   # --add-opens does not exist on jdk8
   if [ "$USING_JDK8" -eq "0" ]; then
     # Enable java.nio.DirectByteBuffer
     # https://github.com/netty/netty/blob/4.1/common/src/main/java/io/netty/util/internal/PlatformDependent0.java
-    NETTY_OPTS="$NETTY_OPTS --add-opens java.base/sun.nio=ALL-UNNAMED"
+    # https://github.com/netty/netty/issues/12265
+    NETTY_OPTS="$NETTY_OPTS --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED"
   fi
   echo $NETTY_OPTS
 }
@@ -326,6 +325,8 @@ build_bookie_opts() {
   if [ "$USING_JDK8" -eq "0" ]; then
     # enable posix_fadvise usage in the Journal
     BOOKIE_OPTS="$BOOKIE_OPTS --add-opens java.base/java.io=ALL-UNNAMED"
+    # DirectMemoryCRC32Digest
+    BOOKIE_OPTS="$BOOKIE_OPTS --add-opens java.base/java.util.zip=ALL-UNNAMED"
   fi
   echo $BOOKIE_OPTS
 }

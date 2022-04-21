@@ -228,10 +228,11 @@ testBuildNettyOpts() {
   source ${BK_BINDIR}/common.sh
 
   ACTUAL_NETTY_OPTS=$(build_netty_opts)
+  EXPECTED_NETTY_OPTS=""
   if [ "$USING_JDK8" -ne "1" ]; then
-    EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled --add-opens java.base/java.nio=ALL-UNNAMED"
+      EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled -Dio.netty.tryReflectionSetAccessible=true --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED"
   else
-    EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled"
+      EXPECTED_NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled -Dio.netty.tryReflectionSetAccessible=true"
   fi
 
   assertEquals "Netty OPTS is not set correctly" "${EXPECTED_NETTY_OPTS}" "${ACTUAL_NETTY_OPTS}"
@@ -245,7 +246,7 @@ testBuildBookieOpts() {
 
   USEJDK8=$(detect_jdk8)
   if [ "$USING_JDK8" -ne "1" ]; then
-    EXPECTED_OPTS="-Djava.net.preferIPv4Stack=true --add-opens java.base/java.io=ALL-UNNAMED"
+    EXPECTED_OPTS="-Djava.net.preferIPv4Stack=true --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.util.zip=ALL-UNNAMED"
   else
     EXPECTED_OPTS="-Djava.net.preferIPv4Stack=true"
   fi
