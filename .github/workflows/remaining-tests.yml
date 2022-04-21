@@ -56,3 +56,9 @@ jobs:
       - name: print JVM thread dumps when cancelled
         if: cancelled()
         run: ./dev/ci-tool print_thread_dumps
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
+        with:
+          files: "**/target/surefire-reports/*"
