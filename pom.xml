@@ -129,7 +129,7 @@
     <commons-io.version>2.7</commons-io.version>
     <bouncycastle.version>1.0.2.3</bouncycastle.version>
     <curator.version>5.1.0</curator.version>
-    <dropwizard.version>3.2.5</dropwizard.version>
+    <dropwizard.version>4.1.12.1</dropwizard.version>
     <etcd.version>0.5.11</etcd.version>
     <freebuilder.version>2.7.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
@@ -601,6 +601,11 @@
       </dependency>
 
       <!-- stats dependencies -->
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-jmx</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-jvm</artifactId>
