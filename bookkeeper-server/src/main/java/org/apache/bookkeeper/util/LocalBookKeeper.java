@@ -79,15 +79,6 @@ public class LocalBookKeeper implements AutoCloseable {
 
     int numberOfBookies;
 
-//    public LocalBookKeeper() {
-//        this(3);
-//    }
-//
-//    public LocalBookKeeper(int numberOfBookies) {
-//        this(numberOfBookies, new ServerConfiguration(), defaultLocalBookiesConfigDir, true,
-//                "test", );
-//    }
-
     public LocalBookKeeper(
             int numberOfBookies,
             ServerConfiguration baseConf,
@@ -366,6 +357,7 @@ public class LocalBookKeeper implements AutoCloseable {
     }
 
     public static void main(String[] args) {
+        System.setProperty("zookeeper.4lw.commands.whitelist", "*");
         try {
             if (args.length < 1) {
                 usage();
@@ -408,6 +400,7 @@ public class LocalBookKeeper implements AutoCloseable {
                     numBookies, true, false, "test", zkDataDir,
                     localBookiesConfigDirName)) {
                 try {
+                    lb.start();
                     while (true) {
                         Thread.sleep(1000);
                     }
