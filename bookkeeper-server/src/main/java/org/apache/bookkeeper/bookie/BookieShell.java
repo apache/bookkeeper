@@ -651,6 +651,7 @@ public class BookieShell implements Tool {
             opts.addOption("excludingmissingreplica", true, "Bookie Id of missing replica to ignore");
             opts.addOption("printmissingreplica", false, "Whether to print missingreplicas list?");
             opts.addOption("printreplicationworkerid", false, "Whether to print replicationworkerid?");
+            opts.addOption("c", "onlyDisplayLedgerCount", false, "Only display underreplicated ledger count");
         }
 
         @Override
@@ -677,12 +678,14 @@ public class BookieShell implements Tool {
             final String excludingBookieId = cmdLine.getOptionValue("excludingmissingreplica");
             final boolean printMissingReplica = cmdLine.hasOption("printmissingreplica");
             final boolean printReplicationWorkerId = cmdLine.hasOption("printreplicationworkerid");
+            final boolean onlyDisplayLedgerCount = cmdLine.hasOption("onlyDisplayLedgerCount");
 
             ListUnderReplicatedCommand.LURFlags flags = new ListUnderReplicatedCommand.LURFlags()
                                                             .missingReplica(includingBookieId)
                                                             .excludingMissingReplica(excludingBookieId)
                                                             .printMissingReplica(printMissingReplica)
-                                                            .printReplicationWorkerId(printReplicationWorkerId);
+                                                            .printReplicationWorkerId(printReplicationWorkerId)
+                                                            .onlyDisplayLedgerCount(onlyDisplayLedgerCount);
             ListUnderReplicatedCommand cmd = new ListUnderReplicatedCommand(ledgerIdFormatter);
             cmd.apply(bkConf, flags);
             return 0;
