@@ -262,7 +262,7 @@ public class BookieShell implements Tool {
      * Format the bookkeeper metadata present in zookeeper.
      */
     class MetaFormatCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         MetaFormatCmd() {
             super(CMD_METAFORMAT);
@@ -271,7 +271,6 @@ public class BookieShell implements Tool {
             opts.addOption("f", "force", false,
                     "If [nonInteractive] is specified, then whether"
                             + " to force delete the old data without prompt.");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -313,11 +312,10 @@ public class BookieShell implements Tool {
      * already existing.
      */
     class InitNewCluster extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         InitNewCluster() {
             super(CMD_INITNEWCLUSTER);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -349,7 +347,7 @@ public class BookieShell implements Tool {
      * Nuke bookkeeper metadata of existing cluster in zookeeper.
      */
     class NukeExistingCluster extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         NukeExistingCluster() {
             super(CMD_NUKEEXISTINGCLUSTER);
@@ -358,7 +356,6 @@ public class BookieShell implements Tool {
             opts.addOption("f", "force", false,
                     "If instanceid is not specified, "
                     + "then whether to force nuke the metadata without validating instanceid");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -395,7 +392,7 @@ public class BookieShell implements Tool {
      * Formats the local data present in current bookie server.
      */
     class BookieFormatCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public BookieFormatCmd() {
             super(CMD_BOOKIEFORMAT);
@@ -405,7 +402,6 @@ public class BookieShell implements Tool {
                     "If [nonInteractive] is specified, then whether"
                             + " to force delete the old data without prompt..?");
             opts.addOption("d", "deleteCookie", false, "Delete its cookie on metadata store");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -444,11 +440,10 @@ public class BookieShell implements Tool {
      * indexDirs are empty and there is no registered Bookie with this BookieId.
      */
     class InitBookieCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public InitBookieCmd() {
             super(CMD_INITBOOKIE);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -479,7 +474,7 @@ public class BookieShell implements Tool {
      * Recover command for ledger data recovery for failed bookie.
      */
     class RecoverCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public RecoverCmd() {
             super(CMD_RECOVER);
@@ -491,7 +486,6 @@ public class BookieShell implements Tool {
             opts.addOption("d", "deleteCookie", false, "Delete cookie node for the bookie.");
             opts.addOption("sku", "skipUnrecoverableLedgers", false, "Skip unrecoverable ledgers.");
             opts.addOption("rate", "replicationRate", false, "Replication rate by bytes");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -549,12 +543,11 @@ public class BookieShell implements Tool {
      * Ledger Command Handles ledger related operations.
      */
     class LedgerCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         LedgerCmd() {
             super(CMD_LEDGER);
             lOpts.addOption("m", "meta", false, "Print meta information");
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -590,7 +583,7 @@ public class BookieShell implements Tool {
      * Command for reading ledger entries.
      */
     class ReadLedgerEntriesCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         ReadLedgerEntriesCmd() {
             super(CMD_READ_LEDGER_ENTRIES);
@@ -601,7 +594,6 @@ public class BookieShell implements Tool {
             lOpts.addOption("r", "force-recovery", false,
                 "Ensure the ledger is properly closed before reading");
             lOpts.addOption("b", "bookie", true, "Only read from a specific bookie");
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -655,7 +647,7 @@ public class BookieShell implements Tool {
      * Command for listing underreplicated ledgers.
      */
     class ListUnderreplicatedCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public ListUnderreplicatedCmd() {
             super(CMD_LISTUNDERREPLICATED);
@@ -663,7 +655,6 @@ public class BookieShell implements Tool {
             opts.addOption("excludingmissingreplica", true, "Bookie Id of missing replica to ignore");
             opts.addOption("printmissingreplica", false, "Whether to print missingreplicas list?");
             opts.addOption("printreplicationworkerid", false, "Whether to print replicationworkerid?");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -708,13 +699,12 @@ public class BookieShell implements Tool {
      * Command to list all ledgers in the cluster.
      */
     class ListLedgersCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         ListLedgersCmd() {
             super(CMD_LISTLEDGERS);
             lOpts.addOption("m", "meta", false, "Print metadata");
             lOpts.addOption("bookieid", true, "List ledgers residing in this bookie");
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -750,13 +740,12 @@ public class BookieShell implements Tool {
      * List active ledgers on entry log file.
      **/
     class ListActiveLedgersCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         ListActiveLedgersCmd() {
             super(CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE);
             lOpts.addOption("l", "logId", true, "Entry log file id");
             lOpts.addOption("t", "timeout", true, "Read timeout(ms)");
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -805,14 +794,13 @@ public class BookieShell implements Tool {
      * Print the metadata for a ledger.
      */
     class LedgerMetadataCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         LedgerMetadataCmd() {
             super(CMD_LEDGERMETADATA);
             lOpts.addOption("l", "ledgerid", true, "Ledger ID");
             lOpts.addOption("dumptofile", true, "Dump metadata for ledger, to a file");
             lOpts.addOption("restorefromfile", true, "Restore metadata for ledger, from a file");
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -861,11 +849,10 @@ public class BookieShell implements Tool {
      * Check local storage for inconsistencies.
      */
     class LocalConsistencyCheck extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         LocalConsistencyCheck() {
             super(CMD_LOCALCONSISTENCYCHECK);
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -895,7 +882,7 @@ public class BookieShell implements Tool {
      * Simple test to create a ledger and write to it.
      */
     class SimpleTestCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         SimpleTestCmd() {
             super(CMD_SIMPLETEST);
@@ -903,7 +890,6 @@ public class BookieShell implements Tool {
             lOpts.addOption("w", "writeQuorum", true, "Write quorum size (default 2)");
             lOpts.addOption("a", "ackQuorum", true, "Ack quorum size (default 2)");
             lOpts.addOption("n", "numEntries", true, "Entries to write (default 1000)");
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -945,13 +931,12 @@ public class BookieShell implements Tool {
      * Command to run a bookie sanity test.
      */
     class BookieSanityTestCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         BookieSanityTestCmd() {
             super(CMD_BOOKIESANITYTEST);
             lOpts.addOption("e", "entries", true, "Total entries to be added for the test (default 10)");
             lOpts.addOption("t", "timeout", true, "Timeout for write/read operations in seconds (default 1)");
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -982,7 +967,7 @@ public class BookieShell implements Tool {
      * Command to read entry log files.
      */
     class ReadLogCmd extends MyCommand {
-        Options rlOpts = new Options();
+        Options rlOpts = getOptionsWithHelp();
 
         ReadLogCmd() {
             super(CMD_READLOG);
@@ -991,7 +976,6 @@ public class BookieShell implements Tool {
             rlOpts.addOption("e", "entryid", true, "Entry ID");
             rlOpts.addOption("sp", "startpos", true, "Start Position");
             rlOpts.addOption("ep", "endpos", true, "End Position");
-            rlOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1051,11 +1035,10 @@ public class BookieShell implements Tool {
      * Command to print metadata of entrylog.
      */
     class ReadLogMetadataCmd extends MyCommand {
-        Options rlOpts = new Options();
+        Options rlOpts = getOptionsWithHelp();
 
         ReadLogMetadataCmd() {
             super(CMD_READLOGMETADATA);
-            rlOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1101,13 +1084,12 @@ public class BookieShell implements Tool {
      * Command to read journal files.
      */
     class ReadJournalCmd extends MyCommand {
-        Options rjOpts = new Options();
+        Options rjOpts = getOptionsWithHelp();
 
         ReadJournalCmd() {
             super(CMD_READJOURNAL);
             rjOpts.addOption("dir", true, "Journal directory (needed if more than one journal configured)");
             rjOpts.addOption("m", "msg", false, "Print message body");
-            rjOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1160,10 +1142,9 @@ public class BookieShell implements Tool {
      * Command to print last log mark.
      */
     class LastMarkCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
         LastMarkCmd() {
             super(CMD_LASTMARK);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1193,7 +1174,7 @@ public class BookieShell implements Tool {
      * List available bookies.
      */
     class ListBookiesCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         ListBookiesCmd() {
             super(CMD_LISTBOOKIES);
@@ -1202,7 +1183,6 @@ public class BookieShell implements Tool {
             opts.addOption("a", "all", false, "Print all bookies");
             // @deprecated 'rw'/'ro' option print both hostname and ip, so this option is not needed anymore
             opts.addOption("h", "hostnames", false, "Also print hostname of the bookie");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1256,14 +1236,13 @@ public class BookieShell implements Tool {
     }
 
     class ListDiskFilesCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         ListDiskFilesCmd() {
             super(CMD_LISTFILESONDISC);
             opts.addOption("txn", "journal", false, "Print list of Journal Files");
             opts.addOption("log", "entrylog", false, "Print list of EntryLog Files");
             opts.addOption("idx", "index", false, "Print list of Index files");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1334,7 +1313,7 @@ public class BookieShell implements Tool {
 
         @Override
         Options getOptions() {
-            return new Options();
+            return getOptionsWithHelp();
         }
     }
 
@@ -1342,7 +1321,7 @@ public class BookieShell implements Tool {
      * Command for administration of autorecovery.
      */
     class AutoRecoveryCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public AutoRecoveryCmd() {
             super(CMD_AUTORECOVERY);
@@ -1350,7 +1329,6 @@ public class BookieShell implements Tool {
                     "Enable auto recovery of underreplicated ledgers");
             opts.addOption("d", "disable", false,
                     "Disable auto recovery of underreplicated ledgers");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1387,11 +1365,10 @@ public class BookieShell implements Tool {
      * Command to query autorecovery status.
      */
     class QueryAutoRecoveryStatusCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public QueryAutoRecoveryStatusCmd() {
             super(CMD_QUERY_AUTORECOVERY_STATUS);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1424,13 +1401,12 @@ public class BookieShell implements Tool {
      * Setter and Getter for LostBookieRecoveryDelay value (in seconds) in metadata store.
      */
     class LostBookieRecoveryDelayCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public LostBookieRecoveryDelayCmd() {
             super(CMD_LOSTBOOKIERECOVERYDELAY);
             opts.addOption("g", "get", false, "Get LostBookieRecoveryDelay value (in seconds)");
             opts.addOption("s", "set", true, "Set LostBookieRecoveryDelay value (in seconds)");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1469,11 +1445,10 @@ public class BookieShell implements Tool {
      * Print which node has the auditor lock.
      */
     class WhoIsAuditorCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public WhoIsAuditorCmd() {
             super(CMD_WHOISAUDITOR);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1504,11 +1479,10 @@ public class BookieShell implements Tool {
      * Prints the instanceid of the cluster.
      */
     class WhatIsInstanceId extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public WhatIsInstanceId() {
             super(CMD_WHATISINSTANCEID);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1538,7 +1512,7 @@ public class BookieShell implements Tool {
      * Update cookie command.
      */
     class UpdateCookieCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
         private static final String BOOKIEID = "bookieId";
         private static final String EXPANDSTORAGE = "expandstorage";
         private static final String LIST = "list";
@@ -1556,7 +1530,6 @@ public class BookieShell implements Tool {
             Option deleteOption = OptionBuilder.withLongOpt(DELETE).hasOptionalArgs(1)
                     .withDescription("Delete cookie both locally and in ZooKeeper").create("d");
             opts.addOption(deleteOption);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1626,7 +1599,7 @@ public class BookieShell implements Tool {
      * Update ledger command.
      */
     class UpdateLedgerCmd extends MyCommand {
-        private final Options opts = new Options();
+        private final Options opts = getOptionsWithHelp();
 
         UpdateLedgerCmd() {
             super(CMD_UPDATELEDGER);
@@ -1637,7 +1610,6 @@ public class BookieShell implements Tool {
             opts.addOption("v", "verbose", true, "Print status of the ledger updation (default: false)");
             opts.addOption("p", "printprogress", true,
                     "Print messages on every configured seconds if verbose turned on (default: 10 secs)");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1703,7 +1675,7 @@ public class BookieShell implements Tool {
      * Update bookie into ledger command.
      */
     class UpdateBookieInLedgerCmd extends MyCommand {
-        private final Options opts = new Options();
+        private final Options opts = getOptionsWithHelp();
 
         UpdateBookieInLedgerCmd() {
             super(CMD_UPDATE_BOOKIE_IN_LEDGER);
@@ -1715,7 +1687,6 @@ public class BookieShell implements Tool {
             opts.addOption("v", "verbose", true, "Print status of the ledger updation (default: false)");
             opts.addOption("p", "printprogress", true,
                     "Print messages on every configured seconds if verbose turned on (default: 10 secs)");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1783,13 +1754,12 @@ public class BookieShell implements Tool {
      * Command to delete a given ledger.
      */
     class DeleteLedgerCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         DeleteLedgerCmd() {
             super(CMD_DELETELEDGER);
             lOpts.addOption("l", "ledgerid", true, "Ledger ID");
             lOpts.addOption("f", "force", false, "Whether to force delete the Ledger without prompt..?");
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1826,11 +1796,10 @@ public class BookieShell implements Tool {
      * the bookies in the cluster.
      */
     class BookieInfoCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         BookieInfoCmd() {
             super(CMD_BOOKIEINFO);
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1860,11 +1829,10 @@ public class BookieShell implements Tool {
      * Command to trigger AuditTask by resetting lostBookieRecoveryDelay to its current value.
      */
     class TriggerAuditCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         TriggerAuditCmd() {
             super(CMD_TRIGGERAUDIT);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1891,7 +1859,7 @@ public class BookieShell implements Tool {
     }
 
     class ForceAuditorChecksCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         ForceAuditorChecksCmd() {
             super(CMD_FORCEAUDITCHECKS);
@@ -1901,7 +1869,6 @@ public class BookieShell implements Tool {
                     + "upon next Auditor startup ");
             opts.addOption("rc", "replicascheck", false, "Force replicasCheck audit "
                     + "upon next Auditor startup ");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -1968,12 +1935,11 @@ public class BookieShell implements Tool {
      * server.
      */
     class DecommissionBookieCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         DecommissionBookieCmd() {
             super(CMD_DECOMMISSIONBOOKIE);
             lOpts.addOption("bookieid", true, "decommission a remote bookie");
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -2007,12 +1973,11 @@ public class BookieShell implements Tool {
      * Command to retrieve remote bookie endpoint information.
      */
     class EndpointInfoCmd extends MyCommand {
-        Options lOpts = new Options();
+        Options lOpts = getOptionsWithHelp();
 
         EndpointInfoCmd() {
             super(CMD_ENDPOINTINFO);
             lOpts.addOption("b", "bookieid", true, "Bookie Id");
-            lOpts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -2058,11 +2023,10 @@ public class BookieShell implements Tool {
      * Convert bookie indexes from InterleavedStorage to DbLedgerStorage format.
      */
     class ConvertToDbStorageCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public ConvertToDbStorageCmd() {
             super(CMD_CONVERT_TO_DB_STORAGE);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -2094,11 +2058,10 @@ public class BookieShell implements Tool {
      * Convert bookie indexes from DbLedgerStorage to InterleavedStorage format.
      */
     class ConvertToInterleavedStorageCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public ConvertToInterleavedStorageCmd() {
             super(CMD_CONVERT_TO_INTERLEAVED_STORAGE);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -2129,11 +2092,10 @@ public class BookieShell implements Tool {
      * Rebuild DbLedgerStorage locations index.
      */
     class RebuildDbLedgerLocationsIndexCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public RebuildDbLedgerLocationsIndexCmd() {
             super(CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX);
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -2163,12 +2125,11 @@ public class BookieShell implements Tool {
      * Rebuild DbLedgerStorage ledgers index.
      */
     class RebuildDbLedgersIndexCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public RebuildDbLedgersIndexCmd() {
             super(CMD_REBUILD_DB_LEDGERS_INDEX);
             opts.addOption("v", "verbose", false, "Verbose logging, print the ledgers added to the new index");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -2205,12 +2166,11 @@ public class BookieShell implements Tool {
      * Rebuild DbLedgerStorage ledgers index.
      */
     class CheckDbLedgersIndexCmd extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public CheckDbLedgersIndexCmd() {
             super(CMD_CHECK_DB_LEDGERS_INDEX);
             opts.addOption("v", "verbose", false, "Verbose logging, print the ledger data in the index.");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -2246,7 +2206,7 @@ public class BookieShell implements Tool {
      * Regenerate an index file for interleaved storage.
      */
     class RegenerateInterleavedStorageIndexFile extends MyCommand {
-        Options opts = new Options();
+        Options opts = getOptionsWithHelp();
 
         public RegenerateInterleavedStorageIndexFile() {
             super(CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE);
@@ -2265,7 +2225,6 @@ public class BookieShell implements Tool {
                            + "This must match the value in the ledger metadata.");
             opts.addOption("b64password", true,
                            "The password in base64 encoding, for cases where the password is not UTF-8.");
-            opts.addOption("h", "help", false, "Show the help");
         }
 
         @Override
@@ -2595,5 +2554,11 @@ public class BookieShell implements Tool {
 
     private static boolean getOptionalValue(String optValue, String optName) {
         return StringUtils.equals(optValue, optName);
+    }
+
+    private static Options getOptionsWithHelp() {
+        Options opts = new Options();
+        opts.addOption("h", "help", false, "Show the help");
+        return opts;
     }
 }
