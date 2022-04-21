@@ -23,6 +23,7 @@ plugins {
 dependencies {
     implementation depLibs.commonsConfiguration
     implementation depLibs.slf4j
+    compileOnly depLibs.spotbugsAnnotations
 }
 
 jar {

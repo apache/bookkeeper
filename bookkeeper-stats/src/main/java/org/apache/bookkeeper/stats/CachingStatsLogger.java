@@ -16,7 +16,7 @@
  */
 package org.apache.bookkeeper.stats;
 
-import org.graalvm.compiler.core.common.SuppressFBWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,7 +31,7 @@ public class CachingStatsLogger implements StatsLogger {
     protected final ConcurrentMap<String, OpStatsLogger> opStatsLoggers;
     protected final ConcurrentMap<String, StatsLogger> scopeStatsLoggers;
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "")
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public CachingStatsLogger(StatsLogger statsLogger) {
         this.underlying = statsLogger;
         this.counters = new ConcurrentHashMap<String, Counter>();

@@ -22,8 +22,9 @@ package org.apache.bookkeeper.stats;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.configuration.Configuration;
-import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +65,7 @@ public class Stats {
         }
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "")
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public static StatsProvider get() {
         return prov;
     }
