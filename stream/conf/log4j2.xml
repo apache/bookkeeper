@@ -37,7 +37,7 @@
             <Policies>
                 <TimeBasedTriggeringPolicy modulate="true"/>
             </Policies>
-            <DefaultRolloverStrategy max="2147483647"/>
+            <DefaultRolloverStrategy max="100"/>
         </RollingFile>
     </Appenders>
     <Loggers>
