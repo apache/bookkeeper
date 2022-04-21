@@ -25,7 +25,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -65,7 +65,7 @@ public class GarbageCollectorThreadTest {
     @Before
     public void setUp() throws Exception {
         when(ledgerStorage.getEntryLogger()).thenReturn(mock(EntryLogger.class));
-        initMocks(this);
+        openMocks(this);
     }
 
     @Test
