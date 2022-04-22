@@ -57,8 +57,13 @@ jobs:
         if: cancelled()
         run: ./dev/ci-tool print_thread_dumps
 
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        if: always()
+      - uses: apache/pulsar-test-infra/test-reporter@master
         with:
-          files: "**/target/surefire-reports/*"
+          artifact: /*/
+          name: 'Tests'
+          path: '**/*.xml'
+          reporter: java-junit
+          max-annotations: 50
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail-on-error: false
+          only-summary: true
