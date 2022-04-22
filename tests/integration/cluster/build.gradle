@@ -39,7 +39,6 @@ dependencies {
     testImplementation project(':testtools')
 
     testCompileOnly depLibs.lombok
-    testImplementation depLibs.log4j12api
     testImplementation depLibs.log4jCore
     testImplementation depLibs.testcontainers
     testImplementation depLibs.commonsConfiguration

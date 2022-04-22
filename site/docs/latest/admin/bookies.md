@@ -71,10 +71,10 @@ Parameter | Description | Default
 
 BookKeeper uses [slf4j](http://www.slf4j.org/) for logging, with [log4j](https://logging.apache.org/log4j/2.x/) bindings enabled by default.
 
-To enable logging for a bookie, create a `log4j.properties` file and point the `BOOKIE_LOG_CONF` environment variable to the configuration file. Here's an example:
+To enable logging for a bookie, create a `log4j2.xml` file and point the `BOOKIE_LOG_CONF` environment variable to the configuration file. Here's an example:
 
 ```shell
-$ export BOOKIE_LOG_CONF=/some/path/log4j.properties
+$ export BOOKIE_LOG_CONF=/some/path/log4j2.xml
 $ bin/bookkeeper bookie
 ```
 

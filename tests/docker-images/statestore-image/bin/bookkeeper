@@ -45,7 +45,7 @@ shift
 
 LOCALBOOKIES_CONFIG_DIR="${LOCALBOOKIES_CONFIG_DIR:-/tmp/localbookies-config}"
 if [ ${COMMAND} == "shell" ]; then
-  DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j.shell.properties
+  DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j2.shell.xml
   if [[ $1 == "-localbookie"  ]]; then
     if [[ $2 == *:* ]];
     then
@@ -72,7 +72,8 @@ if [ -z "$BOOKIE_LOG_CONF" ]; then
 fi
 BOOKIE_LOG_DIR=${BOOKIE_LOG_DIR:-"$BK_HOME/logs"}
 BOOKIE_LOG_FILE=${BOOKIE_LOG_FILE:-"bookkeeper-server.log"}
-BOOKIE_ROOT_LOGGER=${BOOKIE_ROOT_LOGGER:-"INFO,CONSOLE"}
+BOOKIE_ROOT_LOG_LEVEL=${BOOKIE_ROOT_LOG_LEVEL:-"INFO"}
+BOOKIE_ROOT_LOG_APPENDER=${BOOKIE_ROOT_LOG_APPENDER:-"CONSOLE"}
 
 # Configure the classpath
 BOOKIE_CLASSPATH="$BOOKIE_JAR:$BOOKIE_CLASSPATH:$BOOKIE_EXTRA_CLASSPATH"
@@ -84,7 +85,7 @@ echo ${BOOKIE_LOG_CONF}
 BOOKIE_OPTS=$(build_bookie_opts)
 GC_OPTS=$(build_bookie_jvm_opts ${BOOKIE_LOG_DIR} "gc_%p.log")
 NETTY_OPTS=$(build_netty_opts)
-LOGGING_OPTS=$(build_logging_opts ${BOOKIE_LOG_CONF} ${BOOKIE_LOG_DIR} ${BOOKIE_LOG_FILE} ${BOOKIE_ROOT_LOGGER})
+LOGGING_OPTS=$(build_logging_opts ${BOOKIE_LOG_CONF} ${BOOKIE_ROOT_LOG_LEVEL} ${BOOKIE_ROOT_LOG_APPENDER} ${BOOKIE_LOG_DIR} ${BOOKIE_LOG_FILE})
 
 OPTS="${OPTS} -cp ${BOOKIE_CLASSPATH} ${BOOKIE_OPTS} ${GC_OPTS} ${NETTY_OPTS} ${LOGGING_OPTS} ${BOOKIE_EXTRA_OPTS}"
 

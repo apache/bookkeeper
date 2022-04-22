@@ -223,7 +223,7 @@ Default value is "/data/bookkeeper", which contains volumes `/data/bookkeeper/jo
 ### Configure files under /opt/bookkeeper/conf
 These files is originally un-tared from the bookkeeper building binary, such as [bookkeeper-server-4.4.0-bin.tar.tgz](https://archive.apache.org/dist/bookkeeper/bookkeeper-4.4.0/bookkeeper-4.4.0-src.tar.gz), and it comes from [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) in Bookkeeper repo.
 
-Usually we could config files bk_server.conf, bkenv.sh, log4j.properties, and log4j.shell.properties. Please read and understand them before you do the configuration.
+Usually we could config files bk_server.conf, bkenv.sh, log4j2.xml, and log4j2.shell.xml. Please read and understand them before you do the configuration.
 
 
 ### Caveats

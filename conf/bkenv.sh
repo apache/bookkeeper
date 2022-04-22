@@ -63,7 +63,8 @@
 # BOOKIE_LOG_FILE="bookkeeper.log"
 
 # Log level & appender
-# BOOKIE_ROOT_LOGGER="INFO,CONSOLE"
+# BOOKIE_ROOT_LOG_LEVEL="INFO"
+# BOOKIE_ROOT_LOG_APPENDER="CONSOLE"
 
 #################################
 # BookKeeper JVM memory options

@@ -61,7 +61,7 @@ use -help with individual commands for more options. For example,
 or command is the full name of a class with a defined main() method.
 
 Environment variables:
-   BENCHMARK_LOG_CONF        Log4j configuration file (default: conf/log4j.properties)
+   BENCHMARK_LOG_CONF        Log4j configuration file (default: conf/log4j2.xml)
    BENCHMARK_EXTRA_OPTS      Extra options to be passed to the jvm
    BENCHMARK_EXTRA_CLASSPATH Add extra paths to the bookkeeper classpath
 
@@ -104,11 +104,11 @@ COMMAND=$1
 shift
 
 BENCHMARK_CLASSPATH="$BENCHMARK_JAR:$BENCHMARK_CLASSPATH:$BENCHMARK_EXTRA_CLASSPATH"
-BENCHMARK_LOG_CONF=${BENCHMARK_LOG_CONF:-$BENCH_HOME/conf/log4j.properties}
+BENCHMARK_LOG_CONF=${BENCHMARK_LOG_CONF:-$BENCH_HOME/conf/log4j2.xml}
 
 if [ "$BENCHMARK_LOG_CONF" != "" ]; then
     BENCHMARK_CLASSPATH="`dirname $BENCHMARK_LOG_CONF`:$BENCHMARK_CLASSPATH"
-    OPTS="$OPTS -Dlog4j.configuration=`basename $BENCHMARK_LOG_CONF`"
+    OPTS="$OPTS -Dlog4j.configurationFile=`basename $BENCHMARK_LOG_CONF`"
 fi
 OPTS="-cp $BENCHMARK_CLASSPATH $OPTS $BENCHMARK_EXTRA_OPTS"
 

@@ -38,8 +38,8 @@
         <include>bk_server.conf</include>
         <include>bkenv.sh</include>
         <include>jaas_example.conf</include>
-        <include>log4j.cli.properties</include>
-        <include>log4j.shell.properties</include>
+        <include>log4j2.cli.xml</include>
+        <include>log4j2.shell.xml</include>
         <include>nettyenv.sh</include>
         <include>default_rocksdb.conf</include>
         <include>entry_location_rocksdb.conf</include>

@@ -36,13 +36,14 @@ CLI_JAR=$(find_module_jar ${CLI_MODULE_PATH} ${CLI_MODULE_NAME})
 # set up the classpath
 CLI_CLASSPATH=$(set_module_classpath ${CLI_MODULE_PATH})
 
-DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j.cli.properties
+DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j2.cli.xml
 if [ -z "${CLI_LOG_CONF}" ]; then
   CLI_LOG_CONF=${DEFAULT_LOG_CONF}
 fi
 CLI_LOG_DIR=${CLI_LOG_DIR:-"$BK_HOME/logs"}
 CLI_LOG_FILE=${CLI_LOG_FILE:-"stats-doc-gen.log"}
-CLI_ROOT_LOGGER=${CLI_ROOT_LOGGER:-"INFO,ROLLINGFILE"}
+CLI_ROOT_LOG_LEVEL=${CLI_ROOT_LOG_LEVEL:-"INFO"}
+CLI_ROOT_LOG_APPENDER=${CLI_ROOT_LOG_APPENDER:-"ROLLINGFILE"}
 
 # add all dependencies in the classpath
 ALL_MODULE_PATH=bookkeeper-dist/all
@@ -56,7 +57,7 @@ CLI_CLASSPATH="`dirname $CLI_LOG_CONF`:$CLI_CLASSPATH"
 BOOKIE_OPTS=$(build_bookie_opts)
 GC_OPTS=$(build_cli_jvm_opts ${CLI_LOG_DIR} "stats-doc-gen-gc.log")
 NETTY_OPTS=$(build_netty_opts)
-LOGGING_OPTS=$(build_cli_logging_opts ${CLI_LOG_CONF} ${CLI_LOG_DIR} ${CLI_LOG_FILE} ${CLI_ROOT_LOGGER})
+LOGGING_OPTS=$(build_cli_logging_opts ${CLI_LOG_CONF} ${CLI_ROOT_LOG_LEVEL} ${CLI_ROOT_LOG_APPENDER} ${CLI_LOG_DIR} ${CLI_LOG_FILE})
 
 OPTS="${OPTS} -cp ${CLI_CLASSPATH} ${BOOKIE_OPTS} ${GC_OPTS} ${NETTY_OPTS} ${LOGGING_OPTS} ${CLI_EXTRA_OPTS}"
 

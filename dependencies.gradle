@@ -174,7 +174,6 @@ depLibs = [
     junitFoundation: "com.nordstrom.tools:junit-foundation:${depVersions.junitFoundation}",
     kerbySimpleKdc: "org.apache.kerby:kerb-simplekdc:${depVersions.kerby}",
     log4jSlf4jImpl: "org.apache.logging.log4j:log4j-slf4j-impl:${depVersions.log4j}",
-    log4j12api: "org.apache.logging.log4j:log4j-1.2-api:${depVersions.log4j}",
     log4jCore: "org.apache.logging.log4j:log4j-core:${depVersions.log4j}",
     lombok: "org.projectlombok:lombok:${depVersions.lombok}",
     lz4: "net.jpountz.lz4:lz4:${depVersions.lz4}",
