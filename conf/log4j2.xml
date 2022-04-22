@@ -30,7 +30,7 @@
         <Console name="CONSOLE" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%C{1}@%L] - %m%n"/>
         </Console>
-        <File name="TRACEFILE" fileName="bookkeeper-trace.log">
+        <File name="TRACEFILE" fileName="${sys:bookkeeper.log.dir}/bookkeeper-trace.log">
             <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%C{1}@%L][%ndc] - %m%n"/>
         </File>
         <RollingFile name="ROLLINGFILE" fileName="${sys:bookkeeper.log.dir}/${sys:bookkeeper.log.file}" filePattern="${sys:bookkeeper.log.dir}/${sys:bookkeeper.log.file}%d{.yyyy-MM-dd}">

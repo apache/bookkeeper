@@ -133,9 +133,11 @@ OPTS="-cp $SS_CLASSPATH $OPTS"
 OPTS="$OPTS $SS_EXTRA_OPTS"
 
 # log directory & file
-SS_ROOT_LOGGER=${SS_ROOT_LOGGER:-"INFO,CONSOLE"}
 SS_LOG_DIR=${SS_LOG_DIR:-"$SS_HOME/logs"}
 SS_LOG_FILE=${SS_LOG_FILE:-"stream-storage.log"}
+SS_ROOT_LOG_LEVEL=${SS_ROOT_LOG_LEVEL:-"INFO"}
+SS_ROOT_LOG_APPENDER=${SS_ROOT_LOG_APPENDER:-"CONSOLE"}
+
 
 #Configure log configuration system properties
 OPTS="$OPTS -Dstreamstorage.root.logger=$SS_ROOT_LOGGER"

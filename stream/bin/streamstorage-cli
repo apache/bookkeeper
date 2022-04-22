@@ -22,7 +22,7 @@ BINDIR=$(dirname "$0")
 SS_HOME=`cd $BINDIR/..;pwd`
 
 DEFAULT_ENDPOINT="127.0.0.1:4181"
-DEFAULT_LOG_CONF=$SS_HOME/conf/log4j.cli.properties
+DEFAULT_LOG_CONF=$SS_HOME/conf/log4j2.cli.xml
 
 if [ -f "$SS_HOME/conf/streamstorage_cli_env.sh" ]
 then
@@ -96,9 +96,10 @@ OPTS="-cp $SS_CLASSPATH $OPTS"
 OPTS="$OPTS $SS_EXTRA_OPTS"
 
 # log directory & file
-SS_ROOT_LOGGER=${SS_ROOT_LOGGER:-"INFO,CONSOLE"}
 SS_LOG_DIR=${SS_LOG_DIR:-"$SS_HOME/logs"}
 SS_LOG_FILE=${SS_LOG_FILE:-"stream-storage-cli.log"}
+SS_ROOT_LOG_LEVEL=${SS_ROOT_LOGGER:-"INFO"}
+SS_ROOT_LOG_APPENDER=${SS_ROOT_LOGGER:-"CONSOLE"}
 
 #Configure log configuration system properties
 OPTS="$OPTS -Dstreamstorage.root.logger=$SS_ROOT_LOGGER"
