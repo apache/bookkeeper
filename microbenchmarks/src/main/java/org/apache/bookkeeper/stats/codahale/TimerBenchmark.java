@@ -16,9 +16,9 @@
  */
 package org.apache.bookkeeper.stats.codahale;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -71,6 +71,7 @@ public class TimerBenchmark {
         private int timeIdx = 0;
 
         @Setup(Level.Trial)
+        @SuppressFBWarnings("SSD_DO_NOT_USE_INSTANCE_LOCK_ON_SHARED_STATIC_DATA")
         public void doSetup() throws Exception {
             StatsLogger logger = null;
             switch (timerType) {

@@ -16,6 +16,8 @@
  */
 package org.apache.bookkeeper.stats;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,6 +26,7 @@ import java.util.concurrent.TimeUnit;
  * <p>Metrics are not recorded, making this receiver useful in unit tests and as defaults in
  * situations where metrics are not strictly required.
  */
+@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class NullStatsLogger implements StatsLogger {
 
     public static final NullStatsLogger INSTANCE = new NullStatsLogger();

@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.stats;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.configuration.Configuration;
@@ -63,6 +64,7 @@ public class Stats {
         }
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public static StatsProvider get() {
         return prov;
     }

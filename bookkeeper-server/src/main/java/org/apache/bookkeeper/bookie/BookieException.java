@@ -167,6 +167,10 @@ public abstract class BookieException extends Exception {
         public BookieUnauthorizedAccessException() {
             super(Code.UnauthorizedAccessException);
         }
+
+        public BookieUnauthorizedAccessException(String reason) {
+            super(Code.UnauthorizedAccessException, reason);
+        }
     }
 
     /**

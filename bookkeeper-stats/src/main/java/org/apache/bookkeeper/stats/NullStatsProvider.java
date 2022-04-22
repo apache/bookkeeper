@@ -16,11 +16,13 @@
  */
 package org.apache.bookkeeper.stats;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.configuration.Configuration;
 
 /**
  * A <i>no-op</i> stats provider implementation.
  */
+@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class NullStatsProvider implements StatsProvider {
 
     final StatsLogger nullStatsLogger = new NullStatsLogger();

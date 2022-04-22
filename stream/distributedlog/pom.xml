@@ -37,6 +37,9 @@
     <module>core</module>
     <module>io</module>
   </modules>
+  <properties>
+    <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
+  </properties>
   <build>
     <plugins>
       <plugin>
@@ -87,5 +90,21 @@
       </plugin>
     </plugins>
   </build>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-annotations</artifactId>
+        <version>${spotbugs-annotations.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 </project>
 
