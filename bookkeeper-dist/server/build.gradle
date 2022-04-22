@@ -35,7 +35,6 @@ dependencies {
     implementation project(':stream:distributedlog:core')
     implementation project(':stream:server')
     implementation project(':bookkeeper-tools')
-    runtimeOnly depLibs.log4j12api
     runtimeOnly depLibs.log4jSlf4jImpl
     runtimeOnly depLibs.log4jCore
     runtimeOnly (depLibs.zookeeperTest) {

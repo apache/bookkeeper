@@ -41,7 +41,6 @@ dependencies {
     implementation depLibs.nettyBuffer
     implementation depLibs.nettyTransportNativeEpoll
     implementation depLibs.zookeeper
-    implementation depLibs.log4j12api
     implementation depLibs.log4jCore
     implementation depLibs.log4jSlf4jImpl
 

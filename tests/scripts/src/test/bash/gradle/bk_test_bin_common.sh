@@ -30,7 +30,7 @@ testDefaultVariables() {
   source ${BK_BINDIR}/common_gradle.sh
   assertEquals "BINDIR is not set correctly" "${BK_BINDIR}" "${BINDIR}"
   assertEquals "BK_HOME is not set correctly" "${BK_HOMEDIR}" "${BK_HOME}"
-  assertEquals "DEFAULT_LOG_CONF is not set correctly" "${BK_CONFDIR}/log4j.properties" "${DEFAULT_LOG_CONF}"
+  assertEquals "DEFAULT_LOG_CONF is not set correctly" "${BK_CONFDIR}/log4j2.xml" "${DEFAULT_LOG_CONF}"
   assertEquals "NETTY_LEAK_DETECTION_LEVEL is not set correctly" "disabled" "${NETTY_LEAK_DETECTION_LEVEL}"
   assertEquals "NETTY_RECYCLER_MAXCAPACITY is not set correctly" "1000" "${NETTY_RECYCLER_MAXCAPACITY}"
   assertEquals "NETTY_RECYCLER_LINKCAPACITY is not set correctly" "1024" "${NETTY_RECYCLER_LINKCAPACITY}"
@@ -225,11 +225,12 @@ testBuildLoggingOpts() {
   TEST_LOG_FILE="test_log_file"
   TEST_LOGGER="INFO,TEST"
 
-  EXPECTED_OPTS="-Dlog4j.configuration=${TEST_CONF_FILE} \
-    -Dbookkeeper.root.logger=${TEST_LOGGER} \
+  EXPECTED_OPTS="-Dlog4j.configurationFile=${TEST_CONF_FILE} \
+    -Dbookkeeper.log.root.level=${TEST_LOGGER} \
+    -Dbookkeeper.log.root.appender=${TEST_LOG_DIR} \
     -Dbookkeeper.log.dir=${TEST_LOG_DIR} \
     -Dbookkeeper.log.file=${TEST_LOG_FILE}"
-  ACTUAL_OPTS=$(build_logging_opts ${TEST_CONF_FILE} ${TEST_LOG_DIR} ${TEST_LOG_FILE} ${TEST_LOGGER})
+  ACTUAL_OPTS=$(build_logging_opts ${TEST_CONF_FILE} ${TEST_LOG_LEVEL} ${TEST_LOG_APPENDER} ${TEST_LOG_DIR} ${TEST_LOG_FILE})
 
   assertEquals "Logging OPTS is not set correctly" "${EXPECTED_OPTS}" "${ACTUAL_OPTS}"
 }
@@ -240,7 +241,7 @@ testBuildCLILoggingOpts() {
   TEST_LOG_FILE="test_log_file"
   TEST_LOGGER="INFO,TEST"
 
-  EXPECTED_OPTS="-Dlog4j.configuration=${TEST_CONF_FILE} \
+  EXPECTED_OPTS="-Dlog4j.configurationFile=${TEST_CONF_FILE} \
     -Dbookkeeper.cli.root.logger=${TEST_LOGGER} \
     -Dbookkeeper.cli.log.dir=${TEST_LOG_DIR} \
     -Dbookkeeper.cli.log.file=${TEST_LOG_FILE}"
