@@ -31,7 +31,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFF
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGES_SCANNED;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGE_RETRIES;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 
@@ -88,7 +87,6 @@ import org.slf4j.LoggerFactory;
 )
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
     private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
-    public static final long INVALID_ENTRYID = -1;
 
     EntryLogger entryLogger;
     @Getter
@@ -109,8 +107,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     // this indicates that a write has happened since the last flush
     private final AtomicBoolean somethingWritten = new AtomicBoolean(false);
 
-    private int pageSize;
-
     // Expose Stats
     @StatsDoc(
         name = STORAGE_GET_OFFSET,
@@ -128,9 +124,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private OpStatsLogger pageScanStats;
     private Counter retryCounter;
 
-    @VisibleForTesting
     public InterleavedLedgerStorage() {
-        activeLedgers = new SnapshotMap<Long, Boolean>();
+        activeLedgers = new SnapshotMap<>();
     }
 
     @Override
@@ -181,7 +176,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         this.checkpointer = checkpointer;
     }
 
-    @VisibleForTesting
     public void initializeWithEntryLogger(ServerConfiguration conf,
                 LedgerManager ledgerManager,
                 LedgerDirsManager ledgerDirsManager,
@@ -196,7 +190,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager,
             this, statsLogger.scope("gc"));
-        pageSize = conf.getPageSize();
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         // Expose Stats
         getOffsetStats = statsLogger.getOpStatsLogger(STORAGE_GET_OFFSET);
