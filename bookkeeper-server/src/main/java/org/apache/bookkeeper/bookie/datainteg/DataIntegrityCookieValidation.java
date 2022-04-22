@@ -96,7 +96,7 @@ public class DataIntegrityCookieValidation implements CookieValidation {
                 log.info("Stamping cookie to directory {}", d);
                 masterCookie.writeToDirectory(d);
             } catch (IOException ioe) {
-                log.error("Exception writing cookie to {}", ioe);
+                log.error("Exception writing cookie", ioe);
                 throw new BookieException.InvalidCookieException(ioe);
             }
         }

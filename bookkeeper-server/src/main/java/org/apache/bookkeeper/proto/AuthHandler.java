@@ -150,8 +150,8 @@ class AuthHandler {
 
         private boolean checkAuthPlugin(AuthMessage am, final Channel src) {
             if (!am.hasAuthPluginName() || !am.getAuthPluginName().equals(authProviderFactory.getPluginName())) {
-                LOG.error("Received message from incompatible auth plugin. Local = {}," + " Remote = {}, Channel = {}",
-                        authProviderFactory.getPluginName(), am.getAuthPluginName());
+                LOG.error("Received message from incompatible auth plugin. Local = {}, Remote = {}, Channel = {}",
+                        authProviderFactory.getPluginName(), am.getAuthPluginName(), src);
                 return false;
             }
             return true;
