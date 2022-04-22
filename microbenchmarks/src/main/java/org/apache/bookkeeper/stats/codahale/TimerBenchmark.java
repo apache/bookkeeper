@@ -16,10 +16,9 @@
  */
 package org.apache.bookkeeper.stats.codahale;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.openjdk.jmh.annotations.Benchmark;
