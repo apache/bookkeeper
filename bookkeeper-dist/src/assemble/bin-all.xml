@@ -45,6 +45,11 @@
       <outputDirectory>bin</outputDirectory>
     </fileSet>
     <fileSet>
+      <directory>../../stream/bin</directory>
+      <fileMode>755</fileMode>
+      <outputDirectory>bin</outputDirectory>
+    </fileSet>
+    <fileSet>
       <fileMode>644</fileMode>
       <includes>
         <include>${basedir}/*.txt</include>
