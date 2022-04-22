@@ -23,16 +23,17 @@
     <Properties>
         <Property name="streamstorage.log.dir">logs</Property>
         <Property name="streamstorage.log.file">stream-storage-cli.log</Property>
-        <Property name="streamstorage.root.logger">INFO,CONSOLE</Property>
+        <Property name="streamstorage.log.root.level">INFO</Property>
+        <Property name="streamstorage.log.root.appender">CONSOLE</Property>
     </Properties>
     <Appenders>
         <Console name="CONSOLE" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%C{1}@%L] - %m%n"/>
         </Console>
-        <File name="TRACEFILE" fileName="streamstorage-trace.log">
+        <File name="TRACEFILE" fileName="${sys:streamstorage.log.dir}/streamstorage-trace.log">
             <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%C{1}@%L][%ndc] - %m%n"/>
         </File>
-        <RollingFile name="ROLLINGFILE" fileName="logs/stream-storage-cli.log" filePattern="logs/stream-storage-cli.log%d{.yyyy-MM-dd}">
+        <RollingFile name="ROLLINGFILE" fileName="${sys:streamstorage.log.dir}/${sys:streamstorage.log.file}" filePattern="${sys:streamstorage.log.dir}/${sys:streamstorage.log.file}%d{.yyyy-MM-dd}">
             <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%C{1}@%L] - %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy modulate="true"/>
@@ -41,8 +42,8 @@
         </RollingFile>
     </Appenders>
     <Loggers>
-        <Root level="INFO">
-            <AppenderRef ref="CONSOLE"/>
+        <Root level="${sys:streamstorage.log.root.level}">
+            <AppenderRef ref="${sys:streamstorage.log.root.appender}"/>
         </Root>
     </Loggers>
 </Configuration>

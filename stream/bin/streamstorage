@@ -140,9 +140,10 @@ SS_ROOT_LOG_APPENDER=${SS_ROOT_LOG_APPENDER:-"CONSOLE"}
 
 
 #Configure log configuration system properties
-OPTS="$OPTS -Dstreamstorage.root.logger=$SS_ROOT_LOGGER"
 OPTS="$OPTS -Dstreamstorage.log.dir=$SS_LOG_DIR"
 OPTS="$OPTS -Dstreamstorage.log.file=$SS_LOG_FILE"
+OPTS="$OPTS -Dstreamstorage.log.root.level=$SS_ROOT_LOG_LEVEL"
+OPTS="$OPTS -Dstreamstorage.log.root.appender=$SS_ROOT_LOG_APPENDER"
 
 #Change to SS_HOME to support relative paths
 cd "$SS_HOME"

@@ -107,7 +107,7 @@ shift
 
 LOCALBOOKIES_CONFIG_DIR="${LOCALBOOKIES_CONFIG_DIR:-/tmp/localbookies-config}"
 if [ ${COMMAND} == "shell" ]; then
-  DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j.shell.properties
+  DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j2.shell.xml
   if [[ $1 == "-localbookie"  ]]; then
     if [[ $2 == *:* ]];
     then

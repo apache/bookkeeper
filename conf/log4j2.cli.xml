@@ -42,15 +42,10 @@
         </RollingFile>
     </Appenders>
     <Loggers>
-        <Root level="${sys:bookkeeper.log.cli.level}">
-            <AppenderRef ref="${sys:bookkeeper.log.cli.appender}"/>
+        <Root level="${sys:bookkeeper.cli.log.root.level}">
+            <AppenderRef ref="${sys:bookkeeper.cli.log.root.appender}"/>
         </Root>
         <Logger name="org.apache.zookeeper" level="ERROR"/>
-        <Logger name="org.apache.bookkeeper.bookie.BookieShell" level="INFO"/>
-        <Logger name="org.apache.bookkeeper.bookie.InterleavedStorageRegenerateIndexOp" level="INFO"/>
-        <Logger name="org.apache.bookkeeper.client.BookKeeperAdmin" level="INFO"/>
-        <Logger name="org.apache.bookkeeper.tools.cli.commands.bookies.InstanceIdCommand" level="INFO"/>
-        <Logger name="org.apache.bookkeeper" level="ERROR"/>
         <Logger name="verbose" level="INFO">
             <AppenderRef ref="VERBOSECONSOLE"/>
         </Logger>
