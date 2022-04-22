@@ -55,7 +55,6 @@ import java.net.BindException;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -579,7 +578,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                     new MockUncleanShutdownDetection());
 
             fail("Bookkeeper should not have started since current user isn't in permittedStartupUsers");
-        } catch (AccessControlException buae) {
+        } catch (BookieException.BookieUnauthorizedAccessException buae) {
             sawException = true;
         } finally {
             if (bs1 != null && bs1.isRunning()) {
@@ -615,7 +614,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                     NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
                     new MockUncleanShutdownDetection());
             bs1.start();
-        } catch (AccessControlException buae) {
+        } catch (BookieException.BookieUnauthorizedAccessException buae) {
             fail("Bookkeeper should have started since current user is in permittedStartupUsers");
         } finally {
             if (bs1 != null && bs1.isRunning()) {
@@ -632,7 +631,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                     NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
                     new MockUncleanShutdownDetection());
             bs1.start();
-        } catch (AccessControlException buae) {
+        } catch (BookieException.BookieUnauthorizedAccessException buae) {
             fail("Bookkeeper should have started since current user is in permittedStartupUsers");
         } finally {
             if (bs1 != null && bs1.isRunning()) {
@@ -664,7 +663,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                     NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
                     new MockUncleanShutdownDetection());
             bs1.start();
-        } catch (AccessControlException buae) {
+        } catch (BookieException.BookieUnauthorizedAccessException buae) {
             fail("Bookkeeper should have started since permittedStartupUser is not specified");
         } finally {
             if (bs1 != null && bs1.isRunning()) {

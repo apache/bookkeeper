@@ -16,6 +16,16 @@
    limitations under the License.
 //-->
 <FindBugsFilter>
+  <!--Global rules suppressions-->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Bug pattern="MS_EXPOSE_REP"/>
+  </Match>
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~org\.apache\.distributedlog\.tests\.generated.*" />

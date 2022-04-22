@@ -36,6 +36,7 @@ dependencies {
     implementation depLibs.guava
     compileOnly depLibs.jsr305
     compileOnly depLibs.lombok
+    compileOnly depLibs.spotbugsAnnotations
     implementation depLibs.nettyBuffer
     implementation depLibs.nettyTransportNativeEpoll
     implementation depLibs.slf4j

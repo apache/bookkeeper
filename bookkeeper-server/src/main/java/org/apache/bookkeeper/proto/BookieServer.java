@@ -27,7 +27,6 @@ import io.netty.buffer.ByteBufAllocator;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
-import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -201,7 +200,7 @@ public class BookieServer {
     /**
      * Ensure the current user can start-up the process if it's restricted.
      */
-    private void validateUser(ServerConfiguration conf) throws AccessControlException {
+    private void validateUser(ServerConfiguration conf) throws BookieException {
         if (conf.containsKey(PERMITTED_STARTUP_USERS)) {
             String currentUser = System.getProperty("user.name");
             String[] propertyValue = conf.getPermittedStartupUsers();
@@ -215,7 +214,7 @@ public class BookieServer {
                             + " Current user: " + currentUser + " permittedStartupUsers: "
                             + Arrays.toString(propertyValue);
             LOG.error(errorMsg);
-            throw new AccessControlException(errorMsg);
+            throw new BookieException.BookieUnauthorizedAccessException(errorMsg);
         }
     }
 

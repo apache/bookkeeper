@@ -32,10 +32,10 @@ import static org.apache.distributedlog.metadata.LogMetadata.VERSION_PATH;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -533,6 +533,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         }, null);
     }
 
+    @SuppressFBWarnings("DCN_NULLPOINTER_EXCEPTION")
     static LogMetadataForWriter processLogMetadatas(URI uri,
                                                     String logName,
                                                     String logIdentifier,

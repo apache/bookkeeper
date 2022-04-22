@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.verifier;
 
 import static com.google.common.base.Preconditions.checkState;
-
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-
 import org.apache.bookkeeper.client.BKException;
 
 /**
@@ -180,6 +179,7 @@ public class BookkeeperVerifier {
     /**
      * State required to regenerate an entry.
      */
+    @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
     class EntryInfo {
         private final long entryID;
         private final long seed;
