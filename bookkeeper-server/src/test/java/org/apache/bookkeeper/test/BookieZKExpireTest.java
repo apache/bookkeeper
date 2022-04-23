@@ -30,6 +30,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.util.HashSet;
 
+import org.apache.bookkeeper.bookie.BookieStateManager;
 import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -57,13 +58,13 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
         try {
             File f = tmpDirs.createNew("bookieserver", "test");
 
-            HashSet<Thread> threadset = new HashSet<Thread>();
+            HashSet<Thread> threadSet = new HashSet<>();
             int threadCount = Thread.activeCount();
             Thread[] threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1) {
-                    threadset.add(threads[i]);
+                if (threads[i].getName().contains("SendThread")) {
+                    threadSet.add(threads[i]);
                 }
             }
 
@@ -74,8 +75,12 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
                     new MockUncleanShutdownDetection());
             server.start();
 
-            int secondsToWait = 5;
-            while (!server.isRunning()) {
+            int secondsToWait = 10;
+            BookieStateManager stateManager = (BookieStateManager) server.getBookie().getStateManager();
+            while (true) {
+                if (server.isRunning() && stateManager.isRegistered()) {
+                    break;
+                }
                 Thread.sleep(1000);
                 if (secondsToWait-- <= 0) {
                     fail("Bookie never started");
@@ -86,8 +91,8 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1
-                        && !threadset.contains(threads[i])) {
+                if (threads[i].getName().contains("SendThread")
+                        && !threadSet.contains(threads[i])) {
                     sendthread = threads[i];
                     break;
                 }

@@ -62,7 +62,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     private static final int SECOND = 1000;
 
     // Maps entry log files to the set of ledgers that comprise the file and the size usage per ledger
-    private EntryLogMetadataMap entryLogMetaMap;
+    private final EntryLogMetadataMap entryLogMetaMap;
 
     private final ScheduledExecutorService gcExecutor;
     Future<?> scheduledFuture = null;

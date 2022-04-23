@@ -365,7 +365,7 @@ public class BookieStateManager implements StateManager {
         return shutdownHandler;
     }
     @VisibleForTesting
-    boolean isRegistered(){
+    public boolean isRegistered(){
         return rmRegistered.get();
     }
 }
