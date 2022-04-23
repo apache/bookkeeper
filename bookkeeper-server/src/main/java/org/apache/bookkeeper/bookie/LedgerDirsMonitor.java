@@ -113,7 +113,6 @@ class LedgerDirsMonitor {
             ldm.getWritableLedgerDirs();
         } catch (NoWritableLedgerDirException e) {
             LOG.warn("LedgerDirsMonitor check process: All ledger directories are non writable");
-            anyDiskFulled = true;
             try {
                 // disk check can be frequent, so disable 'loggingNoWritable' to avoid log flooding.
                 ldm.getDirsAboveUsableThresholdSize(minUsableSizeForHighPriorityWrites, false);
@@ -163,6 +162,7 @@ class LedgerDirsMonitor {
                     if (makeWritable) {
                         ldm.addToWritableDirs(dir, false);
                     }
+                    anyDiskRecovered = true;
                 } catch (DiskOutOfSpaceException e) {
                     // the full-filled dir is still full-filled
                     diskUsages.put(dir, e.getUsage());
