@@ -53,6 +53,19 @@ jobs:
       - name: Run client tests
         run: mvn -B -am -nsu -pl bookkeeper-server clean install test -Dtest="org.apache.bookkeeper.client.**" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
+      - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories If failure
+        if: failure()
+        continue-on-error: true
+        uses: ./.github/actions/copy-test-reports
+
+      - name: Upload Surefire reports
+        uses: actions/upload-artifact@v3
+        if: failure()
+        continue-on-error: true
+        with:
+          name: client-tests-reports
+          path: surefire-reports
+
       - name: print JVM thread dumps when cancelled
         if: cancelled()
         run: ./dev/ci-tool print_thread_dumps
