@@ -432,10 +432,10 @@ public class BookKeeperAdmin implements AutoCloseable {
             if (currentEntry != null) {
                 return true;
             }
-            if (lastEntryId == -1 || nextEntryId <= lastEntryId) {
+            if ((lastEntryId == -1 || nextEntryId <= lastEntryId) && nextEntryId <= handle.getLastAddConfirmed()) {
                 try {
                     CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
-                    handle.asyncReadEntries(nextEntryId, nextEntryId, new SyncReadCallback(result), null);
+                    handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new SyncReadCallback(result), null, false);
 
                     currentEntry = SyncCallbackUtils.waitForResult(result).nextElement();
 
