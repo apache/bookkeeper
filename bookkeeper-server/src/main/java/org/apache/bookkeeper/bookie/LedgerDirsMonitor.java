@@ -68,9 +68,9 @@ class LedgerDirsMonitor {
 
     private void check(final LedgerDirsManager ldm) {
         final ConcurrentMap<File, Float> diskUsages = ldm.getDiskUsages();
-        boolean anyDiskFulled = false;
+        boolean someDiskFulled = false;
         boolean highPriorityWritesAllowed = true;
-        boolean anyDiskRecovered = false;
+        boolean someDiskRecovered = false;
 
         try {
             List<File> writableDirs = ldm.getWritableLedgerDirs();
@@ -103,7 +103,7 @@ class LedgerDirsMonitor {
                     });
                     // Notify disk full to all listeners
                     ldm.addToFilledDirs(dir);
-                    anyDiskFulled = true;
+                    someDiskFulled = true;
                 }
             }
             // Let's get NoWritableLedgerDirException without waiting for the next iteration
@@ -150,7 +150,7 @@ class LedgerDirsMonitor {
                     if (makeWritable) {
                         ldm.addToWritableDirs(dir, true);
                     }
-                    anyDiskRecovered = true;
+                    someDiskRecovered = true;
                 } catch (DiskErrorException e) {
                     // Notify disk failure to all the listeners
                     for (LedgerDirsListener listener : ldm.getListeners()) {
@@ -162,7 +162,7 @@ class LedgerDirsMonitor {
                     if (makeWritable) {
                         ldm.addToWritableDirs(dir, false);
                     }
-                    anyDiskRecovered = true;
+                    someDiskRecovered = true;
                 } catch (DiskOutOfSpaceException e) {
                     // the full-filled dir is still full-filled
                     diskUsages.put(dir, e.getUsage());
@@ -176,14 +176,14 @@ class LedgerDirsMonitor {
         }
 
         if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
-            if (anyDiskFulled && !ldm.getFullFilledLedgerDirs().isEmpty()) {
+            if (someDiskFulled && !ldm.getFullFilledLedgerDirs().isEmpty()) {
                 // notify any disk full.
                 for (LedgerDirsListener listener : ldm.getListeners()) {
                     listener.anyDiskFull(highPriorityWritesAllowed);
                 }
             }
 
-            if (anyDiskRecovered && ldm.getFullFilledLedgerDirs().isEmpty()) {
+            if (someDiskRecovered && ldm.getFullFilledLedgerDirs().isEmpty()) {
                 // notify all disk recovered.
                 for (LedgerDirsListener listener : ldm.getListeners()) {
                     listener.allDisksWritable();
