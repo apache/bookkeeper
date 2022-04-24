@@ -98,7 +98,7 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
         @Parameter(names =  {"-l", "--ledgeridformatter"}, description = "Set ledger id formatter")
         private String ledgerIdFormatter = DEFAULT;
 
-        @Parameter(names = {"-c", "--onlyDisplayLedgerCount"},
+        @Parameter(names = {"-c", "--onlydisplayledgercount"},
             description = "Only display underreplicated ledger count")
         private boolean onlyDisplayLedgerCount;
     }
