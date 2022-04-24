@@ -37,6 +37,49 @@ function ci_print_thread_dumps() {
   return 0
 }
 
+# copies test reports into test-reports and surefire-reports directory
+# subsequent runs of tests might overwrite previous reports. This ensures that all test runs get reported.
+function ci_move_test_reports() {
+  (
+    if [ -n "${GITHUB_WORKSPACE}" ]; then
+      cd "${GITHUB_WORKSPACE}"
+      mkdir -p test-reports
+      mkdir -p surefire-reports
+    fi
+    # aggregate all junit xml reports in a single directory
+    if [ -d test-reports ]; then
+      # copy test reports to single directory, rename duplicates
+      find . -path '*/target/surefire-reports/junitreports/TEST-*.xml' -print0 | xargs -0 -r -n 1 mv -t test-reports --backup=numbered
+      # rename possible duplicates to have ".xml" extension
+      (
+        for f in test-reports/*~; do
+          mv -- "$f" "${f}.xml"
+        done 2>/dev/null
+      ) || true
+    fi
+    # aggregate all surefire-reports in a single directory
+    if [ -d surefire-reports ]; then
+      (
+        find . -type d -path '*/target/surefire-reports' -not -path './surefire-reports/*' |
+          while IFS=$'\n' read -r directory; do
+            echo "Copying reports from $directory"
+            target_dir="surefire-reports/${directory}"
+            if [ -d "$target_dir" ]; then
+              # rotate backup directory names *~3 -> *~2, *~2 -> *~3, *~1 -> *~2, ...
+              ( command ls -vr1d "${target_dir}~"* 2> /dev/null | awk '{print "mv "$0" "substr($0,0,length-1)substr($0,length,1)+1}' | sh ) || true
+              # backup existing target directory, these are the results of the previous test run
+              mv "$target_dir" "${target_dir}~1"
+            fi
+            # copy files
+            cp -R --parents "$directory" surefire-reports
+            # remove the original directory
+            rm -rf "$directory"
+          done
+      )
+    fi
+  )
+}
+
 if [ -z "$1" ]; then
   echo "usage: $0 [ci_tool_function_name]"
   echo "Available ci tool functions:"

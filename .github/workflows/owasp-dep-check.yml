@@ -67,7 +67,7 @@ jobs:
         run: mvn -q -B -ntp clean install verify -Powasp-dependency-check -DskipTests -pl '!stream/distributedlog/io/dlfs'
 
       - name: Upload report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ cancelled() || failure() }}
         continue-on-error: true
         with:
