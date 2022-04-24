@@ -647,11 +647,15 @@ public class BookieShell implements Tool {
 
         public ListUnderreplicatedCmd() {
             super(CMD_LISTUNDERREPLICATED);
-            opts.addOption("missingreplica", true, "Bookie Id of missing replica");
-            opts.addOption("excludingmissingreplica", true, "Bookie Id of missing replica to ignore");
-            opts.addOption("printmissingreplica", false, "Whether to print missingreplicas list?");
-            opts.addOption("printreplicationworkerid", false, "Whether to print replicationworkerid?");
-            opts.addOption("c", "onlyDisplayLedgerCount", false, "Only display underreplicated ledger count");
+            opts.addOption("mr", "missingreplica", true, "Bookie Id of missing replica");
+            opts.addOption("emr", "excludingmissingreplica", true,
+                "Bookie Id of missing replica to ignore");
+            opts.addOption("pmr", "printmissingreplica", false,
+                "Whether to print missingreplicas list?");
+            opts.addOption("prw", "printreplicationworkerid", false,
+                "Whether to print replicationworkerid?");
+            opts.addOption("c", "onlydisplayledgercount", false,
+                "Only display underreplicated ledger count");
         }
 
         @Override
