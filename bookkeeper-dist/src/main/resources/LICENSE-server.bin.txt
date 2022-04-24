@@ -257,13 +257,13 @@ Apache Software License, Version 2.
 - lib/org.apache.zookeeper-zookeeper-3.8.0.jar [21]
 - lib/org.apache.zookeeper-zookeeper-jute-3.8.0.jar [21]
 - lib/org.apache.zookeeper-zookeeper-3.8.0-tests.jar [21]
-- lib/org.eclipse.jetty-jetty-http-9.4.43.v20210629.jar [22]
-- lib/org.eclipse.jetty-jetty-io-9.4.43.v20210629.jar [22]
-- lib/org.eclipse.jetty-jetty-security-9.4.43.v20210629.jar [22]
-- lib/org.eclipse.jetty-jetty-server-9.4.43.v20210629.jar [22]
-- lib/org.eclipse.jetty-jetty-servlet-9.4.43.v20210629.jar [22]
-- lib/org.eclipse.jetty-jetty-util-9.4.43.v20210629.jar [22]
-- lib/org.eclipse.jetty-jetty-util-ajax-9.4.43.v20210629.jar [22]
+- lib/org.eclipse.jetty-jetty-http-9.4.46.v20220331.jar [22]
+- lib/org.eclipse.jetty-jetty-io-9.4.46.v20220331.jar [22]
+- lib/org.eclipse.jetty-jetty-security-9.4.46.v20220331.jar [22]
+- lib/org.eclipse.jetty-jetty-server-9.4.46.v20220331.jar [22]
+- lib/org.eclipse.jetty-jetty-servlet-9.4.46.v20220331.jar [22]
+- lib/org.eclipse.jetty-jetty-util-9.4.46.v20220331.jar [22]
+- lib/org.eclipse.jetty-jetty-util-ajax-9.4.46.v20220331.jar [22]
 - lib/org.rocksdb-rocksdbjni-6.29.4.1.jar [23]
 - lib/com.beust-jcommander-1.78.jar [24]
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
@@ -332,7 +332,7 @@ Apache Software License, Version 2.
 [19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
 [20] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
 [21] Source available at https://github.com/apache/zookeeper/tree/release-3.8.0
-[22] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.43.v20210629
+[22] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.46.v20220331
 [23] Source available at https://github.com/facebook/rocksdb/tree/v6.16.4
 [24] Source available at https://github.com/cbeust/jcommander/tree/1.78
 [25] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
