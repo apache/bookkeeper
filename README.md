@@ -16,13 +16,13 @@ It is suitable for being used in following scenarios:
 ## Get Started
 
 * Checkout the project [website](https://bookkeeper.apache.org/).
-* *Concepts*: Start with the [basic concepts](https://bookkeeper.apache.org/docs/latest/getting-started/concepts/) of Apache BookKeeper.
+* *Concepts*: Start with the [basic concepts](https://bookkeeper.apache.org/docs/getting-started/concepts) of Apache BookKeeper.
   This will help you to fully understand the other parts of the documentation.
-* Follow the [Install](https://bookkeeper.apache.org/docs/latest/getting-started/installation/) guide to setup BookKeeper.
+* Follow the [Install](https://bookkeeper.apache.org/docs/getting-started/installation) guide to setup BookKeeper.
 
 ## Documentation
 
-Please visit the [Documentation](https://bookkeeper.apache.org/docs/latest/overview/overview/) from the project website for more information.
+Please visit the [Documentation](https://bookkeeper.apache.org/docs/overview/) from the project website for more information.
 
 ## Get In Touch
 
