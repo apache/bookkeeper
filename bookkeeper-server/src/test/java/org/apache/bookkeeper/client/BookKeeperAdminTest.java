@@ -491,6 +491,23 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testGetEntriesFromEmptyLedger() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle lh = bkc.createLedger(numOfBookies, numOfBookies, digestType, "testPasswd".getBytes(UTF_8));
+        lh.close();
+        long ledgerId = lh.getId();
+
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            Iterator<LedgerEntry> iter = bkAdmin.readEntries(ledgerId, 0, 0).iterator();
+            assertFalse(iter.hasNext());
+        }
+
+        bkc.close();
+    }
+
+    @Test
     public void testGetListOfEntriesOfLedgerWithJustOneBookieInWriteQuorum() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
