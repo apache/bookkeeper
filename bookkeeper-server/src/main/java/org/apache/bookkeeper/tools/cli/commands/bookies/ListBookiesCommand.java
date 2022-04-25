@@ -121,7 +121,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
 
     private static void printBookies(Collection<BookieId> bookies, BookieAddressResolver bookieAddressResolver) {
         for (BookieId b : bookies) {
-            LOG.info(getBookieSocketAddrStringRepresentation(b, bookieAddressResolver));
+            LOG.info("{}", getBookieSocketAddrStringRepresentation(b, bookieAddressResolver));
         }
     }
 

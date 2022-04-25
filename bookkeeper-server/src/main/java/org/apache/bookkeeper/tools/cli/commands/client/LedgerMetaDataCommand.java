@@ -137,9 +137,9 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
     }
 
     private void printLedgerMetadata(long ledgerId, LedgerMetadata md, boolean printMeta) {
-        LOG.info("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
+        LOG.info("ledgerID: {}", ledgerIdFormatter.formatLedgerId(ledgerId));
         if (printMeta) {
-            LOG.info(md.toString());
+            LOG.info("{}", md.toString());
         }
     }
 }

@@ -86,17 +86,17 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
             .withPassword(new byte[0])
             .execute())) {
 
-            LOG.info("Ledger ID: " + wh.getId());
+            LOG.info("Ledger ID: {}", wh.getId());
             long lastReport = System.nanoTime();
             for (int i = 0; i < flags.numEntries; i++) {
                 wh.append(data);
                 if (TimeUnit.SECONDS.convert(System.nanoTime() - lastReport,
                         TimeUnit.NANOSECONDS) > 1) {
-                    LOG.info(i + " entries written");
+                    LOG.info("{} entries written", i);
                     lastReport = System.nanoTime();
                 }
             }
-            LOG.info(flags.numEntries + " entries written to ledger " + wh.getId());
+            LOG.info("{} entries written to ledger {}", flags.numEntries, wh.getId());
         }
     }
 }

@@ -163,13 +163,13 @@ public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
 
     public void printActiveLedgerOnEntryLog(long logId, List<Long> activeLedgers){
       if (activeLedgers.size() == 0){
-        LOG.info("No active ledgers on log file " + logId);
+        LOG.info("No active ledgers on log file {}", logId);
       } else {
-        LOG.info("Active ledgers on entry log " + logId + " as follow:");
+        LOG.info("Active ledgers on entry log {} as follow:", logId);
       }
       Collections.sort(activeLedgers);
-      for (long a:activeLedgers){
-        LOG.info(ledgerIdFormatter.formatLedgerId(a) + " ");
+      for (long a : activeLedgers){
+        LOG.info("{} ", ledgerIdFormatter.formatLedgerId(a));
       }
     }
 }

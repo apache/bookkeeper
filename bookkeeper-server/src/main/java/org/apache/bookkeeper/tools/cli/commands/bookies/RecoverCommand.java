@@ -136,14 +136,13 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
             try {
                 bookieAddrs.add(BookieId.parse(bookieStr));
             } catch (IllegalArgumentException err) {
-                LOG.error("BookieSrcs has invalid bookie id format: "
-                                   + bookieStr);
+                LOG.error("BookieSrcs has invalid bookie id format: {}", bookieStr);
                 return false;
             }
         }
 
         if (!force) {
-            LOG.error("Bookies : " + bookieAddrs);
+            LOG.error("Bookies : {}", bookieAddrs);
             if (!IOUtils.confirmPrompt("Are you sure to recover them : (Y/N)")) {
                 LOG.error("Give up!");
                 return false;
@@ -174,12 +173,12 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
             bkAdmin.getLedgersContainBookies(bookieAddrs);
         LOG.error("NOTE: Bookies in inspection list are marked with '*'.");
         for (Map.Entry<Long, LedgerMetadata> ledger : ledgersContainBookies.entrySet()) {
-            LOG.info("ledger " + ledger.getKey() + " : " + ledger.getValue().getState());
+            LOG.info("ledger {} : {}", ledger.getKey(), ledger.getValue().getState());
             Map<Long, Integer> numBookiesToReplacePerEnsemble =
                 inspectLedger(ledger.getValue(), bookieAddrs);
             LOG.info("summary: [");
             for (Map.Entry<Long, Integer> entry : numBookiesToReplacePerEnsemble.entrySet()) {
-                LOG.info(entry.getKey() + "=" + entry.getValue() + ", ");
+                LOG.info("{}={}, ", entry.getKey(), entry.getValue());
             }
             LOG.info("]");
             LOG.info("");
@@ -193,10 +192,10 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
         for (Map.Entry<Long, ? extends List<BookieId>> ensemble :
             metadata.getAllEnsembles().entrySet()) {
             List<BookieId> bookieList = ensemble.getValue();
-            LOG.info(ensemble.getKey() + ":\t");
+            LOG.info("{}:\t", ensemble.getKey());
             int numBookiesToReplace = 0;
             for (BookieId bookie : bookieList) {
-                LOG.info(bookie.toString());
+                LOG.info("{}", bookie.toString());
                 if (bookiesToInspect.contains(bookie)) {
                     LOG.info("*");
                     ++numBookiesToReplace;

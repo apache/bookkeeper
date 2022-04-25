@@ -201,9 +201,8 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                                                    return;
                                                }
 
-                                               LOG.info(
-                                                   "--------- Lid=" + ledgerIdFormatter.formatLedgerId(flags.ledgerId)
-                                                   + ", Eid=" + entryId + " ---------");
+                                               LOG.info("--------- Lid={}, Eid={} ---------",
+                                                   ledgerIdFormatter.formatLedgerId(flags.ledgerId), entryId);
                                                if (flags.msg) {
                                                    LOG.info("Data: " + ByteBufUtil.prettyHexDump(buffer));
                                                }
@@ -238,8 +237,10 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
         long ledgerId = entry.getLedgerId();
         long entryId = entry.getEntryId();
         long entrySize = entry.getLength();
-        LOG.info("--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId) + ", Eid=" + entryId
-                           + ", EntrySize=" + entrySize + " ---------");
+
+        LOG.info("--------- Lid={}, Eid={}, EntrySize={} ---------",
+            ledgerIdFormatter.formatLedgerId(ledgerId), entryId, entrySize);
+
         if (printMsg) {
             entryFormatter.formatEntry(entry.getEntry());
         }
