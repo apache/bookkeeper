@@ -348,7 +348,7 @@ $ bin/bookkeeper shell listunderreplicated \
 | -excludingmissingreplica BOOKIE_ADDRESS | Bookie Id of missing replica to ignore | 
 | -printmissingreplica        | Whether to print missingreplicas list? | 
 | -printreplicationworkerid   | Whether to print replicationworkerid? | 
-| -c,--onlyDisplayLedgerCount | Only display underreplicated ledger count | 
+| -c,--onlydisplayledgercount | Only display underreplicated ledger count | 
 
 
 ### metaformat {#bookkeeper-shell-metaformat}
