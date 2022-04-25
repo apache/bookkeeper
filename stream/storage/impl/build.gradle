@@ -25,7 +25,7 @@ plugins {
 dependencies {
     implementation project(':bookkeeper-common')
     implementation project(':bookkeeper-server')
-    implementation project(':bookkeeper-stats')
+    implementation project(':stats:bookkeeper-stats-api')
     implementation project(':stream:api')
     implementation project(':stream:clients:java:base')
     implementation project(':stream:common')

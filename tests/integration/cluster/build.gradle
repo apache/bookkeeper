@@ -33,7 +33,7 @@ dependencies {
     testImplementation project(':stream:clients:java:base')
     testImplementation project(':stream:clients:java:all')
     testImplementation project(':bookkeeper-server')
-    testImplementation project(':bookkeeper-stats')
+    testImplementation project(':stats:bookkeeper-stats-api')
     testImplementation project(':tests:integration-tests-topologies')
     testImplementation project(':stream:clients:java:kv')
     testImplementation project(':testtools')
