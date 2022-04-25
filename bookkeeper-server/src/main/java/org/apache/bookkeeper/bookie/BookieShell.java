@@ -682,7 +682,7 @@ public class BookieShell implements Tool {
             final String excludingBookieId = cmdLine.getOptionValue("excludingmissingreplica");
             final boolean printMissingReplica = cmdLine.hasOption("printmissingreplica");
             final boolean printReplicationWorkerId = cmdLine.hasOption("printreplicationworkerid");
-            final boolean onlyDisplayLedgerCount = cmdLine.hasOption("onlyDisplayLedgerCount");
+            final boolean onlyDisplayLedgerCount = cmdLine.hasOption("onlydisplayledgercount");
 
             ListUnderReplicatedCommand.LURFlags flags = new ListUnderReplicatedCommand.LURFlags()
                                                             .missingReplica(includingBookieId)
