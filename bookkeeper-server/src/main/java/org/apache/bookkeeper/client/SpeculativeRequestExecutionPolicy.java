@@ -37,9 +37,9 @@ public interface SpeculativeRequestExecutionPolicy {
      * Initialize the speculative request execution policy and initiate requests.
      *
      * @param scheduler The scheduler service to issue the speculative request
-     * @param requestExectuor The executor is used to issue the actual speculative requests
+     * @param requestExecutor The executor is used to issue the actual speculative requests
      * @return ScheduledFuture, in case caller needs to cancel it.
      */
     ScheduledFuture<?> initiateSpeculativeRequest(ScheduledExecutorService scheduler,
-            SpeculativeRequestExecutor requestExectuor);
+            SpeculativeRequestExecutor requestExecutor);
 }

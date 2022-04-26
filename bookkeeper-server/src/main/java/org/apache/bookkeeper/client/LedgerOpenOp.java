@@ -70,7 +70,7 @@ class LedgerOpenOp {
      *
      * @param bk
      * @param ledgerId
-     * @param digestType. Ignored if conf.getEnableDigestTypeAutodetection() is true
+     * @param digestType Ignored if conf.getEnableDigestTypeAutodetection() is true
      * @param passwd
      * @param cb
      * @param ctx
