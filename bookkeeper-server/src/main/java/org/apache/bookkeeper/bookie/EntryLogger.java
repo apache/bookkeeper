@@ -406,7 +406,7 @@ public class EntryLogger {
      * @param pos The starting position from where we want to read.
      * @return
      */
-    private int readFromLogChannel(long entryLogId, BufferedReadChannel channel, ByteBuf buff, long pos)
+    private Pair<Integer, Integer> readFromLogChannel(long entryLogId, BufferedReadChannel channel, ByteBuf buff, long pos)
             throws IOException {
         BufferedLogChannel bc = entryLogManager.getCurrentLogIfPresent(entryLogId);
         if (null != bc) {
@@ -417,21 +417,6 @@ public class EntryLogger {
             }
         }
         return channel.read(buff, pos);
-    }
-
-    private Pair<Integer, Integer> readFromLogChannelWithPrefetchBytes(long entryLogId,
-                                                                       BufferedReadChannel channel,
-                                                                       ByteBuf buff,
-                                                                       long pos) throws IOException {
-        BufferedLogChannel bc = entryLogManager.getCurrentLogIfPresent(entryLogId);
-        if (null != bc) {
-            synchronized (bc) {
-                if (pos + buff.writableBytes() >= bc.getFileChannelPosition()) {
-                    return bc.readWithPrefetchedBytes(buff, pos);
-                }
-            }
-        }
-        return channel.readWithPrefetchedBytes(buff, pos);
     }
 
     /**
@@ -811,7 +796,7 @@ public class EntryLogger {
         long entrySizePos = pos - 4; // we want to get the entrySize as well as the ledgerId and entryId
 
         try {
-            if (readFromLogChannel(entryLogId, fc, sizeBuff, entrySizePos) != sizeBuff.capacity()) {
+            if (readFromLogChannel(entryLogId, fc, sizeBuff, entrySizePos).getLeft() != sizeBuff.capacity()) {
                 throw new EntryLookupException.MissingEntryException(ledgerId, entryId, entryLogId, entrySizePos);
             }
         } catch (BufferedChannelBase.BufferedChannelClosedException | AsynchronousCloseException e) {
@@ -874,7 +859,7 @@ public class EntryLogger {
         }
 
         ByteBuf data = allocator.buffer(entrySize, entrySize);
-        int rc = readFromLogChannel(entryLogId, fc, data, pos);
+        int rc = readFromLogChannel(entryLogId, fc, data, pos).getLeft();
         if (rc != entrySize) {
             // Note that throwing NoEntryException here instead of IOException is not
             // without risk. If all bookies in a quorum throw this same exception
@@ -1042,8 +1027,7 @@ public class EntryLogger {
                     break;
                 }
 
-                Pair<Integer, Integer> readBytesPair =
-                    readFromLogChannelWithPrefetchBytes(entryLogId, bc, headerBuffer, pos);
+                Pair<Integer, Integer> readBytesPair = readFromLogChannel(entryLogId, bc, headerBuffer, pos);
                 if (readBytesPair.getLeft() != headerBuffer.capacity()) {
                     LOG.warn("Short read for entry size from entrylog {}", entryLogId);
                     return;
@@ -1072,7 +1056,7 @@ public class EntryLogger {
                     return;
                 }
                 data.capacity(entrySize);
-                int rc = readFromLogChannel(entryLogId, bc, data, pos);
+                int rc = readFromLogChannel(entryLogId, bc, data, pos).getLeft();
                 if (rc != entrySize) {
                     LOG.warn("Short read for ledger entry from entryLog {}@{} ({} != {})",
                             entryLogId, pos, rc, entrySize);

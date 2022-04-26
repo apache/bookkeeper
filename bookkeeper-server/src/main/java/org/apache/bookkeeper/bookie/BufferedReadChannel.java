@@ -63,25 +63,11 @@ public class BufferedReadChannel extends BufferedChannelBase  {
      *         -1 if the given position is greater than or equal to the file's current size.
      * @throws IOException if I/O error occurs
      */
-    public int read(ByteBuf dest, long pos) throws IOException {
+    public Pair<Integer, Integer> read(ByteBuf dest, long pos) throws IOException {
         return read(dest, pos, dest.writableBytes());
     }
 
-    /**
-     * Read as many bytes into dest as dest.capacity() starting at position pos in the
-     * FileChannel. This function can read from the buffer or the file channel. If it fetched
-     * from the file channel, return the prefetched bytes for throttle.
-     * @param dest
-     * @param pos
-     * @return
-     * @throws IOException
-     */
-    public Pair<Integer, Integer> readWithPrefetchedBytes(ByteBuf dest, long pos) throws IOException {
-        return readWithPrefetchedBytes(dest, pos, dest.writableBytes());
-    }
-
-    public synchronized Pair<Integer, Integer> readWithPrefetchedBytes(ByteBuf dest, long pos, int length)
-        throws IOException {
+    public synchronized Pair<Integer, Integer> read(ByteBuf dest, long pos, int length) throws IOException {
         invocationCount++;
         long currentPosition = pos;
         long eof = validateAndGetFileChannel().size();
@@ -89,43 +75,6 @@ public class BufferedReadChannel extends BufferedChannelBase  {
         // return -1 if the given position is greater than or equal to the file's current size.
         if (pos >= eof) {
             return new ImmutablePair<>(-1, 0);
-        }
-        while (length > 0) {
-            // Check if the data is in the buffer, if so, copy it.
-            if (readBufferStartPosition <= currentPosition
-                && currentPosition < readBufferStartPosition + readBuffer.readableBytes()) {
-                int posInBuffer = (int) (currentPosition - readBufferStartPosition);
-                int bytesToCopy = Math.min(length, readBuffer.readableBytes() - posInBuffer);
-                dest.writeBytes(readBuffer, posInBuffer, bytesToCopy);
-                currentPosition += bytesToCopy;
-                length -= bytesToCopy;
-                cacheHitCount++;
-            } else if (currentPosition >= eof) {
-                // here we reached eof.
-                break;
-            } else {
-                // We don't have it in the buffer, so put necessary data in the buffer
-                readBufferStartPosition = currentPosition;
-                int readBytes = 0;
-                if ((readBytes = validateAndGetFileChannel().read(readBuffer.internalNioBuffer(0, readCapacity),
-                    currentPosition)) <= 0) {
-                    throw new IOException("Reading from filechannel returned a non-positive value. Short read.");
-                }
-                readBuffer.writerIndex(readBytes);
-                bytesFetchedFromFile += readBytes;
-            }
-        }
-
-        return new ImmutablePair<>((int) (currentPosition - pos), bytesFetchedFromFile);
-    }
-
-    public synchronized int read(ByteBuf dest, long pos, int length) throws IOException {
-        invocationCount++;
-        long currentPosition = pos;
-        long eof = validateAndGetFileChannel().size();
-        // return -1 if the given position is greater than or equal to the file's current size.
-        if (pos >= eof) {
-            return -1;
         }
         while (length > 0) {
             // Check if the data is in the buffer, if so, copy it.
@@ -149,9 +98,10 @@ public class BufferedReadChannel extends BufferedChannelBase  {
                     throw new IOException("Reading from filechannel returned a non-positive value. Short read.");
                 }
                 readBuffer.writerIndex(readBytes);
+                bytesFetchedFromFile += readBytes;
             }
         }
-        return (int) (currentPosition - pos);
+        return new ImmutablePair<> ((int) (currentPosition - pos), bytesFetchedFromFile);
     }
 
     public synchronized void clear() {

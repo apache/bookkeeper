@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Provides a buffering layer in front of a FileChannel.
@@ -243,8 +245,9 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     }
 
     @Override
-    public synchronized int read(ByteBuf dest, long pos, int length) throws IOException {
+    public synchronized Pair<Integer, Integer> read(ByteBuf dest, long pos, int length) throws IOException {
         long prevPos = pos;
+        int bytesFetchedFromFile = 0;
         while (length > 0) {
             // check if it is in the write buffer
             if (writeBuffer != null && writeBufferStartPosition.get() <= pos) {
@@ -278,9 +281,10 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
                     throw new IOException("Reading from filechannel returned a non-positive value. Short read.");
                 }
                 readBuffer.writerIndex(readBytes);
+                bytesFetchedFromFile += readBytes;
             }
         }
-        return (int) (pos - prevPos);
+        return new ImmutablePair<>((int) (pos - prevPos), bytesFetchedFromFile);
     }
 
     @Override

@@ -27,6 +27,7 @@ import io.netty.buffer.ByteBufAllocator;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Strictly for testing.
@@ -77,7 +78,7 @@ public class SlowBufferedChannel extends BufferedChannel {
     }
 
     @Override
-    public synchronized int read(ByteBuf dest, long pos) throws IOException {
+    public synchronized Pair<Integer, Integer> read(ByteBuf dest, long pos) throws IOException {
         delayMs(getDelay);
         return super.read(dest, pos);
     }
