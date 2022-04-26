@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -96,6 +97,10 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
 
         @Parameter(names =  {"-l", "--ledgeridformatter"}, description = "Set ledger id formatter")
         private String ledgerIdFormatter = DEFAULT;
+
+        @Parameter(names = {"-c", "--onlydisplayledgercount"},
+            description = "Only display underreplicated ledger count")
+        private boolean onlyDisplayLedgerCount;
     }
 
     @Override
@@ -117,6 +122,7 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
         final String excludingBookieId = flags.excludingMissingReplica;
         final boolean printMissingReplica = flags.printMissingReplica;
         final boolean printReplicationWorkerId = flags.printReplicationWorkerId;
+        final boolean onlyDisplayLedgerCount = flags.onlyDisplayLedgerCount;
 
         final Predicate<List<String>> predicate;
         if (!StringUtils.isBlank(includingBookieId) && !StringUtils.isBlank(excludingBookieId)) {
@@ -130,6 +136,7 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
             predicate = null;
         }
 
+        AtomicInteger underReplicatedLedgerCount = new AtomicInteger(0);
         runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
             LedgerUnderreplicationManager underreplicationManager;
             try {
@@ -143,6 +150,11 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
             Iterator<UnderreplicatedLedger> iter = underreplicationManager.listLedgersToRereplicate(predicate);
             while (iter.hasNext()) {
                 UnderreplicatedLedger underreplicatedLedger = iter.next();
+                underReplicatedLedgerCount.incrementAndGet();
+                if (onlyDisplayLedgerCount) {
+                    continue;
+                }
+
                 long urLedgerId = underreplicatedLedger.getLedgerId();
                 LOG.info("{}", ledgerIdFormatter.formatLedgerId(urLedgerId));
                 long ctime = underreplicatedLedger.getCtime();
@@ -167,6 +179,8 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
                     }
                 }
             }
+
+            LOG.info("Under replicated ledger count: {}", underReplicatedLedgerCount.get());
             return null;
         });
         return true;
