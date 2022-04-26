@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -126,6 +127,20 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
         verify(ledger, times(1)).getLedgerId();
         verify(ledger, times(1)).getCtime();
         verify(underreplicationManager, times(1)).getReplicationWorkerIdRereplicatingLedger(1L);
+    }
+
+    @Test
+    public void testOnlyDisplayLedgerCount() throws InterruptedException, KeeperException,
+        ReplicationException.CompatibilityException, ReplicationException.UnavailableException {
+        testCommand("-c");
+
+        verify(factory, times(1)).newLedgerUnderreplicationManager();
+        verify(underreplicationManager, times(1)).listLedgersToRereplicate(any());
+        verify(underreplicationManager, times(0))
+            .getReplicationWorkerIdRereplicatingLedger(anyLong());
+        verify(ledger, times(0)).getLedgerId();
+        verify(ledger, times(0)).getCtime();
+        verify(ledger, times(0)).getReplicaList();
     }
 
     @Test

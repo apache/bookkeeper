@@ -650,10 +650,15 @@ public class BookieShell implements Tool {
 
         public ListUnderreplicatedCmd() {
             super(CMD_LISTUNDERREPLICATED);
-            opts.addOption("missingreplica", true, "Bookie Id of missing replica");
-            opts.addOption("excludingmissingreplica", true, "Bookie Id of missing replica to ignore");
-            opts.addOption("printmissingreplica", false, "Whether to print missingreplicas list?");
-            opts.addOption("printreplicationworkerid", false, "Whether to print replicationworkerid?");
+            opts.addOption("mr", "missingreplica", true, "Bookie Id of missing replica");
+            opts.addOption("emr", "excludingmissingreplica", true,
+                "Bookie Id of missing replica to ignore");
+            opts.addOption("pmr", "printmissingreplica", false,
+                "Whether to print missingreplicas list?");
+            opts.addOption("prw", "printreplicationworkerid", false,
+                "Whether to print replicationworkerid?");
+            opts.addOption("c", "onlydisplayledgercount", false,
+                "Only display underreplicated ledger count");
         }
 
         @Override
@@ -680,12 +685,14 @@ public class BookieShell implements Tool {
             final String excludingBookieId = cmdLine.getOptionValue("excludingmissingreplica");
             final boolean printMissingReplica = cmdLine.hasOption("printmissingreplica");
             final boolean printReplicationWorkerId = cmdLine.hasOption("printreplicationworkerid");
+            final boolean onlyDisplayLedgerCount = cmdLine.hasOption("onlydisplayledgercount");
 
             ListUnderReplicatedCommand.LURFlags flags = new ListUnderReplicatedCommand.LURFlags()
                                                             .missingReplica(includingBookieId)
                                                             .excludingMissingReplica(excludingBookieId)
                                                             .printMissingReplica(printMissingReplica)
-                                                            .printReplicationWorkerId(printReplicationWorkerId);
+                                                            .printReplicationWorkerId(printReplicationWorkerId)
+                                                            .onlyDisplayLedgerCount(onlyDisplayLedgerCount);
             ListUnderReplicatedCommand cmd = new ListUnderReplicatedCommand(ledgerIdFormatter);
             cmd.apply(bkConf, flags);
             return 0;
