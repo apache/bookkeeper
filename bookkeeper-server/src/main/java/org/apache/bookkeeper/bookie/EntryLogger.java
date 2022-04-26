@@ -406,8 +406,10 @@ public class EntryLogger {
      * @param pos The starting position from where we want to read.
      * @return
      */
-    private Pair<Integer, Integer> readFromLogChannel(long entryLogId, BufferedReadChannel channel, ByteBuf buff, long pos)
-            throws IOException {
+    private Pair<Integer, Integer> readFromLogChannel(long entryLogId,
+                                                      BufferedReadChannel channel,
+                                                      ByteBuf buff,
+                                                      long pos) throws IOException {
         BufferedLogChannel bc = entryLogManager.getCurrentLogIfPresent(entryLogId);
         if (null != bc) {
             synchronized (bc) {
