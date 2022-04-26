@@ -21,7 +21,7 @@ import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
 
 /**
- * Listener for the the available bookies changes.
+ * Listener for the available bookies changes.
  */
 
 @InterfaceAudience.Private
