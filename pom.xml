@@ -40,7 +40,7 @@
     <connection>scm:git:https://github.com/apache/bookkeeper.git</connection>
     <developerConnection>scm:git:https://github.com/apache/bookkeeper.git</developerConnection>
     <url>https://github.com/apache/bookkeeper</url>
-    <tag>branch-4.15</tag>
+    <tag>branch-4.13</tag>
   </scm>
   <issueManagement>
     <system>JIRA</system>
@@ -113,7 +113,7 @@
     <javac.target>1.8</javac.target>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
     <testRetryCount>2</testRetryCount>
-    <test.additional.args />
+    <test.additional.args/>
 
     <!-- dependencies -->
     <arquillian-cube.version>1.18.2</arquillian-cube.version>
