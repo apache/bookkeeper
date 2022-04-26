@@ -2503,7 +2503,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/BookiesListener.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">BookiesListener</span></a> - Interface in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
-<div class="block">Listener for the the available bookies changes.</div>
+<div class="block">Listener for the available bookies changes.</div>
 </dd>
 <dt><a href="org/apache/bookkeeper/net/BookieSocketAddress.html" title="class in org.apache.bookkeeper.net"><span class="typeNameLink">BookieSocketAddress</span></a> - Class in <a href="org/apache/bookkeeper/net/package-summary.html">org.apache.bookkeeper.net</a></dt>
 <dd>
@@ -2571,6 +2571,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieThread.html#%3Cinit%3E(java.lang.String)">BookieThread(String)</a></span> - Constructor for class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieThread.html" title="class in org.apache.bookkeeper.bookie">BookieThread</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieException.BookieUnauthorizedAccessException.html#%3Cinit%3E()">BookieUnauthorizedAccessException()</a></span> - Constructor for exception org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieException.BookieUnauthorizedAccessException.html" title="class in org.apache.bookkeeper.bookie">BookieException.BookieUnauthorizedAccessException</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieException.BookieUnauthorizedAccessException.html#%3Cinit%3E(java.lang.String)">BookieUnauthorizedAccessException(String)</a></span> - Constructor for exception org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieException.BookieUnauthorizedAccessException.html" title="class in org.apache.bookkeeper.bookie">BookieException.BookieUnauthorizedAccessException</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#bookieWatcher">bookieWatcher</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
@@ -13671,8 +13673,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">Entry Entry ID.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/InterleavedLedgerStorage.html#INVALID_ENTRYID">INVALID_ENTRYID</a></span> - Static variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/InterleavedLedgerStorage.html" title="class in org.apache.bookkeeper.bookie">InterleavedLedgerStorage</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/util/AvailabilityOfEntriesOfLedger.html#INVALID_ENTRYID">INVALID_ENTRYID</a></span> - Static variable in class org.apache.bookkeeper.util.<a href="org/apache/bookkeeper/util/AvailabilityOfEntriesOfLedger.html" title="class in org.apache.bookkeeper.util">AvailabilityOfEntriesOfLedger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#INVALID_LEDGER_ID">INVALID_LEDGER_ID</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
@@ -16263,30 +16263,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/proto/BookieClientImpl.html#lookupClient(org.apache.bookkeeper.net.BookieId)">lookupClient(BookieId)</a></span> - Method in class org.apache.bookkeeper.proto.<a href="org/apache/bookkeeper/proto/BookieClientImpl.html" title="class in org.apache.bookkeeper.proto">BookieClientImpl</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.BookieInfoCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.BookieInfoCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.BookieInfoCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.BookieSanityTestCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.BookieSanityTestCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.BookieSanityTestCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.DecommissionBookieCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.DecommissionBookieCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.DecommissionBookieCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.DeleteLedgerCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.DeleteLedgerCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.DeleteLedgerCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.EndpointInfoCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.EndpointInfoCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.EndpointInfoCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.LedgerCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.LedgerCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.LedgerCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.LedgerMetadataCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.LedgerMetadataCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.LedgerMetadataCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ListActiveLedgersCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ListActiveLedgersCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ListActiveLedgersCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ListLedgersCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ListLedgersCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ListLedgersCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.LocalConsistencyCheck.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.LocalConsistencyCheck.html" title="class in org.apache.bookkeeper.bookie">BookieShell.LocalConsistencyCheck</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ReadLedgerEntriesCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ReadLedgerEntriesCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ReadLedgerEntriesCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.SimpleTestCmd.html#lOpts">lOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.SimpleTestCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.SimpleTestCmd</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#LOST_BOOKIE_RECOVERY_DELAY">LOST_BOOKIE_RECOVERY_DELAY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/util/BookKeeperConstants.html#LOSTBOOKIERECOVERYDELAY_NODE">LOSTBOOKIERECOVERYDELAY_NODE</a></span> - Static variable in class org.apache.bookkeeper.util.<a href="org/apache/bookkeeper/util/BookKeeperConstants.html" title="class in org.apache.bookkeeper.util">BookKeeperConstants</a></dt>
@@ -18101,6 +18077,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">Very similar to onLastOpComplete, but gets called on the final call to closeWrite.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/tools/cli/commands/autorecovery/ListUnderReplicatedCommand.LURFlags.html#onlyDisplayLedgerCount(boolean)">onlyDisplayLedgerCount(boolean)</a></span> - Method in class org.apache.bookkeeper.tools.cli.commands.autorecovery.<a href="org/apache/bookkeeper/tools/cli/commands/autorecovery/ListUnderReplicatedCommand.LURFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.autorecovery">ListUnderReplicatedCommand.LURFlags</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/auth/BookieAuthProvider.html#onProtocolUpgrade()">onProtocolUpgrade()</a></span> - Method in interface org.apache.bookkeeper.auth.<a href="org/apache/bookkeeper/auth/BookieAuthProvider.html" title="interface in org.apache.bookkeeper.auth">BookieAuthProvider</a></dt>
 <dd>
 <div class="block">Callback to let the provider know that the underlying protocol is changed.</div>
@@ -18341,51 +18319,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">The list of options for this setting.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.AutoRecoveryCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.AutoRecoveryCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.AutoRecoveryCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.BookieFormatCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.BookieFormatCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.BookieFormatCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.CheckDbLedgersIndexCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.CheckDbLedgersIndexCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.CheckDbLedgersIndexCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ConvertToDbStorageCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ConvertToDbStorageCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ConvertToDbStorageCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ConvertToInterleavedStorageCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ConvertToInterleavedStorageCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ConvertToInterleavedStorageCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ForceAuditorChecksCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ForceAuditorChecksCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ForceAuditorChecksCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.InitBookieCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.InitBookieCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.InitBookieCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.InitNewCluster.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.InitNewCluster.html" title="class in org.apache.bookkeeper.bookie">BookieShell.InitNewCluster</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ListBookiesCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ListBookiesCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ListBookiesCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ListDiskFilesCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ListDiskFilesCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ListDiskFilesCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ListUnderreplicatedCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ListUnderreplicatedCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ListUnderreplicatedCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.LostBookieRecoveryDelayCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.LostBookieRecoveryDelayCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.LostBookieRecoveryDelayCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.MetaFormatCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.MetaFormatCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.MetaFormatCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.NukeExistingCluster.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.NukeExistingCluster.html" title="class in org.apache.bookkeeper.bookie">BookieShell.NukeExistingCluster</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.QueryAutoRecoveryStatusCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.QueryAutoRecoveryStatusCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.QueryAutoRecoveryStatusCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.RebuildDbLedgerLocationsIndexCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.RebuildDbLedgerLocationsIndexCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.RebuildDbLedgerLocationsIndexCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.RebuildDbLedgersIndexCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.RebuildDbLedgersIndexCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.RebuildDbLedgersIndexCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.RecoverCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.RecoverCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.RecoverCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.RegenerateInterleavedStorageIndexFile.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.RegenerateInterleavedStorageIndexFile.html" title="class in org.apache.bookkeeper.bookie">BookieShell.RegenerateInterleavedStorageIndexFile</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.TriggerAuditCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.TriggerAuditCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.TriggerAuditCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.UpdateCookieCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.UpdateCookieCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.UpdateCookieCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.WhatIsInstanceId.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.WhatIsInstanceId.html" title="class in org.apache.bookkeeper.bookie">BookieShell.WhatIsInstanceId</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.WhoIsAuditorCmd.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.WhoIsAuditorCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.WhoIsAuditorCmd</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.MyCommand.html#opts">opts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.MyCommand.html" title="class in org.apache.bookkeeper.bookie">BookieShell.MyCommand</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/common/conf/ConfigKeyGroup.html#order()">order()</a></span> - Method in class org.apache.bookkeeper.common.conf.<a href="org/apache/bookkeeper/common/conf/ConfigKeyGroup.html" title="class in org.apache.bookkeeper.common.conf">ConfigKeyGroup</a></dt>
 <dd>
@@ -21249,13 +21183,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/tools/cli/commands/bookie/RegenerateInterleavedStorageIndexFileCommand.RISIFFlags.html#%3Cinit%3E()">RISIFFlags()</a></span> - Constructor for class org.apache.bookkeeper.tools.cli.commands.bookie.<a href="org/apache/bookkeeper/tools/cli/commands/bookie/RegenerateInterleavedStorageIndexFileCommand.RISIFFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">RegenerateInterleavedStorageIndexFileCommand.RISIFFlags</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ReadJournalCmd.html#rjOpts">rjOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ReadJournalCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ReadJournalCmd</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/IndexPersistenceMgr.html#RLOC">RLOC</a></span> - Static variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/IndexPersistenceMgr.html" title="class in org.apache.bookkeeper.bookie">IndexPersistenceMgr</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ReadLogCmd.html#rlOpts">rlOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ReadLogCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ReadLogCmd</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/BookieShell.ReadLogMetadataCmd.html#rlOpts">rlOpts</a></span> - Variable in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/BookieShell.ReadLogMetadataCmd.html" title="class in org.apache.bookkeeper.bookie">BookieShell.ReadLogMetadataCmd</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/bookie/FileSystemUpgrade.html#rollback(org.apache.bookkeeper.conf.ServerConfiguration)">rollback(ServerConfiguration)</a></span> - Static method in class org.apache.bookkeeper.bookie.<a href="org/apache/bookkeeper/bookie/FileSystemUpgrade.html" title="class in org.apache.bookkeeper.bookie">FileSystemUpgrade</a></dt>
 <dd>&nbsp;</dd>

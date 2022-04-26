@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -217,10 +217,15 @@ extends org.apache.bookkeeper.tools.framework.CliFlags</pre>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="ListUnderReplicatedCommand.LURFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.autorecovery">ListUnderReplicatedCommand.LURFlags</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#printMissingReplica(boolean)">printMissingReplica</a></span>&#8203;(boolean&nbsp;printMissingReplica)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#onlyDisplayLedgerCount(boolean)">onlyDisplayLedgerCount</a></span>&#8203;(boolean&nbsp;onlyDisplayLedgerCount)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code><a href="ListUnderReplicatedCommand.LURFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.autorecovery">ListUnderReplicatedCommand.LURFlags</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#printMissingReplica(boolean)">printMissingReplica</a></span>&#8203;(boolean&nbsp;printMissingReplica)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="ListUnderReplicatedCommand.LURFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.autorecovery">ListUnderReplicatedCommand.LURFlags</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#printReplicationWorkerId(boolean)">printReplicationWorkerId</a></span>&#8203;(boolean&nbsp;printReplicationWorkerId)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -323,10 +328,23 @@ extends org.apache.bookkeeper.tools.framework.CliFlags</pre>
 <a id="ledgerIdFormatter(java.lang.String)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>ledgerIdFormatter</h4>
 <pre class="methodSignature">public&nbsp;<a href="ListUnderReplicatedCommand.LURFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.autorecovery">ListUnderReplicatedCommand.LURFlags</a>&nbsp;ledgerIdFormatter&#8203;(java.lang.String&nbsp;ledgerIdFormatter)</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>this</code>.</dd>
+</dl>
+</li>
+</ul>
+<a id="onlyDisplayLedgerCount(boolean)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>onlyDisplayLedgerCount</h4>
+<pre class="methodSignature">public&nbsp;<a href="ListUnderReplicatedCommand.LURFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.autorecovery">ListUnderReplicatedCommand.LURFlags</a>&nbsp;onlyDisplayLedgerCount&#8203;(boolean&nbsp;onlyDisplayLedgerCount)</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd><code>this</code>.</dd>

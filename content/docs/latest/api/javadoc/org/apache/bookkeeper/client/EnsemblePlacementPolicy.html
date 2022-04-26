@@ -151,11 +151,12 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 
  <p>The ensemble placement policy is constructed by jvm reflection during constructing bookkeeper client.
  After the <code>EnsemblePlacementPolicy</code> is constructed, bookkeeper client will call
- <code>#initialize(ClientConfiguration, Optional, HashedWheelTimer, FeatureProvider, StatsLogger)</code> to initialize
- the placement policy.
+ <a href="#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)"><code>initialize(ClientConfiguration, Optional, HashedWheelTimer, FeatureProvider, StatsLogger,
+ BookieAddressResolver)</code></a> to initialize the placement policy.
 
- <p>The <code>#initialize(ClientConfiguration, Optional, HashedWheelTimer, FeatureProvider, StatsLogger)</code>
- method takes a few resources from bookkeeper for instantiating itself. These resources include:
+ <p>The <a href="#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)"><code>initialize(ClientConfiguration, Optional, HashedWheelTimer, FeatureProvider, StatsLogger,
+ BookieAddressResolver)</code></a> method takes a few resources from bookkeeper for instantiating itself.
+ These resources include:
 
  <ul>
  <li>`ClientConfiguration` : The client configuration that used for constructing the bookkeeper client.
@@ -175,7 +176,8 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
  <p>The ensemble placement policy is a single instance per bookkeeper client. The instance will
  be <a href="#uninitalize()"><code>uninitalize()</code></a> when closing the bookkeeper client. The implementation of a placement policy should be
  responsible for releasing all the resources that allocated during
- <code>#initialize(ClientConfiguration, Optional, HashedWheelTimer, FeatureProvider, StatsLogger)</code>.
+ <a href="#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)"><code>initialize(ClientConfiguration, Optional, HashedWheelTimer, FeatureProvider, StatsLogger,
+ BookieAddressResolver)</code></a>.
 
  <h3>How to choose bookies to place data</h3>
 
@@ -183,8 +185,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
  bookie changes, the ensemble placement policy will be notified with new list of bookies via
  <a href="#onClusterChanged(java.util.Set,java.util.Set)"><code>onClusterChanged(Set, Set)</code></a>. The implementation of the ensemble placement policy will react on those
  changes to build new network topology. Subsequent operations like <a href="#newEnsemble(int,int,int,java.util.Map,java.util.Set)"><code>newEnsemble(int, int, int, Map, Set)</code></a> or
- <code>#replaceBookie(int, int, int, java.util.Map, java.util.Set,
- org.apache.bookkeeper.net.BookieSocketAddress, java.util.Set)</code>
+ <a href="#replaceBookie(int,int,int,java.util.Map,java.util.List,org.apache.bookkeeper.net.BookieId,java.util.Set)"><code>replaceBookie(int, int, int, java.util.Map, java.util.List, BookieId, java.util.Set)</code></a>
  hence can operate on the new
  network topology.
 
@@ -526,8 +527,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 
  <p>The implementation should take actions when the cluster view is changed. So subsequent
  <a href="#newEnsemble(int,int,int,java.util.Map,java.util.Set)"><code>newEnsemble(int, int, int, Map, Set)</code></a> and
- <code>#replaceBookie(int, int, int, java.util.Map, java.util.Set,
- org.apache.bookkeeper.net.BookieSocketAddress, java.util.Set)</code>
+ <a href="#replaceBookie(int,int,int,java.util.Map,java.util.List,org.apache.bookkeeper.net.BookieId,java.util.Set)"><code>replaceBookie(int, int, int, java.util.Map, java.util.List, BookieId, java.util.Set)</code></a>
  can choose proper bookies.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>

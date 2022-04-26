@@ -426,7 +426,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  to a bookie at <code>address</code> for a ledger with <code>ledgerId</code>.
  It is necessary to specify the ledgerId as there may be multiple
  channels for a single bookie if pooling is in use.
- If the bookie is not <code>writable</code>,
+ If the bookie is not <a href="#isWritable(org.apache.bookkeeper.net.BookieId,long)"><code>writable</code></a>,
  then the <a href="#PENDINGREQ_NOTWRITABLE_MASK"><code>PENDINGREQ_NOTWRITABLE_MASK</code></a> will be logically or'd with
  the returned value.</div>
 <dl>
@@ -536,9 +536,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd><code>options</code> - a bit mask of flags from BookieProtocol.FLAG_*
                 <a href="BookieProtocol.html" title="interface in org.apache.bookkeeper.proto"><code>BookieProtocol</code></a></dd>
 <dd><code>allowFastFail</code> - fail the add immediately if the channel is non-writable
-                      <code>#isWritable(BookieSocketAddress,long)</code></dd>
+                      <a href="#isWritable(org.apache.bookkeeper.net.BookieId,long)"><code>isWritable(BookieId,long)</code></a></dd>
 <dd><code>writeFlags</code> - a set of write flags
-                   <code>org.apache.bookkeeper.client.api.WriteFlags</code></dd>
+                   <a href="../client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api"><code>WriteFlag</code></a></dd>
 </dl>
 </li>
 </ul>
@@ -557,7 +557,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Read entry with a null masterkey, disallowing failfast.</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><code>#readEntry(BookieSocketAddress,long,long,ReadEntryCallback,Object,int,byte[],boolean)</code></dd>
+<dd><a href="#readEntry(org.apache.bookkeeper.net.BookieId,long,long,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback,java.lang.Object,int,byte%5B%5D,boolean)"><code>readEntry(BookieId,long,long,ReadEntryCallback,Object,int,byte[],boolean)</code></a></dd>
 </dl>
 </li>
 </ul>
@@ -577,7 +577,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Read entry, disallowing failfast.</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><code>#readEntry(BookieSocketAddress,long,long,ReadEntryCallback,Object,int,byte[],boolean)</code></dd>
+<dd><a href="#readEntry(org.apache.bookkeeper.net.BookieId,long,long,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback,java.lang.Object,int,byte%5B%5D,boolean)"><code>readEntry(BookieId,long,long,ReadEntryCallback,Object,int,byte[],boolean)</code></a></dd>
 </dl>
 </li>
 </ul>
@@ -608,7 +608,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd><code>masterKey</code> - the master key of the ledger being read from. This is only required
                   if the FLAG_DO_FENCING is specified.</dd>
 <dd><code>allowFastFail</code> - fail the read immediately if the channel is non-writable
-                      <code>#isWritable(BookieSocketAddress,long)</code></dd>
+                      <a href="#isWritable(org.apache.bookkeeper.net.BookieId,long)"><code>isWritable(BookieId,long)</code></a></dd>
 </dl>
 </li>
 </ul>

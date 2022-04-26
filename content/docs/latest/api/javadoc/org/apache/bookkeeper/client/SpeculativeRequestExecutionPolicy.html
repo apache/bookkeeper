@@ -158,7 +158,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>java.util.concurrent.ScheduledFuture&lt;?&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initiateSpeculativeRequest(java.util.concurrent.ScheduledExecutorService,org.apache.bookkeeper.client.SpeculativeRequestExecutor)">initiateSpeculativeRequest</a></span>&#8203;(java.util.concurrent.ScheduledExecutorService&nbsp;scheduler,
-                          <a href="SpeculativeRequestExecutor.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutor</a>&nbsp;requestExectuor)</code></th>
+                          <a href="SpeculativeRequestExecutor.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutor</a>&nbsp;requestExecutor)</code></th>
 <td class="colLast">
 <div class="block">Initialize the speculative request execution policy and initiate requests.</div>
 </td>
@@ -187,12 +187,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h4>initiateSpeculativeRequest</h4>
 <pre class="methodSignature">java.util.concurrent.ScheduledFuture&lt;?&gt;&nbsp;initiateSpeculativeRequest&#8203;(java.util.concurrent.ScheduledExecutorService&nbsp;scheduler,
-                                                                   <a href="SpeculativeRequestExecutor.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutor</a>&nbsp;requestExectuor)</pre>
+                                                                   <a href="SpeculativeRequestExecutor.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutor</a>&nbsp;requestExecutor)</pre>
 <div class="block">Initialize the speculative request execution policy and initiate requests.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>scheduler</code> - The scheduler service to issue the speculative request</dd>
-<dd><code>requestExectuor</code> - The executor is used to issue the actual speculative requests</dd>
+<dd><code>requestExecutor</code> - The executor is used to issue the actual speculative requests</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>ScheduledFuture, in case caller needs to cancel it.</dd>
 </dl>

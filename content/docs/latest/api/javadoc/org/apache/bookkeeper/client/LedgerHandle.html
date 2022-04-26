@@ -1965,7 +1965,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
               throws java.lang.InterruptedException,
                      <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Add entry synchronously to an open ledger. This can be used only with
- <a href="LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandleAdv</code></a> returned through ledgers created with <a href="BookKeeper.html#createLedgerAdv(int,int,int,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)"><code>BookKeeper.createLedgerAdv(int, int, int, DigestType, byte[])</code></a>.</div>
+ <a href="LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandleAdv</code></a> returned through ledgers created with <a href="BookKeeper.html#createLedgerAdv(int,int,int,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)"><code>BookKeeper.createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])</code></a>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId to be added</dd>
@@ -2018,7 +2018,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
               throws java.lang.InterruptedException,
                      <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Add entry synchronously to an open ledger. This can be used only with
- <a href="LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandleAdv</code></a> returned through ledgers created with <a href="BookKeeper.html#createLedgerAdv(int,int,int,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)"><code>BookKeeper.createLedgerAdv(int, int, int, DigestType, byte[])</code></a>.</div>
+ <a href="LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandleAdv</code></a> returned through ledgers created with <a href="BookKeeper.html#createLedgerAdv(int,int,int,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)"><code>BookKeeper.createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])</code></a>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId to be added.</dd>
@@ -2064,7 +2064,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
                           <a href="AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
                           java.lang.Object&nbsp;ctx)</pre>
 <div class="block">Add entry asynchronously to an open ledger. This can be used only with
- <a href="LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandleAdv</code></a> returned through ledgers created with <a href="BookKeeper.html#createLedgerAdv(int,int,int,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)"><code>BookKeeper.createLedgerAdv(int, int, int, DigestType, byte[])</code></a>.</div>
+ <a href="LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandleAdv</code></a> returned through ledgers created with <a href="BookKeeper.html#createLedgerAdv(int,int,int,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)"><code>BookKeeper.createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])</code></a>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId to be added</dd>
@@ -2127,7 +2127,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.
  This can be used only with <a href="LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandleAdv</code></a> returned through
  ledgers created with
- <a href="BookKeeper.html#createLedgerAdv(int,int,int,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)"><code>BookKeeper.createLedgerAdv(int, int, int, org.apache.bookkeeper.client.BookKeeper.DigestType, byte[])</code></a>.</div>
+ <a href="BookKeeper.html#createLedgerAdv(int,int,int,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)"><code>BookKeeper.createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])</code></a>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId of the entry to add.</dd>
@@ -2183,7 +2183,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
                           java.lang.Object&nbsp;ctx)</pre>
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.
  This can be used only with <a href="LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandleAdv</code></a> returned through
- ledgers created with <code>createLedgerAdv(int, int, int, DigestType, byte[])</code>.</div>
+ ledgers created with <a href="BookKeeper.html#createLedgerAdv(int,int,int,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)"><code>BookKeeper.createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])</code></a>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId of the entry to add.</dd>
