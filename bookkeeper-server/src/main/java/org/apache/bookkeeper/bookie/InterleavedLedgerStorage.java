@@ -536,7 +536,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         /*
          * Log the entry
          */
-        long pos = entryLogger.addEntry(ledgerId, entry);
+        long pos = entryLogger.addEntry(ledgerId, entry, rollLog);
 
         /*
          * Set offset of entry id to be the current ledger position

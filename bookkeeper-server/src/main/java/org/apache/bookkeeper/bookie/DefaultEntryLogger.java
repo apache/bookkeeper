@@ -602,6 +602,10 @@ public class DefaultEntryLogger implements EntryLogger {
         return entryLogManager.addEntry(ledger, Unpooled.wrappedBuffer(entry), true);
     }
 
+    long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
+        return entryLogManager.addEntry(ledger, entry, rollLog);
+    }
+
     @Override
     public long addEntry(long ledger, ByteBuf entry) throws IOException {
         return entryLogManager.addEntry(ledger, entry, true);

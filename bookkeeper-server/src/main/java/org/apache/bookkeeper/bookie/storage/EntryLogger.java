@@ -73,7 +73,7 @@ public interface EntryLogger extends AutoCloseable {
 
     /**
      * Create a new entrylog into which compacted entries can be added.
-     * There is a 1-1 mapping between logs thats that are being compacted
+     * There is a 1-1 mapping between logs that are being compacted
      * and the log the compacted entries are written to.
      */
     CompactionEntryLog newCompactionLog(long logToCompact) throws IOException;

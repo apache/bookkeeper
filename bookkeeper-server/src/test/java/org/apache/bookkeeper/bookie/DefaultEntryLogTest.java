@@ -78,8 +78,8 @@ import org.slf4j.LoggerFactory;
  * Tests for EntryLog.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class EntryLogTest {
-    private static final Logger LOG = LoggerFactory.getLogger(EntryLogTest.class);
+public class DefaultEntryLogTest {
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogTest.class);
 
     final List<File> tempDirs = new ArrayList<File>();
     final Random rand = new Random();

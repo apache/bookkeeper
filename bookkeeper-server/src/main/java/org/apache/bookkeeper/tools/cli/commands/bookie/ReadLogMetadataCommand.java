@@ -25,9 +25,9 @@ import java.io.File;
 import java.io.IOException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.ReadOnlyDefaultEntryLogger;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand.ReadLogMetadataFlags;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
@@ -53,7 +53,7 @@ public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> 
 
     private LedgerIdFormatter ledgerIdFormatter;
 
-    DefaultEntryLogger entryLogger = null;
+    EntryLogger entryLogger = null;
 
     public ReadLogMetadataCommand() {
         this(new ReadLogMetadataFlags());
