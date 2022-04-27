@@ -1208,13 +1208,13 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
     @Test
     public void testBasicReorderReadSequenceWithLocalRegion() throws Exception {
-        prepareNetworkTopologyForReorderTests(myRegion);
+        prepareNetworkTopologyForReorderTests("region2");
         basicReorderReadSequenceWithLocalRegionTest("region2", false);
     }
 
     @Test
     public void testBasicReorderReadLACSequenceWithLocalRegion() throws Exception {
-        prepareNetworkTopologyForReorderTests(myRegion);
+        prepareNetworkTopologyForReorderTests("region2");
         basicReorderReadSequenceWithLocalRegionTest("region2", true);
     }
 
