@@ -51,6 +51,8 @@ See [PR 2901](https://github.com/apache/bookkeeper/pull/2901) for details.
 
 ### Improvements
 
+* Build and tests work on JDK 17
+* CLI: listunderreplicated command has an option to return count without printing all ledgers https://github.com/apache/bookkeeper/pull/3228
 * Stream Storage: support an optional time to live (TTL) on a per table basis https://github.com/apache/bookkeeper/pull/2775
 * Added dDb ledger index rebuild operation and CLI commands https://github.com/apache/bookkeeper/pull/2774
 * Support multi ledger directories for rocksdb backend entryMetadataMap https://github.com/apache/bookkeeper/pull/2965
@@ -71,8 +73,11 @@ See [PR 2901](https://github.com/apache/bookkeeper/pull/2901) for details.
 * Backpressure: check all bookies of writeset are writable https://github.com/apache/bookkeeper/pull/3055
 * Fix Journal.ForceWriteThread.forceWriteRequests.put deadlock https://github.com/apache/bookkeeper/pull/2962
 * PendingReadOp: Fix ledgerEntryImpl reuse problem https://github.com/apache/bookkeeper/pull/3110
+* Region/rack aware placement policy: replace bookie bug https://github.com/apache/bookkeeper/pull/2642
+* ReplicationWorker: numLedgersReplicated metric does not update https://github.com/apache/bookkeeper/pull/3218
+* Force GC doesn't work under forceAllowCompaction when disk is full https://github.com/apache/bookkeeper/pull/3205
 
-### Multiple dependencies upgraded
+### Dependencies changes
 
 Upgraded dependencies to address CVEs include:
 * vertx
@@ -88,6 +93,12 @@ Upgraded dependencies to address CVEs include:
 * snakeyaml
 * RocksDB
 * jackson
+* jackson-databind
+* Zookeeper
+* http-core
+* dropwizard metrics
+
+Dependency on log4j v.1 is removed.
 
 ## Details
 

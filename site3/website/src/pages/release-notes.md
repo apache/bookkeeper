@@ -9,7 +9,7 @@ adds an option to run without journal, improves memory utilization and stability
 Apache BookKeeper users are encouraged to upgrade to 4.15.0. The technical details of this release are summarized
 below.
 
-## Breaking Changes
+### Breaking Changes
 
 * `BookieServer` API changed and the code that creates its instances will require addition
   of the `UncleanShutdownDetection` parameter.
@@ -30,9 +30,9 @@ below.
   Code that implements the interfaces will need changes.
   See [PR 2901](https://github.com/apache/bookkeeper/pull/2901) for details.
 
-## Highlights
+### Highlights
 
-### Configuration
+#### Configuration
 
 * [ledgerMetadataVersion](https://github.com/apache/bookkeeper/pull/2708):
   BookKeeper-Client config to write ledger metadata with configured version.
@@ -43,14 +43,16 @@ below.
 * [dbStorage_rocksDB_format_version](https://github.com/apache/bookkeeper/pull/2824)
   make rocksdb format version configurable.
 
-### Features
+#### Features
 
 * Running without journal. See [BP-46](https://github.com/apache/bookkeeper/pull/2706) for details.
 * A REST API to get or update bookie readOnly state. [Details](https://github.com/apache/bookkeeper/pull/2799)
 * Separate config files for Rocks DB. [Details](https://github.com/apache/bookkeeper/pull/3056/)
 
-### Improvements
+#### Improvements
 
+* Build and tests work on JDK 17
+* CLI: listunderreplicated command has an option to return count without printing all ledgers https://github.com/apache/bookkeeper/pull/3228
 * Stream Storage: support an optional time to live (TTL) on a per table basis https://github.com/apache/bookkeeper/pull/2775
 * Added dDb ledger index rebuild operation and CLI commands https://github.com/apache/bookkeeper/pull/2774
 * Support multi ledger directories for rocksdb backend entryMetadataMap https://github.com/apache/bookkeeper/pull/2965
@@ -60,7 +62,7 @@ below.
 * read speed rate limiter for scanning entry log file in entryMetadataMap rebuild https://github.com/apache/bookkeeper/pull/2963
 * Other improvements in areas such as test, documentation, CI, metrics, logging, and CLI tools.
 
-### Notable fixes
+#### Notable fixes
 
 * Bookkeeper client might not close the channel for several minutes after a Bookie crashes https://github.com/apache/bookkeeper/issues/2482
 * Stream storage: Ensure progress while restoring from checkpoint. https://github.com/apache/bookkeeper/pull/2764
@@ -71,8 +73,11 @@ below.
 * Backpressure: check all bookies of writeset are writable https://github.com/apache/bookkeeper/pull/3055
 * Fix Journal.ForceWriteThread.forceWriteRequests.put deadlock https://github.com/apache/bookkeeper/pull/2962
 * PendingReadOp: Fix ledgerEntryImpl reuse problem https://github.com/apache/bookkeeper/pull/3110
+* Region/rack aware placement policy: replace bookie bug https://github.com/apache/bookkeeper/pull/2642
+* ReplicationWorker: numLedgersReplicated metric does not update https://github.com/apache/bookkeeper/pull/3218
+* Force GC doesn't work under forceAllowCompaction when disk is full https://github.com/apache/bookkeeper/pull/3205
 
-### Multiple dependencies upgraded
+#### Dependencies changes
 
 Upgraded dependencies to address CVEs include:
 * vertx
@@ -88,8 +93,14 @@ Upgraded dependencies to address CVEs include:
 * snakeyaml
 * RocksDB
 * jackson
+* jackson-databind
+* Zookeeper
+* http-core
+* dropwizard metrics
 
-## Details
+Dependency on log4j v.1 is removed.
+
+### Details
 
 https://github.com/apache/bookkeeper/issues?q=+label%3Arelease%2F4.15.0
 
