@@ -80,9 +80,6 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultEntryLogger implements EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogger.class);
-    static final long UNASSIGNED_LEDGERID = -1L;
-    // log file suffix
-    static final String LOG_FILE_SUFFIX = ".log";
 
     @VisibleForTesting
     static final int UNINITIALIZED_LOG_ID = -0xDEAD;
