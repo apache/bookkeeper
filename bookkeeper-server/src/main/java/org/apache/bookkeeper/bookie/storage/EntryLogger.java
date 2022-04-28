@@ -37,9 +37,9 @@ import org.apache.bookkeeper.bookie.EntryLogMetadata;
  * naturally limits the offset and thus the size of the log to Integer.MAX_VALUE.
  */
 public interface EntryLogger extends AutoCloseable {
-    static final long UNASSIGNED_LEDGERID = -1L;
+    long UNASSIGNED_LEDGERID = -1L;
     // log file suffix
-    static final String LOG_FILE_SUFFIX = ".log";
+    String LOG_FILE_SUFFIX = ".log";
 
     /**
      * Add an entry for ledger ```ledgerId``` to the entrylog.
