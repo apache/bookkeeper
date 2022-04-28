@@ -56,12 +56,9 @@
     <module>bookkeeper-common</module>
     <module>bookkeeper-common-allocator</module>
     <module>stats</module>
-    <!-- TODO: move `bookkeeper-stats` and `bookkeeper-stats-providers` as submodules of `stats` -->
-    <module>bookkeeper-stats</module>
     <module>bookkeeper-proto</module>
     <module>bookkeeper-server</module>
     <module>bookkeeper-benchmark</module>
-    <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
     <module>stream</module>
     <module>tools</module>

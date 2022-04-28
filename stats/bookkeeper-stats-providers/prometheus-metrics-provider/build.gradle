@@ -22,7 +22,7 @@ plugins {
 }
 
 dependencies {
-    implementation project(":bookkeeper-stats")
+    implementation project(":stats:bookkeeper-stats-api")
     implementation depLibs.commonsConfiguration
     implementation depLibs.guava
     implementation depLibs.jettyServlet

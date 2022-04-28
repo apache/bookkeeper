@@ -24,7 +24,7 @@ plugins {
 
 dependencies {
     implementation project(':bookkeeper-common')
-    implementation project(':bookkeeper-stats')
+    implementation project(':stats:bookkeeper-stats-api')
     implementation depLibs.grpc
     runtimeOnly depLibs.googleHTTPClient
     implementation depLibs.guava
