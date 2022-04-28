@@ -18,55 +18,39 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>bookkeeper</artifactId>
-    <groupId>org.apache.bookkeeper</groupId>
+    <artifactId>bookkeeper-stats-providers</artifactId>
+    <groupId>org.apache.bookkeeper.stats</groupId>
     <version>4.16.0-SNAPSHOT</version>
-    <relativePath>../..</relativePath>
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
-  <artifactId>prometheus-metrics-provider</artifactId>
-  <name>Apache BookKeeper :: Stats Providers :: Prometheus</name>
+  <artifactId>codahale-metrics-provider</artifactId>
+  <name>Apache BookKeeper :: Stats Providers :: Codahale Metrics</name>
+  <url>http://maven.apache.org</url>
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
       <artifactId>bookkeeper-stats-api</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
-
     <dependency>
-      <groupId>io.prometheus</groupId>
-      <artifactId>simpleclient</artifactId>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-core</artifactId>
     </dependency>
-
     <dependency>
-      <groupId>io.prometheus</groupId>
-      <artifactId>simpleclient_hotspot</artifactId>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-jmx</artifactId>
     </dependency>
-
     <dependency>
-      <groupId>io.prometheus</groupId>
-      <artifactId>simpleclient_servlet</artifactId>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-jvm</artifactId>
     </dependency>
-    
     <dependency>
-       <groupId>io.netty</groupId>
-       <artifactId>netty-common</artifactId>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-graphite</artifactId>
     </dependency>
-
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-servlet</artifactId>
-    </dependency>
-
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
-    
-    <dependency>
-      <groupId>com.yahoo.datasketches</groupId>
-      <artifactId>sketches-core</artifactId>
-    </dependency>
-
   </dependencies>
 </project>

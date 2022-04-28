@@ -24,7 +24,7 @@ plugins {
 }
 
 dependencies {
-    implementation project(":bookkeeper-stats")
+    implementation project(":stats:bookkeeper-stats-api")
     implementation project(":cpu-affinity")
 
     implementation depLibs.errorprone

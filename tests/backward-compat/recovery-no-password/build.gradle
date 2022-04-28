@@ -21,7 +21,7 @@ dependencies {
     testImplementation project(":bookkeeper-server")
     testImplementation project(":bookkeeper-common")
     testImplementation project(":bookkeeper-common-allocator")
-    testImplementation project(":bookkeeper-stats")
+    testImplementation project(":stats:bookkeeper-stats-api")
     testImplementation depLibs.protobuf
     testImplementation project(":bookkeeper-proto")
     testImplementation depLibs.commonsConfiguration

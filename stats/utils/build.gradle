@@ -24,7 +24,7 @@ description = 'Apache BookKeeper :: Stats :: Utils'
 
 dependencies {
 
-    implementation project(':bookkeeper-stats')
+    implementation project(':stats:bookkeeper-stats-api')
 
     compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations

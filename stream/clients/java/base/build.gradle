@@ -18,7 +18,7 @@
  */
 dependencies {
     implementation project(':bookkeeper-common')
-    implementation project(':bookkeeper-stats')
+    implementation project(':stats:bookkeeper-stats-api')
     implementation project(':stream:common')
     implementation project(':stream:proto')
 

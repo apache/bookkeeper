@@ -25,7 +25,7 @@ plugins {
 dependencies {
     implementation project(':bookkeeper-server')
     implementation project(':bookkeeper-common')
-    implementation project(':bookkeeper-stats')
+    implementation project(':stats:bookkeeper-stats-api')
     implementation project(':stream:common')
     implementation depLibs.grpc
     implementation depLibs.guava

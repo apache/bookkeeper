@@ -350,9 +350,9 @@ allprojects {
 def javadocProjects = [
         ":bookkeeper-common",
         ":bookkeeper-server",
-        ":bookkeeper-stats",
-        ":bookkeeper-stats-providers:prometheus-metrics-provider",
-        ":bookkeeper-stats-providers:codahale-metrics-provider",
+        ":stats:bookkeeper-stats-api",
+        ":stats:bookkeeper-stats-providers:codahale-metrics-provider",
+        ":stats:bookkeeper-stats-providers:prometheus-metrics-provider",
 ]
 
 task generateApiJavadoc(type: Javadoc) {

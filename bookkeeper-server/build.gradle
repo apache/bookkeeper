@@ -27,10 +27,10 @@ dependencies {
     implementation project(':bookkeeper-common-allocator')
     implementation project(':bookkeeper-http:http-server')
     implementation project(':bookkeeper-proto')
-    implementation project(':bookkeeper-stats')
     implementation project(':bookkeeper-tools-framework')
     implementation project(':circe-checksum')
     implementation project(':cpu-affinity')
+    implementation project(':stats:bookkeeper-stats-api')
 
     compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations
@@ -58,7 +58,7 @@ dependencies {
     runtimeOnly depLibs.snappy
 
     testImplementation project(':testtools')
-    testImplementation project(':bookkeeper-stats-providers:prometheus-metrics-provider')
+    testImplementation project(':stats:bookkeeper-stats-providers:prometheus-metrics-provider')
     testImplementation project(':bookkeeper-http:vertx-http-server')
     testImplementation project(path: ':bookkeeper-common', configuration: 'testArtifacts')
 

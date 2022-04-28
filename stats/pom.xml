@@ -23,7 +23,6 @@
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
     <version>4.16.0-SNAPSHOT</version>
-    <relativePath>..</relativePath>
   </parent>
   <packaging>pom</packaging>
   <groupId>org.apache.bookkeeper.stats</groupId>
@@ -31,6 +30,8 @@
   <name>Apache BookKeeper :: Stats :: Parent</name>
 
   <modules>
+    <module>bookkeeper-stats-api</module>
+    <module>bookkeeper-stats-providers</module>
     <module>utils</module>
   </modules>
 
