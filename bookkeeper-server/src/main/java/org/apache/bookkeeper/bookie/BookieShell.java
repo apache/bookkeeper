@@ -176,7 +176,7 @@ public class BookieShell implements Tool {
     File[] ledgerDirectories;
     File[] journalDirectories;
 
-    DefaultEntryLogger entryLogger = null;
+    EntryLogger entryLogger = null;
     List<Journal> journals = null;
     EntryFormatter entryFormatter;
     LedgerIdFormatter ledgerIdFormatter;

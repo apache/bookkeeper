@@ -94,7 +94,7 @@ public class InterleavedStorageRegenerateIndexOp {
                 conf, diskChecker, NullStatsLogger.INSTANCE);
         LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
                 conf, diskChecker,  NullStatsLogger.INSTANCE, ledgerDirsManager);
-        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
+        EntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         final LedgerCache ledgerCache;
         if (dryRun) {
             ledgerCache = new DryRunLedgerCache();

@@ -89,7 +89,7 @@ import org.slf4j.LoggerFactory;
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
     private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
-    DefaultEntryLogger entryLogger;
+    EntryLogger entryLogger;
     @Getter
     LedgerCache ledgerCache;
     protected CheckpointSource checkpointSource = CheckpointSource.DEFAULT;
@@ -181,7 +181,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 LedgerManager ledgerManager,
                 LedgerDirsManager ledgerDirsManager,
                 LedgerDirsManager indexDirsManager,
-                DefaultEntryLogger entryLogger,
+                EntryLogger entryLogger,
                 StatsLogger statsLogger) throws IOException {
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");

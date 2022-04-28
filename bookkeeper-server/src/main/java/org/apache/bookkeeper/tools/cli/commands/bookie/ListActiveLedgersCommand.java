@@ -133,7 +133,7 @@ public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
             BKException.Code.OK, BKException.Code.ReadException);
           if (done.await(cmdFlags.timeout, TimeUnit.MILLISECONDS)){
             if  (resultCode.get() == BKException.Code.OK) {
-              DefaultEntryLogger entryLogger = new ReadOnlyDefaultEntryLogger(bkConf);
+              EntryLogger entryLogger = new ReadOnlyDefaultEntryLogger(bkConf);
               EntryLogMetadata entryLogMetadata = entryLogger.getEntryLogMetadata(cmdFlags.logId);
               List<Long> ledgersOnEntryLog = entryLogMetadata.getLedgersMap().keys();
               if (ledgersOnEntryLog.size() == 0) {
