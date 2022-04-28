@@ -32,8 +32,6 @@ testDefaultVariables() {
   assertEquals "BK_HOME is not set correctly" "${BK_HOMEDIR}" "${BK_HOME}"
   assertEquals "DEFAULT_LOG_CONF is not set correctly" "${BK_CONFDIR}/log4j2.xml" "${DEFAULT_LOG_CONF}"
   assertEquals "NETTY_LEAK_DETECTION_LEVEL is not set correctly" "disabled" "${NETTY_LEAK_DETECTION_LEVEL}"
-  assertEquals "NETTY_RECYCLER_MAXCAPACITY is not set correctly" "1000" "${NETTY_RECYCLER_MAXCAPACITY}"
-  assertEquals "NETTY_RECYCLER_LINKCAPACITY is not set correctly" "1024" "${NETTY_RECYCLER_LINKCAPACITY}"
   assertEquals "BOOKIE_MAX_HEAP_MEMORY is not set correctly" "1g" "${BOOKIE_MAX_HEAP_MEMORY}"
   assertEquals "BOOKIE_MIN_HEAP_MEMORY is not set correctly" "1g" "${BOOKIE_MIN_HEAP_MEMORY}"
   assertEquals "BOOKIE_MAX_DIRECT_MEMORY is not set correctly" "2g" "${BOOKIE_MAX_DIRECT_MEMORY}"
