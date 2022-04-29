@@ -30,7 +30,7 @@ import java.util.PrimitiveIterator.OfLong;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
+import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -94,7 +94,7 @@ public class InterleavedStorageRegenerateIndexOp {
                 conf, diskChecker, NullStatsLogger.INSTANCE);
         LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
                 conf, diskChecker,  NullStatsLogger.INSTANCE, ledgerDirsManager);
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         final LedgerCache ledgerCache;
         if (dryRun) {
             ledgerCache = new DryRunLedgerCache();

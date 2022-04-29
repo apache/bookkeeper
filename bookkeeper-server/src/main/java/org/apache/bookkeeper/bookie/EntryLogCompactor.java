@@ -27,7 +27,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,9 +85,9 @@ public class EntryLogCompactor extends AbstractLogCompactor {
     class CompactionScannerFactory {
         List<EntryLocation> offsets = new ArrayList<EntryLocation>();
 
-        EntryLogger.EntryLogScanner newScanner(final EntryLogMetadata meta) {
+        EntryLogScanner newScanner(final EntryLogMetadata meta) {
 
-            return new EntryLogger.EntryLogScanner() {
+            return new EntryLogScanner() {
                 @Override
                 public boolean accept(long ledgerId) {
                     return meta.containsLedger(ledgerId);

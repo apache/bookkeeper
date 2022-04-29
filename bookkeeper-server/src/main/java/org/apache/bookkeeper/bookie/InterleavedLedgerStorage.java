@@ -57,8 +57,9 @@ import lombok.Getter;
 
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -88,7 +89,7 @@ import org.slf4j.LoggerFactory;
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
     private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
-    EntryLogger entryLogger;
+    DefaultEntryLogger entryLogger;
     @Getter
     LedgerCache ledgerCache;
     protected CheckpointSource checkpointSource = CheckpointSource.DEFAULT;
@@ -158,7 +159,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 ledgerManager,
                 ledgerDirsManager,
                 indexDirsManager,
-                new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE),
+                new DefaultEntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE),
                         allocator),
                 statsLogger);
     }
@@ -184,7 +185,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 StatsLogger statsLogger) throws IOException {
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");
-        this.entryLogger = entryLogger;
+        this.entryLogger = (DefaultEntryLogger) entryLogger;
         this.entryLogger.addListener(this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
@@ -284,7 +285,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         LOG.info("Shutting down GC thread");
         gcThread.shutdown();
         LOG.info("Shutting down entry logger");
-        entryLogger.shutdown();
+        entryLogger.close();
         try {
             ledgerCache.close();
         } catch (IOException e) {
@@ -602,7 +603,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                             try {
                                 entryLogger.checkEntry(ledger, entry, offset);
                                 checkedEntries.increment();
-                            } catch (EntryLogger.EntryLookupException e) {
+                            } catch (DefaultEntryLogger.EntryLookupException e) {
                                 if (version != lep.getVersion()) {
                                     pageRetries.increment();
                                     if (lep.isDeleted()) {

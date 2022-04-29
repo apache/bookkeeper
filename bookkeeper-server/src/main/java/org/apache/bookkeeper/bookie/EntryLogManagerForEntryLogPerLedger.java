@@ -57,7 +57,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Counter;
@@ -259,7 +259,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
      */
     private final ConcurrentLongHashMap<BufferedLogChannelWithDirInfo> replicaOfCurrentLogChannels;
     private final CacheLoader<Long, EntryLogAndLockTuple> entryLogAndLockTupleCacheLoader;
-    private final EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
+    private final DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
     private final int entrylogMapAccessExpiryTimeInSeconds;
     private final int maximumNumberOfActiveEntryLogs;
     private final int entryLogPerLedgerCounterLimitsMultFactor;
@@ -269,9 +269,10 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     final EntryLogsPerLedgerCounter entryLogsPerLedgerCounter;
 
     EntryLogManagerForEntryLogPerLedger(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
-            EntryLoggerAllocator entryLoggerAllocator, List<EntryLogger.EntryLogListener> listeners,
-            EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus, StatsLogger statsLogger)
-            throws IOException {
+                                        EntryLoggerAllocator entryLoggerAllocator,
+                                        List<DefaultEntryLogger.EntryLogListener> listeners,
+                                        DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus,
+                                        StatsLogger statsLogger) throws IOException {
         super(conf, ledgerDirsManager, entryLoggerAllocator, listeners);
         this.recentlyCreatedEntryLogsStatus = recentlyCreatedEntryLogsStatus;
         this.rotatedLogChannels = new CopyOnWriteArrayList<BufferedLogChannel>();

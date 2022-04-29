@@ -35,6 +35,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -57,6 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.ldb.PersistentEntryLogMetadataMap;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -74,15 +76,17 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
-import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.TestUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
+
 import org.junit.Before;
 import org.junit.Test;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * This class tests the entry log compaction functionality.
@@ -742,7 +746,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // Now, let's mark E1 as flushed, as its ledger L1 has been deleted already. In this case, the GC algorithm
         // should consider it for deletion.
-        getGCThread().entryLogger.recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(1L);
+        ((DefaultEntryLogger) getGCThread().entryLogger).recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(1L);
         getGCThread().triggerGC(true, false, false).get();
         assertTrue("Found entry log file 1.log that should have been compacted in ledgerDirectory: "
                 + tmpDirs.getDirs().get(0), TestUtils.hasNoneLogFiles(tmpDirs.getDirs().get(0), 1));
@@ -752,7 +756,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         getGCThread().triggerGC(true, false, false).get();
         assertTrue("Found entry log file 0.log that should not have been compacted in ledgerDirectory: "
                 + tmpDirs.getDirs().get(0), TestUtils.hasAllLogFiles(tmpDirs.getDirs().get(0), 0));
-        getGCThread().entryLogger.recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(0L);
+        ((DefaultEntryLogger) getGCThread().entryLogger).recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(0L);
         getGCThread().triggerGC(true, false, false).get();
         assertTrue("Found entry log file 0.log that should have been compacted in ledgerDirectory: "
                 + tmpDirs.getDirs().get(0), TestUtils.hasNoneLogFiles(tmpDirs.getDirs().get(0), 0));
@@ -1285,7 +1289,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         BookieImpl.checkDirectoryStructure(curDir);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
 
-        conf.setEntryLogSizeLimit(EntryLogger.LOGFILE_HEADER_SIZE + 3 * (4 + ENTRY_SIZE));
+        conf.setEntryLogSizeLimit(DefaultEntryLogger.LOGFILE_HEADER_SIZE + 3 * (4 + ENTRY_SIZE));
         conf.setGcWaitTime(100);
         conf.setMinorCompactionThreshold(0.7f);
         conf.setMajorCompactionThreshold(0.0f);
@@ -1881,30 +1885,31 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             super(gcThread.conf,
                   gcThread.entryLogger,
                   gcThread.ledgerStorage,
-                    (long entry) -> {
-                        try {
-                            gcThread.removeEntryLog(entry);
-                        } catch (EntryLogMetadataMapException e) {
-                            LOG.warn("Failed to remove entry-log metadata {}", entry, e);
-                        }
-                    });
+                  gcThread.ledgerDirsManager,
+                  (long entry) -> {
+                      try {
+                          gcThread.removeEntryLog(entry);
+                      } catch (EntryLogMetadataMapException e) {
+                          LOG.warn("Failed to remove entry-log metadata {}", entry, e);
+                      }
+                  });
         }
 
-        synchronized void compactWithIndexFlushFailure(EntryLogMetadata metadata) {
+        synchronized void compactWithIndexFlushFailure(EntryLogMetadata metadata) throws IOException {
             LOG.info("Compacting entry log {}.", metadata.getEntryLogId());
-            CompactionPhase scanEntryLog = new ScanEntryLogPhase(metadata);
+            CompactionEntryLog compactionLog = entryLogger.newCompactionLog(metadata.getEntryLogId());
+
+            CompactionPhase scanEntryLog = new ScanEntryLogPhase(metadata, compactionLog);
             if (!scanEntryLog.run()) {
                 LOG.info("Compaction for {} end in ScanEntryLogPhase.", metadata.getEntryLogId());
                 return;
             }
-            File compactionLogFile = entryLogger.getCurCompactionLogFile();
-            CompactionPhase flushCompactionLog = new FlushCompactionLogPhase(metadata.getEntryLogId());
+            CompactionPhase flushCompactionLog = new FlushCompactionLogPhase(compactionLog);
             if (!flushCompactionLog.run()) {
                 LOG.info("Compaction for {} end in FlushCompactionLogPhase.", metadata.getEntryLogId());
                 return;
             }
-            File compactedLogFile = getCompactedLogFile(compactionLogFile, metadata.getEntryLogId());
-            CompactionPhase partialFlushIndexPhase = new PartialFlushIndexPhase(compactedLogFile);
+            CompactionPhase partialFlushIndexPhase = new PartialFlushIndexPhase(compactionLog);
             if (!partialFlushIndexPhase.run()) {
                 LOG.info("Compaction for {} end in PartialFlushIndexPhase.", metadata.getEntryLogId());
                 return;
@@ -1913,21 +1918,21 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             LOG.info("Compacted entry log : {}.", metadata.getEntryLogId());
         }
 
-        synchronized void compactWithLogFlushFailure(EntryLogMetadata metadata) {
+        synchronized void compactWithLogFlushFailure(EntryLogMetadata metadata) throws IOException {
             LOG.info("Compacting entry log {}", metadata.getEntryLogId());
-            CompactionPhase scanEntryLog = new ScanEntryLogPhase(metadata);
+            CompactionEntryLog compactionLog = entryLogger.newCompactionLog(metadata.getEntryLogId());
+
+            CompactionPhase scanEntryLog = new ScanEntryLogPhase(metadata, compactionLog);
             if (!scanEntryLog.run()) {
                 LOG.info("Compaction for {} end in ScanEntryLogPhase.", metadata.getEntryLogId());
                 return;
             }
-            File compactionLogFile = entryLogger.getCurCompactionLogFile();
-            CompactionPhase logFlushFailurePhase = new LogFlushFailurePhase(metadata.getEntryLogId());
+            CompactionPhase logFlushFailurePhase = new LogFlushFailurePhase(compactionLog);
             if (!logFlushFailurePhase.run()) {
                 LOG.info("Compaction for {} end in FlushCompactionLogPhase.", metadata.getEntryLogId());
                 return;
             }
-            File compactedLogFile = getCompactedLogFile(compactionLogFile, metadata.getEntryLogId());
-            CompactionPhase updateIndex = new UpdateIndexPhase(compactedLogFile);
+            CompactionPhase updateIndex = new UpdateIndexPhase(compactionLog);
             if (!updateIndex.run()) {
                 LOG.info("Compaction for entry log {} end in UpdateIndexPhase.", metadata.getEntryLogId());
                 return;
@@ -1938,42 +1943,32 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         private class PartialFlushIndexPhase extends UpdateIndexPhase {
 
-            public PartialFlushIndexPhase(File compactedLogFile) {
-                super(compactedLogFile);
+            public PartialFlushIndexPhase(CompactionEntryLog compactionLog) {
+                super(compactionLog);
             }
 
             @Override
             void start() throws IOException {
-                if (compactedLogFile != null && compactedLogFile.exists()) {
-                    File dir = compactedLogFile.getParentFile();
-                    String compactedFilename = compactedLogFile.getName();
-                    // create a hard link "x.log" for file "x.log.y.compacted"
-                    this.newEntryLogFile = new File(dir, compactedFilename.substring(0,
-                                compactedFilename.indexOf(".log") + 4));
-                    File hardlinkFile = new File(dir, newEntryLogFile.getName());
-                    if (!hardlinkFile.exists()) {
-                        HardLink.createHardLink(compactedLogFile, hardlinkFile);
-                    }
-                    assertTrue(offsets.size() > 1);
-                    // only flush index for one entry location
-                    EntryLocation el = offsets.get(0);
-                    ledgerStorage.updateEntriesLocations(offsets);
-                    ledgerStorage.flushEntriesLocationsIndex();
-                    throw new IOException("Flush ledger index encounter exception");
-                }
+                compactionLog.makeAvailable();
+                assertTrue(offsets.size() > 1);
+                // only flush index for one entry location
+                EntryLocation el = offsets.get(0);
+                ledgerStorage.updateEntriesLocations(offsets);
+                ledgerStorage.flushEntriesLocationsIndex();
+                throw new IOException("Flush ledger index encounter exception");
             }
         }
 
         private class LogFlushFailurePhase extends FlushCompactionLogPhase {
 
-            LogFlushFailurePhase(long compactingLogId) {
-                super(compactingLogId);
+            LogFlushFailurePhase(CompactionEntryLog compactionEntryLog) {
+                super(compactionEntryLog);
             }
 
             @Override
             void start() throws IOException {
                 // flush the current compaction log
-                entryLogger.flushCompactionLog();
+                compactionLog.flush();
                 throw new IOException("Encounter IOException when trying to flush compaction log");
             }
         }

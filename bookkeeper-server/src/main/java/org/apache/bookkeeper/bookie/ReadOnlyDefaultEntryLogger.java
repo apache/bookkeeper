@@ -29,14 +29,14 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 /**
  * Read Only Entry Logger.
  */
-public class ReadOnlyEntryLogger extends EntryLogger {
+public class ReadOnlyDefaultEntryLogger extends DefaultEntryLogger {
 
-    public ReadOnlyEntryLogger(ServerConfiguration conf) throws IOException {
+    public ReadOnlyDefaultEntryLogger(ServerConfiguration conf) throws IOException {
         super(conf);
     }
 
     @Override
-    protected boolean removeEntryLog(long entryLogId) {
+    public boolean removeEntryLog(long entryLogId) {
         // can't remove entry log in readonly mode
         return false;
     }

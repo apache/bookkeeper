@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
-import org.apache.bookkeeper.bookie.ReadOnlyEntryLogger;
+import org.apache.bookkeeper.bookie.ReadOnlyDefaultEntryLogger;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.junit.Assert;
@@ -49,7 +49,7 @@ public class ReadLogMetadataCommandTest extends BookieCommandTestBase {
         mockServerConfigurationConstruction();
         entryLogMetadata = mock(EntryLogMetadata.class);
 
-        mockConstruction(ReadOnlyEntryLogger.class, (entryLogger, context) -> {
+        mockConstruction(ReadOnlyDefaultEntryLogger.class, (entryLogger, context) -> {
             when(entryLogger.getEntryLogMetadata(anyLong())).thenReturn(entryLogMetadata);
         });
 
@@ -69,7 +69,7 @@ public class ReadLogMetadataCommandTest extends BookieCommandTestBase {
     public void commandTest() throws Exception {
         ReadLogMetadataCommand cmd = new ReadLogMetadataCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1" }));
-        verify(getMockedConstruction(ReadOnlyEntryLogger.class).constructed().get(0), times(1))
+        verify(getMockedConstruction(ReadOnlyDefaultEntryLogger.class).constructed().get(0), times(1))
                 .getEntryLogMetadata(anyLong());
         verify(entryLogMetadata, times(1)).getLedgersMap();
     }

@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.locks.Lock;
 
-import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -78,8 +78,8 @@ import org.slf4j.LoggerFactory;
  * Tests for EntryLog.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class EntryLogTest {
-    private static final Logger LOG = LoggerFactory.getLogger(EntryLogTest.class);
+public class DefaultEntryLogTest {
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogTest.class);
 
     final List<File> tempDirs = new ArrayList<File>();
     final Random rand = new Random();
@@ -94,7 +94,7 @@ public class EntryLogTest {
     private File curDir;
     private ServerConfiguration conf;
     private LedgerDirsManager dirsMgr;
-    private EntryLogger entryLogger;
+    private DefaultEntryLogger entryLogger;
 
     @Before
     public void setUp() throws Exception {
@@ -108,13 +108,13 @@ public class EntryLogTest {
             new DiskChecker(
                 conf.getDiskUsageThreshold(),
                 conf.getDiskUsageWarnThreshold()));
-        this.entryLogger = new EntryLogger(conf, dirsMgr);
+        this.entryLogger = new DefaultEntryLogger(conf, dirsMgr);
     }
 
     @After
     public void tearDown() throws Exception {
         if (null != this.entryLogger) {
-            entryLogger.shutdown();
+            entryLogger.close();
         }
 
         for (File dir : tempDirs) {
@@ -125,7 +125,7 @@ public class EntryLogTest {
 
     @Test
     public void testDeferCreateNewLog() throws Exception {
-        entryLogger.shutdown();
+        entryLogger.close();
 
         // mark `curDir` as filled
         this.conf.setMinUsableSizeForEntryLogCreation(1);
@@ -137,10 +137,10 @@ public class EntryLogTest {
                 conf.getDiskUsageWarnThreshold()));
         this.dirsMgr.addToFilledDirs(curDir);
 
-        entryLogger = new EntryLogger(conf, dirsMgr);
+        entryLogger = new DefaultEntryLogger(conf, dirsMgr);
         EntryLogManagerForSingleEntryLog entryLogManager =
                 (EntryLogManagerForSingleEntryLog) entryLogger.getEntryLogManager();
-        assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogManager.getCurrentLogId());
+        assertEquals(DefaultEntryLogger.UNINITIALIZED_LOG_ID, entryLogManager.getCurrentLogId());
 
         // add the first entry will trigger file creation
         entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
@@ -149,7 +149,7 @@ public class EntryLogTest {
 
     @Test
     public void testDeferCreateNewLogWithoutEnoughDiskSpaces() throws Exception {
-        entryLogger.shutdown();
+        entryLogger.close();
 
         // mark `curDir` as filled
         this.conf.setMinUsableSizeForEntryLogCreation(Long.MAX_VALUE);
@@ -161,17 +161,17 @@ public class EntryLogTest {
                 conf.getDiskUsageWarnThreshold()));
         this.dirsMgr.addToFilledDirs(curDir);
 
-        entryLogger = new EntryLogger(conf, dirsMgr);
+        entryLogger = new DefaultEntryLogger(conf, dirsMgr);
         EntryLogManagerForSingleEntryLog entryLogManager =
                 (EntryLogManagerForSingleEntryLog) entryLogger.getEntryLogManager();
-        assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogManager.getCurrentLogId());
+        assertEquals(DefaultEntryLogger.UNINITIALIZED_LOG_ID, entryLogManager.getCurrentLogId());
 
         // add the first entry will trigger file creation
         try {
             entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
             fail("Should fail to append entry if there is no enough reserved space left");
         } catch (NoWritableLedgerDirException e) {
-            assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogManager.getCurrentLogId());
+            assertEquals(DefaultEntryLogger.UNINITIALIZED_LOG_ID, entryLogManager.getCurrentLogId());
         }
     }
 
@@ -182,14 +182,14 @@ public class EntryLogTest {
         entryLogger.addEntry(3L, generateEntry(3, 1).nioBuffer());
         entryLogger.addEntry(2L, generateEntry(2, 1).nioBuffer());
         entryLogger.flush();
-        entryLogger.shutdown();
+        entryLogger.close();
         // now lets truncate the file to corrupt the last entry, which simulates a partial write
         File f = new File(curDir, "0.log");
         RandomAccessFile raf = new RandomAccessFile(f, "rw");
         raf.setLength(raf.length() - 10);
         raf.close();
         // now see which ledgers are in the log
-        entryLogger = new EntryLogger(conf, dirsMgr);
+        entryLogger = new DefaultEntryLogger(conf, dirsMgr);
 
         EntryLogMetadata meta = entryLogger.getEntryLogMetadata(0L);
         LOG.info("Extracted Meta From Entry Log {}", meta);
@@ -230,12 +230,12 @@ public class EntryLogTest {
         for (int i = 0; i < numLogs; i++) {
             positions[i] = new long[numEntries];
 
-            EntryLogger logger = new EntryLogger(conf, dirsMgr);
+            DefaultEntryLogger logger = new DefaultEntryLogger(conf, dirsMgr);
             for (int j = 0; j < numEntries; j++) {
                 positions[i][j] = logger.addEntry((long) i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
-            logger.shutdown();
+            logger.close();
         }
         // delete last log id
         File lastLogId = new File(curDir, "lastId");
@@ -245,15 +245,15 @@ public class EntryLogTest {
         for (int i = numLogs; i < 2 * numLogs; i++) {
             positions[i] = new long[numEntries];
 
-            EntryLogger logger = new EntryLogger(conf, dirsMgr);
+            DefaultEntryLogger logger = new DefaultEntryLogger(conf, dirsMgr);
             for (int j = 0; j < numEntries; j++) {
                 positions[i][j] = logger.addEntry((long) i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
-            logger.shutdown();
+            logger.close();
         }
 
-        EntryLogger newLogger = new EntryLogger(conf, dirsMgr);
+        DefaultEntryLogger newLogger = new DefaultEntryLogger(conf, dirsMgr);
         for (int i = 0; i < (2 * numLogs + 1); i++) {
             File logFile = new File(curDir, Long.toHexString(i) + ".log");
             assertTrue(logFile.exists());
@@ -281,9 +281,9 @@ public class EntryLogTest {
     public void testEntryLoggerShouldThrowFNFEIfDirectoriesDoesNotExist()
             throws Exception {
         File tmpDir = createTempDir("bkTest", ".dir");
-        EntryLogger entryLogger = null;
+        DefaultEntryLogger entryLogger = null;
         try {
-            entryLogger = new EntryLogger(conf, new LedgerDirsManager(conf, new File[] { tmpDir },
+            entryLogger = new DefaultEntryLogger(conf, new LedgerDirsManager(conf, new File[] { tmpDir },
                     new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())));
             fail("Expecting FileNotFoundException");
         } catch (FileNotFoundException e) {
@@ -291,7 +291,7 @@ public class EntryLogTest {
                     .getLocalizedMessage());
         } finally {
             if (entryLogger != null) {
-                entryLogger.shutdown();
+                entryLogger.close();
             }
         }
     }
@@ -309,7 +309,7 @@ public class EntryLogTest {
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(),
                 ledgerDir2.getAbsolutePath() });
         BookieImpl bookie = new TestBookieImpl(conf);
-        EntryLogger entryLogger = new EntryLogger(conf,
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf,
                 bookie.getLedgerDirsManager());
         InterleavedLedgerStorage ledgerStorage =
                 ((InterleavedLedgerStorage) bookie.ledgerStorage.getUnderlyingLedgerStorage());
@@ -323,7 +323,7 @@ public class EntryLogTest {
         ledgerStorage.addEntry(generateEntry(2, 1));
         // Add entry with disk full failure simulation
         bookie.getLedgerDirsManager().addToFilledDirs(((EntryLogManagerBase) entryLogger.getEntryLogManager())
-                .getCurrentLogForLedger(EntryLogger.UNASSIGNED_LEDGERID).getLogFile().getParentFile());
+                .getCurrentLogForLedger(DefaultEntryLogger.UNASSIGNED_LEDGERID).getLogFile().getParentFile());
         ledgerStorage.addEntry(generateEntry(3, 1));
         // Verify written entries
         Assert.assertTrue(0 == generateEntry(1, 1).compareTo(ledgerStorage.getEntry(1, 1)));
@@ -343,7 +343,7 @@ public class EntryLogTest {
         entryLogger.addEntry(1L, generateEntry(1, 2).nioBuffer());
 
         EntryLogManagerBase entryLogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
-        entryLogManager.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
+        entryLogManager.createNewLog(DefaultEntryLogger.UNASSIGNED_LEDGERID);
         entryLogManager.flushRotatedLogs();
 
         EntryLogMetadata meta = entryLogger.extractEntryLogMetadataFromIndex(0L);
@@ -366,19 +366,19 @@ public class EntryLogTest {
         entryLogger.addEntry(3L, generateEntry(3, 1).nioBuffer());
         entryLogger.addEntry(2L, generateEntry(2, 1).nioBuffer());
         entryLogger.addEntry(1L, generateEntry(1, 2).nioBuffer());
-        ((EntryLogManagerBase) entryLogger.getEntryLogManager()).createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
-        entryLogger.shutdown();
+        ((EntryLogManagerBase) entryLogger.getEntryLogManager()).createNewLog(DefaultEntryLogger.UNASSIGNED_LEDGERID);
+        entryLogger.close();
 
         // Rewrite the entry log header to be on V0 format
         File f = new File(curDir, "0.log");
         RandomAccessFile raf = new RandomAccessFile(f, "rw");
-        raf.seek(EntryLogger.HEADER_VERSION_POSITION);
+        raf.seek(DefaultEntryLogger.HEADER_VERSION_POSITION);
         // Write zeros to indicate V0 + no ledgers map info
         raf.write(new byte[4 + 8]);
         raf.close();
 
         // now see which ledgers are in the log
-        entryLogger = new EntryLogger(conf, dirsMgr);
+        entryLogger = new DefaultEntryLogger(conf, dirsMgr);
 
         try {
             entryLogger.extractEntryLogMetadataFromIndex(0L);
@@ -404,25 +404,25 @@ public class EntryLogTest {
      */
     @Test
     public void testPreAllocateLog() throws Exception {
-        entryLogger.shutdown();
+        entryLogger.close();
 
         // enable pre-allocation case
         conf.setEntryLogFilePreAllocationEnabled(true);
 
-        entryLogger = new EntryLogger(conf, dirsMgr);
+        entryLogger = new DefaultEntryLogger(conf, dirsMgr);
         // create a logger whose initialization phase allocating a new entry log
-        ((EntryLogManagerBase) entryLogger.getEntryLogManager()).createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
+        ((EntryLogManagerBase) entryLogger.getEntryLogManager()).createNewLog(DefaultEntryLogger.UNASSIGNED_LEDGERID);
         assertNotNull(entryLogger.getEntryLoggerAllocator().getPreallocationFuture());
 
         entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
         // the Future<BufferedLogChannel> is not null all the time
         assertNotNull(entryLogger.getEntryLoggerAllocator().getPreallocationFuture());
-        entryLogger.shutdown();
+        entryLogger.close();
 
         // disable pre-allocation case
         conf.setEntryLogFilePreAllocationEnabled(false);
         // create a logger
-        entryLogger = new EntryLogger(conf, dirsMgr);
+        entryLogger = new DefaultEntryLogger(conf, dirsMgr);
         assertNull(entryLogger.getEntryLoggerAllocator().getPreallocationFuture());
 
         entryLogger.addEntry(2L, generateEntry(1, 1).nioBuffer());
@@ -440,13 +440,13 @@ public class EntryLogTest {
         EntryLogManagerBase entryLogManagerBase = ((EntryLogManagerBase) entryLogger.getEntryLogManager());
         assertEquals(Sets.newHashSet(), entryLogger.getEntryLogsSet());
 
-        entryLogManagerBase.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
+        entryLogManagerBase.createNewLog(DefaultEntryLogger.UNASSIGNED_LEDGERID);
         entryLogManagerBase.flushRotatedLogs();
 
         Thread.sleep(2000);
         assertEquals(Sets.newHashSet(0L, 1L), entryLogger.getEntryLogsSet());
 
-        entryLogManagerBase.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
+        entryLogManagerBase.createNewLog(DefaultEntryLogger.UNASSIGNED_LEDGERID);
         entryLogManagerBase.flushRotatedLogs();
 
         assertEquals(Sets.newHashSet(0L, 1L, 2L), entryLogger.getEntryLogsSet());
@@ -462,7 +462,7 @@ public class EntryLogTest {
      */
     @Test
     public void testFlushOrder() throws Exception {
-        entryLogger.shutdown();
+        entryLogger.close();
 
         int logSizeLimit = 256 * 1024;
         conf.setEntryLogPerLedgerEnabled(false);
@@ -470,7 +470,7 @@ public class EntryLogTest {
         conf.setFlushIntervalInBytes(0);
         conf.setEntryLogSizeLimit(logSizeLimit);
 
-        entryLogger = new EntryLogger(conf, dirsMgr);
+        entryLogger = new DefaultEntryLogger(conf, dirsMgr);
         EntryLogManagerBase entryLogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
         AtomicBoolean exceptionHappened = new AtomicBoolean(false);
 
@@ -487,7 +487,7 @@ public class EntryLogTest {
         addEntriesAndRotateLogs(entryLogger, 30);
 
         rotatedLogChannels = new LinkedList<BufferedLogChannel>(entryLogManager.getRotatedLogChannels());
-        currentActiveChannel = entryLogManager.getCurrentLogForLedger(EntryLogger.UNASSIGNED_LEDGERID);
+        currentActiveChannel = entryLogManager.getCurrentLogForLedger(DefaultEntryLogger.UNASSIGNED_LEDGERID);
         long currentActiveChannelUnpersistedBytes = currentActiveChannel.getUnpersistedBytes();
 
         Thread flushThread = new Thread(new Runnable() {
@@ -512,7 +512,7 @@ public class EntryLogTest {
                      * here we are adding entry of size logSizeLimit with
                      * rolllog=true, so it would create a new entrylog.
                      */
-                    entryLogger.addEntry(123, generateEntry(123, 456, logSizeLimit), true);
+                    entryLogger.addEntry(123, generateEntry(123, 456, logSizeLimit));
                 } catch (InterruptedException | BrokenBarrierException | IOException e) {
                     LOG.error("Exception happened for entryLogManager.createNewLog", e);
                     exceptionHappened.set(true);
@@ -551,18 +551,18 @@ public class EntryLogTest {
         }
     }
 
-    void addEntriesAndRotateLogs(EntryLogger entryLogger, int numOfRotations)
+    void addEntriesAndRotateLogs(DefaultEntryLogger entryLogger, int numOfRotations)
             throws IOException {
         EntryLogManagerBase entryLogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
-        entryLogManager.setCurrentLogForLedgerAndAddToRotate(EntryLogger.UNASSIGNED_LEDGERID, null);
+        entryLogManager.setCurrentLogForLedgerAndAddToRotate(DefaultEntryLogger.UNASSIGNED_LEDGERID, null);
         for (int i = 0; i < numOfRotations; i++) {
             addEntries(entryLogger, 10);
-            entryLogManager.setCurrentLogForLedgerAndAddToRotate(EntryLogger.UNASSIGNED_LEDGERID, null);
+            entryLogManager.setCurrentLogForLedgerAndAddToRotate(DefaultEntryLogger.UNASSIGNED_LEDGERID, null);
         }
         addEntries(entryLogger, 10);
     }
 
-    void addEntries(EntryLogger entryLogger, int noOfEntries) throws IOException {
+    void addEntries(DefaultEntryLogger entryLogger, int noOfEntries) throws IOException {
         for (int j = 0; j < noOfEntries; j++) {
             int ledgerId = Math.abs(rand.nextInt());
             int entryId = Math.abs(rand.nextInt());
@@ -780,8 +780,8 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
-        EntryLogger.RecentEntryLogsStatus recentlyCreatedLogsStatus = entryLogger.recentlyCreatedEntryLogsStatus;
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedLogsStatus = entryLogger.recentlyCreatedEntryLogsStatus;
 
         recentlyCreatedLogsStatus.createdEntryLog(0L);
         Assert.assertEquals("entryLogger's leastUnflushedLogId ", 0L, entryLogger.getLeastUnflushedLogId());
@@ -842,7 +842,7 @@ public class EntryLogTest {
         conf.setLedgerDirNames(createAndGetLedgerDirs(2));
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerBase entryLogManagerBase = ((EntryLogManagerBase) entryLogger.getEntryLogManager());
 
         /*
@@ -852,7 +852,7 @@ public class EntryLogTest {
         int firstEntrySize = 1000;
         long entry0Position = entryLogger.addEntry(0L, generateEntry(ledgerId, 0L, firstEntrySize));
         // entrylogger writes length of the entry (4 bytes) before writing entry
-        long expectedUnpersistedBytes = EntryLogger.LOGFILE_HEADER_SIZE + firstEntrySize + 4;
+        long expectedUnpersistedBytes = DefaultEntryLogger.LOGFILE_HEADER_SIZE + firstEntrySize + 4;
         Assert.assertEquals("Unpersisted Bytes of entrylog", expectedUnpersistedBytes,
                 entryLogManagerBase.getCurrentLogForLedger(ledgerId).getUnpersistedBytes());
 
@@ -869,7 +869,7 @@ public class EntryLogTest {
          * newEntryLogger
          */
         conf.setEntryLogPerLedgerEnabled(false);
-        EntryLogger newEntryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger newEntryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManager newEntryLogManager = newEntryLogger.getEntryLogManager();
         Assert.assertEquals("EntryLogManager class type", EntryLogManagerForSingleEntryLog.class,
                 newEntryLogManager.getClass());
@@ -900,7 +900,7 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
 
@@ -969,12 +969,15 @@ public class EntryLogTest {
         }
     }
 
-    private EntryLogger.BufferedLogChannel createDummyBufferedLogChannel(EntryLogger entryLogger, long logid,
-            ServerConfiguration servConf) throws IOException {
+    private DefaultEntryLogger.BufferedLogChannel createDummyBufferedLogChannel(DefaultEntryLogger entryLogger,
+                                                                                long logid,
+                                                                                ServerConfiguration servConf)
+        throws IOException {
         File tmpFile = File.createTempFile("entrylog", logid + "");
         tmpFile.deleteOnExit();
         FileChannel fc = new RandomAccessFile(tmpFile, "rw").getChannel();
-        EntryLogger.BufferedLogChannel logChannel = new BufferedLogChannel(UnpooledByteBufAllocator.DEFAULT, fc, 10, 10,
+        DefaultEntryLogger.BufferedLogChannel logChannel =
+            new BufferedLogChannel(UnpooledByteBufAllocator.DEFAULT, fc, 10, 10,
                 logid, tmpFile, servConf.getFlushIntervalInBytes());
         return logChannel;
     }
@@ -1050,7 +1053,7 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entryLogManager =
                 (EntryLogManagerForEntryLogPerLedger) entryLogger.getEntryLogManager();
 
@@ -1087,7 +1090,7 @@ public class EntryLogTest {
      */
     @Test
     public void testCacheMaximumSizeEvictionPolicy() throws Exception {
-        entryLogger.shutdown();
+        entryLogger.close();
         final int cacheMaximumSize = 20;
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -1098,7 +1101,7 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entryLogManager =
                 (EntryLogManagerForEntryLogPerLedger) entryLogger.getEntryLogManager();
 
@@ -1121,7 +1124,7 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
 
@@ -1173,7 +1176,7 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
 
@@ -1235,7 +1238,7 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entryLogManager =
                 (EntryLogManagerForEntryLogPerLedger) entryLogger.getEntryLogManager();
 
@@ -1289,7 +1292,7 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entryLogManager =
                 (EntryLogManagerForEntryLogPerLedger) entryLogger.getEntryLogManager();
 
@@ -1357,7 +1360,7 @@ public class EntryLogTest {
         conf.setLedgerDirNames(createAndGetLedgerDirs(2));
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerBase entryLogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
         Assert.assertEquals("EntryLogManager class type", EntryLogManagerForEntryLogPerLedger.class,
                 entryLogManager.getClass());
@@ -1374,7 +1377,7 @@ public class EntryLogTest {
         for (long i = 0; i < numOfActiveLedgers; i++) {
             BufferedLogChannel logChannel =  entryLogManager.getCurrentLogForLedger(i);
             Assert.assertTrue("unpersistedBytes should be greater than LOGFILE_HEADER_SIZE",
-                    logChannel.getUnpersistedBytes() > EntryLogger.LOGFILE_HEADER_SIZE);
+                    logChannel.getUnpersistedBytes() > DefaultEntryLogger.LOGFILE_HEADER_SIZE);
         }
 
         for (long i = 0; i < numOfActiveLedgers; i++) {
@@ -1395,8 +1398,8 @@ public class EntryLogTest {
          */
         for (long i = 0; i < numOfActiveLedgers; i++) {
             BufferedLogChannel logChannel = entryLogManager.getCurrentLogForLedger(i);
-            Assert.assertEquals("unpersistedBytes should be LOGFILE_HEADER_SIZE", EntryLogger.LOGFILE_HEADER_SIZE,
-                    logChannel.getUnpersistedBytes());
+            Assert.assertEquals("unpersistedBytes should be LOGFILE_HEADER_SIZE",
+                DefaultEntryLogger.LOGFILE_HEADER_SIZE, logChannel.getUnpersistedBytes());
         }
 
         for (int j = numEntries; j < 2 * numEntries; j++) {
@@ -1408,7 +1411,7 @@ public class EntryLogTest {
         for (long i = 0; i < numOfActiveLedgers; i++) {
             BufferedLogChannel logChannel =  entryLogManager.getCurrentLogForLedger(i);
             Assert.assertTrue("unpersistedBytes should be greater than LOGFILE_HEADER_SIZE",
-                    logChannel.getUnpersistedBytes() > EntryLogger.LOGFILE_HEADER_SIZE);
+                    logChannel.getUnpersistedBytes() > DefaultEntryLogger.LOGFILE_HEADER_SIZE);
         }
 
         Assert.assertEquals("LeastUnflushedloggerID", 0, entryLogger.getLeastUnflushedLogId());
@@ -1444,7 +1447,7 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerBase entryLogManagerBase = ((EntryLogManagerBase) entryLogger.getEntryLogManager());
 
         int numOfActiveLedgers = 10;
@@ -1513,9 +1516,9 @@ public class EntryLogTest {
         long ledgerId;
         int entryId;
         long position;
-        EntryLogger entryLogger;
+        DefaultEntryLogger entryLogger;
 
-        ReadTask(long ledgerId, int entryId, long position, EntryLogger entryLogger) {
+        ReadTask(long ledgerId, int entryId, long position, DefaultEntryLogger entryLogger) {
             this.ledgerId = ledgerId;
             this.entryId = entryId;
             this.position = position;
@@ -1554,7 +1557,7 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         int numOfActiveLedgers = 15;
         int numEntries = 2000;
         final AtomicLongArray positions = new AtomicLongArray(numOfActiveLedgers * numEntries);
@@ -1633,7 +1636,7 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger)
                 entryLogger.getEntryLogManager();
         Assert.assertEquals("EntryLogManager class type", EntryLogManagerForEntryLogPerLedger.class,
@@ -1704,9 +1707,9 @@ public class EntryLogTest {
      * in this method we add an entry and validate the ledgerdir of the
      * currentLogForLedger against the provided expected ledgerDirs.
      */
-    void addEntryAndValidateFolders(EntryLogger entryLogger, EntryLogManagerBase entryLogManager, int entryId,
-            File expectedDirForLedger0, boolean equalsForLedger0, File expectedDirForLedger1,
-            File expectedDirForLedger2) throws IOException {
+    void addEntryAndValidateFolders(DefaultEntryLogger entryLogger, EntryLogManagerBase entryLogManager, int entryId,
+                                    File expectedDirForLedger0, boolean equalsForLedger0, File expectedDirForLedger1,
+                                    File expectedDirForLedger2) throws IOException {
         entryLogger.addEntry(0L, generateEntry(0, entryId));
         entryLogger.addEntry(1L, generateEntry(1, entryId));
         entryLogger.addEntry(2L, generateEntry(2, entryId));
@@ -1752,8 +1755,8 @@ public class EntryLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
-        EntryLogManagerBase entryLogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
+        DefaultEntryLogger defaultEntryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerBase entryLogManager = (EntryLogManagerBase) defaultEntryLogger.getEntryLogManager();
         Assert.assertEquals(
                 "EntryLogManager class type", initialEntryLogPerLedgerEnabled
                         ? EntryLogManagerForEntryLogPerLedger.class : EntryLogManagerForSingleEntryLog.class,
@@ -1771,7 +1774,7 @@ public class EntryLogTest {
          */
         for (int j = 0; j < numEntries; j++) {
             for (int i = 0; i < numOfActiveLedgers; i++) {
-                positions[i][j] = entryLogger.addEntry((long) i, generateEntry(i, j));
+                positions[i][j] = defaultEntryLogger.addEntry((long) i, generateEntry(i, j));
                 long entryLogId = (positions[i][j] >> 32L);
                 if (initialEntryLogPerLedgerEnabled) {
                     Assert.assertEquals("EntryLogId for ledger: " + i, i, entryLogId);
@@ -1799,7 +1802,7 @@ public class EntryLogTest {
         conf.setEntryLogPerLedgerEnabled(laterEntryLogPerLedgerEnabled);
         LedgerDirsManager newLedgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger newEntryLogger = new EntryLogger(conf, newLedgerDirsManager);
+        DefaultEntryLogger newEntryLogger = new DefaultEntryLogger(conf, newLedgerDirsManager);
         EntryLogManager newEntryLogManager = newEntryLogger.getEntryLogManager();
         Assert.assertEquals("EntryLogManager class type",
                 laterEntryLogPerLedgerEnabled ? EntryLogManagerForEntryLogPerLedger.class
