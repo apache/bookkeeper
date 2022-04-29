@@ -63,6 +63,9 @@ jobs:
       - name: Run bookie tests
         run: mvn -B -nsu -pl bookkeeper-server test -Dtest="org.apache.bookkeeper.bookie.*Test" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
+      - name: Run shell tests
+        run: mvn -B -nsu -pl tests/scripts install -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories If failure
         if: failure()
         continue-on-error: true
