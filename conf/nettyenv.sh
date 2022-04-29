@@ -23,8 +23,3 @@
 # netty buffer leak detection level - {@link http://netty.io/wiki/reference-counted-objects.html#wiki-h3-11}
 # NETTY_LEAK_DETECTION_LEVEL=
 
-# netty recycler max capacity
-# NETTY_RECYCLER_MAXCAPACITY=
-
-# netty recycler link capacity
-# NETTY_RECYCLER_LINKCAPACITY=
