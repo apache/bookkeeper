@@ -40,8 +40,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.IntStream;
 
 import org.apache.bookkeeper.bookie.EntryLogManagerForEntryLogPerLedger.BufferedLogChannelWithDirInfo;
-import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
-import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.Counter;
@@ -122,7 +120,7 @@ public class CreateNewLogTest {
         File newLogFile = new File(dir, logFileName);
         newLogFile.createNewFile();
 
-        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger el = new DefaultEntryLogger(conf, ledgerDirsManager);
         // Calls createNewLog, and with the number of directories we
         // are using, if it picks one at random it will fail.
         EntryLogManagerForSingleEntryLog entryLogManager = (EntryLogManagerForSingleEntryLog) el.getEntryLogManager();
@@ -154,7 +152,7 @@ public class CreateNewLogTest {
             ledgerDirsManager.addToFilledDirs(tdir);
         }
 
-        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger el = new DefaultEntryLogger(conf, ledgerDirsManager);
         // Calls createNewLog, and with the number of directories we
         // are using, if it picks one at random it will fail.
         EntryLogManagerForSingleEntryLog entryLogManager = (EntryLogManagerForSingleEntryLog) el.getEntryLogManager();
@@ -191,7 +189,7 @@ public class CreateNewLogTest {
         conf.setEntryLogPerLedgerEnabled(true);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLoggerAllocator entryLoggerAllocator = entryLogger.entryLoggerAllocator;
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
@@ -244,7 +242,7 @@ public class CreateNewLogTest {
                 expectedPreAllocatedLogID, entryLoggerAllocator.getPreallocatedLogId());
         Assert.assertEquals("Number of current ", numOfLedgers,
                 entryLogManager.getCopyOfCurrentLogs().size());
-        List<BufferedLogChannel> rotatedLogChannels = entryLogManager.getRotatedLogChannels();
+        List<DefaultEntryLogger.BufferedLogChannel> rotatedLogChannels = entryLogManager.getRotatedLogChannels();
         Assert.assertEquals("Number of LogChannels rotated", 1, rotatedLogChannels.size());
         Assert.assertEquals("Rotated logchannel logid", rotatedLedger, rotatedLogChannels.iterator().next().getLogId());
         entryLogger.flush();
@@ -299,7 +297,7 @@ public class CreateNewLogTest {
         conf.setEntryLogPerLedgerEnabled(true);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLoggerAllocator entryLoggerAllocator = entryLogger.entryLoggerAllocator;
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger)
                 entryLogger.getEntryLogManager();
@@ -332,7 +330,7 @@ public class CreateNewLogTest {
         File nonFilledLedgerDir = BookieImpl.getCurrentDirectory(new File(ledgerDirs[numDirs - 1]));
 
         entryLogManager.createNewLog(ledgerId);
-        BufferedLogChannel newLogChannel = entryLogManager.getCurrentLogForLedger(ledgerId);
+        DefaultEntryLogger.BufferedLogChannel newLogChannel = entryLogManager.getCurrentLogForLedger(ledgerId);
         Assert.assertEquals("Directory of newly created BufferedLogChannel file", nonFilledLedgerDir.getAbsolutePath(),
                 newLogChannel.getLogFile().getParentFile().getAbsolutePath());
 
@@ -357,7 +355,7 @@ public class CreateNewLogTest {
         conf.setEntryLogPerLedgerEnabled(true);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entrylogManager = (EntryLogManagerForEntryLogPerLedger)
                 entryLogger.getEntryLogManager();
 
@@ -422,7 +420,7 @@ public class CreateNewLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger el = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerBase entryLogManager = (EntryLogManagerBase) el.getEntryLogManager();
         // set same thread executor for entryLoggerAllocator's allocatorExecutor
         setSameThreadExecutorForEntryLoggerAllocator(el.getEntryLoggerAllocator());
@@ -467,7 +465,7 @@ public class CreateNewLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger el = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerBase entryLogManagerBase = (EntryLogManagerBase) el.getEntryLogManager();
         entryLogManagerBase.createNewLog(0L);
 
@@ -506,7 +504,7 @@ public class CreateNewLogTest {
         conf.setEntryLogFilePreAllocationEnabled(true);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger el = new DefaultEntryLogger(conf, ledgerDirsManager);
         // set same thread executor for entryLoggerAllocator's allocatorExecutor
         setSameThreadExecutorForEntryLoggerAllocator(el.getEntryLoggerAllocator());
         AtomicBoolean receivedException = new AtomicBoolean(false);
@@ -516,7 +514,7 @@ public class CreateNewLogTest {
                 if (i % 2 == 0) {
                     ((EntryLogManagerBase) el.getEntryLogManager()).createNewLog((long) i);
                 } else {
-                    el.createNewCompactionLog();
+                    el.newCompactionLog(i);
                 }
             } catch (IOException e) {
                 LOG.error("Received exception while creating newLog", e);
@@ -544,7 +542,7 @@ public class CreateNewLogTest {
         conf.setEntryLogPerLedgerEnabled(true);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entrylogManager = (EntryLogManagerForEntryLogPerLedger)
                 entryLogger.getEntryLogManager();
 
@@ -609,7 +607,7 @@ public class CreateNewLogTest {
         conf.setEntryLogPerLedgerCounterLimitsMultFactor(entryLogPerLedgerCounterLimitsMultFactor);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager, null, statsLogger,
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager, null, statsLogger,
                 UnpooledByteBufAllocator.DEFAULT);
         EntryLogManagerForEntryLogPerLedger entrylogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
@@ -735,7 +733,7 @@ public class CreateNewLogTest {
         conf.setEntryLogPerLedgerCounterLimitsMultFactor(entryLogPerLedgerCounterLimitsMultFactor);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager, null, statsLogger,
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager, null, statsLogger,
                 UnpooledByteBufAllocator.DEFAULT);
         EntryLogManagerForEntryLogPerLedger entrylogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
@@ -814,7 +812,7 @@ public class CreateNewLogTest {
             }
         };
 
-        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
+        DefaultEntryLogger el = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) el
                 .getEntryLogManager();
 

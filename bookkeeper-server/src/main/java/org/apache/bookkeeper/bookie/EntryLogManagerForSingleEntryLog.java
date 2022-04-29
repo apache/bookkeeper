@@ -21,8 +21,8 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.EntryLogger.INVALID_LID;
-import static org.apache.bookkeeper.bookie.EntryLogger.UNASSIGNED_LEDGERID;
+import static org.apache.bookkeeper.bookie.DefaultEntryLogger.INVALID_LID;
+import static org.apache.bookkeeper.bookie.DefaultEntryLogger.UNASSIGNED_LEDGERID;
 
 import io.netty.buffer.ByteBuf;
 import java.io.File;
@@ -33,7 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
@@ -44,11 +44,11 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
     private volatile BufferedLogChannel activeLogChannel;
     private long logIdBeforeFlush = INVALID_LID;
     private final AtomicBoolean shouldCreateNewEntryLog = new AtomicBoolean(false);
-    private final EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
+    private final DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
 
     EntryLogManagerForSingleEntryLog(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
-            EntryLoggerAllocator entryLoggerAllocator, List<EntryLogger.EntryLogListener> listeners,
-            EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus) {
+            EntryLoggerAllocator entryLoggerAllocator, List<DefaultEntryLogger.EntryLogListener> listeners,
+            DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus) {
         super(conf, ledgerDirsManager, entryLoggerAllocator, listeners);
         this.rotatedLogChannels = new LinkedList<BufferedLogChannel>();
         this.recentlyCreatedEntryLogsStatus = recentlyCreatedEntryLogsStatus;
@@ -157,7 +157,7 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
         if (currentActiveLogChannel != null) {
             return currentActiveLogChannel.getLogId();
         } else {
-            return EntryLogger.UNINITIALIZED_LOG_ID;
+            return DefaultEntryLogger.UNINITIALIZED_LOG_ID;
         }
     }
 
@@ -260,7 +260,7 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
     }
 
     @Override
-    public EntryLogger.BufferedLogChannel createNewLogForCompaction() throws IOException {
+    public DefaultEntryLogger.BufferedLogChannel createNewLogForCompaction() throws IOException {
         return entryLoggerAllocator.createNewLogForCompaction(selectDirForNextEntryLog());
     }
 }

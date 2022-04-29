@@ -22,7 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
-
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 /**
  * Interface that identifies LedgerStorage implementations using EntryLogger and running periodic entries compaction.
  */

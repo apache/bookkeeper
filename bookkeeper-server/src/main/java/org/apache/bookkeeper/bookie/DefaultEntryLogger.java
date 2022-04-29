@@ -45,6 +45,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -54,11 +55,16 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
 
+import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
+import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
+import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
@@ -72,11 +78,8 @@ import org.slf4j.LoggerFactory;
  * the actual ledger entry. The entry log files created by this class are
  * identified by a long.
  */
-public class EntryLogger {
-    private static final Logger LOG = LoggerFactory.getLogger(EntryLogger.class);
-    static final long UNASSIGNED_LEDGERID = -1L;
-    // log file suffix
-    static final String LOG_FILE_SUFFIX = ".log";
+public class DefaultEntryLogger implements EntryLogger {
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogger.class);
 
     @VisibleForTesting
     static final int UNINITIALIZED_LOG_ID = -0xDEAD;
@@ -285,33 +288,6 @@ public class EntryLogger {
     private final ByteBufAllocator allocator;
 
     final ServerConfiguration conf;
-    /**
-     * Scan entries in a entry log file.
-     */
-    public interface EntryLogScanner {
-        /**
-         * Tests whether or not the entries belongs to the specified ledger
-         * should be processed.
-         *
-         * @param ledgerId
-         *          Ledger ID.
-         * @return true if and only the entries of the ledger should be scanned.
-         */
-        boolean accept(long ledgerId);
-
-        /**
-         * Process an entry.
-         *
-         * @param ledgerId
-         *          Ledger ID.
-         * @param offset
-         *          File offset of this entry.
-         * @param entry
-         *          Entry ByteBuf
-         * @throws IOException
-         */
-        void process(long ledgerId, long offset, ByteBuf entry) throws IOException;
-    }
 
     /**
      * Entry Log Listener.
@@ -323,7 +299,7 @@ public class EntryLogger {
         void onRotateEntryLog();
     }
 
-    public EntryLogger(ServerConfiguration conf) throws IOException {
+    public DefaultEntryLogger(ServerConfiguration conf) throws IOException {
         this(conf, new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())));
     }
@@ -331,14 +307,14 @@ public class EntryLogger {
     /**
      * Create an EntryLogger that stores it's log files in the given directories.
      */
-    public EntryLogger(ServerConfiguration conf,
-            LedgerDirsManager ledgerDirsManager) throws IOException {
+    public DefaultEntryLogger(ServerConfiguration conf,
+                              LedgerDirsManager ledgerDirsManager) throws IOException {
         this(conf, ledgerDirsManager, null, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
     }
 
-    public EntryLogger(ServerConfiguration conf,
-            LedgerDirsManager ledgerDirsManager, EntryLogListener listener, StatsLogger statsLogger,
-            ByteBufAllocator allocator) throws IOException {
+    public DefaultEntryLogger(ServerConfiguration conf,
+                              LedgerDirsManager ledgerDirsManager, EntryLogListener listener, StatsLogger statsLogger,
+                              ByteBufAllocator allocator) throws IOException {
         //We reserve 500 bytes as overhead for the protocol.  This is not 100% accurate
         // but the protocol varies so an exact value is difficult to determine
         this.maxSaneEntrySize = conf.getNettyMaxFrameSizeBytes() - 500;
@@ -478,7 +454,8 @@ public class EntryLogger {
      *
      * @return least unflushed log id.
      */
-    long getLeastUnflushedLogId() {
+    @Override
+    public long getLeastUnflushedLogId() {
         return recentlyCreatedEntryLogsStatus.getLeastUnflushedLogId();
     }
 
@@ -489,7 +466,8 @@ public class EntryLogger {
      *
      * @return last entry log id created.
      */
-    long getLastLogId() {
+    @Override
+    public long getLastLogId() {
         return recentlyCreatedEntryLogsStatus.getLastLogId();
     }
 
@@ -499,7 +477,8 @@ public class EntryLogger {
      * @param entryLogId EntryLog id to check.
      * @return Whether the given entryLogId exists and has been rotated.
      */
-    boolean isFlushedEntryLog(Long entryLogId) {
+    @Override
+    public boolean isFlushedEntryLog(Long entryLogId) {
         return recentlyCreatedEntryLogsStatus.isFlushedEntryLog(entryLogId);
     }
 
@@ -510,7 +489,7 @@ public class EntryLogger {
     /**
      * Get the current log file for compaction.
      */
-    File getCurCompactionLogFile() {
+    private File getCurCompactionLogFile() {
         synchronized (compactionLogLock) {
             if (compactionLogChannel == null) {
                 return null;
@@ -544,7 +523,8 @@ public class EntryLogger {
      * @param entryLogId
      *          Entry Log File Id
      */
-    protected boolean removeEntryLog(long entryLogId) {
+    @Override
+    public boolean removeEntryLog(long entryLogId) {
         removeFromChannelsAndClose(entryLogId);
         File entryLogFile;
         try {
@@ -610,6 +590,7 @@ public class EntryLogger {
         entryLogManager.checkpoint();
     }
 
+    @Override
     public void flush() throws IOException {
         entryLogManager.flush();
     }
@@ -618,12 +599,13 @@ public class EntryLogger {
         return entryLogManager.addEntry(ledger, Unpooled.wrappedBuffer(entry), true);
     }
 
-    long addEntry(long ledger, ByteBuf entry) throws IOException {
-        return entryLogManager.addEntry(ledger, entry, true);
+    long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
+        return entryLogManager.addEntry(ledger, entry, rollLog);
     }
 
-    public long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
-        return entryLogManager.addEntry(ledger, entry, rollLog);
+    @Override
+    public long addEntry(long ledger, ByteBuf entry) throws IOException {
+        return entryLogManager.addEntry(ledger, entry, true);
     }
 
     private final FastThreadLocal<ByteBuf> sizeBuffer = new FastThreadLocal<ByteBuf>() {
@@ -634,7 +616,7 @@ public class EntryLogger {
         }
     };
 
-    long addEntryForCompaction(long ledgerId, ByteBuf entry) throws IOException {
+    private long addEntryForCompaction(long ledgerId, ByteBuf entry) throws IOException {
         synchronized (compactionLogLock) {
             int entrySize = entry.readableBytes() + 4;
             if (compactionLogChannel == null) {
@@ -653,7 +635,7 @@ public class EntryLogger {
         }
     }
 
-    void flushCompactionLog() throws IOException {
+    private void flushCompactionLog() throws IOException {
         synchronized (compactionLogLock) {
             if (compactionLogChannel != null) {
                 compactionLogChannel.appendLedgersMap();
@@ -671,7 +653,7 @@ public class EntryLogger {
         }
     }
 
-    void createNewCompactionLog() throws IOException {
+    private void createNewCompactionLog() throws IOException {
         synchronized (compactionLogLock) {
             if (compactionLogChannel == null) {
                 compactionLogChannel = entryLogManager.createNewLogForCompaction();
@@ -683,7 +665,7 @@ public class EntryLogger {
      * Remove the current compaction log, usually invoked when compaction failed and
      * we need to do some clean up to remove the compaction log file.
      */
-    void removeCurCompactionLog() {
+    private void removeCurCompactionLog() {
         synchronized (compactionLogLock) {
             if (compactionLogChannel != null) {
                 if (!compactionLogChannel.getLogFile().delete()) {
@@ -834,8 +816,20 @@ public class EntryLogger {
         }
     }
 
-    public ByteBuf internalReadEntry(long ledgerId, long entryId, long location, boolean validateEntry)
-            throws IOException {
+    @Override
+    public ByteBuf readEntry(long ledgerId, long entryId, long entryLocation)
+            throws IOException, Bookie.NoEntryException {
+        return internalReadEntry(ledgerId, entryId, entryLocation, true /* validateEntry */);
+    }
+
+    @Override
+    public ByteBuf readEntry(long location) throws IOException, Bookie.NoEntryException {
+        return internalReadEntry(location, -1L, -1L, false /* validateEntry */);
+    }
+
+
+    private ByteBuf internalReadEntry(long ledgerId, long entryId, long location, boolean validateEntry)
+            throws IOException, Bookie.NoEntryException {
         long entryLogId = logIdForOffset(location);
         long pos = posForOffset(location);
 
@@ -875,10 +869,6 @@ public class EntryLogger {
         data.writerIndex(entrySize);
 
         return data;
-    }
-
-    public ByteBuf readEntry(long ledgerId, long entryId, long location) throws IOException, Bookie.NoEntryException {
-        return internalReadEntry(ledgerId, entryId, location, true /* validateEntry */);
     }
 
     /**
@@ -932,7 +922,8 @@ public class EntryLogger {
     /**
      * Whether the log file exists or not.
      */
-    boolean logExists(long logId) {
+    @Override
+    public boolean logExists(long logId) {
         for (File d : ledgerDirsManager.getAllLedgerDirs()) {
             File f = new File(d, Long.toHexString(logId) + ".log");
             if (f.exists()) {
@@ -988,6 +979,7 @@ public class EntryLogger {
      * @param scanner Entry Log Scanner
      * @throws IOException
      */
+    @Override
     public void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws IOException {
         // Buffer where to read the entrySize (4 bytes) and the ledgerId (8 bytes)
         ByteBuf headerBuffer = Unpooled.buffer(4 + 8);
@@ -1051,19 +1043,6 @@ public class EntryLogger {
             }
         } finally {
             data.release();
-        }
-    }
-
-    public EntryLogMetadata getEntryLogMetadata(long entryLogId) throws IOException {
-        // First try to extract the EntryLogMetadata from the index, if there's no index then fallback to scanning the
-        // entry log
-        try {
-            return extractEntryLogMetadataFromIndex(entryLogId);
-        } catch (Exception e) {
-            LOG.info("Failed to get ledgers map index from: {}.log : {}", entryLogId, e.getMessage());
-
-            // Fall-back to scanning
-            return extractEntryLogMetadataByScanning(entryLogId);
         }
     }
 
@@ -1164,10 +1143,6 @@ public class EntryLogger {
         return meta;
     }
 
-    private EntryLogMetadata extractEntryLogMetadataByScanning(long entryLogId) throws IOException {
-        return extractEntryLogMetadataByScanning(entryLogId, null);
-    }
-
     private EntryLogMetadata extractEntryLogMetadataByScanning(long entryLogId,
                                                                AbstractLogCompactor.Throttler throttler)
         throws IOException {
@@ -1199,7 +1174,8 @@ public class EntryLogger {
     /**
      * Shutdown method to gracefully stop entry logger.
      */
-    public void shutdown() {
+    @Override
+    public void close() {
         // since logChannel is buffered channel, do flush when shutting down
         LOG.info("Stopping EntryLogger");
         try {
@@ -1302,5 +1278,178 @@ public class EntryLogger {
             return entryLogsStatusMap.containsKey(entryLogId) && entryLogsStatusMap.get(entryLogId)
                     || entryLogId < leastUnflushedLogId;
         }
+    }
+
+    @Override
+    public CompactionEntryLog newCompactionLog(long logToCompact) throws IOException {
+        createNewCompactionLog();
+
+        File compactingLogFile = getCurCompactionLogFile();
+        long compactionLogId = fileName2LogId(compactingLogFile.getName());
+        File compactedLogFile = compactedLogFileFromCompacting(compactingLogFile, logToCompact);
+        File finalLogFile = new File(compactingLogFile.getParentFile(),
+                                     compactingLogFile.getName().substring(0,
+                                             compactingLogFile.getName().indexOf(".log") + 4));
+        return new EntryLoggerCompactionEntryLog(
+                compactionLogId, logToCompact, compactingLogFile, compactedLogFile, finalLogFile);
+
+    }
+
+    private class EntryLoggerCompactionEntryLog implements CompactionEntryLog {
+        private final long compactionLogId;
+        private final long logIdToCompact;
+        private final File compactingLogFile;
+        private final File compactedLogFile;
+        private final File finalLogFile;
+
+        EntryLoggerCompactionEntryLog(long compactionLogId, long logIdToCompact,
+                                      File compactingLogFile,
+                                      File compactedLogFile,
+                                      File finalLogFile) {
+            this.compactionLogId = compactionLogId;
+            this.logIdToCompact = logIdToCompact;
+            this.compactingLogFile = compactingLogFile;
+            this.compactedLogFile = compactedLogFile;
+            this.finalLogFile = finalLogFile;
+        }
+
+        @Override
+        public long addEntry(long ledgerId, ByteBuf entry) throws IOException {
+            return addEntryForCompaction(ledgerId, entry);
+        }
+        @Override
+        public void scan(EntryLogScanner scanner) throws IOException {
+            scanEntryLog(compactionLogId, scanner);
+        }
+        @Override
+        public void flush() throws IOException {
+            flushCompactionLog();
+        }
+        @Override
+        public void abort() {
+            removeCurCompactionLog();
+            if (compactedLogFile.exists()) {
+                if (!compactedLogFile.delete()) {
+                    LOG.warn("Could not delete file: {}", compactedLogFile);
+                }
+            }
+        }
+
+        @Override
+        public void markCompacted() throws IOException {
+            if (compactingLogFile.exists()) {
+                if (!compactedLogFile.exists()) {
+                    HardLink.createHardLink(compactingLogFile, compactedLogFile);
+                }
+            } else {
+                throw new IOException("Compaction log doesn't exist any more after flush: " + compactingLogFile);
+            }
+            removeCurCompactionLog();
+        }
+
+        @Override
+        public void makeAvailable() throws IOException {
+            if (!finalLogFile.exists()) {
+                HardLink.createHardLink(compactedLogFile, finalLogFile);
+            }
+        }
+        @Override
+        public void cleanup() {
+            if (compactedLogFile.exists()) {
+                if (!compactedLogFile.delete()) {
+                    LOG.warn("Could not delete file: {}", compactedLogFile);
+                }
+            }
+            if (compactingLogFile.exists()) {
+                if (!compactingLogFile.delete()) {
+                    LOG.warn("Could not delete file: {}", compactingLogFile);
+                }
+            }
+        }
+
+        @Override
+        public long getLogId() {
+            return compactionLogId;
+        }
+        @Override
+        public long getCompactedLogId() {
+            return logIdToCompact;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                .add("logId", compactionLogId)
+                .add("compactedLogId", logIdToCompact)
+                .add("compactingLogFile", compactingLogFile)
+                .add("compactedLogFile", compactedLogFile)
+                .add("finalLogFile", finalLogFile)
+                .toString();
+        }
+    }
+
+    @Override
+    public Collection<CompactionEntryLog> incompleteCompactionLogs() {
+        List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
+        List<CompactionEntryLog> compactionLogs = new ArrayList<>();
+
+        for (File dir : ledgerDirs) {
+            File[] compactingPhaseFiles = dir.listFiles(
+                    file -> file.getName().endsWith(TransactionalEntryLogCompactor.COMPACTING_SUFFIX));
+            if (compactingPhaseFiles != null) {
+                for (File file : compactingPhaseFiles) {
+                    if (file.delete()) {
+                        LOG.info("Deleted failed compaction file {}", file);
+                    }
+                }
+            }
+            File[] compactedPhaseFiles = dir.listFiles(
+                    file -> file.getName().endsWith(TransactionalEntryLogCompactor.COMPACTED_SUFFIX));
+            if (compactedPhaseFiles != null) {
+                for (File compactedFile : compactedPhaseFiles) {
+                    LOG.info("Found compacted log file {} has partially flushed index, recovering index.",
+                             compactedFile);
+
+                    File compactingLogFile = new File(compactedFile.getParentFile(), "doesntexist");
+                    long compactionLogId = -1L;
+                    long compactedLogId = -1L;
+                    String[] parts = compactedFile.getName().split(Pattern.quote("."));
+                    boolean valid = true;
+                    if (parts.length != 4) {
+                        valid = false;
+                    } else {
+                        try {
+                            compactionLogId = Long.parseLong(parts[0], 16);
+                            compactedLogId = Long.parseLong(parts[2], 16);
+                        } catch (NumberFormatException nfe) {
+                            valid = false;
+                        }
+                    }
+
+                    if (!valid) {
+                        LOG.info("Invalid compacted file found ({}), deleting", compactedFile);
+                        if (!compactedFile.delete()) {
+                            LOG.warn("Couldn't delete invalid compacted file ({})", compactedFile);
+                        }
+                        continue;
+                    }
+                    File finalLogFile = new File(compactedFile.getParentFile(), compactionLogId + ".log");
+
+                    compactionLogs.add(
+                            new EntryLoggerCompactionEntryLog(compactionLogId, compactedLogId,
+                                                              compactingLogFile, compactedFile, finalLogFile));
+                }
+            }
+        }
+        return compactionLogs;
+    }
+
+    private static File compactedLogFileFromCompacting(File compactionLogFile, long compactingLogId) {
+        File dir = compactionLogFile.getParentFile();
+        String filename = compactionLogFile.getName();
+        String newSuffix = ".log." + DefaultEntryLogger.logId2HexString(compactingLogId)
+            + TransactionalEntryLogCompactor.COMPACTED_SUFFIX;
+        String hardLinkFilename = filename.replace(TransactionalEntryLogCompactor.COMPACTING_SUFFIX, newSuffix);
+        return new File(dir, hardLinkFilename);
     }
 }

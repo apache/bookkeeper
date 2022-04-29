@@ -35,9 +35,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
-import org.apache.bookkeeper.bookie.EntryLogger;
-import org.apache.bookkeeper.bookie.ReadOnlyEntryLogger;
+import org.apache.bookkeeper.bookie.ReadOnlyDefaultEntryLogger;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -133,7 +133,7 @@ public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
             BKException.Code.OK, BKException.Code.ReadException);
           if (done.await(cmdFlags.timeout, TimeUnit.MILLISECONDS)){
             if  (resultCode.get() == BKException.Code.OK) {
-              EntryLogger entryLogger = new ReadOnlyEntryLogger(bkConf);
+              DefaultEntryLogger entryLogger = new ReadOnlyDefaultEntryLogger(bkConf);
               EntryLogMetadata entryLogMetadata = entryLogger.getEntryLogMetadata(cmdFlags.logId);
               List<Long> ledgersOnEntryLog = entryLogMetadata.getLedgersMap().keys();
               if (ledgersOnEntryLog.size() == 0) {

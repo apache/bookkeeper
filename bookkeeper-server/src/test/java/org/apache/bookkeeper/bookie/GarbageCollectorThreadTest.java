@@ -64,7 +64,7 @@ public class GarbageCollectorThreadTest {
 
     @Before
     public void setUp() throws Exception {
-        when(ledgerStorage.getEntryLogger()).thenReturn(mock(EntryLogger.class));
+        when(ledgerStorage.getEntryLogger()).thenReturn(mock(DefaultEntryLogger.class));
         openMocks(this);
     }
 

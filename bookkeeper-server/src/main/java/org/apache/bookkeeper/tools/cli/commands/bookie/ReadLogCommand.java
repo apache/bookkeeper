@@ -25,8 +25,9 @@ import java.io.File;
 import java.io.IOException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.bookie.EntryLogger;
-import org.apache.bookkeeper.bookie.ReadOnlyEntryLogger;
+import org.apache.bookkeeper.bookie.ReadOnlyDefaultEntryLogger;
+import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
@@ -174,7 +175,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
         LOG.info("Scan entry log {} ({}.log) for PositionRange: {} - {}",
             logId, Long.toHexString(logId), rangeStartPos, rangeEndPos);
         final MutableBoolean entryFound = new MutableBoolean(false);
-        scanEntryLog(conf, logId, new EntryLogger.EntryLogScanner() {
+        scanEntryLog(conf, logId, new EntryLogScanner() {
             private MutableBoolean stopScanning = new MutableBoolean(false);
 
             @Override
@@ -220,7 +221,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
      * @param logId   Entry Log Id
      * @param scanner Entry Log Scanner
      */
-    private void scanEntryLog(ServerConfiguration conf, long logId, EntryLogger.EntryLogScanner scanner)
+    private void scanEntryLog(ServerConfiguration conf, long logId, EntryLogScanner scanner)
         throws IOException {
         initEntryLogger(conf);
         entryLogger.scanEntryLog(logId, scanner);
@@ -229,7 +230,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
     private synchronized void initEntryLogger(ServerConfiguration conf) throws IOException {
         if (null == entryLogger) {
             // provide read only entry logger
-            entryLogger = new ReadOnlyEntryLogger(conf);
+            entryLogger = new ReadOnlyDefaultEntryLogger(conf);
         }
     }
 
@@ -248,7 +249,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
         LOG.info("Scan entry log {} ({}.log) for LedgerId {} {}", logId, Long.toHexString(logId), ledgerId,
             ((entryId == -1) ? "" : " for EntryId " + entryId));
         final MutableBoolean entryFound = new MutableBoolean(false);
-        scanEntryLog(conf, logId, new EntryLogger.EntryLogScanner() {
+        scanEntryLog(conf, logId, new EntryLogScanner() {
             @Override
             public boolean accept(long candidateLedgerId) {
                 return ((candidateLedgerId == ledgerId) && ((!entryFound.booleanValue()) || (entryId == -1)));
@@ -281,7 +282,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
      */
     private void scanEntryLog(ServerConfiguration conf, long logId, final boolean printMsg) throws Exception {
         LOG.info("Scan entry log {} ({}.log)", logId, Long.toHexString(logId));
-        scanEntryLog(conf, logId, new EntryLogger.EntryLogScanner() {
+        scanEntryLog(conf, logId, new EntryLogScanner() {
             @Override
             public boolean accept(long ledgerId) {
                 return true;

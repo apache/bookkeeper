@@ -59,7 +59,7 @@ public interface ZooKeeperCluster {
 
     void killCluster() throws Exception;
 
-    void sleepCluster(final int time, final TimeUnit timeUnit, final CountDownLatch l)
+    void sleepCluster(int time, final TimeUnit timeUnit, final CountDownLatch l)
             throws InterruptedException, IOException;
 
     default void expireSession(ZooKeeper zk) throws Exception {
