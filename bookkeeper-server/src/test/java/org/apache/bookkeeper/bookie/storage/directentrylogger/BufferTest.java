@@ -20,8 +20,9 @@
  */
 package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -37,26 +38,26 @@ import org.junit.Test;
 /**
  * TestBuffer.
  */
-public class TestBuffer {
+public class BufferTest {
 
     @Test
     public void testIsAligned() throws Exception {
-        assertThat(Buffer.isAligned(1234), equalTo(false));
-        assertThat(Buffer.isAligned(4096), equalTo(true));
-        assertThat(Buffer.isAligned(40960), equalTo(true));
-        assertThat(Buffer.isAligned(1 << 20), equalTo(true));
-        assertThat(Buffer.isAligned(-1), equalTo(false));
-        assertThat(Buffer.isAligned(Integer.MIN_VALUE), equalTo(false));
-        assertThat(Buffer.isAligned(Integer.MAX_VALUE), equalTo(false));
+        assertFalse(Buffer.isAligned(1234));
+        assertTrue(Buffer.isAligned(4096));
+        assertTrue(Buffer.isAligned(40960));
+        assertTrue(Buffer.isAligned(1 << 20));
+        assertFalse(Buffer.isAligned(-1));
+        assertFalse(Buffer.isAligned(Integer.MAX_VALUE));
+        assertFalse(Buffer.isAligned(Integer.MIN_VALUE));
     }
 
     @Test
     public void testNextAlignment() throws Exception {
-        assertThat(Buffer.nextAlignment(0), equalTo(0));
-        assertThat(Buffer.nextAlignment(1), equalTo(4096));
-        assertThat(Buffer.nextAlignment(4096), equalTo(4096));
-        assertThat(Buffer.nextAlignment(4097), equalTo(8192));
-        assertThat(Buffer.nextAlignment(0x7FFFF000), equalTo(0x7FFFF000));
+        assertEquals(0, Buffer.nextAlignment(0));
+        assertEquals(4096, Buffer.nextAlignment(1));
+        assertEquals(4096, Buffer.nextAlignment(4096));
+        assertEquals(8192, Buffer.nextAlignment(4097));
+        assertEquals(0x7FFFF000, Buffer.nextAlignment(0x7FFFF000));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -78,33 +79,33 @@ public class TestBuffer {
     public void testWriteInt() throws Exception {
         int bufferSize = 1 << 20;
         Buffer b = new Buffer(new NativeIOImpl(), bufferSize);
-        assertThat(b.hasSpace(bufferSize), equalTo(true));
-        assertThat(b.position(), equalTo(0));
+        assertTrue(b.hasSpace(bufferSize));
+        assertEquals(0, b.position());
         b.writeInt(0xdeadbeef);
 
 
-        assertThat(PlatformDependent.getByte(b.pointer() + 0), equalTo((byte) 0xde));
-        assertThat(PlatformDependent.getByte(b.pointer() + 1), equalTo((byte) 0xad));
-        assertThat(PlatformDependent.getByte(b.pointer() + 2), equalTo((byte) 0xbe));
-        assertThat(PlatformDependent.getByte(b.pointer() + 3), equalTo((byte) 0xef));
+        assertEquals((byte) 0xde, PlatformDependent.getByte(b.pointer() + 0));
+        assertEquals((byte) 0xad, PlatformDependent.getByte(b.pointer() + 1));
+        assertEquals((byte) 0xbe, PlatformDependent.getByte(b.pointer() + 2));
+        assertEquals((byte) 0xef, PlatformDependent.getByte(b.pointer() + 3));
 
-        assertThat(b.hasSpace(bufferSize), equalTo(false));
-        assertThat(b.position(), equalTo(Integer.BYTES));
+        assertFalse(b.hasSpace(bufferSize));
+        assertEquals(Integer.BYTES, b.position());
 
         for (int i = 0; i < 10000; i++) {
             b.writeInt(i);
         }
-        assertThat(b.position(), equalTo(Integer.BYTES * 10001));
-        assertThat(b.hasSpace(bufferSize - (Integer.BYTES * 10001)), equalTo(true));
-        assertThat(b.hasSpace(bufferSize - (Integer.BYTES * 10000)), equalTo(false));
+        assertEquals(Integer.BYTES * 10001, b.position());
+        assertTrue(b.hasSpace(bufferSize - (Integer.BYTES * 10001)));
+        assertFalse(b.hasSpace(bufferSize - (Integer.BYTES * 10000)));
 
-        assertThat(b.readInt(0), equalTo(0xdeadbeef));
+        assertEquals(0xdeadbeef, b.readInt(0));
         for (int i = 0; i < 10000; i++) {
-            assertThat(b.readInt((i + 1) * Integer.BYTES), equalTo(i));
+            assertEquals(i, b.readInt((i + 1) * Integer.BYTES));
         }
         b.reset();
-        assertThat(b.hasSpace(bufferSize), equalTo(true));
-        assertThat(b.position(), equalTo(0));
+        assertTrue(b.hasSpace(bufferSize));
+        assertEquals(0, b.position());
     }
 
     @Test
@@ -113,25 +114,25 @@ public class TestBuffer {
         fillByteBuf(bb, 0xdeadbeef);
         int bufferSize = 1 << 20;
         Buffer b = new Buffer(new NativeIOImpl(), bufferSize);
-        assertThat(b.position(), equalTo(0));
+        assertEquals(0, b.position());
         b.writeByteBuf(bb);
-        assertThat(b.position(), equalTo(1021));
-        assertThat(bb.readableBytes(), equalTo(0));
+        assertEquals(1021, b.position());
+        assertEquals(0, bb.readableBytes());
         bb.clear();
         fillByteBuf(bb, 0xcafecafe);
         b.writeByteBuf(bb);
-        assertThat(bb.readableBytes(), equalTo(0));
-        assertThat(b.position(), equalTo(2042));
+        assertEquals(0, bb.readableBytes());
+        assertEquals(2042, b.position());
 
         bb = Unpooled.buffer(2042);
         int ret = b.readByteBuf(bb, 0, 2042);
-        assertThat(ret, equalTo(2042));
+        assertEquals(2042, ret);
         for (int i = 0; i < 1020 / Integer.BYTES; i++) {
-            assertThat(bb.readInt(), equalTo(0xdeadbeef));
+            assertEquals(0xdeadbeef, bb.readInt());
         }
-        assertThat(bb.readByte(), equalTo((byte) 0xde));
+        assertEquals((byte) 0xde, bb.readByte());
         for (int i = 0; i < 1020 / Integer.BYTES; i++) {
-            assertThat(bb.readInt(), equalTo(0xcafecafe));
+            assertEquals(0xcafecafe, bb.readInt());
         }
     }
 
@@ -145,7 +146,7 @@ public class TestBuffer {
         }
 
         int ret = b.readByteBuf(bb, 0, 5000);
-        assertThat(ret, equalTo(4096));
+        assertEquals(4096, ret);
     }
 
     @Test(expected = IOException.class)
@@ -155,9 +156,10 @@ public class TestBuffer {
         for (int i = 0; i < 4096 / Integer.BYTES; i++) {
             b.writeInt(0xdeadbeef);
         }
-        assertThat(b.hasData(4092, Integer.BYTES), equalTo(true));
-        assertThat(b.hasData(4093, Integer.BYTES), equalTo(false));
-        assertThat(b.hasData(4096, Integer.BYTES), equalTo(false));
+        assertTrue(b.hasData(4092, Integer.BYTES));
+        assertFalse(b.hasData(4093, Integer.BYTES));
+        assertFalse(b.hasData(4096, Integer.BYTES));
+
         b.readInt(4096 - 2);
     }
 
@@ -168,9 +170,10 @@ public class TestBuffer {
         for (int i = 0; i < 4096 / Integer.BYTES; i++) {
             b.writeInt(0xdeadbeef);
         }
-        assertThat(b.hasData(4088, Long.BYTES), equalTo(true));
-        assertThat(b.hasData(4089, Long.BYTES), equalTo(false));
-        assertThat(b.hasData(4096, Long.BYTES), equalTo(false));
+        assertTrue(b.hasData(4088, Long.BYTES));
+        assertFalse(b.hasData(4089, Long.BYTES));
+        assertFalse(b.hasData(4096, Long.BYTES));
+
         b.readInt(4096 - 2);
     }
 
@@ -183,12 +186,12 @@ public class TestBuffer {
         }
         int writtenLength = b.padToAlignment();
 
-        assertThat(writtenLength, equalTo(8192));
-        assertThat(b.readInt(1024 * Integer.BYTES), equalTo(0xdededede));
+        assertEquals(8192, writtenLength);
+        assertEquals(0xdededede, b.readInt(1024 * Integer.BYTES));
         for (int i = 1025 * Integer.BYTES; i < writtenLength; i += Integer.BYTES) {
-            assertThat(b.readInt(i), equalTo(0xf0f0f0f0));
+            assertEquals(0xf0f0f0f0, b.readInt(i));
         }
-        assertThat(b.readInt(writtenLength), equalTo(0));
+        assertEquals(0, b.readInt(writtenLength));
     }
 
     @Test
