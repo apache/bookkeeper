@@ -44,7 +44,7 @@ import org.apache.bookkeeper.common.util.nativeio.NativeIO;
  * alignment, so writes can have an aligned size also (as required by
  * direct I/O). The padding is done with 0xF0, so that if it is read as
  * an integer, or long, the value will be negative (assuming the read is
- * a java read, and thus an signed int).
+ * a java read, and thus a signed int).
  */
 class Buffer {
     /* Padding byte must have MSB set, so if read at the start
@@ -69,7 +69,6 @@ class Buffer {
                       "Buffer size not aligned %d", bufferSize);
 
         this.buffer = allocateAligned(ALIGNMENT, bufferSize);
-
         this.nativeIO = nativeIO;
         this.bufferSize = bufferSize;
         byteBuffer = buffer.nioBuffer(0, bufferSize);
@@ -116,7 +115,7 @@ class Buffer {
     }
 
     /**
-     * Write a bytebuf to this buffer. Progresses the position of the buffer by the
+     * Write a btebuf to this buffer. Progresses the position of the buffer by the
      * number of readable bytes of the bytebuf. Progresses the readerIndex of the passed
      * bytebuf by the number of bytes read (i.e. to the end).
      */

@@ -26,13 +26,12 @@ import java.util.concurrent.ArrayBlockingQueue;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 
 /**
- * BufferPool.
+ * BufferPool used to manage Buffers.
  */
 public class BufferPool implements AutoCloseable {
-    private final int maxPoolSize;
     private final ArrayBlockingQueue<Buffer> pool;
+
     BufferPool(NativeIO nativeIO, int bufferSize, int maxPoolSize) throws IOException {
-        this.maxPoolSize = maxPoolSize;
         pool = new ArrayBlockingQueue<>(maxPoolSize);
         for (int i = 0; i < maxPoolSize; i++) {
             pool.add(new Buffer(nativeIO, bufferSize));
