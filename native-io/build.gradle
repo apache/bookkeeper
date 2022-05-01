@@ -24,7 +24,6 @@ dependencies {
     compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations
     implementation depLibs.commonsLang3
-    implementation depLibs.guava
     implementation depLibs.slf4j
     testImplementation depLibs.junit
 
