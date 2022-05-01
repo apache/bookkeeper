@@ -27,7 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 
-import javax.annotation.CheckForNull;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -80,7 +80,7 @@ class NativeUtils {
         System.load(temp.getAbsolutePath());
     }
 
-    public static void checkArgument(boolean expression, @CheckForNull Object errorMessage) {
+    public static void checkArgument(boolean expression, @NonNull Object errorMessage) {
         if (!expression) {
             throw new IllegalArgumentException(String.valueOf(errorMessage));
         }
