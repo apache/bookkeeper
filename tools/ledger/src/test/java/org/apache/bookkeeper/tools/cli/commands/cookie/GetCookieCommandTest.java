@@ -97,7 +97,7 @@ public class GetCookieCommandTest extends CookieCommandTestBase {
             .build();
         when(rm.readCookie(eq(BookieId.parse(BOOKIE_ID))))
             .thenReturn(new Versioned<>(cookie.toString().getBytes(UTF_8), new LongVersion(-1L)));
-        assertTrue(runCommand(new String[] { BOOKIE_ID.toString() }));
+        assertTrue(runCommand(new String[] {BOOKIE_ID}));
         String consoleOutput = getConsoleOutput();
         assertTrue(consoleOutput, consoleOutput.contains(cookie.toString()));
         verify(rm, times(1)).readCookie(eq(BookieId.parse(BOOKIE_ID)));

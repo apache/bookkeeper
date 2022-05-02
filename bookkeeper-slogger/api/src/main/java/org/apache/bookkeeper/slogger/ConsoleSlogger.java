@@ -102,7 +102,7 @@ public class ConsoleSlogger extends AbstractSlogger {
         }
         builder.append("}");
 
-        System.out.println(builder.toString());
+        System.out.println(builder);
     }
 
     private static void keyValue(StringBuilder sb, String key, String value) {

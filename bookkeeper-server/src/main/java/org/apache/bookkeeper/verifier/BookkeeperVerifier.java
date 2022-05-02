@@ -301,7 +301,7 @@ public class BookkeeperVerifier {
 
         void openWrite(long entryID) {
             writesInProgress.add(entryID);
-            System.out.format("Open writes, %s%n", writesInProgress.toString());
+            System.out.format("Open writes, %s%n", writesInProgress);
         }
 
         void incReads() {
@@ -382,7 +382,7 @@ public class BookkeeperVerifier {
                 System.out.format(
                         "checkWriteComplete: ledger %d, writesInProgress %s%n",
                         ledgerID,
-                        writesInProgress.toString());
+                        writesInProgress);
                 cb.accept(0);
             }
         }
@@ -396,7 +396,7 @@ public class BookkeeperVerifier {
                 System.out.format(
                         "checkOpComplete: ledger %d, writesInProgress %s, readsInProgress %d%n",
                         ledgerID,
-                        writesInProgress.toString(), readsInProgress);
+                        writesInProgress, readsInProgress);
                 cb.accept(0);
             }
         }

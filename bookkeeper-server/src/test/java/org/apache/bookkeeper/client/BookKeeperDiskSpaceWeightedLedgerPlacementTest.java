@@ -70,7 +70,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
             }
             fail(String.format(
                     "Server %s still has weight %s rather than %s",
-                    bookie.toString(), freeDiskSpace.toString(), target.toString()));
+                    bookie.toString(), freeDiskSpace, target.toString()));
         }
     }
 
