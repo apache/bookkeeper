@@ -75,7 +75,7 @@ public interface EntryLogMetadataMap extends Closeable {
     int size() throws EntryLogMetadataMapException;
 
     /**
-     * Returns true iff there are no elements in the map.
+     * Returns true if there are no elements in the map.
      *
      * @return
      */

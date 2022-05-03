@@ -261,8 +261,7 @@ public class SortedLedgerStorage
     @Override
     public void checkpoint(final Checkpoint checkpoint) throws IOException {
         long numBytesFlushed = memTable.flush(this, checkpoint);
-        ((DefaultEntryLogger) interleavedLedgerStorage.getEntryLogger())
-            .prepareSortedLedgerStorageCheckpoint(numBytesFlushed);
+        interleavedLedgerStorage.getEntryLogger().prepareSortedLedgerStorageCheckpoint(numBytesFlushed);
         interleavedLedgerStorage.checkpoint(checkpoint);
     }
 
@@ -317,9 +316,9 @@ public class SortedLedgerStorage
             public void run() {
                 try {
                     LOG.info("Started flushing mem table.");
-                    ((DefaultEntryLogger) interleavedLedgerStorage.getEntryLogger()).prepareEntryMemTableFlush();
+                    interleavedLedgerStorage.getEntryLogger().prepareEntryMemTableFlush();
                     memTable.flush(SortedLedgerStorage.this);
-                    if (((DefaultEntryLogger) interleavedLedgerStorage.getEntryLogger()).commitEntryMemTableFlush()) {
+                    if (interleavedLedgerStorage.getEntryLogger().commitEntryMemTableFlush()) {
                         interleavedLedgerStorage.checkpointer.startCheckpoint(cp);
                     }
                 } catch (Exception e) {
@@ -342,7 +341,7 @@ public class SortedLedgerStorage
         return (BookieStateManager) stateManager;
     }
 
-    public EntryLogger getEntryLogger() {
+    public DefaultEntryLogger getEntryLogger() {
         return interleavedLedgerStorage.getEntryLogger();
     }
 

@@ -704,7 +704,6 @@ public class GarbageCollectorThread extends SafeRunnable {
                 LOG.warn("Premature exception when processing " + entryLogId
                          + " recovery will take care of the problem", e);
             }
-
         }
     }
 

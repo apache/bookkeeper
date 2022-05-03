@@ -512,7 +512,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         ledgerCache.flushLedger(true);
     }
 
-    public EntryLogger getEntryLogger() {
+    public DefaultEntryLogger getEntryLogger() {
         return entryLogger;
     }
 

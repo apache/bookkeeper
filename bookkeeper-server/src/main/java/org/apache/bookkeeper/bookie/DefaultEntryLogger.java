@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -460,7 +461,7 @@ public class DefaultEntryLogger implements EntryLogger {
         Set<Long> logIds = new HashSet<>();
         synchronized (recentlyCreatedEntryLogsStatus) {
             for (File dir : ledgerDirsManager.getAllLedgerDirs()) {
-                for (File f : dir.listFiles(file -> file.getName().endsWith(".log"))) {
+                for (File f : Objects.requireNonNull(dir.listFiles(file -> file.getName().endsWith(".log")))) {
                     long logId = fileName2LogId(f.getName());
                     if (recentlyCreatedEntryLogsStatus.isFlushedLogId(logId)) {
                         logIds.add(logId);
@@ -1238,7 +1239,7 @@ public class DefaultEntryLogger implements EntryLogger {
         private long leastUnflushedLogId;
 
         RecentEntryLogsStatus(long leastUnflushedLogId) {
-            entryLogsStatusMap = new TreeMap<Long, Boolean>();
+            entryLogsStatusMap = new TreeMap<>();
             this.leastUnflushedLogId = leastUnflushedLogId;
         }
 
