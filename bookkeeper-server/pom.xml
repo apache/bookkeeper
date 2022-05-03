@@ -123,6 +123,19 @@
       <groupId>io.reactivex.rxjava3</groupId>
       <artifactId>rxjava</artifactId>
     </dependency>
+    <!-- used on test and main method like `LocalBookKeeper` -->
+    <dependency>
+      <!-- needed by ZooKeeper server -->
+      <groupId>org.xerial.snappy</groupId>
+      <artifactId>snappy-java</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <!-- needed by ZooKeeper server -->
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-core</artifactId>
+      <scope>runtime</scope>
+    </dependency>
     <!-- testing dependencies -->
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
@@ -165,18 +178,6 @@
        <!-- needed by ZooKeeper server tests utilities -->
        <groupId>org.junit.jupiter</groupId>
        <artifactId>junit-jupiter-api</artifactId>
-       <scope>test</scope>
-    </dependency>
-    <dependency>
-       <!-- needed by ZooKeeper server -->
-       <groupId>org.xerial.snappy</groupId>
-       <artifactId>snappy-java</artifactId>
-       <scope>test</scope>
-    </dependency>
-    <dependency>
-        <!-- needed by ZooKeeper server -->
-       <groupId>io.dropwizard.metrics</groupId>
-       <artifactId>metrics-core</artifactId>
        <scope>test</scope>
     </dependency>
     <dependency>
