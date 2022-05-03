@@ -461,15 +461,16 @@ public class DefaultEntryLogger implements EntryLogger {
         Set<Long> logIds = new HashSet<>();
         synchronized (recentlyCreatedEntryLogsStatus) {
             for (File dir : ledgerDirsManager.getAllLedgerDirs()) {
-                try {
-                    for (File f : Objects.requireNonNull(dir.listFiles(file -> file.getName().endsWith(".log")))) {
-                        long logId = fileName2LogId(f.getName());
-                        if (recentlyCreatedEntryLogsStatus.isFlushedLogId(logId)) {
-                            logIds.add(logId);
+                if (dir.exists() && dir.isDirectory()) {
+                    File[] files = dir.listFiles(file -> file.getName().endsWith(".log"));
+                    if (files != null && files.length > 0) {
+                        for (File f : files) {
+                            long logId = fileName2LogId(f.getName());
+                            if (recentlyCreatedEntryLogsStatus.isFlushedLogId(logId)) {
+                                logIds.add(logId);
+                            }
                         }
                     }
-                } catch (NullPointerException e) {
-                    LOG.error("Failed get log files from {} ", dir, e);
                 }
             }
         }
