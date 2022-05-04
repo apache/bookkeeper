@@ -46,6 +46,11 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>native-io</artifactId>
+      <version>${project.parent.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.rocksdb</groupId>
       <artifactId>rocksdbjni</artifactId>
     </dependency>
