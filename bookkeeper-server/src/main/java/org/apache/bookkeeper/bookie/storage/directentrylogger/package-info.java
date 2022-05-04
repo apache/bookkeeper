@@ -16,26 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-plugins {
-    id 'java'
-}
-
-dependencies {
-    compileOnly depLibs.lombok
-    compileOnly depLibs.spotbugsAnnotations
-    implementation depLibs.commonsLang3
-    implementation depLibs.slf4j
-    testImplementation depLibs.junit
-
-    annotationProcessor depLibs.lombok
-}
-
-compileJava {
-    options.headerOutputDirectory = file("${buildDir}/javahGenerated")
-}
-
-jar {
-    from (tasks.getByPath(":native-io:src:main:native-io-jni:linkRelease").outputs.files.filter { f -> f.isFile()} ) {
-        into "/lib"
-    }
-}
+/**
+ * Support for bookie entry logs using Direct IO.
+ */
+package org.apache.bookkeeper.bookie.storage.directentrylogger;

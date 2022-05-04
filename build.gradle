@@ -85,6 +85,7 @@ allprojects {
     apply from: "$rootDir/dependencies.gradle"
     if (it.path != ':circe-checksum:src:main:circe'
         && it.path != ':cpu-affinity:src:main:affinity'
+        && it.path != ':native-io:src:main:native-io-jni'
         && it.name != 'src'
         && it.name != 'main') {
         apply plugin: 'java'

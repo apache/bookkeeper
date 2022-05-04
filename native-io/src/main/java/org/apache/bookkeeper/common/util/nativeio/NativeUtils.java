@@ -18,8 +18,6 @@
  */
 package org.apache.bookkeeper.common.util.nativeio;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.File;
@@ -29,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -80,4 +79,9 @@ class NativeUtils {
 
         System.load(temp.getAbsolutePath());
     }
-}
+
+    public static void checkArgument(boolean expression, @NonNull Object errorMessage) {
+        if (!expression) {
+            throw new IllegalArgumentException(String.valueOf(errorMessage));
+        }
+    }}
