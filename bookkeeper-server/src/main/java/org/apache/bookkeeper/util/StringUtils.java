@@ -72,10 +72,10 @@ public class StringUtils {
         // do 2-4-4 split
         StringBuilder sb = new StringBuilder();
         sb.append("/")
-          .append(ledgerIdStr.substring(0, 2)).append("/")
-          .append(ledgerIdStr.substring(2, 6)).append("/")
+          .append(ledgerIdStr, 0, 2).append("/")
+          .append(ledgerIdStr, 2, 6).append("/")
           .append(LEDGER_NODE_PREFIX)
-          .append(ledgerIdStr.substring(6, 10));
+          .append(ledgerIdStr, 6, 10);
         return sb.toString();
     }
 
@@ -91,12 +91,12 @@ public class StringUtils {
         // do 3-4-4-4-4 split
         StringBuilder sb = new StringBuilder();
         sb.append("/")
-          .append(ledgerIdStr.substring(0, 3)).append("/")
-          .append(ledgerIdStr.substring(3, 7)).append("/")
-          .append(ledgerIdStr.substring(7, 11)).append("/")
-          .append(ledgerIdStr.substring(11, 15)).append("/")
+          .append(ledgerIdStr, 0, 3).append("/")
+          .append(ledgerIdStr, 3, 7).append("/")
+          .append(ledgerIdStr, 7, 11).append("/")
+          .append(ledgerIdStr, 11, 15).append("/")
           .append(LEDGER_NODE_PREFIX)
-          .append(ledgerIdStr.substring(15, 19));
+          .append(ledgerIdStr, 15, 19);
         return sb.toString();
     }
 

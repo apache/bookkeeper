@@ -87,7 +87,7 @@ public class DecommissionService implements HttpEndpointService {
                     });
 
                     response.setCode(HttpServer.StatusCode.OK);
-                    response.setBody("Success send decommission Bookie command " + bookieSrc.toString());
+                    response.setBody("Success send decommission Bookie command " + bookieSrc);
                     return response;
                 } catch (Exception e) {
                     LOG.error("Exception occurred while decommissioning bookie: ", e);

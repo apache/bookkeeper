@@ -78,8 +78,7 @@ public class SaslServerState {
 
                 final String servicePrincipalNameAndHostname = servicePrincipal.getName();
                 int indexOf = servicePrincipalNameAndHostname.indexOf("/");
-                final String serviceHostnameAndKerbDomain = servicePrincipalNameAndHostname.substring(indexOf + 1,
-                    servicePrincipalNameAndHostname.length());
+                final String serviceHostnameAndKerbDomain = servicePrincipalNameAndHostname.substring(indexOf + 1);
                 int indexOfAt = serviceHostnameAndKerbDomain.indexOf("@");
 
                 final String servicePrincipalName, serviceHostname;

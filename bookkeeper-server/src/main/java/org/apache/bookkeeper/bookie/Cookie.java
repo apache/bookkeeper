@@ -167,7 +167,7 @@ public class Cookie {
         }
         StringBuilder b = new StringBuilder();
         b.append(CURRENT_COOKIE_LAYOUT_VERSION).append("\n");
-        b.append(builder.build().toString());
+        b.append(builder.build());
         return b.toString();
     }
 

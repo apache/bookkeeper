@@ -421,7 +421,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
             Node rack = getNodeForNetworkLocation(node);
             if (rack != null && !(rack instanceof InnerNode)) {
                 LOG.error("Unexpected data node {} at an illegal network location", node);
-                throw new IllegalArgumentException("Unexpected data node " + node.toString()
+                throw new IllegalArgumentException("Unexpected data node " + node
                         + " at an illegal network location");
             }
             if (clusterMap.add(node)) {
@@ -436,7 +436,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("NetworkTopology became:\n" + this.toString());
+                LOG.debug("NetworkTopology became:\n" + this);
             }
         } finally {
             netlock.writeLock().unlock();
@@ -507,7 +507,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("NetworkTopology became:\n" + this.toString());
+                LOG.debug("NetworkTopology became:\n" + this);
             }
         } finally {
             netlock.writeLock().unlock();
