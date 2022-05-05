@@ -215,10 +215,8 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     private static final Logger log = LoggerFactory.getLogger(PrometheusMetricsProvider.class);
 
-    /*
-     * Try to get Netty counter of used direct memory. This will be correct, unlike the JVM values.
-     */
     private static final Optional<BufferPoolMXBean> poolMxBeanOp;
+
     static {
         List<BufferPoolMXBean> platformMXBeans = ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class);
         poolMxBeanOp = platformMXBeans.stream()
