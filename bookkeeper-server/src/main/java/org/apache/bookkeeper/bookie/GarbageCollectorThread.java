@@ -33,9 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 import lombok.Getter;
 
@@ -111,9 +109,6 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     volatile boolean running = true;
 
-    // track the last scanned successfully log id
-    long scannedLogId = 0;
-
     // Boolean to trigger a forced GC.
     final AtomicBoolean forceGarbageCollection = new AtomicBoolean(false);
     // Boolean to disable major compaction, when disk is almost full
@@ -139,8 +134,9 @@ public class GarbageCollectorThread extends SafeRunnable {
     public GarbageCollectorThread(ServerConfiguration conf, LedgerManager ledgerManager,
                                   final LedgerDirsManager ledgerDirsManager,
                                   final CompactableLedgerStorage ledgerStorage,
+                                  EntryLogger entryLogger,
                                   StatsLogger statsLogger) throws IOException {
-        this(conf, ledgerManager, ledgerDirsManager, ledgerStorage, statsLogger,
+        this(conf, ledgerManager, ledgerDirsManager, ledgerStorage, entryLogger, statsLogger,
                 Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread")));
     }
 
@@ -155,6 +151,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                                   LedgerManager ledgerManager,
                                   final LedgerDirsManager ledgerDirsManager,
                                   final CompactableLedgerStorage ledgerStorage,
+                                  EntryLogger entryLogger,
                                   StatsLogger statsLogger,
                                   ScheduledExecutorService gcExecutor)
         throws IOException {
@@ -162,7 +159,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         this.conf = conf;
 
         this.ledgerDirsManager = ledgerDirsManager;
-        this.entryLogger = ledgerStorage.getEntryLogger();
+        this.entryLogger = entryLogger;
         this.entryLogMetaMap = createEntryLogMetadataMap();
         this.ledgerStorage = ledgerStorage;
         this.gcWaitTime = conf.getGcWaitTime();
@@ -214,8 +211,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             }
         };
         if (conf.getUseTransactionalCompaction()) {
-            this.compactor = new TransactionalEntryLogCompactor(conf, entryLogger, ledgerStorage,
-                    ledgerDirsManager, remover);
+            this.compactor = new TransactionalEntryLogCompactor(conf, entryLogger, ledgerStorage, remover);
         } else {
             this.compactor = new EntryLogCompactor(conf, entryLogger, ledgerStorage, remover);
         }
@@ -678,15 +674,7 @@ public class GarbageCollectorThread extends SafeRunnable {
      * @throws EntryLogMetadataMapException
      */
     protected void extractMetaFromEntryLogs() throws EntryLogMetadataMapException {
-        // Entry Log ID's are just a long value that starts at 0 and increments by 1 when the log fills up and we roll
-        // to a new one. We scan entry logs as follows:
-        // - entryLogPerLedgerEnabled is false: Extract it for every entry log except for the current one (un-flushed).
-        // - entryLogPerLedgerEnabled is true: Scan all flushed entry logs up to the highest known id.
-        Supplier<Long> finalEntryLog = () -> conf.isEntryLogPerLedgerEnabled() ? entryLogger.getLastLogId() :
-                entryLogger.getLeastUnflushedLogId();
-        boolean hasExceptionWhenScan = false;
-        boolean increaseScannedLogId = true;
-        for (long entryLogId = scannedLogId; entryLogId < finalEntryLog.get(); entryLogId++) {
+        for (long entryLogId : entryLogger.getFlushedLogIds()) {
             // Comb the current entry log file if it has not already been extracted.
             if (entryLogMetaMap.containsKey(entryLogId)) {
                 continue;
@@ -695,15 +683,6 @@ public class GarbageCollectorThread extends SafeRunnable {
             // check whether log file exists or not
             // if it doesn't exist, this log file might have been garbage collected.
             if (!entryLogger.logExists(entryLogId)) {
-                continue;
-            }
-
-            // If entryLogPerLedgerEnabled is true, we will look for entry log files beyond getLeastUnflushedLogId()
-            // that have been explicitly rotated or below getLeastUnflushedLogId().
-            if (conf.isEntryLogPerLedgerEnabled() && !entryLogger.isFlushedEntryLog(entryLogId)) {
-                LOG.info("Entry log {} not flushed (entryLogPerLedgerEnabled). Starting next iteration at this point.",
-                        entryLogId);
-                increaseScannedLogId = false;
                 continue;
             }
 
@@ -722,17 +701,8 @@ public class GarbageCollectorThread extends SafeRunnable {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
                 }
             } catch (IOException e) {
-                hasExceptionWhenScan = true;
                 LOG.warn("Premature exception when processing " + entryLogId
                          + " recovery will take care of the problem", e);
-            }
-
-            // if scan failed on some entry log, we don't move 'scannedLogId' to next id
-            // if scan succeed, we don't need to scan it again during next gc run,
-            // we move 'scannedLogId' to next id (unless entryLogPerLedgerEnabled is true
-            // and we have found and un-flushed entry log already).
-            if (!hasExceptionWhenScan && (!conf.isEntryLogPerLedgerEnabled() || increaseScannedLogId)) {
-                ++scannedLogId;
             }
         }
     }

@@ -187,7 +187,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES, TimeUnit.MINUTES);
 
         entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager, null, statsLogger, allocator);
-        gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager, this, statsLogger);
+        gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager, this, entryLogger, statsLogger);
 
         dbLedgerStorageStats = new DbLedgerStorageStats(
                 ledgerDirStatsLogger,
@@ -864,8 +864,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         entryLocationIndex.updateLocations(locations);
     }
 
-    @Override
-    public EntryLogger getEntryLogger() {
+    @VisibleForTesting
+    EntryLogger getEntryLogger() {
         return entryLogger;
     }
 

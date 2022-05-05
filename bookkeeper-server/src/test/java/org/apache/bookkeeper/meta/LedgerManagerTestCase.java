@@ -43,7 +43,6 @@ import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.StateManager;
-import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -262,11 +261,6 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
                     .subMap(firstLedgerId, true, lastLedgerId, false);
 
             return subBkActiveLedgers.keySet();
-        }
-
-        @Override
-        public EntryLogger getEntryLogger() {
-            return null;
         }
 
         @Override

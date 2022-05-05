@@ -190,7 +190,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager,
-            this, statsLogger.scope("gc"));
+                                              this, entryLogger, statsLogger.scope("gc"));
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         // Expose Stats
         getOffsetStats = statsLogger.getOpStatsLogger(STORAGE_GET_OFFSET);
@@ -512,8 +512,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         ledgerCache.flushLedger(true);
     }
 
-    @Override
-    public EntryLogger getEntryLogger() {
+    public DefaultEntryLogger getEntryLogger() {
         return entryLogger;
     }
 

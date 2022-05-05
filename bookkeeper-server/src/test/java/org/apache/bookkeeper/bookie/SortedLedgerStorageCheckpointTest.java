@@ -224,12 +224,11 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         });
 
         // simulate entry log is rotated (due to compaction)
+        DefaultEntryLogger elogger = storage.getEntryLogger();
         EntryLogManagerForSingleEntryLog entryLogManager =
-            (EntryLogManagerForSingleEntryLog) ((DefaultEntryLogger) storage.getEntryLogger()).getEntryLogManager();
+            (EntryLogManagerForSingleEntryLog) elogger.getEntryLogManager();
         entryLogManager.createNewLog(DefaultEntryLogger.UNASSIGNED_LEDGERID);
-        long leastUnflushedLogId = storage.getEntryLogger().getLeastUnflushedLogId();
         long currentLogId = entryLogManager.getCurrentLogId();
-        log.info("Least unflushed entry log : current = {}, leastUnflushed = {}", currentLogId, leastUnflushedLogId);
 
         readyLatch.countDown();
         assertNull(checkpoints.poll());
@@ -246,8 +245,8 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         assertEquals(0, storage.memTable.kvmap.size());
         assertTrue(
             "current log " + currentLogId + " contains entries added from memtable should be forced to disk"
-            + " but least unflushed log is " + storage.getEntryLogger().getLeastUnflushedLogId(),
-            storage.getEntryLogger().getLeastUnflushedLogId() > currentLogId);
+            + " but flushed logs are " + elogger.getFlushedLogIds(),
+            elogger.getFlushedLogIds().contains(currentLogId));
     }
 
 }

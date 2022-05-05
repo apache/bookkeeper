@@ -41,7 +41,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 /**
  * A mock for running tests that require ledger storage.
  */
-public class MockLedgerStorage implements LedgerStorage {
+public class MockLedgerStorage implements CompactableLedgerStorage {
 
     private static class LedgerInfo {
         boolean limbo = false;
@@ -242,7 +242,7 @@ public class MockLedgerStorage implements LedgerStorage {
 
     @Override
     public void deleteLedger(long ledgerId) throws IOException {
-        throw new UnsupportedOperationException("Not supported in mock, implement if you need it");
+        ledgers.remove(ledgerId);
     }
 
     @Override
@@ -262,36 +262,52 @@ public class MockLedgerStorage implements LedgerStorage {
 
     @Override
     public LedgerStorage getUnderlyingLedgerStorage() {
-        return LedgerStorage.super.getUnderlyingLedgerStorage();
+        return CompactableLedgerStorage.super.getUnderlyingLedgerStorage();
     }
 
     @Override
     public void forceGC() {
-        LedgerStorage.super.forceGC();
+        CompactableLedgerStorage.super.forceGC();
     }
 
     @Override
     public void forceGC(Boolean forceMajor, Boolean forceMinor) {
-        LedgerStorage.super.forceGC(forceMajor, forceMinor);
+        CompactableLedgerStorage.super.forceGC(forceMajor, forceMinor);
     }
 
     @Override
     public List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
-        return LedgerStorage.super.localConsistencyCheck(rateLimiter);
+        return CompactableLedgerStorage.super.localConsistencyCheck(rateLimiter);
     }
 
     @Override
     public boolean isInForceGC() {
-        return LedgerStorage.super.isInForceGC();
+        return CompactableLedgerStorage.super.isInForceGC();
     }
 
     @Override
     public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
-        return LedgerStorage.super.getGarbageCollectionStatus();
+        return CompactableLedgerStorage.super.getGarbageCollectionStatus();
     }
 
     @Override
     public PrimitiveIterator.OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
+        throw new UnsupportedOperationException("Not supported in mock, implement if you need it");
+    }
+
+    @Override
+    public Iterable<Long> getActiveLedgersInRange(long firstLedgerId, long lastLedgerId)
+            throws IOException {
+        throw new UnsupportedOperationException("Not supported in mock, implement if you need it");
+    }
+
+    @Override
+    public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
+            throw new UnsupportedOperationException("Not supported in mock, implement if you need it");
+    }
+
+    @Override
+    public void flushEntriesLocationsIndex() throws IOException {
         throw new UnsupportedOperationException("Not supported in mock, implement if you need it");
     }
 
