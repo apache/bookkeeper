@@ -179,7 +179,7 @@ public class HttpWaitStrategy extends AbstractWaitStrategy {
         if ((tlsEnabled && 443 == livenessCheckPort) || (!tlsEnabled && 80 == livenessCheckPort)) {
             portSuffix = "";
         } else {
-            portSuffix = ":" + String.valueOf(livenessCheckPort);
+            portSuffix = ":" + livenessCheckPort;
         }
         return URI.create(scheme + host + portSuffix + path);
     }

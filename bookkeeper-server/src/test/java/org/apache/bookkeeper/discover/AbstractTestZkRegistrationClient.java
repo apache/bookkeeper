@@ -151,7 +151,7 @@ public abstract class AbstractTestZkRegistrationClient extends MockZooKeeperTest
                         Code.NONODE.intValue(),
                         new byte[] {},
                         new Stat());
-            mockZkGetData(regReadonlyPath + "/" + address.toString(),
+            mockZkGetData(regReadonlyPath + "/" + address,
                         zkRegistrationClient.isBookieAddressTracking(),
                         Code.OK.intValue(),
                         new byte[] {},
@@ -162,7 +162,7 @@ public abstract class AbstractTestZkRegistrationClient extends MockZooKeeperTest
                         Code.OK.intValue(),
                         new byte[] {},
                         new Stat());
-            mockZkGetData(regReadonlyPath + "/" + address.toString(),
+            mockZkGetData(regReadonlyPath + "/" + address,
                         zkRegistrationClient.isBookieAddressTracking(),
                         Code.NONODE.intValue(),
                         new byte[] {},

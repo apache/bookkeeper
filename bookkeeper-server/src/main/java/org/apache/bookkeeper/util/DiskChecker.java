@@ -246,21 +246,21 @@ public class DiskChecker {
         float usage = checkDiskFull(dir);
         if (!mkdirsWithExistsCheck(dir)) {
             throw new DiskErrorException("can not create directory: "
-                    + dir.toString());
+                    + dir);
         }
 
         if (!dir.isDirectory()) {
-            throw new DiskErrorException("not a directory: " + dir.toString());
+            throw new DiskErrorException("not a directory: " + dir);
         }
 
         if (!dir.canRead()) {
             throw new DiskErrorException("directory is not readable: "
-                    + dir.toString());
+                    + dir);
         }
 
         if (!dir.canWrite()) {
             throw new DiskErrorException("directory is not writable: "
-                    + dir.toString());
+                    + dir);
         }
         return usage;
     }

@@ -200,7 +200,7 @@ public abstract class Tool {
             for (int i = 0; i < numSpaces; i++) {
                 spacesBuilder.append(" ");
             }
-            println("\t"  + entry.getKey() + spacesBuilder.toString() + ": " + entry.getValue().getDescription());
+            println("\t"  + entry.getKey() + spacesBuilder + ": " + entry.getValue().getDescription());
         }
         println("");
     }
@@ -227,7 +227,7 @@ public abstract class Tool {
         int rc = -1;
         if (args.length <= 0) {
             System.err.println("No tool to run.");
-            System.err.println("");
+            System.err.println();
             System.err.println("Usage : Tool <tool_class_name> <options>");
             System.exit(-1);
         }

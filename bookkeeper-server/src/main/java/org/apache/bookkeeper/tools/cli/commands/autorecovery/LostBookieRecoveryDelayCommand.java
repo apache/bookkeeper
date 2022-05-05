@@ -102,12 +102,12 @@ public class LostBookieRecoveryDelayCommand extends BookieCommand<LostBookieReco
         try {
             if (getter) {
                 int lostBookieRecoveryDelay = admin.getLostBookieRecoveryDelay();
-                LOG.info("LostBookieRecoveryDelay value in ZK: {}", String.valueOf(lostBookieRecoveryDelay));
+                LOG.info("LostBookieRecoveryDelay value in ZK: {}", lostBookieRecoveryDelay);
             } else {
                 int lostBookieRecoveryDelay = flags.set;
                 admin.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
                 LOG.info("Successfully set LostBookieRecoveryDelay value in ZK: {}",
-                         String.valueOf(lostBookieRecoveryDelay));
+                        lostBookieRecoveryDelay);
             }
         } finally {
             if (admin != null) {

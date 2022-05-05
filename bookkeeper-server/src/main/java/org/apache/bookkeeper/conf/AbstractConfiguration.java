@@ -1248,7 +1248,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         Map<String, Object> configMap = new HashMap<>();
         Iterator<String> iterator = this.getKeys();
         while (iterator.hasNext()) {
-            String key = iterator.next().toString();
+            String key = iterator.next();
             Object property = this.getProperty(key);
             if (property != null) {
                 configMap.put(key, property.toString());

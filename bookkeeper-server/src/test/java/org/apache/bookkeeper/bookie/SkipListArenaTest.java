@@ -190,7 +190,7 @@ public class SkipListArenaTest {
                 }
                 AllocBuffer other = treeMap.put(buf.alloc.getOffset(), buf);
                 if (other != null) {
-                    fail("Buffer " + other.toString() + " overlapped with " + buf.toString());
+                    fail("Buffer " + other + " overlapped with " + buf);
                 }
             }
         }

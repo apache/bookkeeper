@@ -23,12 +23,9 @@ package org.apache.bookkeeper.bookie;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
@@ -58,7 +55,7 @@ class JournalChannel implements Closeable {
 
     static final int SECTOR_SIZE = 512;
     private static final int START_OF_FILE = -12345;
-    private static long cacheDropLagBytes = 8 * MB;
+    private static final long cacheDropLagBytes = 8 * MB;
 
     // No header
     static final int V1 = 1;
@@ -71,7 +68,7 @@ class JournalChannel implements Closeable {
     // 1) expanding header to 512
     // 2) Padding writes to align sector size
     static final int V5 = 5;
-    // Adding explicitlac entry
+    // Adding explicit lac entry
     public static final int V6 = 6;
 
     static final int HEADER_SIZE = SECTOR_SIZE; // align header to sector size
@@ -309,12 +306,4 @@ class JournalChannel implements Closeable {
         }
     }
 
-    @VisibleForTesting
-    public static FileChannel openFileChannel(RandomAccessFile randomAccessFile) {
-        if (randomAccessFile == null) {
-            throw new IllegalArgumentException("Input cannot be null");
-        }
-
-        return randomAccessFile.getChannel();
-    }
 }

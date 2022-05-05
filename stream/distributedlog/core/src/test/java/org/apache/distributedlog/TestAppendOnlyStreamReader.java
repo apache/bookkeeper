@@ -195,7 +195,7 @@ public class TestAppendOnlyStreamReader extends TestDistributedLogBase {
         byte[] bytesIn = new byte[4];
         int read = reader.read(bytesIn, 0, 4);
         assertEquals(4, read);
-        assertEquals(new String("abca"), new String(bytesIn));
+        assertEquals("abca", new String(bytesIn));
 
         assertTrue(reader.skipTo(reader.position()));
 
@@ -203,6 +203,6 @@ public class TestAppendOnlyStreamReader extends TestDistributedLogBase {
 
         read = reader.read(bytesIn, 0, 4);
         assertEquals(4, read);
-        assertEquals(new String("bcab"), new String(bytesIn));
+        assertEquals("bcab", new String(bytesIn));
     }
 }

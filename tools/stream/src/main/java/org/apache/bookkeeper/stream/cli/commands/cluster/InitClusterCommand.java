@@ -159,8 +159,8 @@ public class InitClusterCommand extends BKCommand<Flags> {
                 null,
                 null);
 
-            String ledgersUri = rootUri.toString() + ledgersPath;
-            String dlogUri = rootUri.toString() + dlogPath;
+            String ledgersUri = rootUri + ledgersPath;
+            String dlogUri = rootUri + dlogPath;
 
             log.info("Initializing cluster {} : \n"
                 + "\tledgers : path = {}, uri = {}\n"

@@ -472,9 +472,9 @@ public class DistributedLogAdmin extends DistributedLogTool {
                 return 0;
             } else {
                 System.out.println("There is bookkeeper bound to " + uri + " : ");
-                System.out.println("");
-                System.out.println(bkdlConfig.toString());
-                System.out.println("");
+                System.out.println();
+                System.out.println(bkdlConfig);
+                System.out.println();
                 if (!force && !IOUtils.confirmPrompt("Do you want to unbind " + uri + " :\n")) {
                     return 0;
                 }
@@ -597,9 +597,9 @@ public class DistributedLogAdmin extends DistributedLogTool {
                     System.out.println("No bookkeeper is bound to " + uri);
                 } else {
                     System.out.println("There is bookkeeper bound to " + uri + " : ");
-                    System.out.println("");
-                    System.out.println(bkdlConfig.toString());
-                    System.out.println("");
+                    System.out.println();
+                    System.out.println(bkdlConfig);
+                    System.out.println();
                     if (!isQuery) {
                         if (newBKDLConfig.equals(bkdlConfig)) {
                             System.out.println("No bookkeeper binding needs to be updated. Quit.");
@@ -631,9 +631,9 @@ public class DistributedLogAdmin extends DistributedLogTool {
                     try {
                         dlMetadata.update(uri);
                         System.out.println("Updated binding on " + uri + " : ");
-                        System.out.println("");
+                        System.out.println();
                         System.out.println(newBKDLConfig.toString());
-                        System.out.println("");
+                        System.out.println();
                     } catch (IOException ie) {
                         System.err.println("Failed to update binding on " + uri + " : " + ie.getMessage());
                     }

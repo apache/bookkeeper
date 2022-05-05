@@ -162,7 +162,7 @@ class TGTRefreshThread extends Thread {
                 LOG.info("refreshing now because expiry is before next scheduled refresh time.");
             } else if (now < nextRefresh) {
                 Date until = new Date(nextRefresh);
-                LOG.info("TGT refresh sleeping until: {}", until.toString());
+                LOG.info("TGT refresh sleeping until: {}", until);
                 try {
                     Thread.sleep(nextRefresh - now);
                 } catch (InterruptedException ie) {

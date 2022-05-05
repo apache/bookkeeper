@@ -115,7 +115,7 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
     public String dumpTopology() {
         Map<String, String> rack = getSwitchMap();
         StringBuilder builder = new StringBuilder();
-        builder.append("Mapping: ").append(toString()).append("\n");
+        builder.append("Mapping: ").append(this).append("\n");
         if (rack != null) {
             builder.append("Map:\n");
             Set<String> switches = new HashSet<String>();

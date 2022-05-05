@@ -56,7 +56,7 @@ public class PersistentEntryLogMetadataMapTest {
     @Test
     public void simple() throws Exception {
         File tmpDir = tempFolder.newFolder("metadata-cache");
-        String path = tmpDir.getAbsolutePath().toString();
+        String path = tmpDir.getAbsolutePath();
         PersistentEntryLogMetadataMap entryMetadataMap = new PersistentEntryLogMetadataMap(path, configuration);
 
         List<EntryLogMetadata> metadatas = Lists.newArrayList();
@@ -104,7 +104,7 @@ public class PersistentEntryLogMetadataMapTest {
     @Test
     public void closeAndOpen() throws Exception {
         File tmpDir = tempFolder.newFolder();
-        String path = tmpDir.getAbsolutePath().toString();
+        String path = tmpDir.getAbsolutePath();
         PersistentEntryLogMetadataMap entryMetadataMap = new PersistentEntryLogMetadataMap(path, configuration);
 
         List<EntryLogMetadata> metadatas = Lists.newArrayList();
