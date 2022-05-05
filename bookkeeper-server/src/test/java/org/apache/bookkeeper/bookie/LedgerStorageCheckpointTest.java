@@ -371,7 +371,7 @@ public class LedgerStorageCheckpointTest {
         }
         handle.close();
         // simulate rolling entrylog
-        ((EntryLogManagerBase) ((DefaultEntryLogger) ledgerStorage.getEntryLogger()).getEntryLogManager())
+        ((EntryLogManagerBase) ledgerStorage.getEntryLogger().getEntryLogManager())
                 .createNewLog(ledgerId);
         // sleep for a bit for checkpoint to do its task
         executorController.advance(Duration.ofMillis(500));

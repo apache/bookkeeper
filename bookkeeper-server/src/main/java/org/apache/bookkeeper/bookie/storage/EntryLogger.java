@@ -89,21 +89,12 @@ public interface EntryLogger extends AutoCloseable {
     Collection<CompactionEntryLog> incompleteCompactionLogs();
 
     /**
-     * Get the last log id created so far. If entryLogPerLedger is enabled, the Garbage Collector
-     * process needs to look beyond the least unflushed entry log file, as there may be entry logs
-     * ready to be garbage collected.
-     *
-     * @return last entry log id created.
-     */
-    long getLastLogId();
-
-    /**
-     * Get the lowest entrylog ID which has not had all its data persisted to
+     * Get the log ids for the set of logs which have been completely flushed to
      * disk.
-     * This is used by compaction. Any entrylog ID higher or equal to this value
-     * will not be considered for compaction.
+     * Only log ids in this set are considered for either compaction or garbage
+     * collection.
      */
-    long getLeastUnflushedLogId();
+    Collection<Long> getFlushedLogIds();
 
     /**
      * Scan the given entrylog, returning all entries contained therein.
@@ -132,14 +123,6 @@ public interface EntryLogger extends AutoCloseable {
      * Check whether an entrylog with the given ID exists.
      */
     boolean logExists(long logId);
-
-    /**
-     * Returns whether the current log id exists and has been rotated already.
-     *
-     * @param entryLogId EntryLog id to check.
-     * @return Whether the given entryLogId exists and has been rotated.
-     */
-    boolean isFlushedEntryLog(Long entryLogId);
 
     /**
      * Delete the entrylog with the given ID.

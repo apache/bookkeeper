@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.function.BiConsumer;
 
 import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
@@ -37,7 +36,7 @@ public interface EntryLogMetadataMap extends Closeable {
      *
      * @param entryLogId
      * @return
-     * @throws IOException
+     * @throws EntryLogMetadataMapException
      */
     boolean containsKey(long entryLogId) throws EntryLogMetadataMapException;
 
@@ -46,7 +45,7 @@ public interface EntryLogMetadataMap extends Closeable {
      *
      * @param entryLogId
      * @param entryLogMeta
-     * @throws IOException
+     * @throws EntryLogMetadataMapException
      */
     void put(long entryLogId, EntryLogMetadata entryLogMeta) throws EntryLogMetadataMapException;
 
@@ -55,7 +54,7 @@ public interface EntryLogMetadataMap extends Closeable {
      * have been processed or the action throws an exception.
      *
      * @param action
-     * @throws IOException
+     * @throws EntryLogMetadataMapException
      */
     void forEach(BiConsumer<Long, EntryLogMetadata> action) throws EntryLogMetadataMapException;
 
@@ -63,7 +62,7 @@ public interface EntryLogMetadataMap extends Closeable {
      * Removes entryLogMetadata record from the map.
      *
      * @param entryLogId
-     * @throws IOException
+     * @throws EntryLogMetadataMapException
      */
     void remove(long entryLogId) throws EntryLogMetadataMapException;
 
@@ -71,8 +70,24 @@ public interface EntryLogMetadataMap extends Closeable {
      * Returns number of entryLogMetadata records presents into the map.
      *
      * @return
-     * @throws IOException
+     * @throws EntryLogMetadataMapException
      */
     int size() throws EntryLogMetadataMapException;
 
+    /**
+     * Returns true if there are no elements in the map.
+     *
+     * @return
+     */
+    default boolean isEmpty() throws EntryLogMetadataMapException {
+        return size() == 0;
+    }
+
+    /**
+     * Clear all records from the map.
+     * For unit tests.
+     *
+     * @throws EntryLogMetadataMapException
+     */
+    void clear() throws EntryLogMetadataMapException;
 }

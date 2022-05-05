@@ -32,6 +32,9 @@ dependencies {
     implementation project(':circe-checksum')
     implementation project(':cpu-affinity')
     implementation project(':stats:bookkeeper-stats-api')
+    implementation project(':bookkeeper-slogger:api')
+    implementation project(':bookkeeper-slogger:slf4j')
+    implementation project(':bookkeeper-stats')
 
     compileOnly depLibs.lombok
     compileOnly depLibs.spotbugsAnnotations

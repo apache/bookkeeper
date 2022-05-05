@@ -28,8 +28,3 @@ dependencies {
 }
 
 jar.archiveBaseName = 'bookkeeper-slogger-slf4j'
-
-jar {
-    dependsOn tasks.named("writeClasspath")
-}
-
