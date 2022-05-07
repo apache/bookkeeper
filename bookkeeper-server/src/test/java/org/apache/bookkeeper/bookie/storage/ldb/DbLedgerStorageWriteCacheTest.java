@@ -72,7 +72,7 @@ public class DbLedgerStorageWriteCacheTest {
                     ByteBufAllocator allocator, ScheduledExecutorService gcExecutor, long writeCacheSize,
                     long readCacheSize, int readAheadCacheBatchSize) throws IOException {
                 super(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entrylogger,
-                      statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize, readAheadCacheBatchSize);
+                    statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize, readAheadCacheBatchSize);
             }
 
           @Override

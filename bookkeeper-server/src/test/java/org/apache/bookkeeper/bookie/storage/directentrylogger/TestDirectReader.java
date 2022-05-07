@@ -280,7 +280,8 @@ public class TestDirectReader {
                                                  ByteBufAllocator.DEFAULT,
                                                  new NativeIOImpl(), Buffer.ALIGNMENT,
                                                  1 << 20, opLogger)) {
-            List<Map.Entry<Integer, Integer>> offset2PatternList = new ArrayList(offset2Pattern.entrySet());
+            List<Map.Entry<Integer, Integer>> offset2PatternList =
+                new ArrayList<Map.Entry<Integer, Integer>>(offset2Pattern.entrySet());
             Collections.shuffle(offset2PatternList);
 
             for (Map.Entry<Integer, Integer> e : offset2PatternList) {

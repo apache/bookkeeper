@@ -35,7 +35,6 @@ import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import java.io.File;
 
-import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectCompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
 import org.apache.bookkeeper.slogger.Slogger;
