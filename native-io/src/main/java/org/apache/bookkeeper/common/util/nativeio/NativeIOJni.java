@@ -51,7 +51,7 @@ class NativeIOJni {
             if (SystemUtils.IS_OS_MAC_OSX) {
                 NativeUtils.loadLibraryFromJar("/lib/libnative-io.jnilib");
             } else if (SystemUtils.IS_OS_LINUX) {
-                NativeUtils.loadLibraryFromJar("/lib/libnative-io-jni.so");
+                NativeUtils.loadLibraryFromJar("/lib/libnative-io.so");
             } else {
                 throw new RuntimeException("OS not supported by Native-IO utils");
             }
