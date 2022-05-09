@@ -65,7 +65,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * DirectEntryLogger.
  */
 public class DirectEntryLogger implements EntryLogger {
-    private static final String LOGFILE_SUFFIX = ".log";
     private final Slogger slog;
     private final File ledgerDir;
     private final EntryLogIds ids;
@@ -462,7 +461,7 @@ public class DirectEntryLogger implements EntryLogger {
     }
 
     public static File logFile(File directory, int logId) {
-        return new File(directory, Long.toHexString(logId) + LOGFILE_SUFFIX);
+        return new File(directory, Long.toHexString(logId) + LOG_FILE_SUFFIX);
     }
 
     public static String logFilename(File directory, int logId) {

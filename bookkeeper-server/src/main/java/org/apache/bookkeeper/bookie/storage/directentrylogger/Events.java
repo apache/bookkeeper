@@ -55,7 +55,7 @@ public enum Events {
     ENTRYLOGGER_MISCONFIGURED,
 
     /**
-     * The entrylogger has started writing the a new log file. The previous log file may not
+     * The entrylogger has started writing a new log file. The previous log file may not
      * be entirely flushed when this is called, though they will be after an explicit flush call.
      */
     LOG_ROLL,

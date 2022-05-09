@@ -39,7 +39,7 @@ interface LogWriter extends AutoCloseable {
     void writeAt(long offset, ByteBuf buf) throws IOException;
 
     /**
-     * Write a delimited buffer the the log. The size of the buffer is first
+     * Write a delimited buffer the log. The size of the buffer is first
      * written and then the buffer itself.
      * Note that the returned offset is for the buffer itself, not the size.
      * So, if a buffer is written at the start of the file, the returned offset
