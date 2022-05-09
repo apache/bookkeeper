@@ -32,7 +32,7 @@ dependencies {
     implementation depLibs.prometheusSimpleClientHotspot
     implementation depLibs.prometheusSimpleClientServlet
     implementation depLibs.slf4j
-    implementation depLibs.yahooDatasketches
+    implementation depLibs.datasketches
 
     testCompileOnly depLibs.lombok
     testImplementation depLibs.junit
