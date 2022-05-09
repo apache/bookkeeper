@@ -122,12 +122,16 @@ public class EntryLogIdsImpl implements EntryLogIds {
 
     public static List<Integer> logIdsInDirectory(File directory) {
         List<Integer> ids = new ArrayList<>();
-        File[] files = directory.listFiles();
-        for (File f : files) {
-            Matcher m = FILE_PATTERN.matcher(f.getName());
-            if (m.matches()) {
-                int logId = Integer.parseUnsignedInt(m.group(1), 16);
-                ids.add(logId);
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null && files.length > 0) {
+                for (File f : files) {
+                    Matcher m = FILE_PATTERN.matcher(f.getName());
+                    if (m.matches()) {
+                        int logId = Integer.parseUnsignedInt(m.group(1), 16);
+                        ids.add(logId);
+                    }
+                }
             }
         }
         return ids;
@@ -135,14 +139,19 @@ public class EntryLogIdsImpl implements EntryLogIds {
 
     private static List<Integer> compactedLogIdsInDirectory(File directory) {
         List<Integer> ids = new ArrayList<>();
-        File[] files = directory.listFiles();
-        for (File f : files) {
-            Matcher m = COMPACTED_FILE_PATTERN.matcher(f.getName());
-            if (m.matches()) {
-                int logId = Integer.parseUnsignedInt(m.group(1), 16);
-                ids.add(logId);
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null && files.length > 0) {
+                for (File f : files) {
+                    Matcher m = COMPACTED_FILE_PATTERN.matcher(f.getName());
+                    if (m.matches()) {
+                        int logId = Integer.parseUnsignedInt(m.group(1), 16);
+                        ids.add(logId);
+                    }
+                }
             }
         }
         return ids;
+
     }
 }

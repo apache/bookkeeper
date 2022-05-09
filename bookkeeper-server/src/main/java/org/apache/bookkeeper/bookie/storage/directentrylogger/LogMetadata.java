@@ -135,7 +135,6 @@ class LogMetadata {
                 throw new IOException(exMsg("ledgerMap never written").kv("ledgerMapOffset", ledgerMapOffset)
                                       .toString());
             }
-            int ledgerCount = Header.extractLedgerCount(header);
 
             long offset = ledgerMapOffset;
             EntryLogMetadata meta = new EntryLogMetadata(reader.logId());

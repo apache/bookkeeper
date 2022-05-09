@@ -49,7 +49,7 @@ class NativeIOJni {
     static {
         try {
             if (SystemUtils.IS_OS_MAC_OSX) {
-                NativeUtils.loadLibraryFromJar("/lib/libnative-io-jni.dylib");
+                NativeUtils.loadLibraryFromJar("/lib/libnative-io.jnilib");
             } else if (SystemUtils.IS_OS_LINUX) {
                 NativeUtils.loadLibraryFromJar("/lib/libnative-io-jni.so");
             } else {

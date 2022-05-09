@@ -252,11 +252,15 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
             writer.finalizeAndClose();
 
             idempotentLink(compactingFile, compactedFile);
-            compactingFile.delete();
-
-            slog.kv("compactingFile", compactingFile)
-                .kv("compactedFile", compactedFile)
-                .info(Events.COMPACTION_MARK_COMPACTED);
+            if (!compactingFile.delete()) {
+                slog.kv("compactingFile", compactingFile)
+                    .kv("compactedFile", compactedFile)
+                    .info(Events.COMPACTION_DELETE_FAILURE);
+            } else {
+                slog.kv("compactingFile", compactingFile)
+                    .kv("compactedFile", compactedFile)
+                    .info(Events.COMPACTION_MARK_COMPACTED);
+            }
         }
 
         @Override

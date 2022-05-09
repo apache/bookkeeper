@@ -30,6 +30,7 @@
 
   <properties>
     <nar.runtime>dynamic</nar.runtime>
+    <nar.cpp.optionSet>-msse4.2 -mpclmul</nar.cpp.optionSet>
   </properties>
 
   <dependencies>

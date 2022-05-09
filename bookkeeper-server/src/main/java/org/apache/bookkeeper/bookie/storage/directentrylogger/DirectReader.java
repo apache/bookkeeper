@@ -311,7 +311,6 @@ class DirectReader implements LogReader {
                                                .kv("currentBlockEnd", currentBlockEnd).toString());
         }
 
-        long blockOffset = offset - currentBlock;
         long available = currentBlockEnd - offset;
         checkState(available <= Integer.MAX_VALUE, "Available(%d) must be less than max int", available);
         return Math.min(size, (int) available);

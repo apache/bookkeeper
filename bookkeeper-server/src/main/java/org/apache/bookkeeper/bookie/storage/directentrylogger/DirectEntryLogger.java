@@ -300,7 +300,10 @@ public class DirectEntryLogger implements EntryLogger {
     }
 
     private Future<?> flushCurrent() throws IOException {
-        WriterWithMetadata flushWriter = this.curWriter;
+        WriterWithMetadata flushWriter;
+        synchronized (this) {
+            flushWriter = this.curWriter;
+        }
         if (flushWriter != null) {
             return flushExecutor.submit(() -> {
                     long start = System.nanoTime();
@@ -331,21 +334,20 @@ public class DirectEntryLogger implements EntryLogger {
             pendingFlushes.add(flushPromise);
         }
         if (flushWriter != null) {
-            flushExecutor.submit(() -> {
-                    long start = System.nanoTime();
-                    try {
-                        flushWriter.finalizeAndClose();
-                        stats.getWriterFlushStats()
-                            .registerSuccessfulEvent(System.nanoTime() - start, TimeUnit.NANOSECONDS);
-                        unflushedLogs.remove(flushWriter.logId());
-                        flushPromise.complete(null);
-                    } catch (Throwable t) {
-                        stats.getWriterFlushStats()
-                            .registerFailedEvent(System.nanoTime() - start, TimeUnit.NANOSECONDS);
-                        flushPromise.completeExceptionally(t);
-                    }
-                    return null;
-                });
+            flushExecutor.execute(() -> {
+                long start = System.nanoTime();
+                try {
+                    flushWriter.finalizeAndClose();
+                    stats.getWriterFlushStats()
+                        .registerSuccessfulEvent(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+                    unflushedLogs.remove(flushWriter.logId());
+                    flushPromise.complete(null);
+                } catch (Throwable t) {
+                    stats.getWriterFlushStats()
+                        .registerFailedEvent(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+                    flushPromise.completeExceptionally(t);
+                }
+            });
         } else {
             flushPromise.complete(null);
         }
@@ -480,25 +482,30 @@ public class DirectEntryLogger implements EntryLogger {
     public Collection<CompactionEntryLog> incompleteCompactionLogs() {
         List<CompactionEntryLog> logs = new ArrayList<>();
 
-        for (File f : ledgerDir.listFiles()) {
-            if (f.getName().endsWith(COMPACTING_SUFFIX)) {
-                try {
-                    Files.deleteIfExists(f.toPath());
-                } catch (IOException ioe) {
-                    slog.kv("file", f).warn(Events.COMPACTION_DELETE_FAILURE);
+        if (ledgerDir.exists() && ledgerDir.isDirectory()) {
+            File[] files = ledgerDir.listFiles();
+            if (files != null && files.length > 0) {
+                for (File f : files) {
+                    if (f.getName().endsWith(COMPACTING_SUFFIX)) {
+                        try {
+                            Files.deleteIfExists(f.toPath());
+                        } catch (IOException ioe) {
+                            slog.kv("file", f).warn(Events.COMPACTION_DELETE_FAILURE);
+                        }
+                    }
+
+                    Matcher m = EntryLogIdsImpl.COMPACTED_FILE_PATTERN.matcher(f.getName());
+                    if (m.matches()) {
+                        int dstLogId = Integer.parseUnsignedInt(m.group(1), 16);
+                        int srcLogId = Integer.parseUnsignedInt(m.group(2), 16);
+
+                        logs.add(DirectCompactionEntryLog.recoverLog(srcLogId, dstLogId, ledgerDir,
+                            readBufferSize, maxSaneEntrySize,
+                            nativeIO, allocator,
+                            stats.getReadBlockStats(),
+                            slog));
+                    }
                 }
-            }
-
-            Matcher m = EntryLogIdsImpl.COMPACTED_FILE_PATTERN.matcher(f.getName());
-            if (m.matches()) {
-                int dstLogId = Integer.parseUnsignedInt(m.group(1), 16);
-                int srcLogId = Integer.parseUnsignedInt(m.group(2), 16);
-
-                logs.add(DirectCompactionEntryLog.recoverLog(srcLogId, dstLogId, ledgerDir,
-                                                             readBufferSize, maxSaneEntrySize,
-                                                             nativeIO, allocator,
-                                                             stats.getReadBlockStats(),
-                                                             slog));
             }
         }
         return logs;

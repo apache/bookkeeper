@@ -49,7 +49,7 @@ class DirectWriter implements LogWriter {
     final List<Future<?>> outstandingWrites = new ArrayList<Future<?>>();
     Buffer nativeBuffer;
     long offset;
-    private static volatile boolean useFallocate = true;
+    private volatile boolean useFallocate = true;
 
     DirectWriter(int id,
                  String filename,
