@@ -86,7 +86,7 @@ depVersions = [
     thrift: "0.14.2",
     testcontainers: "1.16.3",
     vertx: "3.9.8",
-    yahooDatasketches: "0.8.3",
+    yahooDatasketches: "2.0.0",
     zookeeper: "3.8.0",
 ]
 
@@ -235,7 +235,7 @@ depLibs = [
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
         exclude group: 'io.netty'
     },
-    yahooDatasketches: "com.yahoo.datasketches:sketches-core:${depVersions.yahooDatasketches}",
+    yahooDatasketches: "org.apache.datasketches:sketches-java:${depVersions.yahooDatasketches}",
     zookeeper: dependencies.create("org.apache.zookeeper:zookeeper:${depVersions.zookeeper}") {
         exclude group: 'io.netty'
         exclude group: 'ch.qos.logback'

@@ -16,11 +16,6 @@
  */
 package org.apache.bookkeeper.stats.prometheus;
 
-import com.yahoo.sketches.quantiles.DoublesSketch;
-import com.yahoo.sketches.quantiles.DoublesSketchBuilder;
-import com.yahoo.sketches.quantiles.DoublesUnion;
-import com.yahoo.sketches.quantiles.DoublesUnionBuilder;
-
 import io.netty.util.concurrent.FastThreadLocal;
 
 import java.util.Map;
@@ -31,6 +26,11 @@ import java.util.concurrent.locks.StampedLock;
 
 import org.apache.bookkeeper.stats.OpStatsData;
 import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.datasketches.quantiles.DoublesSketch;
+import org.apache.datasketches.quantiles.DoublesSketchBuilder;
+import org.apache.datasketches.quantiles.DoublesUnion;
+import org.apache.datasketches.quantiles.DoublesUnionBuilder;
+import org.apache.datasketches.quantiles.UpdateDoublesSketch;
 
 /**
  * OpStatsLogger implementation that uses DataSketches library to calculate the approximated latency quantiles.
@@ -193,8 +193,8 @@ public class DataSketchesOpStatsLogger implements OpStatsLogger {
     }
 
     private static class LocalData {
-        private final DoublesSketch successSketch = new DoublesSketchBuilder().build();
-        private final DoublesSketch failSketch = new DoublesSketchBuilder().build();
+        private final UpdateDoublesSketch successSketch = new DoublesSketchBuilder().build();
+        private final UpdateDoublesSketch failSketch = new DoublesSketchBuilder().build();
         private final StampedLock lock = new StampedLock();
     }
 

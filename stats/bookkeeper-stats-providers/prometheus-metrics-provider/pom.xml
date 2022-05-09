@@ -61,10 +61,10 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
-    
+
     <dependency>
-      <groupId>com.yahoo.datasketches</groupId>
-      <artifactId>sketches-core</artifactId>
+      <groupId>org.apache.datasketches</groupId>
+      <artifactId>datasketches-java</artifactId>
     </dependency>
 
   </dependencies>
