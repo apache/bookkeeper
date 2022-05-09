@@ -164,7 +164,7 @@ extends java.lang.Object</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) java.util.concurrent.Future&lt;<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.concurrent.Future&lt;<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preallocation">preallocation</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -186,9 +186,9 @@ extends java.lang.Object</pre>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.EntryLogger.RecentEntryLogsStatus,long,io.netty.buffer.ByteBufAllocator)">EntryLoggerAllocator</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.DefaultEntryLogger.RecentEntryLogsStatus,long,io.netty.buffer.ByteBufAllocator)">EntryLoggerAllocator</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                     <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
-                    <a href="EntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.RecentEntryLogsStatus</a>&nbsp;recentlyCreatedEntryLogsStatus,
+                    <a href="DefaultEntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.RecentEntryLogsStatus</a>&nbsp;recentlyCreatedEntryLogsStatus,
                     long&nbsp;logId,
                     io.netty.buffer.ByteBufAllocator&nbsp;byteBufAllocator)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -212,12 +212,12 @@ extends java.lang.Object</pre>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>(package private) <a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a></code></td>
+<td class="colFirst"><code>(package private) <a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createNewLog(java.io.File)">createNewLog</a></span>&#8203;(java.io.File&nbsp;dirForNextEntryLog)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>(package private) <a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a></code></td>
+<td class="colFirst"><code>(package private) <a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createNewLogForCompaction(java.io.File)">createNewLogForCompaction</a></span>&#8203;(java.io.File&nbsp;dirForNextEntryLog)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -227,7 +227,7 @@ extends java.lang.Object</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>(package private) java.util.concurrent.Future&lt;<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.concurrent.Future&lt;<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPreallocationFuture()">getPreallocationFuture</a></span>()</code></th>
 <td class="colLast">
 <div class="block">get the preallocation for tests.</div>
@@ -270,7 +270,7 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>preallocation</h4>
-<pre>java.util.concurrent.Future&lt;<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&gt; preallocation</pre>
+<pre>java.util.concurrent.Future&lt;<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&gt; preallocation</pre>
 </li>
 </ul>
 <a id="allocatorExecutor">
@@ -301,7 +301,7 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.EntryLogger.RecentEntryLogsStatus,long,io.netty.buffer.ByteBufAllocator)">
+<a id="&lt;init&gt;(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.DefaultEntryLogger.RecentEntryLogsStatus,long,io.netty.buffer.ByteBufAllocator)">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -309,7 +309,7 @@ extends java.lang.Object</pre>
 <h4>EntryLoggerAllocator</h4>
 <pre>EntryLoggerAllocator&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                      <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
-                     <a href="EntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.RecentEntryLogsStatus</a>&nbsp;recentlyCreatedEntryLogsStatus,
+                     <a href="DefaultEntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.RecentEntryLogsStatus</a>&nbsp;recentlyCreatedEntryLogsStatus,
                      long&nbsp;logId,
                      io.netty.buffer.ByteBufAllocator&nbsp;byteBufAllocator)</pre>
 </li>
@@ -339,8 +339,8 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>createNewLog</h4>
-<pre class="methodSignature"><a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;createNewLog&#8203;(java.io.File&nbsp;dirForNextEntryLog)
-                                     throws java.io.IOException</pre>
+<pre class="methodSignature"><a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;createNewLog&#8203;(java.io.File&nbsp;dirForNextEntryLog)
+                                            throws java.io.IOException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>java.io.IOException</code></dd>
@@ -353,8 +353,8 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>createNewLogForCompaction</h4>
-<pre class="methodSignature"><a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;createNewLogForCompaction&#8203;(java.io.File&nbsp;dirForNextEntryLog)
-                                                  throws java.io.IOException</pre>
+<pre class="methodSignature"><a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;createNewLogForCompaction&#8203;(java.io.File&nbsp;dirForNextEntryLog)
+                                                         throws java.io.IOException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>java.io.IOException</code></dd>
@@ -377,7 +377,7 @@ extends java.lang.Object</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>getPreallocationFuture</h4>
-<pre class="methodSignature">java.util.concurrent.Future&lt;<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&gt;&nbsp;getPreallocationFuture()</pre>
+<pre class="methodSignature">java.util.concurrent.Future&lt;<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&gt;&nbsp;getPreallocationFuture()</pre>
 <div class="block">get the preallocation for tests.</div>
 </li>
 </ul>

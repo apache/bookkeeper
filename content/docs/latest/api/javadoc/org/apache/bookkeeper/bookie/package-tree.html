@@ -177,7 +177,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="BufferedChannel.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">BufferedChannel</span></a> (implements java.io.Closeable)
 <ul>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogger.BufferedLogChannel</span></a></li>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultEntryLogger.BufferedLogChannel</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="SlowBufferedChannel.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">SlowBufferedChannel</span></a></li>
 </ul>
 </li>
@@ -188,6 +188,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.bookkeeper.bookie.<a href="CheckpointSourceList.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">CheckpointSourceList</span></a> (implements org.apache.bookkeeper.bookie.<a href="CheckpointSource.html" title="interface in org.apache.bookkeeper.bookie">CheckpointSource</a>)</li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="Cookie.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">Cookie</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="Cookie.Builder.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">Cookie.Builder</span></a></li>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultEntryLogger</span></a> (implements org.apache.bookkeeper.bookie.storage.<a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>)
+<ul>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="ReadOnlyDefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">ReadOnlyDefaultEntryLogger</span></a></li>
+</ul>
+</li>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultEntryLogger.RecentEntryLogsStatus</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultFileChannel.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultFileChannel</span></a> (implements org.apache.bookkeeper.bookie.<a href="BookieFileChannel.html" title="interface in org.apache.bookkeeper.bookie">BookieFileChannel</a>)</li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultFileChannelProvider.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultFileChannelProvider</span></a> (implements org.apache.bookkeeper.bookie.<a href="FileChannelProvider.html" title="interface in org.apache.bookkeeper.bookie">FileChannelProvider</a>)</li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="EntryKey.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryKey</span></a>
@@ -197,12 +203,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLocation.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLocation</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogCompactor.CompactionScannerFactory.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogCompactor.CompactionScannerFactory</span></a></li>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogger</span></a>
-<ul>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="ReadOnlyEntryLogger.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">ReadOnlyEntryLogger</span></a></li>
-</ul>
-</li>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogger.RecentEntryLogsStatus</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLoggerAllocator.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLoggerAllocator</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogManagerBase.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogManagerBase</span></a> (implements org.apache.bookkeeper.bookie.<a href="EntryLogManager.html" title="interface in org.apache.bookkeeper.bookie">EntryLogManager</a>)
 <ul>
@@ -232,7 +232,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.bookkeeper.bookie.<a href="IndexInMemPageMgr.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">IndexInMemPageMgr</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="IndexPersistenceMgr.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">IndexPersistenceMgr</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="InMemoryEntryLogMetadataMap.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">InMemoryEntryLogMetadataMap</span></a> (implements org.apache.bookkeeper.bookie.<a href="EntryLogMetadataMap.html" title="interface in org.apache.bookkeeper.bookie">EntryLogMetadataMap</a>)</li>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="InterleavedLedgerStorage.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">InterleavedLedgerStorage</span></a> (implements org.apache.bookkeeper.bookie.<a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>, org.apache.bookkeeper.bookie.<a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a>)</li>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="InterleavedLedgerStorage.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">InterleavedLedgerStorage</span></a> (implements org.apache.bookkeeper.bookie.<a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>, org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a>)</li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="InterleavedStorageRegenerateIndexOp.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">InterleavedStorageRegenerateIndexOp</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="InterleavedStorageRegenerateIndexOp.DryRunLedgerCache.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">InterleavedStorageRegenerateIndexOp.DryRunLedgerCache</span></a> (implements org.apache.bookkeeper.bookie.<a href="LedgerCache.html" title="interface in org.apache.bookkeeper.bookie">LedgerCache</a>)</li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="InterleavedStorageRegenerateIndexOp.RecoveryStats.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">InterleavedStorageRegenerateIndexOp.RecoveryStats</span></a></li>
@@ -270,7 +270,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.bookkeeper.bookie.<a href="ScrubberStats.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">ScrubberStats</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="SkipListArena.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">SkipListArena</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="SkipListArena.MemorySlice.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">SkipListArena.MemorySlice</span></a></li>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="SortedLedgerStorage.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">SortedLedgerStorage</span></a> (implements org.apache.bookkeeper.bookie.<a href="CacheCallback.html" title="interface in org.apache.bookkeeper.bookie">CacheCallback</a>, org.apache.bookkeeper.bookie.<a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>, org.apache.bookkeeper.bookie.<a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a>, org.apache.bookkeeper.bookie.<a href="LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a>, org.apache.bookkeeper.bookie.<a href="SkipListFlusher.html" title="interface in org.apache.bookkeeper.bookie">SkipListFlusher</a>)</li>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="SortedLedgerStorage.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">SortedLedgerStorage</span></a> (implements org.apache.bookkeeper.bookie.<a href="CacheCallback.html" title="interface in org.apache.bookkeeper.bookie">CacheCallback</a>, org.apache.bookkeeper.bookie.<a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>, org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a>, org.apache.bookkeeper.bookie.<a href="LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a>, org.apache.bookkeeper.bookie.<a href="SkipListFlusher.html" title="interface in org.apache.bookkeeper.bookie">SkipListFlusher</a>)</li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="SyncThread.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">SyncThread</span></a> (implements org.apache.bookkeeper.bookie.<a href="Checkpointer.html" title="interface in org.apache.bookkeeper.bookie">Checkpointer</a>)</li>
 <li class="circle">java.lang.Thread (implements java.lang.Runnable)
 <ul>
@@ -315,12 +315,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.bookkeeper.bookie.<a href="BookieException.UpgradeException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">BookieException.UpgradeException</span></a></li>
 </ul>
 </li>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogger.EntryLookupException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogger.EntryLookupException</span></a>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.EntryLookupException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultEntryLogger.EntryLookupException</span></a>
 <ul>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogger.EntryLookupException.InvalidEntryLengthException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogger.EntryLookupException.InvalidEntryLengthException</span></a></li>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogger.EntryLookupException.MissingEntryException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogger.EntryLookupException.MissingEntryException</span></a></li>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogger.EntryLookupException.MissingLogFileException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogger.EntryLookupException.MissingLogFileException</span></a></li>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogger.EntryLookupException.WrongEntryException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogger.EntryLookupException.WrongEntryException</span></a></li>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.EntryLookupException.InvalidEntryLengthException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultEntryLogger.EntryLookupException.InvalidEntryLengthException</span></a></li>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.EntryLookupException.MissingEntryException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultEntryLogger.EntryLookupException.MissingEntryException</span></a></li>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.EntryLookupException.MissingLogFileException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultEntryLogger.EntryLookupException.MissingLogFileException</span></a></li>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.EntryLookupException.WrongEntryException.html" title="class in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultEntryLogger.EntryLookupException.WrongEntryException</span></a></li>
 </ul>
 </li>
 <li class="circle">java.io.IOException
@@ -392,8 +392,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </ul>
 </li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="CookieValidation.html" title="interface in org.apache.bookkeeper.bookie"><span class="typeNameLink">CookieValidation</span></a></li>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogger.EntryLogListener</span></a></li>
-<li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogger.EntryLogScanner.html" title="interface in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogger.EntryLogScanner</span></a></li>
+<li class="circle">org.apache.bookkeeper.bookie.<a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie"><span class="typeNameLink">DefaultEntryLogger.EntryLogListener</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="EntryLogManager.html" title="interface in org.apache.bookkeeper.bookie"><span class="typeNameLink">EntryLogManager</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="FileInfoBackingCache.FileLoader.html" title="interface in org.apache.bookkeeper.bookie"><span class="typeNameLink">FileInfoBackingCache.FileLoader</span></a></li>
 <li class="circle">org.apache.bookkeeper.bookie.<a href="GarbageCollector.html" title="interface in org.apache.bookkeeper.bookie"><span class="typeNameLink">GarbageCollector</span></a></li>

@@ -179,7 +179,7 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) java.util.List&lt;<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.List&lt;<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rotatedLogChannels">rotatedLogChannels</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -204,7 +204,7 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.EntryLoggerAllocator,java.util.List)">EntryLogManagerBase</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                    <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
                    <a href="EntryLoggerAllocator.html" title="class in org.apache.bookkeeper.bookie">EntryLoggerAllocator</a>&nbsp;entryLoggerAllocator,
-                   java.util.List&lt;<a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a>&gt;&nbsp;listeners)</code></th>
+                   java.util.List&lt;<a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a>&gt;&nbsp;listeners)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -255,7 +255,7 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#flushLogChannel(org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel,boolean)">flushLogChannel</a></span>&#8203;(<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#flushLogChannel(org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel,boolean)">flushLogChannel</a></span>&#8203;(<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
                boolean&nbsp;forceMetadata)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -265,31 +265,31 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code>(package private) abstract <a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a></code></td>
+<td class="colFirst"><code>(package private) abstract <a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCurrentLogForLedger(long)">getCurrentLogForLedger</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
-<td class="colFirst"><code>(package private) abstract <a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a></code></td>
+<td class="colFirst"><code>(package private) abstract <a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCurrentLogForLedgerForAddEntry(long,int,boolean)">getCurrentLogForLedgerForAddEntry</a></span>&#8203;(long&nbsp;ledgerId,
                                  int&nbsp;entrySize,
                                  boolean&nbsp;rollLog)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code>(package private) java.util.List&lt;<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.List&lt;<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRotatedLogChannels()">getRotatedLogChannels</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reachEntryLogLimit(org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel,long)">reachEntryLogLimit</a></span>&#8203;(<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reachEntryLogLimit(org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel,long)">reachEntryLogLimit</a></span>&#8203;(<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
                   long&nbsp;size)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readEntryLogHardLimit(org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel,long)">readEntryLogHardLimit</a></span>&#8203;(<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readEntryLogHardLimit(org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel,long)">readEntryLogHardLimit</a></span>&#8203;(<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
                      long&nbsp;size)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -300,8 +300,8 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code>(package private) abstract void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setCurrentLogForLedgerAndAddToRotate(long,org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel)">setCurrentLogForLedgerAndAddToRotate</a></span>&#8203;(long&nbsp;ledgerId,
-                                    <a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;logChannel)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setCurrentLogForLedgerAndAddToRotate(long,org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel)">setCurrentLogForLedgerAndAddToRotate</a></span>&#8203;(long&nbsp;ledgerId,
+                                    <a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;logChannel)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -341,7 +341,7 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>rotatedLogChannels</h4>
-<pre>volatile&nbsp;java.util.List&lt;<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&gt; rotatedLogChannels</pre>
+<pre>volatile&nbsp;java.util.List&lt;<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&gt; rotatedLogChannels</pre>
 </li>
 </ul>
 <a id="entryLoggerAllocator">
@@ -391,7 +391,7 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 <pre>EntryLogManagerBase&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                     <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
                     <a href="EntryLoggerAllocator.html" title="class in org.apache.bookkeeper.bookie">EntryLoggerAllocator</a>&nbsp;entryLoggerAllocator,
-                    java.util.List&lt;<a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a>&gt;&nbsp;listeners)</pre>
+                    java.util.List&lt;<a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a>&gt;&nbsp;listeners)</pre>
 </li>
 </ul>
 </li>
@@ -422,23 +422,23 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 </dl>
 </li>
 </ul>
-<a id="reachEntryLogLimit(org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel,long)">
+<a id="reachEntryLogLimit(org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel,long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>reachEntryLogLimit</h4>
-<pre class="methodSignature">boolean&nbsp;reachEntryLogLimit&#8203;(<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
+<pre class="methodSignature">boolean&nbsp;reachEntryLogLimit&#8203;(<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
                            long&nbsp;size)</pre>
 </li>
 </ul>
-<a id="readEntryLogHardLimit(org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel,long)">
+<a id="readEntryLogHardLimit(org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel,long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>readEntryLogHardLimit</h4>
-<pre class="methodSignature">boolean&nbsp;readEntryLogHardLimit&#8203;(<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
+<pre class="methodSignature">boolean&nbsp;readEntryLogHardLimit&#8203;(<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
                               long&nbsp;size)</pre>
 </li>
 </ul>
@@ -448,8 +448,8 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>getCurrentLogForLedger</h4>
-<pre class="methodSignature">abstract&nbsp;<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;getCurrentLogForLedger&#8203;(long&nbsp;ledgerId)
-                                                        throws java.io.IOException</pre>
+<pre class="methodSignature">abstract&nbsp;<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;getCurrentLogForLedger&#8203;(long&nbsp;ledgerId)
+                                                               throws java.io.IOException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>java.io.IOException</code></dd>
@@ -462,24 +462,24 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>getCurrentLogForLedgerForAddEntry</h4>
-<pre class="methodSignature">abstract&nbsp;<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;getCurrentLogForLedgerForAddEntry&#8203;(long&nbsp;ledgerId,
-                                                                          int&nbsp;entrySize,
-                                                                          boolean&nbsp;rollLog)
-                                                                   throws java.io.IOException</pre>
+<pre class="methodSignature">abstract&nbsp;<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;getCurrentLogForLedgerForAddEntry&#8203;(long&nbsp;ledgerId,
+                                                                                 int&nbsp;entrySize,
+                                                                                 boolean&nbsp;rollLog)
+                                                                          throws java.io.IOException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>java.io.IOException</code></dd>
 </dl>
 </li>
 </ul>
-<a id="setCurrentLogForLedgerAndAddToRotate(long,org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel)">
+<a id="setCurrentLogForLedgerAndAddToRotate(long,org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>setCurrentLogForLedgerAndAddToRotate</h4>
 <pre class="methodSignature">abstract&nbsp;void&nbsp;setCurrentLogForLedgerAndAddToRotate&#8203;(long&nbsp;ledgerId,
-                                                   <a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;logChannel)
+                                                   <a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;logChannel)
                                             throws java.io.IOException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -521,7 +521,7 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>getRotatedLogChannels</h4>
-<pre class="methodSignature">java.util.List&lt;<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&gt;&nbsp;getRotatedLogChannels()</pre>
+<pre class="methodSignature">java.util.List&lt;<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&gt;&nbsp;getRotatedLogChannels()</pre>
 </li>
 </ul>
 <a id="flush()">
@@ -540,13 +540,13 @@ implements <a href="EntryLogManager.html" title="interface in org.apache.bookkee
 </dl>
 </li>
 </ul>
-<a id="flushLogChannel(org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel,boolean)">
+<a id="flushLogChannel(org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel,boolean)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>flushLogChannel</h4>
-<pre class="methodSignature">void&nbsp;flushLogChannel&#8203;(<a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
+<pre class="methodSignature">void&nbsp;flushLogChannel&#8203;(<a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a>&nbsp;logChannel,
                      boolean&nbsp;forceMetadata)
               throws java.io.IOException</pre>
 <dl>

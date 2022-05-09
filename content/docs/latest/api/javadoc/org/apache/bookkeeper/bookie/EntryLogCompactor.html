@@ -193,7 +193,7 @@ extends <a href="AbstractLogCompactor.html" title="class in org.apache.bookkeepe
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a></code></td>
+<td class="colFirst"><code>(package private) <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#entryLogger">entryLogger</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -232,8 +232,8 @@ extends <a href="AbstractLogCompactor.html" title="class in org.apache.bookkeepe
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.EntryLogger,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.bookie.AbstractLogCompactor.LogRemovalListener)">EntryLogCompactor</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
-                 <a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a>&nbsp;entryLogger,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.bookie.AbstractLogCompactor.LogRemovalListener)">EntryLogCompactor</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                 <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
                  <a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>&nbsp;ledgerStorage,
                  <a href="AbstractLogCompactor.LogRemovalListener.html" title="interface in org.apache.bookkeeper.bookie">AbstractLogCompactor.LogRemovalListener</a>&nbsp;logRemover)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -309,7 +309,7 @@ extends <a href="AbstractLogCompactor.html" title="class in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>entryLogger</h4>
-<pre>final&nbsp;<a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a> entryLogger</pre>
+<pre>final&nbsp;<a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a> entryLogger</pre>
 </li>
 </ul>
 <a id="ledgerStorage">
@@ -331,14 +331,14 @@ extends <a href="AbstractLogCompactor.html" title="class in org.apache.bookkeepe
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.EntryLogger,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.bookie.AbstractLogCompactor.LogRemovalListener)">
+<a id="&lt;init&gt;(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.bookie.AbstractLogCompactor.LogRemovalListener)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>EntryLogCompactor</h4>
 <pre>public&nbsp;EntryLogCompactor&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
-                         <a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a>&nbsp;entryLogger,
+                         <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
                          <a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>&nbsp;ledgerStorage,
                          <a href="AbstractLogCompactor.LogRemovalListener.html" title="interface in org.apache.bookkeeper.bookie">AbstractLogCompactor.LogRemovalListener</a>&nbsp;logRemover)</pre>
 </li>

@@ -131,12 +131,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="CacheCallback.html" title="interface in org.apache.bookkeeper.bookie">CacheCallback</a></code>, <code><a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a></code>, <code><a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a></code>, <code><a href="LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a></code>, <code><a href="SkipListFlusher.html" title="interface in org.apache.bookkeeper.bookie">SkipListFlusher</a></code></dd>
+<dd><code><a href="CacheCallback.html" title="interface in org.apache.bookkeeper.bookie">CacheCallback</a></code>, <code><a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a></code>, <code><a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a></code>, <code><a href="LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a></code>, <code><a href="SkipListFlusher.html" title="interface in org.apache.bookkeeper.bookie">SkipListFlusher</a></code></dd>
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">SortedLedgerStorage</span>
 extends java.lang.Object
-implements <a href="LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a>, <a href="CacheCallback.html" title="interface in org.apache.bookkeeper.bookie">CacheCallback</a>, <a href="SkipListFlusher.html" title="interface in org.apache.bookkeeper.bookie">SkipListFlusher</a>, <a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>, <a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a></pre>
+implements <a href="LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a>, <a href="CacheCallback.html" title="interface in org.apache.bookkeeper.bookie">CacheCallback</a>, <a href="SkipListFlusher.html" title="interface in org.apache.bookkeeper.bookie">SkipListFlusher</a>, <a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>, <a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a></pre>
 <div class="block">A <code>SortedLedgerStorage</code> is an extension of <a href="InterleavedLedgerStorage.html" title="class in org.apache.bookkeeper.bookie"><code>InterleavedLedgerStorage</code></a>. It
  is comprised of two <code>MemTable</code>s and a <code>InterleavedLedgerStorage</code>. All the
  entries will be first added into a <code>MemTable</code>, and then be flushed back to the
@@ -324,7 +324,7 @@ implements <a href="LedgerStorage.html" title="interface in org.apache.bookkeepe
 </td>
 </tr>
 <tr id="i13" class="rowColor">
-<td class="colFirst"><code><a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a></code></td>
+<td class="colFirst"><code><a href="DefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEntryLogger()">getEntryLogger</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1095,11 +1095,11 @@ implements <a href="LedgerStorage.html" title="interface in org.apache.bookkeepe
 <li class="blockList">
 <h4>onRotateEntryLog</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;onRotateEntryLog()</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EntryLogger.EntryLogListener.html#onRotateEntryLog()">EntryLogger.EntryLogListener</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="DefaultEntryLogger.EntryLogListener.html#onRotateEntryLog()">DefaultEntryLogger.EntryLogListener</a></code></span></div>
 <div class="block">Rotate a new entry log to write.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="EntryLogger.EntryLogListener.html#onRotateEntryLog()">onRotateEntryLog</a></code>&nbsp;in interface&nbsp;<code><a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a></code></dd>
+<dd><code><a href="DefaultEntryLogger.EntryLogListener.html#onRotateEntryLog()">onRotateEntryLog</a></code>&nbsp;in interface&nbsp;<code><a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -1118,13 +1118,7 @@ implements <a href="LedgerStorage.html" title="interface in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>getEntryLogger</h4>
-<pre class="methodSignature">public&nbsp;<a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a>&nbsp;getEntryLogger()</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="CompactableLedgerStorage.html#getEntryLogger()">getEntryLogger</a></code>&nbsp;in interface&nbsp;<code><a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a></code></dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>the EntryLogger used by the ledger storage</dd>
-</dl>
+<pre class="methodSignature">public&nbsp;<a href="DefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger</a>&nbsp;getEntryLogger()</pre>
 </li>
 </ul>
 <a id="getActiveLedgersInRange(long,long)">

@@ -170,13 +170,8 @@ extends <a href="TransactionalEntryLogCompactor.CompactionPhase.html" title="cla
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) java.io.File</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compactedLogFile">compactedLogFile</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>(package private) java.io.File</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newEntryLogFile">newEntryLogFile</a></span></code></th>
+<td class="colFirst"><code>(package private) <a href="storage/CompactionEntryLog.html" title="interface in org.apache.bookkeeper.bookie.storage">CompactionEntryLog</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compactionLog">compactionLog</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -197,11 +192,11 @@ extends <a href="TransactionalEntryLogCompactor.CompactionPhase.html" title="cla
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.io.File)">UpdateIndexPhase</a></span>&#8203;(java.io.File&nbsp;compactedLogFile)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.bookie.storage.CompactionEntryLog)">UpdateIndexPhase</a></span>&#8203;(<a href="storage/CompactionEntryLog.html" title="interface in org.apache.bookkeeper.bookie.storage">CompactionEntryLog</a>&nbsp;compactionLog)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.io.File,boolean)">UpdateIndexPhase</a></span>&#8203;(java.io.File&nbsp;compactedLogFile,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.bookie.storage.CompactionEntryLog,boolean)">UpdateIndexPhase</a></span>&#8203;(<a href="storage/CompactionEntryLog.html" title="interface in org.apache.bookkeeper.bookie.storage">CompactionEntryLog</a>&nbsp;compactionLog,
                 boolean&nbsp;isInRecovery)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -269,22 +264,13 @@ extends <a href="TransactionalEntryLogCompactor.CompactionPhase.html" title="cla
 <!--   -->
 </a>
 <h3>Field Detail</h3>
-<a id="compactedLogFile">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>compactedLogFile</h4>
-<pre>java.io.File compactedLogFile</pre>
-</li>
-</ul>
-<a id="newEntryLogFile">
+<a id="compactionLog">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>newEntryLogFile</h4>
-<pre>java.io.File newEntryLogFile</pre>
+<h4>compactionLog</h4>
+<pre>final&nbsp;<a href="storage/CompactionEntryLog.html" title="interface in org.apache.bookkeeper.bookie.storage">CompactionEntryLog</a> compactionLog</pre>
 </li>
 </ul>
 </li>
@@ -297,22 +283,22 @@ extends <a href="TransactionalEntryLogCompactor.CompactionPhase.html" title="cla
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(java.io.File)">
+<a id="&lt;init&gt;(org.apache.bookkeeper.bookie.storage.CompactionEntryLog)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>UpdateIndexPhase</h4>
-<pre>public&nbsp;UpdateIndexPhase&#8203;(java.io.File&nbsp;compactedLogFile)</pre>
+<pre>public&nbsp;UpdateIndexPhase&#8203;(<a href="storage/CompactionEntryLog.html" title="interface in org.apache.bookkeeper.bookie.storage">CompactionEntryLog</a>&nbsp;compactionLog)</pre>
 </li>
 </ul>
-<a id="&lt;init&gt;(java.io.File,boolean)">
+<a id="&lt;init&gt;(org.apache.bookkeeper.bookie.storage.CompactionEntryLog,boolean)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>UpdateIndexPhase</h4>
-<pre>public&nbsp;UpdateIndexPhase&#8203;(java.io.File&nbsp;compactedLogFile,
+<pre>public&nbsp;UpdateIndexPhase&#8203;(<a href="storage/CompactionEntryLog.html" title="interface in org.apache.bookkeeper.bookie.storage">CompactionEntryLog</a>&nbsp;compactionLog,
                         boolean&nbsp;isInRecovery)</pre>
 </li>
 </ul>

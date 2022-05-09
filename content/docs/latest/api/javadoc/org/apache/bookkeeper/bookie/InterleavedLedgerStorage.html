@@ -131,7 +131,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a></code>, <code><a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a></code>, <code><a href="LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a></code></dd>
+<dd><code><a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a></code>, <code><a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a></code>, <code><a href="LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a></code></dd>
 </dl>
 <hr>
 <pre><a href="../stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">@StatsDoc</a>(<a href="../stats/annotations/StatsDoc.html#name()">name</a>="bookie",
@@ -139,7 +139,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
           <a href="../stats/annotations/StatsDoc.html#help()">help</a>="Bookie related stats")
 public class <span class="typeNameLabel">InterleavedLedgerStorage</span>
 extends java.lang.Object
-implements <a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>, <a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a></pre>
+implements <a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>, <a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a></pre>
 <div class="block">Interleave ledger storage.
 
  <p>This ledger storage implementation stores all entries in a single
@@ -197,7 +197,7 @@ implements <a href="CompactableLedgerStorage.html" title="interface in org.apach
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a></code></td>
+<td class="colFirst"><code>(package private) <a href="DefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#entryLogger">entryLogger</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -345,7 +345,7 @@ implements <a href="CompactableLedgerStorage.html" title="interface in org.apach
 </td>
 </tr>
 <tr id="i13" class="rowColor">
-<td class="colFirst"><code><a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a></code></td>
+<td class="colFirst"><code><a href="DefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEntryLogger()">getEntryLogger</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -416,21 +416,21 @@ implements <a href="CompactableLedgerStorage.html" title="interface in org.apach
 </tr>
 <tr id="i23" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initializeWithEntryLogger(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.EntryLogger,org.apache.bookkeeper.stats.StatsLogger)">initializeWithEntryLogger</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initializeWithEntryLogger(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger)">initializeWithEntryLogger</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                          <a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
                          <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
                          <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
-                         <a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a>&nbsp;entryLogger,
+                         <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
                          <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i24" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initializeWithEntryLogListener(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">initializeWithEntryLogListener</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initializeWithEntryLogListener(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.DefaultEntryLogger.EntryLogListener,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">initializeWithEntryLogListener</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                               <a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
                               <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
                               <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
-                              <a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a>&nbsp;entryLogListener,
+                              <a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a>&nbsp;entryLogListener,
                               <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
                               io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -623,7 +623,7 @@ implements <a href="CompactableLedgerStorage.html" title="interface in org.apach
 <ul class="blockList">
 <li class="blockList">
 <h4>entryLogger</h4>
-<pre><a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a> entryLogger</pre>
+<pre><a href="DefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger</a> entryLogger</pre>
 </li>
 </ul>
 <a id="ledgerCache">
@@ -723,7 +723,7 @@ implements <a href="CompactableLedgerStorage.html" title="interface in org.apach
 </dl>
 </li>
 </ul>
-<a id="initializeWithEntryLogListener(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">
+<a id="initializeWithEntryLogListener(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.DefaultEntryLogger.EntryLogListener,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -733,7 +733,7 @@ implements <a href="CompactableLedgerStorage.html" title="interface in org.apach
                                     <a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
                                     <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
                                     <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
-                                    <a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a>&nbsp;entryLogListener,
+                                    <a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a>&nbsp;entryLogListener,
                                     <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
                                     io.netty.buffer.ByteBufAllocator&nbsp;allocator)
                              throws java.io.IOException</pre>
@@ -782,7 +782,7 @@ implements <a href="CompactableLedgerStorage.html" title="interface in org.apach
 </dl>
 </li>
 </ul>
-<a id="initializeWithEntryLogger(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.EntryLogger,org.apache.bookkeeper.stats.StatsLogger)">
+<a id="initializeWithEntryLogger(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -792,7 +792,7 @@ implements <a href="CompactableLedgerStorage.html" title="interface in org.apach
                                       <a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
                                       <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
                                       <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
-                                      <a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a>&nbsp;entryLogger,
+                                      <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
                                       <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)
                                throws java.io.IOException</pre>
 <dl>
@@ -1258,13 +1258,7 @@ implements <a href="CompactableLedgerStorage.html" title="interface in org.apach
 <ul class="blockList">
 <li class="blockList">
 <h4>getEntryLogger</h4>
-<pre class="methodSignature">public&nbsp;<a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a>&nbsp;getEntryLogger()</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="CompactableLedgerStorage.html#getEntryLogger()">getEntryLogger</a></code>&nbsp;in interface&nbsp;<code><a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a></code></dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>the EntryLogger used by the ledger storage</dd>
-</dl>
+<pre class="methodSignature">public&nbsp;<a href="DefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger</a>&nbsp;getEntryLogger()</pre>
 </li>
 </ul>
 <a id="registerLedgerDeletionListener(org.apache.bookkeeper.bookie.LedgerStorage.LedgerDeletionListener)">
@@ -1324,11 +1318,11 @@ implements <a href="CompactableLedgerStorage.html" title="interface in org.apach
 <li class="blockList">
 <h4>onRotateEntryLog</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;onRotateEntryLog()</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EntryLogger.EntryLogListener.html#onRotateEntryLog()">EntryLogger.EntryLogListener</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="DefaultEntryLogger.EntryLogListener.html#onRotateEntryLog()">DefaultEntryLogger.EntryLogListener</a></code></span></div>
 <div class="block">Rotate a new entry log to write.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="EntryLogger.EntryLogListener.html#onRotateEntryLog()">onRotateEntryLog</a></code>&nbsp;in interface&nbsp;<code><a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a></code></dd>
+<dd><code><a href="DefaultEntryLogger.EntryLogListener.html#onRotateEntryLog()">onRotateEntryLog</a></code>&nbsp;in interface&nbsp;<code><a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a></code></dd>
 </dl>
 </li>
 </ul>

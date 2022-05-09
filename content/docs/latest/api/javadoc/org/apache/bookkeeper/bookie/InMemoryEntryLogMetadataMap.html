@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -181,17 +181,24 @@ implements <a href="EntryLogMetadataMap.html" title="interface in org.apache.boo
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clear()">clear</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Clear all records from the map.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#close()">close</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#containsKey(long)">containsKey</a></span>&#8203;(long&nbsp;entryLogId)</code></th>
 <td class="colLast">
 <div class="block">Checks if record with entryLogId exists into the map.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#forEach(java.util.function.BiConsumer)">forEach</a></span>&#8203;(java.util.function.BiConsumer&lt;java.lang.Long,&#8203;<a href="EntryLogMetadata.html" title="class in org.apache.bookkeeper.bookie">EntryLogMetadata</a>&gt;&nbsp;action)</code></th>
 <td class="colLast">
@@ -199,7 +206,14 @@ implements <a href="EntryLogMetadataMap.html" title="interface in org.apache.boo
  have been processed or the action throws an exception.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEmpty()">isEmpty</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Returns true if there are no elements in the map.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#put(long,org.apache.bookkeeper.bookie.EntryLogMetadata)">put</a></span>&#8203;(long&nbsp;entryLogId,
    <a href="EntryLogMetadata.html" title="class in org.apache.bookkeeper.bookie">EntryLogMetadata</a>&nbsp;entryLogMeta)</code></th>
@@ -207,14 +221,14 @@ implements <a href="EntryLogMetadataMap.html" title="interface in org.apache.boo
 <div class="block">Adds entryLogMetadata record into the map.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#remove(long)">remove</a></span>&#8203;(long&nbsp;entryLogId)</code></th>
 <td class="colLast">
 <div class="block">Removes entryLogMetadata record from the map.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size()">size</a></span>()</code></th>
 <td class="colLast">
@@ -340,6 +354,38 @@ implements <a href="EntryLogMetadataMap.html" title="interface in org.apache.boo
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="EntryLogMetadataMap.html#size()">size</a></code>&nbsp;in interface&nbsp;<code><a href="EntryLogMetadataMap.html" title="interface in org.apache.bookkeeper.bookie">EntryLogMetadataMap</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+</dl>
+</li>
+</ul>
+<a id="isEmpty()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isEmpty</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isEmpty()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EntryLogMetadataMap.html#isEmpty()">EntryLogMetadataMap</a></code></span></div>
+<div class="block">Returns true if there are no elements in the map.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="EntryLogMetadataMap.html#isEmpty()">isEmpty</a></code>&nbsp;in interface&nbsp;<code><a href="EntryLogMetadataMap.html" title="interface in org.apache.bookkeeper.bookie">EntryLogMetadataMap</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+</dl>
+</li>
+</ul>
+<a id="clear()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>clear</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;clear()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EntryLogMetadataMap.html#clear()">EntryLogMetadataMap</a></code></span></div>
+<div class="block">Clear all records from the map.
+ For unit tests.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="EntryLogMetadataMap.html#clear()">clear</a></code>&nbsp;in interface&nbsp;<code><a href="EntryLogMetadataMap.html" title="interface in org.apache.bookkeeper.bookie">EntryLogMetadataMap</a></code></dd>
 </dl>
 </li>
 </ul>

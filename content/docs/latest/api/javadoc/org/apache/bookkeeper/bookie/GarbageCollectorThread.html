@@ -189,7 +189,7 @@ extends <a href="../util/SafeRunnable.html" title="class in org.apache.bookkeepe
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a></code></td>
+<td class="colFirst"><code>(package private) <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#entryLogger">entryLogger</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -294,26 +294,21 @@ extends <a href="../util/SafeRunnable.html" title="class in org.apache.bookkeepe
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#scannedLogId">scannedLogId</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.Future&lt;?&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#scheduledFuture">scheduledFuture</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.atomic.AtomicBoolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#suspendMajorCompaction">suspendMajorCompaction</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.atomic.AtomicBoolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#suspendMinorCompaction">suspendMinorCompaction</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="AbstractLogCompactor.Throttler.html" title="class in org.apache.bookkeeper.bookie">AbstractLogCompactor.Throttler</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#throttler">throttler</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -343,20 +338,22 @@ extends <a href="../util/SafeRunnable.html" title="class in org.apache.bookkeepe
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.stats.StatsLogger)">GarbageCollectorThread</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger)">GarbageCollectorThread</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                       <a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
                       <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
                       <a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>&nbsp;ledgerStorage,
+                      <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
                       <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
 <td class="colLast">
 <div class="block">Create a garbage collector thread.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.stats.StatsLogger,java.util.concurrent.ScheduledExecutorService)">GarbageCollectorThread</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger,java.util.concurrent.ScheduledExecutorService)">GarbageCollectorThread</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
                       <a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
                       <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
                       <a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>&nbsp;ledgerStorage,
+                      <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
                       <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
                       java.util.concurrent.ScheduledExecutorService&nbsp;gcExecutor)</code></th>
 <td class="colLast">
@@ -705,7 +702,7 @@ extends <a href="../util/SafeRunnable.html" title="class in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>entryLogger</h4>
-<pre>final&nbsp;<a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a> entryLogger</pre>
+<pre>final&nbsp;<a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a> entryLogger</pre>
 </li>
 </ul>
 <a id="compactor">
@@ -760,15 +757,6 @@ extends <a href="../util/SafeRunnable.html" title="class in org.apache.bookkeepe
 <li class="blockList">
 <h4>running</h4>
 <pre>volatile&nbsp;boolean running</pre>
-</li>
-</ul>
-<a id="scannedLogId">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>scannedLogId</h4>
-<pre>long scannedLogId</pre>
 </li>
 </ul>
 <a id="forceGarbageCollection">
@@ -853,7 +841,7 @@ extends <a href="../util/SafeRunnable.html" title="class in org.apache.bookkeepe
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.stats.StatsLogger)">
+<a id="&lt;init&gt;(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -863,6 +851,7 @@ extends <a href="../util/SafeRunnable.html" title="class in org.apache.bookkeepe
                               <a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
                               <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
                               <a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>&nbsp;ledgerStorage,
+                              <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
                               <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)
                        throws java.io.IOException</pre>
 <div class="block">Create a garbage collector thread.</div>
@@ -874,7 +863,7 @@ extends <a href="../util/SafeRunnable.html" title="class in org.apache.bookkeepe
 </dl>
 </li>
 </ul>
-<a id="&lt;init&gt;(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.stats.StatsLogger,java.util.concurrent.ScheduledExecutorService)">
+<a id="&lt;init&gt;(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger,java.util.concurrent.ScheduledExecutorService)">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -884,6 +873,7 @@ extends <a href="../util/SafeRunnable.html" title="class in org.apache.bookkeepe
                               <a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
                               <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
                               <a href="CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>&nbsp;ledgerStorage,
+                              <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
                               <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
                               java.util.concurrent.ScheduledExecutorService&nbsp;gcExecutor)
                        throws java.io.IOException</pre>

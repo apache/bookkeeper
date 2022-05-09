@@ -2,6 +2,8 @@ org.apache.bookkeeper.auth
 org.apache.bookkeeper.bookie
 org.apache.bookkeeper.bookie.datainteg
 org.apache.bookkeeper.bookie.stats
+org.apache.bookkeeper.bookie.storage
+org.apache.bookkeeper.bookie.storage.directentrylogger
 org.apache.bookkeeper.bookie.storage.ldb
 org.apache.bookkeeper.client
 org.apache.bookkeeper.client.api

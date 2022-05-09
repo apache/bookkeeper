@@ -249,10 +249,12 @@
 <li><a href="org/apache/bookkeeper/common/stats/BroadCastStatsLogger.html" title="class in org.apache.bookkeeper.common.stats">BroadCastStatsLogger</a></li>
 <li><a href="org/apache/bookkeeper/common/stats/BroadCastStatsLogger.MasterSlave.html" title="class in org.apache.bookkeeper.common.stats">BroadCastStatsLogger.MasterSlave</a></li>
 <li><a href="org/apache/bookkeeper/common/stats/BroadCastStatsLogger.Two.html" title="class in org.apache.bookkeeper.common.stats">BroadCastStatsLogger.Two</a></li>
+<li><a href="org/apache/bookkeeper/bookie/storage/directentrylogger/Buffer.html" title="class in org.apache.bookkeeper.bookie.storage.directentrylogger">Buffer</a></li>
 <li><a href="org/apache/bookkeeper/bookie/BufferedChannel.html" title="class in org.apache.bookkeeper.bookie">BufferedChannel</a></li>
 <li><a href="org/apache/bookkeeper/bookie/BufferedChannelBase.html" title="class in org.apache.bookkeeper.bookie">BufferedChannelBase</a></li>
 <li><a href="org/apache/bookkeeper/bookie/BufferedChannelBase.BufferedChannelClosedException.html" title="class in org.apache.bookkeeper.bookie">BufferedChannelBase.BufferedChannelClosedException</a></li>
 <li><a href="org/apache/bookkeeper/bookie/BufferedReadChannel.html" title="class in org.apache.bookkeeper.bookie">BufferedReadChannel</a></li>
+<li><a href="org/apache/bookkeeper/bookie/storage/directentrylogger/BufferPool.html" title="class in org.apache.bookkeeper.bookie.storage.directentrylogger">BufferPool</a></li>
 <li><a href="org/apache/bookkeeper/common/collections/BusyWait.html" title="class in org.apache.bookkeeper.common.collections">BusyWait</a></li>
 <li><a href="org/apache/bookkeeper/util/ByteBufList.html" title="class in org.apache.bookkeeper.util">ByteBufList</a></li>
 <li><a href="org/apache/bookkeeper/util/ByteBufList.Encoder.html" title="class in org.apache.bookkeeper.util">ByteBufList.Encoder</a></li>
@@ -284,6 +286,7 @@
 <li><a href="org/apache/bookkeeper/tools/cli/helpers/CommandHelpers.html" title="class in org.apache.bookkeeper.tools.cli.helpers">CommandHelpers</a></li>
 <li><a href="org/apache/bookkeeper/net/CommonConfigurationKeys.html" title="interface in org.apache.bookkeeper.net"><span class="interfaceName">CommonConfigurationKeys</span></a></li>
 <li><a href="org/apache/bookkeeper/bookie/CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie"><span class="interfaceName">CompactableLedgerStorage</span></a></li>
+<li><a href="org/apache/bookkeeper/bookie/storage/CompactionEntryLog.html" title="interface in org.apache.bookkeeper.bookie.storage"><span class="interfaceName">CompactionEntryLog</span></a></li>
 <li><a href="org/apache/bookkeeper/common/conf/ComponentConfiguration.html" title="class in org.apache.bookkeeper.common.conf">ComponentConfiguration</a></li>
 <li><a href="org/apache/bookkeeper/common/component/ComponentInfoPublisher.html" title="class in org.apache.bookkeeper.common.component">ComponentInfoPublisher</a></li>
 <li><a href="org/apache/bookkeeper/common/component/ComponentInfoPublisher.EndpointInfo.html" title="class in org.apache.bookkeeper.common.component">ComponentInfoPublisher.EndpointInfo</a></li>
@@ -353,6 +356,15 @@
 <li><a href="org/apache/bookkeeper/server/http/service/DecommissionService.html" title="class in org.apache.bookkeeper.server.http.service">DecommissionService</a></li>
 <li><a href="org/apache/bookkeeper/client/DefaultBookieAddressResolver.html" title="class in org.apache.bookkeeper.client">DefaultBookieAddressResolver</a></li>
 <li><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></li>
+<li><a href="org/apache/bookkeeper/bookie/DefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger</a></li>
+<li><a href="org/apache/bookkeeper/bookie/DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a></li>
+<li><a href="org/apache/bookkeeper/bookie/DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie"><span class="interfaceName">DefaultEntryLogger.EntryLogListener</span></a></li>
+<li><a href="org/apache/bookkeeper/bookie/DefaultEntryLogger.EntryLookupException.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLookupException</a></li>
+<li><a href="org/apache/bookkeeper/bookie/DefaultEntryLogger.EntryLookupException.InvalidEntryLengthException.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLookupException.InvalidEntryLengthException</a></li>
+<li><a href="org/apache/bookkeeper/bookie/DefaultEntryLogger.EntryLookupException.MissingEntryException.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLookupException.MissingEntryException</a></li>
+<li><a href="org/apache/bookkeeper/bookie/DefaultEntryLogger.EntryLookupException.MissingLogFileException.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLookupException.MissingLogFileException</a></li>
+<li><a href="org/apache/bookkeeper/bookie/DefaultEntryLogger.EntryLookupException.WrongEntryException.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLookupException.WrongEntryException</a></li>
+<li><a href="org/apache/bookkeeper/bookie/DefaultEntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.RecentEntryLogsStatus</a></li>
 <li><a href="org/apache/bookkeeper/bookie/DefaultFileChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultFileChannel</a></li>
 <li><a href="org/apache/bookkeeper/bookie/DefaultFileChannelProvider.html" title="class in org.apache.bookkeeper.bookie">DefaultFileChannelProvider</a></li>
 <li><a href="org/apache/bookkeeper/proto/DefaultPerChannelBookieClientPool.html" title="class in org.apache.bookkeeper.proto">DefaultPerChannelBookieClientPool</a></li>
@@ -399,16 +411,7 @@
 <li><a href="org/apache/bookkeeper/bookie/storage/ldb/EntryLocationIndex.html" title="class in org.apache.bookkeeper.bookie.storage.ldb">EntryLocationIndex</a></li>
 <li><a href="org/apache/bookkeeper/bookie/storage/ldb/EntryLocationIndexStats.html" title="class in org.apache.bookkeeper.bookie.storage.ldb">EntryLocationIndexStats</a></li>
 <li><a href="org/apache/bookkeeper/bookie/EntryLogCompactor.html" title="class in org.apache.bookkeeper.bookie">EntryLogCompactor</a></li>
-<li><a href="org/apache/bookkeeper/bookie/EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a></li>
-<li><a href="org/apache/bookkeeper/bookie/EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a></li>
-<li><a href="org/apache/bookkeeper/bookie/EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie"><span class="interfaceName">EntryLogger.EntryLogListener</span></a></li>
-<li><a href="org/apache/bookkeeper/bookie/EntryLogger.EntryLogScanner.html" title="interface in org.apache.bookkeeper.bookie"><span class="interfaceName">EntryLogger.EntryLogScanner</span></a></li>
-<li><a href="org/apache/bookkeeper/bookie/EntryLogger.EntryLookupException.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.EntryLookupException</a></li>
-<li><a href="org/apache/bookkeeper/bookie/EntryLogger.EntryLookupException.InvalidEntryLengthException.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.EntryLookupException.InvalidEntryLengthException</a></li>
-<li><a href="org/apache/bookkeeper/bookie/EntryLogger.EntryLookupException.MissingEntryException.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.EntryLookupException.MissingEntryException</a></li>
-<li><a href="org/apache/bookkeeper/bookie/EntryLogger.EntryLookupException.MissingLogFileException.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.EntryLookupException.MissingLogFileException</a></li>
-<li><a href="org/apache/bookkeeper/bookie/EntryLogger.EntryLookupException.WrongEntryException.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.EntryLookupException.WrongEntryException</a></li>
-<li><a href="org/apache/bookkeeper/bookie/EntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.RecentEntryLogsStatus</a></li>
+<li><a href="org/apache/bookkeeper/bookie/storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage"><span class="interfaceName">EntryLogger</span></a></li>
 <li><a href="org/apache/bookkeeper/bookie/EntryLoggerAllocator.html" title="class in org.apache.bookkeeper.bookie">EntryLoggerAllocator</a></li>
 <li><a href="org/apache/bookkeeper/bookie/EntryLogManager.html" title="interface in org.apache.bookkeeper.bookie"><span class="interfaceName">EntryLogManager</span></a></li>
 <li><a href="org/apache/bookkeeper/bookie/EntryLogManagerBase.html" title="class in org.apache.bookkeeper.bookie">EntryLogManagerBase</a></li>
@@ -418,12 +421,14 @@
 <li><a href="org/apache/bookkeeper/bookie/EntryLogMetadata.html" title="class in org.apache.bookkeeper.bookie">EntryLogMetadata</a></li>
 <li><a href="org/apache/bookkeeper/bookie/EntryLogMetadata.EntryLogMetadataRecyclable.html" title="class in org.apache.bookkeeper.bookie">EntryLogMetadata.EntryLogMetadataRecyclable</a></li>
 <li><a href="org/apache/bookkeeper/bookie/EntryLogMetadataMap.html" title="interface in org.apache.bookkeeper.bookie"><span class="interfaceName">EntryLogMetadataMap</span></a></li>
+<li><a href="org/apache/bookkeeper/bookie/storage/EntryLogScanner.html" title="interface in org.apache.bookkeeper.bookie.storage"><span class="interfaceName">EntryLogScanner</span></a></li>
 <li><a href="org/apache/bookkeeper/bookie/EntryMemTable.html" title="class in org.apache.bookkeeper.bookie">EntryMemTable</a></li>
 <li><a href="org/apache/bookkeeper/bookie/EntryMemTable.EntrySkipList.html" title="class in org.apache.bookkeeper.bookie">EntryMemTable.EntrySkipList</a></li>
 <li><a href="org/apache/bookkeeper/bookie/stats/EntryMemTableStats.html" title="class in org.apache.bookkeeper.bookie.stats">EntryMemTableStats</a></li>
 <li><a href="org/apache/bookkeeper/bookie/EntryMemTableWithParallelFlusher.html" title="class in org.apache.bookkeeper.bookie">EntryMemTableWithParallelFlusher</a></li>
 <li><a href="org/apache/bookkeeper/util/EventLoopUtil.html" title="class in org.apache.bookkeeper.util">EventLoopUtil</a></li>
 <li><a href="org/apache/bookkeeper/bookie/datainteg/Events.html" title="enum in org.apache.bookkeeper.bookie.datainteg">Events</a></li>
+<li><a href="org/apache/bookkeeper/common/util/ExceptionMessageHelper.html" title="class in org.apache.bookkeeper.common.util">ExceptionMessageHelper</a></li>
 <li><a href="org/apache/bookkeeper/common/util/ExecutorUtils.html" title="class in org.apache.bookkeeper.common.util">ExecutorUtils</a></li>
 <li><a href="org/apache/bookkeeper/bookie/ExitCode.html" title="class in org.apache.bookkeeper.bookie">ExitCode</a></li>
 <li><a href="org/apache/bookkeeper/server/http/service/ExpandStorageService.html" title="class in org.apache.bookkeeper.server.http.service">ExpandStorageService</a></li>
@@ -792,7 +797,7 @@
 <li><a href="org/apache/bookkeeper/tools/cli/commands/bookie/ReadLogMetadataCommand.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">ReadLogMetadataCommand</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/bookie/ReadLogMetadataCommand.ReadLogMetadataFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">ReadLogMetadataCommand.ReadLogMetadataFlags</a></li>
 <li><a href="org/apache/bookkeeper/bookie/ReadOnlyBookie.html" title="class in org.apache.bookkeeper.bookie">ReadOnlyBookie</a></li>
-<li><a href="org/apache/bookkeeper/bookie/ReadOnlyEntryLogger.html" title="class in org.apache.bookkeeper.bookie">ReadOnlyEntryLogger</a></li>
+<li><a href="org/apache/bookkeeper/bookie/ReadOnlyDefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie">ReadOnlyDefaultEntryLogger</a></li>
 <li><a href="org/apache/bookkeeper/bookie/ReadOnlyFileInfo.html" title="class in org.apache.bookkeeper.bookie">ReadOnlyFileInfo</a></li>
 <li><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/bookie/RebuildDBLedgerLocationsIndexCommand.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">RebuildDBLedgerLocationsIndexCommand</a></li>

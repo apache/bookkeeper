@@ -187,142 +187,136 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="EntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogListener</a></th>
+<th class="colFirst" scope="row"><a href="DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a></th>
 <td class="colLast">
 <div class="block">Entry Log Listener.</div>
 </td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="EntryLogger.EntryLogScanner.html" title="interface in org.apache.bookkeeper.bookie">EntryLogger.EntryLogScanner</a></th>
-<td class="colLast">
-<div class="block">Scan entries in a entry log file.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="EntryLogManager.html" title="interface in org.apache.bookkeeper.bookie">EntryLogManager</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="EntryLogMetadataMap.html" title="interface in org.apache.bookkeeper.bookie">EntryLogMetadataMap</a></th>
 <td class="colLast">
 <div class="block">Map-store to store Entrylogger metadata.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="FileChannelProvider.html" title="interface in org.apache.bookkeeper.bookie">FileChannelProvider</a></th>
 <td class="colLast">
 <div class="block">An interface of the FileChannelProvider.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="FileInfoBackingCache.FileLoader.html" title="interface in org.apache.bookkeeper.bookie">FileInfoBackingCache.FileLoader</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="GarbageCollector.html" title="interface in org.apache.bookkeeper.bookie">GarbageCollector</a></th>
 <td class="colLast">
 <div class="block">This is the garbage collector interface, garbage collector implementers
  need to extends this class to remove the deleted ledgers.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="GarbageCollector.GarbageCleaner.html" title="interface in org.apache.bookkeeper.bookie">GarbageCollector.GarbageCleaner</a></th>
 <td class="colLast">
 <div class="block">A interface used to define customised garbage cleaner.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="HandleFactory.html" title="interface in org.apache.bookkeeper.bookie">HandleFactory</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="Journal.BufferedChannelBuilder.html" title="interface in org.apache.bookkeeper.bookie">Journal.BufferedChannelBuilder</a></th>
 <td class="colLast">
 <div class="block">For testability.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="Journal.JournalIdFilter.html" title="interface in org.apache.bookkeeper.bookie">Journal.JournalIdFilter</a></th>
 <td class="colLast">
 <div class="block">Filter to pickup journals.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="Journal.JournalScanner.html" title="interface in org.apache.bookkeeper.bookie">Journal.JournalScanner</a></th>
 <td class="colLast">
 <div class="block">Scanner used to scan a journal.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LedgerCache.html" title="interface in org.apache.bookkeeper.bookie">LedgerCache</a></th>
 <td class="colLast">
 <div class="block">This class maps a ledger entry number into a location (entrylogid, offset) in
  an entry log file.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LedgerCache.PageEntries.html" title="interface in org.apache.bookkeeper.bookie">LedgerCache.PageEntries</a></th>
 <td class="colLast">
 <div class="block">Represents a page of the index.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LedgerCache.PageEntriesIterable.html" title="interface in org.apache.bookkeeper.bookie">LedgerCache.PageEntriesIterable</a></th>
 <td class="colLast">
 <div class="block">Iterable over index pages -- returns PageEntries rather than individual
  entries because getEntries() above needs to be able to throw an IOException.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LedgerDirsManager.LedgerDirsListener.html" title="interface in org.apache.bookkeeper.bookie">LedgerDirsManager.LedgerDirsListener</a></th>
 <td class="colLast">
 <div class="block">Listener for the disk check events will be notified from the
  <a href="LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie"><code>LedgerDirsManager</code></a> whenever disk full/failure detected.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LedgerEntryPage.EntryVisitor.html" title="interface in org.apache.bookkeeper.bookie">LedgerEntryPage.EntryVisitor</a></th>
 <td class="colLast">
 <div class="block">Interface for getEntries to propagate entry, pos pairs.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a></th>
 <td class="colLast">
 <div class="block">Interface for storing ledger data on persistent storage.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LedgerStorage.LedgerDeletionListener.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage.LedgerDeletionListener</a></th>
 <td class="colLast">
 <div class="block">Signals that a ledger is deleted by the garbage collection thread.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LEPStateChangeCallback.html" title="interface in org.apache.bookkeeper.bookie">LEPStateChangeCallback</a></th>
 <td class="colLast">
 <div class="block">Callback interface when state of ledger entry page changed.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="SkipListFlusher.html" title="interface in org.apache.bookkeeper.bookie">SkipListFlusher</a></th>
 <td class="colLast">
 <div class="block">Flush entries from skip list.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="StateManager.html" title="interface in org.apache.bookkeeper.bookie">StateManager</a></th>
 <td class="colLast">
 <div class="block">State management of Bookie, including register, turn bookie to w/r mode.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="StateManager.ShutdownHandler.html" title="interface in org.apache.bookkeeper.bookie">StateManager.ShutdownHandler</a></th>
 <td class="colLast">
 <div class="block">ShutdownHandler used to shutdown bookie.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="UncleanShutdownDetection.html" title="interface in org.apache.bookkeeper.bookie">UncleanShutdownDetection</a></th>
 <td class="colLast">
 <div class="block">An interface for unclean shutdown detection.</div>
@@ -347,7 +341,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <th class="colFirst" scope="row"><a href="AbstractLogCompactor.Throttler.html" title="class in org.apache.bookkeeper.bookie">AbstractLogCompactor.Throttler</a></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">class Throttler.</div>
+</td>
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="BookieCriticalThread.html" title="class in org.apache.bookkeeper.bookie">BookieCriticalThread</a></th>
@@ -436,53 +432,53 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="DefaultFileChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultFileChannel</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="DefaultFileChannelProvider.html" title="class in org.apache.bookkeeper.bookie">DefaultFileChannelProvider</a></th>
-<td class="colLast">
-<div class="block">A wrapper of FileChannel.</div>
-</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="EntryKey.html" title="class in org.apache.bookkeeper.bookie">EntryKey</a></th>
-<td class="colLast">
-<div class="block">An <code>EntryKey</code> represents an entry in a ledger, identified by <code>ledgerId</code> and <code>entryId</code>.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="EntryKeyValue.html" title="class in org.apache.bookkeeper.bookie">EntryKeyValue</a></th>
-<td class="colLast">
-<div class="block">An entry Key/Value.</div>
-</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="EntryLocation.html" title="class in org.apache.bookkeeper.bookie">EntryLocation</a></th>
-<td class="colLast">
-<div class="block">An <code>EntryLocation</code> represents the location where an entry is stored.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="EntryLogCompactor.html" title="class in org.apache.bookkeeper.bookie">EntryLogCompactor</a></th>
-<td class="colLast">
-<div class="block">This is the basic entry log compactor to compact entry logs.</div>
-</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="EntryLogger.html" title="class in org.apache.bookkeeper.bookie">EntryLogger</a></th>
+<th class="colFirst" scope="row"><a href="DefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger</a></th>
 <td class="colLast">
 <div class="block">This class manages the writing of the bookkeeper entries.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="EntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.BufferedLogChannel</a></th>
+<th class="colFirst" scope="row"><a href="DefaultEntryLogger.BufferedLogChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.BufferedLogChannel</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="EntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.RecentEntryLogsStatus</a></th>
+<th class="colFirst" scope="row"><a href="DefaultEntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.RecentEntryLogsStatus</a></th>
 <td class="colLast">
 <div class="block">Datastructure which maintains the status of logchannels.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="DefaultFileChannel.html" title="class in org.apache.bookkeeper.bookie">DefaultFileChannel</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="DefaultFileChannelProvider.html" title="class in org.apache.bookkeeper.bookie">DefaultFileChannelProvider</a></th>
+<td class="colLast">
+<div class="block">A wrapper of FileChannel.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="EntryKey.html" title="class in org.apache.bookkeeper.bookie">EntryKey</a></th>
+<td class="colLast">
+<div class="block">An <code>EntryKey</code> represents an entry in a ledger, identified by <code>ledgerId</code> and <code>entryId</code>.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="EntryKeyValue.html" title="class in org.apache.bookkeeper.bookie">EntryKeyValue</a></th>
+<td class="colLast">
+<div class="block">An entry Key/Value.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="EntryLocation.html" title="class in org.apache.bookkeeper.bookie">EntryLocation</a></th>
+<td class="colLast">
+<div class="block">An <code>EntryLocation</code> represents the location where an entry is stored.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="EntryLogCompactor.html" title="class in org.apache.bookkeeper.bookie">EntryLogCompactor</a></th>
+<td class="colLast">
+<div class="block">This is the basic entry log compactor to compact entry logs.</div>
 </td>
 </tr>
 <tr class="rowColor">
@@ -733,7 +729,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="ReadOnlyEntryLogger.html" title="class in org.apache.bookkeeper.bookie">ReadOnlyEntryLogger</a></th>
+<th class="colFirst" scope="row"><a href="ReadOnlyDefaultEntryLogger.html" title="class in org.apache.bookkeeper.bookie">ReadOnlyDefaultEntryLogger</a></th>
 <td class="colLast">
 <div class="block">Read Only Entry Logger.</div>
 </td>
@@ -939,31 +935,31 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="EntryLogger.EntryLookupException.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.EntryLookupException</a></th>
+<th class="colFirst" scope="row"><a href="DefaultEntryLogger.EntryLookupException.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLookupException</a></th>
 <td class="colLast">
 <div class="block">Exception type for representing lookup errors.</div>
 </td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="EntryLogger.EntryLookupException.InvalidEntryLengthException.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.EntryLookupException.InvalidEntryLengthException</a></th>
+<th class="colFirst" scope="row"><a href="DefaultEntryLogger.EntryLookupException.InvalidEntryLengthException.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLookupException.InvalidEntryLengthException</a></th>
 <td class="colLast">
 <div class="block">Represents case where log is present, but encoded entry length header is invalid.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="EntryLogger.EntryLookupException.MissingEntryException.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.EntryLookupException.MissingEntryException</a></th>
+<th class="colFirst" scope="row"><a href="DefaultEntryLogger.EntryLookupException.MissingEntryException.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLookupException.MissingEntryException</a></th>
 <td class="colLast">
 <div class="block">Represents case where entry log is present, but does not contain the specified entry.</div>
 </td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="EntryLogger.EntryLookupException.MissingLogFileException.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.EntryLookupException.MissingLogFileException</a></th>
+<th class="colFirst" scope="row"><a href="DefaultEntryLogger.EntryLookupException.MissingLogFileException.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLookupException.MissingLogFileException</a></th>
 <td class="colLast">
 <div class="block">Represents case where log file is missing.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="EntryLogger.EntryLookupException.WrongEntryException.html" title="class in org.apache.bookkeeper.bookie">EntryLogger.EntryLookupException.WrongEntryException</a></th>
+<th class="colFirst" scope="row"><a href="DefaultEntryLogger.EntryLookupException.WrongEntryException.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLookupException.WrongEntryException</a></th>
 <td class="colLast">
 <div class="block">Represents case where the entry at pos is wrong.</div>
 </td>

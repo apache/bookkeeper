@@ -26,8 +26,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
+var data = {"i0":6,"i1":6,"i2":6,"i3":18,"i4":6,"i5":6,"i6":6};
+var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],16:["t5","Default Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -147,20 +147,27 @@ extends java.io.Closeable</pre>
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t5" class="tableTab"><span><a href="javascript:show(16);">Default Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clear()">clear</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Clear all records from the map.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#containsKey(long)">containsKey</a></span>&#8203;(long&nbsp;entryLogId)</code></th>
 <td class="colLast">
 <div class="block">Checks if record with entryLogId exists into the map.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#forEach(java.util.function.BiConsumer)">forEach</a></span>&#8203;(java.util.function.BiConsumer&lt;java.lang.Long,&#8203;<a href="EntryLogMetadata.html" title="class in org.apache.bookkeeper.bookie">EntryLogMetadata</a>&gt;&nbsp;action)</code></th>
 <td class="colLast">
@@ -168,7 +175,14 @@ extends java.io.Closeable</pre>
  have been processed or the action throws an exception.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>default boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEmpty()">isEmpty</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Returns true if there are no elements in the map.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#put(long,org.apache.bookkeeper.bookie.EntryLogMetadata)">put</a></span>&#8203;(long&nbsp;entryLogId,
    <a href="EntryLogMetadata.html" title="class in org.apache.bookkeeper.bookie">EntryLogMetadata</a>&nbsp;entryLogMeta)</code></th>
@@ -176,14 +190,14 @@ extends java.io.Closeable</pre>
 <div class="block">Adds entryLogMetadata record into the map.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#remove(long)">remove</a></span>&#8203;(long&nbsp;entryLogId)</code></th>
 <td class="colLast">
 <div class="block">Removes entryLogMetadata record from the map.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size()">size</a></span>()</code></th>
 <td class="colLast">
@@ -228,7 +242,6 @@ extends java.io.Closeable</pre>
 <dd><code>entryLogId</code> - </dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.io.IOException</code></dd>
 <dd><code><a href="BookieException.EntryLogMetadataMapException.html" title="class in org.apache.bookkeeper.bookie">BookieException.EntryLogMetadataMapException</a></code></dd>
 </dl>
 </li>
@@ -248,7 +261,6 @@ extends java.io.Closeable</pre>
 <dd><code>entryLogId</code> - </dd>
 <dd><code>entryLogMeta</code> - </dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.io.IOException</code></dd>
 <dd><code><a href="BookieException.EntryLogMetadataMapException.html" title="class in org.apache.bookkeeper.bookie">BookieException.EntryLogMetadataMapException</a></code></dd>
 </dl>
 </li>
@@ -267,7 +279,6 @@ extends java.io.Closeable</pre>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>action</code> - </dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.io.IOException</code></dd>
 <dd><code><a href="BookieException.EntryLogMetadataMapException.html" title="class in org.apache.bookkeeper.bookie">BookieException.EntryLogMetadataMapException</a></code></dd>
 </dl>
 </li>
@@ -285,7 +296,6 @@ extends java.io.Closeable</pre>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryLogId</code> - </dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.io.IOException</code></dd>
 <dd><code><a href="BookieException.EntryLogMetadataMapException.html" title="class in org.apache.bookkeeper.bookie">BookieException.EntryLogMetadataMapException</a></code></dd>
 </dl>
 </li>
@@ -293,7 +303,7 @@ extends java.io.Closeable</pre>
 <a id="size()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>size</h4>
 <pre class="methodSignature">int&nbsp;size()
@@ -302,7 +312,38 @@ extends java.io.Closeable</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.io.IOException</code></dd>
+<dd><code><a href="BookieException.EntryLogMetadataMapException.html" title="class in org.apache.bookkeeper.bookie">BookieException.EntryLogMetadataMapException</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="isEmpty()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isEmpty</h4>
+<pre class="methodSignature">default&nbsp;boolean&nbsp;isEmpty()
+                 throws <a href="BookieException.EntryLogMetadataMapException.html" title="class in org.apache.bookkeeper.bookie">BookieException.EntryLogMetadataMapException</a></pre>
+<div class="block">Returns true if there are no elements in the map.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="BookieException.EntryLogMetadataMapException.html" title="class in org.apache.bookkeeper.bookie">BookieException.EntryLogMetadataMapException</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="clear()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>clear</h4>
+<pre class="methodSignature">void&nbsp;clear()
+    throws <a href="BookieException.EntryLogMetadataMapException.html" title="class in org.apache.bookkeeper.bookie">BookieException.EntryLogMetadataMapException</a></pre>
+<div class="block">Clear all records from the map.
+ For unit tests.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="BookieException.EntryLogMetadataMapException.html" title="class in org.apache.bookkeeper.bookie">BookieException.EntryLogMetadataMapException</a></code></dd>
 </dl>
 </li>
