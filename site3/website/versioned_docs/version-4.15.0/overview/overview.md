@@ -1,6 +1,6 @@
 ---
 id: overview
-title: Apache BookKeeper 4.15.0-SNAPSHOT
+title: Apache BookKeeper 4.15.0
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
