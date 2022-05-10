@@ -239,10 +239,14 @@ Apache Software License, Version 2.
 - lib/io.netty-netty-transport-classes-epoll-4.1.75.Final.jar [11]
 - lib/io.netty-netty-transport-native-epoll-4.1.75.Final-linux-x86_64.jar [11]
 - lib/io.netty-netty-transport-native-unix-common-4.1.75.Final.jar [11]
-- lib/io.prometheus-simpleclient-0.8.1.jar [12]
-- lib/io.prometheus-simpleclient_common-0.8.1.jar [12]
-- lib/io.prometheus-simpleclient_hotspot-0.8.1.jar [12]
-- lib/io.prometheus-simpleclient_servlet-0.8.1.jar [12]
+- lib/io.prometheus-simpleclient-0.15.0.jar [12]
+- lib/io.prometheus-simpleclient_common-0.15.0.jar [12]
+- lib/io.prometheus-simpleclient_hotspot-0.15.0.jar [12]
+- lib/io.prometheus-simpleclient_servlet-0.15.0.jar [12]
+- lib/io.prometheus-simpleclient_servlet_common-0.15.0.jar [12]
+- lib/io.prometheus-simpleclient_tracer_common-0.15.0.jar [12]
+- lib/io.prometheus-simpleclient_tracer_otel-0.15.0.jar [12]
+- lib/io.prometheus-simpleclient_tracer_otel_agent-0.15.0.jar [12]
 - lib/io.vertx-vertx-auth-common-3.9.8.jar [13]
 - lib/io.vertx-vertx-bridge-common-3.9.8.jar [14]
 - lib/io.vertx-vertx-core-3.9.8.jar [15]
@@ -322,7 +326,7 @@ Apache Software License, Version 2.
 [9] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=375459
 [10] Source available at http://svn.apache.org/viewvc/commons/proper/logging/tags/commons-logging-1.1.1/
 [11] Source available at https://github.com/netty/netty/tree/netty-4.1.75.Final
-[12] Source available at https://github.com/prometheus/client_java/tree/parent-0.8.1
+[12] Source available at https://github.com/prometheus/client_java/tree/parent-0.15.0
 [13] Source available at https://github.com/vert-x3/vertx-auth/tree/3.9.8
 [14] Source available at https://github.com/vert-x3/vertx-bridge-common/tree/3.9.8
 [15] Source available at https://github.com/eclipse/vert.x/tree/3.9.8
