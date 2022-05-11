@@ -335,5 +335,13 @@ file name: netty-tcnative-boringssl-static-2.0.50.Final-windows-x86_64.jar
         <sha1>b6211fb3224bfd2dadf10273a15211f592174652</sha1>
         <cve>CVE-2015-1205</cve>
     </suppress>
+    <!--    DataSketches false positive https://github.com/apache/datasketches-java/issues/397 -->
+    <suppress>
+        <notes><![CDATA[
+   file name: datasketches-java-3.2.0.jar
+   ]]></notes>
+        <sha1>ceb2774dcd51210437a2f139b64d33213bf7f523</sha1>
+        <cve>CVE-2021-40531</cve>
+    </suppress>
 </suppressions>
 
