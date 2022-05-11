@@ -10,7 +10,7 @@ Apache Bookkeeper is a software project of the Apache Software Foundation, provi
 
 Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve its state and publish its bookies (Bookkeeper servers). The client only need to connect to a Zookeeper server in the ensamble in order to obtain the list of Bookkeeper servers.
 ## standalone BookKeeper cluster
-Just like running a BookKeeper cluster in one machine(http://bookkeeper.apache.org/docs/latest/getting-started/run-locally/), you can run a standalone BookKeeper in one docker container, the command is:
+Just like running a BookKeeper cluster in one machine(https://bookkeeper.apache.org/docs/getting-started/run-locally/), you can run a standalone BookKeeper in one docker container, the command is:
 ```
 docker run -it \
      --env JAVA_HOME=/usr/lib/jvm/java-11 \
@@ -19,7 +19,7 @@ docker run -it \
      -c "/opt/bookkeeper/bin/bookkeeper localbookie 3"
 ```
 Note: you can first start the container, and then execute "bin/bookkeeper localbookie 3" in the container.  
-After that, you can execute BookKeeper shell command(http://bookkeeper.apache.org/docs/latest/reference/cli/) to test the cluster, you need first log into the container, use command below:
+After that, you can execute BookKeeper shell command(https://bookkeeper.apache.org/docs/reference/cli/) to test the cluster, you need first log into the container, use command below:
 ```
 docker exec -it <container id or name> bash
 ```
