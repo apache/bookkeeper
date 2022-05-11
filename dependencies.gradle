@@ -72,7 +72,7 @@ depVersions = [
     netty: "4.1.75.Final",
     nettyTcnativeBoringSsl: "2.0.50.Final",
     powermock: "2.0.2",
-    prometheus: "0.8.1",
+    prometheus: "0.15.0",
     protobuf: "3.16.1",
     reflections: "0.9.11",
     rocksDb: "6.27.3",

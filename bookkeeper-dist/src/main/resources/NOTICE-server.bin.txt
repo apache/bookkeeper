@@ -51,10 +51,14 @@ License for the specific language governing permissions and limitations
 under the License.
 
 ------------------------------------------------------------------------------------
-- lib/io.prometheus-simpleclient-0.8.1.jar
-- lib/io.prometheus-simpleclient_common-0.8.1.jar
-- lib/io.prometheus-simpleclient_hotspot-0.8.1.jar
-- lib/io.prometheus-simpleclient_servlet-0.8.1.jar
+- lib/io.prometheus-simpleclient-0.15.0.jar
+- lib/io.prometheus-simpleclient_common-0.15.0.jar
+- lib/io.prometheus-simpleclient_hotspot-0.15.0.jar
+- lib/io.prometheus-simpleclient_servlet-0.15.0.jar
+- lib/io.prometheus-simpleclient_servlet_common-0.15.0.jar
+- lib/io.prometheus-simpleclient_tracer_common-0.15.0.jar
+- lib/io.prometheus-simpleclient_tracer_otel-0.15.0.jar
+- lib/io.prometheus-simpleclient_tracer_otel_agent-0.15.0.jar
 
 Prometheus instrumentation library for JVM applications
 Copyright 2012-2015 The Prometheus Authors
