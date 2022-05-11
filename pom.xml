@@ -1220,6 +1220,7 @@
           --add-opens java.base/java.util.concurrent=ALL-UNNAMED
           --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED
           --add-opens java.base/java.util.stream=ALL-UNNAMED
+          --add-opens java.base/java.util.zip=ALL-UNNAMED
           --add-opens java.base/java.time=ALL-UNNAMED
           --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
           --add-opens java.base/sun.net.dns=ALL-UNNAMED
