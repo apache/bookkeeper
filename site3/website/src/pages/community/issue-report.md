@@ -18,7 +18,7 @@ Here is an very useful artical [How to report bugs effectively]( http://www.chia
 
 #### If it is a question
 
--  Please check our [documentation](http://bookkeeper.apache.org/docs/latest/) first. 
+-  Please check our [documentation](https://bookkeeper.apache.org/docs/next/overview/) first. 
 -  If you could not find an answer there, please consider asking your question in our community mailing list at [dev@bookkeeper.apache.org](mailto:dev@bookkeeper.apache.org), or reach out us on our [Slack channel](slack).  It would benefit other members of our community.
 
 #### If it is a **FEATURE REQUEST**
