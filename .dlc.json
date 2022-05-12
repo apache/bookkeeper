@@ -10,7 +10,7 @@
       "pattern": "http://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/ZooKeeper.html"
     },
     {
-      "pattern": "^https://github.com/apache/bookkeeper/$"
+      "pattern": "^https://github.com/apache/bookkeeper/[0-9]*$"
     }
   ],
   "timeout": "10s",
