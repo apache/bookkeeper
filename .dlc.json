@@ -23,6 +23,9 @@
     },
     {
       "pattern": "^http://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#persistent-storage"
+    },
+    {
+      "pattern": "^https://bookkeeper.apache.org/docs/api/javadoc/"
     }
   ],
   "timeout": "10s",
