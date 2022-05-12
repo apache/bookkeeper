@@ -7,10 +7,22 @@
       "pattern": "^https://kubernetes.io/docs/resources-reference/v1.6/"
     },
     {
-      "pattern": "http://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/ZooKeeper.html"
+      "pattern": "^https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming"
     },
     {
       "pattern": "^https://github.com/apache/bookkeeper/[0-9]*$"
+    },
+    {
+      "pattern": "^https://github.com/sijie/bookkeeper/tree/bookie_shell_refactor"
+    },
+    {
+      "pattern": "^http://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#persistent-storage"
+    },
+    {
+      "pattern": "^https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/"
+    },
+    {
+      "pattern": "^http://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#persistent-storage"
     }
   ],
   "timeout": "10s",
@@ -19,6 +31,7 @@
   "fallbackRetryDelay": "1000s",
   "aliveStatusCodes": [
     200,
-    401
+    401,
+    403
   ]
 }
