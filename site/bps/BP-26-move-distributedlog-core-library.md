@@ -1,6 +1,6 @@
 ---
 title: "BP-26: Move distributedlog library as part of bookkeeper"
-issue: https://github.com/apache/bookkeeper/1024
+issue: https://github.com/apache/bookkeeper/issues/1024
 state: 'Accepted'
 release: "N/A"
 ---
