@@ -44,7 +44,7 @@ We feel that a welcoming open community is important and welcome contributions.
 
 ### Contributing Code
 
-1. See our [installation guide](https://bookkeeper.apache.org/docs/latest/getting-started/installation/) to get your local environment setup.
+1. See our [installation guide](https://bookkeeper.apache.org/docs/next/getting-started/installation/) to get your local environment setup.
 
 2. Take a look at our open issues: [Github Issues](https://github.com/apache/bookkeeper/issues).
 
