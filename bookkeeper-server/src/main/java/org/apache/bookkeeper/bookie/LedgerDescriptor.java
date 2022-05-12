@@ -38,6 +38,9 @@ public abstract class LedgerDescriptor {
     static LedgerDescriptor create(byte[] masterKey,
                                    long ledgerId,
                                    LedgerStorage ledgerStorage) throws IOException {
+        if (!ledgerStorage.ledgerExists(ledgerId)) {
+            throw new Bookie.NoLedgerException(ledgerId);
+        }
         LedgerDescriptor ledger = new LedgerDescriptorImpl(masterKey, ledgerId, ledgerStorage);
         ledgerStorage.setMasterKey(ledgerId, masterKey);
         return ledger;
