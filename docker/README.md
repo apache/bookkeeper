@@ -186,7 +186,7 @@ Because
 
 This variable allows you to specify the port on which Bookkeeper should listen for incoming connections.
 
-This will override `bookiePort` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
+This will override `bookiePort` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf).
 
 Default value is "3181".
 
@@ -194,7 +194,7 @@ Default value is "3181".
 
 This variable allows you to specify a list of machines of the Zookeeper ensemble. Each entry has the form of `host:port`. Entries are separated with a comma.
 
-This will override `zkServers` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
+This will override `zkServers` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf).
 
 Default value is "127.0.0.1:2181"
 
@@ -202,7 +202,7 @@ Default value is "127.0.0.1:2181"
 
 This variable allows you to specify the root directory Bookkeeper will use on Zookeeper to store ledgers metadata.
 
-This will override `zkLedgersRootPath ` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
+This will override `zkLedgersRootPath ` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf).
 
 Default value is "/bookkeeper/ledgers"
 

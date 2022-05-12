@@ -16,7 +16,7 @@ You can install BookKeeper either by [downloading](#download) a [GZipped](http:/
 You can download Apache BookKeeper releases from one of many [Apache mirrors](http://www.apache.org/dyn/closer.cgi/bookkeeper). 
 ## Clone
 
-To build BookKeeper from source, clone the repository, either from the [GitHub mirror]({{ site.github_repo }}) or from the [Apache repository](http://git.apache.org/bookkeeper.git/):
+To build BookKeeper from source, clone the repository, either from the [GitHub mirror]({{ site.github_repo }}) or from the [Apache repository](https://git.apache.org/bookkeeper.git):
 
 ```shell
 # From the GitHub mirror
