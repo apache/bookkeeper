@@ -65,7 +65,7 @@ Whenever entries are written to a ledger, those entries are striped across the e
 
 > BookKeeper was initially inspired by the NameNode server in HDFS but its uses now extend far beyond this.
 
-The initial motivation for BookKeeper comes from the [Hadoop](http://hadoop.apache.org/) ecosystem. In the [Hadoop Distributed File System](https://wiki.apache.org/hadoop/HDFS) (HDFS), a special node called the [NameNode](https://wiki.apache.org/hadoop/NameNode) logs all operations in a reliable fashion, which ensures that recovery is possible in case of crashes.
+The initial motivation for BookKeeper comes from the [Hadoop](http://hadoop.apache.org/) ecosystem. In the [Hadoop Distributed File System](https://cwiki.apache.org/confluence/display/HADOOP2/HDFS) (HDFS), a special node called the [NameNode](https://cwiki.apache.org/confluence/display/HADOOP2/NameNode) logs all operations in a reliable fashion, which ensures that recovery is possible in case of crashes.
 
 The NameNode, however, served only as initial inspiration for BookKeeper. The applications for BookKeeper extend far beyond this and include essentially any application that requires an append-based storage system. BookKeeper provides a number of advantages for such applications:
 

@@ -3,7 +3,7 @@ title: BookKeeper administration
 subtitle: A guide to deploying and administering BookKeeper
 ---
 
-This document is a guide to deploying, administering, and maintaining BookKeeper. It also discusses [best practices](#best-practices) and [common problems](#common-problems).
+This document is a guide to deploying, administering, and maintaining BookKeeper. It also discusses best practices and common problems.
 
 ## Requirements
 

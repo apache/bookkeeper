@@ -26,7 +26,7 @@ $ cd bookkeeper-{{ site.latest_release }}
 
 ## Clone
 
-To build BookKeeper from source, clone the repository, either from the [GitHub mirror]({{ site.github_repo }}) or from the [Apache repository](http://git.apache.org/bookkeeper.git/):
+To build BookKeeper from source, clone the repository, either from the [GitHub mirror]({{ site.github_repo }}) or from the [Apache repository](https://git.apache.org/bookkeeper.git):
 
 ```shell
 # From the GitHub mirror

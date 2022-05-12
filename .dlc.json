@@ -2,6 +2,9 @@
   "ignorePatterns": [
     {
       "pattern": "^http://localhost"
+    },
+    {
+      "pattern": "^https://kubernetes.io/docs/resources-reference/v1.6/"
     }
   ],
   "timeout": "10s",
