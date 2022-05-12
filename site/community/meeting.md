@@ -6,7 +6,7 @@ The community meeting runs bi-weekly on Thursday 8am - 9am PST. The meeting link
 
 The meeting is typically comprised of 3 parts:
 
-- Discuss [BookKeeper Proposals](http://bookkeeper.apache.org/community/bookkeeper_proposals/).
+- Discuss [BookKeeper Proposals](https://bookkeeper.apache.org/community/bookkeeper-proposals/).
 - Review and address concerns for any open pull requests.
 - Open discussion.
 
