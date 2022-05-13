@@ -10,7 +10,7 @@
       "pattern": "^https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming"
     },
     {
-      "pattern": "^https://github.com/apache/bookkeeper/[0-9]*$"
+      "pattern": "^https://github.com/apache/bookkeeper/"
     },
     {
       "pattern": "^https://github.com/sijie/bookkeeper/tree/bookie_shell_refactor"
