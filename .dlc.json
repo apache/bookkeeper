@@ -7,7 +7,7 @@
       "pattern": "^https://kubernetes.io/docs/resources-reference/v1.6/"
     },
     {
-      "pattern": "^https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming"
+      "pattern": "^https://zookeeper.apache.org/doc/"
     },
     {
       "pattern": "^http://zookeeper.apache.org/doc/current/api/"
