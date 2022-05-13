@@ -10,6 +10,9 @@
       "pattern": "^https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming"
     },
     {
+      "pattern": "^http://zookeeper.apache.org/doc/current/api/"
+    },
+    {
       "pattern": "^https://github.com/apache/bookkeeper/"
     },
     {
