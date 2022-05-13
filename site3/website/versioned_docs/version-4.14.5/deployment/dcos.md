@@ -136,6 +136,6 @@ You can shut down and uninstall the `bookkeeper` from DC/OS at any time using th
 
 ```shell
 $ dcos package uninstall bookkeeper
-Uninstalled package [bookkeeper] version [4.14.4]
+Uninstalled package [bookkeeper] version [4.14.5]
 Thank you for using bookkeeper.
 ```
