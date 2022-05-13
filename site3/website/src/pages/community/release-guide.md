@@ -174,7 +174,7 @@ For Github, we can use the milestone link in the Release Notes. E.g. [Release 4.
 
 #### Prepare Release Notes
 
-After review the release notes on both Github, you should write a `releaseNotes` under `site/docs/${release_version}/overview/releaseNotes.md` and then send out a pull request for review.
+After review the release notes on both Github, you should write a the release notes under `site3/website/src/release-notes.md` and then send out a pull request for review.
 
 [4.5.0 Release Notes](https://github.com/apache/bookkeeper/pull/402) is a good example to follow.
 
@@ -446,25 +446,25 @@ Copy the source release from the `dev` repository to the `release` repository at
 
 ### Update Website
 
-1. Create the documentation for `${VERSION}`. Run the `release.sh` to generate the branch for `${VERSION}` and bump
-    the versions for website documentation; or run the `release_minor.sh` to release documentation when doing a
-    mintor release.
+1. Create the documentation for the release
+   #### Patch release
+   For each minor release only the latest patch version documentation is kept.
+   
+       export LATEST_RELEASED= # version to replace
+       export NEW_RELEASE=${VERSION}
+   
+       ./site3/website/scripts/release-minor.sh
+   
+   #### Major/minor release
+   
+        export NEW_RELEASE=${VERSION}
+        ./site3/website/scripts/release-major.sh
+   
+   Once run the above commands, please send a pull request for it and get approval from any committers, then merge it.
+   The CI job will automatically update the website in a few minutes. Please review the website to make sure the
+   documentation for `${VERSION}` is live.
 
-    ```shell
-    $ cd site
-
-    // use `release.sh` for major releases
-    $ ./scripts/release.sh
-
-    // or `release_minor.sh` for minor releases
-    $ ./scripts/release_minor.sh
-    ```
-
-    Once run the `release.sh`, please send a pull request for it and get approval from any committers, then merge it.
-    The CI job will automatically update the website in a few minutes. Please review the website to make sure the
-    documentation for `${VERSION}` is live.
-
-2. Merge the Release Notes pull request and make sure the Release Notes is updated.
+2. Merge the Release Notes pull request and make sure the [release notes page](/release-notes) is updated.
 
 ### Git tag
 
