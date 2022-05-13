@@ -104,6 +104,43 @@ Dependency on log4j v.1 is removed.
 
 https://github.com/apache/bookkeeper/issues?q=+label%3Arelease%2F4.15.0
 
+## 4.14.5
+
+Release 4.14.5 includes multiple stability, performance, and security fixes.
+
+Apache BookKeeper users are encouraged to upgrade to 4.14.5.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+
+- [https://github.com/apache/bookkeeper/pull/3110] PendingReadOp: Fix ledgerEntryImpl reuse problem
+- [https://github.com/apache/bookkeeper/pull/3060] Catch onBookieRackChange exception
+- [https://github.com/apache/bookkeeper/pull/2981] Fix region aware placement policy use disk weight not work
+- [https://github.com/apache/bookkeeper/pull/2642] fix region/rack aware placement police replace bookie bug
+- [https://github.com/apache/bookkeeper/pull/3011] Auditor should get the LegdgerManagerFactory from the client instance
+
+
+#### Improvements
+
+- [https://github.com/apache/bookkeeper/pull/3144] Revert rocksdb compaction on checkpoint to reduce cpu intensive
+- [https://github.com/apache/bookkeeper/pull/3117] Log NoLedgerException at debug level
+- [https://github.com/apache/bookkeeper/pull/2799] Add a REST API to get or update bookie readOnly state
+- [https://github.com/apache/bookkeeper/pull/2790] only update topology when bookie rack changed
+- [https://github.com/apache/bookkeeper/pull/2769] Support specifying bookie http port as a command argument
+- [https://github.com/apache/bookkeeper/pull/2757] Change log level from error to warn in getReadLacResponse
+- [https://github.com/apache/bookkeeper/pull/3096] Set BOOKIE_HTTP_PORT to make it optional in docker run
+
+#### Dependency updates
+
+- [https://github.com/apache/bookkeeper/pull/3167] Replace Log4J with Reload4J
+
+
+### Details
+
+https://github.com/apache/bookkeeper/issues?q=+label%3Arelease%2F4.14.5
+
 ## 4.14.4
 
 Release 4.14.4 includes multiple stability, performance, and security fixes.
