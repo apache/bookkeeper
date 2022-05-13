@@ -38,6 +38,15 @@
     },
     {
       "pattern": "^http://apache.claz.org/bookkeeper"
+    },
+    {
+      "pattern": "^https://dcos.io/"
+    },
+    {
+      "pattern": "^ https://docs.mesosphere.com"
+    },
+    {
+      "pattern": "^http://master.dcos/exhibitor"
     }
   ],
   "timeout": "10s",
