@@ -20,6 +20,7 @@
 name: Website PR validation
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - master
@@ -27,7 +28,6 @@ on:
     paths:
       - 'site3/**'
       - '.github/workflows/website-pr-validation.yaml'
-    workflow_dispatch:
 
 jobs:
   website-pull-validation:
