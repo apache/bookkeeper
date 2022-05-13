@@ -47,6 +47,9 @@
     },
     {
       "pattern": "^http://master.dcos/exhibitor"
+    },
+    {
+      "pattern": "^https://docs.mesosphere.com/"
     }
   ],
   "timeout": "10s",
