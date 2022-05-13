@@ -26,6 +26,12 @@
     },
     {
       "pattern": "^https://bookkeeper.apache.org/docs/api/javadoc/"
+    },
+    {
+      "pattern": "^http://hbtc2012.hadooper.cn/subject/track1maheswara2.pdf"
+    },
+    {
+      "pattern": "^https://developer.yahoo.com/blogs/ydn/bookkeeper-durability-scale-54048.html"
     }
   ],
   "timeout": "10s",
