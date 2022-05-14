@@ -52,7 +52,7 @@
       "pattern": "^https://docs.mesosphere.com/"
     },
     {
-      "pattern": "^https://distributedlog.io",
+      "pattern": "^https://distributedlog.io"
     }
   ],
   "timeout": "10s",
