@@ -53,6 +53,9 @@
     },
     {
       "pattern": "^https://distributedlog.io"
+    },
+    {
+      "pattern": "^https://www.opengroup.org/membership/forums/platform/unix"
     }
   ],
   "timeout": "10s",
