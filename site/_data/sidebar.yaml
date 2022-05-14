@@ -1,10 +1,8 @@
 groups:
-- name: Getting started
+- name: Get started
   dir: getting-started
   docs:
-  - name: Installation
-    endpoint: installation
-  - name: Run bookies locally
+  - name: Run BookKeeper locally
     endpoint: run-locally
   - name: Concepts and architecture
     endpoint: concepts
