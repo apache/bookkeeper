@@ -1,3 +1,4 @@
+<!-- markdown-link-check-disable -->
 ---
 title: Apache BookKeeper 4.13.0 Release Notes
 ---
