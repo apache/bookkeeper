@@ -1,3 +1,4 @@
+<!-- markdown-link-check-disable -->
 # Release notes
 
 ## 4.15.0
