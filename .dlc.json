@@ -56,6 +56,9 @@
     },
     {
       "pattern": "^https://www.opengroup.org/membership/forums/platform/unix"
+    },
+    {
+      "pattern": "^https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html"
     }
   ],
   "timeout": "10s",
