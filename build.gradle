@@ -193,7 +193,6 @@ allprojects {
                     '**/*.iml',
                     '**/*.iws',
                     '**/*.ipr',
-                    'site/**',
                     'site3/**',
                     '**/*.log',
                     'data/**',

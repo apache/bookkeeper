@@ -1,7 +1,0 @@
-source 'https://rubygems.org'
-
-ruby '>=2.4.0'
-
-gem 'jekyll', '3.8.6'
-gem 'nokogiri', '1.10.8'
-gem 'jekyll-toc', '0.12.2'
