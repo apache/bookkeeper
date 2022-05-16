@@ -1,3 +1,0 @@
----
-title: BookKeeper metrics reference
----
