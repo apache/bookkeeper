@@ -460,11 +460,14 @@ Copy the source release from the `dev` repository to the `release` repository at
         export NEW_RELEASE=${VERSION}
         ./site3/website/scripts/release-major.sh
    
+   Update the `latest_release` and `stable_release` in the docusaurus.config.js file if needed. 
    Once run the above commands, please send a pull request for it and get approval from any committers, then merge it.
    The CI job will automatically update the website in a few minutes. Please review the website to make sure the
    documentation for `${VERSION}` is live.
 
 2. Merge the Release Notes pull request and make sure the [release notes page](/release-notes) is updated.
+
+Note: you can put the 1. and 2. in the same pull. 
 
 ### Git tag
 
@@ -474,6 +477,7 @@ Create and push a new signed for the released version by copying the tag for the
 
 ```shell
 git tag -s "${TAG}" "${RC_TAG}"
+# Message: "Release ${VERSION}"
 git push apache "${TAG}"
 ```
 
@@ -519,7 +523,7 @@ Now, you are ready to publish the python client.
 
 ```bash
 cd stream/clients/python
-./publish.sh
+./scripts/publish.sh
 ```
 
 Check the PyPi project package to make sure the python client is uploaded to  https://pypi.org/project/apache-bookkeeper-client/ .
@@ -541,15 +545,9 @@ Then you have to create a PR and submit it for review.
 
 Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1350)
 
-### Advance python client version
+### Create release in Github
 
-If you are doing a major release, you need to update the python client version to next major development version in master
-and next minor development version in the branch. For example, if you are doing 4.9.0 release, you need to bump the version
-in master to `4.10.0-alpha-0` (NOTE: we are using `alpha-0` as `SNAPSHOT`, otherwise pypi doesn't work), and the version in
-`branch-4.9` to `4.9.1-alpha-0`.
-
-If you are only doing a minor release, you just need to update the version in release branch. For example, if you are doing
-4.9.1 release, you need to bump the version in `branch-4.9` to `4.9.2-alpha-0`.
+Create a new release on Github. Under [releases](https://github.com/apache/bookkeeper/releases), click "Draft a new release", select the tag and the publish the release.
 
 ### Mark the version as released in Github
 
@@ -573,8 +571,8 @@ Update the [release schedule](releases) page:
 * Website is updated with new release
 * Docker image is built with new release
 * Release tagged in the source code repository
+* Release exists in Github
 * Release version finalized in Github
-* Release section with release summary is added in [releases.md](https://github.com/apache/bookkeeper/blob/master/site/releases.md)
 * Release schedule page is updated
 
 **********
