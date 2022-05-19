@@ -3,7 +3,7 @@ id: installation
 title: BookKeeper installation
 ---
 
-You can install BookKeeper either by [downloading](#download) a [GZipped](http://www.gzip.org/) tarball package or [cloning](#clone) the BookKeeper repository.
+You can install BookKeeper either by [downloading](#download) a [GZipped](http://www.gzip.org/) tarball package, using the [Docker image](https://hub.docker.com/r/apache/bookkeeper/tags) or [cloning](#clone) the BookKeeper repository.
 
 ## Requirements
 
@@ -12,7 +12,7 @@ You can install BookKeeper either by [downloading](#download) a [GZipped](http:/
 
 ## Download
 
-You can download Apache BookKeeper releases from one of many [Apache mirrors](https://dlcdn.apache.org/bookkeeper/).
+You can download Apache BookKeeper releases from the [Download page](/releases).
 
 ## Clone
 

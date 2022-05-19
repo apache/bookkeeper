@@ -3,7 +3,7 @@ id: manual
 title: Manual deployment
 ---
 
-The easiest way to deploy BookKeeper is using schedulers like [DC/OS](dcos), but you can also deploy BookKeeper clusters manually. A BookKeeper cluster consists of two main components:
+A BookKeeper cluster consists of two main components:
 
 * A [ZooKeeper](#zookeeper-setup) cluster that is used for configuration- and coordination-related tasks
 * An [ensemble](#starting-up-bookies) of bookies

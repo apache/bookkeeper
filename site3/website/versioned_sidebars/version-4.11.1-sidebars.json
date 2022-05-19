@@ -37,11 +37,6 @@
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/deployment/dcos",
-          "label": "BookKeeper on DC/OS"
-        },
-        {
-          "type": "doc",
           "id": "version-4.11.1/deployment/kubernetes",
           "label": "BookKeeper on Kubernetes"
         }
