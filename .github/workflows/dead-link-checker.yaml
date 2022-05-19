@@ -18,12 +18,12 @@ name: Dead link checker
 
 on:
   push:
-    paths:
-      - '**.md'
   pull_request:
     branches:
       - master
-      - branch-*
+      - branch-*   
+    paths:
+      - '**.md'
 
 concurrency:
   group: dlc-${{ github.event.pull_request.number || github.ref }}
