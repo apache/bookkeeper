@@ -428,6 +428,28 @@ public class LedgerDirsManagerTest {
         verifyUsage(curDir1, nospace + 0.05f, curDir2, nospace + 0.05f, mockLedgerDirsListener, true);
     }
 
+    @Test
+    public void testValidateLwmThreshold() {
+        // check failed because diskSpaceThreshold < diskSpaceLwmThreshold
+        try {
+            ledgerMonitor.setDiskSpaceThreshold(0.65f, 0.90f);
+            fail("diskSpaceThreshold < diskSpaceLwmThreshold, should be failed.");
+        } catch (Exception e) {
+            assertTrue(e.getCause().getMessage().contains("diskSpaceThreshold >= diskSpaceLwmThreshold"));
+        }
+
+        // check failed because diskSpaceThreshold = 0 and diskUsageLwmThreshold = 1
+        try {
+            ledgerMonitor.setDiskSpaceThreshold(0f, 1f);
+            fail("diskSpaceThreshold = 0 and diskUsageLwmThreshold = 1, should be failed.");
+        } catch (Exception e) {
+            assertTrue(e.getCause().getMessage().contains("Should be > 0 and < 1"));
+        }
+
+        // check succeeded
+        ledgerMonitor.setDiskSpaceThreshold(0.95f, 0.90f);
+    }
+
     private void setUsageAndThenVerify(File dir1, float dir1Usage, File dir2, float dir2Usage,
             MockDiskChecker mockDiskChecker, MockLedgerDirsListener mockLedgerDirsListener, boolean verifyReadOnly)
             throws InterruptedException {
