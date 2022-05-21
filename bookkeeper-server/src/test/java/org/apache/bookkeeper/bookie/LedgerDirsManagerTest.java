@@ -435,7 +435,7 @@ public class LedgerDirsManagerTest {
             ledgerMonitor.setDiskSpaceThreshold(0.65f, 0.90f);
             fail("diskSpaceThreshold < diskSpaceLwmThreshold, should be failed.");
         } catch (Exception e) {
-            assertTrue(e.getCause().getMessage().contains("diskSpaceThreshold >= diskSpaceLwmThreshold"));
+            assertTrue(e.getMessage().contains("diskSpaceThreshold >= diskSpaceLwmThreshold"));
         }
 
         // check failed because diskSpaceThreshold = 0 and diskUsageLwmThreshold = 1
@@ -443,7 +443,7 @@ public class LedgerDirsManagerTest {
             ledgerMonitor.setDiskSpaceThreshold(0f, 1f);
             fail("diskSpaceThreshold = 0 and diskUsageLwmThreshold = 1, should be failed.");
         } catch (Exception e) {
-            assertTrue(e.getCause().getMessage().contains("Should be > 0 and < 1"));
+            assertTrue(e.getMessage().contains("Should be > 0 and < 1"));
         }
 
         // check succeeded
