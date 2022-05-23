@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
+import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -31,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -50,6 +52,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.SneakyThrows;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -1223,6 +1227,108 @@ public class BookKeeperAdmin implements AutoCloseable {
         public void processResult(int rc, String s, Object ctx) {
             SyncCallbackUtils.finish(rc, null, sync);
         }
+    }
+
+    /**
+     *
+     * @param lh Ledger Handle
+     * @param dryRun if true, run it without any modification.
+     * @return failed ledger fragment indices
+     * @throws UnsupportedOperationException Default behavior of
+     *  {@link EnsemblePlacementPolicy#replaceToAdherePlacementPolicy(int, int, int, java.util.Set, java.util.List)}.
+     */
+    public List<Long> relocateLedgerToAdherePlacementPolicy(LedgerHandle lh, boolean dryRun)
+            throws UnsupportedOperationException {
+        final EnsemblePlacementPolicy placementPolicy = bkc.getPlacementPolicy();
+
+        final long ledgerId = lh.getId();
+        final LedgerMetadata ledgerMeta = lh.getLedgerMetadata();
+        final List<Long> failedFragmentIndexList = new ArrayList<>();
+        final Map<Long, Long> ledgerFragmentsRange = new HashMap<>();
+        Long curEntryId = null;
+        for (Map.Entry<Long, ? extends List<BookieId>> entry :
+                ledgerMeta.getAllEnsembles().entrySet()) {
+            if (curEntryId != null) {
+                ledgerFragmentsRange.put(curEntryId, entry.getKey() - 1);
+            }
+            curEntryId = entry.getKey();
+        }
+        if (curEntryId != null) {
+            ledgerFragmentsRange.put(curEntryId, lh.getLastAddConfirmed());
+        }
+
+        for (Map.Entry<Long, ? extends List<BookieId>> entry : ledgerMeta.getAllEnsembles().entrySet()) {
+            if (placementPolicy.isEnsembleAdheringToPlacementPolicy(entry.getValue(),
+                    ledgerMeta.getWriteQuorumSize(), ledgerMeta.getAckQuorumSize())
+                    == EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL) {
+                final List<BookieId> currentEnsemble =  entry.getValue();
+                // Currently, don't consider quarantinedBookies
+                final EnsemblePlacementPolicy.PlacementResult<List<BookieId>> placementResult =
+                        placementPolicy.replaceToAdherePlacementPolicy(
+                                ledgerMeta.getEnsembleSize(),
+                                ledgerMeta.getWriteQuorumSize(),
+                                ledgerMeta.getAckQuorumSize(),
+                                Collections.emptySet(),
+                                currentEnsemble);
+
+                if (placementResult.isAdheringToPolicy()
+                        == EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL) {
+                    LOG.warn("Failed to relocate the ensemble. So, skip the operation."
+                                    + " ledgerId: {}, fragmentIndex: {}",
+                            ledgerId, entry.getKey());
+                    failedFragmentIndexList.add(entry.getKey());
+                } else {
+                    final List<BookieId> newEnsemble = placementResult.getResult();
+                    final Map<Integer, BookieId> replaceBookiesMap = IntStream
+                            .range(0, ledgerMeta.getEnsembleSize()).boxed()
+                            .filter(i -> !newEnsemble.get(i).equals(currentEnsemble.get(i)))
+                            .collect(Collectors.toMap(Functions.identity(), newEnsemble::get));
+                    if (replaceBookiesMap.isEmpty()) {
+                        LOG.warn("Failed to get bookies to replace. So, skip the operation."
+                                        + " ledgerId: {}, fragmentIndex: {}",
+                                ledgerId, entry.getKey());
+                        failedFragmentIndexList.add(entry.getKey());
+                    } else if (dryRun) {
+                        LOG.info("Would replace the ensemble. ledgerId: {}, fragmentIndex: {},"
+                                        + " currentEnsemble: {} replaceBookiesMap {}",
+                                ledgerId, entry.getKey(),
+                                currentEnsemble, replaceBookiesMap);
+                    } else {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Try to replace the ensemble. ledgerId: {}, fragmentIndex: {},"
+                                            + " replaceBookiesMap {}",
+                                    ledgerId, entry.getKey(), replaceBookiesMap);
+                        }
+                        final LedgerFragment fragment = new LedgerFragment(lh, entry.getKey(),
+                                ledgerFragmentsRange.get(entry.getKey()), replaceBookiesMap.keySet());
+
+                        try {
+                            replicateLedgerFragment(lh, fragment, replaceBookiesMap,
+                                    (lId, eId) -> {
+                                        // This consumer is already accepted before the method returns
+                                        // void. Therefore, use failedFragmentIndexList in this consumer.
+                                        LOG.warn("Failed to read entry {}:{}", lId, eId);
+                                        failedFragmentIndexList.add(entry.getKey());
+                                    });
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Operation finished in the ensemble. ledgerId: {},"
+                                                + " fragmentIndex: {}, replaceBookiesMap {}",
+                                        ledgerId, entry.getKey(), replaceBookiesMap);
+                            }
+                        } catch (BKException | InterruptedException e) {
+                            LOG.warn("Failed to replicate ledger fragment.", e);
+                            failedFragmentIndexList.add(entry.getKey());
+                        }
+                    }
+                }
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("The fragment is adhering to placement policy. So, skip the operation."
+                            + " ledgerId: {}, fragmentIndex: {}", ledgerId, entry.getKey());
+                }
+            }
+        }
+        return failedFragmentIndexList;
     }
 
     /**

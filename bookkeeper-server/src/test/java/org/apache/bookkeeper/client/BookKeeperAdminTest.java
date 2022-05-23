@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.REPP_DNS_RESOLVER_CLASS;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import static org.hamcrest.Matchers.is;
@@ -30,21 +31,30 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.eq;
 import com.google.common.net.InetAddresses;
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.bookie.CookieValidation;
@@ -65,6 +75,9 @@ import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.NetworkTopologyImpl;
+import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.Main;
@@ -74,11 +87,14 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.PortManager;
+import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +114,12 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         baseConf.setLostBookieRecoveryDelay(lostBookieRecoveryDelayInitValue);
         baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30000));
         setAutoRecoveryEnabled(true);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+        StaticDNSResolver.reset();
     }
 
     @Test
@@ -734,5 +756,122 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     @Test
     public void testLegacyBookieServiceInfo() throws Exception {
         testBookieServiceInfo(false, true);
+    }
+
+    @Test
+    public void testRelocateLedgerToAdherePlacementPolicyByRackaware() throws Exception {
+        final int ensembleSize = 7;
+        final int quorumSize = 2;
+
+        final BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        final BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        final BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        final BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        final BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
+        final BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
+        final BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.7", 3181);
+        final BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.8", 3181);
+        final BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.9", 3181);
+
+        final Set<BookieId> writableBookies = new HashSet<>();
+        writableBookies.add(addr1.toBookieId());
+        writableBookies.add(addr2.toBookieId());
+        writableBookies.add(addr3.toBookieId());
+        writableBookies.add(addr4.toBookieId());
+        writableBookies.add(addr5.toBookieId());
+        writableBookies.add(addr6.toBookieId());
+        writableBookies.add(addr7.toBookieId());
+        writableBookies.add(addr8.toBookieId());
+        writableBookies.add(addr9.toBookieId());
+
+        // add bookie node to resolver
+        StaticDNSResolver.reset();
+
+        final String rackName1 = NetworkTopology.DEFAULT_REGION + "/r1";
+        final String rackName2 = NetworkTopology.DEFAULT_REGION + "/r2";
+        final String rackName3 = NetworkTopology.DEFAULT_REGION + "/r3";
+
+        // update dns mapping
+        // add port for testing
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), rackName1);
+        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), rackName1);
+        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), rackName1);
+        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), rackName2);
+        StaticDNSResolver.addNodeToRack(addr5.getSocketAddress().getAddress().getHostAddress(), rackName2);
+        StaticDNSResolver.addNodeToRack(addr6.getSocketAddress().getAddress().getHostAddress(), rackName2);
+        StaticDNSResolver.addNodeToRack(addr7.getSocketAddress().getAddress().getHostAddress(), rackName3);
+        StaticDNSResolver.addNodeToRack(addr8.getSocketAddress().getAddress().getHostAddress(), rackName3);
+        StaticDNSResolver.addNodeToRack(addr9.getSocketAddress().getAddress().getHostAddress(), rackName3);
+        LOG.info("Set up static DNS Resolver.");
+        baseClientConf.setEnsemblePlacementPolicy(RackawareEnsemblePlacementPolicy.class);
+        baseClientConf.setProperty(REPP_DNS_RESOLVER_CLASS, StaticDNSResolver.class.getName());
+
+        final NavigableMap<Long, List<BookieId>> ensemble = new TreeMap<>();
+        // create failed ensemble
+        // expect that the ensemble will be replaced to
+        // [addr1, addr4, addr7, addr2, addr5, addr8, *addr6 (in /default-region/r2 bookies)*]
+        ensemble.put(0L, Arrays.asList(
+                addr1.toBookieId(), addr4.toBookieId(),
+                addr7.toBookieId(), addr2.toBookieId(),
+                addr5.toBookieId(), addr8.toBookieId(),
+                addr3.toBookieId()));
+        final LedgerMetadata lm1 = Mockito.mock(LedgerMetadata.class);
+        Mockito.doReturn(ensemble).when(lm1).getAllEnsembles();
+        Mockito.doReturn(ensembleSize).when(lm1).getEnsembleSize();
+        Mockito.doReturn(quorumSize).when(lm1).getWriteQuorumSize();
+        Mockito.doReturn(quorumSize).when(lm1).getAckQuorumSize();
+        final LedgerHandle lh1 = Mockito.mock(LedgerHandle.class);
+        Mockito.when(lh1.getLedgerMetadata()).thenReturn(lm1);
+
+        @Cleanup
+        final BookKeeper bookKeeper = Mockito.spy(new BookKeeper(baseClientConf));
+        Mockito.doReturn(true).when(bookKeeper).isClosed(Mockito.anyLong());
+
+        @Cleanup
+        final BookKeeperAdmin admin = Mockito.spy(new BookKeeperAdmin(bookKeeper));
+        Mockito.doAnswer(invocationOnMock -> {
+            final AsyncCallback.OpenCallback op = invocationOnMock.getArgument(1);
+            final CountDownLatch ctx = invocationOnMock.getArgument(2);
+            op.openComplete(BKException.Code.OK, lh1, ctx);
+            return null;
+        }).when(admin).asyncOpenLedger(Mockito.anyLong(), Mockito.any(), Mockito.any());
+        // expected return
+        final Map<Integer, BookieId> expectedMap = new HashMap<>();
+        expectedMap.put(6, addr6.toBookieId());
+        Mockito.doNothing().when(admin)
+                .replicateLedgerFragment(Mockito.any(), Mockito.any(), eq(expectedMap), Mockito.any());
+
+        final EnsemblePlacementPolicy policy = bookKeeper.getPlacementPolicy();
+        final Field depthOfAllLeavesField = NetworkTopologyImpl.class.getDeclaredField("depthOfAllLeaves");
+        depthOfAllLeavesField.setAccessible(true);
+        final Field topologyField = TopologyAwareEnsemblePlacementPolicy.class
+                .getDeclaredField("topology");
+        topologyField.setAccessible(true);
+        final NetworkTopology topology = Mockito.spy((NetworkTopology) topologyField.get(policy));
+        Mockito.doReturn(2).when(topology).getNumOfRacks();
+        depthOfAllLeavesField.set(topology, -1);
+        topologyField.set(policy, topology);
+        final Field bookieAddressResolverField = TopologyAwareEnsemblePlacementPolicy.class
+                .getDeclaredField("bookieAddressResolver");
+        bookieAddressResolverField.setAccessible(true);
+        final BookieAddressResolver bookieAddressResolver =
+                Mockito.spy((BookieAddressResolver) bookieAddressResolverField.get(policy));
+        Mockito.doAnswer(invocationOnMock -> {
+            final BookieId bookieId = invocationOnMock.getArgument(0);
+            return new BookieSocketAddress(bookieId.getId());
+        }).when(bookieAddressResolver).resolve(Mockito.any());
+        bookieAddressResolverField.set(policy, bookieAddressResolver);
+
+        // add mock bookies to knownBookies
+        policy.onClusterChanged(writableBookies, Collections.emptySet());
+
+        // make sure that the ensemble is FAIL state
+        assertEquals(EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL,
+                policy.isEnsembleAdheringToPlacementPolicy(ensemble.get(0L), quorumSize, quorumSize));
+
+        assertEquals(Collections.emptyList(), admin.relocateLedgerToAdherePlacementPolicy(lh1, false));
+
+        Mockito.verify(admin, Mockito.times(1))
+                .replicateLedgerFragment(Mockito.any(), Mockito.any(), eq(expectedMap), Mockito.any());
     }
 }
