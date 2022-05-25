@@ -12,7 +12,7 @@ import RecentReleases from "@site/src/components/RecentReleases"
 <RecentReleases />
 
 ## Release Integrity
-You must [verify](https://www.apache.org/info/verification.htm) the integrity of the downloaded files. We provide OpenPGP signatures for every release file. This signature should be matched against the [KEYS]({{ site.dist_base_url }}/KEYS) file which contains the OpenPGP keys of BookKeeper's Release Managers. We also provide SHA-512 checksums for every release file. After you download the file, you should calculate a checksum for your download, and make sure it is the same as ours.
+You must [verify](https://www.apache.org/info/verification.html) the integrity of the downloaded files. We provide OpenPGP signatures for every release file. This signature should be matched against the [KEYS]({{ site.dist_base_url }}/KEYS) file which contains the OpenPGP keys of BookKeeper's Release Managers. We also provide SHA-512 checksums for every release file. After you download the file, you should calculate a checksum for your download, and make sure it is the same as ours.
 
 If you want to download older, archived releases, they are available in the [Apache archive](http://archive.apache.org/dist/bookkeeper/).
 
