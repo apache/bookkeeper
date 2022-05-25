@@ -13,7 +13,6 @@ const variables = {
   github_master: "https://github.com/apache/bookkeeper/tree/master",
   mirror_base_url: "https://www.apache.org/dyn/closer.lua/bookkeeper",
   dist_base_url: "https://www.apache.org/dist/bookkeeper",
-  archive_base_url: "https://archive.apache.org/dist/bookkeeper",
   javadoc_base_url: deployUrl + "/docs/latest/api/javadoc",
   archive_releases_base_url: deployUrl + "/archives",
 }
