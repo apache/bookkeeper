@@ -87,9 +87,11 @@ Java_org_apache_bookkeeper_common_util_nativeio_NativeIOJni_open(
     }
 #endif
 
+#ifndef _WIN32
     if (javaFlags & 0x20) {
-        flags |= O_DSYNC;
+            flags |= O_DSYNC;
     }
+#endif
 
     int fd = open(cPath, flags, mode);
 
