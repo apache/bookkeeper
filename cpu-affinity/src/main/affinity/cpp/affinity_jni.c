@@ -44,6 +44,10 @@ static int set_affinity(int cpuid) { return NOT_IMPLEMENTED; }
 
 static const int IS_AVAILABLE = 0;
 
+#endif
+
+#ifdef _WIN32
+
 #define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
 
 #endif
