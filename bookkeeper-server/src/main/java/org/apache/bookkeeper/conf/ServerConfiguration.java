@@ -1680,7 +1680,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the maximum milliseconds to run major compaction. If {@literal <=}0</code> the
+     * Get the maximum milliseconds to run major compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @return limit
@@ -1691,7 +1691,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the maximum milliseconds to run major compaction. If {@literal <=}0</code> the
+     * Set the maximum milliseconds to run major compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @see #getMajorCompactionMaxTimeMillis()
@@ -1757,7 +1757,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the maximum milliseconds to run minor compaction. If {@literal <=}0</code> the
+     * Get the maximum milliseconds to run minor compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @return limit
@@ -1768,7 +1768,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the maximum milliseconds to run minor compaction. If {@literal <=}0</code> the
+     * Set the maximum milliseconds to run minor compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @see #getMinorCompactionMaxTimeMillis()
