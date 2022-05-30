@@ -562,14 +562,14 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Get local scrub interval.
      *
-     * @return Number of seconds between scrubs, <= 0 for disabled.
+     * @return Number of seconds between scrubs, {@literal <=}0 for disabled.
      */
     public long getLocalScrubPeriod() {
         return this.getLong(LOCAL_SCRUB_PERIOD, 0);
     }
 
     /**
-     * Set local scrub period in seconds (<= 0 for disabled). Scrub will be scheduled at delays
+     * Set local scrub period in seconds ({@literal <=}0 for disabled). Scrub will be scheduled at delays
      * chosen from the interval (.5 * interval, 1.5 * interval)
      */
     public void setLocalScrubPeriod(long period) {
@@ -1680,7 +1680,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the maximum milliseconds to run major compaction. If <= 0 the
+     * Get the maximum milliseconds to run major compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @return limit
@@ -1691,7 +1691,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the maximum milliseconds to run major compaction. If <= 0 the
+     * Set the maximum milliseconds to run major compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @see #getMajorCompactionMaxTimeMillis()
@@ -1757,7 +1757,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the maximum milliseconds to run minor compaction. If <= 0 the
+     * Get the maximum milliseconds to run minor compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @return limit
@@ -1768,7 +1768,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the maximum milliseconds to run minor compaction. If <= 0 the
+     * Set the maximum milliseconds to run minor compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @see #getMinorCompactionMaxTimeMillis()

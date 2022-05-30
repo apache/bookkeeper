@@ -479,7 +479,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
     /**
      * Extract an exception code from an BKException, or use a default if it's another type.
      * The throwable is null, assume that no exception took place and return
-     * {@link BKException.Code.OK}.
+     * {@link BKException.Code#OK}.
      */
     public static int getExceptionCode(Throwable t, int defaultCode) {
         if (t == null) {
