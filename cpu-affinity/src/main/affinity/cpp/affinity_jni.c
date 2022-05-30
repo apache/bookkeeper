@@ -44,6 +44,8 @@ static int set_affinity(int cpuid) { return NOT_IMPLEMENTED; }
 
 static const int IS_AVAILABLE = 0;
 
+#define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
+
 #endif
 
 #include <unistd.h>
@@ -60,7 +62,11 @@ static const int IS_AVAILABLE = 0;
  */
 JNIEXPORT jboolean JNICALL
 Java_org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni_isRoot(JNIEnv *env, jclass cls) {
+#ifdef __linux__
     return getuid() == 0;
+#else
+    return 0;
+#endif
 }
 
 /*

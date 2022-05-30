@@ -221,6 +221,43 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>Windows</id>
+      <activation>
+        <os>
+          <family>Windows</family>
+        </os>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.maven-nar</groupId>
+            <artifactId>nar-maven-plugin</artifactId>
+            <version>${nar-maven-plugin.version}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <runtime>${nar.runtime}</runtime>
+              <output>cpu-affinity</output>
+              <libraries>
+                <library>
+                  <type>jni</type>
+                  <narSystemPackage>org.apache.bookkeeper.utils.affinity</narSystemPackage>
+                </library>
+              </libraries>
+              <cpp>
+                <optionSet>${nar.cpp.optionSet}</optionSet>
+                <exceptions>false</exceptions>
+                <rtti>false</rtti>
+                <optimize>full</optimize>
+              </cpp>
+              <linker>
+                <name>g++</name>
+              </linker>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
 </project>
