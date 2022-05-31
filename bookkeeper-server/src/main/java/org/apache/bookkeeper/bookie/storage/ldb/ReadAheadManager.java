@@ -622,6 +622,7 @@ public class ReadAheadManager {
                         if (log.isDebugEnabled()) {
                             log.debug("[L{} E{}] Failed to locate entry with location:{}", ledgerId, entryId, location);
                         }
+                        earlyExit = true;
                         break;
                     }
                 } else {
@@ -656,6 +657,11 @@ public class ReadAheadManager {
                     entry.release();
                 }
             }
+        }  catch (IOException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("[L{} E{}] Failed to read from file channel", ledgerId, entryId, e);
+            }
+            return;
         } catch (Exception e) {
             log.error("Exception during reading ahead for L{} E{}", ledgerId, entryId, e);
             return;
@@ -674,6 +680,7 @@ public class ReadAheadManager {
         if (preTriggerReadAheadRatio > 0 && !earlyExit && entries >= 1) {
             int index = Math.min(entries - 1, (int) (preTriggerReadAheadRatio * entries));
             long nextHitEntryId = entriesPos.get(index);
+            // ensure that the location has been validated
             addNextReadPosition(ledgerId, nextHitEntryId, ledgerId, entryId, location);
         }
 
