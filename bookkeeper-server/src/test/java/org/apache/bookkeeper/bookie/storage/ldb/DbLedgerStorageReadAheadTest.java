@@ -34,7 +34,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieImpl;
-import org.apache.bookkeeper.bookie.EntryLogger;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -95,7 +95,7 @@ public class DbLedgerStorageReadAheadTest {
                 entry.writeLong(lid); // ledger id
                 entry.writeLong(eid); // entry id
                 entry.writeBytes(("entry-" + eid).getBytes());
-                long location = entryLogger.addEntry(lid, entry, false);
+                long location = entryLogger.addEntry(lid, entry);
                 entryLocationIndex.addLocation(lid, eid, location);
                 locations.add(Pair.of(Pair.of(lid, eid), location));
             }
@@ -134,7 +134,7 @@ public class DbLedgerStorageReadAheadTest {
                 entry.writeLong(lid); // ledger id
                 entry.writeLong(eid); // entry id
                 entry.writeBytes(("entry-" + eid).getBytes());
-                long location = entryLogger.addEntry(lid, entry, false);
+                long location = entryLogger.addEntry(lid, entry);
                 entryLocationIndex.addLocation(lid, eid, location);
                 locations.add(Pair.of(Pair.of(lid, eid), location));
             }
@@ -180,7 +180,7 @@ public class DbLedgerStorageReadAheadTest {
                 entry.writeLong(lid); // ledger id
                 entry.writeLong(eid); // entry id
                 entry.writeBytes(("entry-" + eid).getBytes());
-                long location = entryLogger.addEntry(lid, entry, false);
+                long location = entryLogger.addEntry(lid, entry);
                 entryLocationIndex.addLocation(lid, eid, location);
                 locations.add(Pair.of(Pair.of(lid, eid), location));
             }
@@ -245,7 +245,7 @@ public class DbLedgerStorageReadAheadTest {
                 entry.writeLong(lid); // ledger id
                 entry.writeLong(eid); // entry id
                 entry.writeBytes(("entry-" + eid).getBytes());
-                long location = entryLogger.addEntry(lid, entry, false);
+                long location = entryLogger.addEntry(lid, entry);
                 entryLocationIndex.addLocation(lid, eid, location);
                 locations.add(Pair.of(Pair.of(lid, eid), location));
             }
@@ -283,7 +283,7 @@ public class DbLedgerStorageReadAheadTest {
         entry.writeLong(lid); // ledger id
         entry.writeLong(eid); // entry id
         entry.writeBytes(("entry-" + eid).getBytes());
-        long location = entryLogger.addEntry(lid, entry, false);
+        long location = entryLogger.addEntry(lid, entry);
         entryLocationIndex.addLocation(lid, eid, location);
 
         ReadAheadManager readAheadManager = new ReadAheadManager(
@@ -315,7 +315,7 @@ public class DbLedgerStorageReadAheadTest {
                 entry.writeLong(lid); // ledger id
                 entry.writeLong(eid); // entry id
                 entry.writeBytes(("entry-" + eid).getBytes());
-                long location = entryLogger.addEntry(lid, entry, false);
+                long location = entryLogger.addEntry(lid, entry);
                 entryLocationIndex.addLocation(lid, eid, location);
                 locations.add(Pair.of(Pair.of(lid, eid), location));
             }

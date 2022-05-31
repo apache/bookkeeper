@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.EntryLogger;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -436,8 +436,7 @@ public class ReadAheadManager {
             while (count < readAheadEntries
                     && size < readAheadBytes
                     && currentEntryLogId == firstEntryLogId) {
-                ByteBuf entry = entryLogger.internalReadEntry(orginalLedgerId, firstEntryId, currentEntryLocation,
-                        false /* validateEntry */);
+                ByteBuf entry = entryLogger.readEntry(orginalLedgerId, firstEntryId, currentEntryLocation);
 
                 try {
                     long currentEntryLedgerId = entry.getLong(0);
@@ -626,7 +625,7 @@ public class ReadAheadManager {
                         break;
                     }
                 } else {
-                    entry = entryLogger.internalReadEntry(ledgerId, entryId, location, false);
+                    entry = entryLogger.readEntry(ledgerId, entryId, location);
                 }
 
                 try {
