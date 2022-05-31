@@ -348,6 +348,9 @@ public class ReadAheadManager {
                        ledgerReadAheadTaskStatuses.remove(readAheadTaskStatus.startEntryId);
                        return ledgerReadAheadTaskStatuses.isEmpty() ? null : ledgerReadAheadTaskStatuses;
                     });
+
+            // signal all waiting threads if it has after actually removing from the in-progress map
+            readAheadTaskStatus.forceSignalAllIfHasWaiters();
         }
 
         if (log.isDebugEnabled()) {
@@ -583,6 +586,7 @@ public class ReadAheadManager {
         // obtain the read-ahead info
         ReadAheadTaskStatus readAheadTaskStatus = getNearestTask(ledgerId, entryId);
         if (readAheadTaskStatus == null) {
+            log.info("The RA-task L{} E{} has already been cleaned", ledgerId, entryId);
             return;
         }
 
@@ -760,6 +764,20 @@ public class ReadAheadManager {
 
         public long getEndEntryId() {
             return endEntryId;
+        }
+
+        public void forceSignalAllIfHasWaiters() {
+            lock.lock();
+            try {
+                final boolean hasWaiters = lock.hasWaiters(condition);
+                if (hasWaiters) {
+                    log.info("RA-task of L{} E{} - {} still has waiters when doing clean-up",
+                            ledgerId, startEntryId, endEntryId);
+                    condition.signalAll();
+                }
+            } finally {
+                lock.unlock();
+            }
         }
 
         public boolean isExpired() {
