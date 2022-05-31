@@ -28,6 +28,12 @@
 
 #include <org_apache_bookkeeper_common_util_nativeio_NativeIOJni.h>
 
+#ifdef _WIN32
+
+#define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
+
+#endif
+
 static void throwExceptionWithErrno(JNIEnv* env, const char* message) {
     char err_msg[1024];
     strerror_r(errno, err_msg, sizeof(err_msg));
