@@ -30,7 +30,59 @@
 
 #ifdef _WIN32
 
+#define fsync(fd) fflush(fd)
 #define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
+
+static ssize_t pread (int fd, void *buf, size_t count, off_t offset)
+{
+  ssize_t res;
+  off_t ooffset;
+
+  ooffset = lseek (fd, 0, SEEK_CUR);
+  lseek (fd, offset, SEEK_SET);
+  res = read (fd, buf, count);
+  lseek (fd, ooffset, SEEK_SET);
+
+  return res;
+}
+
+static ssize_t pwrite (int fd, void *buf, size_t count, off_t offset)
+{
+  ssize_t res;
+  off_t ooffset;
+
+  ooffset = lseek (fd, 0, SEEK_CUR);
+  lseek (fd, offset, SEEK_SET);
+  res = write (fd, buf, count);
+  lseek (fd, ooffset, SEEK_SET);
+
+  return res;
+}
+
+static int check_align(size_t align)
+{
+    for (size_t i = sizeof(void *); i != 0; i *= 2)
+    if (align == i)
+        return 0;
+    return EINVAL;
+}
+
+int posix_memalign(void **ptr, size_t align, size_t size)
+{
+    if (check_align(align))
+        return EINVAL;
+
+    int saved_errno = errno;
+    void *p = _aligned_malloc(size, align);
+    if (p == NULL)
+    {
+        errno = saved_errno;
+        return ENOMEM;
+    }
+
+    *ptr = p;
+    return 0;
+}
 
 #endif
 
@@ -87,9 +139,11 @@ Java_org_apache_bookkeeper_common_util_nativeio_NativeIOJni_open(
     }
 #endif
 
+#ifndef _WIN32
     if (javaFlags & 0x20) {
         flags |= O_DSYNC;
     }
+#endif
 
     int fd = open(cPath, flags, mode);
 
