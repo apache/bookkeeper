@@ -91,7 +91,7 @@ public class DigestTypeBenchmark {
         public BufferType bufferType;
         @Param
         public Digest digest;
-        @Param({"1024", "4086", "8192", "16384", "65536"})
+        @Param({"64", "1024", "4086", "8192", "16384", "65536"})
         public int entrySize;
 
         private DigestManager crc32;
