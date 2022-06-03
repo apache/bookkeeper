@@ -89,7 +89,9 @@ import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.api.ConnectionMode;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -343,6 +345,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final SecurityHandlerFactory shFactory;
     private volatile boolean isWritable = true;
     private long lastBookieUnavailableLogTimestamp = 0;
+    private final ConnectionMode connectionMode;
+    private final BookieSocketAddress proxyAddress;
+    private volatile BookieSocketAddress targetBookieAddress;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieId addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
@@ -374,7 +379,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                   EventLoopGroup eventLoopGroup,
                                   ByteBufAllocator allocator,
                                   BookieId bookieId,
-                                  StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
+                                  StatsLogger parentStatsLogger,
+                                  ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool,
                                   SecurityHandlerFactory shFactory,
@@ -384,6 +390,19 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         this.bookieId = bookieId;
         this.bookieAddressResolver = bookieAddressResolver;
         this.executor = executor;
+        this.connectionMode = conf.getBookieConnectionMode();
+        if (ConnectionMode.SNI_ROUTING == connectionMode) {
+            ServiceURI serviceURI = ServiceURI.create(conf.getBookieServiceUri());
+            String hostName = serviceURI.getServiceHosts()[0];
+            try {
+                this.proxyAddress = new BookieSocketAddress(hostName);
+            } catch (UnknownHostException e) {
+                throw new RuntimeException("Invalid bookie service uri : " + serviceURI, e);
+            }
+        } else {
+            this.proxyAddress = null;
+        }
+
         if (LocalBookiesRegistry.isLocalBookie(bookieId)) {
             this.eventLoopGroup = new DefaultEventLoopGroup();
         } else {
@@ -528,9 +547,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Connecting to bookie: {}", bookieId);
         }
-        BookieSocketAddress addr;
         try {
-            addr = bookieAddressResolver.resolve(bookieId);
+            targetBookieAddress = bookieAddressResolver.resolve(bookieId);
         } catch (BookieAddressResolver.BookieIdNotResolvedException err) {
             LOG.error("Cannot connect to {} as endpoint resolution failed (probably bookie is down) err {}",
                     bookieId, err.toString());
@@ -596,9 +614,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
         });
 
-        SocketAddress bookieAddr = addr.getSocketAddress();
+        SocketAddress bookieAddr;
         if (eventLoopGroup instanceof DefaultEventLoopGroup) {
             bookieAddr = new LocalAddress(bookieId.toString());
+        } else {
+            if (ConnectionMode.SNI_ROUTING == connectionMode) {
+                bookieAddr = proxyAddress.getSocketAddress();
+            } else {
+                bookieAddr = targetBookieAddress.getSocketAddress();
+            }
         }
 
         ChannelFuture future = bootstrap.connect(bookieAddr);
@@ -1488,7 +1512,20 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     void initTLSHandshake() {
         // create TLS handler
         PerChannelBookieClient parentObj = PerChannelBookieClient.this;
-        SslHandler handler = parentObj.shFactory.newTLSHandler();
+        SslHandler handler;
+        BookieSocketAddress bookieSocketAddress = targetBookieAddress;
+        if (ConnectionMode.SNI_ROUTING == connectionMode) {
+            if (bookieSocketAddress != null) {
+                handler = parentObj.shFactory.newTLSHandler(
+                    bookieSocketAddress.getHostName(), bookieSocketAddress.getPort());
+            } else {
+                LOG.warn("No target bookie address for BookieId [{}] is resolved"
+                    + " when connecting to proxy [{}] using SNI routing", bookieId, proxyAddress);
+                handler = parentObj.shFactory.newTLSHandler();
+            }
+        } else {
+            handler = parentObj.shFactory.newTLSHandler();
+        }
         channel.pipeline().addFirst(parentObj.shFactory.getHandlerName(), handler);
         handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override

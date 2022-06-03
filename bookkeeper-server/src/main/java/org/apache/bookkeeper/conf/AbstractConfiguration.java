@@ -29,6 +29,7 @@ import javax.net.ssl.SSLEngine;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.bookkeeper.client.api.ConnectionMode;
 import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
 import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
@@ -76,6 +77,10 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String ZK_TIMEOUT = "zkTimeout";
     protected static final String ZK_SERVERS = "zkServers";
     protected static final String ZK_RETRY_BACKOFF_MAX_RETRIES = "zkRetryBackoffMaxRetries";
+
+    // BK Service URI.
+    protected static final String BK_SERVICE_URI = "bookieServiceUri";
+    protected static final String BK_CONNECTION_MODE = "bookieConnectionMode";
 
     // Ledger Manager
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
@@ -241,6 +246,52 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
             String key = iter.next();
             setProperty(key, baseConf.getProperty(key));
         }
+    }
+
+    /**
+     * Get service uri to connect to bookies.
+     *
+     * <p>The service uri should be pointed to the proxy service if {@link ConnectionMode#SNI_ROUTING} is configured.
+     *
+     * @return metadata service uri.
+     */
+    public String getBookieServiceUri() {
+        return getString(BK_SERVICE_URI);
+    }
+
+    /**
+     * Set the service uri to connect to bookies.
+     *
+     * @param serviceUri the bookie service uri.
+     * @return the configuration object.
+     * @see #getBookieServiceUri()
+     */
+    public T setBookieServiceUri(String serviceUri) {
+        setProperty(BK_SERVICE_URI, serviceUri);
+        return getThis();
+    }
+
+    /**
+     * Get the {@link ConnectionMode} that the bookkeeper client uses to connect to bookies.
+     *
+     * @return the {@link ConnectionMode} that the bookkeeper client used to connect to bookies.
+     */
+    public ConnectionMode getBookieConnectionMode() {
+        String modeStr = getString(BK_CONNECTION_MODE, ConnectionMode.DIRECT.name());
+        return ConnectionMode.valueOf(modeStr);
+    }
+
+    /**
+     * Set the {@link ConnectionMode} that the bookkeeper client uses to connect to bookies.
+     *
+     * @param connectionMode connection mode that the bookkeeper client uses to connect to bookies.
+     * @return the configuration object
+     * @see #getBookieConnectionMode()
+     * @see #getBookieServiceUri()
+     */
+    public T setBookieConnectionMode(ConnectionMode connectionMode) {
+        setProperty(BK_CONNECTION_MODE, connectionMode.name());
+        return getThis();
     }
 
     /**
