@@ -912,7 +912,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
-          <additionalparam>-notimestamp</additionalparam>
+          <notimestamp>true</notimestamp>
           <!-- Prevent missing javadoc comments from being marked as errors -->
           <doclint>none</doclint>
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.client.api:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
@@ -941,6 +941,10 @@
           <overview>site/_site/overview/index.html</overview>
           <show>package</show>
           <detectJavaApiLink>false</detectJavaApiLink>
+          <!-- The javadoc plugin only runs in the javadoc modules. But with the default configuration it tries
+               to run a new maven instance in every dependency, in order to generate the apidocs there as well.
+               {@link https://maven.apache.org/plugins-archives/maven-javadoc-plugin-3.1.1/javadoc-mojo.html#detectOfflineLinks} -->
+          <detectOfflineLinks>false</detectOfflineLinks>
         </configuration>
         <executions>
           <execution>
