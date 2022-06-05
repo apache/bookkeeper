@@ -20,6 +20,7 @@ package org.apache.bookkeeper.meta;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
 import static org.apache.bookkeeper.replication.ReplicationStats.ELECTION_ATTEMPTS;
+
 import com.google.protobuf.TextFormat;
 import java.io.IOException;
 import java.io.Serializable;

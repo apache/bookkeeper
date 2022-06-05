@@ -24,6 +24,7 @@ package org.apache.bookkeeper.proto;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.lang.reflect.Field;
 import java.nio.channels.FileChannel;

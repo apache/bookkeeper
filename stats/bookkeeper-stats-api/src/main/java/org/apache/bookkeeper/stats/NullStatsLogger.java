@@ -17,7 +17,6 @@
 package org.apache.bookkeeper.stats;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.concurrent.TimeUnit;
 
 /**

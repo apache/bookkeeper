@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.common.util.affinity.impl;
 
 import java.io.IOException;
-
 import lombok.experimental.UtilityClass;
 
 /**

@@ -33,7 +33,6 @@ import static org.mockito.Mockito.spy;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -42,7 +41,6 @@ import java.nio.channels.FileChannel;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
-
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.common.util.Watcher;

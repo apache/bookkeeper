@@ -21,13 +21,10 @@ package org.apache.bookkeeper.metadata.etcd;
 import static org.apache.bookkeeper.metadata.etcd.EtcdUtils.msResult;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import io.etcd.jetcd.Lease;
 import io.etcd.jetcd.lease.LeaseKeepAliveResponse;
 import io.etcd.jetcd.support.CloseableClient;
-
 import io.grpc.stub.StreamObserver;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -36,7 +33,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

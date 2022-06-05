@@ -19,13 +19,11 @@
 package org.apache.bookkeeper.common;
 
 import com.google.common.collect.ImmutableMap;
-
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.openjdk.jmh.annotations.Benchmark;

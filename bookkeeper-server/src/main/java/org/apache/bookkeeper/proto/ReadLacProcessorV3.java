@@ -21,14 +21,11 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.protobuf.ByteString;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
-
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacRequest;

@@ -18,13 +18,10 @@
 package org.apache.bookkeeper.tls;
 
 import com.google.common.base.Strings;
-
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
-
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;

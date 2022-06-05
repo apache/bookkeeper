@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkState;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;

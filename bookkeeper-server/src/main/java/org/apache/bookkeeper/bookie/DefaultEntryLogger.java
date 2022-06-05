@@ -27,7 +27,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -57,7 +56,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
-
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
@@ -69,7 +67,6 @@ import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

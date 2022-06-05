@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.tools.cli.commands;
 
 import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
+
 import org.apache.bookkeeper.tools.cli.commands.health.SwitchOfHealthCheckCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;

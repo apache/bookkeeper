@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.util;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
@@ -34,7 +33,6 @@ import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
-
 import java.util.ArrayList;
 
 /**

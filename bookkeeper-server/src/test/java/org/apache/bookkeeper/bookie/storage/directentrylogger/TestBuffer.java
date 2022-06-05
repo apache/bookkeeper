@@ -24,16 +24,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+// CHECKSTYLE.OFF: IllegalImport
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-// CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
-// CHECKSTYLE.ON: IllegalImport
-
 import java.io.IOException;
-
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.junit.Test;
+// CHECKSTYLE.ON: IllegalImport
 
 /**
  * TestBuffer.

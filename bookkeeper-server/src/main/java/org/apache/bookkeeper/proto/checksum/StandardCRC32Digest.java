@@ -18,9 +18,7 @@
 package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
-
 import java.util.zip.CRC32;
-
 import org.apache.bookkeeper.proto.checksum.CRC32DigestManager.CRC32Digest;
 
 /**

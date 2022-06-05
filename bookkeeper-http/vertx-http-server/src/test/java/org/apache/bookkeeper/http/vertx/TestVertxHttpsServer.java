@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.http.vertx;
 
-
 import java.io.FileInputStream;
 import java.net.URL;
 import java.security.KeyStore;
@@ -32,7 +31,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-
 import org.apache.bookkeeper.http.HttpServerConfiguration;
 import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.apache.bookkeeper.http.NullHttpServiceProvider;

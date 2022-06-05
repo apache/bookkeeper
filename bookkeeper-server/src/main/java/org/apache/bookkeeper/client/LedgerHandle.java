@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkState;
-
 import static org.apache.bookkeeper.client.api.BKException.Code.ClientClosedException;
 import static org.apache.bookkeeper.client.api.BKException.Code.WriteException;
 

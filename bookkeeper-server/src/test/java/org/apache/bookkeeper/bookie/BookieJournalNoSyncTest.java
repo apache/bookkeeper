@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Enumeration;
-
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;

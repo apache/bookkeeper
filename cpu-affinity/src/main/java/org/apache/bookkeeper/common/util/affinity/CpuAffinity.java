@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.common.util.affinity;
 
 import lombok.experimental.UtilityClass;
-
 import org.apache.bookkeeper.common.util.affinity.impl.CpuAffinityImpl;
 
 /**

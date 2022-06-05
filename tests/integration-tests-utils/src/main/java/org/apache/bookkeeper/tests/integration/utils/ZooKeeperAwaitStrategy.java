@@ -18,13 +18,11 @@
 package org.apache.bookkeeper.tests.integration.utils;
 
 import java.util.concurrent.TimeUnit;
-
 import org.arquillian.cube.docker.impl.docker.DockerClientExecutor;
 import org.arquillian.cube.docker.impl.util.Ping;
 import org.arquillian.cube.docker.impl.util.PingCommand;
 import org.arquillian.cube.spi.Cube;
 import org.arquillian.cube.spi.await.AwaitStrategy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

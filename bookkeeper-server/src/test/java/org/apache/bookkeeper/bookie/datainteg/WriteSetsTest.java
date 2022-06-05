@@ -26,16 +26,12 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import org.apache.bookkeeper.client.DistributionSchedule;
 import org.apache.bookkeeper.client.RoundRobinDistributionSchedule;
-
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
