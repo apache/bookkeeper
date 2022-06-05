@@ -42,7 +42,6 @@ import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -1021,7 +1020,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
         try {
             testClient(clientConf, numBookies);
             fail("should have failed with unauthorized exception");
-        } catch (BKUnauthorizedAccessException e) {
+        } catch (BKException.BKNotEnoughBookiesException e) {
             // Ok.
         }
     }
