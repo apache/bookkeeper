@@ -194,5 +194,21 @@
      <sha1>9b78a289a3aa34eb47fac8c432f664fc140387df</sha1>
      <cve>CVE-2021-28165</cve>
   </suppress>
+    <!-- https://github.com/jeremylong/DependencyCheck/issues/4487 -->
+    <suppress>
+        <notes><![CDATA[
+   file name: google-http-client-gson-1.41.0.jar
+   ]]></notes>
+        <sha1>1a754a5dd672218a2ac667d7ff2b28df7a5a240e</sha1>
+        <cve>CVE-2022-25647</cve>
+    </suppress>
+    <!-- only use maven-settings for integration-test -->
+    <suppress>
+        <notes><![CDATA[
+   file name: maven-settings-3.3.9.jar
+   ]]></notes>
+        <sha1>68d4180c51468ae8f45869f8f9c569092262fcca</sha1>
+        <cve>CVE-2021-26291</cve>
+    </suppress>
 </suppressions>
 

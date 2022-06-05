@@ -249,25 +249,25 @@ Apache Software License, Version 2.
 - lib/com.beust-jcommander-1.78.jar [23]
 - lib/net.jpountz.lz4-lz4-1.3.0.jar [25]
 - lib/com.google.api.grpc-proto-google-common-protos-2.0.1.jar [27]
-- lib/com.google.code.gson-gson-2.8.9.jar [28]
+- lib/com.google.code.gson-gson-2.9.0.jar [28]
 - lib/io.opencensus-opencensus-api-0.28.0.jar [29]
 - lib/io.opencensus-opencensus-contrib-http-util-0.28.0.jar [29]
 - lib/io.opencensus-opencensus-proto-0.2.0.jar [29]
-- lib/io.grpc-grpc-all-1.45.1.jar [32]
-- lib/io.grpc-grpc-alts-1.45.1.jar [32]
-- lib/io.grpc-grpc-api-1.45.1.jar [32]
-- lib/io.grpc-grpc-auth-1.45.1.jar [32]
-- lib/io.grpc-grpc-context-1.45.1.jar [32]
-- lib/io.grpc-grpc-core-1.45.1.jar [32]
-- lib/io.grpc-grpc-grpclb-1.45.1.jar [32]
-- lib/io.grpc-grpc-netty-1.45.1.jar [32]
-- lib/io.grpc-grpc-protobuf-1.45.1.jar [32]
-- lib/io.grpc-grpc-protobuf-lite-1.45.1.jar [32]
-- lib/io.grpc-grpc-services-1.45.1.jar [32]
-- lib/io.grpc-grpc-stub-1.45.1.jar [32]
-- lib/io.grpc-grpc-testing-1.45.1.jar [32]
-- lib/io.grpc-grpc-xds-1.45.1.jar [32]
-- lib/io.grpc-grpc-rls-1.45.1.jar[32]
+- lib/io.grpc-grpc-all-1.47.0.jar [32]
+- lib/io.grpc-grpc-alts-1.47.0.jar [32]
+- lib/io.grpc-grpc-api-1.47.0.jar [32]
+- lib/io.grpc-grpc-auth-1.47.0.jar [32]
+- lib/io.grpc-grpc-context-1.47.0.jar [32]
+- lib/io.grpc-grpc-core-1.47.0.jar [32]
+- lib/io.grpc-grpc-grpclb-1.47.0.jar [32]
+- lib/io.grpc-grpc-netty-1.47.0.jar [32]
+- lib/io.grpc-grpc-protobuf-1.47.0.jar [32]
+- lib/io.grpc-grpc-protobuf-lite-1.47.0.jar [32]
+- lib/io.grpc-grpc-services-1.47.0.jar [32]
+- lib/io.grpc-grpc-stub-1.47.0.jar [32]
+- lib/io.grpc-grpc-testing-1.47.0.jar [32]
+- lib/io.grpc-grpc-xds-1.47.0.jar [32]
+- lib/io.grpc-grpc-rls-1.47.0.jar[32]
 - lib/org.apache.curator-curator-client-5.1.0.jar [33]
 - lib/org.apache.curator-curator-framework-5.1.0.jar [33]
 - lib/org.apache.curator-curator-recipes-5.1.0.jar [33]
@@ -285,7 +285,7 @@ Apache Software License, Version 2.
 - lib/com.google.j2objc-j2objc-annotations-1.3.jar [44]
 - lib/com.google.re2j-re2j-1.5.jar [45]
 - lib/io.dropwizard.metrics-metrics-core-4.1.12.1.jar [46]
-- lib/io.perfmark-perfmark-api-0.23.0.jar [47]
+- lib/io.perfmark-perfmark-api-0.25.0.jar [47]
 - lib/org.conscrypt-conscrypt-openjdk-uber-2.5.1.jar [49]
 - lib/org.xerial.snappy-snappy-java-1.1.7.7.jar [50]
 - lib/io.reactivex.rxjava3-rxjava-3.0.1.jar [51]
@@ -309,9 +309,9 @@ Apache Software License, Version 2.
 [23] Source available at https://github.com/cbeust/jcommander/tree/1.78
 [25] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
 [27] Source available at https://github.com/googleapis/googleapis
-[28] Source available at https://github.com/google/gson/tree/gson-parent-2.8.9
+[28] Source available at https://github.com/google/gson/tree/gson-parent-2.9.0
 [29] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.28.0
-[32] Source available at https://github.com/grpc/grpc-java/tree/v1.45.1
+[32] Source available at https://github.com/grpc/grpc-java/tree/v1.47.0
 [33] Source available at https://github.com/apache/curator/tree/apache-curator-5.1.0
 [34] Source available at https://github.com/inferred/FreeBuilder/tree/v2.7.0
 [35] Source available at https://github.com/google/error-prone/tree/v2.9.0
@@ -326,7 +326,7 @@ Apache Software License, Version 2.
 [44] Source available at https://github.com/google/j2objc/releases/tag/1.3
 [45] Source available at https://github.com/google/re2j/releases/tag/re2j-1.5
 [46] Source available at https://github.com/dropwizard/metrics/releases/tag/v3.1.0
-[47] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.23.0
+[47] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.25.0
 [49] Source available at https://github.com/google/conscrypt/releases/tag/2.5.1
 [50] Source available at https://github.com/google/snappy/releases/tag/1.1.7.7
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
