@@ -43,7 +43,7 @@ depVersions = [
     freebuilder: "2.7.0",
     googleHTTPClient: "1.34.0",
     gradleTooling: "4.0.1",
-    grpc: "1.45.1",
+    grpc: "1.47.0",
     groovy: "2.5.8",
     guava: "31.0.1-jre",
     hamcrest: "1.3",
