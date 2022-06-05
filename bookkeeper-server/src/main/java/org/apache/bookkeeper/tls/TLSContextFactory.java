@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -143,6 +144,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     }
 
     private static final String TLSCONTEXT_HANDLER_NAME = "tls";
+    private NodeType type;
     private String[] protocols;
     private String[] ciphers;
     private volatile SslContext sslContext;
@@ -475,6 +477,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             throws SecurityException {
         this.allocator = allocator;
         this.config = conf;
+        this.type = type;
         final String enabledProtocols;
         final String enabledCiphers;
         certRefreshTime = TimeUnit.SECONDS.toMillis(conf.getTLSCertFilesRefreshDurationSeconds());
@@ -522,7 +525,12 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
     @Override
     public SslHandler newTLSHandler() {
-        SslHandler sslHandler = getSSLContext().newHandler(allocator);
+        return this.newTLSHandler(null, -1);
+    }
+
+    @Override
+    public SslHandler newTLSHandler(String peer, int port) {
+        SslHandler sslHandler = getSSLContext().newHandler(allocator, peer, port);
 
         if (protocols != null && protocols.length != 0) {
             sslHandler.engine().setEnabledProtocols(protocols);
@@ -536,6 +544,15 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         }
         if (log.isDebugEnabled()) {
             log.debug("Enabled cipher suites: {} ", Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
+        }
+
+        if (type == NodeType.Client && ((ClientConfiguration) config).getHostnameVerificationEnabled()) {
+            SSLParameters sslParameters = sslHandler.engine().getSSLParameters();
+            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+            sslHandler.engine().setSSLParameters(sslParameters);
+            if (log.isDebugEnabled()) {
+                log.debug("Enabled endpointIdentificationAlgorithm: HTTPS");
+            }
         }
 
         return sslHandler;
