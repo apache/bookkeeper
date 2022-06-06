@@ -20,7 +20,7 @@
   <parent>
     <artifactId>distributedlog</artifactId>
     <groupId>org.apache.distributedlog</groupId>
-    <version>4.14.5-SNAPSHOT</version>
+    <version>4.14.6-SNAPSHOT</version>
     <relativePath>../..</relativePath>
   </parent>
   <groupId>org.apache.distributedlog</groupId>
