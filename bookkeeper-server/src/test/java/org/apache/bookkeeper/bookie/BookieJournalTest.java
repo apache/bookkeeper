@@ -539,6 +539,7 @@ public class BookieJournalTest {
         JournalChannel jc = writeV2Journal(BookieImpl.getCurrentDirectory(journalDir), 0);
         jc.getBufferedChannel().write(Unpooled.wrappedBuffer("JunkJunkJunk".getBytes()));
         jc.getBufferedChannel().flushAndForceWrite(false);
+        jc.close();
 
         writeIndexFileForLedger(ledgerDir, 1, "testPasswd".getBytes());
 
