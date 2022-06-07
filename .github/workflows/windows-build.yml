@@ -49,4 +49,4 @@ jobs:
           java-version: 11
 
       - name: mvn package
-        run: mvn clean package -DskipTests
+        run: mvn -B -nsu clean package -DskipTests
