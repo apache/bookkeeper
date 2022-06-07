@@ -27,7 +27,6 @@
   <name>Apache BookKeeper :: Stats API</name>
   <url>http://maven.apache.org</url>
   <properties>
-    <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
   </properties>
   <build>
     <plugins>
@@ -36,6 +35,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
+          <sourcepath>${src.dir}</sourcepath>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
           <doclint>none</doclint>
           <subpackages>org.apache.bookkeeper.stats</subpackages>
@@ -58,11 +58,5 @@
     </plugins>
   </build>
   <dependencies>
-    <dependency>
-      <groupId>com.github.spotbugs</groupId>
-      <artifactId>spotbugs-annotations</artifactId>
-      <version>${spotbugs-annotations.version}</version>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
 </project>

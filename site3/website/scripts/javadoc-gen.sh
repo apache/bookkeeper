@@ -34,7 +34,7 @@ function build_javadoc() {
   if [[ "$use_gradle" == "true" ]]; then
     ./gradlew generateApiJavadoc
   else
-    mvn clean install javadoc:aggregate -DskipTests
+    mvn clean -B -nsu -am -pl bookkeeper-common,bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider install javadoc:aggregate -DskipTests -Pdelombok
   fi
 
   mv $javadoc_gen_dir $javadoc_dest_dir
