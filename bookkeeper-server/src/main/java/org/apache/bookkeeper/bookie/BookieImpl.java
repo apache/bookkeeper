@@ -465,7 +465,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
                 @Override
                 public void start() {
-                    executor.scheduleAtFixedRate(() -> {
+                    executor.scheduleWithFixedDelay(() -> {
                         doCheckpoint(checkpointSource.newCheckpoint());
                     }, conf.getFlushInterval(), conf.getFlushInterval(), TimeUnit.MILLISECONDS);
                 }
