@@ -2752,7 +2752,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLocalScrubPeriod(long)">setLocalScrubPeriod</a></span>&#8203;(long&nbsp;period)</code></th>
 <td class="colLast">
-<div class="block">Set local scrub period in seconds (<= 0 for disabled).</div>
+<div class="block">Set local scrub period in seconds (&lt;=0 for disabled).</div>
 </td>
 </tr>
 <tr id="i249" class="rowColor">
@@ -5632,7 +5632,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 <div class="block">Get local scrub interval.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>Number of seconds between scrubs, <= 0 for disabled.</dd>
+<dd>Number of seconds between scrubs, &lt;=0 for disabled.</dd>
 </dl>
 </li>
 </ul>
@@ -5643,7 +5643,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 <li class="blockList">
 <h4>setLocalScrubPeriod</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;setLocalScrubPeriod&#8203;(long&nbsp;period)</pre>
-<div class="block">Set local scrub period in seconds (<= 0 for disabled). Scrub will be scheduled at delays
+<div class="block">Set local scrub period in seconds (&lt;=0 for disabled). Scrub will be scheduled at delays
  chosen from the interval (.5 * interval, 1.5 * interval)</div>
 </li>
 </ul>
@@ -7154,7 +7154,7 @@ public&nbsp;java.lang.String&nbsp;getJournalDirName()</pre>
 <li class="blockList">
 <h4>getMajorCompactionMaxTimeMillis</h4>
 <pre class="methodSignature">public&nbsp;long&nbsp;getMajorCompactionMaxTimeMillis()</pre>
-<div class="block">Get the maximum milliseconds to run major compaction. If <= 0 the
+<div class="block">Get the maximum milliseconds to run major compaction. If &lt;=0 the
  thread will run until all compaction is completed.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -7170,7 +7170,7 @@ public&nbsp;java.lang.String&nbsp;getJournalDirName()</pre>
 <li class="blockList">
 <h4>setMajorCompactionMaxTimeMillis</h4>
 <pre class="methodSignature">public&nbsp;<a href="ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;setMajorCompactionMaxTimeMillis&#8203;(long&nbsp;majorCompactionMaxTimeMillis)</pre>
-<div class="block">Set the maximum milliseconds to run major compaction. If <= 0 the
+<div class="block">Set the maximum milliseconds to run major compaction. If &lt;=0 the
  thread will run until all compaction is completed.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -7257,7 +7257,7 @@ public&nbsp;java.lang.String&nbsp;getJournalDirName()</pre>
 <li class="blockList">
 <h4>getMinorCompactionMaxTimeMillis</h4>
 <pre class="methodSignature">public&nbsp;long&nbsp;getMinorCompactionMaxTimeMillis()</pre>
-<div class="block">Get the maximum milliseconds to run minor compaction. If <= 0 the
+<div class="block">Get the maximum milliseconds to run minor compaction. If &lt;=0 the
  thread will run until all compaction is completed.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -7273,7 +7273,7 @@ public&nbsp;java.lang.String&nbsp;getJournalDirName()</pre>
 <li class="blockList">
 <h4>setMinorCompactionMaxTimeMillis</h4>
 <pre class="methodSignature">public&nbsp;<a href="ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;setMinorCompactionMaxTimeMillis&#8203;(long&nbsp;minorCompactionMaxTimeMillis)</pre>
-<div class="block">Set the maximum milliseconds to run minor compaction. If <= 0 the
+<div class="block">Set the maximum milliseconds to run minor compaction. If &lt;=0 the
  thread will run until all compaction is completed.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
