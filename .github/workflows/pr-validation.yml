@@ -57,4 +57,4 @@ jobs:
         run: dev/check-all-licenses
 
       - name: Generate Javadoc
-        run: mvn clean -B -nsu -am -pl :bookkeeper-common,:bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider install javadoc:aggregate -DskipTests -Pdelombok
+        run: mvn clean -B -nsu -am -pl bookkeeper-common,bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider install javadoc:aggregate -DskipTests -Pdelombok
