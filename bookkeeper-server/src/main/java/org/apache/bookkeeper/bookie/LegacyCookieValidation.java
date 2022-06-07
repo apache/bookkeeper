@@ -136,23 +136,28 @@ public class LegacyCookieValidation implements CookieValidation {
         // we are checking all possibilities here, so we don't need to fail if we can only get
         // loopback address. it will fail anyway when the bookie attempts to listen on loopback address.
         try {
-            // ip address
-            addresses.add(BookieImpl.getBookieAddress(
-                    new ServerConfiguration(conf)
-                            .setUseHostNameAsBookieID(false)
-                            .setAdvertisedAddress(null)
-                            .setAllowLoopback(true)
-            ).toBookieId());
-            // host name
-            addresses.add(BookieImpl.getBookieAddress(
-                    new ServerConfiguration(conf)
-                            .setUseHostNameAsBookieID(true)
-                            .setAdvertisedAddress(null)
-                            .setAllowLoopback(true)
-            ).toBookieId());
-            // advertised address
-            if (null != conf.getAdvertisedAddress()) {
+            if (null != conf.getBookieId()) {
+                // If BookieID is configured, it takes precedence over default network information used as id.
                 addresses.add(BookieImpl.getBookieId(conf));
+            } else {
+                // ip address
+                addresses.add(BookieImpl.getBookieAddress(
+                        new ServerConfiguration(conf)
+                                .setUseHostNameAsBookieID(false)
+                                .setAdvertisedAddress(null)
+                                .setAllowLoopback(true)
+                ).toBookieId());
+                // host name
+                addresses.add(BookieImpl.getBookieAddress(
+                        new ServerConfiguration(conf)
+                                .setUseHostNameAsBookieID(true)
+                                .setAdvertisedAddress(null)
+                                .setAllowLoopback(true)
+                ).toBookieId());
+                // advertised address
+                if (null != conf.getAdvertisedAddress()) {
+                    addresses.add(BookieImpl.getBookieAddress(conf).toBookieId());
+                }
             }
         } catch (UnknownHostException e) {
             throw new BookieException.UnknownBookieIdException(e);
