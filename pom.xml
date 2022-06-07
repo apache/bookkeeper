@@ -110,6 +110,7 @@
     <javac.target>1.8</javac.target>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
     <testRetryCount>2</testRetryCount>
+    <src.dir>src/main/java</src.dir>
     <test.additional.args />
 
     <!-- dependencies -->
@@ -183,6 +184,7 @@
     <download-maven-plugin.version>1.6.8</download-maven-plugin.version>
     <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
     <license-maven-plugin.version>1.6</license-maven-plugin.version>
+    <lombok-maven-plugin.version>1.18.20.0</lombok-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
@@ -833,6 +835,7 @@
   </dependencies>
 
   <build>
+    <sourceDirectory>${src.dir}</sourceDirectory>
     <extensions>
       <extension>
         <groupId>kr.motd.maven</groupId>
@@ -1156,6 +1159,44 @@
           </plugin>
         </plugins>
       </reporting>
+    </profile>
+    <profile>
+      <id>delombok</id>
+      <properties>
+        <src.dir>${project.build.directory}/generated-sources/delombok</src.dir>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok-maven-plugin</artifactId>
+            <version>${lombok-maven-plugin.version}</version>
+            <inherited>true</inherited>
+            <dependencies>
+              <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>delombok</goal>
+                </goals>
+                <configuration>
+                  <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                  <outputDirectory>${project.build.directory}/generated-sources/delombok</outputDirectory>
+                  <formatPreferences>
+                    <pretty/>
+                  </formatPreferences>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <!-- the profiles below are only for development purpose -->
     <profile>

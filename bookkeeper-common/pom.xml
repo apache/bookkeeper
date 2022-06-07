@@ -112,6 +112,31 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin.version}</version>
+        <configuration>
+          <sourcepath>${src.dir}</sourcepath>
+          <!-- Avoid for missing javadoc comments to be marked as errors -->
+          <doclint>none</doclint>
+          <subpackages>org.apache.bookkeeper.common.annotation</subpackages>
+          <groups>
+            <group>
+              <title>Bookkeeper Client</title>
+              <packages>org.apache.bookkeeper.common.annotation*</packages>
+            </group>
+          </groups>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
