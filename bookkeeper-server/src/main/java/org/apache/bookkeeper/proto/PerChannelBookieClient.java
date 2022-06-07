@@ -1289,6 +1289,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             if (c != null) {
                 closeChannel(c);
             }
+            return;
         }
 
         if (cause instanceof IOException) {
