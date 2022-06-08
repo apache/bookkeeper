@@ -499,7 +499,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
     }
 
-    private void recyclePendAddOpObject() {
+    public void recyclePendAddOpObject() {
         entryId = LedgerHandle.INVALID_ENTRY_ID;
         currentLedgerLength = -1;
         if (payload != null) {

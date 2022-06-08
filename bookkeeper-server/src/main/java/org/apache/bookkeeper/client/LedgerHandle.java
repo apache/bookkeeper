@@ -1326,6 +1326,7 @@ public class LedgerHandle implements WriteHandle {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
                         op.cb.addCompleteWithLatency(BKException.Code.LedgerClosedException,
                                 LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
+                        op.recyclePendAddOpObject();
                     }
 
                     @Override
@@ -1337,6 +1338,7 @@ public class LedgerHandle implements WriteHandle {
                 op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
                                                                     BKException.Code.InterruptedException),
                         LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
+                op.recyclePendAddOpObject();
             }
             return;
         }
