@@ -15,5 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-java -Xms1G -Xmx1G -Djdk.nio.maxCachedBufferSize=0 -Djava.net.preferIPv4Stack=true -Duser.timezone=UTC -XX:-MaxFDLimit -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+ResizeTLAB -XX:-ResizePLAB -XX:MetaspaceSize=128m -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -XX:+ParallelRefProcEnabled -XX:StackShadowPages=20 -XX:+UseCompressedOops -XX:+DisableExplicitGC -XX:StringTableSize=1000003 -XX:InitiatingHeapOccupancyPercent=40 -jar target/benchmarks.jar $@ -prof gc -prof stack:lines=5;time=1;top=3
+java -Xms1G -Xmx1G -Djdk.nio.maxCachedBufferSize=0 -Djava.net.preferIPv4Stack=true -Duser.timezone=UTC \
+    --add-opens java.base/java.util.zip=ALL-UNNAMED \
+    -XX:-MaxFDLimit -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+ResizeTLAB -XX:-ResizePLAB -XX:MetaspaceSize=128m -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -XX:+ParallelRefProcEnabled -XX:StackShadowPages=20 -XX:+UseCompressedOops -XX:+DisableExplicitGC -XX:StringTableSize=1000003 -XX:InitiatingHeapOccupancyPercent=40 -jar target/benchmarks.jar $@ -prof gc -prof stack:lines=5;time=1;top=3 
 

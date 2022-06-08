@@ -53,17 +53,17 @@ public class ChecksumTest {
     public void testCrc32cValueIncremental() {
         final byte[] bytes = "Some String".getBytes();
 
-        int checksum = Crc32cIntChecksum.CRC32C_HASH.calculate(bytes, 0, bytes.length);
+        int checksum = Crc32cIntChecksum.computeChecksum(Unpooled.wrappedBuffer(bytes));
         assertEquals(608512271, checksum);
 
-        checksum = Crc32cIntChecksum.CRC32C_HASH.calculate(bytes, 0, 1);
+        checksum = Crc32cIntChecksum.computeChecksum(Unpooled.wrappedBuffer(bytes, 0, 1));
         for (int i = 1; i < bytes.length; i++) {
-            checksum = Crc32cIntChecksum.CRC32C_HASH.resume(checksum, bytes, i, 1);
+            checksum = Crc32cIntChecksum.resumeChecksum(checksum, Unpooled.wrappedBuffer(bytes, i, 1));
         }
         assertEquals(608512271, checksum);
 
-        checksum = Crc32cIntChecksum.CRC32C_HASH.calculate(bytes, 0, 4);
-        checksum = Crc32cIntChecksum.CRC32C_HASH.resume(checksum, bytes, 4, 7);
+        checksum = Crc32cIntChecksum.computeChecksum(Unpooled.wrappedBuffer(bytes, 0, 4));
+        checksum = Crc32cIntChecksum.resumeChecksum(checksum, Unpooled.wrappedBuffer(bytes, 4, 7));
         assertEquals(608512271, checksum);
 
 
@@ -89,28 +89,6 @@ public class ChecksumTest {
         long checksum = Crc32cIntChecksum.resumeChecksum(0, Unpooled.wrappedBuffer(bytes));
 
         assertEquals(608512271L, checksum);
-    }
-
-    @Test
-    public void testCrc32cLongValueIncremental() {
-        final byte[] bytes = "Some String".getBytes();
-
-        long checksum = Crc32cLongChecksum.computeChecksum(Unpooled.wrappedBuffer(bytes));
-        assertEquals(608512271, checksum);
-
-        checksum = Crc32cLongChecksum.computeChecksum(Unpooled.wrappedBuffer(bytes, 0, 1));
-        for (int i = 1; i < bytes.length; i++) {
-            checksum = Crc32cLongChecksum.resumeChecksum(
-                checksum, Unpooled.wrappedBuffer(bytes, i, 1));
-        }
-        assertEquals(608512271, checksum);
-
-        ByteBuf buffer = Unpooled.wrappedBuffer(bytes, 0, 4);
-        checksum = Crc32cLongChecksum.computeChecksum(buffer);
-        checksum = Crc32cLongChecksum.resumeChecksum(
-            checksum, Unpooled.wrappedBuffer(bytes, 4, bytes.length - 4));
-
-        assertEquals(608512271, checksum);
     }
 
     @Test

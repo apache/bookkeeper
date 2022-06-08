@@ -45,10 +45,6 @@
         </exclusion>
         <exclusion>
           <groupId>io.netty</groupId>
-          <artifactId>netty-common</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.netty</groupId>
           <artifactId>netty-buffer</artifactId>
         </exclusion>
       </exclusions>
