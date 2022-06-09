@@ -20,6 +20,9 @@ package org.apache.bookkeeper.proto;
 
 import org.junit.Before;
 
+/**
+ * Tests for bckpressure handling on the server side with V2 protocol.
+ */
 public class BookieBackpressureForV2Test extends BookieBackpressureTest {
 
     @Before
