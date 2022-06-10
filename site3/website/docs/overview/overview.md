@@ -32,6 +32,7 @@ Use case | Example
 [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (write-ahead logging) | The HDFS [namenode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL)
 [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (write-ahead logging) | Twitter [Manhattan](https://blog.twitter.com/engineering/en_us/a/2016/strong-consistency-in-manhattan.html)
 [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (write-ahead logging) | [HerdDB](https://github.com/diennea/herddb)
+[WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (write-ahead logging) | [Pravega](https://github.com/pravega/pravega)
 Message storage | [Apache Pulsar](https://pulsar.apache.org/docs/concepts-architecture-overview#persistent-storage)
 Offset/cursor storage | [Apache Pulsar](https://pulsar.apache.org/docs/concepts-architecture-overview#persistent-storage)
 Object/[BLOB](https://en.wikipedia.org/wiki/Binary_large_object) storage | Storing snapshots to replicated state machines
