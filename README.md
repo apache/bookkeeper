@@ -8,7 +8,7 @@ Apache BookKeeper is a scalable, fault tolerant and low latency storage service 
 
 It is suitable for being used in following scenarios:
 
-- WAL (Write-Ahead-Logging), e.g. HDFS NameNode.
+- WAL (Write-Ahead-Logging), e.g. HDFS NameNode, Pravega.
 - Message Store, e.g. Apache Pulsar.
 - Offset/Cursor Store, e.g. Apache Pulsar.
 - Object/Blob Store, e.g. storing state machine snapshots.
