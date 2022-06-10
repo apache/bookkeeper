@@ -29,6 +29,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
@@ -36,6 +37,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.PortManager;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 
 /**
@@ -99,9 +101,14 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             sendthread.resume();
 
             // allow watcher thread to run
-            Thread.sleep(3000);
-            assertTrue("Bookie should not shutdown on losing zk session", server.isBookieRunning());
-            assertTrue("Bookie Server should not shutdown on losing zk session", server.isRunning());
+            BookieServer finalServer = server;
+            Awaitility.await()
+                .pollDelay(3, TimeUnit.SECONDS)
+                .atMost(10, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    assertTrue("Bookie should not shutdown on losing zk session", finalServer.isBookieRunning());
+                    assertTrue("Bookie Server should not shutdown on losing zk session", finalServer.isRunning());
+                });
         } finally {
             server.shutdown();
         }
