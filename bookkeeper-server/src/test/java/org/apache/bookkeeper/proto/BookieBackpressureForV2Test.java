@@ -30,6 +30,5 @@ public class BookieBackpressureForV2Test extends BookieBackpressureTest {
     public void setUp() throws Exception {
         super.setUp();
         baseClientConf.setUseV2WireProtocol(true);
-        confByIndex(0).setReadWorkerThreadsThrottlingEnabled(false);
     }
 }
