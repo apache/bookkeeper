@@ -29,6 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.Lists;
 
@@ -39,6 +40,7 @@ import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectCompactionEn
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.test.TmpDirs;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.Test;
 
@@ -214,18 +216,17 @@ public class TestEntryLogIds {
 
     @Test
     public void testGapSelection() throws Exception {
-        assertThat(toObject(EntryLogIdsImpl.findLargestGap(Lists.newArrayList())),
-                   arrayContaining(0, Integer.MAX_VALUE));
-        assertThat(toObject(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(0))),
-                   arrayContaining(1, Integer.MAX_VALUE));
-        assertThat(toObject(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(1, 2, 3, 4, 5, 6))),
-                   arrayContaining(7, Integer.MAX_VALUE));
-        assertThat(toObject(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE))),
-                   arrayContaining(0, Integer.MAX_VALUE));
-        assertThat(toObject(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE / 2))),
-                   arrayContaining(0, Integer.MAX_VALUE / 2));
-        assertThat(toObject(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE / 2 - 1))),
-                   arrayContaining(Integer.MAX_VALUE / 2, Integer.MAX_VALUE));
+        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList()), Pair.of(0, Integer.MAX_VALUE));
+        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(0)),
+            Pair.of(1, Integer.MAX_VALUE));
+        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(1, 2, 3, 4, 5, 6)),
+            Pair.of(7, Integer.MAX_VALUE));
+        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE)),
+            Pair.of(0, Integer.MAX_VALUE));
+        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE / 2)),
+            Pair.of(0, Integer.MAX_VALUE/2));
+        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE / 2 - 1)),
+            Pair.of(Integer.MAX_VALUE / 2, Integer.MAX_VALUE));
     }
 
     private static void touchLog(File ledgerDir, int logId) throws Exception {

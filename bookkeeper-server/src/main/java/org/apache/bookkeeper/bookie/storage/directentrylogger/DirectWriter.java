@@ -68,7 +68,7 @@ class DirectWriter implements LogWriter {
         try {
             fd = nativeIO.open(filename,
                                NativeIO.O_CREAT | NativeIO.O_WRONLY | NativeIO.O_DIRECT,
-                               00755);
+                               00644);
             checkState(fd >= 0, "Open should have thrown exception, fd is invalid : %d", fd);
         } catch (NativeIOException ne) {
             throw new IOException(exMsg(ne.getMessage()).kv("file", filename)
@@ -204,7 +204,7 @@ class DirectWriter implements LogWriter {
     public void close() throws IOException {
         synchronized (bufferLock) {
             if (nativeBuffer != null && nativeBuffer.position() > 0) {
-                flushBuffer();
+                flush();
             }
         }
 

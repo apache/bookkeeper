@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.Events;
 import org.apache.bookkeeper.slogger.Slogger;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * EntryLogIdsImpl.
@@ -77,9 +78,9 @@ public class EntryLogIdsImpl implements EntryLogIds {
             currentIds.addAll(compactedLogIdsInDirectory(ledgerDir));
         }
 
-        int[] gap = findLargestGap(currentIds);
-        nextId = gap[0];
-        maxId = gap[1];
+        Pair<Integer, Integer> gap = findLargestGap(currentIds);
+        nextId = gap.getLeft();
+        maxId = gap.getRight();
         slog.kv("dirs", ledgerDirsManager.getAllLedgerDirs())
             .kv("nextId", nextId)
             .kv("maxId", maxId)
@@ -93,9 +94,9 @@ public class EntryLogIdsImpl implements EntryLogIds {
      * Entry logs should be about 1GB in size, so even if the node
      * stores a PB, there should be only 1000000 entry logs.
      */
-    static int[] findLargestGap(List<Integer> currentIds) {
+    static Pair<Integer, Integer> findLargestGap(List<Integer> currentIds) {
         if (currentIds.isEmpty()) {
-            return new int[] { 0, Integer.MAX_VALUE };
+            return Pair.of(0, Integer.MAX_VALUE);
         }
 
         Collections.sort(currentIds);
@@ -117,7 +118,7 @@ public class EntryLogIdsImpl implements EntryLogIds {
                 maxIdCandidate = gapEnd;
             }
         }
-        return new int[] { nextIdCandidate, maxIdCandidate };
+        return Pair.of(nextIdCandidate, maxIdCandidate);
     }
 
     public static List<Integer> logIdsInDirectory(File directory) {
