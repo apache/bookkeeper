@@ -24,9 +24,7 @@ import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.logIdFromLo
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.makeEntry;
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.newDirsManager;
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.newLegacyEntryLogger;
-import static org.apache.commons.lang3.ArrayUtils.toObject;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
@@ -224,7 +222,7 @@ public class TestEntryLogIds {
         assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE)),
             Pair.of(0, Integer.MAX_VALUE));
         assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE / 2)),
-            Pair.of(0, Integer.MAX_VALUE/2));
+            Pair.of(0, Integer.MAX_VALUE / 2));
         assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE / 2 - 1)),
             Pair.of(Integer.MAX_VALUE / 2, Integer.MAX_VALUE));
     }
