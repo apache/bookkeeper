@@ -298,8 +298,6 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private static final String SLEEP_TIME = System.getenv("SLEEP_TIME_FOR_TESTING");
-
     @Override
     public void processRequest(Object msg, Channel c) {
         // If we can decode this packet as a Request protobuf packet, process
@@ -311,14 +309,6 @@ public class BookieRequestProcessor implements RequestProcessor {
                 BookkeeperProtocol.BKPacketHeader header = r.getHeader();
                 switch (header.getOperation()) {
                     case ADD_ENTRY:
-                        LOG.info("Using v3 protocol to resolve the request, wait for {}", SLEEP_TIME);
-                        int seconds = Integer.parseInt(SLEEP_TIME);
-                        try {
-                            TimeUnit.MILLISECONDS.sleep(seconds);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        LOG.info("Continue to process the add entry request");
                         processAddRequestV3(r, c);
                         break;
                     case READ_ENTRY:
@@ -374,14 +364,6 @@ public class BookieRequestProcessor implements RequestProcessor {
             // process packet
             switch (r.getOpCode()) {
                 case BookieProtocol.ADDENTRY:
-                    LOG.info("Using v2 protocol to resolve the request, wait for {}", SLEEP_TIME);
-                    int seconds = Integer.parseInt(SLEEP_TIME);
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(seconds);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    LOG.info("Continue to process the add entry request");
                     checkArgument(r instanceof BookieProtocol.ParsedAddRequest);
                     processAddRequest((BookieProtocol.ParsedAddRequest) r, c);
                     break;

@@ -33,7 +33,6 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -343,20 +342,5 @@ public class BookieClientTest {
         int expectedBookieInfoSuccessCount = (limitStatsLogging) ? 0 : 1;
         assertEquals("BookieInfoSuccessCount", expectedBookieInfoSuccessCount,
                 perChannelBookieClientScopeOfThisAddr.getSuccessCount());
-    }
-
-    @Test
-    public void testMemoryLimit() throws Exception {
-        ResultStruct arc = new ResultStruct();
-        BookieId addr = bs.getBookieId();
-        byte[] pwd = "".getBytes(StandardCharsets.UTF_8);
-
-        ClientConfiguration conf = new ClientConfiguration();
-        conf.setClientMemoryLimitEnabled(true);
-        conf.setClientMemoryLimitByBytes(10);
-        BookieClient bc = new BookieClientImpl();
-        ByteBufList bb = createByteBuffer(1, 1, 1);
-        System.out.println(bb.readableBytes());
-//        bc.addEntry(addr, 1, pwd, 1, );
     }
 }
