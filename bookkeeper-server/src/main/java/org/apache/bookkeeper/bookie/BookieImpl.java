@@ -426,7 +426,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         }
 
         // instantiate the journals
-        journals = Lists.newArrayListWithCapacity(journalDirectories.size());
+        journals = new ArrayList<>(journalDirectories.size());
         for (int i = 0; i < journalDirectories.size(); i++) {
             journals.add(new Journal(i, journalDirectories.get(i),
                     conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE), allocator));
