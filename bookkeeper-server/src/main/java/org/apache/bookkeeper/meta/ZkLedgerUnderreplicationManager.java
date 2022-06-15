@@ -196,6 +196,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                     // someone else managed to create it
                     continue;
                 }
+                break;
             } else {
                 byte[] layoutData = zkc.getData(layoutZNode, false, null);
 
