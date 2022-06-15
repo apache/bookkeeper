@@ -1622,13 +1622,33 @@ public class BookKeeperAdmin implements AutoCloseable {
             LedgerManager ledgerManager) throws InterruptedException, TimeoutException {
         int maxSleepTimeInBetweenChecks = 10 * 60 * 1000; // 10 minutes
         int sleepTimePerLedger = 10 * 1000; // 10 secs
+        int rereplicateBackoffMs = 10 * 1000; // 10 secs
+        int backOffCount = 0;
         Predicate<Long> validateBookieIsNotPartOfEnsemble = ledgerId -> !areEntriesOfLedgerStoredInTheBookie(ledgerId,
                 thisBookieAddress, ledgerManager);
         while (!ledgers.isEmpty()) {
             LOG.info("Count of Ledgers which need to be rereplicated: {}", ledgers.size());
             int sleepTimeForThisCheck = (long) ledgers.size() * sleepTimePerLedger > maxSleepTimeInBetweenChecks
                     ? maxSleepTimeInBetweenChecks : ledgers.size() * sleepTimePerLedger;
-            Thread.sleep(sleepTimeForThisCheck);
+            long nextValidateTime = System.currentTimeMillis() + sleepTimeForThisCheck;
+            while (underreplicationManager.isLedgerWaitingReplicated()) {
+                LOG.info("Waiting Ledgers rereplicate complete.");
+                Thread.sleep(rereplicateBackoffMs);
+                if (System.currentTimeMillis() >= nextValidateTime) {
+                    break;
+                }
+                backOffCount = 0;
+            }
+            // Back off for some case like auditor is running as CheckAllLedgers need more time to audit this bookie.
+            backOffCount++;
+            if (backOffCount > 1){
+                int backOffTime = backOffCount * rereplicateBackoffMs;
+                sleepTimeForThisCheck = backOffTime < (nextValidateTime - System.currentTimeMillis())
+                        ? backOffTime : (int) (nextValidateTime - System.currentTimeMillis());
+                LOG.info("Waiting {} s for audit bookie complete.", sleepTimeForThisCheck / 1000);
+                Thread.sleep(sleepTimeForThisCheck);
+            }
+
             LOG.debug("Making sure following ledgers replication to be completed: {}", ledgers);
             ledgers.removeIf(validateBookieIsNotPartOfEnsemble);
         }

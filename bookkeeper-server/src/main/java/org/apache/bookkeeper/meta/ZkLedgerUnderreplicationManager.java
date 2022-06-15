@@ -786,6 +786,16 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         }
     }
 
+    @Override
+    public boolean isLedgerWaitingReplicated() {
+        try {
+            return zkc.getAllChildrenNumber(urLockPath) > 0 || zkc.getAllChildrenNumber(urLedgerPath) > 0;
+        } catch (Exception e) {
+            LOG.error("Failed to check ledger lock", e);
+            return true;
+        }
+    }
+
     /**
      * Acquire the underreplicated ledger lock.
      */

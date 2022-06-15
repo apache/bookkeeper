@@ -49,6 +49,8 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      */
     boolean isLedgerBeingReplicated(long ledgerId) throws ReplicationException;
 
+    boolean isLedgerWaitingReplicated();
+
     /**
      * Mark a ledger as underreplicated with missing bookies. The replication should then
      * check which fragements are underreplicated and rereplicate them.
