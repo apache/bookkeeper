@@ -56,6 +56,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         rep.init(request, channel, requestProcessor);
         rep.fenceThreadPool = fenceThreadPool;
         rep.throttleReadResponses = throttleReadResponses;
+        requestProcessor.onReadRequestStart(channel);
         return rep;
     }
 
@@ -133,11 +134,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
             response = ResponseBuilder.buildErrorResponse(errorCode, request);
         }
 
-        if (throttleReadResponses) {
-            sendResponseAndWait(errorCode, response, stats.getReadRequestStats());
-        } else {
-            sendResponse(errorCode, response, stats.getReadRequestStats());
-        }
+        sendReadReqResponse(errorCode, response, stats.getReadRequestStats(), throttleReadResponses);
         recycle();
     }
 
