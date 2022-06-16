@@ -31,7 +31,6 @@ on:
 
 env:
   MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
-  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
 
 jobs:
   check:
