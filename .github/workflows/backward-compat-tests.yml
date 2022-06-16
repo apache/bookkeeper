@@ -30,7 +30,7 @@ on:
     workflow_dispatch:
 
 env:
-  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
+  MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
 
 jobs:
   test:
@@ -48,11 +48,12 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Build
-        run: ./gradlew stream:server:build -x test ${GRADLE_ARGS}
+      - name: Install Module
+        run: mvn -B -nsu clean install -DskipTests
       - name: Test current server with old clients
-        run: ./gradlew :tests:backward-compat:current-server-old-clients:test ${GRADLE_ARGS} || (tail -n +1 tests/backward-compat/current-server-old-clients/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/current-server-old-clients/build/container-logs/**/* && exit 1)
+        run: mvn -B -nsu -DintegrationTests -pl :backward-compat-current-server-old-clients test
       - name: Test progressive upgrade
-        run: ./gradlew :tests:backward-compat:upgrade:test ${GRADLE_ARGS} || (tail -n +1 tests/backward-compat/upgrade/build/reports/tests/test/classes/* && tail -n +1 tests/backward-compat/upgrade/build/container-logs/**/* && exit 1)
+        run: mvn -B -nsu -DintegrationTests -pl :upgrade test
       - name: Other tests
-        run: ./gradlew :tests:backward-compat:test -x tests:backward-compat:upgrade:test -x :tests:backward-compat:current-server-old-clients:test ${GRADLE_ARGS}
+        run: |
+          mvn -B -nsu -DintegrationTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct,:yahoo-custom-version test
