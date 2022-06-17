@@ -700,10 +700,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 if (entry != null) {
                     if (log.isDebugEnabled()) {
                         entry.readLong(); // ledgedId
-                        long entryId = entry.readLong();
+                        long eId = entry.readLong();
                         entry.resetReaderIndex();
                         if (log.isDebugEnabled()) {
-                            log.debug("Found last entry for ledger {} in write cache being flushed: {}", ledgerId, entryId);
+                            log.debug("Found last entry for ledger {} in write cache being flushed: {}", ledgerId, eId);
                         }
                     }
                     dbLedgerStorageStats.getWriteCacheHitCounter().inc();
