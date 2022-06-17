@@ -85,6 +85,36 @@ public class WriteCacheTest {
     }
 
     @Test
+    public void cloneCache() throws Exception {
+        WriteCache flushdCache = new WriteCache(allocator, 10 * 1024);
+        WriteCache lastFlushdCache = new WriteCache(allocator, 10 * 1024);
+
+        ByteBuf entry1 = allocator.buffer(1024);
+        ByteBufUtil.writeUtf8(entry1, "entry-1");
+        entry1.writerIndex(entry1.capacity());
+        flushdCache.put(1, 1, entry1);
+
+        assertEquals(entry1, flushdCache.get(1, 1));
+
+        cloneFlushedCache2LastFlushCache(flushdCache, lastFlushdCache);
+        assertEquals(entry1, lastFlushdCache.get(1, 1));
+
+        flushdCache.clear();
+        assertEquals(entry1, lastFlushdCache.get(1, 1));
+
+        entry1.release();
+        flushdCache.close();
+        lastFlushdCache.close();
+    }
+
+    private void cloneFlushedCache2LastFlushCache(WriteCache writeCacheBeingFlushed, WriteCache writeCacheLastFlushed) {
+        writeCacheLastFlushed.clear();
+        writeCacheBeingFlushed.forEach((ledgerId, entryId, data) -> {
+            writeCacheLastFlushed.put(ledgerId, entryId, data);
+        });
+    }
+
+    @Test
     public void cacheFull() throws Exception {
         int cacheSize = 10 * 1024;
         int entrySize = 1024;
