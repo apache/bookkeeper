@@ -333,6 +333,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Used for location index, lots of writes and much bigger dataset
     protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
 
+    // guaranteed writeCache fixed length for cache read
+    protected static final String IS_WRITECACHE_FIXED_LENGTH_ENABLE = "isWriteCacheFixedLengthEnabled";
+
     /**
      * Construct a default configuration object.
      */
@@ -3965,5 +3968,14 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
         this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
         return this;
+    }
+
+    public ServerConfiguration setIsWriteCacheFixedLengthEnabled(boolean enabled) {
+        this.setProperty(IS_WRITECACHE_FIXED_LENGTH_ENABLE, Boolean.toString(enabled));
+        return this;
+    }
+
+    public boolean isWriteCacheFixedLengthEnabled() {
+        return this.getBoolean(IS_WRITECACHE_FIXED_LENGTH_ENABLE, false);
     }
 }
