@@ -70,6 +70,11 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- class Crc32cIntChecksum needs netty buffer -->
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
