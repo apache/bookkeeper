@@ -1294,10 +1294,14 @@ public class Auditor implements AutoCloseable {
      * List all the ledgers and check them individually. This should not
      * be run very often.
      */
-    void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException,
-            UnavailableException {
-        if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-            LOG.info("Ledger rereplication has been disabled, aborting periodic check");
+    void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
+        try {
+            if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                LOG.info("Ledger rereplication has been disabled, aborting periodic check");
+                return;
+            }
+        } catch (UnavailableException ue) {
+            LOG.error("Underreplication manager unavailable running periodic check", ue);
             return;
         }
         final BookKeeper localClient = getBookKeeper(conf);
