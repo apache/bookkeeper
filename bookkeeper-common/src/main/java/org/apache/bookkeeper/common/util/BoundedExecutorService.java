@@ -59,51 +59,67 @@ public class BoundedExecutorService extends ForwardingExecutorService {
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        checkQueue(tasks.size());
-        return super.invokeAll(tasks);
+        synchronized (this) {
+            checkQueue(tasks.size());
+            return super.invokeAll(tasks);
+        }
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
             throws InterruptedException {
-        checkQueue(tasks.size());
-        return super.invokeAll(tasks, timeout, unit);
+        synchronized (this) {
+            checkQueue(tasks.size());
+            return super.invokeAll(tasks, timeout, unit);
+        }
     }
 
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        checkQueue(tasks.size());
-        return super.invokeAny(tasks);
+        synchronized (this) {
+            checkQueue(tasks.size());
+            return super.invokeAny(tasks);
+        }
     }
 
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
-        checkQueue(tasks.size());
-        return super.invokeAny(tasks, timeout, unit);
+        synchronized (this) {
+            checkQueue(tasks.size());
+            return super.invokeAny(tasks, timeout, unit);
+        }
     }
 
     @Override
     public void execute(Runnable command) {
-        checkQueue(1);
-        super.execute(command);
+        synchronized (this) {
+            checkQueue(1);
+            super.execute(command);
+        }
     }
 
     @Override
     public <T> Future<T> submit(Callable<T> task) {
-        checkQueue(1);
-        return super.submit(task);
+        synchronized (this) {
+            checkQueue(1);
+            return super.submit(task);
+        }
     }
 
     @Override
     public Future<?> submit(Runnable task) {
-        checkQueue(1);
-        return super.submit(task);
+        synchronized (this) {
+            checkQueue(1);
+            return super.submit(task);
+        }
     }
 
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        checkQueue(1);
-        return super.submit(task, result);
+        synchronized (this) {
+            checkQueue(1);
+            return super.submit(task, result);
+        }
     }
 }
