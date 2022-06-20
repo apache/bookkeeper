@@ -707,6 +707,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         // Only a single flush operation can happen at a time
         flushMutex.lock();
         try {
+            if (writeCache.isEmpty()) {
+                return;
+            }
             // Swap the write cache so that writes can continue to happen while the flush is
             // ongoing
             swapWriteCache();
