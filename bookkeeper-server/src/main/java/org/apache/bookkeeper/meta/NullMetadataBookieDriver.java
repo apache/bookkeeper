@@ -302,6 +302,11 @@ public class NullMetadataBookieDriver implements MetadataBookieDriver {
         }
 
         @Override
+        public boolean isLedgerWaitingReplicated() {
+            return false;
+        }
+
+        @Override
         public CompletableFuture<Void> markLedgerUnderreplicatedAsync(long ledgerId,
                                                                       Collection<String> missingReplicas) {
             CompletableFuture<Void> promise = new CompletableFuture<>();
