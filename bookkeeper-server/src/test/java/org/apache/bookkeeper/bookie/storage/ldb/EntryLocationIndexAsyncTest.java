@@ -20,15 +20,15 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Unit test for {@link EntryLocationIndex}.
