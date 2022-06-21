@@ -360,8 +360,6 @@ class BookieWatcherImpl implements BookieWatcher {
     }
 
     public void releaseAllQuarantinedBookies(){
-        if (quarantinedBookies.size() > 0){
-            quarantinedBookies.invalidateAll();
-        }
+        quarantinedBookies.invalidateAll();
     }
 }
