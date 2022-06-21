@@ -170,7 +170,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_DIRS = "journalDirectories";
     protected static final String LEDGER_DIRS = "ledgerDirectories";
     protected static final String INDEX_DIRS = "indexDirectories";
-    protected static final String LOCATION_INDEX_SYNC_DATA = "locationIndexSyncData";
+    protected static final String DB_LEDGERLOCATION_INDEX_SYNC_ENABLE = "dbLedgerLocationIndexSyncEnable";
     protected static final String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
     // NIO and Netty Parameters
     protected static final String SERVER_TCP_NODELAY = "serverTcpNoDelay";
@@ -1830,24 +1830,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get location index sync data.
+     * Get db ledger location index sync enable.
      *
      * @return true  - sync operate location index,
      *         false - async operate location index.
      */
-    public boolean getLocationIndexSyncData() {
-        return getBoolean(LOCATION_INDEX_SYNC_DATA, true);
+    public boolean getDbLedgerLocationIndexSyncEnable() {
+        return getBoolean(DB_LEDGERLOCATION_INDEX_SYNC_ENABLE, true);
     }
 
     /**
-     * Set location index sync data.
+     * Set db ledger location index sync enable.
      *
      * @param syncSwitch true to sync operate location index
      *
      * @return ServerConfiguration
      */
-    public ServerConfiguration setLocationIndexSyncData(boolean syncSwitch) {
-        setProperty(LOCATION_INDEX_SYNC_DATA, syncSwitch);
+    public ServerConfiguration setDbLedgerLocationIndexSyncEnable(boolean syncSwitch) {
+        setProperty(DB_LEDGERLOCATION_INDEX_SYNC_ENABLE, syncSwitch);
         return this;
     }
 

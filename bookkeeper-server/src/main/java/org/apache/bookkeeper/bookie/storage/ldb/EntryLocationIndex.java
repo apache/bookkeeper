@@ -243,9 +243,8 @@ public abstract class EntryLocationIndex implements Closeable {
             }
         } finally {
             try {
-                batch.flush();
-                batch.clear();
                 flush(batch);
+
                 if (deletedEntries != 0) {
                     locationsDb.compact(firstDeletedKey, keyToDelete.array);
                 }
@@ -270,7 +269,7 @@ public abstract class EntryLocationIndex implements Closeable {
 
     public static EntryLocationIndex newInstance(ServerConfiguration conf, KeyValueStorageFactory storageFactory,
                                                  String basePath, StatsLogger stats) throws IOException {
-        if (!conf.getLocationIndexSyncData()) {
+        if (!conf.getDbLedgerLocationIndexSyncEnable()) {
             return new EntryLocationIndexAsync(conf, storageFactory, basePath, stats);
         }
         return new EntryLocationIndexSync(conf, storageFactory, basePath, stats);
