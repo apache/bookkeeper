@@ -19,8 +19,11 @@
 package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.BKException.BKIllegalOpException;
@@ -29,6 +32,7 @@ import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 
@@ -44,19 +48,23 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
 
     public BookieDecommissionTest() {
         super(NUM_OF_BOOKIES, 480);
-        baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30000));
+        baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(1000));
         setAutoRecoveryEnabled(true);
     }
 
     @FlakyTest("https://github.com/apache/bookkeeper/issues/502")
+    @Test
     public void testDecommissionBookie() throws Exception {
         ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
         BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
+
+        List<Long> ledgerIds = new LinkedList<>();
 
         int numOfLedgers = 2 * NUM_OF_BOOKIES;
         int numOfEntries = 2 * NUM_OF_BOOKIES;
         for (int i = 0; i < numOfLedgers; i++) {
             LedgerHandle lh = bkc.createLedger(3, 2, digestType, PASSWORD.getBytes());
+            ledgerIds.add(lh.getId());
             for (int j = 0; j < numOfEntries; j++) {
                 lh.addEntry("entry".getBytes());
             }
@@ -67,6 +75,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
          */
         for (int i = 0; i < numOfLedgers; i++) {
             LedgerHandle emptylh = bkc.createLedger(3, 2, digestType, PASSWORD.getBytes());
+            ledgerIds.add(emptylh.getId());
             emptylh.close();
         }
 
@@ -88,7 +97,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
          */
         bkAdmin.decommissionBookie(BookieImpl.getBookieId(killedBookieConf));
         bkAdmin.triggerAudit();
-        Thread.sleep(500);
+        Thread.sleep(5000);
         Iterator<UnderreplicatedLedger> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
         if (ledgersToRereplicate.hasNext()) {
             while (ledgersToRereplicate.hasNext()) {
@@ -101,7 +110,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         killedBookieConf = killBookie(0);
         bkAdmin.decommissionBookie(BookieImpl.getBookieId(killedBookieConf));
         bkAdmin.triggerAudit();
-        Thread.sleep(500);
+        Thread.sleep(5000);
         ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
         if (ledgersToRereplicate.hasNext()) {
             while (ledgersToRereplicate.hasNext()) {
@@ -111,6 +120,10 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
             fail("There are not supposed to be any underreplicatedledgers");
         }
         bkAdmin.close();
+
+        for (Long id: ledgerIds) {
+            verifyNoFragmentsOnBookie(id, BookieImpl.getBookieId(killedBookieConf));
+        }
     }
 
     @Test
@@ -130,11 +143,16 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
             lh4.addEntry(j, "data".getBytes());
         }
 
+        // avoiding autorecovery fencing the ledger
+        servers.forEach(srv -> srv.stopAutoRecovery());
+
         startNewBookie();
 
         assertEquals("Number of Available Bookies", NUM_OF_BOOKIES + 1, bkAdmin.getAvailableBookies().size());
 
-        ServerConfiguration killedBookieConf = killBookie(0);
+        BookieId killedBookieId = getBookie(0);
+        log.warn("Killing bookie {}", killedBookieId);
+        killBookie(0);
 
         /*
          * since one of the bookie is killed, ensemble change happens when next
@@ -152,16 +170,24 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         lh1.close();
         lh2.close();
 
+        servers.forEach(srv -> {
+            try {
+                srv.startAutoRecovery();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
         /*
          * If the last fragment of the ledger is underreplicated and if the
          * ledger is not closed then it will remain underreplicated for
-         * openLedgerRereplicationGracePeriod (by default 30 secs). For more
+         * openLedgerRereplicationGracePeriod (by default 30 secs, 1 in the test). For more
          * info. Check BOOKKEEPER-237 and BOOKKEEPER-325. But later
          * ReplicationWorker will fence the ledger.
          */
-        bkAdmin.decommissionBookie(BookieImpl.getBookieId(killedBookieConf));
+        bkAdmin.decommissionBookie(killedBookieId);
         bkAdmin.triggerAudit();
-        Thread.sleep(500);
+        Thread.sleep(5000);
         Iterator<UnderreplicatedLedger> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
         if (ledgersToRereplicate.hasNext()) {
             while (ledgersToRereplicate.hasNext()) {
@@ -171,6 +197,73 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
             fail("There are not supposed to be any underreplicatedledgers");
         }
         bkAdmin.close();
+
+        verifyNoFragmentsOnBookie(1L, killedBookieId);
+        verifyNoFragmentsOnBookie(2L, killedBookieId);
+        verifyNoFragmentsOnBookie(3L, killedBookieId);
+        verifyNoFragmentsOnBookie(4L, killedBookieId);
+    }
+
+    @Test
+    public void testDecommissionForEmptyLedgers() throws Exception {
+        ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
+        BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
+
+        LedgerHandle lh1 = bkc.createLedgerAdv(1L, numBookies, numBookies - 1, numBookies - 1,
+                digestType, PASSWORD.getBytes(), null);
+        LedgerHandle lh2 = bkc.createLedgerAdv(2L, numBookies, numBookies - 1, numBookies - 1,
+                digestType, PASSWORD.getBytes(), null);
+        LedgerHandle lh3 = bkc.createLedgerAdv(3L, numBookies, numBookies - 1, numBookies - 1,
+                digestType, PASSWORD.getBytes(), null);
+        LedgerHandle lh4 = bkc.createLedgerAdv(4L, numBookies, numBookies - 1, numBookies - 1,
+                digestType, PASSWORD.getBytes(), null);
+
+        lh1.close();
+        lh2.close();
+
+        startNewBookie();
+
+        assertEquals("Number of Available Bookies", NUM_OF_BOOKIES + 1, bkAdmin.getAvailableBookies().size());
+
+        BookieId killedBookieId = getBookie(0);
+        log.warn("Killing bookie {}", killedBookieId);
+        killBookie(0);
+        assertEquals("Number of Available Bookies", NUM_OF_BOOKIES, bkAdmin.getAvailableBookies().size());
+
+        bkAdmin.decommissionBookie(killedBookieId);
+        bkAdmin.triggerAudit();
+        Thread.sleep(5000);
+        Iterator<UnderreplicatedLedger> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
+        if (ledgersToRereplicate.hasNext()) {
+            while (ledgersToRereplicate.hasNext()) {
+                long ledgerId = ledgersToRereplicate.next().getLedgerId();
+                log.error("Ledger: {} is underreplicated which is not expected. {}",
+                        ledgerId, ledgersToRereplicate.next().getReplicaList());
+            }
+            fail("There are not supposed to be any underreplicatedledgers");
+        }
+        bkAdmin.close();
+
+        verifyNoFragmentsOnBookie(1L, killedBookieId);
+        verifyNoFragmentsOnBookie(2L, killedBookieId);
+        verifyNoFragmentsOnBookie(3L, killedBookieId);
+        verifyNoFragmentsOnBookie(4L, killedBookieId);
+
+        lh3.close();
+        lh4.close();
+    }
+
+    private void verifyNoFragmentsOnBookie(long ledgerId, BookieId bookieId) throws BKException, InterruptedException {
+        LedgerHandle lh = bkc.openLedgerNoRecovery(ledgerId, digestType, PASSWORD.getBytes());
+        log.error("Ledger {} metadata: {}", ledgerId, lh.getLedgerMetadata());
+
+        lh.getLedgerMetadata().getAllEnsembles().forEach((num, bookies) -> {
+            bookies.forEach(id -> {
+                assertNotEquals(bookieId, id);
+            });
+        });
+
+        lh.close();
     }
 
 }
