@@ -1649,7 +1649,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                 LOG.debug("Ledger: {} has been deleted", ledgerId);
                 return false;
             } else {
-                LOG.error("Got exception while trying to read LedgerMeatadata of " + ledgerId, e);
+                LOG.error("Got exception while trying to read LedgerMetadata of " + ledgerId, e);
                 throw new RuntimeException(e);
             }
         }
