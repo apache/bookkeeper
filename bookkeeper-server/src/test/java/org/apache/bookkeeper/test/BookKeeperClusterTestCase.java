@@ -97,6 +97,7 @@ public abstract class BookKeeperClusterTestCase {
     protected final List<BookieServer> bs = new LinkedList<BookieServer>();
     protected final List<ServerConfiguration> bsConfs = new LinkedList<ServerConfiguration>();
     private final Map<BookieId, TestStatsProvider> bsLoggers = new HashMap<>();
+
     protected int numBookies;
     protected BookKeeperTestClient bkc;
     protected boolean useUUIDasBookieId = true;

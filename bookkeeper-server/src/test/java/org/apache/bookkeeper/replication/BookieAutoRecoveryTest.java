@@ -383,6 +383,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         LOG.info("Killing last bookie, {}, in ensemble {}", replicaToKill,
                  lh.getLedgerMetadata().getAllEnsembles().get(0L));
         killBookie(replicaToKill);
+        startNewBookie();
 
         getAuditor(10, TimeUnit.SECONDS).submitAuditTask().get(); // ensure auditor runs
 
