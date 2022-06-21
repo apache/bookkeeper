@@ -40,7 +40,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * A utility class to check the complete ledger and finds the UnderReplicated fragments if any.
  *
@@ -238,7 +237,13 @@ public class LedgerChecker {
             if (lastStored != LedgerHandle.INVALID_ENTRY_ID) {
                 throw new InvalidFragmentException();
             }
-            cb.operationComplete(BKException.Code.OK, fragment);
+
+            if (bookieWatcher.isBookieUnavailable(fragment.getAddress(bookieIndex))) {
+                // fragment is on this bookie, but already know it's unavailable, so skip the call
+                cb.operationComplete(BKException.Code.BookieHandleNotAvailableException, fragment);
+            } else {
+                cb.operationComplete(BKException.Code.OK, fragment);
+            }
         } else if (bookieWatcher.isBookieUnavailable(fragment.getAddress(bookieIndex))) {
             // fragment is on this bookie, but already know it's unavailable, so skip the call
             cb.operationComplete(BKException.Code.BookieHandleNotAvailableException, fragment);
