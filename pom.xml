@@ -1138,6 +1138,7 @@
               <mixAuditAnalyzerEnabled>false</mixAuditAnalyzerEnabled>
               <nugetconfAnalyzerEnabled>false</nugetconfAnalyzerEnabled>
               <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+              <skipSystemScope>true</skipSystemScope>
             </configuration>
             <executions>
               <execution>
