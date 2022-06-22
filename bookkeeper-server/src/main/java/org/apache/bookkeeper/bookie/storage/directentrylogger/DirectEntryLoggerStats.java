@@ -99,43 +99,46 @@ class DirectEntryLoggerStats {
 
         flushStats = stats.getOpStatsLogger(FLUSH);
         writerFlushStats = stats.getOpStatsLogger(WRITER_FLUSH);
+        setStats(stats);
+    }
 
+    private synchronized static void setStats(StatsLogger stats) {
         readEntryStats = new ThreadLocal<OpStatsLogger>() {
-                @Override
-                public OpStatsLogger initialValue() {
-                    return stats.scopeLabel("thread", String.valueOf(Thread.currentThread().getId()))
+            @Override
+            public OpStatsLogger initialValue() {
+                return stats.scopeLabel("thread", String.valueOf(Thread.currentThread().getId()))
                     .getOpStatsLogger(READ_ENTRY);
-                }
-            };
+            }
+        };
         readBlockStats = new ThreadLocal<OpStatsLogger>() {
-                @Override
-                public OpStatsLogger initialValue() {
-                    return stats.scopeLabel("thread", String.valueOf(Thread.currentThread().getId()))
+            @Override
+            public OpStatsLogger initialValue() {
+                return stats.scopeLabel("thread", String.valueOf(Thread.currentThread().getId()))
                     .getOpStatsLogger(READ_BLOCK);
-                }
-            };
-
-        openReaderStats = new ThreadLocal<Counter>() {
-            @Override
-            public Counter initialValue() {
-                return stats.scopeLabel("thread", String.valueOf(Thread.currentThread().getId()))
-                        .getCounter(READER_OPEN);
             }
         };
 
-        closeReaderStats = new ThreadLocal<Counter>() {
+        DirectEntryLoggerStats.openReaderStats = new ThreadLocal<Counter>() {
             @Override
             public Counter initialValue() {
                 return stats.scopeLabel("thread", String.valueOf(Thread.currentThread().getId()))
-                        .getCounter(READER_CLOSE);
+                    .getCounter(READER_OPEN);
             }
         };
 
-        cachedReadersServedClosed = new ThreadLocal<Counter>() {
+        DirectEntryLoggerStats.closeReaderStats = new ThreadLocal<Counter>() {
             @Override
             public Counter initialValue() {
                 return stats.scopeLabel("thread", String.valueOf(Thread.currentThread().getId()))
-                        .getCounter(CACHED_READER_SERVED_CLOSED);
+                    .getCounter(READER_CLOSE);
+            }
+        };
+
+        DirectEntryLoggerStats.cachedReadersServedClosed = new ThreadLocal<Counter>() {
+            @Override
+            public Counter initialValue() {
+                return stats.scopeLabel("thread", String.valueOf(Thread.currentThread().getId()))
+                    .getCounter(CACHED_READER_SERVED_CLOSED);
             }
         };
     }
