@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -113,30 +114,45 @@ class DirectWriter implements LogWriter {
                       Buffer.ALIGNMENT, buf.readableBytes());
         Buffer tmpBuffer = bufferPool.acquire();
         int bytesToWrite = buf.readableBytes();
+        if (bytesToWrite <= 0) {
+            return;
+        }
+
         tmpBuffer.reset();
         tmpBuffer.writeByteBuf(buf);
         Future<?> f = writeExecutor.submit(() -> {
-                try {
-                    int ret = nativeIO.pwrite(fd, tmpBuffer.pointer(), bytesToWrite, offset);
-                    if (ret != bytesToWrite) {
-                        throw new IOException(exMsg("Incomplete write")
-                                              .kv("filename", filename)
-                                              .kv("writeSize", bytesToWrite)
-                                              .kv("bytesWritten", ret)
-                                              .kv("offset", offset).toString());
-                    }
-                } catch (NativeIOException ne) {
-                    throw new IOException(exMsg("Write error")
-                                          .kv("filename", filename)
-                                          .kv("writeSize", bytesToWrite)
-                                          .kv("errno", ne.getErrno())
-                                          .kv("offset", offset).toString());
-                } finally {
-                    bufferPool.release(tmpBuffer);
-                }
-                return null;
+            writeByteBuf(tmpBuffer, bytesToWrite, offset);
+            return null;
             });
         addOutstandingWrite(f);
+    }
+
+    private void writeByteBuf(Buffer buffer, int bytesToWrite, long offsetToWrite) throws IOException{
+        try {
+            if (bytesToWrite <= 0) {
+                return;
+            }
+            int ret = nativeIO.pwrite(fd, buffer.pointer(), bytesToWrite, offsetToWrite);
+            if (ret != bytesToWrite) {
+                throw new IOException(exMsg("Incomplete write")
+                    .kv("filename", filename)
+                    .kv("pointer", buffer.pointer())
+                    .kv("offset", offsetToWrite)
+                    .kv("writeSize", bytesToWrite)
+                    .kv("bytesWritten", ret)
+                    .toString());
+            }
+        } catch (NativeIOException ne) {
+            throw new IOException(exMsg("Write error")
+                .kv("filename", filename)
+                .kv("offset", offsetToWrite)
+                .kv("writeSize", bytesToWrite)
+                .kv("pointer", buffer.pointer())
+                .kv("errno", ne.getErrno())
+                .toString());
+        } finally {
+            bufferPool.release(buffer);
+        }
     }
 
     @Override
@@ -280,31 +296,9 @@ class DirectWriter implements LogWriter {
                 offset += bytesToWrite;
 
                 Future<?> f = writeExecutor.submit(() -> {
-                        try {
-                            if (bytesToWrite <= 0) {
-                                return null;
-                            }
-                            int ret = nativeIO.pwrite(fd, bufferToFlush.pointer(), bytesToWrite, offsetToWrite);
-                            if (ret != bytesToWrite) {
-                                throw new IOException(exMsg("Incomplete write")
-                                                      .kv("filename", filename)
-                                                      .kv("pointer", bufferToFlush.pointer())
-                                                      .kv("offset", offsetToWrite)
-                                                      .kv("writeSize", bytesToWrite)
-                                                      .kv("bytesWritten", ret).toString());
-                            }
-                        } catch (NativeIOException ne) {
-                            throw new IOException(exMsg(ne.getMessage())
-                                                  .kv("filename", filename)
-                                                  .kv("offset", offsetToWrite)
-                                                  .kv("writeSize", bytesToWrite)
-                                                  .kv("pointer", bufferToFlush.pointer())
-                                                  .kv("errno", ne.getErrno()).toString(), ne);
-                        } finally {
-                            bufferPool.release(bufferToFlush);
-                        }
-                        return null;
-                    });
+                    writeByteBuf(bufferToFlush, bytesToWrite, offsetToWrite);
+                    return null;
+                });
                 addOutstandingWrite(f);
 
                 // must acquire after triggering the write

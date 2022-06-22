@@ -56,7 +56,7 @@ class DirectEntryLoggerStats {
               help = "Operation stats of reading entries from the entry log",
               parent = BOOKIE_READ_ENTRY
     )
-    private final ThreadLocal<OpStatsLogger> readEntryStats;
+    private static ThreadLocal<OpStatsLogger> readEntryStats;
 
     @StatsDoc(
               name = FLUSH,
@@ -74,25 +74,25 @@ class DirectEntryLoggerStats {
               name = READ_BLOCK,
               help = "Stats for reading blocks from disk"
     )
-    private final ThreadLocal<OpStatsLogger> readBlockStats;
+    private static ThreadLocal<OpStatsLogger> readBlockStats;
 
     @StatsDoc(
             name = READER_OPEN,
             help = "Stats for reader open operations"
     )
-    private final ThreadLocal<Counter> openReaderStats;
+    private static ThreadLocal<Counter> openReaderStats;
 
     @StatsDoc(
             name = READER_CLOSE,
             help = "Stats for reader close operations"
     )
-    private final ThreadLocal<Counter> closeReaderStats;
+    private static ThreadLocal<Counter> closeReaderStats;
 
     @StatsDoc(
             name = CACHED_READER_SERVED_CLOSED,
             help = "Stats for cached readers being served closed"
     )
-    private final ThreadLocal<Counter> cachedReadersServedClosed;
+    private static ThreadLocal<Counter> cachedReadersServedClosed;
 
     DirectEntryLoggerStats(StatsLogger stats) {
         addEntryStats = stats.getOpStatsLogger(ADD_ENTRY);
