@@ -328,12 +328,14 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         long stamp = writeCacheRotationLock.tryOptimisticRead();
         WriteCache localWriteCache = writeCache;
         WriteCache localWriteCacheBeingFlushed = writeCacheBeingFlushed;
+        WriteCache localWriteCacheLastFlushed = writeCacheLastFlushed;
         if (!writeCacheRotationLock.validate(stamp)) {
             // Fallback to regular read lock approach
             stamp = writeCacheRotationLock.readLock();
             try {
                 localWriteCache = writeCache;
                 localWriteCacheBeingFlushed = writeCacheBeingFlushed;
+                localWriteCacheLastFlushed = writeCacheLastFlushed;
             } finally {
                 writeCacheRotationLock.unlockRead(stamp);
             }
@@ -341,7 +343,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         boolean inCache = isWriteCacheFixedLengthEnabled ? localWriteCache.hasEntry(ledgerId, entryId)
                 || localWriteCacheBeingFlushed.hasEntry(ledgerId, entryId)
-                || writeCacheLastFlushed.hasEntry(ledgerId, entryId)
+                || localWriteCacheLastFlushed.hasEntry(ledgerId, entryId)
                 || readCache.hasEntry(ledgerId, entryId) : localWriteCache.hasEntry(ledgerId, entryId)
                 || localWriteCacheBeingFlushed.hasEntry(ledgerId, entryId)
                 || readCache.hasEntry(ledgerId, entryId);
@@ -531,12 +533,14 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         long stamp = writeCacheRotationLock.tryOptimisticRead();
         WriteCache localWriteCache = writeCache;
         WriteCache localWriteCacheBeingFlushed = writeCacheBeingFlushed;
+        WriteCache localWriteCacheLastFlushed = writeCacheLastFlushed;
         if (!writeCacheRotationLock.validate(stamp)) {
             // Fallback to regular read lock approach
             stamp = writeCacheRotationLock.readLock();
             try {
                 localWriteCache = writeCache;
                 localWriteCacheBeingFlushed = writeCacheBeingFlushed;
+                localWriteCacheLastFlushed = writeCacheLastFlushed;
             } finally {
                 writeCacheRotationLock.unlockRead(stamp);
             }
@@ -558,7 +562,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         if (isWriteCacheFixedLengthEnabled) {
             // If there's a flush finished, the entry might be in the flush buffer
-            entry = writeCacheLastFlushed.get(ledgerId, entryId);
+            entry = localWriteCacheLastFlushed.get(ledgerId, entryId);
             if (entry != null) {
                 dbLedgerStorageStats.getWriteCacheHitCounter().inc();
                 return entry;
