@@ -812,7 +812,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             lastCheckpoint = thisCheckpoint;
 
             if (isWriteCacheFixedLengthEnabled) {
-                cloneFlushedCache2LastFlushCache(writeCacheBeingFlushed, writeCacheLastFlushed);
+                swapBeingFlushedCache2LastFlushCache();
             }
             // Discard all the entry from the write cache, since they're now persisted
             writeCacheBeingFlushed.clear();
@@ -843,11 +843,17 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         }
     }
 
-    private void cloneFlushedCache2LastFlushCache(WriteCache writeCacheBeingFlushed, WriteCache writeCacheLastFlushed) {
+    private void swapBeingFlushedCache2LastFlushCache() {
+        // first clean the history data in writeCacheLastFlushed
         writeCacheLastFlushed.clear();
-        writeCacheBeingFlushed.forEach((ledgerId, entryId, data) -> {
-            writeCacheLastFlushed.put(ledgerId, entryId, data);
-        });
+        long stamp = writeCacheRotationLock.writeLock();
+        try {
+            WriteCache tmp = writeCacheBeingFlushed;
+            writeCacheBeingFlushed = writeCacheLastFlushed;
+            writeCacheLastFlushed = tmp;
+        } finally {
+            writeCacheRotationLock.unlockWrite(stamp);
+        }
     }
 
     /**
