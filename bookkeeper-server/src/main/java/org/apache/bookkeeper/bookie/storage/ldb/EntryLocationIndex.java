@@ -191,7 +191,7 @@ public abstract class EntryLocationIndex implements Closeable {
         long deletedEntriesInBatch = 0;
 
         Batch batch = newBatch();
-        final byte[] firstDeletedKey = new byte[keyToDelete.array.length];
+
         try {
             for (long ledgerId : ledgersToDelete) {
                 if (log.isDebugEnabled()) {
@@ -244,10 +244,6 @@ public abstract class EntryLocationIndex implements Closeable {
         } finally {
             try {
                 flush(batch);
-
-                if (deletedEntries != 0) {
-                    locationsDb.compact(firstDeletedKey, keyToDelete.array);
-                }
             } finally {
                 firstKeyWrapper.recycle();
                 lastKeyWrapper.recycle();
