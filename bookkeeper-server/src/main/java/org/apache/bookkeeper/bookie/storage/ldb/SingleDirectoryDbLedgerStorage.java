@@ -204,10 +204,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         dbLedgerStorageStats = new DbLedgerStorageStats(
                 ledgerDirStatsLogger,
-            () -> this.isWriteCacheFixedLengthEnabled ? writeCache.size() + writeCacheBeingFlushed.size()
-                    + writeCacheLastFlushed.size() : writeCache.size() + writeCacheBeingFlushed.size(),
-            () -> this.isWriteCacheFixedLengthEnabled ? writeCache.count() + writeCacheBeingFlushed.count()
-                    + writeCacheLastFlushed.count() : writeCache.count() + writeCacheBeingFlushed.count(),
+            this.isWriteCacheFixedLengthEnabled ? () ->  writeCache.size() + writeCacheBeingFlushed.size()
+                    + writeCacheLastFlushed.size() : () -> writeCache.size() + writeCacheBeingFlushed.size(),
+            this.isWriteCacheFixedLengthEnabled ? () -> writeCache.count() + writeCacheBeingFlushed.count()
+                    + writeCacheLastFlushed.count() : () -> writeCache.count() + writeCacheBeingFlushed.count(),
             () -> readCache.size(),
             () -> readCache.count()
         );
