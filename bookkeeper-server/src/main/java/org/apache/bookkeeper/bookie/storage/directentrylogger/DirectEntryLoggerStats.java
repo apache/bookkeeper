@@ -102,7 +102,7 @@ class DirectEntryLoggerStats {
         setStats(stats);
     }
 
-    private synchronized static void setStats(StatsLogger stats) {
+    private static synchronized void setStats(StatsLogger stats) {
         readEntryStats = new ThreadLocal<OpStatsLogger>() {
             @Override
             public OpStatsLogger initialValue() {
