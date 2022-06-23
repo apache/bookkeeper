@@ -1026,7 +1026,14 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             for (int j = 0; j < writeQuorumSize; j++) {
                 bookie = ensembleList.get((i + j) % ensembleSize);
                 try {
-                    racksInQuorum.add(knownBookies.get(bookie).getNetworkLocation());
+                    BookieNode bookieNode = knownBookies.get(bookie);
+                    if (bookieNode == null) {
+                        bookieNode = historyBookies.get(bookie);
+                    }
+                    if (bookieNode == null) {
+                        continue;
+                    }
+                    racksInQuorum.add(bookieNode.getNetworkLocation());
                 } catch (Exception e) {
                     /*
                      * any issue/exception in analyzing whether ensemble is
