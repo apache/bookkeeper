@@ -162,6 +162,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String READ_REORDER_THRESHOLD_PENDING_REQUESTS = "readReorderThresholdPendingRequests";
     protected static final String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES =
         "ensemblePlacementPolicyOrderSlowBookies";
+    protected static final String ENABLE_BOOKIE_ADDRESS_RESOLVER = "enableBookieAddressResolver";
 
     // Stats
     protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
@@ -1285,6 +1286,33 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setEnsemblePlacementPolicySlowBookies(boolean enabled) {
         setProperty(ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES, enabled);
+        return this;
+    }
+
+    /**
+     * Whether to enable BookieAddressResolver.
+     *
+     * @return flag to enable/disable BookieAddressResolver.
+     */
+    public boolean getEnableBookieAddressResolver() {
+        return getBoolean(ENABLE_BOOKIE_ADDRESS_RESOLVER, true);
+    }
+
+    /**
+     * Enable/Disable BookieAddressResolver.
+     *
+     * <p>
+     * If this flag is true, read bookie information from the metadata service (e.g. ZooKeeper) to resolve the address
+     * from each bookie ID. If all bookie IDs in the cluster are "address:port" or "hostname:port", you can set this
+     * flag to false to reduce requests to the metadata service.
+     * </p>
+     *
+     * @param enabled
+     *          flag to enable/disable BookieAddressResolver.
+     * @return client configuration.
+     */
+    public ClientConfiguration setEnableBookieAddressResolver(boolean enabled) {
+        setProperty(ENABLE_BOOKIE_ADDRESS_RESOLVER, enabled);
         return this;
     }
 
