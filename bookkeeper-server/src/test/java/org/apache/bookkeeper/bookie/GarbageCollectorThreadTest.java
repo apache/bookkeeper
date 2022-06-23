@@ -22,6 +22,7 @@ package org.apache.bookkeeper.bookie;
 
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.logIdFromLocation;
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.makeEntry;
+import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.newDirectEntryLogger;
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.newDirsManager;
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.newLegacyEntryLogger;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -150,6 +151,14 @@ public class GarbageCollectorThreadTest {
         File ledgerDir = tmpDirs.createNew("testExtractMeta", "ledgers");
         testExtractMetaFromEntryLogs(
                 newLegacyEntryLogger(20000, ledgerDir), ledgerDir);
+    }
+
+    @Test
+    public void testExtractMetaFromEntryLogsDirect() throws Exception {
+        File ledgerDir = tmpDirs.createNew("testExtractMeta", "ledgers");
+        testExtractMetaFromEntryLogs(
+                newDirectEntryLogger(23000, // direct header is 4kb rather than 1kb
+                                                       ledgerDir), ledgerDir);
     }
 
     private void testExtractMetaFromEntryLogs(EntryLogger entryLogger, File ledgerDir)

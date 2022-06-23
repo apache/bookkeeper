@@ -33,7 +33,10 @@ public abstract class AbstractLogCompactor {
     protected final ServerConfiguration conf;
     protected final Throttler throttler;
 
-    interface LogRemovalListener {
+    /**
+     * LogRemovalListener.
+     */
+    public interface LogRemovalListener {
         void removeEntryLog(long logToRemove);
     }
 
@@ -71,7 +74,7 @@ public abstract class AbstractLogCompactor {
         }
 
         // acquire. if bybytes: bytes of this entry; if byentries: 1.
-        void acquire(int permits) {
+        public void acquire(int permits) {
             rateLimiter.acquire(this.isThrottleByBytes ? permits : 1);
         }
     }

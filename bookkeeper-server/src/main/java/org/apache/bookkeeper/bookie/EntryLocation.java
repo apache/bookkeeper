@@ -46,4 +46,14 @@ public class EntryLocation {
     public long getLocation() {
         return location;
     }
+
+    @Override
+    public String toString() {
+        return new StringBuilder().append("EntryLocation{")
+            .append("ledger=").append(ledger)
+            .append(",entry=").append(entry)
+            .append(",locationLog=").append(location >> 32 & 0xFFFFFFFF)
+            .append(",locationOffset=").append((int) (location & 0xFFFFFFFF))
+            .append("}").toString();
+    }
 }

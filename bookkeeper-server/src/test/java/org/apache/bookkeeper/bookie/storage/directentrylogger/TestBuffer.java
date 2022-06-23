@@ -38,7 +38,7 @@ import org.junit.Test;
 /**
  * TestBuffer.
  */
-public class BufferTest {
+public class TestBuffer {
 
     @Test
     public void testIsAligned() throws Exception {
